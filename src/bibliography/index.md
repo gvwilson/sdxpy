@@ -1,0 +1,6 @@
+---
+title: "Bibliography"
+---
+
+[% bibliography %]
+
