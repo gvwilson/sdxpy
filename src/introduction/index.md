@@ -165,7 +165,7 @@ and the other open source tools used to make this material.
 If we all give a little,
 we all get a lot.
 
-<div align="center" markdown="1">
+<div class="center" markdown="1">
   *This one's for Mike*
   <br/>
   *I'm glad you've always found it hard to say "no"*
