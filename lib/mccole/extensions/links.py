@@ -34,6 +34,7 @@ def links_table(pargs, kwargs, node):
         return "<p>NO LINKS</p>"
 
     links = _read_links()
+    links.sort(key=_link_key)
     links = "\n".join(
         f'<li>{x["title"]}: <a class="link-ref" href="{x["url"]}">{x["url"]}</a></li>'
         for x in links
@@ -76,6 +77,16 @@ class LinkCollector(Treeprocessor):
         for element in root.iter("a"):
             self.used.add(element.attrib["href"])
         return root
+
+
+def _link_key(item):
+    """Create sorting key for link."""
+    key = item["title"].lower()
+    if key.startswith("a "):
+        key = key[2:]
+    elif key.startswith("the "):
+        key = key[4:]
+    return key.strip()
 
 
 def _read_links():

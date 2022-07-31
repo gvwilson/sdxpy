@@ -2,23 +2,11 @@
 title: "Introduction"
 ---
 
-The best way to learn design is to study examples [%b Schon1984 Petre2016 %],
-and some of the best examples of software design come from
-the tools programmers use in their own work.
-These lessons build small versions of file backup systems,
-testing frameworks,
-and regular expression matchers
-both to demystify them
-and to give some insights into how experienced programmers think.
-We draw inspiration from [%b Brown2011 Brown2012 Brown2016 %],
-[Mary Rose Cook's][cook_mary_rose] [Gitlet][gitlet],
-and the books that introduced the Unix philosophy to an entire generation of programmers
-[%b Kernighan1979 Kernighan1981 Kernighan1983 Kernighan1988 %].
+[% root README.md %]
 
-## Who is our audience? {: #introduction-audience}
+## Audience {: #introduction-audience}
 
-Every lesson should be written with specific learners in mind [%b Wilson2019 %].
-These three [personas][t3_personas] describe ours:
+These [personas][t3_personas] describe who this book is meant to help [%b Wilson2019 %]:
 
 -   Aïsha started writing VB macros for Excel in an accounting course and never looked back.
     After spending three years fixing her company's [Django][django] website
@@ -57,7 +45,7 @@ If you are looking for a project to do in a software design course,
 adding a tool to those covered here would be fun as well as educational.
 Please see [%x conclusion %] for more details.
 
-## What tools and ideas do we cover? {: #introduction-contents}
+## Topics {: #introduction-contents}
 
 Programmers have invented [a lot of tools][programming_tools] to make their lives easier.
 This volume focuses on a few that individual developers use while writing software;
@@ -79,9 +67,7 @@ which in turn define their scope:
 
 -   How to find and run code modules on the fly.
 
-<div class="pagebreak"></div>
-
-## How are these lessons laid out? {: #introduction-layout}
+## Layout {: #introduction-layout}
 
 We display Python source code like this:
 
@@ -127,7 +113,7 @@ but people don't use `array_name[]` for arrays,
 and the empty parentheses makes it hard to tell
 whether we're talking about "the function itself" or "a call to the function with no parameters".
 
-## How can people use and contribute to this material? {: #introduction-use}
+## Contributing {: #introduction-use}
 
 All of the written material in this book
 is made available under the [Creative Commons - Attribution - NonCommercial 4.0 International license][cc_by_nc]
@@ -147,18 +133,40 @@ please file an issue in our GitHub repository or send us email.
 Please note that all contributors are required to abide by our Code of Conduct
 ([%x conduct %]).
 
-## Who helped us? {: #introduction-help}
+## Acknowledgments {: #introduction-acknowledgments}
 
-I am grateful to the creators of
+This book was inspired by
+classics like [%b Kernighan1979 Kernighan1981 Kernighan1983 Kernighan1988 Petre2016 %],
+and by:
+
+-   the entries in the [*Architecture of Open Source Applications*][aosa] series [%b Brown2011 Brown2012 Armstrong2013 Brown2016 %];
+-   [Mary Rose Cook][cook_mary_rose]'s [Gitlet][gitlet];
+-   [Matt Brubeck][brubeck_matt]'s [browser engine tutorial][browser_engine_tutorial];
+-   [Connor Stack][stack_connor]'s [database tutorial][db_tutorial];
+-   [Maël Nison][nison_mael]'s [package manager tutorial][package_manager_tutorial];
+-   [Paige Ruten][ruten_paige]'s [kilo text editor][kilo_editor];
+-   [Bob Nystrom][nystrom_bob]'s book [*Crafting Interpreters*][crafting_interpreters] [%b Nystrom2021 %];
+-   [Pavel Panchekha][panchekha_pavel] and [Chris Harrelson][harrelson_chris]'s [*Web Browser Engineering*][browser_engineering]
+-   [Julia Evans][evans_julia]' posts and [zines][evans_zines].
+
+I am also grateful to the creators of
 [Black][black],
 [flake8][flake8],
 [Glosario][glosario],
 [GNU Make][gnu_make],
 [isort][isort],
+[ivy][ivy],
 [LaTeX][latex],
 [pip][pip],
+[Python][python],
 [SVG Screenshot][svg_screenshot],
 [WAVE][webaim_wave],
-and all the other open source tools used in creating these lessons:
-if we all give a little,
+and the other open source tools used to make this material.
+If we all give a little,
 we all get a lot.
+
+<div align="center" markdown="1">
+  *This one's for Mike*
+  <br/>
+  *I'm glad you've always found it hard to say "no"*
+</div>

@@ -1,3 +1,0 @@
-TARGETS =
-
-include ../examples.mk

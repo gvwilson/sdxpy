@@ -15,7 +15,3 @@ human language,
 or both,
 your help would be very welcome:
 please see [%x introduction %] and [%x contributing %] for more information.
-
-> We shape our tools, and thereafter our tools shape us.
->
-> --- Marshall McLuhan
