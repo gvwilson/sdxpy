@@ -25,6 +25,7 @@ chapters = [
     "pattern-matching",
     "regex-parser",
     "web-server",
+    "file-cache",
     "database",
     "persistence",
     "html-templating",
