@@ -13,10 +13,10 @@ from bs4 import BeautifulSoup, Tag
 INDEX_FILE = "index.md"
 RE_CODE_BLOCK = re.compile('```.+?```', re.DOTALL)
 RE_CODE_INLINE = re.compile('`.+?`')
-RE_FILE = re.compile(r'\[%\s*excerpt.+?f="(.+?)".+?%\]')
-RE_FIGURE = re.compile(r'\[%\s*figure.+?img="(.+?)".+?%\]', re.DOTALL)
+RE_FILE = re.compile(r'\[%\s*excerpt\b.+?f="(.+?)".+?%\]')
+RE_FIGURE = re.compile(r'\[%\s*figure\b.+?img="(.+?)".+?%\]', re.DOTALL)
 RE_LINK = re.compile(r'\[[^]]+?\]\[(\w+?)\]')
-RE_PAT = re.compile(r'\[%\s*excerpt.+?pat="(.+?)"\s+fill="(.+?)".+?%\]')
+RE_PAT = re.compile(r'\[%\s*excerpt\b.+?pat="(.+?)"\s+fill="(.+?)".+?%\]')
 RE_SHORTCODE = re.compile(r'\[%.+?%\]')
 
 
