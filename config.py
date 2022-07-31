@@ -26,6 +26,7 @@ chapters = [
     "regex-parser",
     "web-server",
     "database",
+    "persistence",
     "html-templating",
     "build-manager",
     "package-manager",
