@@ -18,6 +18,23 @@ author = "Greg Wilson"
 chapters = [
     "introduction",
     "version-control",
+    "interpreter",
+    "test-runner",
+    "data-table",
+    "pipeline-runner",
+    "pattern-matching",
+    "regex-parser",
+    "web-server",
+    "database",
+    "html-templating",
+    "build-manager",
+    "package-manager",
+    "page-layout",
+    "style-checker",
+    "doc-generator",
+    "code-generator",
+    "virtual-machine",
+    "debugger",
     "conclusion",
 ]
 
