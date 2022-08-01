@@ -300,7 +300,7 @@ it evaluates and returns its second argument (the "else" branch):
 [% excerpt f="stmt.py" keep="if" %]
 
 This is called [% g lazy_evaluation "lazy evaluation" %]:
-`do_if` only evalutes what it absolutely needs to.
+`do_if` only evaluates what it absolutely needs to.
 Most languages do this so that we can write things like:
 {: .continue}
 
