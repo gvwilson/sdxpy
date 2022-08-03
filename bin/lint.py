@@ -10,6 +10,7 @@ from pathlib import Path
 import utils
 from bs4 import BeautifulSoup, Tag
 
+IGNORE_FILE = ".mccoleignore"
 INDEX_FILE = "index.md"
 RE_CODE_BLOCK = re.compile('```.+?```', re.DOTALL)
 RE_CODE_INLINE = re.compile('`.+?`')
@@ -47,9 +48,8 @@ def check_files(source_files):
     """Check for excerpts and figures."""
     for (dirname, filename) in source_files:
         filepath = Path(dirname, filename)
-        referenced = get_excerpts(filepath)
-        referenced |= get_figures(filepath)
-        existing = get_files(dirname)
+        referenced = get_excerpts(filepath) | get_figures(filepath)
+        existing = get_files(dirname) - get_ignores(dirname)
         report(f"{dirname}: excerpts", referenced, existing)
 
 
@@ -92,6 +92,16 @@ def get_figures(filepath):
 def get_html(options):
     """Get paths to HTML files for processing."""
     return list(Path(options.html).glob("**/*.html"))
+
+
+def get_ignores(dirname):
+    """Get list of files in a directory that are intentionally unreferenced."""
+    result = {IGNORE_FILE}
+    ignore = Path(dirname, ".mccoleignore")
+    if ignore.exists():
+        with open(ignore, "r") as reader:
+            result |= {x.strip() for x in reader.readlines()}
+    return result
 
 
 def get_links(filename):
