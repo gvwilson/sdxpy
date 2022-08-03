@@ -13,8 +13,7 @@ def collect_syllabi():
         for slug in ivy.site.config["chapters"]
         if slug in info
     ]
-    config = util.mccole()
-    config["syllabi"] = syllabi
+    util.make_config("syllabus", syllabi)
 
 
 def _collect(info, node):
@@ -26,9 +25,9 @@ def _collect(info, node):
 @shortcodes.register("syllabus")
 def syllabus(pargs, kwargs, node):
     """Display syllabus."""
-    config = util.mccole()
+    syllabi = util.get_config("syllabus")
     result = ["<ul>"]
-    for (slug, title, syllabus) in config["syllabi"]:
+    for (slug, title, syllabus) in syllabi:
         result.append(f'<li><a href="@root/{slug}" markdown="1">{title}</a>')
         if syllabus:
             result.append("<ul>")

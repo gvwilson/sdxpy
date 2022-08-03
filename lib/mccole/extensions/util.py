@@ -10,11 +10,13 @@ import ivy
 # i.e., `"figures"` becomes `ivy.site.config["mccole"]["figures"]`.
 CONFIGURATIONS = {
     "bibliography": set(),  # citations
+    "definitions": [],  # glossary definitions
     "figures": {},  # numbered figures
     "glossary": set(),  # glossary keys
     "headings": {},  # number chapter, section, and appendix headings
     "inclusions": {},  # included files
     "index": {},  # index entries
+    "syllabus": [],  # syllabus entries
     "tables": {},  # numbered tables
 }
 
