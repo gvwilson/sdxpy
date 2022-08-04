@@ -27,6 +27,7 @@ chapters = [
     "web-server",
     "file-cache",
     "database",
+    "object-storage",
     "binary-storage",
     "html-templating",
     "build-manager",
