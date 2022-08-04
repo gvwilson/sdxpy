@@ -1,34 +1,34 @@
 ---
-title: "Object Persistence"
+title: "Binary Storage"
 syllabus:
 - FIXME
 ---
 
-## Integers {: .persistence-int}
+## Integers {: #binary-storage-int}
 
 Let's start by looking at how numbers are stored.
 If we only have 0's and 1' the natural way to store a positive integer is to use base 2,
-so 1001 in binary is (1×2<sup>3</sup>)+(0×2<sup>2</sup>)+(0×2<sup>1</sup>)+(1×2<sup>0</sup>)
-or 9 base 10.
+so 1001 in binary is (1×8)+(0×4)+(0×2)+(1×1) or 9 base 10.
 It's natural to extend this scheme to negative numbers by reserving one bit for the sign,
 so that 01001 is +9 and 11001 is -9.
 
 But there are two problems with this.
-The first is that it gives us two representations for zero,
+The minor one is that it gives us two representations for zero,
 and no-one wants to have to write:
 
 ```python
 if (length != +0) and (length != -0)
 ```
 
-Second,
+The major one is that
 the hardware needed to do addition and other arithmetic
 on this [%g sign_magnitude "sign and magnitude" %] representation
 are more complicated than the hardware needed for another representation
 called {% g twos_complement "two's complement" %].
 Instead of mirroring positive values,
-two's complement "rolls over" when going below zero like a car's odometer.
-If we're using three bits per number we get:
+two's complement rolls over when going below zero like an odometer.
+For example,
+with three-bit integers we get:
 
 | Base 10 | Base 2 |
 | ------- | ------ |
@@ -41,8 +41,7 @@ If we're using three bits per number we get:
 | -3      | 101    |
 | -4      | 100    |
 
-This scheme isn't intuitive,
-but it solves the "double zero" problem
+This scheme solves the "double zero" problem
 and the hardware to handle it is faster and cheaper.
 We can still tell whether a number is positive or negative
 by looking at the first bit:
@@ -53,7 +52,7 @@ numbers go from -4 to 3, or -16 to 15, and so on,
 so even if `x` is a valid number,
 `-x` may not be.
 
-## Floating Point Numbers {: .persistence-fp}
+## Floating Point Numbers {: #binary-storage-fp}
 
 Finding a good representation for floating point numbers is hard.
 The root of the problem is that
@@ -72,29 +71,26 @@ please read [%b Goldberg1991 %].
 
 </div>
 
-Floating point numbers are usually represented by a sign,
+Floating point numbers are represented by a sign,
 a magnitude,
 and an exponent.
-In a 32-bit word,
+In a 32-bit [%g word_memory "word" %]
 the IEEE 754 standard calls for 1 bit of sign,
 23 bits for the magnitude (or mantissa),
 and 8 bits for the exponent.
-To illustrate how it all works we'll use a much smaller representation:
-we'll use 3 bits for the magnitude and 2 for the exponent
-and require both to be non-negative.
-For example,
-the decimal value 48 in binary is
-`110` times 2 to the `11` power,
-or 6×8.
+We will illustrate how it works using a much smaller representation:
+no sign,
+3 bits for the magnitude,
+and 2 for the exponent.
 
-Here are the values we can represent this way.
-Each one is the mantissa times two to the exponent:
+[% fixme "represent 48" $]
 
-FIXME
+Here are the values we can represent this way:
 
-The first thing to notice is that
-there are a lot of values we can't store.
-It can represent 8 and 10, for example, but not 9.
+[% fixme "number line" %]
+
+There are a lot of values this format can't represent.
+It can store 8 and 10, for example, but not 9.
 This is exactly like the problem hand calculators have
 with fractions like 1/3:
 in decimal, we have to round that to 0.3333 or 0.3334.
@@ -188,11 +184,11 @@ which checks whether two numbers are within some tolerance of each other.
 FIXME: Fraction
 <https://www.textualize.io/blog/posts/7-things-about-terminals>
 
-## Text {: .persistence-text}
+## Text {: #binary-storage-text}
 
 FIXME
 
-## And Now, Persistence {: .persistence-binary}
+## And Now, Persistence {: #binary-storage-binary}
 
 So, why binary?
 Why store data in a format that can't be handled by editors like Notepad and nano?
@@ -391,9 +387,7 @@ so the format `"3i"` means "three integers":
 a lon
 ```
 
-Oops:
-we told Python to pack five characters,
-so we only got the first five characters of our string.
+We get the wrong answer because we only told Python to pack five characters.
 How can we tell it to pack all the data that's there regardless of length?
 
 The short answer is that we can't:
@@ -508,3 +502,7 @@ but there's no substitute when you *do* have to.
 Please remember that libraries already exist to handle almost every binary format ever created
 and to read data from almost every instrument on the market.
 You shouldn't worry about 1's and 0's unless you really have to.
+
+## Exercises {: #binary-storage-exercises}
+
+FIXME
