@@ -75,7 +75,12 @@ check: lint
 ## lint: check project structure
 .PHONY: lint
 lint:
-	python ./bin/lint.py --dom info/dom.yml --links info/links.yml --html docs --src src
+	python ./bin/lint.py \
+	--config config.py \
+	--dom info/dom.yml \
+	--links info/links.yml \
+	--html docs \
+	--src src
 
 ## spelling: check spelling against known words
 .PHONY: spelling

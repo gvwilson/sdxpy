@@ -4,12 +4,40 @@
 
 
 import argparse
+import importlib.util
 import re
 from pathlib import Path
 
 import utils
 from bs4 import BeautifulSoup, Tag
 
+
+CONFIGURATION = [
+    ("abbrev", str),
+    ("acknowledgments", str),
+    ("acronym", str),
+    ("appendices", list),
+    ("author", str),
+    ("bibliography", str),
+    ("bibliography_style", str),
+    ("chapters", list),
+    ("copy", list),
+    ("credits", str),
+    ("debug", bool),
+    ("exclude", list),
+    ("extension", str),
+    ("github", str),
+    ("glossary", str),
+    ("lang", str),
+    ("links", str),
+    ("markdown_settings", dict),
+    ("out_dir", str),
+    ("src_dir", str),
+    ("tagline", str),
+    ("theme", str),
+    ("title", str),
+    ("warnings", bool),
+]
 IGNORE_FILE = ".mccoleignore"
 INDEX_FILE = "index.md"
 RE_CODE_BLOCK = re.compile('```.+?```', re.DOTALL)
@@ -25,12 +53,30 @@ def main():
     """Main driver."""
     options = parse_args()
 
+    check_config(options.config)
+
     source_files = get_src(options)
     check_files(source_files)
     check_links(options.links, source_files)
 
     html_files = get_html(options)
     check_dom(options.dom, html_files)
+
+
+def check_config(config_path):
+    """Check configuration file."""
+    def _require(m, field, kind):
+        if field not in dir(m):
+            print(f"Configuration does not have {field}")
+        elif not isinstance(getattr(m, field), kind):
+            print(f"Configuration value for {field} is not {str(kind)}")
+
+    spec = importlib.util.spec_from_file_location("config", config_path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    for (field, kind) in CONFIGURATION:
+        _require(module, field, kind)
 
 
 def check_dom(dom_spec, html_files):
@@ -124,6 +170,7 @@ def get_src(options):
 def parse_args():
     """Parse arguments."""
     parser = argparse.ArgumentParser()
+    parser.add_argument("--config", required=True, help="Configuration file")
     parser.add_argument("--dom", required=True, help="YAML spec of allowed DOM")
     parser.add_argument("--html", required=True, help="HTML directory")
     parser.add_argument("--links", required=True, help="YAML file of links")
