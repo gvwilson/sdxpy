@@ -92,6 +92,11 @@ wordlist: ./docs/index.html
 	| sort \
 	| uniq
 
+## count: words per file
+.PHONY: count
+count:
+	@wc -w ${SRC} | sort -n
+
 ## valid: run html5validator on generated files
 .PHONY: valid
 valid: docs/all.html
