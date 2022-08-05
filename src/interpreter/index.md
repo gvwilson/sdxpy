@@ -17,7 +17,7 @@ Real programming languages have two parts:
 a [%g parser "parser %] that translates the source code into a data structure in memory,
 and a [%g runtime "runtime" %] that executes the instructions in that data structure.
 To keep this chapter manageable we only consider the runtime;
-[%x regex-parser %] will explore parsing.
+[%x parser %] will explore parsing.
 
 ## Expressions {: #interpreter-expressions}
 

@@ -2,10 +2,10 @@
 title: "Conclusion"
 ---
 
-We have come a long way since we listed the contents of a directory in [%x version-control %].
+We have come a long way since we first passed a function as an argument in [%x tester %].
 Saving files in version control,
 making sure code meets style rules,
-debugging it and bundling it (hopefully in that order)---programmers do these things every day,
+debugging it and bundling it (hopefully in that order)—programmers do these things every day,
 and we hope that understanding how they work will help you do them better.
 
 We also hope that your journey won't stop here.
