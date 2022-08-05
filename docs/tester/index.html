@@ -234,7 +234,15 @@
   
   <ul class="syllabus">
   
-  <li markdown="1">FIXME</li>
+  <li markdown="1">Functions are objects that can be saved in data structures or passed as arguments to other functions.</li>
+  
+  <li markdown="1">Python stores variables in a structure like a dictionary.</li>
+  
+  <li markdown="1">A unit test is a function that takes a fixture, performs an operation, and passes, fails, or produces an error.</li>
+  
+  <li markdown="1">Use reflection to discover functions and other values in programs at runtime.</li>
+  
+  <li markdown="1">Replace actual functions with mock objects temporarily to simplify testing.</li>
   
   </ul>
   
@@ -284,9 +292,687 @@
   
 
   
+  <p class="definitions">
+    Terms defined:
+    <a class="gl-ref" href="../glossary/#actual_result" markdown="1">actual result (of test)</a>, <a class="gl-ref" href="../glossary/#assertion" markdown="1">assertion</a>, <a class="gl-ref" href="../glossary/#context_manager" markdown="1">context manager</a>, <a class="gl-ref" href="../glossary/#defensive_programming" markdown="1">defensive programming</a>, <a class="gl-ref" href="../glossary/#docstring" markdown="1">docstring</a>, <a class="gl-ref" href="../glossary/#error_test" markdown="1">error (result of test)</a>, <a class="gl-ref" href="../glossary/#exception_handler" markdown="1">exception handler</a>, <a class="gl-ref" href="../glossary/#expected_result" markdown="1">expected result (of test)</a>, <a class="gl-ref" href="../glossary/#fail_test" markdown="1">failure (result of test)</a>, <a class="gl-ref" href="../glossary/#fixture" markdown="1">fixture</a>, <a class="gl-ref" href="../glossary/#introspection" markdown="1">introspection</a>, <a class="gl-ref" href="../glossary/#mock_object" markdown="1">mock object</a>, <a class="gl-ref" href="../glossary/#pass_test" markdown="1">pass (result of test)</a>, <a class="gl-ref" href="../glossary/#throw_exception" markdown="1">throw exception</a>, <a class="gl-ref" href="../glossary/#unit_test" markdown="1">unit test</a>
+  </p>
+  
+
+  
 
 
-          <p>FIXME</p>
+          <p>We are going to write many small programs in the coming chapters
+but not a lot of re-runnable tests.
+That's OK for exploratory programming,
+but if our software is going to be used instead of just read,
+we should try to make sure it works.</p>
+<p>A tool for writing and running <a class="gl-ref" href="../glossary/#unit_test" markdown="1">unit tests</a> is a good first step.
+Such a tool should:</p>
+<ul>
+<li>find files containing tests;</li>
+<li>find the tests in those files;</li>
+<li>run the tests;</li>
+<li>capture their results; and</li>
+<li>report each test's result and a summary of those results.</li>
+</ul>
+<p>Our design is inspired by <a href="https://docs.pytest.org/">pytest</a>,
+which was in turn inspired by many tools built for other languages
+from the 1980s onward <span class="bib-ref">[<a class="bib-ref" href="../bibliography/#Meszaros2007">Meszaros2007</a>]</span>.</p>
+<h2 id="tester-funcobj">Section 2.1: Functions as Objects</h2>
+<p><span class="FIXME">FIXME</span></p>
+<h2 id="tester-reflection">Section 2.2: Finding Functions</h2>
+<p>The first thing we need to understand is how Python stores variables.
+The answer is, "In a dictionary."
+Run the Python interpreter and call the <code>globals</code> function:</p>
+<div class="highlight"><pre><span></span><code>&gt;&gt;&gt; globals()
+{
+    &#39;__name__&#39;: &#39;__main__&#39;,
+    &#39;__doc__&#39;: None,
+    &#39;__package__&#39;: None,
+    &#39;__loader__&#39;: &lt;class &#39;_frozen_importlib.BuiltinImporter&#39;&gt;,
+    &#39;__spec__&#39;: None,
+    &#39;__annotations__&#39;: {},
+    &#39;__builtins__&#39;: &lt;module &#39;builtins&#39; (built-in)&gt;
+}
+</code></pre></div>
+<p><code>globals</code> returns a copy of the dictionary that Python uses
+to store all the variables at the top (global) level of your program.
+Since we just started the interpreter,
+what we get are the variables that Python defines automatically:
+it uses double underscores like <code>__name__</code> for these variables,
+but they're just string keys in a dictionary.</p>
+<p>Let's define a variable of our own:</p>
+<div class="highlight"><pre><span></span><code>&gt;&gt;&gt; my_variable = 123
+&gt;&gt;&gt; globals()
+{
+    &#39;__name__&#39;: &#39;__main__&#39;,
+    &#39;__doc__&#39;: None,
+    &#39;__package__&#39;: None,
+    &#39;__loader__&#39;: &lt;class &#39;_frozen_importlib.BuiltinImporter&#39;&gt;,
+    &#39;__spec__&#39;: None,
+    &#39;__annotations__&#39;: {},
+    &#39;__builtins__&#39;: &lt;module &#39;builtins&#39; (built-in)&gt;,
+    &#39;my_variable&#39;: 123
+}
+</code></pre></div>
+<p>There's our variable <code>my_variable</code> and its value.</p>
+<p>There's another function called <code>locals</code> that returns a dictionary full of
+all the variables defined in the current (local) scope.
+Let's create a function that takes a parameter,
+creates a local variable,
+and then shows what's in scope:</p>
+<p><div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">show_off</span><span class="p">(</span><span class="n">some_parameter</span><span class="p">):</span>
+    <span class="n">some_variable</span> <span class="o">=</span> <span class="n">some_parameter</span> <span class="o">*</span> <span class="mi">2</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;local values&quot;</span><span class="p">,</span> <span class="nb">locals</span><span class="p">())</span>
+
+<span class="n">show_off</span><span class="p">(</span><span class="s2">&quot;hello&quot;</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>local values {&#39;some_parameter&#39;: &#39;hello&#39;, &#39;some_variable&#39;: &#39;hellohello&#39;}
+</code></pre></div></p>
+<p>The second thing we need to understand is that
+a function is just another kind of object:
+while a string object holds characters
+and an image object holds pixels,
+a function object holds instructions.
+When we write:</p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">example</span><span class="p">():</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;in example&quot;</span><span class="p">)</span>
+</code></pre></div>
+<p>what we're actually doing is saying,
+"Please create an object containing the instructions to print a string
+and assign it to the variable <code>example</code>."
+Here's proof:</p>
+<p><div class="highlight"><pre><span></span><code><span class="n">alias</span> <span class="o">=</span> <span class="n">example</span>
+<span class="n">alias</span><span class="p">()</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>in example
+</code></pre></div></p>
+<p>We can also assign to the original variable:</p>
+<p><div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">replacement</span><span class="p">():</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;in replacement&quot;</span><span class="p">)</span>
+
+<span class="n">example</span> <span class="o">=</span> <span class="n">replacement</span>
+<span class="n">example</span><span class="p">()</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>in replacement
+</code></pre></div></p>
+<p>Like other objects,
+functions have attributes.
+We can use <code>dir</code> (short for "directory") to get a list of their names:</p>
+<p><div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">example</span><span class="p">():</span>
+    <span class="s2">&quot;Docstring for example.&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;in example&quot;</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="nb">dir</span><span class="p">(</span><span class="n">example</span><span class="p">))</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>[
+    &#39;__annotations__&#39;, &#39;__builtins__&#39;, &#39;__call__&#39;, &#39;__class__&#39;
+    &#39;__closure__&#39;, &#39;__code__&#39;, &#39;__defaults__&#39;, &#39;__delattr__&#39;
+    &#39;__dict__&#39;, &#39;__dir__&#39;, &#39;__doc__&#39;, &#39;__eq__&#39;, &#39;__format__&#39; &#39;__ge__&#39;,
+    &#39;__get__&#39;, &#39;__getattribute__&#39;, &#39;__globals__&#39; &#39;__gt__&#39;, &#39;__hash__&#39;,
+    &#39;__init__&#39;, &#39;__init_subclass__&#39; &#39;__kwdefaults__&#39;, &#39;__le__&#39;,
+    &#39;__lt__&#39;, &#39;__module__&#39;, &#39;__name__&#39; &#39;__ne__&#39;, &#39;__new__&#39;,
+    &#39;__qualname__&#39;, &#39;__reduce__&#39;, &#39;__reduce_ex__&#39; &#39;__repr__&#39;,
+    &#39;__setattr__&#39;, &#39;__sizeof__&#39;, &#39;__str__&#39;, &#39;__subclasshook__&#39;
+]
+</code></pre></div></p>
+<p>I don't know what all of these do,
+but <code>__doc__</code> holds the documentation string (docstring) for the function
+and <code>__name__</code> holds its original name:</p>
+<p><div class="highlight"><pre><span></span><code>print(&quot;docstring:&quot;, example.__doc__)
+print(&quot;name:&quot;, example.__name__)
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>docstring: Docstring for example.
+name: example
+</code></pre></div></p>
+<p>If a program's variables are stored in a dictionary,
+we can iterate over them.
+Let's do that to find all the functions whose names start with <code>test_</code>:</p>
+<p><div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">test_addition</span><span class="p">():</span>
+    <span class="k">assert</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">4</span>
+
+<span class="k">def</span> <span class="nf">test_multiplication</span><span class="p">():</span>
+    <span class="k">assert</span> <span class="mi">3</span> <span class="o">*</span> <span class="mi">3</span> <span class="o">==</span> <span class="mi">9</span>
+
+<span class="k">def</span> <span class="nf">test_remainder</span><span class="p">():</span>
+    <span class="k">assert</span> <span class="mi">15</span> <span class="o">%</span> <span class="mi">4</span> <span class="o">==</span> <span class="mi">0</span> <span class="c1"># this is wrong</span>
+
+<span class="k">def</span> <span class="nf">find_tests</span><span class="p">():</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">func</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">globals</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;test_&quot;</span><span class="p">):</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">result</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;all the test functions&quot;</span><span class="p">,</span> <span class="n">find_tests</span><span class="p">())</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>all the test functions [
+    &lt;function test_addition at 0x1008d7d90&gt;,
+    &lt;function test_multiplication at 0x1009fb010&gt;,
+    &lt;function test_remainder at 0x1009fb0a0&gt;
+]
+</code></pre></div></p>
+<p>Remember, a function is just another kind of object in Python:
+when we print the function out,
+Python shows us its name and its address in memory.
+If we have a function we can call it,
+which means we can find all the <code>test_</code> functions in this file
+and call them one by one.</p>
+<p>We can do more than just call functions:
+we can check if they run to completion or raise an exception
+and report that:</p>
+<p><div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">test_addition</span><span class="p">():</span>
+    <span class="k">assert</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">4</span>
+
+<span class="k">def</span> <span class="nf">test_multiplication</span><span class="p">():</span>
+    <span class="k">assert</span> <span class="mi">3</span> <span class="o">*</span> <span class="mi">3</span> <span class="o">==</span> <span class="mi">9</span>
+
+<span class="k">def</span> <span class="nf">test_remainder</span><span class="p">():</span>
+    <span class="k">assert</span> <span class="mi">15</span> <span class="o">%</span> <span class="mi">4</span> <span class="o">==</span> <span class="mi">0</span> <span class="c1"># this is wrong</span>
+
+<span class="k">def</span> <span class="nf">run_tests</span><span class="p">():</span>
+    <span class="k">for</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">func</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">globals</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;test_&quot;</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">func</span><span class="p">()</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">func</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="s2">&quot;passed&quot;</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">AssertionError</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">func</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="s2">&quot;failed&quot;</span><span class="p">)</span>
+
+<span class="n">run_tests</span><span class="p">()</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>test_addition passed
+test_multiplication passed
+test_remainder failed
+</code></pre></div></p>
+<p>Notice that all the <code>test_</code> functions can be called with no arguments.
+If some of them required arguments,
+we'd have to know what it expected and then call it with the right number of values.
+On the other hand,
+if we say that test functions all have the same signature (i.e., parameter list),
+we can call them interchangeably.</p>
+<h2 id="tester-structure">Section 2.3: Structuring Tests</h2>
+<p>As in other unit testing frameworks,
+each test will be a function of zero arguments
+so that the framework can run them all in the same way.
+Each test will create a <a class="gl-ref" href="../glossary/#fixture" markdown="1">fixture</a> to be tested
+and use <a class="gl-ref" href="../glossary/#assertion" markdown="1">assertions</a>
+to compare the <a class="gl-ref" href="../glossary/#actual_result" markdown="1">actual result</a>
+against the <a class="gl-ref" href="../glossary/#expected_result" markdown="1">expected result</a>.
+The outcome can be exactly one of:</p>
+<ul>
+<li>
+<p><a class="gl-ref" href="../glossary/#pass_test" markdown="1">Pass</a>:
+    the test works as expected.</p>
+</li>
+<li>
+<p><a class="gl-ref" href="../glossary/#fail_test" markdown="1">Fail</a>:
+    something is wrong with the test subject.</p>
+</li>
+<li>
+<p><a class="gl-ref" href="../glossary/#error_test" markdown="1">Error</a>:
+    something wrong in the test itself,
+    which means we don't know whether the test subject is working properly or not.</p>
+</li>
+</ul>
+<p>To make this work,
+we need some way to distinguish failing tests from broken ones.
+Our solution relies on the fact that exceptions are objects
+and that a program can use <a class="gl-ref" href="../glossary/#introspection" markdown="1">introspection</a>
+to determine the class of an object.
+If a test <a class="gl-ref" href="../glossary/#throw_exception" markdown="1">throws an exception</a> whose class is <code>assert.AssertionError</code>,
+then we will assume the exception came from
+one of the assertions we put in the test as a check.
+Any other kind of assertion indicates that the test itself contains an error.</p>
+<p>To start,
+let's record tests and what they mean.
+We don't run tests immediately
+because we want to wrap each one in our own <a class="gl-ref" href="../glossary/#exception_handler" markdown="1">exception handler</a>.
+Instead,
+the function <code>hope_that</code> saves a descriptive message and a function that implements a test
+in an array:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Tests to run.</span>
+<span class="n">HOPE_TESTS</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="c1"># Record a single test for running later.</span>
+<span class="k">def</span> <span class="nf">hope_that</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">func</span><span class="p">):</span>
+    <span class="n">HOPE_TESTS</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">message</span><span class="p">,</span> <span class="n">func</span><span class="p">])</span>
+</code></pre></div>
+<blockquote>
+<h3>Independence</h3>
+<p>Because we're appending tests to an array,
+they will be run in the order in which they are registered,
+but we shouldn't rely on that.
+Every unit test should work independently of every other
+so that an error or failure in an early test
+doesn't affect the result of a later one.</p>
+</blockquote>
+<p>The function <code>main</code> runs all registered tests:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Run all of the tests that have been asked for and report summary.</span>
+<span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+    <span class="n">results</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;pass&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="s2">&quot;fail&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="mi">0</span>
+    <span class="p">}</span>
+    <span class="k">for</span> <span class="p">[</span><span class="n">message</span><span class="p">,</span> <span class="n">test</span><span class="p">]</span> <span class="ow">in</span> <span class="n">HOPE_TESTS</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">test</span><span class="p">()</span>
+            <span class="n">results</span><span class="p">[</span><span class="s2">&quot;pass&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">except</span> <span class="ne">AssertionError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="n">results</span><span class="p">[</span><span class="s2">&quot;fail&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="n">results</span><span class="p">[</span><span class="s2">&quot;error&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;pass </span><span class="si">{</span><span class="n">results</span><span class="p">[</span><span class="s1">&#39;pass&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;fail </span><span class="si">{</span><span class="n">results</span><span class="p">[</span><span class="s1">&#39;fail&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;error </span><span class="si">{</span><span class="n">results</span><span class="p">[</span><span class="s1">&#39;error&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</code></pre></div>
+<p class="continue">If a test completes without an exception, it passes.
+If any of the <code>assert</code> calls inside the test raises an <code>AssertionError</code>,
+the test fails,
+and if it raises any other exception,
+it's an error.
+After all tests are run,
+<code>main</code> reports the number of results of each kind.</p>
+<p>Let's try it out:</p>
+<p><div class="highlight"><pre><span></span><code><span class="c1"># Something to test (doesn&#39;t handle zero properly).</span>
+<span class="k">def</span> <span class="nf">sign</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">value</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">1</span>
+
+<span class="c1"># These two should pass.</span>
+<span class="k">def</span> <span class="nf">test_sign_negative</span><span class="p">():</span>
+    <span class="k">assert</span> <span class="n">sign</span><span class="p">(</span><span class="o">-</span><span class="mi">3</span><span class="p">)</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span>
+
+<span class="k">def</span> <span class="nf">test_sign_positive</span><span class="p">():</span>
+    <span class="k">assert</span> <span class="n">sign</span><span class="p">(</span><span class="mi">19</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+
+<span class="c1"># This one should fail.</span>
+<span class="k">def</span> <span class="nf">test_sign_zero</span><span class="p">():</span>
+    <span class="k">assert</span> <span class="n">sign</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span>
+
+<span class="c1"># This one is an error (misspelled function).</span>
+<span class="k">def</span> <span class="nf">test_sign_error</span><span class="p">():</span>
+    <span class="k">assert</span> <span class="n">sgn</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+
+<span class="c1"># Register functions and Call the main driver.</span>
+<span class="n">hope_that</span><span class="p">(</span><span class="s2">&quot;Sign of negative is -1&quot;</span><span class="p">,</span> <span class="n">test_sign_negative</span><span class="p">)</span>
+<span class="n">hope_that</span><span class="p">(</span><span class="s2">&quot;Sign of positive is 1&quot;</span><span class="p">,</span> <span class="n">test_sign_positive</span><span class="p">)</span>
+<span class="n">hope_that</span><span class="p">(</span><span class="s2">&quot;Sign of zero is 0&quot;</span><span class="p">,</span> <span class="n">test_sign_zero</span><span class="p">)</span>
+<span class="n">hope_that</span><span class="p">(</span><span class="s2">&quot;Sign misspelled is error&quot;</span><span class="p">,</span> <span class="n">test_sign_error</span><span class="p">)</span>
+<span class="n">main</span><span class="p">()</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>pass 2
+fail 1
+error 1
+</code></pre></div></p>
+<h2 id="tester-discovery">Section 2.4: Discovery</h2>
+<p>This simple approach does what it's supposed to, but:</p>
+<ol>
+<li>
+<p>It doesn't tell us which tests have passed or failed.</p>
+</li>
+<li>
+<p>The description of the test is separate from the test code.
+    Some people argue that tests shouldn't need descriptions---that
+    we should instead give them long names that describe what they're doing---but
+    we should support string-style explanations for those who want them.</p>
+</li>
+<li>
+<p>It doesn't discover tests on its own:
+    we have to remember to register the test using <code>hope_that</code>,
+    which means that sooner or later (probably sooner)
+    some of our tests won't be run.</p>
+</li>
+<li>
+<p>We don't have a way to test things that are supposed to raise <code>AssertionError</code>.
+    Putting assertions into code to check that it is behaving correctly
+    is called <a class="gl-ref" href="../glossary/#defensive_programming" markdown="1">defensive programming</a>;
+    it's a good practice,
+    but we should make sure those assertions are failing when they're supposed to,
+    just as we should test our smoke detectors every once in a while.</p>
+</li>
+</ol>
+<p>We can solve several of these problems at once by looking up test functions dynamically.
+Python stores the variables and functions we define in a dictionary.
+We can get that dictionary by calling the function <code>globals</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">print</span><span class="p">(</span><span class="nb">globals</span><span class="p">())</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>{&#39;__name__&#39;: &#39;__main__&#39;, &#39;__doc__&#39;: None, &#39;__package__&#39;: None, &#39;__loader__&#39;: &lt;_frozen_importlib_external.SourceFileLoader object at 0x109a03ca0&gt;, &#39;__spec__&#39;: None, &#39;__annotations__&#39;: {}, &#39;__builtins__&#39;: &lt;module &#39;builtins&#39; (built-in)&gt;, &#39;__file__&#39;: &#39;/Users/gregwilson/sd4ds/src/unittest/show_globals.py&#39;, &#39;__cached__&#39;: None}
+</code></pre></div>
+<p>We can loop over the keys of this dictionary and find things with particular names:</p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">test_sign_negative</span><span class="p">():</span>
+    <span class="k">assert</span> <span class="n">sign</span><span class="p">(</span><span class="o">-</span><span class="mi">3</span><span class="p">)</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span>
+
+<span class="k">def</span> <span class="nf">test_sign_positive</span><span class="p">():</span>
+    <span class="k">assert</span> <span class="n">sign</span><span class="p">(</span><span class="mi">19</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+
+<span class="k">def</span> <span class="nf">test_sign_zero</span><span class="p">():</span>
+    <span class="k">assert</span> <span class="n">sign</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span>
+
+<span class="k">def</span> <span class="nf">test_sign_error</span><span class="p">():</span>
+    <span class="k">assert</span> <span class="n">sgn</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+
+<span class="k">def</span> <span class="nf">show_tests</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Show all functions that start with &#39;test_&#39;.&quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">globals</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;test_&quot;</span><span class="p">):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">show_tests</span><span class="p">()</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>test_sign_negative
+test_sign_positive
+test_sign_zero
+test_sign_error
+</code></pre></div>
+<p class="continue">which means we can find all the tests in a module,
+call them,
+and keep track of their results:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Something to test (doesn&#39;t handle zero properly).</span>
+<span class="k">def</span> <span class="nf">sign</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">value</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">1</span>
+
+
+<span class="c1"># These two should pass.</span>
+<span class="k">def</span> <span class="nf">test_sign_negative</span><span class="p">():</span>
+    <span class="k">assert</span> <span class="n">sign</span><span class="p">(</span><span class="o">-</span><span class="mi">3</span><span class="p">)</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span>
+
+
+<span class="k">def</span> <span class="nf">test_sign_positive</span><span class="p">():</span>
+    <span class="k">assert</span> <span class="n">sign</span><span class="p">(</span><span class="mi">19</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+
+
+<span class="c1"># This one should fail.</span>
+<span class="k">def</span> <span class="nf">test_sign_zero</span><span class="p">():</span>
+    <span class="k">assert</span> <span class="n">sign</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span>
+
+
+<span class="c1"># This one is an error (misspelled function).</span>
+<span class="k">def</span> <span class="nf">test_sign_error</span><span class="p">():</span>
+    <span class="k">assert</span> <span class="n">sgn</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+
+
+<span class="k">def</span> <span class="nf">run_tests</span><span class="p">(</span><span class="n">prefix</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Run all the functions whose names start with the given prefix.&quot;&quot;&quot;</span>
+    <span class="n">prefixed_names</span> <span class="o">=</span> <span class="p">[</span><span class="n">n</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">globals</span><span class="p">()</span> <span class="k">if</span> <span class="n">n</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">prefix</span><span class="p">)]</span>
+    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">prefixed_names</span><span class="p">:</span>
+        <span class="n">func</span> <span class="o">=</span> <span class="nb">globals</span><span class="p">()[</span><span class="n">name</span><span class="p">]</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">func</span><span class="p">()</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;pass: </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">AssertionError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;fail: </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;error: </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">run_tests</span><span class="p">(</span><span class="s2">&quot;test_&quot;</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>pass: test_sign_negative
+pass: test_sign_positive
+fail: test_sign_zero
+error: test_sign_error name &#39;sgn&#39; is not defined
+</code></pre></div>
+<p>This approach is less typing and less fragile than our first,
+but we can improve it by showing the test function's <a class="gl-ref" href="../glossary/#docstring" markdown="1">docstring</a>
+if it has one.
+Again,
+functions are just objects,
+which means they can have attributes.
+If we give a function a docstring:</p>
+<div class="highlight"><pre><span></span><code>def example():
+   &quot;This is documentation.&quot;&quot;&quot;
+   pass
+</code></pre></div>
+<p>then <code>example.__doc__</code> contains the string <code>"This is documentation."</code></p>
+<p>We can do more than just print these strings when reporting problems:
+we can embed instructions for the test framework in them.
+For example,
+we could decide that the string <code>"test:skip"</code> means "skip this test",
+while <code>"test:fail"</code> means "we expect this test to fail".
+Let's rewrite our tests to show this off:</p>
+<div class="highlight"><pre><span></span><code><span class="n">TEST_FAIL</span> <span class="o">=</span> <span class="s2">&quot;test:fail&quot;</span>
+<span class="n">TEST_SKIP</span> <span class="o">=</span> <span class="s2">&quot;test:skip&quot;</span>
+
+
+<span class="k">def</span> <span class="nf">test_sign_negative</span><span class="p">():</span>
+    <span class="s2">&quot;test:skip&quot;</span>
+    <span class="k">assert</span> <span class="n">sign</span><span class="p">(</span><span class="o">-</span><span class="mi">3</span><span class="p">)</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span>
+
+
+<span class="k">def</span> <span class="nf">test_sign_positive</span><span class="p">():</span>
+    <span class="k">assert</span> <span class="n">sign</span><span class="p">(</span><span class="mi">19</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+
+
+<span class="k">def</span> <span class="nf">test_sign_zero</span><span class="p">():</span>
+    <span class="s2">&quot;test:fail&quot;</span>
+    <span class="k">assert</span> <span class="n">sign</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span>
+
+
+<span class="k">def</span> <span class="nf">test_sign_error</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Expect an error.&quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="n">sgn</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+</code></pre></div>
+<p class="continue">and then modify <code>run_tests</code> to look for these strings and act accordingly:</p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">run_tests</span><span class="p">(</span><span class="n">prefix</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Run all the functions whose names start with the given prefix.&quot;&quot;&quot;</span>
+    <span class="n">prefixed_names</span> <span class="o">=</span> <span class="p">[</span><span class="n">n</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">globals</span><span class="p">()</span> <span class="k">if</span> <span class="n">n</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">prefix</span><span class="p">)]</span>
+    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">prefixed_names</span><span class="p">:</span>
+        <span class="n">func</span> <span class="o">=</span> <span class="nb">globals</span><span class="p">()[</span><span class="n">name</span><span class="p">]</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">TEST_SKIP</span> <span class="ow">in</span> <span class="n">func</span><span class="o">.</span><span class="vm">__doc__</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;skip: </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">func</span><span class="p">()</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;pass: </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">AssertionError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">TEST_FAIL</span> <span class="ow">in</span> <span class="n">func</span><span class="o">.</span><span class="vm">__doc__</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;pass (expected failure): </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;fail: </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">doc</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;/</span><span class="si">{</span><span class="n">func</span><span class="o">.</span><span class="vm">__doc__</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="n">func</span><span class="o">.</span><span class="vm">__doc__</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;error: </span><span class="si">{</span><span class="n">name</span><span class="si">}{</span><span class="n">doc</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</code></pre></div>
+<p>The output is now:</p>
+<div class="highlight"><pre><span></span><code>skip: test_sign_negative
+error: test_sign_positive argument of type &#39;NoneType&#39; is not iterable
+pass (expected failure): test_sign_zero
+error: test_sign_error/Expect an error. name &#39;sgn&#39; is not defined
+</code></pre></div>
+<h2>Mock Objects</h2>
+<p>We can do more than look up functions in a running program:
+we can change them,
+and doing this can make testing much easier.
+For example,
+if our test checks the time of day,
+we can temporarily replace the real <code>time.time</code> function
+with one that returns a fixed value.
+Similarly,
+if a test needs data from a database,
+we can temporarily replace the function that gets the data
+with one that returns a known, fixed dataset in a fraction of the time.</p>
+<p>Temporary replacements like this are called <a class="gl-ref" href="../glossary/#mock_object" markdown="1">mock objects</a>
+because they mimic the essential behavior of the real objects in the program.
+We usually use objects even if the thing we're replacing is a function,
+and rely on the fact that Python lets us create objects that can be called just like functions:</p>
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Adder</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">arg</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">arg</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span>
+
+
+<span class="n">add_3</span> <span class="o">=</span> <span class="n">Adder</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">add_3</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;add_3(8): </span><span class="si">{</span><span class="n">result</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>add_3(8): 11
+</code></pre></div>
+<p>Let's create a class that:</p>
+<ol>
+<li>Defines a <code>__call__</code> method so that instances can be called like functions.</li>
+<li>Declares the parameters of that method to be <code>*args*</code> and <code>**kwargs</code>
+    so that it can be called with any number of regular or keyword arguments.</li>
+<li>Stores those arguments so we can see how the replaced function was called.</li>
+<li>Returns either a fixed value or a value produced by a user-defined function.</li>
+</ol>
+<p>The whole thing looks like this:</p>
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Fake</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;An object that can take the place of a callable.&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Construct.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">calls</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">func</span> <span class="o">=</span> <span class="n">func</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Remember the call and return either the result of</span>
+<span class="sd">        the function given to the constructor or a constant.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">calls</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">])</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">func</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span>
+</code></pre></div>
+<p>For convenience,
+let's also define a function that replaces some function we've already defined
+with an instance of our <code>Fake</code> class.
+This function takes either a fixed value or another function as an argument
+and passes those to <code>Fake</code>'s constructor:</p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">fixit</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">func</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Replace the thing named &#39;name&#39;.&quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">globals</span><span class="p">()</span>
+    <span class="n">fake</span> <span class="o">=</span> <span class="n">Fake</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+    <span class="nb">globals</span><span class="p">()[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">fake</span>
+    <span class="k">return</span> <span class="n">fake</span>
+</code></pre></div>
+<p>Next,
+we'll define a function that adds two numbers
+and write a test for it:</p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">adder</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;The function we&#39;re testing.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span>
+
+
+<span class="k">def</span> <span class="nf">test_with_real_function</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Does the real function work?&quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="n">adder</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span> <span class="o">==</span> <span class="mi">5</span>
+</code></pre></div>
+<p>But we can also use <code>fixit</code> to replace the real <code>adder</code> function
+with a mock object that always returns 99
+and check that it actually does:</p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">test_with_fixed_return_value</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Can we return a constant instead?&quot;&quot;&quot;</span>
+    <span class="n">fixit</span><span class="p">(</span><span class="s2">&quot;adder&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mi">99</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">adder</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span> <span class="o">==</span> <span class="mi">99</span>
+</code></pre></div>
+<p>Another test proves that our <code>Fake</code> class records
+all of the calls:</p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">test_fake_records_calls</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Does the fake object record all calls?&quot;&quot;&quot;</span>
+    <span class="n">fake</span> <span class="o">=</span> <span class="n">fixit</span><span class="p">(</span><span class="s2">&quot;adder&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mi">99</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">adder</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span> <span class="o">==</span> <span class="mi">99</span>
+    <span class="k">assert</span> <span class="n">adder</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span> <span class="o">==</span> <span class="mi">99</span>
+    <span class="k">assert</span> <span class="n">adder</span><span class="o">.</span><span class="n">calls</span> <span class="o">==</span> <span class="p">[[(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="p">{}],</span> <span class="p">[(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span> <span class="p">{}]]</span>
+</code></pre></div>
+<p>And finally,
+the user can provide a function to calculate a return value:</p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">test_fake_calculates_result</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Can the fake object calculate a value?&quot;&quot;&quot;</span>
+    <span class="n">fixit</span><span class="p">(</span><span class="s2">&quot;adder&quot;</span><span class="p">,</span> <span class="n">func</span><span class="o">=</span><span class="k">lambda</span> <span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="p">:</span> <span class="mi">10</span> <span class="o">*</span> <span class="n">left</span> <span class="o">+</span> <span class="n">right</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">adder</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span> <span class="o">==</span> <span class="mi">23</span>
+</code></pre></div>
+<p>We can run all of these tests using the same "lookup and call" trick
+we developed earlier,
+but there's a problem.
+Every test except the first one replaces <code>adder</code> with a mock object
+but doesn't put <code>adder</code> back when it's done.
+As a result,
+any test that <em>doesn't</em> replace <code>adder</code> will run with
+whatever mock object was last put in place:</p>
+<div class="highlight"><pre><span></span><code>pass: test_with_real_function
+pass: test_with_fixed_return_value
+pass: test_fake_records_calls
+pass: test_fake_calculates_result
+adder(2, 3) is now 23
+</code></pre></div>
+<p>We could fix this by asking users to remember to swap things back when they're done,
+but people are forgetful.
+Instead,
+we can set up a <a class="gl-ref" href="../glossary/#context_manager" markdown="1">context manager</a> that does this automatically.
+A context manager is a class that defines two methods called <code>__enter__</code> and <code>__exit__</code>.
+If the class is called <code>C</code>,
+then when Python encounters a <code>with</code> block like this:</p>
+<div class="highlight"><pre><span></span><code><span class="k">with</span> <span class="n">C</span><span class="p">(</span><span class="err">…</span><span class="n">args</span><span class="err">…</span><span class="p">)</span> <span class="k">as</span> <span class="n">name</span><span class="p">:</span>
+    <span class="err">…</span><span class="n">do</span> <span class="n">things</span><span class="err">…</span>
+</code></pre></div>
+<p class="continue">it does the following:</p>
+<ol>
+<li>Call <code>C</code>'s constructor with the given arguments.</li>
+<li>Assign the result to the variable <code>name</code>.</li>
+<li>Call <code>name.__enter__()</code>.</li>
+<li>Run the code inside the <code>with</code> block.</li>
+<li>When the block finishes, call <code>name.__exit__()</code>.</li>
+</ol>
+<p class="continue">The last step is guaranteed to happen
+even if an exception occurred inside the block,
+so the context manager always has a chance to clean up after itself.</p>
+<p>Here's a mock object that inherits all the capabilities of <code>Fake</code>
+and adds the two methods needed by <code>with</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">ContextFake</span><span class="p">(</span><span class="n">Fake</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Now make it work as a context manager.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">func</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Construct.&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">original</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="fm">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Replace the original function.&quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="nb">globals</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">original</span> <span class="o">=</span> <span class="nb">globals</span><span class="p">()[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
+        <span class="nb">globals</span><span class="p">()[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="fm">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_value</span><span class="p">,</span> <span class="n">exc_traceback</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Put everything back.&quot;&quot;&quot;</span>
+        <span class="nb">globals</span><span class="p">()[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">original</span>
+</code></pre></div>
+<p class="continue">And here's a test to prove that it works:</p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">subber</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Another function to test.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">a</span> <span class="o">-</span> <span class="n">b</span>
+
+
+<span class="k">def</span> <span class="nf">check_no_lasting_effects</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Make sure the function goes back to working.&quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="n">subber</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="k">with</span> <span class="n">ContextFake</span><span class="p">(</span><span class="s2">&quot;subber&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mi">1234</span><span class="p">)</span> <span class="k">as</span> <span class="n">fake</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">subber</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1234</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">fake</span><span class="o">.</span><span class="n">calls</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+    <span class="k">assert</span> <span class="n">subber</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span>
+</code></pre></div>
+<h2 id="tester-exercises">Section 2.6: Exercises</h2>
+<h3 class="exercise">Literal strings</h3>
+<p>If we have defined a variable with the test-skipping marker,
+why can't we use that variable as the function's docstring like this:</p>
+<div class="highlight"><pre><span></span><code><span class="n">TEST_SKIP</span> <span class="o">=</span> <span class="s2">&quot;test:skip&quot;</span>
+
+
+<span class="k">def</span> <span class="nf">test_sign_negative</span><span class="p">():</span>
+    <span class="n">TEST_SKIP</span>
+    <span class="k">assert</span> <span class="n">sign</span><span class="p">(</span><span class="o">-</span><span class="mi">3</span><span class="p">)</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span>
+</code></pre></div>
         </main>
       </div>
     </div>
