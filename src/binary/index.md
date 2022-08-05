@@ -329,37 +329,9 @@ This points us at a couple of useful definitions:
 For example,
 being off by 1 in approximating 8+1 and 56+1 is the same absolute error,
 but the relative error is larger in the first case than in the second.
-{: .continue}
-
 Relative error is almost always more useful than absolute:
 it makes little sense to say that we're off by a hundredth
 when the value in question is a billionth.
-We should take this into account when testing.
-The program shown below loops over the integers from 1 to 9
-and uses them to create the values 0.9, 0.09, and so on:
-
-[% fixme "program to calculate numbers" %]
-
-It then sums those numbers to produce 0.9, 0.99, and so on.
-
-Let's calculate the same values by subtracting .1 from 1,
-then subtracting .01,
-and so on.
-This program does that and computes the difference
-between the two representations:
-
-The very first value contributing to our sum is already slightly off
-because we cannot exactly represent 0.9 in base 2
-any more than we can exactly represent 1/3 in base 10.
-Doubling the size of the mantissa would reduce the error,
-but we can't ever eliminate it.
-The good news is that 9×0.1 and 1-0.1 are exactly the same.
-It might not be precisely right, but at least it's consistent.
-
-The same cannot be said for some of the later values:
-there are small differences between what we get from our two formulas.
-And sometimes the accumulated errors cancel out
-and make the result more accurate once again.
 
 One implication of this is that
 we should never compare floating point numbers with `==` or `!=`
@@ -683,3 +655,15 @@ and adds them as if they were numbers
 *without* actually converting them to numbers.
 For example,
 `add_str("12", "5")` should produce the string `"17"`.
+
+### Roundoff {: .exercise}
+
+1.  Write a program that loops over the integers from 1 to 9
+    and uses them to create the values 0.9, 0.09, and so on.
+1.  Calculate the same values by subtracting 0.1 from 1,
+    then subtracting 0.01,
+    and so on.
+1.  Calculate the absolute and relative differences between corresponding values
+    (which should be identical).
+1.  Repeat the exercise using the `Fraction` class
+    from the [`fractions`][python_fractions] package.
