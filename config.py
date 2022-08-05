@@ -28,7 +28,7 @@ chapters = [
     "file-cache",
     "database",
     "object-storage",
-    "binary-storage",
+    "binary",
     "html-templating",
     "build-manager",
     "package-manager",
