@@ -291,21 +291,23 @@
   
 
 
-          <h2 id="binary-storage-int">Section 13.1: Integers</h2>
-<p>Let's start by looking at how numbers are stored.
+          <p>Python and other high-level languages shield programmers from low-level details,
+but sooner or later someone has to worry about bits and bytes.
+This chapter explores computers represent numbers and text
+and how to work with binary data.</p>
+<h2 id="binary-storage-int">Section 13.1: Integers</h2>
+<p>Let's start by looking at how integers are stored.
 The natural way to do this with ones and zeroes is to use base 2,
 so 1001 in binary is (1×8)+(0×4)+(0×2)+(1×1) or 9 base 10.
-We can extend this scheme to negative numbers by reserving one bit for the sign,
+We can handle negative numbers by reserving the top bit for the sign,
 so that 01001 is +9 and 11001 is -9.</p>
-<p>This approach has two drawbacks.
-The minor one is that it gives us two representations for zero,
-and no-one wants to have to write:</p>
-<div class="highlight"><pre><span></span><code><span class="k">if</span> <span class="p">(</span><span class="n">length</span> <span class="o">!=</span> <span class="o">+</span><span class="mi">0</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">length</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">0</span><span class="p">)</span>
-</code></pre></div>
-<p>The major one is that
+<p>This representation has two drawbacks.
+The minor one is that it gives us two zeroes,
+one positive and one negative.
+More importantly,
 the hardware needed to do arithmetic
 on this <a class="gl-ref" href="../glossary/#sign_magnitude" markdown="1">sign and magnitude</a> representation
-is more complicated than the hardware needed for another representation
+is more complicated than the hardware needed for another scheme
 called {% g twos_complement "two's complement" %].
 Instead of mirroring positive values,
 two's complement rolls over when going below zero like an odometer.
@@ -357,13 +359,294 @@ with three-bit integers we get the values in <a class="tbl-ref" href="../binary/
 <p>We can still tell whether a number is positive or negative
 by looking at the first bit:
 negative numbers have a 1, positives have a 0.
-The only odd thing is its asymmetry:
-because 0 counts as a positive number,
-numbers go from -4 to 3, or -16 to 15, and so on,
-so even if <code>x</code> is a valid number,
+However,
+two's complement is asymmetric:
+since 0 counts as a positive number,
+numbers go from -4 to 3, or -16 to 15, and so on.
+As a result,
+even if <code>x</code> is a valid number,
 <code>-x</code> may not be.</p>
-<h2 id="binary-storage-fp">Section 13.2: Floating Point Numbers</h2>
-<p>Finding a good representation for floating point numbers is hard.
+<h3>Writing Binary</h3>
+<p>We can write binary numbers directly in Python by using the <code>0b</code> prefix.
+For example, <code>0b0011</code> is the number 3.
+Programmers usually use <a class="gl-ref" href="../glossary/#hexadecimal" markdown="1">hexadecimal</a> (base 16) instead:
+the digits 0–9 have the usual meaning,
+and the letters A-F (or a-f) are used to represent the numbers 11–15.
+We signal that we're using hexadecimal with a <code>0x</code> prefix,
+so <code>0xF7</code> is (15×16)+7 or 247.</p>
+<p>Each hexadecimal digit corresponds to four bits (<a class="tbl-ref" href="../binary/#binary-hex">Table 13.2</a>),
+which makes it easy to translate bits to digits and vice versa:
+for example,
+<code>0xF7</code> is <code>0b11110111</code>.
+As a bonus,
+two hexadecimal digits is exactly one byte.</p>
+<div class="table"><table id="binary-hex"><caption>Table 13.2: Bitwise operations</caption>
+<thead>
+<tr>
+<th>Decimal</th>
+<th>Hexadecimal</th>
+<th>Bits</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>0</td>
+<td>0000</td>
+</tr>
+<tr>
+<td>1</td>
+<td>1</td>
+<td>0001</td>
+</tr>
+<tr>
+<td>2</td>
+<td>2</td>
+<td>0010</td>
+</tr>
+<tr>
+<td>3</td>
+<td>3</td>
+<td>0011</td>
+</tr>
+<tr>
+<td>4</td>
+<td>4</td>
+<td>0100</td>
+</tr>
+<tr>
+<td>5</td>
+<td>5</td>
+<td>0101</td>
+</tr>
+<tr>
+<td>6</td>
+<td>6</td>
+<td>0110</td>
+</tr>
+<tr>
+<td>7</td>
+<td>7</td>
+<td>0111</td>
+</tr>
+<tr>
+<td>8</td>
+<td>8</td>
+<td>1000</td>
+</tr>
+<tr>
+<td>9</td>
+<td>9</td>
+<td>1001</td>
+</tr>
+<tr>
+<td>10</td>
+<td>A</td>
+<td>1010</td>
+</tr>
+<tr>
+<td>11</td>
+<td>B</td>
+<td>1011</td>
+</tr>
+<tr>
+<td>12</td>
+<td>C</td>
+<td>1100</td>
+</tr>
+<tr>
+<td>13</td>
+<td>D</td>
+<td>1101</td>
+</tr>
+<tr>
+<td>14</td>
+<td>E</td>
+<td>1110</td>
+</tr>
+<tr>
+<td>15</td>
+<td>F</td>
+<td>1111</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h2 id="binary-ops">Section 13.2: Bitwise Operations</h2>
+<p>Like most languages based on C,
+Python provides four operators for working with bits:
+<code>&amp;</code> (and),
+<code>|</code> (or),
+<code>^</code> (xor),
+and <code>~</code> (not).
+<code>&amp;</code> yields a 1 only if both its arguments are 1's,
+while <code>|</code> yields 1 if either or both of its arguments are 1.
+<code>^</code>, called <a class="gl-ref" href="../glossary/#exclusive_or" markdown="1">exclusive or</a> or <a class="gl-ref" href="../glossary/#xor" markdown="1">xor</a>,
+produces 1 if either but <em>not</em> both of its arguments are 1.
+Putting it another way,
+<code>^</code> produces 0 if its inputs are the same and 1 if they are different.
+Finally,
+<code>~</code> flips its argument: 1 becomes 0, and 0 becomes 1.
+When these operators are used on multibit values
+they work on corresponding bits independently as shown in <a class="tbl-ref" href="../binary/#binary-ops">Table 13.3</a>.</p>
+<div class="table"><table id="binary-ops"><caption>Table 13.3: Bitwise operations</caption>
+<thead>
+<tr>
+<th>Expression</th>
+<th>Bitwise</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>12 &amp; 6</code></td>
+<td><code>1100 &amp; 0110</code></td>
+<td><code>4</code> (<code>0100</code>)</td>
+</tr>
+<tr>
+<td><code>12 | 6</code></td>
+<td><code>1100 | 0110</code></td>
+<td><code>14</code> (<code>1110</code>)</td>
+</tr>
+<tr>
+<td><code>12 ^ 6</code></td>
+<td><code>1100 ^ 0110</code></td>
+<td><code>10</code> (<code>1010</code>)</td>
+</tr>
+<tr>
+<td><code>~ 6</code></td>
+<td><code>~ 0110</code></td>
+<td><code>9</code> (<code>1001</code>)</td>
+</tr>
+<tr>
+<td><code>12 &lt;&lt; 2</code></td>
+<td><code>1100 &lt;&lt; 2</code></td>
+<td><code>48</code> (<code>110000</code>)</td>
+</tr>
+<tr>
+<td><code>12 &gt;&gt; 2</code></td>
+<td><code>1100 &gt;&gt; 2</code></td>
+<td><code>3</code> (<code>0011</code>)</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>We can set or clear individual bits with these operators.
+To set a particular bit,
+create a value in which that bit is 1 and the rest are 0.
+When this is or'd with a value,
+the bit we set is guaranteed to come out 1;
+the other bits will be left as they are.
+Similarly,
+to  set a bit to zero,
+create a value in which that bit is 0 and the others are 1,
+then use <code>&amp;</code> to combine the two.
+To make things easier to read,
+programmers often set a single bit,
+negative it with <code>~</code>,
+and then use <code>&amp;</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="n">mask</span> <span class="o">=</span> <span class="o">~</span> <span class="mh">0x0100</span>  <span class="c1"># binary 1111 1110 1111 1111</span>
+<span class="n">val</span> <span class="o">=</span> <span class="n">val</span> <span class="o">&amp;</span> <span class="n">mask</span> <span class="c1">#    clears this ^ bit</span>
+</code></pre></div>
+<p>Most C-inspired languages also provide <a class="gl-ref" href="../glossary/#bit_shift" markdown="1">bit shifting</a> operators.
+that move bits left or right.
+Shifting the bits <code>0110</code> left by one place produces <code>1100</code>,
+while shifting it right by one place produces <code>0011</code>.
+In Python,
+this is written <code>x &lt;&lt; 1</code> or <code>x &gt;&gt; 1</code>.</p>
+<p>Just as shifting a decimal number left corresponds to multiplying by 10,
+shifting a binary number left is the same as multiplying it by 2.
+Similarly,
+shifting a number right corresponds to dividing by 2 and throwing away the remainder,
+so <code>17 &gt;&gt; 3</code> is 2.</p>
+<p>But what if the top bit of an integer changes from 1 to 0 or vice versa as a result of shifting?
+If we're using two's complement,
+then the bits <code>1111</code> represent the value -1;
+if we shift right we get <code>0111</code> which is 7.
+Similarly,
+if we shift <code>0111</code> to the left we get <code>1110</code> (assuming we fill in the bottom with 0),
+which is -2.</p>
+<p>Different languages deal with this problem in different ways.
+Python always fills with zeroes.
+Java provides two versions of right shift:
+<code>&gt;&gt;</code> fills in the high end with zeroes
+while <code>&gt;&gt;&gt;</code> copies in the topmost (sign) bit of the original value.
+C (and by extension C++) lets the underlying hardware decide,
+which means that if you want to be sure of getting a particular answer
+you have to handle the top bit yourself.</p>
+<h2 id="binary-storage-text">Section 13.3: Text</h2>
+<p>The rules for storing text make integers look simple.
+By the early 1970s most programs used <a class="gl-ref" href="../glossary/#ascii" markdown="1">ASCII</a>,
+which represented unaccented Latin characters using the numbers from 32 to 127.
+(The numbers 0 to 31 were used for <a class="gl-ref" href="../glossary/#control_code" markdown="1">control codes</a>
+such as newline, carriage return, and bell.)
+Since computers use 8-bit bytes and the numbers 0–127 only need 7 bits,
+programmers were free to use the numbers 128–255 for other characters.
+Unfortunately,
+different pieces of software used them to represent different symbols:
+non-Latin characters,
+graphic characters like boxes,
+and so on.
+The chaos was eventually tamed by the <a class="gl-ref" href="../glossary/#ansi_character" markdown="1">ANSI</a> standard
+which (for example) defined the value 231 to mean the character "ç".</p>
+<p>But the ANSI standard only solved part of the problem.
+The ANSI standard didn't include characters from Turkish, Devanagari, and many other alphabets,
+much less the thousands of characters used in some East Asian writing systems.
+One solution would have been to use 16 or even 32 bits per character,
+but:</p>
+<ol>
+<li>existing text files using ANSI would have to be transcribed, and</li>
+<li>documents would be two or four times larger.</li>
+</ol>
+<p>The solution was a new standard called <a class="gl-ref" href="../glossary/#unicode" markdown="1">Unicode</a> with two parts.
+The first part defined a <a class="gl-ref" href="../glossary/#code_point" markdown="1">code point</a> for every character:
+U+0065 for an upper-case Latin "A",
+U+2605 for a black star,
+and so on.
+The second part defined ways to store these values in memory.
+The simplest of these is <a class="gl-ref" href="../glossary/#utf_32" markdown="1">UTF-32</a>,
+which stores every character as a 32-bit number.
+This wastes a lot of memory—if the text is written in a Western European language,
+UTF-32 uses four times as much storage as necessary—but
+since each character is exactly the same size it's very easy to process.</p>
+<p>The most popular encoding is <a class="gl-ref" href="../glossary/#utf_8" markdown="1">UTF-8</a>,
+which is a <a class="gl-ref" href="../glossary/#variable_length_encoding" markdown="1">variable length encoding</a>.
+Every code point from 0 to 127 is stored in a single byte whose high bit is 0,
+just as it was in the original ASCII standard.</p>
+<p>What if the high bit in the byte is 1?
+In that case,
+the number of 1's after the high bit but before the first 0
+tells UTF-8 how many more bytes that character is using.
+For example,
+if the first byte of the character is <code>11101101</code> then:</p>
+<ul>
+<li>the first 1 signals that this is a multi-byte character;</li>
+<li>the next two 1's signal that the character includes bits
+    from the following two bytes as well as this one;</li>
+<li>the 0 separates the byte count from the first few bits used in the character;
+    and</li>
+<li>the final 1101 is the first four bits of the character.</li>
+</ul>
+<p>But that's not all:
+every byte that's a continuation of a character starts with 10.
+This rule means that if we look at any byte in a string
+we can immediately tell if it's the start of a character
+or the continuation of a character.
+Thus,
+if we want to represent a character whose code point is 1789:</p>
+<ul>
+<li>We convert to binary 11011111101.</li>
+<li>We count and realize that we'll need two bytes:
+    the first storing the high 5 bits of the character,
+    the second storing the low 6 bits.</li>
+<li>We encode the high 5 bits as 11011011,
+    meaning "start of a character with one continuation byte
+    and the 5 payload bits 11011".</li>
+<li>We encode the low 6 bits as 10111101,
+    meaning "a continuation byte wiht 6 payload bits 111101".</li>
+</ul>
+<h2 id="binary-storage-fp">Section 13.4: Floating Point Numbers</h2>
+<p>The rules for floating point numbers make Unicode look simple.
 The root of the problem is that
 we cannot represent an infinite number of real values
 with a finite set of bit patterns.
@@ -460,184 +743,22 @@ there are small differences between what we get from our two formulas.
 And sometimes the accumulated errors cancel out
 and make the result more accurate once again.</p>
 <p>One implication of this is that
-we should never use <code>==</code> or <code>!=</code> on floating point numbers
+we should never compare floating point numbers with <code>==</code> or <code>!=</code>
 because two numbers calculated in different ways
 will probably not have exactly the same bits.
-It's OK to use <code>&lt;</code>, <code>&gt;=</code>, and other orderings.
-<span class="FIXME">FIXME</span></p>
-<p>If we want to compare floating point numbers,
-use pytest's <code>approx</code>,
+It's safe to use <code>&lt;</code>, <code>&gt;=</code>, and other orderings,
+though,
+since they don't depend on being the same down to the last bit.</p>
+<p>If we do want to compare floating point numbers
+we can use something like <a href="https://docs.pytest.org/en/4.6.x/reference.html#pytest-approx">the <code>approx</code> class</a> from <a href="https://docs.pytest.org/">pytest</a>
 which checks whether two numbers are within some tolerance of each other.
-<a href="https://docs.pytest.org/en/4.6.x/reference.html#pytest-approx">https://docs.pytest.org/en/4.6.x/reference.html#pytest-approx</a></p>
-<p><span class="FIXME">FIXME</span></p>
-<h2 id="binary-storage-text">Section 13.3: Text</h2>
-<p>The rules for storing text make floating point numbers look simple.
-By the early 1970s most programs used <a class="gl-ref" href="../glossary/#ascii" markdown="1">ASCII</a>,
-which represented unaccented Latin characters using the numbers from 32 to 127.
-(The numbers 0 to 31 were used for <a class="gl-ref" href="../glossary/#control_code" markdown="1">control codes</a>
-such as newline, carriage return, and bell.)
-Since computers use 8-bit bytes and the numbers 0–127 only need 7 bits,
-programmers were free to use the numbers 128–255 for other characters.
-Unfortunately,
-different pieces of software used them to represent different symbols:
-non-Latin characters,
-graphic characters like boxes,
-and so on.
-The chaos was eventually tamed by the <a class="gl-ref" href="../glossary/#ansi_character" markdown="1">ANSI</a> standard
-which (for example) defined the value 231 to mean the character "ç".</p>
-<p>But the ANSI standard only solved part of the problem.
-The ANSI standard didn't include characters from Turkish, Devanagari, and many other alphabets,
-much less the thousands of characters used in some East Asian writing systems.
-One solution would have been to use 16 or even 32 bits per character,
-but:</p>
-<ol>
-<li>existing text files using ANSI would have to be transcribed, and</li>
-<li>documents would be two or four times larger.</li>
-</ol>
-<p>The solution was a new standard called <a class="gl-ref" href="../glossary/#unicode" markdown="1">Unicode</a> with two parts.
-The first part defined a <a class="gl-ref" href="../glossary/#code_point" markdown="1">code point</a> for every character:
-U+0065 for an upper-case Latin "A",
-U+2605 for a black star,
-and so on.
-The second part defined ways to store these values in memory.
-The simplest of these is <a class="gl-ref" href="../glossary/#utf_32" markdown="1">UTF-32</a>,
-which stores every character as a 32-bit number.
-This wastes a lot of memory—if the text is written in a Western European language,
-UTF-32 uses four times as much storage as necessary—but
-since each character is exactly the same size it's very easy to process.</p>
-<p>The most popular encoding is <a class="gl-ref" href="../glossary/#utf_8" markdown="1">UTF-8</a>,
-which is a <a class="gl-ref" href="../glossary/#variable_length_encoding" markdown="1">variable length encoding</a>.
-Every code point from 0 to 127 is stored in a single byte whose high bit is 0,
-just as it was in the original ASCII standard.</p>
-<p>What if the high bit in the byte is 1?
-In that case,
-the number of 1's after the high bit but before the first 0
-tells UTF-8 how many more bytes that character is using.
-For example,
-if the first byte of the character is <code>11101101</code> then:</p>
-<ul>
-<li>the first 1 signals that this is a multi-byte character;</li>
-<li>the next two 1's signal that the character includes bits
-    from the following two bytes as well as this one;</li>
-<li>the 0 separates the byte count from the first few bits used in the character;
-    and</li>
-<li>the final 1101 is the first four bits of the character.</li>
-</ul>
-<p>But that's not all:
-every byte that's a continuation of a character starts with 10.
-This rule means that if we look at any byte in a string
-we can immediately tell if it's the start of a character
-or the continuation of a character.
-Thus,
-if we want to represent a character whose code point is 1789:</p>
-<ul>
-<li>We convert to binary 11011111101.</li>
-<li>We count and realize that we'll need two bytes:
-    the first storing the high 5 bits of the character,
-    the second storing the low 6 bits.</li>
-<li>We encode the high 5 bits as 11011011,
-    meaning "start of a character with one continuation byte
-    and the 5 payload bits 11011".</li>
-<li>We encode the low 6 bits as 10111101,
-    meaning "a continuation byte wiht 6 payload bits 111101".</li>
-</ul>
-<p>Like most languages based on C,
-Python provides four operators for working with bits written <code>&amp;</code>, <code>|</code>, <code>^</code>, and <code>~</code>.
-<code>&amp;</code> yields a 1 only if both its arguments are 1's,
-while <code>|</code> yields 1 if either or both of its arguments are 1.
-<code>^</code>, called <a class="gl-ref" href="../glossary/#exclusive_or" markdown="1">exclusive or</a> or <a class="gl-ref" href="../glossary/#xor" markdown="1">xor</a>,
-produces 1 if either but <em>not</em> both of its arguments are 1
-(i.e., if they are different),
-and <code>~</code> flips its argument: 1 becomes 0, and 0 becomes 1.</p>
-<p>When these operators are used on multibit values
-they work on corresponding bits independently (<a class="tbl-ref" href="../binary/#binary-ops">Table 13.2</a>).</p>
-<div class="table"><table id="binary-ops"><caption>Table 13.2: Bitwise operations</caption>
-<thead>
-<tr>
-<th>Expression</th>
-<th>Bitwise</th>
-<th>Result</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>12 &amp; 6</code></td>
-<td><code>1100 &amp; 0110</code></td>
-<td><code>4</code> (<code>0100</code>)</td>
-</tr>
-<tr>
-<td><code>12 | 6</code></td>
-<td><code>1100 | 0110</code></td>
-<td><code>14</code> (<code>1110</code>)</td>
-</tr>
-<tr>
-<td><code>12 ^ 6</code></td>
-<td><code>1100 ^ 0110</code></td>
-<td><code>10</code> (<code>1010</code>)</td>
-</tr>
-<tr>
-<td><code>~ 6</code></td>
-<td><code>~ 0110</code></td>
-<td><code>9</code> (<code>1001</code>)</td>
-</tr>
-<tr>
-<td><code>12 &lt;&lt; 2</code></td>
-<td><code>1100 &lt;&lt; 2</code></td>
-<td><code>48</code> (<code>110000</code>)</td>
-</tr>
-<tr>
-<td><code>12 &gt;&gt; 2</code></td>
-<td><code>1100 &gt;&gt; 2</code></td>
-<td><code>3</code> (<code>0011</code>)</td>
-</tr>
-</tbody>
-</table>
-</div>
-<p>We can set or clear individual bits with these operators.
-To set a particular bit, create a value in which that bit is 1 and the rest are 0.
-When this is or'd with a value,
-the bit we set is guaranteed to come out 1;
-the other bits will be left as they are.
-Similarly,
-to  set a bit to zero,
-create a value in which that bit is 0 and the others are 1,
-then use <code>&amp;</code> to combine the two.
-To make things easier to read,
-programmers often set a single bit,
-negative it with <code>~</code>,
-and then use <code>&amp;</code>:</p>
-<div class="highlight"><pre><span></span><code><span class="n">mask</span> <span class="o">=</span> <span class="o">~</span> <span class="mh">0x0100</span>  <span class="c1"># binary 1111 1110 1111 1111</span>
-<span class="n">val</span> <span class="o">=</span> <span class="n">val</span> <span class="o">&amp;</span> <span class="n">mask</span> <span class="c1">#    clears this ^ bit</span>
-</code></pre></div>
-<p>Most C-inspired languages also provide <a class="gl-ref" href="../glossary/#bit_shift" markdown="1">bit shifting</a> operators.
-that move bits left or right.
-Shifting the bits <code>0110</code> left by one place produces <code>1100</code>,
-while shifting it right by one place produces <code>0011</code>.
-In Python,
-this is written <code>x &lt;&lt; 1</code> or <code>x &gt;&gt; 1</code>.</p>
-<p>Just as shifting a decimal number left corresponds to multiplying by 10,
-shifting a binary number left is the same as multiplying it by 2.
-Similarly,
-shifting a number right corresponds to dividing by 2 and throwing away the remainder,
-so <code>17 &gt;&gt; 3</code> is 2.</p>
-<p>But what if the top bit of an integer changes from 1 to 0 or vice versa as a result of shifting?
-If we're using two's complement,
-then the bits <code>1111</code> represent the value -1;
-if we shift right we get <code>0111</code> which is 7.
-Similarly,
-if we shift <code>0111</code> to the left we get <code>1110</code> (assuming we fill in the bottom with 0),
-which is -2.</p>
-<p>Different languages deal with this problem in different ways.
-Python always fills with zeroes.
-Java provides two versions of right shift:
-<code>&gt;&gt;</code> fills in the high end with zeroes
-while <code>&gt;&gt;&gt;</code> copies in the topmost (sign) bit of the original value.
-C (and by extension C++) lets the underlying hardware decide,
-which means that if you want to be sure of getting a particular answer
-you have to handle the top bit yourself.</p>
-<h2 id="binary-storage-binary">Section 13.4: And Now, Persistence</h2>
-<p>So, why binary?
-Why store data in a format that can't be handled by editors like Notepad and nano?
+A completely different approach is to use something like
+[the <code>fractions</code> package][python_fractions],
+which (as its name suggests) uses numerators and denominators
+to avoid some precision issues.
+<a href="https://www.textualize.io/blog/posts/7-things-about-terminals">This post</a> describes one clever use of the package.</p>
+<h2 id="binary-storage-binary">Section 13.5: And Now, Persistence</h2>
+<p>So why store data in a format that can't be edited with Notepad or nano?
 There are generally four reasons:</p>
 <dl>
 <dt>Size</dt>
@@ -783,7 +904,7 @@ because the ASCII code for an upper-case letter A is the decimal value 65.
 All the other bytes are zeroes (<code>"\x00"</code>)
 because each of our integers is 32 bits long
 and the significant digits only fill one byte's worth of each.</p>
-<div class="table"><table id="binary-storage-formats"><caption>Table 13.3: `struct` package formats</caption>
+<div class="table"><table id="binary-storage-formats"><caption>Table 13.4: `struct` package formats</caption>
 <thead>
 <tr>
 <th>Format</th>
@@ -819,7 +940,7 @@ and the significant digits only fill one byte's worth of each.</p>
 </table>
 </div>
 <p>The <code>struct</code> module offers a lot of different formats,
-some of which are shown in <a class="tbl-ref" href="../binary/#binary-storage-formats">Table 13.3</a>.
+some of which are shown in <a class="tbl-ref" href="../binary/#binary-storage-formats">Table 13.4</a>.
 The <code>"B"</code>, <code>"h"</code>, and <code>"2"</code> formats deserve some explanation.
 <code>"B"</code> takes the least significant 8 bits out of an integer and packs those;
 <code>"h"</code> takes the least significant 16 bits and does likewise.
@@ -905,8 +1026,8 @@ This is such a pain that the <code>struct</code> library and other libraries lik
 will do things for you if you ask it to.
 If you're using <code>struct</code>,
 the first character of a format string optionally indicates the byte order
-(<a class="tbl-ref" href="../binary/#binary-storage-endian">Table 13.4</a>).</p>
-<div class="table"><table id="binary-storage-endian"><caption>Table 13.4: `struct` package endian indicators</caption>
+(<a class="tbl-ref" href="../binary/#binary-storage-endian">Table 13.5</a>).</p>
+<div class="table"><table id="binary-storage-endian"><caption>Table 13.5: `struct` package endian indicators</caption>
 <thead>
 <tr>
 <th>Character</th>
@@ -964,7 +1085,7 @@ but there's no substitute when you <em>do</em> have to.
 Please remember that libraries already exist to handle almost every binary format ever created
 and to read data from almost every instrument on the market.
 You shouldn't worry about 1's and 0's unless you really have to.</p>
-<h2 id="binary-storage-exercises">Section 13.5: Exercises</h2>
+<h2 id="binary-storage-exercises">Section 13.6: Exercises</h2>
 <p>FIXME</p>
 <h3 class="exercise">Adding strings</h3>
 <p>Write a function that takes two strings of digits

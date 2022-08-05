@@ -4,26 +4,26 @@ syllabus:
 - FIXME
 ---
 
+Python and other high-level languages shield programmers from low-level details,
+but sooner or later someone has to worry about bits and bytes.
+This chapter explores computers represent numbers and text
+and how to work with binary data.
+
 ## Integers {: #binary-storage-int}
 
-Let's start by looking at how numbers are stored.
+Let's start by looking at how integers are stored.
 The natural way to do this with ones and zeroes is to use base 2,
 so 1001 in binary is (1×8)+(0×4)+(0×2)+(1×1) or 9 base 10.
-We can extend this scheme to negative numbers by reserving one bit for the sign,
+We can handle negative numbers by reserving the top bit for the sign,
 so that 01001 is +9 and 11001 is -9.
 
-This approach has two drawbacks.
-The minor one is that it gives us two representations for zero,
-and no-one wants to have to write:
-
-```python
-if (length != +0) and (length != -0)
-```
-
-The major one is that
+This representation has two drawbacks.
+The minor one is that it gives us two zeroes,
+one positive and one negative.
+More importantly,
 the hardware needed to do arithmetic
 on this [%g sign_magnitude "sign and magnitude" %] representation
-is more complicated than the hardware needed for another representation
+is more complicated than the hardware needed for another scheme
 called {% g twos_complement "two's complement" %].
 Instead of mirroring positive values,
 two's complement rolls over when going below zero like an odometer.
@@ -46,15 +46,207 @@ with three-bit integers we get the values in [%t binary-storage-3bit %]
 We can still tell whether a number is positive or negative
 by looking at the first bit:
 negative numbers have a 1, positives have a 0.
-The only odd thing is its asymmetry:
-because 0 counts as a positive number,
-numbers go from -4 to 3, or -16 to 15, and so on,
-so even if `x` is a valid number,
+However,
+two's complement is asymmetric:
+since 0 counts as a positive number,
+numbers go from -4 to 3, or -16 to 15, and so on.
+As a result,
+even if `x` is a valid number,
 `-x` may not be.
+
+### Writing Binary
+
+We can write binary numbers directly in Python by using the `0b` prefix.
+For example, `0b0011` is the number 3.
+Programmers usually use [%g hexadecimal "hexadecimal" %] (base 16) instead:
+the digits 0–9 have the usual meaning,
+and the letters A-F (or a-f) are used to represent the numbers 11–15.
+We signal that we're using hexadecimal with a `0x` prefix,
+so `0xF7` is (15×16)+7 or 247.
+
+Each hexadecimal digit corresponds to four bits ([%t binary-hex %]),
+which makes it easy to translate bits to digits and vice versa:
+for example,
+`0xF7` is `0b11110111`.
+As a bonus,
+two hexadecimal digits is exactly one byte.
+
+<div class="table" id="binary-hex" caption="Bitwise operations" markdown="1">
+| Decimal | Hexadecimal | Bits |
+| ------- | ----------- | ---- |
+| 0       | 0           | 0000 |
+| 1       | 1           | 0001 |
+| 2       | 2           | 0010 |
+| 3       | 3           | 0011 |
+| 4       | 4           | 0100 |
+| 5       | 5           | 0101 |
+| 6       | 6           | 0110 |
+| 7       | 7           | 0111 |
+| 8       | 8           | 1000 |
+| 9       | 9           | 1001 |
+| 10      | A           | 1010 |
+| 11      | B           | 1011 |
+| 12      | C           | 1100 |
+| 13      | D           | 1101 |
+| 14      | E           | 1110 |
+| 15      | F           | 1111 |
+</div>
+
+## Bitwise Operations {: #binary-ops}
+
+Like most languages based on C,
+Python provides four operators for working with bits:
+`&` (and),
+`|` (or),
+`^` (xor),
+and `~` (not).
+`&` yields a 1 only if both its arguments are 1's,
+while `|` yields 1 if either or both of its arguments are 1.
+`^`, called [%g exclusive_or "exclusive or" %] or [%g xor "xor" %],
+produces 1 if either but *not* both of its arguments are 1.
+Putting it another way,
+`^` produces 0 if its inputs are the same and 1 if they are different.
+Finally,
+`~` flips its argument: 1 becomes 0, and 0 becomes 1.
+When these operators are used on multibit values
+they work on corresponding bits independently as shown in [%t binary-ops %].
+
+<div class="table" id="binary-ops" caption="Bitwise operations" markdown="1">
+| Expression | Bitwise       | Result          |
+| ---------- | ------------- | --------------- |
+| `12 & 6`   | `1100 & 0110` | `4` (`0100`)    |
+| `12 | 6`   | `1100 | 0110` | `14` (`1110`)   |
+| `12 ^ 6`   | `1100 ^ 0110` | `10` (`1010`)   |
+| `~ 6`      | `~ 0110`      | `9` (`1001`)    |
+| `12 << 2`  | `1100 << 2`   | `48` (`110000`) |
+| `12 >> 2`  | `1100 >> 2`   | `3` (`0011`)    |
+</div>
+
+We can set or clear individual bits with these operators.
+To set a particular bit,
+create a value in which that bit is 1 and the rest are 0.
+When this is or'd with a value,
+the bit we set is guaranteed to come out 1;
+the other bits will be left as they are.
+Similarly,
+to  set a bit to zero,
+create a value in which that bit is 0 and the others are 1,
+then use `&` to combine the two.
+To make things easier to read,
+programmers often set a single bit,
+negative it with `~`,
+and then use `&`:
+
+[% excerpt f="bit_mask.py" %]
+
+Most C-inspired languages also provide [%g bit_shift "bit shifting" %] operators.
+that move bits left or right.
+Shifting the bits `0110` left by one place produces `1100`,
+while shifting it right by one place produces `0011`.
+In Python,
+this is written `x << 1` or `x >> 1`.
+
+Just as shifting a decimal number left corresponds to multiplying by 10,
+shifting a binary number left is the same as multiplying it by 2.
+Similarly,
+shifting a number right corresponds to dividing by 2 and throwing away the remainder,
+so `17 >> 3` is 2.
+
+But what if the top bit of an integer changes from 1 to 0 or vice versa as a result of shifting?
+If we're using two's complement,
+then the bits `1111` represent the value -1;
+if we shift right we get `0111` which is 7.
+Similarly,
+if we shift `0111` to the left we get `1110` (assuming we fill in the bottom with 0),
+which is -2.
+
+Different languages deal with this problem in different ways.
+Python always fills with zeroes.
+Java provides two versions of right shift:
+`>>` fills in the high end with zeroes
+while `>>>` copies in the topmost (sign) bit of the original value.
+C (and by extension C++) lets the underlying hardware decide,
+which means that if you want to be sure of getting a particular answer
+you have to handle the top bit yourself.
+
+## Text {: #binary-storage-text}
+
+The rules for storing text make integers look simple.
+By the early 1970s most programs used [%g ascii "ASCII" %],
+which represented unaccented Latin characters using the numbers from 32 to 127.
+(The numbers 0 to 31 were used for [%g control_code "control codes" %]
+such as newline, carriage return, and bell.)
+Since computers use 8-bit bytes and the numbers 0–127 only need 7 bits,
+programmers were free to use the numbers 128–255 for other characters.
+Unfortunately,
+different pieces of software used them to represent different symbols:
+non-Latin characters,
+graphic characters like boxes,
+and so on.
+The chaos was eventually tamed by the [%g ansi_character "ANSI" %] standard
+which (for example) defined the value 231 to mean the character "ç".
+
+But the ANSI standard only solved part of the problem.
+The ANSI standard didn't include characters from Turkish, Devanagari, and many other alphabets,
+much less the thousands of characters used in some East Asian writing systems.
+One solution would have been to use 16 or even 32 bits per character,
+but:
+
+1.  existing text files using ANSI would have to be transcribed, and
+2.  documents would be two or four times larger.
+
+The solution was a new standard called [%g unicode Unicode %] with two parts.
+The first part defined a [%g code_point "code point" %] for every character:
+U+0065 for an upper-case Latin "A",
+U+2605 for a black star,
+and so on.
+The second part defined ways to store these values in memory.
+The simplest of these is [%g utf_32 "UTF-32" %],
+which stores every character as a 32-bit number.
+This wastes a lot of memory—if the text is written in a Western European language,
+UTF-32 uses four times as much storage as necessary—but
+since each character is exactly the same size it's very easy to process.
+
+The most popular encoding is [%g utf_8 "UTF-8" %],
+which is a [%g variable_length_encoding "variable length encoding" %].
+Every code point from 0 to 127 is stored in a single byte whose high bit is 0,
+just as it was in the original ASCII standard.
+
+What if the high bit in the byte is 1?
+In that case,
+the number of 1's after the high bit but before the first 0
+tells UTF-8 how many more bytes that character is using.
+For example,
+if the first byte of the character is `11101101` then:
+
+-   the first 1 signals that this is a multi-byte character;
+-   the next two 1's signal that the character includes bits
+    from the following two bytes as well as this one;
+-   the 0 separates the byte count from the first few bits used in the character;
+    and
+-   the final 1101 is the first four bits of the character.
+
+But that's not all:
+every byte that's a continuation of a character starts with 10.
+This rule means that if we look at any byte in a string
+we can immediately tell if it's the start of a character
+or the continuation of a character.
+Thus,
+if we want to represent a character whose code point is 1789:
+
+-   We convert to binary 11011111101.
+-   We count and realize that we'll need two bytes:
+    the first storing the high 5 bits of the character,
+    the second storing the low 6 bits.
+-   We encode the high 5 bits as 11011011,
+    meaning "start of a character with one continuation byte
+    and the 5 payload bits 11011".
+-   We encode the low 6 bits as 10111101,
+    meaning "a continuation byte wiht 6 payload bits 111101".
 
 ## Floating Point Numbers {: #binary-storage-fp}
 
-Finding a good representation for floating point numbers is hard.
+The rules for floating point numbers make Unicode look simple.
 The root of the problem is that
 we cannot represent an infinite number of real values
 with a finite set of bit patterns.
@@ -170,167 +362,25 @@ And sometimes the accumulated errors cancel out
 and make the result more accurate once again.
 
 One implication of this is that
-we should never use `==` or `!=` on floating point numbers
+we should never compare floating point numbers with `==` or `!=`
 because two numbers calculated in different ways
 will probably not have exactly the same bits.
-It's OK to use `<`, `>=`, and other orderings.
-[% fixme "explain why" %]
+It's safe to use `<`, `>=`, and other orderings,
+though,
+since they don't depend on being the same down to the last bit.
 
-If we want to compare floating point numbers,
-use pytest's `approx`,
+If we do want to compare floating point numbers
+we can use something like [the `approx` class][pytest_approx] from [pytest][pytest]
 which checks whether two numbers are within some tolerance of each other.
-<https://docs.pytest.org/en/4.6.x/reference.html#pytest-approx>
-
-[% fixme "explain `Fraction` package https://www.textualize.io/blog/posts/7-things-about-terminals" %]
-
-## Text {: #binary-storage-text}
-
-The rules for storing text make floating point numbers look simple.
-By the early 1970s most programs used [%g ascii "ASCII" %],
-which represented unaccented Latin characters using the numbers from 32 to 127.
-(The numbers 0 to 31 were used for [%g control_code "control codes" %]
-such as newline, carriage return, and bell.)
-Since computers use 8-bit bytes and the numbers 0–127 only need 7 bits,
-programmers were free to use the numbers 128–255 for other characters.
-Unfortunately,
-different pieces of software used them to represent different symbols:
-non-Latin characters,
-graphic characters like boxes,
-and so on.
-The chaos was eventually tamed by the [%g ansi_character "ANSI" %] standard
-which (for example) defined the value 231 to mean the character "ç".
-
-But the ANSI standard only solved part of the problem.
-The ANSI standard didn't include characters from Turkish, Devanagari, and many other alphabets,
-much less the thousands of characters used in some East Asian writing systems.
-One solution would have been to use 16 or even 32 bits per character,
-but:
-
-1.  existing text files using ANSI would have to be transcribed, and
-2.  documents would be two or four times larger.
-
-The solution was a new standard called [%g unicode Unicode %] with two parts.
-The first part defined a [%g code_point "code point" %] for every character:
-U+0065 for an upper-case Latin "A",
-U+2605 for a black star,
-and so on.
-The second part defined ways to store these values in memory.
-The simplest of these is [%g utf_32 "UTF-32" %],
-which stores every character as a 32-bit number.
-This wastes a lot of memory—if the text is written in a Western European language,
-UTF-32 uses four times as much storage as necessary—but
-since each character is exactly the same size it's very easy to process.
-
-The most popular encoding is [%g utf_8 "UTF-8" %],
-which is a [%g variable_length_encoding "variable length encoding" %].
-Every code point from 0 to 127 is stored in a single byte whose high bit is 0,
-just as it was in the original ASCII standard.
-
-What if the high bit in the byte is 1?
-In that case,
-the number of 1's after the high bit but before the first 0
-tells UTF-8 how many more bytes that character is using.
-For example,
-if the first byte of the character is `11101101` then:
-
--   the first 1 signals that this is a multi-byte character;
--   the next two 1's signal that the character includes bits
-    from the following two bytes as well as this one;
--   the 0 separates the byte count from the first few bits used in the character;
-    and
--   the final 1101 is the first four bits of the character.
-
-But that's not all:
-every byte that's a continuation of a character starts with 10.
-This rule means that if we look at any byte in a string
-we can immediately tell if it's the start of a character
-or the continuation of a character.
-Thus,
-if we want to represent a character whose code point is 1789:
-
--   We convert to binary 11011111101.
--   We count and realize that we'll need two bytes:
-    the first storing the high 5 bits of the character,
-    the second storing the low 6 bits.
--   We encode the high 5 bits as 11011011,
-    meaning "start of a character with one continuation byte
-    and the 5 payload bits 11011".
--   We encode the low 6 bits as 10111101,
-    meaning "a continuation byte wiht 6 payload bits 111101".
-
-Like most languages based on C,
-Python provides four operators for working with bits written `&`, `|`, `^`, and `~`.
-`&` yields a 1 only if both its arguments are 1's,
-while `|` yields 1 if either or both of its arguments are 1.
-`^`, called [%g exclusive_or "exclusive or" %] or [%g xor "xor" %],
-produces 1 if either but *not* both of its arguments are 1
-(i.e., if they are different),
-and `~` flips its argument: 1 becomes 0, and 0 becomes 1.
-
-When these operators are used on multibit values
-they work on corresponding bits independently ([%t binary-ops %]).
-
-<div class="table" id="binary-ops" caption="Bitwise operations" markdown="1">
-| Expression | Bitwise       | Result          |
-| ---------- | ------------- | --------------- |
-| `12 & 6`   | `1100 & 0110` | `4` (`0100`)    |
-| `12 | 6`   | `1100 | 0110` | `14` (`1110`)   |
-| `12 ^ 6`   | `1100 ^ 0110` | `10` (`1010`)   |
-| `~ 6`      | `~ 0110`      | `9` (`1001`)    |
-| `12 << 2`  | `1100 << 2`   | `48` (`110000`) |
-| `12 >> 2`  | `1100 >> 2`   | `3` (`0011`)    |
-</div>
-
-We can set or clear individual bits with these operators.
-To set a particular bit, create a value in which that bit is 1 and the rest are 0.
-When this is or'd with a value,
-the bit we set is guaranteed to come out 1;
-the other bits will be left as they are.
-Similarly,
-to  set a bit to zero,
-create a value in which that bit is 0 and the others are 1,
-then use `&` to combine the two.
-To make things easier to read,
-programmers often set a single bit,
-negative it with `~`,
-and then use `&`:
-
-[% excerpt f="bit_mask.py" %]
-
-Most C-inspired languages also provide [%g bit_shift "bit shifting" %] operators.
-that move bits left or right.
-Shifting the bits `0110` left by one place produces `1100`,
-while shifting it right by one place produces `0011`.
-In Python,
-this is written `x << 1` or `x >> 1`.
-
-Just as shifting a decimal number left corresponds to multiplying by 10,
-shifting a binary number left is the same as multiplying it by 2.
-Similarly,
-shifting a number right corresponds to dividing by 2 and throwing away the remainder,
-so `17 >> 3` is 2.
-
-But what if the top bit of an integer changes from 1 to 0 or vice versa as a result of shifting?
-If we're using two's complement,
-then the bits `1111` represent the value -1;
-if we shift right we get `0111` which is 7.
-Similarly,
-if we shift `0111` to the left we get `1110` (assuming we fill in the bottom with 0),
-which is -2.
-
-Different languages deal with this problem in different ways.
-Python always fills with zeroes.
-Java provides two versions of right shift:
-`>>` fills in the high end with zeroes
-while `>>>` copies in the topmost (sign) bit of the original value.
-C (and by extension C++) lets the underlying hardware decide,
-which means that if you want to be sure of getting a particular answer
-you have to handle the top bit yourself.
+A completely different approach is to use something like
+[the `fractions` package][python_fractions],
+which (as its name suggests) uses numerators and denominators
+to avoid some precision issues.
+[This post][textualize_fraction] describes one clever use of the package.
 
 ## And Now, Persistence {: #binary-storage-binary}
 
-So, why binary?
-Why store data in a format that can't be handled by editors like Notepad and nano?
+So why store data in a format that can't be edited with Notepad or nano?
 There are generally four reasons:
 
 Size
