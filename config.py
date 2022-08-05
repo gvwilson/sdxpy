@@ -29,6 +29,7 @@ chapters = [
     "filecache",
     "database",
     "persistence",
+    "binary",
     "templating",
     "packman",
     "layout",

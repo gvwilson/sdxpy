@@ -259,12 +259,11 @@ def handle(node, state, accum, doEscape):
         children(node, state, accum, doEscape)
         accum.append("\\end{enumerate}\n")
 
-    # <p> => paragraph (possibly a continuation)
+    # <p> => paragraph
     elif node_match(node, "p"):
         accum.append("\n")
-        if has_class(node, "continue"):
-            accum.append(r"\noindent")
-            accum.append("\n")
+        if noindent(node):
+            accum.append(r"\noindent ")
         children(node, state, accum, doEscape)
         accum.append("\n")
 
@@ -338,8 +337,13 @@ def handle(node, state, accum, doEscape):
 
 
 def has_class(node, cls):
-    """Check if node has specified class."""
-    return node.has_attr("class") and (cls in node["class"])
+    """Check if node has one of the specified classes."""
+    if not node.has_attr("class"):
+        return False
+    if isinstance(cls, str):
+        return cls in node["class"]
+    assert isinstance(cls, set)
+    return any(c in node["class"] for c in cls)
 
 
 def href_key(node):
@@ -368,6 +372,11 @@ def node_match(node, name, cls=None):
     if cls is None:
         return True
     return has_class(node, cls)
+
+
+def noindent(node):
+    """Is this an unindented paragraph?"""
+    return node_match(node, "p", {"continue", "definitions"})
 
 
 def parse_args():
