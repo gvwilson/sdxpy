@@ -28,8 +28,9 @@ called {% g twos_complement "two's complement" %].
 Instead of mirroring positive values,
 two's complement rolls over when going below zero like an odometer.
 For example,
-with three-bit integers we get:
+with three-bit integers we get the values in [%t binary-storage-3bit %]
 
+<div class="table" id="binary-storage-3bit" caption="3-bit integer values" markdown="1">
 | Base 10 | Base 2 |
 | ------- | ------ |
 | 3       | 011    |
@@ -40,8 +41,9 @@ with three-bit integers we get:
 | -2      | 110    |
 | -3      | 101    |
 | -4      | 100    |
+</div>
 
-This scheme solves the "double zero" problem
+This scheme solves the double zero problem
 and the hardware to handle it is faster and cheaper.
 We can still tell whether a number is positive or negative
 by looking at the first bit:
@@ -89,8 +91,12 @@ Here are the values we can represent this way:
 
 [% fixme "number line" %]
 
-There are a lot of values this format can't represent.
-It can store 8 and 10, for example, but not 9.
+There is a lot of redundancy here
+which the IEEE standard avoids by shifting things around.
+More importantly,
+this format can't represent a lot of values:
+for example,
+it can store 8 and 10 but not 9.
 This is exactly like the problem hand calculators have
 with fractions like 1/3:
 in decimal, we have to round that to 0.3333 or 0.3334.
@@ -146,7 +152,7 @@ We should take this into account when testing.
 The program shown below loops over the integers from 1 to 9
 and uses them to create the values 0.9, 0.09, and so on:
 
-FIXME
+[% fixme "program to calculate numbers" %]
 
 It then sums those numbers to produce 0.9, 0.99, and so on.
 
@@ -174,19 +180,18 @@ we should never use `==` or `!=` on floating point numbers
 because two numbers calculated in different ways
 will probably not have exactly the same bits.
 It's OK to use `<`, `>=`, and other orderings.
-FIXME: why.
+[% fixme "explain why" %]
 
 If we want to compare floating point numbers,
 use pytest's `approx`,
 which checks whether two numbers are within some tolerance of each other.
 <https://docs.pytest.org/en/4.6.x/reference.html#pytest-approx>
 
-FIXME: Fraction
-<https://www.textualize.io/blog/posts/7-things-about-terminals>
+[% fixme "explain `Fraction` package https://www.textualize.io/blog/posts/7-things-about-terminals" %]
 
 ## Text {: #binary-storage-text}
 
-FIXME
+[% fixme "explain Unicode storage" %]
 
 ## And Now, Persistence {: #binary-storage-binary}
 
@@ -204,8 +209,8 @@ Size
 
 Speed
 :   Adding the integers 34 and 56 is a single machine operation.
-    Adding the values represented by the strings `"34"` and `"56"` is dozens.
-    FIXME: exercise
+    Adding the values represented by the strings `"34"` and `"56"` is dozens;
+    we'll explore this in the exercises.
     Most programs that read and write text files
     convert the values in those files into binary data
     using something like the `int` or `float` functions,
@@ -235,6 +240,8 @@ We can concatenate other data onto it,
 but if the underlying file is a PNG image,
 text-oriented methods like `string.upper`
 won't do anything meaningful.
+
+[% fixme "rewrite this to explain bytes instead of strings" %]
 
 Where there's a `read` there's a `write`.
 `stream.write(str)` writes the bytes in the string `str` to a file that has been opened for writing.
@@ -322,26 +329,13 @@ takes a format string and a bunch of values as arguments,
 packs them into a string,
 and gives that back to us.
 The inverse function, `unpack(format, string)` takes such a string and a format
-and returns a tuple containing the unpacked values. Here's an example:
+and returns a tuple containing the unpacked values.
+Here's an example:
 
-```python
->>> import struct 
->>> fmt = 'ii' \# two 32-bit integers
->>> x = 31 
->>> y = 65 
->>> binary = struct.pack(fmt, x, y)
->>> print("binary representation:", repr(binary))
-binary representation: '\x1f\x00\x00\x00A\x00\x00\x00' 
+[% excerpt pat="simple_struct.*" fill="py out" %]
 
->>> normal = struct.unpack(fmt, binary) 
->>> print("back to normal:", normal)
-back to normal: (31, 65)
-```
-
-Er, what?
 What is `\x1f` and why is it in our data?
-Well,
-if Python finds a character in a string that doesn't have a printable representation,
+If Python finds a character in a string that doesn't have a printable representation,
 it prints a 2-digit escape sequence in [%g hexadecimal "hexadecimal" %] (base 16).
 This uses the letters A-F (or a-f) to represent the digits from 10 to 15,
 so that (for example) `3D5` is (3×16^2^)+(13×16^1^)+(5×16^0^), or 981 in decimal.
@@ -355,8 +349,7 @@ All the other bytes are zeroes (`"\x00"`)
 because each of our integers is 32 bits long
 and the significant digits only fill one byte's worth of each.
 
-The `struct` module offers a lot of different formats:
-
+<div class="table" id="binary-storage-formats" caption="`struct` package formats" markdown="1">
 | Format | Meaning                                     |
 |------- | ------------------------------------------- |
 | `"c"`  | Single character (i.e., string of length 1) |
@@ -365,7 +358,10 @@ The `struct` module offers a lot of different formats:
 | `"i"`  | 32-bit integer                              |
 | `"f"`  | 32-bit float                                |
 | `"d"`  | Double-precision (64-bit) float             |
+</div>
 
+The `struct` module offers a lot of different formats,
+some of which are shown in [%t binary-storage-formats %].
 The `"B"`, `"h"`, and `"2"` formats deserve some explanation.
 `"B"` takes the least significant 8 bits out of an integer and packs those;
 `"h"` takes the least significant 16 bits and does likewise.
@@ -378,16 +374,10 @@ only store 16 bits per sample.)
 Any format can be preceded by a count,
 so the format `"3i"` means "three integers":
 
-```python
->>> pack('3i', 1, 2, 3)
-'\x01\x00\x02\x00\x03\x00'
+[% excerpt pat="pack_count.*" fill="py out" %]
 
->>> pack('5s', 'hello') hello 
->>> pack('5s', 'a longer string')
-a lon
-```
-
-We get the wrong answer because we only told Python to pack five characters.
+We get the wrong answer in the last call
+because we only told Python to pack five characters.
 How can we tell it to pack all the data that's there regardless of length?
 
 The short answer is that we can't:
@@ -396,23 +386,21 @@ But that doesn't mean we can't handle variable-length strings;
 it just means that we have to construct the format on the fly:
 
 ```python
-format = '%ds' % len(str)
+format = f"{len(str)}s"
 ```
 
 `len(str)` is just the length of the string `str`,
-and the plain old text format `"%ds"` means
-"a decimal integer followed by the letter 's'",
 so if `str` contains the string `"example"`,
 the expression above will assign the string `"7s"` to `format`,
 which just happens to be exactly the right format to use to pack it.
 
 That's fine when we're writing,
 buthow do we know how much data to get if we're reading?
-For example, suppose I have the two strings "hello" and "Python".
-I can pack them like this:
+For example, suppose we have the two strings "hello" and "Python".
+we can pack them like this:
 
 ```python
-buffer = pack('5s6s', 'hello', 'Python')
+pack('5s6s', 'hello', 'Python')
 ```
 
 but how do I know how to unpack 5 characters then 6?
@@ -456,10 +444,6 @@ Once we've got that we use the trick shown earlier
 to construct the right format on the fly
 and then unpack the string and return it.
 
-<div class="callout" markdown="1">
-
-### Big and Little
-
 Something else to notice here is that
 the least significant byte of an integer comes first.
 This is called [%g little_endian "little-endian" %] and is used by all Intel processors.
@@ -472,8 +456,10 @@ because the machine doesn't know what the bytes mean.
 This is such a pain that the `struct` library and other libraries like
 will do things for you if you ask it to.
 If you're using `struct`,
-the first character of a format string optionally indicates the byte order:
+the first character of a format string optionally indicates the byte order
+([%t binary-storage-endian %]).
 
+<div class="table" id="binary-storage-endian" caption="`struct` package endian indicators" markdown="1">
 | Character | Byte order | Size     | Alignment     |
 | --------- | ---------- | -------- | ------------- |
 | `@`       | native     | native   | native        |
@@ -481,7 +467,6 @@ the first character of a format string optionally indicates the byte order:
 | `<`       | little     | endian   | standard none |
 | `>`       | big        | endian   | standard none |
 | `!`       | network    | standard | none          |
-
 </div>
 
 You should also use the `struct` library's `calcsize` function,
@@ -506,3 +491,11 @@ You shouldn't worry about 1's and 0's unless you really have to.
 ## Exercises {: #binary-storage-exercises}
 
 FIXME
+
+### Adding strings {: .exercise}
+
+Write a function that takes two strings of digits
+and adds them as if they were numbers
+*without* actually converting them to numbers.
+For example,
+`add_str("12", "5")` should produce the string `"17"`.
