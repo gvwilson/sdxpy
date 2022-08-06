@@ -9,7 +9,7 @@ but sooner or later someone has to worry about bits and bytes.
 This chapter explores computers represent numbers and text
 and how to work with binary data.
 
-## Integers {: #binary-storage-int}
+## Integers {: #binary-int}
 
 Let's start by looking at how integers are stored.
 The natural way to do this with ones and zeroes is to use base 2,
@@ -28,9 +28,9 @@ called {% g twos_complement "two's complement" %].
 Instead of mirroring positive values,
 two's complement rolls over when going below zero like an odometer.
 For example,
-with three-bit integers we get the values in [%t binary-storage-3bit %]
+with three-bit integers we get the values in [%t binary-3bit %]
 
-<div class="table" id="binary-storage-3bit" caption="3-bit integer values" markdown="1">
+<div class="table" id="binary-3bit" caption="3-bit integer values" markdown="1">
 | Base 10 | Base 2 |
 | ------- | ------ |
 | 3       | 011    |
@@ -169,7 +169,7 @@ C (and by extension C++) lets the underlying hardware decide,
 which means that if you want to be sure of getting a particular answer
 you have to handle the top bit yourself.
 
-## Text {: #binary-storage-text}
+## Text {: #binary-text}
 
 The rules for storing text make integers look simple.
 By the early 1970s most programs used [%g ascii "ASCII" %],
@@ -244,7 +244,7 @@ if we want to represent a character whose code point is 1789:
 -   We encode the low 6 bits as 10111101,
     meaning "a continuation byte wiht 6 payload bits 111101".
 
-## Floating Point Numbers {: #binary-storage-fp}
+## Floating Point Numbers {: #binary-fp}
 
 The rules for floating point numbers make Unicode look simple.
 The root of the problem is that
@@ -350,7 +350,7 @@ which (as its name suggests) uses numerators and denominators
 to avoid some precision issues.
 [This post][textualize_fraction] describes one clever use of the package.
 
-## And Now, Persistence {: #binary-storage-binary}
+## And Now, Persistence {: #binary-binary}
 
 So why store data in a format that can't be edited with Notepad or nano?
 There are generally four reasons:
@@ -505,7 +505,7 @@ All the other bytes are zeroes (`"\x00"`)
 because each of our integers is 32 bits long
 and the significant digits only fill one byte's worth of each.
 
-<div class="table" id="binary-storage-formats" caption="`struct` package formats" markdown="1">
+<div class="table" id="binary-formats" caption="`struct` package formats" markdown="1">
 | Format | Meaning                                     |
 |------- | ------------------------------------------- |
 | `"c"`  | Single character (i.e., string of length 1) |
@@ -517,7 +517,7 @@ and the significant digits only fill one byte's worth of each.
 </div>
 
 The `struct` module offers a lot of different formats,
-some of which are shown in [%t binary-storage-formats %].
+some of which are shown in [%t binary-formats %].
 The `"B"`, `"h"`, and `"2"` formats deserve some explanation.
 `"B"` takes the least significant 8 bits out of an integer and packs those;
 `"h"` takes the least significant 16 bits and does likewise.
@@ -613,9 +613,9 @@ This is such a pain that the `struct` library and other libraries like
 will do things for you if you ask it to.
 If you're using `struct`,
 the first character of a format string optionally indicates the byte order
-([%t binary-storage-endian %]).
+([%t binary-endian %]).
 
-<div class="table" id="binary-storage-endian" caption="`struct` package endian indicators" markdown="1">
+<div class="table" id="binary-endian" caption="`struct` package endian indicators" markdown="1">
 | Character | Byte order | Size     | Alignment     |
 | --------- | ---------- | -------- | ------------- |
 | `@`       | native     | native   | native        |
@@ -644,7 +644,7 @@ Please remember that libraries already exist to handle almost every binary forma
 and to read data from almost every instrument on the market.
 You shouldn't worry about 1's and 0's unless you really have to.
 
-## Exercises {: #binary-storage-exercises}
+## Exercises {: #binary-exercises}
 
 FIXME
 

@@ -107,10 +107,13 @@ exclude = [
     "*.png",
     "*.py",
     "*.pyc",
+    "*.sh",
     "*.svg",
+    "*.tll",
     "*.txt",
     "*~",
     "*/__pycache__",
+    "*/.pytest_cache",
 ]
 
 # Display values for LaTeX generation.
