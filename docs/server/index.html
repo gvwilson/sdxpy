@@ -250,7 +250,23 @@
   
   <ul class="syllabus">
   
-  <li markdown="1">FIXME</li>
+  <li markdown="1">Every computer on a network has a unique IP address.</li>
+  
+  <li markdown="1">The Domain Name System (DNS) translates human-readable names into IP addresses.</li>
+  
+  <li markdown="1">The programs on each computer send and receive messages through numbered sockets.</li>
+  
+  <li markdown="1">The program that receives a message must interpret the bytes in the message.</li>
+  
+  <li markdown="1">The HyperText Transfer Protocol (HTTP) specifies one way to interact via messages over sockets.</li>
+  
+  <li markdown="1">A minimal HTTP request has a method, a URL, and a protocol version.</li>
+  
+  <li markdown="1">A complete HTTP request may also have headers and a body.</li>
+  
+  <li markdown="1">An HTTP response has a status code, a status phrase, and optionally some headers and a body.</li>
+  
+  <li markdown="1">HTTP is a stateless protocol: the application is responsible for remembering things between requests.</li>
   
   </ul>
   
@@ -288,7 +304,329 @@
   
 
 
-          <p>FIXME</p>
+          <p>The Internet is simpler than most people realize
+(as well as being more complex than anyone could possibly have imagined).
+Most systems still follow the rules they did thirty years ago;
+in particular,
+most web servers still handle the same kinds of messages in the same way.</p>
+<h2 id="server-sockets">Section 10.1: Sockets</h2>
+<p>Pretty much every program on the web
+runs on a family of communication standards called Internet Protocol (IP).
+The member of that family which concerns us is the Transmission Control Protocol (TCP/IP),
+which makes communication between computers look like reading and writing files.</p>
+<p>Programs using IP communicate through sockets.
+Each socket is one end of a point-to-point communication channel,
+just like a phone is one end of a phone call.
+A socket consists of an IP address that identifies a particular machine
+and a port number on that machine.
+The IP address consists of four 8-bit numbers,
+such as <code>174.136.14.108</code>;
+the Domain Name System (DNS) matches these numbers to symbolic names like <code>example.com</code>
+that are easier for human beings to remember.</p>
+<p>A port number is a number in the range 0-65535
+that uniquely identifies the socket on the host machine.
+(If an IP address is like a company's phone number,
+then a port number is like an extension.)
+Ports 0-1023 are reserved for the operating system's use;
+anyone else can use the remaining ports.</p>
+<p>Here's a simple socket client:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">socket</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="n">KILOBYTE</span> <span class="o">=</span> <span class="mi">1024</span>
+<span class="n">SERVER_ADDRESS</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="mi">8080</span><span class="p">)</span>
+
+<span class="n">message</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+<span class="n">sock</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">socket</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">AF_INET</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">SOCK_STREAM</span><span class="p">)</span>
+<span class="n">sock</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">SERVER_ADDRESS</span><span class="p">)</span>
+<span class="n">sock</span><span class="o">.</span><span class="n">sendall</span><span class="p">(</span><span class="nb">bytes</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="s2">&quot;utf-8&quot;</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;client sent </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">message</span><span class="p">)</span><span class="si">}</span><span class="s2"> bytes&quot;</span><span class="p">)</span>
+
+<span class="n">received</span> <span class="o">=</span> <span class="n">sock</span><span class="o">.</span><span class="n">recv</span><span class="p">(</span><span class="n">KILOBYTE</span><span class="p">)</span>
+<span class="n">received_str</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">received</span><span class="p">,</span> <span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;client received </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">received</span><span class="p">)</span><span class="si">}</span><span class="s2"> bytes: &#39;</span><span class="si">{</span><span class="n">receiver_str</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+</code></pre></div>
+<p>From top to bottom, it:</p>
+<ol>
+<li>Imports some modules and defines some constants.
+    The most interesting of these is <code>SERVER_ADDRESS</code>
+    The empty string <code>""</code> for the host means "the current machine";
+    we could also use the string <code>"localhost"</code>.</li>
+<li>We use <code>socket.socket</code> to create a new socket.
+    The values <code>AF_INET</code> and <code>SOCK_STREAM</code> specify the protocols we're using;
+    we'll always use those in our examples,
+    so we won't go into details about them.</li>
+<li>We connect to the server...</li>
+<li>...send our message as a bunch of bytes with <code>sock.sendall</code>...</li>
+<li>...and print a message saying the data's been sent.</li>
+<li>We then read up to a kilobyte from the socket with <code>sock.recv</code>.
+    If we were expecting longer messages,
+    we'd keep reading from the socket until there was no more data,
+    but we're trying to keep this example simple.</li>
+<li>Finally, we print another diagnostic message.</li>
+</ol>
+<p>The receiving end is only a little more complicated:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">socketserver</span>
+
+
+<span class="n">KILOBYTE</span> <span class="o">=</span> <span class="mi">1024</span>
+<span class="n">SERVER_ADDRESS</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="mi">8080</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">MyHandler</span><span class="p">(</span><span class="n">socketserver</span><span class="o">.</span><span class="n">BaseRequestHandler</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;The request handler class for our server.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">handle</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Handle a single request.&quot;&quot;&quot;</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">recv</span><span class="p">(</span><span class="n">KILOBYTE</span><span class="p">)</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;got request from </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">client_address</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">sendall</span><span class="p">(</span><span class="nb">bytes</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="s2">&quot;utf-8&quot;</span><span class="p">))</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">server</span> <span class="o">=</span> <span class="n">socketserver</span><span class="o">.</span><span class="n">TCPServer</span><span class="p">(</span><span class="n">SERVER_ADDRESS</span><span class="p">,</span> <span class="n">MyHandler</span><span class="p">)</span>
+    <span class="n">server</span><span class="o">.</span><span class="n">serve_forever</span><span class="p">()</span>
+</code></pre></div>
+<p>Python's <code>socketserver</code> library provides two things:
+a class called <code>TCPServer</code> that listens for incoming connections
+and then manages them for us,
+and another class called <code>BaseRequestHandler</code>
+that does everything <em>except</em> process the incoming data.
+In order to do that,
+we derive a class of our own from <code>BaseRequestHandler</code> that provides a <code>handle</code> method.
+Every time <code>TCPServer</code> gets a new connection
+it creates a new instance of our class
+and calls its <code>handle</code> method.</p>
+<p>Our <code>handle</code> method is the inverse of the code that sends request:</p>
+<ol>
+<li>Read up to a kilobyte from <code>self.request</code>
+    (which is set up automatically for us in the base class <code>BaseRequestHandler</code>).</li>
+<li>Construct and print a diagnostic message.</li>
+<li>Use <code>self.request</code> again to send data back to whoever we received the message from.</li>
+</ol>
+<p>The easiest way to test this is to open two terminal windows side by side.
+<a class="tbl-ref" href="../server/#server-transcript">Table 10.1</a> shows the sequence of operations side by side:</p>
+<div class="table"><table id="server-transcript"><caption>Table 10.1: Sequence of operations in socket client/server interaction</caption>
+<thead>
+<tr>
+<th>Server</th>
+<th>Client</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$ python socket_server.py</code></td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td><code>$ python socket_client.py "a test message"</code></td>
+</tr>
+<tr>
+<td></td>
+<td><code>client sent 14 bytes</code></td>
+</tr>
+<tr>
+<td><code>got request from 127.0.0.1: 14</code></td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td><code>client received 30 bytes: 'got request from 127.0.0.1: 14</code></td>
+</tr>
+</tbody>
+</table>
+</div>
+<h2 id="server-http">Section 10.2: HTTP</h2>
+<p>The Hypertext Transfer Protocol (HTTP) describes one way that
+programs can exchange data over IP.
+HTTP is deliberately simple:
+the client sends a request specifying what it wants over a socket connection,
+and the server sends some data in response.
+The data may be copied from a file on disk,
+generated dynamically by a program,
+or some mix of the two.</p>
+<p>The most important thing about an HTTP request is that it's just text:
+any program that wants to can create one or parse one.
+An absolutely minimal HTTP request has just a <em>method</em>,
+a <em>URL</em>,
+and a <em>protocol version</em>
+on a single line separated by spaces:</p>
+<div class="highlight"><pre><span></span><code>GET /index.html HTTP/1.1
+</code></pre></div>
+<p>The HTTP method is almost always either "GET" (to fetch information)
+or "POST" (to submit form data or upload files).
+The URL specifies what the client wants;
+it is often a path to a file on disk,
+such as <code>/index.html</code>,
+but (and this is the crucial part)
+it's completely up to the server to decide what to do with it.
+The HTTP version is usually "HTTP/1.0" or "HTTP/1.1";
+the differences between the two don't matter to us.</p>
+<p>Most real requests have a few extra lines called <em>headers</em>,
+which are key value pairs like the three shown below:</p>
+<div class="highlight"><pre><span></span><code>GET /index.html HTTP/1.1
+Accept: text/html
+Accept-Language: en, fr
+If-Modified-Since: 16-May-2022
+</code></pre></div>
+<p>Unlike the keys in hash tables,
+keys may appear any number of times in HTTP headers.
+This allows a request to do things like
+specify that it's willing to accept several types of content.</p>
+<p>Finally,
+the <em>body</em> of the request is any extra data associated with the request.
+This is used when submitting data via web forms,
+when uploading files,
+and so on.
+There must be a blank line between the last header and the start of the body
+to signal the end of the headers.
+If there is a body,
+the request must have a header called <code>Content-Length</code>
+that tells the server how many bytes to read in the body of the request.</p>
+<p>An HTTP response is formatted like an HTTP request.
+Its first line has the protocol,
+a <em>status code</em> (like 200 for "OK" or 404 for "Not Found")
+and a status phrase (like "OK").
+There are then some headers,
+a blank line,
+and the body of the response:</p>
+<div class="highlight"><pre><span></span><code>HTTP/1.1 200 OK
+Date: Thu, 16 June 2022 12:28:53 GMT
+Server: minserve/2.2.14 (Linux)
+Last-Modified: Wed, 15 Jun 2022 19:15:56 GMT
+Content-Type: text/html
+Content-Length: 53
+
+&lt;html&gt;
+&lt;body&gt;
+&lt;h1&gt;Hello, World!&lt;/h1&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</code></pre></div>
+<p>Constructing HTTP requests is tedious,
+so most people use libraries to do most of the work.
+The most popular such library in Python is called <a href="https://requests.readthedocs.io/">requests</a>.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">requests</span>
+
+<span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;http://third-bit.com/test.html&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;status code:&quot;</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;content length:&quot;</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s2">&quot;content-length&quot;</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>status code: 200
+content length: 109
+&lt;html&gt;
+  &lt;head&gt;
+    &lt;title&gt;A Test Page&lt;/title&gt;
+  &lt;/head&gt;
+  &lt;body&gt;
+    &lt;h1&gt;A Test Page&lt;/h1&gt;
+  &lt;/body&gt;
+&lt;/html&gt;
+</code></pre></div>
+<p><code>request.get</code> sends an HTTP GET request to a server
+and returns an object containing the response.
+That object's <code>status_code</code> member is the response's status code;
+its <code>content_length</code> member  is the number of bytes in the response data,
+and <code>text</code> is the actual data
+(in this case, an HTML page).</p>
+<h2 id="server-static">Section 10.3: Hello, Web</h2>
+<p>We're now ready to write our first simple HTTP server.
+The basic idea is simple:</p>
+<ol>
+<li>Wait for someone to connect to our server and send an HTTP request;</li>
+<li>parse that request;</li>
+<li>figure out what it's asking for;</li>
+<li>fetch that data (or generate it dynamically);</li>
+<li>format the data as HTML; and</li>
+<li>send it back.</li>
+</ol>
+<p>Steps 1, 2, and 6 are the same from one application to another,
+so the Python standard library has a module called <code>http.server</code>
+that contains tools to do that for us
+so that we just have to take care of steps 3-5.
+Here's our first working web server:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">http.server</span> <span class="kn">import</span> <span class="n">HTTPServer</span><span class="p">,</span> <span class="n">BaseHTTPRequestHandler</span>
+
+<span class="c1"># Page to send back.</span>
+<span class="n">PAGE</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span><span class="se">\</span>
+<span class="s2">&lt;html&gt;</span>
+<span class="s2">&lt;body&gt;</span>
+<span class="s2">&lt;p&gt;Hello, web!&lt;/p&gt;</span>
+<span class="s2">&lt;/body&gt;</span>
+<span class="s2">&lt;/html&gt;</span>
+<span class="s2">&quot;&quot;&quot;</span>
+
+<span class="k">class</span> <span class="nc">RequestHandler</span><span class="p">(</span><span class="n">BaseHTTPRequestHandler</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Handle HTTP requests by returning a fixed &quot;page&quot;.&quot;&quot;&quot;</span>
+
+    <span class="c1"># Handle a GET request.</span>
+    <span class="k">def</span> <span class="nf">do_GET</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">content</span> <span class="o">=</span> <span class="nb">bytes</span><span class="p">(</span><span class="n">PAGE</span><span class="p">,</span> <span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">send_response</span><span class="p">(</span><span class="mi">200</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">send_header</span><span class="p">(</span><span class="s2">&quot;Content-Type&quot;</span><span class="p">,</span> <span class="s2">&quot;text/html&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">send_header</span><span class="p">(</span><span class="s2">&quot;Content-Length&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">content</span><span class="p">)))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">end_headers</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">server_address</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="mi">8080</span><span class="p">)</span>
+    <span class="n">server</span> <span class="o">=</span> <span class="n">HTTPServer</span><span class="p">(</span><span class="n">server_address</span><span class="p">,</span> <span class="n">RequestHandler</span><span class="p">)</span>
+    <span class="n">server</span><span class="o">.</span><span class="n">serve_forever</span><span class="p">()</span>
+</code></pre></div>
+<p>Let's start at the bottom and work our way up.</p>
+<ol>
+<li>Again, <code>SERVER_ADDRESS</code> that specifies the host the server is running on
+    and the port it's listening on.</li>
+<li>The <code>HTTPServer</code> class takes care of parsing requests and sending back responses.
+    When we construct it,
+    we give it the server address and the name of the class we've written
+    that handles requests the way we want---in this case, <code>RequestHandler</code>.</li>
+<li>Finally, we call the server's <code>serve_forever</code> method.
+    It will then run until it crashes or we stop it with Ctrl-C.</li>
+</ol>
+<p>So what does <code>RequestHandler</code> do?</p>
+<ol>
+<li>When the server receives a <code>GET</code> request,
+    it looks in the request handler for a method called <code>do_GET</code>.
+    (If it gets a <code>POST</code>, it looks for <code>do_POST</code> and so on.)</li>
+<li><code>do_GET</code> converts the text of the page we want to send back
+    from characters to bytes---we'll talk about this below.</li>
+<li>It then sends a response code (200),
+    a couple of headers to say what the content type is
+    and how many bytes the receiver should expect,
+    and a blank line (produced by the <code>end_headers</code> method).</li>
+<li>Finally, <code>do_GET</code> sends the content of the response
+    by calling <code>self.wfile.write</code>.
+    <code>self.wfile</code> is something that looks and acts like a write-only file,
+    but is actually sending bytes to the socket connection.</li>
+</ol>
+<p>If we run this program from the command line,
+it doesn't display anything:</p>
+<div class="highlight"><pre><span></span><code>$ python serve_static_content.py
+</code></pre></div>
+<p>If we then go to <code>http://localhost:8080</code> with our browser,
+though,
+we get this in our browser:</p>
+<div class="highlight"><pre><span></span><code>Hello, web!
+</code></pre></div>
+<p>and this in our shell:</p>
+<div class="highlight"><pre><span></span><code>127.0.0.1 - - [16/Sep/2022 06:34:59] &quot;GET / HTTP/1.1&quot; 200 -
+127.0.0.1 - - [16/Sep/2022 06:35:00] &quot;GET /favicon.ico HTTP/1.1&quot; 200 -
+</code></pre></div>
+<p>The first line is straightforward:
+since we didn't ask for a particular file,
+our browser has asked for '/' (the root directory of whatever the server is serving).
+The second line appears because
+our browser automatically sends a second request
+for an image file called <code>/favicon.ico</code>,
+which it will display as an icon in the address bar if it exists.</p>
+<h2 id="server-exercises">Section 10.4: Exercises</h2>
+<p>FIXME</p>
         </main>
       </div>
     </div>
