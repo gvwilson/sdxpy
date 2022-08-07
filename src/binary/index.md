@@ -242,7 +242,7 @@ if we want to represent a character whose code point is 1789:
     meaning "start of a character with one continuation byte
     and the 5 payload bits 11011".
 -   We encode the low 6 bits as 10111101,
-    meaning "a continuation byte wiht 6 payload bits 111101".
+    meaning "a continuation byte with 6 payload bits 111101".
 
 ## Floating Point Numbers {: #binary-fp}
 
@@ -551,7 +551,7 @@ the expression above will assign the string `"7s"` to `format`,
 which just happens to be exactly the right format to use to pack it.
 
 That's fine when we're writing,
-buthow do we know how much data to get if we're reading?
+but how do we know how much data to get if we're reading?
 For example, suppose we have the two strings "hello" and "Python".
 we can pack them like this:
 
