@@ -18,9 +18,9 @@ author = "Greg Wilson"
 chapters = [
     "introduction",
     "tester",
+    "backup",
     "interpreter",
     "dataframe",
-    "backup",
     "pipeline",
     "builder",
     "matching",
