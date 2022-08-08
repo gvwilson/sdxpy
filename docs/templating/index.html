@@ -286,11 +286,451 @@
   
 
   
+  <p class="definitions">
+    Terms defined:
+    <a class="gl-ref" href="../glossary/#bare_object" markdown="1">bare object</a>, <a class="gl-ref" href="../glossary/#dynamic_scoping" markdown="1">dynamic scoping</a>, <a class="gl-ref" href="../glossary/#environment" markdown="1">environment</a>, <a class="gl-ref" href="../glossary/#lexical_scoping" markdown="1">lexical scoping</a>, <a class="gl-ref" href="../glossary/#stack_frame" markdown="1">stack frame</a>, <a class="gl-ref" href="../glossary/#static_site_generator" markdown="1">static site generator</a>, <a class="gl-ref" href="../glossary/#visitor_pattern" markdown="1">Visitor pattern</a>
+  </p>
+  
+
+  
 
   
 
 
-          <p>FIXME</p>
+          <p>Every program needs documentation in order to be usable,
+and the best place to put that documentation is on the web.
+Writing and updating pages by hand is time-consuming and error-prone,
+particularly when many parts are the same,
+so most documentation sites use some kind of
+<span class="ix-entry" ix-key="static site generator" markdown="1"><a class="gl-ref" href="../glossary/#static_site_generator" markdown="1">static site generator</a></span>
+to create web pages from templates.</p>
+<p>At the heart of every static site generator is a page templating system.
+Thousands of these have been written in the last thirty years
+in every popular programming language
+(and one language, <span class="ix-entry" ix-key="PHP" markdown="1"><a href="https://www.php.net/">PHP</a></span>, was created for this purpose).
+Most of these systems use one of three designs
+(<span class="FIXME">FIXME</span>):</p>
+<ol>
+<li>
+<p>Mix commands in a language such as JavaScript with the HTML or Markdown
+    using some kind of marker to indicate which parts are commands
+    and which parts are to be taken as-is.
+    This approach is taken by <span class="ix-entry" ix-key="EJS" markdown="1"><a href="https://ejs.co/">EJS</a></span>,
+    which we used to write these lessons.</p>
+</li>
+<li>
+<p>Create a mini-language with its own commands like <span class="ix-entry" ix-key="Jekyll" markdown="1"><a href="https://jekyllrb.com/">Jekyll</a></span>
+    (which is used by <span class="ix-entry" ix-key="GitHub Pages" markdown="1">[GitHub Pages][github-pages]</span>).
+    Mini-languages are appealing because they are smaller and safer than general-purpose languages,
+    but experience shows that they eventually grow
+    most of the features of a general-purpose language.
+    Again, some kind of marker must be used to show
+    which parts of the page are code and which are ordinary text.</p>
+</li>
+<li>
+<p>Put directives in specially-named attributes in the HTML.
+    This approach has been the least popular,
+    but since pages are valid HTML,
+    it eliminates the need for a special parser.</p>
+</li>
+</ol>
+<p><span class="FIXME">FIXME</span></p>
+<p>In this chapter we will build a simple page templating system using the third strategy.
+We will process each page independently by parsing the HTML
+and walking the <span class="ix-entry" ix-key="DOM" markdown="1">DOM</span> to find nodes with special attributes.
+Our program will execute the instructions in those nodes
+to do the equivalent of loops and if/else statements;
+other nodes will be copied as-is to create text.</p>
+<h2 id="templating-syntax">Section 15.1: What will our system look like?</h2>
+<p>Let's start by deciding what "done" looks like.
+Suppose we want to turn an array of strings into an HTML list.
+Our page will look like this:</p>
+<p><span class="FIXME">FIXME</span></p>
+<p class="continue">The attribute <code>z-loop</code> tells the tool to repeat the contents of that node;
+the loop variable and the collection being looped over are separated by a colon.
+The attribute <code>z-var</code> tells the tool to fill in the node with the value of the variable.</p>
+<p>When our tool processes this page,
+the output will be standard HTML without any traces of how it was created:</p>
+<p><span class="FIXME">FIXME</span></p>
+<div class="callout">
+<h3>Human-readable vs. machine-readable</h3>
+<p>The introduction said that mini-languages for page templating
+quickly start to accumulate extra features.
+We have already started down that road
+by putting the loop variable and loop target in a single attribute
+and splitting that attribute to get them out.
+Doing this makes loops easy for people to type,
+but hides important information from standard HTML processing tools.
+They can't know that this particular attribute of these particular elements
+contains multiple values
+or that those values should be extracted by splitting a string on a colon.
+We could instead require people to use two attributes, as in:</p>
+<div class="highlight"><pre><span></span><code><span class="p">&lt;</span><span class="nt">ul</span> <span class="na">z-loop</span><span class="o">=</span><span class="s">&quot;names&quot;</span> <span class="na">z-loop-var</span><span class="o">=</span><span class="s">&quot;item&quot;</span><span class="p">&gt;</span>
+</code></pre></div>
+<p class="continue">but we have decided to err on the side of minimal typing.
+And note that strictly speaking,
+we should call our attributes <code>data-something</code> instead of <code>z-something</code>
+to conform with <span class="ix-entry" ix-key="HTML5 specification" markdown="1">[the HTML5 specification][html5-data-attributes]</span>,
+but by the time we're finished processing our templates,
+there shouldn't be any <code>z-*</code> attributes left to confuse a browser.</p>
+</div>
+<p>The next step is to define the API for filling in templates.
+Our tool needs the template itself,
+somewhere to write its output,
+and some variables to use in the expansion.
+These variables might come from a configuration file,
+from a YAML header in the file itself,
+or from some mix of the two;
+for the moment,
+we will just pass them into the expansion function as an object:</p>
+<p><span class="FIXME">FIXME</span></p>
+<h2 id="templating-values">Section 15.2: How can we keep track of values?</h2>
+<p>Speaking of variables,
+we need a way to keep track of their current values;
+we say "current" because the value of a loop variable changes each time we go around the loop.
+We also need to maintain multiple sets of variables
+so that variables used inside a loop
+don't conflict with ones used outside it.
+(We don't actually "need" to do this---we could just have one global set of variables---but
+experience teaches us that if all our variables are global,
+all of our programs will be buggy.)</p>
+<p>The standard way to manage variables is to create a stack of lookup tables.
+Each <span class="ix-entry" ix-key="stack frame" markdown="1"><a class="gl-ref" href="../glossary/#stack_frame" markdown="1">stack frame</a></span> is an object with names and values;
+when we need to find a variable,
+we look through the stack frames in order to find the uppermost definition of that variable..</p>
+<div class="callout">
+<h3>Scoping rules</h3>
+<p>Searching the stack <span class="ix-entry" ix-key="call stack!stack frame;stack frame" markdown="1">frame</span> by frame
+while the program is running
+is called is <span class="ix-entry" ix-key="dynamic scoping;scoping!dynamic" markdown="1"><a class="gl-ref" href="../glossary/#dynamic_scoping" markdown="1">dynamic scoping</a></span>,
+since we find variables while the program is running.
+In contrast,
+most programming languages used <span class="ix-entry" ix-key="lexical scoping;scoping!lexical" markdown="1"><a class="gl-ref" href="../glossary/#lexical_scoping" markdown="1">lexical scoping</a></span>,
+which figures out what a variable name refers to based on the structure of the program text.</p>
+</div>
+<p>The values in a running program are sometimes called
+an <span class="ix-entry" ix-key="environment (to store variables);call stack!environment" markdown="1"><a class="gl-ref" href="../glossary/#environment" markdown="1">environment</a></span>,
+so we have named our stack-handling class <code>Env</code>.
+Its methods let us push and pop new stack frames
+and find a variable given its name;
+if the variable can't be found,
+<code>Env.find</code> returns <code>undefined</code> instead of throwing an exception
+(<span class="FIXME">FIXME</span>).</p>
+<p><span class="FIXME">FIXME</span></p>
+<p><span class="FIXME">FIXME</span></p>
+<h2 id="templating-nodes">Section 15.3: How do we handle nodes?</h2>
+<p>HTML pages have a nested structure,
+so we will process them using
+the <span class="ix-entry" ix-key="Visitor pattern;design pattern!Visitor" markdown="1"><a class="gl-ref" href="../glossary/#visitor_pattern" markdown="1">Visitor</a></span> design pattern.
+<code>Visitor</code>'s constructor takes the root node of the DOM tree as an argument and saves it.
+When we call <code>Visitor.walk</code> without a value,
+it starts recursing from that saved root;
+if <code>.walk</code> is given a value (as it is during recursive calls),
+it uses that instead.</p>
+<p><span class="FIXME">FIXME</span></p>
+<p class="continue"><code>Visitor</code> defines two methods called <code>open</code> and <code>close</code> that are called
+when we first arrive at a node and when we are finished with it
+(<span class="FIXME">FIXME</span>).
+The default implementations of these methods throw exceptions
+to remind the creators of derived classes to implement their own versions.</p>
+<p><span class="FIXME">FIXME</span></p>
+<p>The <code>Expander</code> class is specialization of <code>Visitor</code>
+that uses an <code>Env</code> to keep track of variables.
+It imports a handler
+for each type of special node we support---we will write those in a moment---and
+uses them to process each type of node:</p>
+<ol>
+<li>
+<p>If the node is plain text, copy it to the output.</p>
+</li>
+<li>
+<p>If there is a handler for the node,
+    call the handler's <code>open</code> or <code>close</code> method.</p>
+</li>
+<li>
+<p>Otherwise, open or close a regular tag.</p>
+</li>
+</ol>
+<p><span class="FIXME">FIXME</span></p>
+<p>Checking to see if there is a handler for a particular node
+and getting that handler are straightforward---we just
+look at the node's attributes:</p>
+<p><span class="FIXME">FIXME</span></p>
+<p>Finally, we need a few helper methods to show tags and generate output:</p>
+<p><span class="FIXME">FIXME</span></p>
+<p class="continue">Notice that this class adds strings to an array and joins them all right at the end
+rather than concatenating strings repeatedly.
+Doing this is more efficient and also helps with debugging,
+since each string in the array corresponds to a single method call.</p>
+<h2 id="templating-handlers">Section 15.4: How do we implement node handlers?</h2>
+<p>At this point
+we have built a lot of infrastructure but haven't actually processed any special nodes.
+To do that,
+let's write a handler that copies a constant number into the output:</p>
+<p><span class="FIXME">FIXME</span></p>
+<p class="continue">When we enter a node like <code>&lt;span z-num="123"/&gt;</code>
+this handler asks the expander to show an opening tag
+followed by the value of the <code>z-num</code> attribute.
+When we exit the node,
+the handler asks the expander to close the tag.
+The handler doesn't know whether things are printed immediately,
+added to an output list,
+or something else;
+it just knows that whoever called it implements the low-level operations it needs.</p>
+<p>Note that this expander is <em>not</em> a class,
+but instead an object with two functions stored under the keys <code>open</code> and <code>close</code>.
+We could use a class for each handler
+so that handlers can store any extra state they need,
+but <span class="ix-entry" ix-key="bare object;software design!bare object" markdown="1"><a class="gl-ref" href="../glossary/#bare_object" markdown="1">bare objects</a></span> are common and useful in JavaScript
+(though we will see below that we <em>should</em> have used classes).</p>
+<p>So much for constants; what about variables?</p>
+<p><span class="FIXME">FIXME</span></p>
+<p class="continue">This code is almost the same as the previous example.
+The only difference is that instead of copying the attribute's value
+directly to the output,
+we use it as a key to look up a value in the environment.</p>
+<p>These two pairs of handlers look plausible, but do they work?
+To find out,
+we can build a program that loads variable definitions from a JSON file,
+reads an HTML template,
+and does the expansion:</p>
+<p><span class="FIXME">FIXME</span></p>
+<p>We added new variables for our test cases one by one
+as we were writing this chapter.
+To avoid repeating text repeatedly,
+we show the entire set once:</p>
+<p><span class="FIXME">FIXME</span></p>
+<p>Our first test:
+is static text copied over as-is (<span class="FIXME">FIXME</span>)?</p>
+<p><span class="FIXME">FIXME</span>
+<span class="FIXME">FIXME</span>
+<span class="FIXME">FIXME</span></p>
+<p><span class="FIXME">FIXME</span></p>
+<p>Good.
+Now, does the expander handle constants (<span class="FIXME">FIXME</span>)?</p>
+<p><span class="FIXME">FIXME</span>
+<span class="FIXME">FIXME</span></p>
+<p><span class="FIXME">FIXME</span></p>
+<p>What about a single variable (<span class="FIXME">FIXME</span>)?</p>
+<p><span class="FIXME">FIXME</span>
+<span class="FIXME">FIXME</span></p>
+<p><span class="FIXME">FIXME</span></p>
+<p>What about a page containing multiple variables?
+There's no reason it should fail if the single-variable case works,
+but we should still check---again,
+software isn't done until it has been tested (<span class="FIXME">FIXME</span>).</p>
+<p><span class="FIXME">FIXME</span>
+<span class="FIXME">FIXME</span></p>
+<p><span class="FIXME">FIXME</span></p>
+<h2 id="templating-flow">Section 15.5: How can we implement control flow?</h2>
+<p>Our tool supports two types of control flow:
+conditional expressions and loops.
+Since we don't support Boolean expressions like <code>and</code> and <code>or</code>,
+implementing a conditional is as simple as looking up a variable
+(which we know how to do)
+and then expanding the node if the value is true:</p>
+<p><span class="FIXME">FIXME</span></p>
+<p>Let's test it (<span class="FIXME">FIXME</span>):</p>
+<p><span class="FIXME">FIXME</span>
+<span class="FIXME">FIXME</span></p>
+<p><span class="FIXME">FIXME</span></p>
+<blockquote class="break-before">
+<h3>Spot the bug</h3>
+<p>This implementation of <code>if</code> contains a subtle bug.
+The <code>open</code> and <code>close</code> functions both check the value of the control variable.
+If something inside the body of the <code>if</code> changes that value,
+the result could be an opening tag without a matching closing tag or vice versa.
+We haven't implemented an assignment operator,
+so right now there's no way for that to happen,
+but it's a plausible thing for us to add later,
+and tracking down a bug in old code that is revealed by new code
+is always a headache.</p>
+</blockquote>
+<p>Finally we come to loops.
+For these,
+we need to get the array we're looping over from the environment
+and do something for each of its elements.
+That "something" is:</p>
+<ol>
+<li>
+<p>Create a new stack frame holding the current value of the loop variable.</p>
+</li>
+<li>
+<p>Expand all of the node's children with that stack frame in place.</p>
+</li>
+<li>
+<p>Pop the stack frame to get rid of the temporary variable.</p>
+</li>
+</ol>
+<p><span class="FIXME">FIXME</span></p>
+<p>Once again,
+it's not done until we test it (<span class="FIXME">FIXME</span>):</p>
+<p><span class="FIXME">FIXME</span>
+<span class="FIXME">FIXME</span></p>
+<p><span class="FIXME">FIXME</span></p>
+<p>Notice how we create the new stack frame using:</p>
+<div class="highlight"><pre><span></span><code><span class="p">{</span><span class="w"> </span><span class="p">[</span><span class="nx">indexName</span><span class="p">]</span><span class="o">:</span><span class="w"> </span><span class="nx">index</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+</code></pre></div>
+<p class="continue">This is an ugly but useful trick.
+We can't write:</p>
+<div class="highlight"><pre><span></span><code><span class="p">{</span><span class="w"> </span><span class="nx">indexName</span><span class="o">:</span><span class="w"> </span><span class="nx">index</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+</code></pre></div>
+<p class="continue">because that would create an object with the string <code>indexName</code> as a key,
+rather than one with the value of the variable <code>indexName</code> as its key.
+We can't do this either:</p>
+<div class="highlight"><pre><span></span><code><span class="p">{</span><span class="w"> </span><span class="sb">`</span><span class="si">${</span><span class="nx">indexName</span><span class="si">}</span><span class="sb">`</span><span class="o">:</span><span class="w"> </span><span class="nx">index</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+</code></pre></div>
+<p class="continue">though it seems like we should be able to.
+Instead,
+we create an array containing the string we want.
+Since JavaScript automatically converts arrays to strings
+by concatenating their elements when it needs to,
+our expression is a quick way to get the same effect as:</p>
+<div class="highlight"><pre><span></span><code><span class="kd">const</span><span class="w"> </span><span class="nx">temp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{}</span><span class="w"></span>
+<span class="nx">temp</span><span class="p">[</span><span class="nx">indexName</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">index</span><span class="w"></span>
+<span class="nx">expander</span><span class="p">.</span><span class="nx">env</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">temp</span><span class="p">)</span><span class="w"></span>
+</code></pre></div>
+<p class="continue">Those three lines <em>are</em> much easier to understand, though,
+so we should probably have been less clever.</p>
+<h2 id="templating-learning">Section 15.6: How did we know how to do all of this?</h2>
+<p>We have just implemented a simple programming language.
+It can't do arithmetic,
+but if we wanted to add tags like:</p>
+<div class="highlight"><pre><span></span><code><span class="o">&lt;</span><span class="nx">span</span><span class="w"> </span><span class="nx">z</span><span class="o">-</span><span class="nx">math</span><span class="o">=</span><span class="s2">&quot;+&quot;</span><span class="o">&gt;&lt;</span><span class="nx">span</span><span class="w"> </span><span class="nx">z</span><span class="o">-</span><span class="kd">var</span><span class="o">=</span><span class="s2">&quot;width&quot;</span><span class="o">/&gt;&lt;</span><span class="nx">span</span><span class="w"> </span><span class="nx">z</span><span class="o">-</span><span class="nx">num</span><span class="o">=</span><span class="s2">&quot;1&quot;</span><span class="c1">//&gt;</span><span class="w"></span>
+</code></pre></div>
+<p class="continue">we could.
+It's unlikely anyone would use the result---typing all of that
+is so much clumsier than typing <code>width+1</code> that people wouldn't use it
+unless they had no other choice---but the basic design is there.</p>
+<p>We didn't invent any of this from scratch,
+any more than we invented the parsing algorithm of <a class="x-ref" href="../parser/">Chapter 9</a>.
+Instead,
+we did what you are doing now:
+we read what other programmers had written
+and tried to make sense of the key ideas.</p>
+<p>The problem is that "making sense" depends on who we are.
+When we use a low-level language,
+we incur the <span class="ix-entry" ix-key="cognitive load" markdown="1">cognitive load</span> of assembling micro-steps into something more meaningful.
+When we use a high-level language,
+on the other hand,
+we incur a similar load translating functions of functions of functions
+(or meta-classes templated on object factories)
+into actual operations on actual data.</p>
+<p>More experienced programmers are more capable at both ends of the curve,
+but that's not the only thing that changes.
+If a novice's comprehension curve looks like the one on the left
+of <span class="FIXME">FIXME</span>,
+then an expert's looks like the one on the right.
+Experts don't just understand more at all levels of abstraction;
+their <em>preferred</em> level has also shifted
+so that \(\sqrt{x^2 + y^2}\)
+is actually more readable than the medieval expression
+"the side of the square whose area is the sum of the areas of the two squares
+whose sides are given by the first part and the second part".</p>
+<p><span class="FIXME">FIXME</span></p>
+<p>One implication of this is that for any given task,
+the software that is quickest for a novice to comprehend
+will almost certainly be different from the software that
+an expert can understand most quickly.
+In an ideal world our tools would automatically re-represent programs at different levels,
+so that with a click of a button we could view our code as either:</p>
+<div class="highlight"><pre><span></span><code>const hosts = links.map(a =&gt; a.href.split(&#39;:&#39;)[1].split(&#39;/&#39;)[0]).unique()
+</code></pre></div>
+<p>or:</p>
+<div class="highlight"><pre><span></span><code>hosts = []
+for (each a in links) do
+  temp &lt;- attr(a, &#39;href&#39;).split(&#39;:&#39;)[1].split(&#39;/&#39;)[0]
+  if (not (temp in hosts)) do
+    hosts.append(temp)
+  end
+end
+</code></pre></div>
+<p>just as we could change the colors used for syntax highlighting
+or the depth to which loop bodies are indented.
+But today's tools don't do that,
+and I suspect that any IDE smart enough to translate between comprehension levels automatically
+would also be smart enough to write the code without our help.</p>
+<h2 id="templating-exercises">Section 15.7: Exercises</h2>
+<h3 class="exercise">Tracing execution</h3>
+<p>Add a directive <code>&lt;span z-trace="variable"/&gt;</code>
+that prints the current value of a variable using <code>console.error</code> for debugging.</p>
+<h3 class="exercise">Unit tests</h3>
+<p>Write unit tests for template expansion using Mocha.</p>
+<h3 class="exercise">Trimming text</h3>
+<p>Modify all of the directives to take an extra optional attribute <code>z-trim="true"</code>
+If this attribute is set,
+leading and trailing whitespace is trimmed from the directive's expansion.</p>
+<h3 class="exercise">Literal text</h3>
+<p>Add a directive <code>&lt;div z-literal="true"&gt;…&lt;/div&gt;</code> that copies the enclosed text as-is
+without interpreting or expanding any contained directives.
+(A directive like this would be needed when writing documentation for the template expander.)</p>
+<h3 class="exercise">Including other files</h3>
+<ol>
+<li>
+<p>Add a directive <code>&lt;div z-include="filename.html"/&gt;</code> that includes another file
+    in the file being processed.</p>
+</li>
+<li>
+<p>Should included files be processed and the result copied into the including file,
+    or should the text be copied in and then processed?
+    What difference does it make to the way variables are evaluated?</p>
+</li>
+</ol>
+<h3 class="exercise">HTML snippets</h3>
+<p>Add a directive <code>&lt;div z-snippet="variable"&gt;…&lt;/div&gt;</code> that saves some text in a variable
+so that it can be displayed later.
+For example:</p>
+<div class="highlight"><pre><span></span><code><span class="p">&lt;</span><span class="nt">html</span><span class="p">&gt;</span>
+  <span class="p">&lt;</span><span class="nt">body</span><span class="p">&gt;</span>
+    <span class="p">&lt;</span><span class="nt">div</span> <span class="na">z-snippet</span><span class="o">=</span><span class="s">&quot;prefix&quot;</span><span class="p">&gt;&lt;</span><span class="nt">strong</span><span class="p">&gt;</span>Important:<span class="p">&lt;/</span><span class="nt">strong</span><span class="p">&gt;&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+    <span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span>Expect three items<span class="p">&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+    <span class="p">&lt;</span><span class="nt">ul</span><span class="p">&gt;</span>
+      <span class="p">&lt;</span><span class="nt">li</span> <span class="na">z-loop</span><span class="o">=</span><span class="s">&quot;item:names&quot;</span><span class="p">&gt;</span>
+        <span class="p">&lt;</span><span class="nt">span</span> <span class="na">z-var</span><span class="o">=</span><span class="s">&quot;prefix&quot;</span><span class="p">&gt;&lt;</span><span class="nt">span</span> <span class="na">z-var</span><span class="o">=</span><span class="s">&quot;item&quot;</span><span class="p">/&gt;</span>
+      <span class="p">&lt;/</span><span class="nt">li</span><span class="p">&gt;</span>
+    <span class="p">&lt;/</span><span class="nt">ul</span><span class="p">&gt;</span>
+  <span class="p">&lt;/</span><span class="nt">body</span><span class="p">&gt;</span>
+<span class="p">&lt;/</span><span class="nt">html</span><span class="p">&gt;</span>
+</code></pre></div>
+<p class="continue">would printed the word "Important:" in bold before each item in the list.</p>
+<h3 class="exercise">YAML headers</h3>
+<p>Modify the template expander to handle variables defined in a YAML header in the page being processed.
+For example, if the page is:</p>
+<div class="highlight"><pre><span></span><code>---
+name: &quot;Dorothy Johnson Vaughan&quot;
+---
+<span class="p">&lt;</span><span class="nt">html</span><span class="p">&gt;</span>
+  <span class="p">&lt;</span><span class="nt">body</span><span class="p">&gt;</span>
+    <span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;&lt;</span><span class="nt">span</span> <span class="na">z-var</span><span class="o">=</span><span class="s">&quot;name&quot;</span><span class="p">/&gt;&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+  <span class="p">&lt;/</span><span class="nt">body</span><span class="p">&gt;</span>
+<span class="p">&lt;/</span><span class="nt">html</span><span class="p">&gt;</span>
+</code></pre></div>
+<p class="continue">will create a paragraph containing the given name.</p>
+<h3 class="exercise">Expanding all files</h3>
+<p>Write a program <code>expand-all.js</code> that takes two directory names as command-line arguments
+and builds a website in the second directory by expanding all of the HTML files found in the first
+or in sub-directories of the first.</p>
+<h3 class="exercise">Counting loops</h3>
+<p>Add a directive <code>&lt;div z-index="indexName" z-limit="limitName"&gt;…&lt;/div&gt;</code>
+that loops from zero to the value in the variable <code>limitName</code>,
+putting the current iteration index in <code>indexName</code>.</p>
+<h3 class="exercise">Auxiliary functions</h3>
+<ol>
+<li>
+<p>Modify <code>Expander</code> so that it takes an extra argument <code>auxiliaries</code>
+    containing zero or more named functions:</p>
+<div class="highlight"><pre><span></span><code><span class="kd">const</span><span class="w"> </span><span class="nx">expander</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Expander</span><span class="p">(</span><span class="nx">root</span><span class="p">,</span><span class="w"> </span><span class="nx">vars</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="nx">max</span><span class="o">:</span><span class="w"> </span><span class="nb">Math</span><span class="p">.</span><span class="nx">max</span><span class="p">,</span><span class="w"></span>
+<span class="w">  </span><span class="nx">trim</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">x</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">x</span><span class="p">.</span><span class="nx">trim</span><span class="p">()</span><span class="w"></span>
+<span class="p">})</span><span class="w"></span>
+</code></pre></div>
+</li>
+<li>
+<p>Add a directive <code>&lt;span z-call="functionName" z-args="var,var"/&gt;</code>
+    that looks up a function in <code>auxiliaries</code> and calls it
+    with the given variables as arguments.</p>
+</li>
+</ol>
         </main>
       </div>
     </div>

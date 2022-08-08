@@ -74,7 +74,7 @@ check: lint
 
 ## lint: check project structure
 .PHONY: lint
-lint: clean
+lint: clean build
 	@python ./bin/lint.py \
 	--config config.py \
 	--dom info/dom.yml \
