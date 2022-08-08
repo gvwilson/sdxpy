@@ -284,13 +284,678 @@
   
 
   
+  <p class="definitions">
+    Terms defined:
+    <a class="gl-ref" href="../glossary/#tdd" markdown="1">test-driven development</a>
+  </p>
+  
+
+  
 
   
 
   
 
 
-          <p>FIXME</p>
+          <ul>
+<li>Want reproducible data processing pipelines with a "test run" option<ul>
+<li>Several moving parts, so do it in steps</li>
+</ul>
+</li>
+<li>We could write this:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="n">start</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s2">&quot;input.csv&quot;</span><span class="p">)</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">third</span><span class="p">(</span><span class="n">second</span><span class="p">(</span><span class="n">first</span><span class="p">(</span><span class="n">start</span><span class="p">)))</span>
+<span class="n">result</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="s2">&quot;output.csv&quot;</span><span class="p">)</span>
+</code></pre></div>
+<ul>
+<li>But if we have parameters it becomes:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="n">start</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s2">&quot;input.csv&quot;</span><span class="p">)</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">third</span><span class="p">(</span><span class="n">second</span><span class="p">(</span><span class="n">first</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">alpha</span><span class="p">),</span> <span class="n">beta</span><span class="p">,</span> <span class="n">gamma</span><span class="p">),</span> <span class="n">delta</span><span class="p">,</span> <span class="n">epsilon</span><span class="p">)</span>
+<span class="n">result</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="s2">&quot;output.csv&quot;</span><span class="p">)</span>
+</code></pre></div>
+<ul>
+<li>Quick, which function is getting <code>delta</code> as a parameter?</li>
+<li>And how does someone reproduce this without reading the history of your GitHub repo?</li>
+</ul>
+<h2 id="pipeline-funclist">Section 6.1: Lists of Functions</h2>
+<ul>
+<li>Break it down to more readable steps:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s2">&quot;input.csv&quot;</span><span class="p">)</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">first</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">alpha</span><span class="p">)</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">second</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">beta</span><span class="p">,</span> <span class="n">gamma</span><span class="p">)</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">third</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">delta</span><span class="p">,</span> <span class="n">epsilon</span><span class="p">)</span>
+<span class="n">data</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="s2">&quot;output.csv&quot;</span><span class="p">)</span>
+</code></pre></div>
+<ul>
+<li>But a function is just another kind of object, so we can put it in a list...</li>
+<li>...and we can spread keyword arguments in a call using <code>*</code></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="n">pipeline</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">[</span><span class="n">first</span><span class="p">,</span> <span class="n">alpha</span><span class="p">],</span>
+    <span class="p">[</span><span class="n">second</span><span class="p">,</span> <span class="n">beta</span><span class="p">,</span> <span class="n">gamma</span><span class="p">],</span>
+    <span class="p">[</span><span class="n">third</span><span class="p">,</span> <span class="n">delta</span><span class="p">,</span> <span class="n">epsilon</span><span class="p">]</span>
+<span class="p">]</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s2">&quot;input.csv&quot;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="n">pipeline</span><span class="p">:</span>
+    <span class="n">func</span><span class="p">,</span> <span class="n">params</span> <span class="o">=</span> <span class="n">step</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">step</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="o">*</span><span class="n">params</span><span class="p">)</span>
+<span class="n">data</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="s2">&quot;output.csv&quot;</span><span class="p">)</span>
+</code></pre></div>
+<h2 id="pipeline-config">Section 6.2: Configuration</h2>
+<ul>
+<li>Every function remembers the name it was given when it was defined</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">proof</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+    <span class="k">pass</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">proof</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
+<span class="c1"># &gt; proof</span>
+</code></pre></div>
+<ul>
+<li>So we can convert a list of functions into a lookup table</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">make_table</span><span class="p">(</span><span class="o">*</span><span class="n">functions</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">{</span><span class="n">f</span><span class="o">.</span><span class="vm">__name__</span><span class="p">:</span> <span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">functions</span><span class="p">}</span>
+
+<span class="k">def</span> <span class="nf">left</span><span class="p">():</span> <span class="k">pass</span>
+<span class="k">def</span> <span class="nf">right</span><span class="p">():</span> <span class="k">pass</span>
+
+<span class="n">table</span> <span class="o">=</span> <span class="n">make_table</span><span class="p">(</span><span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">table</span><span class="p">)</span>
+<span class="c1"># &gt; {&#39;left&#39;: &lt;function left at 0x101a3bdc0&gt;, &#39;right&#39;: &lt;function right at 0x101a3bee0&gt;}</span>
+</code></pre></div>
+<ul>
+<li>Which means we should be able to run a pipeline from a YAML file that looks like this:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">function</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">left</span><span class="w"></span>
+<span class="w">  </span><span class="nt">count</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3</span><span class="w"></span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">function</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">right</span><span class="w"></span>
+<span class="w">  </span><span class="nt">size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.9</span><span class="w"></span>
+</code></pre></div>
+<ul>
+<li>Here's the code:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">pipeline</span><span class="p">(</span><span class="n">config_file</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="o">*</span><span class="n">functions</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Construct and run a processing pipeline.&quot;&quot;&quot;</span>
+    <span class="c1"># Set up.</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="n">_read_config</span><span class="p">(</span><span class="n">config_file</span><span class="p">)</span>
+    <span class="n">functions</span> <span class="o">=</span> <span class="p">{</span><span class="n">f</span><span class="o">.</span><span class="vm">__name__</span><span class="p">:</span> <span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">functions</span><span class="p">}</span>
+
+    <span class="c1"># Run each stage in turn.</span>
+    <span class="k">for</span> <span class="n">stage</span> <span class="ow">in</span> <span class="n">config</span><span class="p">:</span>
+        <span class="n">func</span> <span class="o">=</span> <span class="n">functions</span><span class="p">[</span><span class="n">stage</span><span class="p">[</span><span class="s2">&quot;function&quot;</span><span class="p">]]</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">stage</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">stage</span> <span class="k">if</span> <span class="n">key</span> <span class="o">!=</span> <span class="s2">&quot;function&quot;</span><span class="p">}</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">params</span><span class="p">)</span>
+
+    <span class="c1"># Return final result.</span>
+    <span class="k">return</span> <span class="n">data</span>
+
+<span class="k">def</span> <span class="nf">_read_config</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">reader</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">reader</span><span class="p">)</span>
+</code></pre></div>
+<ul>
+<li>Read the YAML configuration file (in a separate function so we can replace it for testing)</li>
+<li>Create a lookup table from function name to function<ul>
+<li><code>pipeline</code> has been given the functions it's allowed to call</li>
+</ul>
+</li>
+<li>
+<p>For each stage in the configuration file:</p>
+<ul>
+<li>Find the function in the lookup table</li>
+<li>Assemble the parameters in a dictionary (rather than a list) <em>without</em> the function name</li>
+<li>Call the function with the current data</li>
+<li>Return the final result</li>
+</ul>
+</li>
+<li>
+<p>Here are three functions we can use to test this:</p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">first</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[[</span><span class="mi">0</span><span class="p">]]</span>
+
+<span class="k">def</span> <span class="nf">head</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">num</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="n">num</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">tail</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">num</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">df</span><span class="o">.</span><span class="n">tail</span><span class="p">(</span><span class="n">num</span><span class="p">)</span>
+</code></pre></div>
+<ul>
+<li>Yes, they're trivial, but we <em>want</em> trivial for testing</li>
+<li>Let's create a simple dataframe for testing:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nd">@fixture</span>
+<span class="k">def</span> <span class="nf">simple_df</span><span class="p">():</span>
+    <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
+        <span class="s2">&quot;red&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">],</span>
+        <span class="s2">&quot;green&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">],</span>
+        <span class="s2">&quot;blue&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.7</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">]</span>
+    <span class="p">})</span>
+</code></pre></div>
+<ul>
+<li>An empty pipeline should just return the original data</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="n">READ_CONFIG</span> <span class="o">=</span> <span class="s2">&quot;nitinat.pipeline._read_config&quot;</span>
+
+<span class="k">def</span> <span class="nf">test_pipeline_empty_returns_original_data</span><span class="p">(</span><span class="n">simple_df</span><span class="p">):</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">with</span> <span class="n">patch</span><span class="p">(</span><span class="n">READ_CONFIG</span><span class="p">,</span> <span class="n">return_value</span><span class="o">=</span><span class="n">config</span><span class="p">):</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">pipeline</span><span class="p">(</span><span class="s2">&quot;test.yml&quot;</span><span class="p">,</span> <span class="n">simple_df</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="n">result</span><span class="o">.</span><span class="n">equals</span><span class="p">(</span><span class="n">simple_df</span><span class="p">)</span>
+</code></pre></div>
+<ul>
+<li>Here's a more complex pipeline:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">test_pipeline_multiple_functions</span><span class="p">(</span><span class="n">simple_df</span><span class="p">):</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">{</span><span class="s2">&quot;function&quot;</span><span class="p">:</span> <span class="s2">&quot;head&quot;</span><span class="p">,</span> <span class="s2">&quot;num&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">},</span>
+        <span class="p">{</span><span class="s2">&quot;function&quot;</span><span class="p">:</span> <span class="s2">&quot;tail&quot;</span><span class="p">,</span> <span class="s2">&quot;num&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">}</span>
+    <span class="p">]</span>
+    <span class="k">with</span> <span class="n">patch</span><span class="p">(</span><span class="n">READ_CONFIG</span><span class="p">,</span> <span class="n">return_value</span><span class="o">=</span><span class="n">config</span><span class="p">):</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">pipeline</span><span class="p">(</span><span class="s2">&quot;test.yml&quot;</span><span class="p">,</span> <span class="n">simple_df</span><span class="p">,</span> <span class="n">head</span><span class="p">,</span> <span class="n">tail</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">result</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+        <span class="k">assert</span> <span class="n">result</span><span class="o">.</span><span class="n">equals</span><span class="p">(</span><span class="n">simple_df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[[</span><span class="mi">1</span><span class="p">]])</span>
+</code></pre></div>
+<ul>
+<li>
+<p>One more test: configuration file and data file on disk</p>
+</li>
+<li>
+<p>Add a reader function</p>
+<ul>
+<li>Must be the first in the pipeline, so incoming dataframe must be <code>None</code></li>
+</ul>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">reader</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;To demonstrative pipeline operation.&quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="n">df</span> <span class="ow">is</span> <span class="kc">None</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">reader</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">reader</span><span class="p">)</span>
+</code></pre></div>
+<ul>
+<li>Write a configuration file</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">function</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">reader</span><span class="w"></span>
+<span class="w">  </span><span class="nt">filename</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">three-colors.csv</span><span class="w"></span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">function</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">head</span><span class="w"></span>
+<span class="w">  </span><span class="nt">num</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span><span class="w"></span>
+</code></pre></div>
+<ul>
+<li>Create the data file</li>
+</ul>
+<div class="highlight"><pre><span></span><code>red,green,blue
+0.1,0.4,0.7
+0.2,0.5,0.8
+0.3,0.6,0.9
+</code></pre></div>
+<ul>
+<li>Write the test</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">test_pipeline_with_real_files</span><span class="p">():</span>
+    <span class="n">filename</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s2">&quot;simple-pipeline.yml&quot;</span><span class="p">)</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">pipeline</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">reader</span><span class="p">,</span> <span class="n">head</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">result</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+</code></pre></div>
+<ul>
+<li>Again, the special variable <code>__file__</code> holds the full path of this file<ul>
+<li>Its parent is the directory that contains it</li>
+<li>So the complicated <code>Path</code> expression gets <code>simple-pipeline.yml</code> in the current directory</li>
+</ul>
+</li>
+<li>Run this: it fails</li>
+</ul>
+<div class="highlight"><pre><span></span><code>FileNotFoundError: [Errno 2] No such file or directory: &#39;three-colors.csv&#39;
+</code></pre></div>
+<ul>
+<li>Problem is that the current working directory when we run tests is the root directory of the project<ul>
+<li>And our file is in <code>tests/three-colors.csv</code>, not <code>./three-colors.csv</code></li>
+</ul>
+</li>
+<li>Temporary solution: modify the configuration file</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">function</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">reader</span><span class="w"></span>
+<span class="w">  </span><span class="nt">filename</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">tests/three-colors.csv</span><span class="w"></span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">function</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">head</span><span class="w"></span>
+<span class="w">  </span><span class="nt">num</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span><span class="w"></span>
+</code></pre></div>
+<ul>
+<li>Now the test runs</li>
+</ul>
+<h2 id="pipeline-global">Section 6.3: Global Configuration</h2>
+<ul>
+<li>We want global configuration (passed to all stages) as well as local (per-stage)<ul>
+<li>I.e., a configuration file like this:</li>
+</ul>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">overall</span><span class="p">:</span><span class="w"></span>
+<span class="w">    </span><span class="nt">debug</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w"></span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">function</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">reader</span><span class="w"></span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">function</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">head</span><span class="w"></span>
+<span class="w">  </span><span class="nt">num</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1000</span><span class="w"></span>
+</code></pre></div>
+<ul>
+<li>Would also prefer not to have to pass in all the needed functions separately</li>
+<li>And requiring <code>reader</code> to take <code>None</code> as the first parameter seems clumsy<ul>
+<li>Listen to our code</li>
+</ul>
+</li>
+<li><a class="gl-ref" href="../glossary/#tdd" markdown="1">Test-driven development</a> (TDD) doesn't actually improve productivity <span class="bib-ref">[<a class="bib-ref" href="../bibliography/#Fucci2016">Fucci2016</a>]</span><ul>
+<li>But working backwards from a test you have can be a good way to <em>explain</em> a design</li>
+</ul>
+</li>
+<li>Eventually wrote this:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">test_pipeline2_two_stage_with_yaml_text</span><span class="p">(</span><span class="n">available</span><span class="p">):</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="n">dedent</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span><span class="se">\</span>
+<span class="s2">    - overall:</span>
+<span class="s2">        debug: true</span>
+<span class="s2">    - function: reader</span>
+<span class="s2">    - function: head</span>
+<span class="s2">      num: 1000</span>
+<span class="s2">    &quot;&quot;&quot;</span><span class="p">)</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">patch</span><span class="p">(</span><span class="n">READ_CONFIG</span><span class="p">,</span> <span class="n">return_value</span><span class="o">=</span><span class="n">config</span><span class="p">):</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">pipeline</span><span class="p">(</span><span class="s2">&quot;test.yml&quot;</span><span class="p">,</span> <span class="n">available</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">result</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+</code></pre></div>
+<ul>
+<li>The <code>available</code> fixture is a dictionary of functions the pipeline can use<ul>
+<li><code>textwrap.dedent</code> moves text back to the left margin<ul>
+<li>So this is what our YAML configuration file would look like</li>
+</ul>
+</li>
+<li>The new <code>pipeline</code> function always starts with a reader<ul>
+<li>That's probably too far the other way</li>
+</ul>
+</li>
+<li>The global <code>debug</code> flag overrides the <code>num</code> setting in <code>head</code>:</li>
+</ul>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">head</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">num</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;To demonstrate pipeline operation.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="k">if</span> <span class="n">debug</span> <span class="k">else</span> <span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="n">num</span><span class="p">)</span>
+</code></pre></div>
+<ul>
+<li><code>debug</code> has a default value so we don't have to provide it every time</li>
+<li>The revised <code>pipeline</code> function is:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">pipeline</span><span class="p">(</span><span class="n">config_file</span><span class="p">,</span> <span class="n">available</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Construct and run a processing pipeline.&quot;&quot;&quot;</span>
+    <span class="c1"># Set up.</span>
+    <span class="n">raw_config</span> <span class="o">=</span> <span class="n">_read_config</span><span class="p">(</span><span class="n">config_file</span><span class="p">)</span>
+    <span class="n">overall</span><span class="p">,</span> <span class="n">stages</span> <span class="o">=</span> <span class="n">split_config</span><span class="p">(</span><span class="n">raw_config</span><span class="p">)</span>
+
+    <span class="c1"># Run each stage in turn.</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">for</span> <span class="n">stage</span> <span class="ow">in</span> <span class="n">stages</span><span class="p">:</span>
+        <span class="n">func</span> <span class="o">=</span> <span class="n">get_function</span><span class="p">(</span><span class="n">available</span><span class="p">,</span> <span class="n">stage</span><span class="p">[</span><span class="s2">&quot;function&quot;</span><span class="p">])</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="n">overall</span> <span class="o">|</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">stage</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">stage</span> <span class="k">if</span> <span class="n">k</span> <span class="o">!=</span> <span class="s2">&quot;function&quot;</span><span class="p">}</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="o">**</span><span class="n">params</span><span class="p">)</span> <span class="k">if</span> <span class="p">(</span><span class="n">data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="k">else</span> <span class="n">func</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">params</span><span class="p">)</span>
+
+    <span class="c1"># Return final result.</span>
+    <span class="k">return</span> <span class="n">data</span>
+</code></pre></div>
+<ul>
+<li>Read the configuration file<ul>
+<li>Again, keep this in a separate function for easy mocking</li>
+</ul>
+</li>
+<li>Split the configuration into overall and per-stage</li>
+<li>Initially have no data</li>
+<li>For each stage:<ul>
+<li>Get the function</li>
+<li>Construct parameters: per-stage overrides overall</li>
+<li>Call the function with data if we have any or with nothing if we don't</li>
+</ul>
+</li>
+<li>Splitting the configuration is straightforward:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">split_config</span><span class="p">(</span><span class="n">raw</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Split configuration into overall and per-stage.&quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">entry</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">raw</span><span class="p">):</span>
+        <span class="k">if</span> <span class="s2">&quot;overall&quot;</span> <span class="ow">in</span> <span class="n">entry</span><span class="p">:</span>
+            <span class="k">del</span> <span class="n">raw</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="k">return</span> <span class="n">entry</span><span class="p">[</span><span class="s2">&quot;overall&quot;</span><span class="p">],</span> <span class="n">raw</span>
+    <span class="k">return</span> <span class="p">{},</span> <span class="n">raw</span>
+</code></pre></div>
+<ul>
+<li>OK, I lied: it took a couple of tries to come up with this<ul>
+<li>The overall configuration is a dictionary with one key ("overall")</li>
+</ul>
+</li>
+<li>Getting the function is straightforward:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">get_function</span><span class="p">(</span><span class="n">available</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Look up a function by name.&quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">available</span>
+    <span class="k">return</span> <span class="n">available</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+</code></pre></div>
+<ul>
+<li>Could move this inline<ul>
+<li>But it's likely to become more complicated...</li>
+<li>...and we're going to want to add better error handling than a simple <code>assert</code></li>
+<li>Experience (i.e., past difficulties) tell us when to plan and design ahead</li>
+</ul>
+</li>
+<li>Lots here to test, but one key feature is that we can debug individual stages:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="n">READER_SHORTENED_LEN</span> <span class="o">=</span> <span class="mi">3</span>
+
+<span class="k">def</span> <span class="nf">reader</span><span class="p">(</span><span class="n">debug</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;To demonstrate pipeline operation.&quot;&quot;&quot;</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">simple_df</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="n">READER_SHORTENED_LEN</span><span class="p">)</span> <span class="k">if</span> <span class="n">debug</span> <span class="k">else</span> <span class="n">df</span>
+
+<span class="k">def</span> <span class="nf">test_pipeline2_single_stage_with_debugging</span><span class="p">(</span><span class="n">available</span><span class="p">):</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="p">[{</span><span class="s2">&quot;function&quot;</span><span class="p">:</span> <span class="s2">&quot;reader&quot;</span><span class="p">,</span> <span class="s2">&quot;debug&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}]</span>
+    <span class="k">with</span> <span class="n">patch</span><span class="p">(</span><span class="n">READ_CONFIG</span><span class="p">,</span> <span class="n">return_value</span><span class="o">=</span><span class="n">config</span><span class="p">):</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">pipeline</span><span class="p">(</span><span class="s2">&quot;test.yml&quot;</span><span class="p">,</span> <span class="n">available</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">result</span><span class="p">)</span> <span class="o">==</span> <span class="n">READER_SHORTENED_LEN</span>
+</code></pre></div>
+<ul>
+<li>Test code should be written as cleanly as production code<ul>
+<li>Which is why this code now has <code>READER_SHORTENED_LEN</code></li>
+<li>Because an earlier version of the just used the number 3...</li>
+<li>...which stopped working when we changed it in one place but not another</li>
+</ul>
+</li>
+<li>One final step: <code>inv coverage</code><ul>
+<li>Tells us that <code>_read_config</code> isn't being tested</li>
+<li>Could add a test that reads from an actual file...</li>
+<li>...or add a directive in a specially-formatted comment telling coverage not to worry about it</li>
+</ul>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">_read_config</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>  <span class="c1"># pragma: no cover</span>
+    <span class="sd">&quot;&quot;&quot;Read YAML configuration file.&quot;&quot;&quot;</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">reader</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">reader</span><span class="p">)</span>
+</code></pre></div>
+<ul>
+<li>Please use these sparingly</li>
+</ul>
+<h2 id="pipeline-provenance">Section 6.4: Provenance</h2>
+<ul>
+<li>We want to know what each run of a pipeline actually did<ul>
+<li>Automatically record functions and their parameters in a structured way</li>
+<li>Would also like to introduce a little error handling</li>
+</ul>
+</li>
+<li>Rewrite <code>pipeline</code> to capture functions' parameters:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">pipeline</span><span class="p">(</span><span class="n">config_file</span><span class="p">,</span> <span class="n">available</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Construct and run a processing pipeline.&quot;&quot;&quot;</span>
+    <span class="c1"># Set up.</span>
+    <span class="n">raw_config</span> <span class="o">=</span> <span class="n">_read_config</span><span class="p">(</span><span class="n">config_file</span><span class="p">)</span>
+    <span class="n">overall</span><span class="p">,</span> <span class="n">stages</span> <span class="o">=</span> <span class="n">split_config</span><span class="p">(</span><span class="n">raw_config</span><span class="p">)</span>
+
+    <span class="c1"># Run each stage in turn.</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">provenance</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">stage</span> <span class="ow">in</span> <span class="n">stages</span><span class="p">:</span>
+        <span class="n">func_name</span><span class="p">,</span> <span class="n">params</span> <span class="o">=</span> <span class="n">pre_stage</span><span class="p">(</span><span class="n">overall</span><span class="p">,</span> <span class="n">stage</span><span class="p">)</span>
+        <span class="n">record</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">run_stage</span><span class="p">(</span><span class="n">available</span><span class="p">,</span> <span class="n">func_name</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+        <span class="n">provenance</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">record</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">record</span><span class="p">[</span><span class="s2">&quot;exc&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">provenance</span><span class="p">,</span> <span class="kc">None</span>
+
+    <span class="c1"># Return final result.</span>
+    <span class="k">return</span> <span class="n">provenance</span><span class="p">,</span> <span class="n">data</span>
+</code></pre></div>
+<ul>
+<li>Convert overall configuration and stage configuration into function name and parameters<ul>
+<li>Run that stage, getting a record of what happened and the data to pass on</li>
+<li>Save that record</li>
+<li>If an exception occurred, stop the pipeline</li>
+<li>Only return data if the pipeline ran to the end</li>
+</ul>
+</li>
+<li>Getting the function name and parameters is just dictionary juggling:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">pre_stage</span><span class="p">(</span><span class="n">overall</span><span class="p">,</span> <span class="n">stage</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Get function, parameters, and provenance record.&quot;&quot;&quot;</span>
+    <span class="n">func_name</span> <span class="o">=</span> <span class="n">stage</span><span class="p">[</span><span class="s2">&quot;function&quot;</span><span class="p">]</span>
+    <span class="n">params</span> <span class="o">=</span> <span class="n">overall</span> <span class="o">|</span> <span class="n">stage</span>
+    <span class="k">del</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;function&quot;</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">func_name</span><span class="p">,</span> <span class="n">params</span>
+</code></pre></div>
+<ul>
+<li>Running the stage:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">run_stage</span><span class="p">(</span><span class="n">available</span><span class="p">,</span> <span class="n">func_name</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Run a single stage, recording provenance.&quot;&quot;&quot;</span>
+    <span class="n">func</span> <span class="o">=</span> <span class="n">get_function</span><span class="p">(</span><span class="n">available</span><span class="p">,</span> <span class="n">func_name</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="n">_now</span><span class="p">()</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="o">**</span><span class="n">params</span><span class="p">)</span> <span class="k">if</span> <span class="p">(</span><span class="n">data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="k">else</span> <span class="n">func</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">params</span><span class="p">)</span>
+        <span class="n">params</span><span class="p">[</span><span class="s2">&quot;exc&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+        <span class="n">params</span><span class="p">[</span><span class="s2">&quot;exc&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">repr</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span>
+    <span class="k">finally</span><span class="p">:</span>
+        <span class="n">params</span><span class="p">[</span><span class="s2">&quot;elapsed&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">_now</span><span class="p">()</span> <span class="o">-</span> <span class="n">start</span><span class="p">)</span><span class="o">.</span><span class="n">total_seconds</span><span class="p">()</span>
+        <span class="n">params</span><span class="p">[</span><span class="s2">&quot;function&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">func_name</span>
+    <span class="k">return</span> <span class="n">params</span><span class="p">,</span> <span class="n">data</span>
+</code></pre></div>
+<ul>
+<li>Steps:<ul>
+<li>Look up the function</li>
+<li>Record a start time</li>
+<li>Call the function</li>
+<li>If an exception occurred, save it</li>
+<li><em>Always</em> record the end time and the function name</li>
+</ul>
+</li>
+<li>Updating the tests</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">test_pipeline3_two_stages_with_parameters_no_overall</span><span class="p">(</span><span class="n">available</span><span class="p">):</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="p">[{</span><span class="s2">&quot;function&quot;</span><span class="p">:</span> <span class="s2">&quot;reader&quot;</span><span class="p">},</span> <span class="p">{</span><span class="s2">&quot;function&quot;</span><span class="p">:</span> <span class="s2">&quot;head&quot;</span><span class="p">,</span> <span class="s2">&quot;num&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">}]</span>
+    <span class="k">with</span> <span class="p">(</span>
+        <span class="n">patch</span><span class="p">(</span><span class="n">READ_CONFIG</span><span class="p">,</span> <span class="n">return_value</span><span class="o">=</span><span class="n">config</span><span class="p">),</span>
+        <span class="n">patch</span><span class="p">(</span><span class="n">NOW</span><span class="p">,</span> <span class="n">side_effect</span><span class="o">=</span><span class="n">times</span><span class="p">(</span><span class="mi">2</span><span class="p">)),</span>
+    <span class="p">):</span>
+        <span class="n">provenance</span><span class="p">,</span> <span class="n">result</span> <span class="o">=</span> <span class="n">pipeline</span><span class="p">(</span><span class="s2">&quot;test.yml&quot;</span><span class="p">,</span> <span class="n">available</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">result</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span>
+        <span class="k">assert</span> <span class="n">result</span><span class="o">.</span><span class="n">equals</span><span class="p">(</span><span class="n">simple_df</span><span class="p">()</span><span class="o">.</span><span class="n">iloc</span><span class="p">[[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]])</span>
+        <span class="k">assert</span> <span class="n">provenance</span> <span class="o">==</span> <span class="p">[</span>
+            <span class="p">{</span><span class="s2">&quot;exc&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;elapsed&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span> <span class="s2">&quot;function&quot;</span><span class="p">:</span> <span class="s2">&quot;reader&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;exc&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;elapsed&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span> <span class="s2">&quot;function&quot;</span><span class="p">:</span> <span class="s2">&quot;head&quot;</span><span class="p">,</span> <span class="s2">&quot;num&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">},</span>
+        <span class="p">]</span>
+</code></pre></div>
+<ul>
+<li>Need a helper function <code>times</code> to generate predictable times</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="n">NOW</span> <span class="o">=</span> <span class="s2">&quot;nitinat.pipeline3._now&quot;</span>
+
+<span class="k">def</span> <span class="nf">times</span><span class="p">(</span><span class="n">num_stages</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2022</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">num_stages</span><span class="p">)]</span>
+</code></pre></div>
+<ul>
+<li>Always test error handling</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">test_pipeline3_two_stages_with_failure</span><span class="p">(</span><span class="n">available</span><span class="p">):</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="p">[{</span><span class="s2">&quot;function&quot;</span><span class="p">:</span> <span class="s2">&quot;reader&quot;</span><span class="p">},</span> <span class="p">{</span><span class="s2">&quot;function&quot;</span><span class="p">:</span> <span class="s2">&quot;failure&quot;</span><span class="p">}]</span>
+    <span class="k">with</span> <span class="p">(</span>
+        <span class="n">patch</span><span class="p">(</span><span class="n">READ_CONFIG</span><span class="p">,</span> <span class="n">return_value</span><span class="o">=</span><span class="n">config</span><span class="p">),</span>
+        <span class="n">patch</span><span class="p">(</span><span class="n">NOW</span><span class="p">,</span> <span class="n">side_effect</span><span class="o">=</span><span class="n">times</span><span class="p">(</span><span class="mi">2</span><span class="p">)),</span>
+    <span class="p">):</span>
+        <span class="n">provenance</span><span class="p">,</span> <span class="n">result</span> <span class="o">=</span> <span class="n">pipeline</span><span class="p">(</span><span class="s2">&quot;test.yml&quot;</span><span class="p">,</span> <span class="n">available</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="n">result</span> <span class="ow">is</span> <span class="kc">None</span>
+        <span class="k">assert</span> <span class="n">provenance</span> <span class="o">==</span> <span class="p">[</span>
+            <span class="p">{</span><span class="s2">&quot;exc&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;elapsed&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span> <span class="s2">&quot;function&quot;</span><span class="p">:</span> <span class="s2">&quot;reader&quot;</span><span class="p">},</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;exc&quot;</span><span class="p">:</span> <span class="s2">&quot;ValueError(&#39;failure message&#39;)&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;elapsed&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+                <span class="s2">&quot;function&quot;</span><span class="p">:</span> <span class="s2">&quot;failure&quot;</span><span class="p">,</span>
+            <span class="p">},</span>
+        <span class="p">]</span>
+</code></pre></div>
+<ul>
+<li>Note that <code>run_stage</code> converts exceptions to strings using <code>repr</code><ul>
+<li>Python doesn't implement <code>==</code> on exception objects</li>
+<li>And <code>str(exc)</code> produces the error message, not the exception class</li>
+<li>Once again, we are designing for testability</li>
+</ul>
+</li>
+</ul>
+<h2 id="pipeline-configuration">Section 6.5: Configuration</h2>
+<ul>
+<li>Current configuration syntax allows one "overall" section and one section per pipeline stage</li>
+<li>What if we want to share the overall configuration between multiple pipelines?</li>
+<li>Or share some settings for a particular stage across all uses of that stage?</li>
+<li>Use a layered configuration that takes configuration in this order:<ol>
+<li>A system-wide configuration file for general settings.</li>
+<li>A user-specific configuration file for personal preferences.</li>
+<li>Project-specific files.</li>
+<li>Analysis-specific files.</li>
+<li>Command-line arguments.</li>
+</ol>
+</li>
+<li>Each level adds to or overrides settings in the layer before it<ul>
+<li>Example: <code>.gitignore</code> files</li>
+</ul>
+</li>
+<li>First step: modify <code>pipeline</code></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="n">SYSTEM_CONFIG</span> <span class="o">=</span> <span class="s2">&quot;/etc/nitinat.yml&quot;</span>
+
+
+<span class="k">def</span> <span class="nf">pipeline</span><span class="p">(</span><span class="n">config_file</span><span class="p">,</span> <span class="n">available</span><span class="p">):</span>
+    <span class="s2">&quot;&quot;&quot;Construct and run a processing pipeline.&quot;&quot;</span>
+<span class="s2">    # Set up.</span>
+<span class="s2">    layered = read_layered_config(config_file)</span>
+<span class="s2">    raw_config = _read_config(config_file)</span>
+<span class="s2">    overall, stages = split_config(raw_config)</span>
+<span class="s2">    overall = layered | overall</span>
+
+<span class="s2">    # Run each stage in turn.</span>
+<span class="s2">    # ...as before...</span>
+
+<span class="s2">    # Return final result.</span>
+<span class="s2">    return provenance, data</span>
+</code></pre></div>
+<ul>
+<li>Write the function to read and overlay several configuration files<ul>
+<li>Yes, we've used the <code>:=</code> operator - we're sinners...</li>
+</ul>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">read_layered_config</span><span class="p">(</span><span class="n">config_file</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Read layered configuration files in order.&quot;&quot;&quot;</span>
+    <span class="n">all_filenames</span> <span class="o">=</span> <span class="p">[</span><span class="n">SYSTEM_CONFIG</span><span class="p">,</span> <span class="n">_get_home_dir</span><span class="p">()</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s2">&quot;.nitinat.yml&quot;</span><span class="p">)]</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">project_config</span> <span class="o">:=</span> <span class="n">_find_project_config</span><span class="p">(</span><span class="n">config_file</span><span class="p">)):</span>
+        <span class="n">all_filenames</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">project_config</span><span class="p">)</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">filename</span> <span class="ow">in</span> <span class="n">all_filenames</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">Path</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+            <span class="n">config</span> <span class="o">|=</span> <span class="n">_read_config</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">config</span>
+</code></pre></div>
+<ul>
+<li>Now look for the project configuration file<ul>
+<li>Search up from the directory containing the file specified for the run</li>
+<li>Stop at the user's home directory</li>
+<li>Might be better to stop at the root of the Git repository?</li>
+</ul>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">_find_project_config</span><span class="p">(</span><span class="n">starting_point</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Look up from given file to find project configuration file.&quot;&quot;&quot;</span>
+    <span class="n">curdir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">starting_point</span><span class="p">)</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span><span class="o">.</span><span class="n">parent</span>
+    <span class="n">home</span> <span class="o">=</span> <span class="n">_get_home_dir</span><span class="p">()</span>
+    <span class="k">while</span> <span class="n">curdir</span> <span class="o">&gt;</span> <span class="n">home</span><span class="p">:</span>
+        <span class="n">candidate</span> <span class="o">=</span> <span class="n">curdir</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s2">&quot;.nitinat.yml&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">candidate</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+            <span class="k">return</span> <span class="n">candidate</span>
+        <span class="n">curdir</span> <span class="o">=</span> <span class="n">curdir</span><span class="o">.</span><span class="n">parent</span>
+    <span class="k">return</span> <span class="kc">None</span>
+</code></pre></div>
+<ul>
+<li>Relies on a helper function <code>_get_home_dir</code><ul>
+<li>Originally just used <code>Path.home()</code></li>
+<li>But discovered we need to patch this when testing</li>
+</ul>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">_get_home_dir</span><span class="p">():</span>  <span class="c1"># pragma: no cover</span>
+    <span class="sd">&quot;&quot;&quot;Get current user&#39;s home directory.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">Path</span><span class="o">.</span><span class="n">home</span><span class="p">()</span>
+</code></pre></div>
+<ul>
+<li>To test:<ul>
+<li>Patch <code>_read_config</code> with a sequence of return values (one per config file)</li>
+<li>Replace the entire file system</li>
+</ul>
+</li>
+<li>Install <a href="http://jmcgeheeiv.github.io/pyfakefs/">pyfakefs</a><ul>
+<li>Add it to <code>development.txt</code>, not <code>requirements.txt</code></li>
+</ul>
+</li>
+<li>Use the <code>fs</code> fixture it provides to manipulate an in-memory filesystem<ul>
+<li>Functions like <code>open</code> are patched behind the scenes to use it</li>
+</ul>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">nitinat.pipeline4</span> <span class="kn">import</span> <span class="n">SYSTEM_CONFIG</span><span class="p">,</span> <span class="n">read_layered_config</span>
+
+<span class="n">GET_HOME_DIR</span> <span class="o">=</span> <span class="s2">&quot;nitinat.pipeline4._get_home_dir&quot;</span>
+
+
+<span class="k">def</span> <span class="nf">make_file</span><span class="p">(</span><span class="n">fs</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">contents</span><span class="p">):</span>
+    <span class="n">fs</span><span class="o">.</span><span class="n">create_file</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">contents</span><span class="o">=</span><span class="n">yaml</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">contents</span><span class="p">))</span>
+
+
+<span class="k">def</span> <span class="nf">test_layered_config_read_system</span><span class="p">(</span><span class="n">fs</span><span class="p">):</span>
+    <span class="n">fs</span><span class="o">.</span><span class="n">cwd</span> <span class="o">=</span> <span class="s2">&quot;/home/person/project/analysis&quot;</span>
+    <span class="n">expected</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;alpha&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">}</span>
+    <span class="n">make_file</span><span class="p">(</span><span class="n">fs</span><span class="p">,</span> <span class="n">SYSTEM_CONFIG</span><span class="p">,</span> <span class="n">expected</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">patch</span><span class="p">(</span><span class="n">GET_HOME_DIR</span><span class="p">,</span> <span class="n">return_value</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="s2">&quot;/home/person&quot;</span><span class="p">)):</span>
+        <span class="n">actual</span> <span class="o">=</span> <span class="n">read_layered_config</span><span class="p">(</span><span class="s2">&quot;test.yml&quot;</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">actual</span> <span class="o">==</span> <span class="n">expected</span>
+</code></pre></div>
+<ul>
+<li>Line by line, <code>test_layered_config_read_system</code>:<ol>
+<li>Is given the <code>fs</code> fixture created by <code>pyfakefs</code></li>
+<li>Specifies the pretended current working directory</li>
+<li>Creates the expected configuration as a dictionary</li>
+<li>Calls <code>make_file</code> to turn that dictionary into a file in the fake filesystem<ul>
+<li><code>make_file</code> uses <code>fs.create_file</code></li>
+<li>Pulling this out into a one-line function makes the tests easier to read</li>
+</ul>
+</li>
+<li>Patch the <code>_get_home_dir</code> helper function to return the right value</li>
+<li>Reads the layered configuration<ul>
+<li>Which should get just the system-wide configuration</li>
+</ul>
+</li>
+<li>Checks</li>
+</ol>
+</li>
+<li>Here's a test of multiple configuration files layering correctly:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">test_layered_config_combine_files</span><span class="p">(</span><span class="n">fs</span><span class="p">):</span>
+    <span class="n">fs</span><span class="o">.</span><span class="n">cwd</span> <span class="o">=</span> <span class="s2">&quot;/home/person/project/analysis&quot;</span>
+    <span class="n">make_file</span><span class="p">(</span><span class="n">fs</span><span class="p">,</span> <span class="n">SYSTEM_CONFIG</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;alpha&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
+    <span class="n">make_file</span><span class="p">(</span><span class="n">fs</span><span class="p">,</span> <span class="s2">&quot;/home/person/.nitinat.yml&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;beta&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">})</span>
+    <span class="n">make_file</span><span class="p">(</span><span class="n">fs</span><span class="p">,</span> <span class="s2">&quot;/home/person/project/.nitinat.yml&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;gamma&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">})</span>
+    <span class="k">with</span> <span class="n">patch</span><span class="p">(</span><span class="n">GET_HOME_DIR</span><span class="p">,</span> <span class="n">return_value</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="s2">&quot;/home/person&quot;</span><span class="p">)):</span>
+        <span class="n">actual</span> <span class="o">=</span> <span class="n">read_layered_config</span><span class="p">(</span><span class="s2">&quot;temp/test.yml&quot;</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">actual</span> <span class="o">==</span> <span class="p">{</span><span class="s2">&quot;alpha&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;beta&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;gamma&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">}</span>
+</code></pre></div>
+<ul>
+<li>Everything else in the pipeline code stays the same</li>
+<li>So the provenance record for each stage has the complete configuration<ul>
+<li>We really should write at least a couple of tests for that...</li>
+</ul>
+</li>
+</ul>
         </main>
       </div>
     </div>
