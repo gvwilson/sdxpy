@@ -25,6 +25,7 @@ chapters = [
     "builder",
     "matching",
     "parser",
+    "scraper",
     "server",
     "filecache",
     "database",
