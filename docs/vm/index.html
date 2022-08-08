@@ -149,7 +149,7 @@
   
   <li>
     <a href="../vm/">
-      <strong>A Virtual Machine</strong>
+      <strong>A Virtual Machine and Assembler</strong>
     </a>
   </li>
   
@@ -228,7 +228,7 @@
       <div class="column bordered">
         <main>
 	  
-          <h1>A Virtual Machine</h1>
+          <h1>A Virtual Machine and Assembler</h1>
 	  
           
   
@@ -290,7 +290,249 @@
   
 
 
-          <p>FIXME</p>
+          <p>You might feel there's still magic in our interpreter,
+so let's build something lower-level.
+Our virtual machine simulates a computer with three parts:</p>
+<ol>
+<li>
+<p>An instruction pointer (IP)
+    that holds the memory address of the next instruction to execute.
+    It is automatically initialized to point at address 0,
+    which is where every program must start.</p>
+</li>
+<li>
+<p>Four registers named R0 to R3 that instructions can access directly.
+    There are no memory-to-memory operations in our VM:
+    everything  happens in or through registers.</p>
+</li>
+<li>
+<p>256 words of memory, each of which can store a single value.
+    Both the program and its data live in this single block of memory;
+    we chose the size 256 so that each address will fit in a single byte.</p>
+</li>
+</ol>
+<p>The instructions for our VM are 3 bytes long.
+The op code fits into one byte,
+and each instruction may optionally include one or two single-byte operands.
+Each operand is a register identifier,
+a constant,
+or an address
+(which is just a constant that identifies a location in memory);
+since constants have to fit in one byte,
+the largest number we can represent directly is 256.
+The table below uses the letters <code>r</code>, <code>c</code>, and <code>a</code>
+to indicate instruction format:
+<code>r</code> indicates a register identifier,
+<code>c</code> indicates a constant,
+and <code>a</code> indicates an address.</p>
+<table>
+<thead>
+<tr>
+<th>Instruction</th>
+<th>Code</th>
+<th>Format</th>
+<th>Action</th>
+<th>Example</th>
+<th>Equivalent</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>hlt</code></td>
+<td>1</td>
+<td><code>--</code></td>
+<td>Halt program</td>
+<td><code>hlt</code></td>
+<td><code>sys.exit(0)</code></td>
+</tr>
+<tr>
+<td><code>ldc</code></td>
+<td>2</td>
+<td><code>rc</code></td>
+<td>Load constant</td>
+<td><code>ldc R0 123</code></td>
+<td><code>R0 = 123</code></td>
+</tr>
+<tr>
+<td><code>ldr</code></td>
+<td>3</td>
+<td><code>rr</code></td>
+<td>Load register</td>
+<td><code>ldr R0 R1</code></td>
+<td><code>R0 = RAM[R1]</code></td>
+</tr>
+<tr>
+<td><code>cpy</code></td>
+<td>4</td>
+<td><code>rr</code></td>
+<td>Copy register</td>
+<td><code>cpy R0 R1</code></td>
+<td><code>R0 = R1</code></td>
+</tr>
+<tr>
+<td><code>str</code></td>
+<td>5</td>
+<td><code>rr</code></td>
+<td>Store register</td>
+<td><code>str R0 R1</code></td>
+<td><code>RAM[R1] = R0</code></td>
+</tr>
+<tr>
+<td><code>add</code></td>
+<td>6</td>
+<td><code>rr</code></td>
+<td>Add</td>
+<td><code>add R0 R1</code></td>
+<td><code>R0 = R0 + R1</code></td>
+</tr>
+<tr>
+<td><code>sub</code></td>
+<td>7</td>
+<td><code>rr</code></td>
+<td>Subtract</td>
+<td><code>sub R0 R1</code></td>
+<td><code>R0 = R0 - R1</code></td>
+</tr>
+<tr>
+<td><code>beq</code></td>
+<td>8</td>
+<td><code>ra</code></td>
+<td>Branch if equal</td>
+<td><code>beq R0 123</code></td>
+<td><code>if (R0 == 0) PC = 123</code></td>
+</tr>
+<tr>
+<td><code>bne</code></td>
+<td>9</td>
+<td><code>ra</code></td>
+<td>Branch if not equal</td>
+<td><code>bne R0 123</code></td>
+<td><code>if (R0 != 0) PC = 123</code></td>
+</tr>
+<tr>
+<td><code>prr</code></td>
+<td>10</td>
+<td><code>r-</code></td>
+<td>Print register</td>
+<td><code>prr R0</code></td>
+<td><code>print(R0)</code></td>
+</tr>
+<tr>
+<td><code>prm</code></td>
+<td>11</td>
+<td><code>r-</code></td>
+<td>Print memory</td>
+<td><code>prm R0</code></td>
+<td><code>print(RAM[R0])</code></td>
+</tr>
+</tbody>
+</table>
+<p>We put our VM's architectural details in <code>architecture.py</code>.
+The VM itself is in <code>vm.py</code>:</p>
+<ul>
+<li>
+<p>The construct initializes the IP, the registers, and RAM.</p>
+</li>
+<li>
+<p><code>initialize</code> copies a program into RAM.
+    A program is just a list of numbers;
+    we'll see where they come from in a moment.</p>
+</li>
+<li>
+<p><code>fetch</code> gets the instruction that the IP refers to and moves the IP on to the next address.
+    It then uses bitwise operations
+    to extract the <em>op code</em> and operands from the instruction.</p>
+</li>
+<li>
+<p><code>run</code> is just a big switch statement
+    that does whatever the newly-fetched instruction tells it to do,
+    such copy a value from memory into a register
+    or add the contents of two registers.
+    The most interesting instructions are probably the branch instructions,
+    which assign a new value to the IP
+    so that execution continues at a different location in the program.</p>
+</li>
+</ul>
+<p>We could figure out numerical op codes by hand,
+and in fact that's what the first programmers did.
+However,
+it's much easier to use an <em>assembler</em>,
+which is just a small compiler for a language that very closely represents actual machine instructions.
+Each command in our assembly languages matches an instruction in the VM.
+Here's an assembly language program to print the value stored in R1 and then halt:</p>
+<div class="highlight"><span class="filename">print-r1.as</span><pre><span></span><code># Print initial contents of R1.
+prr R1
+hlt
+</code></pre></div>
+<p>In hexadecimal, its numeric representation is:</p>
+<div class="highlight"><span class="filename">print-r1.mx</span><pre><span></span><code>00010a
+000001
+</code></pre></div>
+<p>One thing the assembly language has that the instruction set doesn't
+is labels on addresses.
+The label <code>loop</code> doesn't take up any space;
+instead,
+it tells the assembler to give the address of the next instruction a name
+so that we can refer to that address as <code>@loop</code> in jump instructions.
+For example,
+this program prints the numbers from 0 to 2</p>
+<div class="highlight"><span class="filename">count-up.as</span><pre><span></span><code># Count up to 3.
+# - R0: loop index.
+# - R1: loop limit.
+ldc R0 0
+ldc R1 3
+loop:
+prr R0
+ldc R2 1
+add R0 R2
+cpy R2 R1
+sub R2 R0
+bne R2 @loop
+hlt
+</code></pre></div>
+<p>Let's trace this program's execution:</p>
+<ol>
+<li>R0 holds the current loop index.</li>
+<li>R1 holds the loop's upper bound (in this case 3).</li>
+<li>The loop prints the value of R0 (one instruction).</li>
+<li>The program adds 1 to R0.
+    This takes two instructions because we can only add register-to-register.</li>
+<li>It checks to see if we should loop again,
+    which takes three instructions.</li>
+<li>If the program <em>doesn't</em> jump back, it halts.</li>
+</ol>
+<p>The implementation of the assembler mirrors the simplicity of assembly language.
+The main method gets interesting lines,
+finds the addresses of labels,
+and turns each remaining line into an instruction:
+To find labels,
+we go through the lines one by one
+and either save the label <em>or</em> increment the current address
+(because labels don't take up space).</p>
+<p>To compile a single instruction we break the line into tokens,
+look up the format for the operands,
+and pack them into a single value;
+combining op codes and operands into a single value
+is the reverse of the unpacking done by the virtual machine.</p>
+<p>It's tedious to write interesting programs when each value needs a unique name,
+so we can add arrays to our assembler.
+We allocate storage for arrays at the end of the program
+by using <code>.data</code> on a line of its own to mark the start of the data section
+and then <code>label: number</code> to give a region a name and allocate some storage space.</p>
+<h2 id="compiler-exercises">Section 21.1: Exercises</h2>
+<h3 class="exercise">Swapping Values</h3>
+<p>Write an assembly language program that swaps the values in R1 and R2
+without affecting the values in other registers.</p>
+<h3 class="exercise">Reversing an Array</h3>
+<p>Write an assembly language program that starts with
+the base address of an array in one word,
+the length of the array N in the next word,
+and N values immediately thereafter,
+and reverses the array in place.</p>
+<h3 class="exercise">String Length</h3>
+<p>C stores character strings as non-zero bytes terminated by a byte containing zero.
+Write a program that starts with the base address of a string in R1
+and finishes with the length of the string (not including the terminator) in the same register.</p>
         </main>
       </div>
     </div>
