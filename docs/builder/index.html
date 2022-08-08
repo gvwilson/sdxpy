@@ -290,7 +290,423 @@
   
 
 
-          <p>FIXME</p>
+          <p>Choosing what actions to take based on how files depend on one another is a common pattern.
+For example,
+programs in compiled languages
+like C and Java
+have to be translated into lower-level forms before they can run.
+In fact,
+there are usually two stages to the translation:
+compiling each source file into some intermediate form,
+and then linking the compiled modules
+to each other and to libraries
+to create a runnable program
+(<span class="FIXME">FIXME</span>).
+If a source file hasn't changed,
+there's no need to recompile it before linking.</p>
+<p><span class="FIXME">FIXME</span></p>
+<p>A build manager takes a description of what depends on what,
+figures out which files are out of date,
+determines an order in which to rebuild things,
+and then executes any necessary steps.
+Originally created to manage compilation,
+they are also useful for programs written in interpreted languages
+like JavaScript
+when we want to bundle multiple modules into a single loadable file (<span class="FIXME">FIXME</span>)
+or re-create documentation from source code (<span class="FIXME">FIXME</span>).
+In this chapter we will create a simple build manager based on [Make][gnu-make]
+and other systems discussed in <span class="bib-ref">[<a class="bib-ref" href="../bibliography/#Smith2011">Smith2011</a>]</span>.</p>
+<h2 id="builder-contents">Section 7.1: What's in a build manager?</h2>
+<p>The input to a build manager is a set of rules,
+each of which has:</p>
+<ul>
+<li>
+<p>a target, which is the file to be updated;</p>
+</li>
+<li>
+<p>some dependencies, which are the things that file depends on;
+    and</p>
+</li>
+<li>
+<p>a recipe that specifies how to update the target
+    if it is out of date compared to its dependencies.</p>
+</li>
+</ul>
+<p>The target of one rule can be a dependency of another rule,
+so the relationships between the files form a directed acyclic graph or DAG
+(<span class="FIXME">FIXME</span>).
+The graph is directed because "A depends on B" is a one-way relationship;
+it cannot contain cycles (or loops) because
+if something depends on itself we can never finish updating it.
+We say that a target is stale if it is older than any of its dependencies.
+When this happens,
+we use the recipes to bring it up to date.</p>
+<p><span class="FIXME">FIXME</span></p>
+<p>Our build manager must:</p>
+<ol>
+<li>
+<p>Read a file containing rules.</p>
+</li>
+<li>
+<p>Construct the dependency graph.</p>
+</li>
+<li>
+<p>Figure out which targets are stale.</p>
+</li>
+<li>
+<p>Build those targets,
+    making sure to build things <em>before</em> anything that depends on them is built.</p>
+</li>
+</ol>
+<blockquote>
+<h3>Topological order</h3>
+<p>A topological ordering of a graph
+arranges the nodes so that every node comes after everything it depends on.
+For example,
+if A depends on both B and C,
+then (B, C, A) and (C, B, A) are both valid topological orders of the graph.</p>
+</blockquote>
+<h2 id="builder-start">Section 7.2: Where should we start?</h2>
+<p>We will store our rules in YAML files like this:</p>
+<p><span class="FIXME">FIXME</span></p>
+<p class="continue">We could equally well have used JSON,
+but it wouldn't have made sense to use CSV:
+rules have a nested structure,
+and CSV doesn't represent nesting particularly gracefully.</p>
+<p>We are going to create our build manager in stages,
+so we start by writing a simple driver that loads a JavaScript source file,
+creates an object of whatever class that file exports,
+and runs the <code>.build</code> method of that object with the rest of the command-line parameters:</p>
+<p><span class="FIXME">FIXME</span></p>
+<p class="continue">We use the <code>import</code> function to dynamically load files containing in <span class="FIXME">FIXME</span> as well.
+It only saves us a few lines of code in this case,
+but we will use this idea of a general-purpose driver for larger programs in future chapters.</p>
+<p>To work with our driver,
+each version of our build manager must be a class that satisfies two requirements:</p>
+<ol>
+<li>
+<p>Its constructor must take a configuration file as an argument.</p>
+</li>
+<li>
+<p>It must provide a <code>build</code> method that needs no arguments.</p>
+</li>
+</ol>
+<p>The <code>build</code> method must create a graph from the configuration file,
+check that it does not contain any cycles,
+and then run whatever commands are needed to update stale targets.
+Just as we built a generic <code>Visitor</code> class in <span class="FIXME">FIXME</span>,
+we can build a generic base class for our build manager that does these steps in this order
+without actually implementing any of them:</p>
+<p><span class="FIXME">FIXME</span></p>
+<p>This is an example of
+the Template Method design pattern:
+the parent class defines the order of the steps
+and child classes fill them in
+(<span class="FIXME">FIXME</span>).
+This design pattern ensures that every child does the same things in the same order,
+even if the details of <em>how</em> vary from case to case.</p>
+<p><span class="FIXME">FIXME</span></p>
+<p>We would normally implement all of the methods required by the <code>build</code> method at the same time,
+but to make the evolving code easier to follow we will write them them one by one.
+The <code>loadConfig</code> method loads the configuration file
+as the builder object is being constructed:</p>
+<p><span class="FIXME">FIXME</span></p>
+<p class="continue">The first line does the loading;
+the rest of the method checks that the rules are at least superficially plausible.
+We need these checks because YAML is a generic file format
+that doesn't know anything about the extra requirements of our rules.
+And as we first saw in <span class="FIXME">FIXME</span>,
+we have to specify that the character encoding of our file is UTF-8
+so that JavaScript knows how to convert bytes into text.</p>
+<p>The next step is to turn the configuration into a graph in memory.
+We use the <code>graphlib</code> module to manage nodes and links
+rather than writing our own classes for graphs,
+and store the recipe to rebuild a node in that node.
+Two features of <code>graphlib</code> that took us a while to figure out are that:</p>
+<ol>
+<li>
+<p>links go <em>from</em> the dependency <em>to</em> the target,
+    and</p>
+</li>
+<li>
+<p><code>setEdge</code> automatically adds nodes if they aren't already present.</p>
+</li>
+</ol>
+<p><code>graphlib</code> provides implementations of some common graph algorithms,
+including one to check for cycles,
+so we might as well write that method at this point as well:</p>
+<p><span class="FIXME">FIXME</span></p>
+<p>We can now create something that displays our configuration when it runs
+but does nothing else:</p>
+<p><span class="FIXME">FIXME</span></p>
+<p>If we run this with our three simple rules as input,
+it shows the graph with <code>v</code> and <code>w</code> keys to represent the ends of the links:</p>
+<p><span class="FIXME">FIXME</span></p>
+<p>Let's write a quick test to make sure the cycle detector works as intended:</p>
+<p><span class="FIXME">FIXME</span>
+<span class="FIXME">FIXME</span></p>
+<h2 id="builder-timestamp">Section 7.3: How can we specify that a file is out of date?</h2>
+<p>The next step is to figure out which files are out of date.
+Make does this by comparing the timestamps of the files in question,
+but this isn't always reliable:
+computers' clocks may be slightly out of sync,
+which can produce a wrong answer on a networked filesystem,
+and the operating system may only report file update times to the nearest millisecond
+(which seemed very short in 1970 but seems very long today).</p>
+<p>More modern build systems store a hash of each file's contents
+and compare the current hash to the stored one to see if the file has changed.
+Since we already looked at hashing in <span class="FIXME">FIXME</span>,
+we will use the timestamp approach here.
+And instead of using a mock filesystem as we did in <span class="FIXME">FIXME</span>,
+we will simply load another configuration file that specifies fake timestamps for files:</p>
+<p><span class="FIXME">FIXME</span></p>
+<p>Since we want to associate those timestamps with files,
+we add a step to <code>buildGraph</code> to read the timestamp file and add information to the graph's nodes:</p>
+<p><span class="FIXME">FIXME</span></p>
+<blockquote>
+<h3>Not quite what we were expecting</h3>
+<p>The steps defined in <code>SkeletonBuilder.build</code> don't change when we do this,
+so people reading the code don't have to change their mental model of what it does overall.
+However,
+if we had realized in advance that we were going to want to add timestamps from a file,
+we would probably have added a step for that in the template method.
+And if someone ever wants to inject a new step between building the graph and adding timestamps,
+they will have to override <code>addTimestamps</code> and put their step at the top before calling <code>super.addTimestamps</code>,
+which will make the code a lot harder to understand.
+We will reflect on this in the last section of this chapter.</p>
+</blockquote>
+<p>Before we move on,
+let's make sure that adding timestamps works as we want:</p>
+<p><span class="FIXME">FIXME</span></p>
+<h2 id="builder-update">Section 7.4: How can we update out-of-date files?</h2>
+<p>To figure out which recipes to execute and in which order,
+we set the pretended current time to the latest time of any file,
+then look at each file in topological order.
+If a file is older than any of its dependencies,
+we update the file <em>and</em> its pretended timestamp
+to trigger an update of anything that depends on it.</p>
+<p>We can pretend that updating a file always takes one unit of time,
+so we advance our fictional clock by one for each build.
+Using <code>graphlib.alg.topsort</code> to create the topological order,
+we get this:</p>
+<p><span class="FIXME">FIXME</span></p>
+<p>The <code>run</code> method:</p>
+<ol>
+<li>
+<p>Gets a sorted list of nodes.</p>
+</li>
+<li>
+<p>Sets the starting time to be one unit past the largest file time.</p>
+</li>
+<li>
+<p>Uses <code>Array.reduce</code> to operate on each node (i.e., each file) in order.
+    If that file is stale,
+    we print the steps we would run and then update the file's timestamp.
+    We only advance the notional current time when we do an update.</p>
+</li>
+</ol>
+<p>In order to check if a file is stale,
+we see if any of its dependencies currently have timestamps greater than or equal to its.
+When we run this,
+it seems to do the right thing:</p>
+<p><span class="FIXME">FIXME</span></p>
+<h2 id="builder-generic">Section 7.5: How can we add generic build rules?</h2>
+<p>If our website has a hundred blog posts
+or a hundred pages of documentation about particular JavaScript files,
+we don't want to have to write a hundred nearly-identical recipes.
+Instead,
+we want to be able to write generic build rules that say,
+"Build all things of this kind the same way."
+These generic rules need:</p>
+<ul>
+<li>
+<p>a way to define a set of files;</p>
+</li>
+<li>
+<p>a way to specify a generic rule;
+    and</p>
+</li>
+<li>
+<p>a way to fill in parts of that rule.</p>
+</li>
+</ul>
+<p>We will achieve this by overriding <code>buildGraph</code> to replace variables in recipes with values.
+Once again,
+object-oriented programming helps us change only what we need to change,
+provided we divided our problem into sensible chunks in the first place.</p>
+<p>Make provides automatic variables
+with names like <code>$&lt;</code> and <code>$@</code>
+to represent the parts of a rule.
+Our variables will be more readable:
+we will use <code>@TARGET</code> for the target,
+<code>@DEPENDENCIES</code> for the dependencies (in order),
+and <code>@DEP[1]</code>, <code>@DEP[2]</code>, and so on for specific dependencies
+(<span class="FIXME">FIXME</span>).</p>
+<p><span class="FIXME">FIXME</span></p>
+<p>Our variable expander looks like this:</p>
+<p><span class="FIXME">FIXME</span></p>
+<p>The first thing we do is test that it works when there <em>aren't</em> any variables to expand
+by running it on the same example we used previously:</p>
+<p><span class="FIXME">FIXME</span></p>
+<p class="continue">This is perhaps the most important reason to create tests:
+they tell us right away if something we have added or changed
+has broken something that used to work.
+That gives us a firm base to build on as we debug the new code.</p>
+<p>Now we need to add pattern rules.
+Our first attempt at a rules file looks like this:</p>
+<p><span class="FIXME">FIXME</span></p>
+<p class="continue">and our first attempt at reading it extracts rules before expanding variables:</p>
+<p><span class="FIXME">FIXME</span></p>
+<p>However,
+that doesn't work:</p>
+<p><span class="FIXME">FIXME</span></p>
+<p class="continue">The problem is that our simple graph loader creates nodes for dependencies even if they aren't targets.
+As a result,
+we wind up tripping over the lack of a node for <code>%.in</code> before we get to extracting rules.</p>
+<blockquote>
+<h3>Errors become assertions</h3>
+<p>When we first wrote <code>add-timestamps.js</code>,
+it didn't contain the assertion
+that printed the error message shown above.
+Once we tracked down our bug,
+though,
+we added the assertion to ensure we didn't make the same mistake again,
+and as runnable documentation
+to tell the next programmer more about the code.
+Regular code tells the computer what to do;
+assertions with meaningful error messages tell the reader why.</p>
+</blockquote>
+<p>We can fix our problem by rewriting the rule loader
+to separate pattern rules from simple rules;
+we can tell the two apart by checking if the rule's dependencies include <code>%</code>.
+While we're here,
+we will enable timestamps as an optional field in the rules for testing purposes
+rather than having them in a separate file:</p>
+<p><span class="FIXME">FIXME</span></p>
+<p>Before we try to run this,
+let's add methods to show the state of our two internal data structures:</p>
+<p><span class="FIXME">FIXME</span></p>
+<p>The output seems to be right,
+so let's try expanding rules <em>after</em> building the graph and rules
+but <em>before</em> expanding variables:</p>
+<p><span class="FIXME">FIXME</span></p>
+<h2 id="builder-next">Section 7.6: What should we do next?</h2>
+<p>We have added a lot of steps to our original template method,
+which makes it a bit of a stretch to claim that the overall operation hasn't changed.
+Knowing what we know now,
+we could go back and modify the original <code>SkeletonBuilder.build</code> method
+to include those extra steps and provide do-nothing implementations.</p>
+<p>The root of the problem is that we didn't anticipate all the steps that would be involved
+when we wrote our template method.
+It typically takes a few child classes for this to settle down;
+if it never does,
+then Template Method is probably the wrong pattern for our situation.
+Realizing this isn't a failure in initial design:
+we always learn about our problem as we try to capture it in code,
+and if we know enough to anticipate 100% of the issues that are going to come up,
+it's time to put what we've learned in a library for future use.</p>
+<h2 id="builder-exercises">Section 7.7: Exercises</h2>
+<h3 class="exercise">Handle failure</h3>
+<ol>
+<li>
+<p>Modify the build manager to accommodate build steps that fail.</p>
+</li>
+<li>
+<p>Write Mocha tests to check that this change works correctly.</p>
+</li>
+</ol>
+<h3 class="exercise">Dry run</h3>
+<p>Add an option to the build manager to show what commands would be executed and why
+if a build were actually run.
+For example,
+the output should display things like, "'update A' because A older than B".</p>
+<h3 class="exercise">Change directories</h3>
+<p>Modify the build manager so that:</p>
+<div class="highlight"><pre><span></span><code>node build.js -C some/sub/directory rules.yml timestamps.yml
+</code></pre></div>
+<p class="continue">runs the build in the specified directory rather than the current directory.</p>
+<h3 class="exercise">Merge files</h3>
+<p>Modify the build manager so that it can read multiple configuration files
+and execute their combines rules.</p>
+<h3 class="exercise">Show recipes</h3>
+<p>Add a method to build manager to display all unique recipes,
+i.e.,
+all of the commands it might execute if asked to rebuild everything.</p>
+<h3 class="exercise">Conditional execution</h3>
+<p>Modify the build manager so that:</p>
+<ol>
+<li>
+<p>The user can pass <code>variable=true</code> and <code>variable=false</code> arguments on the command-line
+    to define variables.</p>
+</li>
+<li>
+<p>Rules can contain an <code>if: variable</code> field.</p>
+</li>
+<li>
+<p>Those rules are only executed if the variable is defined and true.</p>
+</li>
+<li>
+<p>Write Mocha tests to check that this works correctly.</p>
+</li>
+</ol>
+<h3 class="exercise">Define filesets</h3>
+<p>Modify the build manager so that users can define sets of files:</p>
+<div class="highlight"><pre><span></span><code>fileset:
+  name: everything
+  contains:
+    - X
+    - Y
+    - Z
+</code></pre></div>
+<p class="continue">and then refer to them later:</p>
+<div class="highlight"><pre><span></span><code>- target: P
+  depends:
+  - @everything
+</code></pre></div>
+<h3 class="exercise">Globbing</h3>
+<p>Modify the build manager so that it can dynamically construct a set of files:</p>
+<div class="highlight"><pre><span></span><code>glob:
+  name: allAvailableInputs
+  pattern: &quot;./*.in&quot;
+</code></pre></div>
+<p class="continue">and then refer to them later:</p>
+<div class="highlight"><pre><span></span><code>- target: P
+  depends:
+  - @allAvailableInputs
+</code></pre></div>
+<h3 class="exercise">Use hashes</h3>
+<ol>
+<li>
+<p>Write a program called <code>build-init.js</code> that calculates a hash
+    for every file mentioned in the build configuration
+    and stores the hash along with the file's name in <code>build-hash.json</code>.</p>
+</li>
+<li>
+<p>Modify the build manager to compare the current hashes of files
+    with those stored in <code>build-hash.json</code>
+    in order to determine what is out of date,
+    and to update <code>build-hash.json</code> each time it runs.</p>
+</li>
+</ol>
+<h3 class="exercise">Auxiliary functions</h3>
+<ol>
+<li>
+<p>Modify the builder manager so that it takes an extra argument <code>auxiliaries</code>
+    containing zero or more named functions:</p>
+<div class="highlight"><pre><span></span><code><span class="kd">const</span><span class="w"> </span><span class="nx">builder</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">ExtensibleBuilder</span><span class="p">(</span><span class="nx">configFile</span><span class="p">,</span><span class="w"> </span><span class="nx">timesFile</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="nx">slice</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">node</span><span class="p">,</span><span class="w"> </span><span class="nx">graph</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">simplify</span><span class="p">(</span><span class="nx">node</span><span class="p">,</span><span class="w"> </span><span class="nx">graph</span><span class="p">,</span><span class="w"> </span><span class="mf">1</span><span class="p">)</span><span class="w"></span>
+<span class="p">})</span><span class="w"></span>
+</code></pre></div>
+</li>
+<li>
+<p>Modify the <code>run</code> method to call these functions
+    before executing the rules for a node,
+    and to only execute the rules if all of them return <code>true</code>.</p>
+</li>
+<li>
+<p>Write Mocha tests to check that this works correctly.</p>
+</li>
+</ol>
         </main>
       </div>
     </div>
