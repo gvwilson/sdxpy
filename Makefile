@@ -4,6 +4,7 @@
 ABBREV := $(shell python ./config.py --abbrev)
 
 # Direct variables.
+EXAMPLES := $(patsubst %/Makefile,%,$(wildcard src/*/Makefile))
 HTML := info/head.html info/foot.html
 INFO := info/bibliography.bib info/credits.yml info/glossary.yml info/links.yml
 FIG_SVG := $(wildcard src/*/*.svg)
@@ -81,6 +82,11 @@ lint: clean
 	--links info/links.yml \
 	--html docs \
 	--src src
+
+## examples: re-run examples
+.PHONY: examples
+examples:
+	@for d in ${EXAMPLES}; do echo ""; echo $$d; make -C $$d; done
 
 ## spelling: check spelling against known words
 .PHONY: spelling

@@ -397,7 +397,7 @@ And here's the implementation of `do_call`:
 
 Our test program looks like this:
 
-[% excerpt f="call.tll" %]
+[% excerpt f="func.tll" %]
 
 and its output is:
 {: .continue}
