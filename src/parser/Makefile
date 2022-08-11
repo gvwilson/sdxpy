@@ -4,7 +4,7 @@ TARGETS=\
   tokenizer_collapse_example.out \
   tokenizer_test.out
 
-include ../examples.mk
+include ../../examples.mk
 
 parser_test.out: parser.py tokenizer.py
 tokenizer_collapse_example.py: tokenizer_collapse.py

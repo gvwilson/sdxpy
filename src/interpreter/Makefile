@@ -3,7 +3,7 @@ TARGETS=\
   func.out \
   vars.out
 
-include ../examples.mk
+include ../../examples.mk
 
 expr.out: expr.tll
 func.out: func.tll

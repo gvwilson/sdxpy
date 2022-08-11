@@ -7,7 +7,7 @@ TARGETS=\
   show_globals.out \
   show_tests.out
 
-include ../examples.mk
+include ../../examples.mk
 
 show_globals.out: show_globals.py
 	python $< > $@
