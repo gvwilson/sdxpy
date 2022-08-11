@@ -18,8 +18,6 @@ targets:
 	bash $< 2>&1 | ${REFORMAT} > $@
 %.out: %.sh %.py
 	bash $< 2>&1 | ${REFORMAT} > $@
-%.raw.out: %.sh %.py
-	bash $< 2>&1 > $@
 %.slice.out: %.sh %.py
 	bash $< 2>&1 | ${REFORMAT} --slice > $@
 
@@ -30,8 +28,6 @@ targets:
 	bash $< 2>&1 | ${REFORMAT} > $@
 %.out: %.sh
 	bash $< 2>&1 | ${REFORMAT} > $@
-%.raw.out: %.sh
-	bash $< 2>&1 > $@
 %.slice.out: %.sh
 	bash $< 2>&1 | ${REFORMAT} --slice > $@
 
@@ -40,8 +36,6 @@ targets:
 	python $< 2>&1 | ${REFORMAT} > $@
 %.out: %.py
 	python $< 2>&1 | ${REFORMAT} > $@
-%.raw.out: %.py
-	python $< 2>&1 > $@
 %.slice.out: %.py
 	python $< 2>&1 | ${REFORMAT} --slice > $@
 
