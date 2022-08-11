@@ -18,6 +18,7 @@ CONFIGURATIONS = {
     "index": {},  # index entries
     "syllabus": [],  # syllabus entries
     "tables": {},  # numbered tables
+    "titles": [],  # chapter/appendix titles
 }
 
 # Translations of multilingual terms.

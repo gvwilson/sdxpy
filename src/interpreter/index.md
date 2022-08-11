@@ -1,5 +1,5 @@
 ---
-title: "Interpreter"
+title: "An Interpreter"
 syllabus:
 - Compilers and interpreters are programs like any others.
 ---
@@ -14,7 +14,7 @@ This chapter shows how to do that
 by building a very small programming language.
 
 Real programming languages have two parts:
-a [%g parser "parser %] that translates the source code into a data structure in memory,
+a [%g parser "parser" %] that translates the source code into a data structure in memory,
 and a [%g runtime "runtime" %] that executes the instructions in that data structure.
 To keep this chapter manageable we only consider the runtime;
 [%x parser %] will explore parsing.
