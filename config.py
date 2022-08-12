@@ -90,7 +90,8 @@ extension = "/"
 
 # Files to copy verbatim.
 copy = [
-    "*.html",
+    "*.ht",
+    "*.json",
     "*.out",
     "*.pdf",
     "*.png",
@@ -103,6 +104,8 @@ exclude = [
     "*/Makefile",
     "*.csv",
     "*.gz",
+    "*.ht",
+    "*.json",
     "*.mk",
     "*.out",
     "*.pdf",
