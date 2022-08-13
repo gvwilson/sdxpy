@@ -13,7 +13,7 @@ PROTOCOL = 'file://'
 
 # Home directory replacement.
 HERE = os.path.abspath(os.path.join(os.getcwd(), os.pardir))
-FAKE = '/u/stjs'
+FAKE = '/u/sdpy'
 
 # How to show removed lines. (Can't use literal ellipsis '…' because it confuses LaTeX.)
 REMOVED = '...'

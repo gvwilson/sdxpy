@@ -293,60 +293,76 @@
 
   
 
+  
+  <p class="definitions">
+    Terms defined:
+    <a class="gl-ref" href="../glossary/#automatic_variable" markdown="1">automatic variable</a>, <a class="gl-ref" href="../glossary/#build_manager" markdown="1">build manager</a>, <a class="gl-ref" href="../glossary/#build_recipe" markdown="1">build recipe</a>, <a class="gl-ref" href="../glossary/#build_rule" markdown="1">build rule</a>, <a class="gl-ref" href="../glossary/#csv" markdown="1">comma-separated values</a>, <a class="gl-ref" href="../glossary/#compiled_language" markdown="1">compiled language</a>, <a class="gl-ref" href="../glossary/#dependency" markdown="1">dependency (in build)</a>, <a class="gl-ref" href="../glossary/#dag" markdown="1">directed acyclic graph</a>, <a class="gl-ref" href="../glossary/#json" markdown="1">JavaScript Object Notation</a>, <a class="gl-ref" href="../glossary/#link" markdown="1">link (in build)</a>, <a class="gl-ref" href="../glossary/#pattern_rule" markdown="1">pattern rule (in build)</a>, <a class="gl-ref" href="../glossary/#build_stale" markdown="1">stale (in build)</a>, <a class="gl-ref" href="../glossary/#build_target" markdown="1">target (in build)</a>, <a class="gl-ref" href="../glossary/#topological_order" markdown="1">topological order</a>, <a class="gl-ref" href="../glossary/#yaml" markdown="1">Yet Another Markup Language</a>
+  </p>
+  
 
-          <p>Choosing what actions to take based on how files depend on one another is a common pattern.
-For example,
-programs in compiled languages
-like C and Java
+
+          <p>Programs in <span class="ix-entry" ix-key="compiled language;language!compiled" markdown="1"><a class="gl-ref" href="../glossary/#compiled_language" markdown="1">compiled languages</a></span>
+like <span class="ix-entry" ix-key="C" markdown="1">C</span> and <span class="ix-entry" ix-key="Java" markdown="1">Java</span>
 have to be translated into lower-level forms before they can run.
-In fact,
-there are usually two stages to the translation:
+There are usually two stages to the translation:
 compiling each source file into some intermediate form,
-and then linking the compiled modules
+and then <span class="ix-entry" ix-key="linking (compiled language);compiled language!linking" markdown="1"><a class="gl-ref" href="../glossary/#link" markdown="1">linking</a></span> the compiled modules
 to each other and to libraries
 to create a runnable program
-(<span class="FIXME">FIXME</span>).
-If a source file hasn't changed,
-there's no need to recompile it before linking.</p>
-<p><span class="FIXME">FIXME</span></p>
-<p>A build manager takes a description of what depends on what,
+(<a class="fig-ref" href="../builder/#builder-compiling">Figure 7.1</a>).</p>
+<figure id="builder-compiling">
+  <img src="./compiling.svg" alt="Compiling and linking"/>
+  <figcaption markdown="1">Figure 7.1: Compiling source files and linking the resulting modules.</figcaption>
+</figure>
+
+<p>If a source file hasn't changed,
+there's no need to recompile it before linking.
+A <span class="ix-entry" ix-key="build manager" markdown="1"><a class="gl-ref" href="../glossary/#build_manager" markdown="1">build manager</a></span> takes a description of what depends on what,
 figures out which files are out of date,
 determines an order in which to rebuild things,
-and then executes any necessary steps.
-Originally created to manage compilation,
-they are also useful for programs written in interpreted languages
-like JavaScript
-when we want to bundle multiple modules into a single loadable file (<span class="FIXME">FIXME</span>)
-or re-create documentation from source code (<span class="FIXME">FIXME</span>).
-In this chapter we will create a simple build manager based on [Make][gnu-make]
-and other systems discussed in <span class="bib-ref">[<a class="bib-ref" href="../bibliography/#Smith2011">Smith2011</a>]</span>.</p>
-<h2 id="builder-contents">Section 7.1: What's in a build manager?</h2>
+and then does whatever is required and only what is required <span class="bib-ref">[<a class="bib-ref" href="../bibliography/#Smith2011">Smith2011</a>]</span>.</p>
+<p>The first build manager,
+<span class="ix-entry" ix-key="Make" markdown="1">[Make][gnu-make]</span>,
+was created to handle compilation of C programs,
+but build managers are used to update packages,
+regenerate websites (<a class="x-ref" href="../templating/">Chapter 15</a>),
+or re-create documentation from source code (<a class="x-ref" href="../docgen/">Chapter 19</a>).
+This chapter creates a simple build manager to illustrate how they work.</p>
+<h2 id="builder-structure">Section 7.1: Structure</h2>
 <p>The input to a build manager is a set of rules,
 each of which has:</p>
 <ul>
 <li>
-<p>a target, which is the file to be updated;</p>
+<p>a <span class="ix-entry" ix-key="build target;target!build" markdown="1"><a class="gl-ref" href="../glossary/#build_target" markdown="1">target</a></span>,
+    which is the file to be updated;</p>
 </li>
 <li>
-<p>some dependencies, which are the things that file depends on;
+<p>some <span class="ix-entry" ix-key="dependency (in build);build!dependency" markdown="1"><a class="gl-ref" href="../glossary/#dependency" markdown="1">dependencies</a></span>,
+    which are the things that file depends on;
     and</p>
 </li>
 <li>
-<p>a recipe that specifies how to update the target
+<p>a <span class="ix-entry" ix-key="recipe (in build);build!recipe" markdown="1"><a class="gl-ref" href="../glossary/#build_recipe" markdown="1">recipe</a></span>
+    that specifies how to update the target
     if it is out of date compared to its dependencies.</p>
 </li>
 </ul>
 <p>The target of one rule can be a dependency of another rule,
-so the relationships between the files form a directed acyclic graph or DAG
-(<span class="FIXME">FIXME</span>).
-The graph is directed because "A depends on B" is a one-way relationship;
-it cannot contain cycles (or loops) because
-if something depends on itself we can never finish updating it.
-We say that a target is stale if it is older than any of its dependencies.
+so their relationships form a <span class="ix-entry" ix-key="directed acyclic graph (DAG);DAG" markdown="1"><a class="gl-ref" href="../glossary/#dag" markdown="1">directed acyclic graph</a></span>
+(<a class="fig-ref" href="../builder/#builder-dependencies">Figure 7.2</a>).
+The graph is directed because "A depends on B" is a one-way relationship,
+while "acyclic" means it cannot contains loops:
+if something depends on itself we can never finish updating it.</p>
+<figure id="builder-dependencies">
+  <img src="./dependencies.svg" alt="Respecting dependencies"/>
+  <figcaption markdown="1">Figure 7.2: How a build manager finds and respects dependencies.</figcaption>
+</figure>
+
+<p>We say that a target is <span class="ix-entry" ix-key="stale (in build);build!stale" markdown="1"><a class="gl-ref" href="../glossary/#build_stale" markdown="1">stale</a></span>
+if it is older than any of its dependencies.
 When this happens,
-we use the recipes to bring it up to date.</p>
-<p><span class="FIXME">FIXME</span></p>
-<p>Our build manager must:</p>
+we use the recipes to bring it up to date.
+Our build manager therefore must:</p>
 <ol>
 <li>
 <p>Read a file containing rules.</p>
@@ -362,138 +378,290 @@ we use the recipes to bring it up to date.</p>
     making sure to build things <em>before</em> anything that depends on them is built.</p>
 </li>
 </ol>
-<blockquote>
+<div class="callout">
 <h3>Topological order</h3>
-<p>A topological ordering of a graph
+<p>A <span class="ix-entry" ix-key="topological order" markdown="1"><a class="gl-ref" href="../glossary/#topological_order" markdown="1">topological ordering</a></span> of a graph
 arranges the nodes so that every node comes after everything it depends on.
 For example,
 if A depends on both B and C,
 then (B, C, A) and (C, B, A) are both valid topological orders of the graph.</p>
-</blockquote>
-<h2 id="builder-start">Section 7.2: Where should we start?</h2>
-<p>We will store our rules in YAML files like this:</p>
-<p><span class="FIXME">FIXME</span></p>
-<p class="continue">We could equally well have used JSON,
-but it wouldn't have made sense to use CSV:
+</div>
+<h2 id="builder-rules">Section 7.2: Representing Rules</h2>
+<p>We will store our rules in <a class="gl-ref" href="../glossary/#yaml" markdown="1">YAML</a> files like this:</p>
+<div class="highlight"><pre><span></span><code>- target: A
+  depends:
+  - B
+  - C
+  recipes:
+  - &quot;update A from B and C&quot;
+- target: B
+  depends:
+  - C
+  recipes:
+  - &quot;update B from C&quot;
+- target: C
+  depends: []
+  recipes: []
+</code></pre></div>
+<p class="continue">We could equally well have used <a class="gl-ref" href="../glossary/#json" markdown="1">JSON</a>,
+but it wouldn't have made sense to use <a class="gl-ref" href="../glossary/#csv" markdown="1">CSV</a>:
 rules have a nested structure,
-and CSV doesn't represent nesting particularly gracefully.</p>
-<p>We are going to create our build manager in stages,
-so we start by writing a simple driver that loads a JavaScript source file,
-creates an object of whatever class that file exports,
-and runs the <code>.build</code> method of that object with the rest of the command-line parameters:</p>
-<p><span class="FIXME">FIXME</span></p>
-<p class="continue">We use the <code>import</code> function to dynamically load files containing in <span class="FIXME">FIXME</span> as well.
-It only saves us a few lines of code in this case,
-but we will use this idea of a general-purpose driver for larger programs in future chapters.</p>
-<p>To work with our driver,
-each version of our build manager must be a class that satisfies two requirements:</p>
-<ol>
-<li>
-<p>Its constructor must take a configuration file as an argument.</p>
-</li>
-<li>
-<p>It must provide a <code>build</code> method that needs no arguments.</p>
-</li>
-</ol>
-<p>The <code>build</code> method must create a graph from the configuration file,
-check that it does not contain any cycles,
-and then run whatever commands are needed to update stale targets.
-Just as we built a generic <code>Visitor</code> class in <span class="FIXME">FIXME</span>,
-we can build a generic base class for our build manager that does these steps in this order
-without actually implementing any of them:</p>
-<p><span class="FIXME">FIXME</span></p>
-<p>This is an example of
-the Template Method design pattern:
-the parent class defines the order of the steps
-and child classes fill them in
-(<span class="FIXME">FIXME</span>).
-This design pattern ensures that every child does the same things in the same order,
-even if the details of <em>how</em> vary from case to case.</p>
-<p><span class="FIXME">FIXME</span></p>
-<p>We would normally implement all of the methods required by the <code>build</code> method at the same time,
+and CSV doesn't represent nesting gracefully.</p>
+<p>We would normally implement all of the methods required by the builder at once,
 but to make the evolving code easier to follow we will write them them one by one.
-The <code>loadConfig</code> method loads the configuration file
-as the builder object is being constructed:</p>
-<p><span class="FIXME">FIXME</span></p>
-<p class="continue">The first line does the loading;
-the rest of the method checks that the rules are at least superficially plausible.
-We need these checks because YAML is a generic file format
-that doesn't know anything about the extra requirements of our rules.
-And as we first saw in <span class="FIXME">FIXME</span>,
-we have to specify that the character encoding of our file is UTF-8
-so that JavaScript knows how to convert bytes into text.</p>
+Let's start by writing a class that loads a configuration file:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">yaml</span>
+
+<span class="k">class</span> <span class="nc">ConfigLoader</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rules_file</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rules_file</span> <span class="o">=</span> <span class="n">rules_file</span>
+
+    <span class="k">def</span> <span class="nf">build</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">load_config</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">load_config</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rules_file</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">reader</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rules</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">reader</span><span class="p">,</span> <span class="n">Loader</span><span class="o">=</span><span class="n">yaml</span><span class="o">.</span><span class="n">FullLoader</span><span class="p">)</span>
+
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rules</span><span class="p">,</span> <span class="nb">list</span><span class="p">),</span> \
+            <span class="s2">&quot;Configuration must be array&quot;</span>
+
+        <span class="k">for</span> <span class="n">rule</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">rules</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_check</span><span class="p">(</span><span class="n">rule</span><span class="p">)</span>
+</code></pre></div>
+<p>We need to check each rule because YAML is a generic file format
+that doesn't know anything about the extra requirements of our rules:</p>
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">_check</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Check a single rule.&quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="p">(</span><span class="s2">&quot;target&quot;</span> <span class="ow">in</span> <span class="n">rule</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">rule</span><span class="p">[</span><span class="s2">&quot;target&quot;</span><span class="p">],</span> <span class="nb">str</span><span class="p">),</span> \
+            <span class="sa">f</span><span class="s2">&quot;Rule </span><span class="si">{</span><span class="n">rule</span><span class="si">}</span><span class="s2"> does not have &#39;target&#39;&quot;</span>
+
+        <span class="k">assert</span> <span class="p">(</span><span class="s2">&quot;depends&quot;</span> <span class="ow">in</span> <span class="n">rule</span><span class="p">)</span> <span class="ow">and</span> \
+            <span class="nb">isinstance</span><span class="p">(</span><span class="n">rule</span><span class="p">[</span><span class="s2">&quot;depends&quot;</span><span class="p">],</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> \
+            <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">dep</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">for</span> <span class="n">dep</span> <span class="ow">in</span> <span class="n">rule</span><span class="p">[</span><span class="s2">&quot;depends&quot;</span><span class="p">]),</span> \
+            <span class="sa">f</span><span class="s2">&quot;Bad &#39;depends&#39; for rule </span><span class="si">{</span><span class="n">rule</span><span class="si">}</span><span class="s2">&quot;</span>
+
+        <span class="k">assert</span> <span class="p">(</span><span class="s2">&quot;recipes&quot;</span> <span class="ow">in</span> <span class="n">rule</span><span class="p">)</span> <span class="ow">and</span> \
+            <span class="nb">isinstance</span><span class="p">(</span><span class="n">rule</span><span class="p">[</span><span class="s2">&quot;recipes&quot;</span><span class="p">],</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> \
+            <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">rule</span><span class="p">[</span><span class="s2">&quot;recipes&quot;</span><span class="p">]),</span> \
+            <span class="sa">f</span><span class="s2">&quot;Bad &#39;recipes&#39; for rule </span><span class="si">{</span><span class="n">rule</span><span class="si">}</span><span class="s2">&quot;</span>
+</code></pre></div>
 <p>The next step is to turn the configuration into a graph in memory.
-We use the <code>graphlib</code> module to manage nodes and links
+We derive a class from <code>ConfigLoader</code> so that we can recycle the code we've already written
+and call a couple of methods that we are planning to add:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
+<span class="kn">from</span> <span class="nn">networkx.readwrite</span> <span class="kn">import</span> <span class="n">json_graph</span>
+
+<span class="kn">from</span> <span class="nn">config_loader</span> <span class="kn">import</span> <span class="n">ConfigLoader</span>
+
+<span class="k">class</span> <span class="nc">GraphCreator</span><span class="p">(</span><span class="n">ConfigLoader</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">build</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">load_config</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">build_graph</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_cycles</span><span class="p">()</span>
+</code></pre></div>
+<p>We use the [<code>networkx</code>][networkx] module to manage nodes and links
 rather than writing our own classes for graphs,
-and store the recipe to rebuild a node in that node.
-Two features of <code>graphlib</code> that took us a while to figure out are that:</p>
-<ol>
-<li>
-<p>links go <em>from</em> the dependency <em>to</em> the target,
-    and</p>
-</li>
-<li>
-<p><code>setEdge</code> automatically adds nodes if they aren't already present.</p>
-</li>
-</ol>
-<p><code>graphlib</code> provides implementations of some common graph algorithms,
-including one to check for cycles,
-so we might as well write that method at this point as well:</p>
-<p><span class="FIXME">FIXME</span></p>
-<p>We can now create something that displays our configuration when it runs
-but does nothing else:</p>
-<p><span class="FIXME">FIXME</span></p>
-<p>If we run this with our three simple rules as input,
-it shows the graph with <code>v</code> and <code>w</code> keys to represent the ends of the links:</p>
-<p><span class="FIXME">FIXME</span></p>
+and store the recipe to rebuild a node in that node:</p>
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">build_graph</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">graph</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">rule</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">rules</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">rule</span><span class="p">[</span><span class="s2">&quot;target&quot;</span><span class="p">],</span> <span class="n">recipes</span><span class="o">=</span><span class="n">rule</span><span class="p">[</span><span class="s2">&quot;recipes&quot;</span><span class="p">])</span>
+
+        <span class="k">for</span> <span class="n">rule</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">rules</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">rule</span><span class="p">[</span><span class="s2">&quot;depends&quot;</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">rule</span><span class="p">[</span><span class="s2">&quot;target&quot;</span><span class="p">])</span>
+</code></pre></div>
+<p><code>networkx</code> provides implementations of some common graph algorithms,
+including one to find cycles,
+so let's write that next:</p>
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">check_cycles</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">cycles</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">nx</span><span class="o">.</span><span class="n">algorithms</span><span class="o">.</span><span class="n">simple_cycles</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="p">))</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">cycles</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> \
+            <span class="sa">f</span><span class="s2">&quot;Dependency graph contains cycles </span><span class="si">{</span><span class="n">cycles</span><span class="si">}</span><span class="s2">&quot;</span>
+</code></pre></div>
+<p>Finally,
+we write a <code>__str__</code> method so we can see what we've built:</p>
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">temp</span> <span class="o">=</span> <span class="n">json_graph</span><span class="o">.</span><span class="n">node_link_data</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="p">)</span>
+        <span class="n">temp</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span><span class="n">v</span> <span class="k">for</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="ow">in</span> <span class="n">temp</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;nodes&quot;</span><span class="p">,</span> <span class="s2">&quot;links&quot;</span><span class="p">}}</span>
+        <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">temp</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+</code></pre></div>
+<p>When we run this with our three simple rules as input we get:</p>
+<div class="highlight"><pre><span></span><code>python graph_creator.py three_simple_rules.yml
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>{
+  &quot;nodes&quot;: [
+    {
+      &quot;recipes&quot;: [
+        &quot;update A from B and C&quot;
+      ],
+      &quot;id&quot;: &quot;A&quot;
+    },
+    {
+      &quot;recipes&quot;: [
+        &quot;update B from C&quot;
+      ],
+      &quot;id&quot;: &quot;B&quot;
+    },
+    {
+      &quot;recipes&quot;: [],
+      &quot;id&quot;: &quot;C&quot;
+    }
+  ],
+  &quot;links&quot;: [
+    {
+      &quot;source&quot;: &quot;B&quot;,
+      &quot;target&quot;: &quot;A&quot;
+    },
+    {
+      &quot;source&quot;: &quot;C&quot;,
+      &quot;target&quot;: &quot;A&quot;
+    },
+    {
+      &quot;source&quot;: &quot;C&quot;,
+      &quot;target&quot;: &quot;B&quot;
+    }
+  ]
+}
+</code></pre></div>
 <p>Let's write a quick test to make sure the cycle detector works as intended:</p>
-<p><span class="FIXME">FIXME</span>
-<span class="FIXME">FIXME</span></p>
-<h2 id="builder-timestamp">Section 7.3: How can we specify that a file is out of date?</h2>
+<p><div class="highlight"><pre><span></span><code>- target: A
+  depends:
+  - B
+  recipes:
+  - &quot;update A from B&quot;
+- target: B
+  depends:
+  - A
+  recipes:
+  - &quot;update B from A&quot;
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>python graph_creator.py circular_rules.yml
+</code></pre></div></p>
+<div class="highlight"><pre><span></span><code>
+</code></pre></div>
+<h2 id="builder-timestamp">Section 7.3: Stale Files</h2>
 <p>The next step is to figure out which files are out of date.
-Make does this by comparing the timestamps of the files in question,
+Make does this by comparing the <span class="ix-entry" ix-key="timestamp!in build;build!timestamp" markdown="1">timestamps</span> of the files in question,
 but this isn't always reliable:
-computers' clocks may be slightly out of sync,
+<span class="ix-entry" ix-key="clock synchronization (in build);build!clock synchronization" markdown="1">computers' clocks may be slightly out of sync</span>,
 which can produce a wrong answer on a networked filesystem,
 and the operating system may only report file update times to the nearest millisecond
 (which seemed very short in 1970 but seems very long today).</p>
-<p>More modern build systems store a hash of each file's contents
+<p>More modern build systems store a <span class="ix-entry" ix-key="hash code!in build;build!hash code" markdown="1">hash</span> of each file's contents
 and compare the current hash to the stored one to see if the file has changed.
-Since we already looked at hashing in <span class="FIXME">FIXME</span>,
-we will use the timestamp approach here.
-And instead of using a mock filesystem as we did in <span class="FIXME">FIXME</span>,
-we will simply load another configuration file that specifies fake timestamps for files:</p>
-<p><span class="FIXME">FIXME</span></p>
+We looked at hashing in <a class="x-ref" href="../backup/">Chapter 5</a>,
+so we will use the timestamp approach here,
+but instead of using a mock filesystem
+we will load another configuration file that specifies fake timestamps for files:</p>
+<div class="highlight"><pre><span></span><code>A: 2
+B: 5
+C: 8
+</code></pre></div>
 <p>Since we want to associate those timestamps with files,
-we add a step to <code>buildGraph</code> to read the timestamp file and add information to the graph's nodes:</p>
-<p><span class="FIXME">FIXME</span></p>
-<blockquote>
-<h3>Not quite what we were expecting</h3>
-<p>The steps defined in <code>SkeletonBuilder.build</code> don't change when we do this,
-so people reading the code don't have to change their mental model of what it does overall.
-However,
-if we had realized in advance that we were going to want to add timestamps from a file,
-we would probably have added a step for that in the template method.
-And if someone ever wants to inject a new step between building the graph and adding timestamps,
-they will have to override <code>addTimestamps</code> and put their step at the top before calling <code>super.addTimestamps</code>,
-which will make the code a lot harder to understand.
-We will reflect on this in the last section of this chapter.</p>
-</blockquote>
+we add steps to the constructor and the <code>build</code> method
+to read the timestamp file and add information to the graph's nodes:</p>
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">AddTimestamps</span><span class="p">(</span><span class="n">GraphCreator</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rules_file</span><span class="p">,</span> <span class="n">times_file</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">rules_file</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">times_file</span> <span class="o">=</span> <span class="n">times_file</span>
+
+    <span class="k">def</span> <span class="nf">build</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">load_config</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">build_graph</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_timestamps</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_cycles</span><span class="p">()</span>
+</code></pre></div>
+<p class="continue">and then implement <code>add_timestamps</code>:</p>
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">add_timestamps</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">times_file</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">reader</span><span class="p">:</span>
+            <span class="n">times</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">reader</span><span class="p">,</span> <span class="n">Loader</span><span class="o">=</span><span class="n">yaml</span><span class="o">.</span><span class="n">FullLoader</span><span class="p">)</span>
+        <span class="n">missing</span> <span class="o">=</span> <span class="p">{</span><span class="n">n</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">}</span> <span class="o">-</span> <span class="p">{</span><span class="n">n</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">times</span><span class="o">.</span><span class="n">keys</span><span class="p">()}</span>
+        <span class="k">assert</span> <span class="ow">not</span> <span class="n">missing</span><span class="p">,</span> \
+            <span class="sa">f</span><span class="s2">&quot;Name(s) missing from times: </span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">missing</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">nx</span><span class="o">.</span><span class="n">set_node_attributes</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="p">,</span> <span class="n">times</span><span class="p">,</span> <span class="s2">&quot;timestamp&quot;</span><span class="p">)</span>
+</code></pre></div>
 <p>Before we move on,
 let's make sure that adding timestamps works as we want:</p>
-<p><span class="FIXME">FIXME</span></p>
-<h2 id="builder-update">Section 7.4: How can we update out-of-date files?</h2>
+<div class="highlight"><pre><span></span><code>python add_timestamps.py three_simple_rules.yml add_timestamps.yml
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>{
+  &quot;nodes&quot;: [
+    {
+      &quot;recipes&quot;: [
+        &quot;update A from B and C&quot;
+      ],
+      &quot;timestamp&quot;: 2,
+      &quot;id&quot;: &quot;A&quot;
+    },
+    {
+      &quot;recipes&quot;: [
+        &quot;update B from C&quot;
+      ],
+      &quot;timestamp&quot;: 5,
+      &quot;id&quot;: &quot;B&quot;
+    },
+    {
+      &quot;recipes&quot;: [],
+      &quot;timestamp&quot;: 8,
+      &quot;id&quot;: &quot;C&quot;
+    }
+  ],
+  &quot;links&quot;: [
+    {
+      &quot;source&quot;: &quot;B&quot;,
+      &quot;target&quot;: &quot;A&quot;
+    },
+    {
+      &quot;source&quot;: &quot;C&quot;,
+      &quot;target&quot;: &quot;A&quot;
+    },
+    {
+      &quot;source&quot;: &quot;C&quot;,
+      &quot;target&quot;: &quot;B&quot;
+    }
+  ]
+}
+</code></pre></div>
+<h2 id="builder-update">Section 7.4: Updating Files</h2>
 <p>To figure out which recipes to execute and in which order,
 we set the pretended current time to the latest time of any file,
 then look at each file in topological order.
 If a file is older than any of its dependencies,
 we update the file <em>and</em> its pretended timestamp
-to trigger an update of anything that depends on it.</p>
-<p>We can pretend that updating a file always takes one unit of time,
+to trigger an update of anything that depends on it.
+First,
+we add a step to <code>build</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">UpdateTimestamps</span><span class="p">(</span><span class="n">AddTimestamps</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">build</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">load_config</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">build_graph</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_timestamps</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_cycles</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</code></pre></div>
+<p>Next,
+we implement the <code>run</code> method.
+We can pretend that updating a file always takes one unit of time,
 so we advance our fictional clock by one for each build.
-Using <code>graphlib.alg.topsort</code> to create the topological order,
+Using <code>networkx.topological_sort</code> to create the topological order,
 we get this:</p>
-<p><span class="FIXME">FIXME</span></p>
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">times</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">get_node_attributes</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="p">,</span> <span class="s2">&quot;timestamp&quot;</span><span class="p">)</span>
+        <span class="n">current_time</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">+</span> <span class="nb">max</span><span class="p">(</span><span class="n">times</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">current_time</span><span class="si">}</span><span class="s2">: START&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">reversed</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">nx</span><span class="o">.</span><span class="n">topological_sort</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="p">))):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_stale</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">current_time</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">current_time</span>
+                <span class="n">current_time</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">current_time</span><span class="si">}</span><span class="s2">: END&quot;</span><span class="p">)</span>
+</code></pre></div>
 <p>The <code>run</code> method:</p>
 <ol>
 <li>
@@ -503,25 +671,45 @@ we get this:</p>
 <p>Sets the starting time to be one unit past the largest file time.</p>
 </li>
 <li>
-<p>Uses <code>Array.reduce</code> to operate on each node (i.e., each file) in order.
+<p>Checks each file in order.
     If that file is stale,
     we print the steps we would run and then update the file's timestamp.
     We only advance the notional current time when we do an update.</p>
 </li>
 </ol>
 <p>In order to check if a file is stale,
-we see if any of its dependencies currently have timestamps greater than or equal to its.
-When we run this,
+we see if any of its dependencies currently have timestamps
+greater than or equal to the target's timestamp:</p>
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">is_stale</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">any</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">p</span><span class="p">][</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">predecessors</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="p">)</span>
+</code></pre></div>
+<p>Our <code>update</code> method simply prints the actions it would take:</p>
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">time</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;- </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">time</span><span class="si">}</span><span class="s2">):&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;recipes&quot;</span><span class="p">]:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  - </span><span class="si">{</span><span class="n">r</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</code></pre></div>
+<p>When we run this,
 it seems to do the right thing:</p>
-<p><span class="FIXME">FIXME</span></p>
-<h2 id="builder-generic">Section 7.5: How can we add generic build rules?</h2>
-<p>If our website has a hundred blog posts
-or a hundred pages of documentation about particular JavaScript files,
-we don't want to have to write a hundred nearly-identical recipes.
+<div class="highlight"><pre><span></span><code>python update_timestamps.py three_simple_rules.yml add_timestamps.yml
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>9: START
+- A (9):
+  - update A from B and C
+- B (10):
+  - update B from C
+11: END
+</code></pre></div>
+<h2 id="builder-variables">Section 7.5: Variables</h2>
+<p>We don't want to have to write a hundred nearly-identical recipes
+if our website has a hundred blog posts
+or a hundred pages of documentation.
 Instead,
-we want to be able to write generic build rules that say,
-"Build all things of this kind the same way."
-These generic rules need:</p>
+we want to be able to write generic <span class="ix-entry" ix-key="build!rule;rule (in build)" markdown="1"><a class="gl-ref" href="../glossary/#build_rule" markdown="1">build rules</a></span>.
+To do this we need:</p>
 <ul>
 <li>
 <p>a way to define a set of files;</p>
@@ -534,67 +722,187 @@ These generic rules need:</p>
 <p>a way to fill in parts of that rule.</p>
 </li>
 </ul>
-<p>We will achieve this by overriding <code>buildGraph</code> to replace variables in recipes with values.
+<p>We will achieve this by overriding <code>build_graph</code> to replace variables in recipes with values.
 Once again,
 object-oriented programming helps us change only what we need to change,
 provided we divided our problem into sensible chunks in the first place.</p>
-<p>Make provides automatic variables
+<p>Make provides
+<span class="ix-entry" ix-key="automatic variable (in build);build!automatic variable" markdown="1"><a class="gl-ref" href="../glossary/#automatic_variable" markdown="1">automatic variables</a></span>
 with names like <code>$&lt;</code> and <code>$@</code>
 to represent the parts of a rule.
 Our variables will be more readable:
 we will use <code>@TARGET</code> for the target,
 <code>@DEPENDENCIES</code> for the dependencies (in order),
 and <code>@DEP[1]</code>, <code>@DEP[2]</code>, and so on for specific dependencies
-(<span class="FIXME">FIXME</span>).</p>
-<p><span class="FIXME">FIXME</span></p>
+(<a class="fig-ref" href="../builder/#builder-pattern-rules">Figure 7.3</a>).</p>
+<figure id="builder-pattern-rules">
+  <img src="./pattern_rules.svg" alt="Pattern rules"/>
+  <figcaption markdown="1">Figure 7.3: Turning patterns rules into runnable commands.</figcaption>
+</figure>
+
 <p>Our variable expander looks like this:</p>
-<p><span class="FIXME">FIXME</span></p>
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">expand_variables</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">target</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">expand_one</span><span class="p">(</span><span class="n">target</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">expand_one</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+        <span class="n">dependencies</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">predecessors</span><span class="p">(</span><span class="n">target</span><span class="p">))</span>
+        <span class="n">recipes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">target</span><span class="p">][</span><span class="s2">&quot;recipes&quot;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="p">(</span><span class="n">ir</span><span class="p">,</span> <span class="n">recipe</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">recipes</span><span class="p">):</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">recipe</span>\
+                <span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;@TARGET&quot;</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span>\
+                <span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;@DEPENDENCIES&quot;</span><span class="p">,</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dependencies</span><span class="p">))</span>
+            <span class="k">for</span> <span class="p">(</span><span class="nb">id</span><span class="p">,</span> <span class="n">d</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">dependencies</span><span class="p">):</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;@DEP[</span><span class="si">{</span><span class="nb">id</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">,</span> <span class="n">d</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">target</span><span class="p">][</span><span class="s2">&quot;recipes&quot;</span><span class="p">][</span><span class="n">ir</span><span class="p">]</span> <span class="o">=</span> <span class="n">result</span>
+</code></pre></div>
 <p>The first thing we do is test that it works when there <em>aren't</em> any variables to expand
 by running it on the same example we used previously:</p>
-<p><span class="FIXME">FIXME</span></p>
+<div class="highlight"><pre><span></span><code>python expand_variables.py three_simple_rules.yml add_timestamps.yml
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>9: START
+- A (9):
+  - update A from B and C
+- B (10):
+  - update B from C
+11: END
+</code></pre></div>
 <p class="continue">This is perhaps the most important reason to create tests:
-they tell us right away if something we have added or changed
-has broken something that used to work.
-That gives us a firm base to build on as we debug the new code.</p>
-<p>Now we need to add pattern rules.
-Our first attempt at a rules file looks like this:</p>
-<p><span class="FIXME">FIXME</span></p>
+they tell us if something we have added or changed
+has broken something that used to work
+so that we have a solid base for new code.</p>
+<p><div class="highlight"><pre><span></span><code>- target: A
+  depends:
+  - B
+  - C
+  recipes:
+  - &quot;update @TARGET from @DEPENDENCIES&quot;
+- target: B
+  depends:
+  - C
+  recipes:
+  - &quot;update @TARGET from @DEP[1]&quot;
+- target: C
+  depends: []
+  recipes: []
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>python expand_variables.py three_variable_rules.yml add_timestamps.yml
+</code></pre></div></p>
+<div class="highlight"><pre><span></span><code>9: START
+- A (9):
+  - update A from B C
+- B (10):
+  - update B from C
+11: END
+</code></pre></div>
+<h2 id="builder-generic">Section 7.6: Generic Rules</h2>
+<p>Now we need to add <span class="ix-entry" ix-key="pattern rule (in build);build!pattern rule" markdown="1"><a class="gl-ref" href="../glossary/#pattern_rule" markdown="1">pattern rules</a></span>:
+Our test rules file is:</p>
+<div class="highlight"><pre><span></span><code>- target: left.out
+  depends: []
+  recipes: []
+- target: left.in
+  depends: []
+  recipes: []
+- target: right.out
+  depends: []
+  recipes: []
+- target: right.in
+  depends: []
+  recipes: []
+- target: &quot;%.out&quot;
+  depends:
+  - &quot;%.in&quot;
+  recipes:
+  - &quot;update @TARGET from @DEPENDENCIES&quot;
+</code></pre></div>
 <p class="continue">and our first attempt at reading it extracts rules before expanding variables:</p>
-<p><span class="FIXME">FIXME</span></p>
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">PatternAttempt</span><span class="p">(</span><span class="n">ExpandVariables</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">build</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">load_config</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">build_graph</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">extract_rules</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">expand_rules</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">expand_variables</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_timestamps</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_cycles</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">extract_rules</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rules</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">target</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s2">&quot;%&quot;</span> <span class="ow">in</span> <span class="n">target</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">rules</span><span class="p">[</span><span class="n">target</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">target</span><span class="p">][</span><span class="s2">&quot;recipes&quot;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">rules</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">remove_node</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+</code></pre></div>
 <p>However,
-that doesn't work:</p>
-<p><span class="FIXME">FIXME</span></p>
-<p class="continue">The problem is that our simple graph loader creates nodes for dependencies even if they aren't targets.
+it doesn't work:</p>
+<div class="highlight"><pre><span></span><code>python pattern_attempt.py pattern_rules.yml pattern_times.yml
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>Traceback (most recent call last):
+  File &quot;/u/sdpy/builder/pattern_attempt.py&quot;, line 33, in &lt;module&gt;
+    builder.build()
+  File &quot;/u/sdpy/builder/pattern_attempt.py&quot;, line 9, in build
+    self.extract_rules()
+  File &quot;/u/sdpy/builder/pattern_attempt.py&quot;, line 20, in extract_rules
+    self.rules[target] = self.graph.nodes[target][&quot;recipes&quot;]
+KeyError: &#39;recipes&#39;
+</code></pre></div>
+<p>After a bit of poking around we realize that
+we're looking at the rule for <code>%.in</code>.
+A bit more poking around and we realize that
+when we created edges in the graph between a target and its dependencies,
+<code>networkx</code> automatically added a node for the dependency
+if one didn't exist yet.
 As a result,
-we wind up tripping over the lack of a node for <code>%.in</code> before we get to extracting rules.</p>
-<blockquote>
-<h3>Errors become assertions</h3>
-<p>When we first wrote <code>add-timestamps.js</code>,
-it didn't contain the assertion
-that printed the error message shown above.
-Once we tracked down our bug,
-though,
-we added the assertion to ensure we didn't make the same mistake again,
-and as runnable documentation
-to tell the next programmer more about the code.
-Regular code tells the computer what to do;
-assertions with meaningful error messages tell the reader why.</p>
-</blockquote>
-<p>We can fix our problem by rewriting the rule loader
-to separate pattern rules from simple rules;
-we can tell the two apart by checking if the rule's dependencies include <code>%</code>.
-While we're here,
-we will enable timestamps as an optional field in the rules for testing purposes
-rather than having them in a separate file:</p>
-<p><span class="FIXME">FIXME</span></p>
-<p>Before we try to run this,
-let's add methods to show the state of our two internal data structures:</p>
-<p><span class="FIXME">FIXME</span></p>
-<p>The output seems to be right,
-so let's try expanding rules <em>after</em> building the graph and rules
-but <em>before</em> expanding variables:</p>
-<p><span class="FIXME">FIXME</span></p>
-<h2 id="builder-next">Section 7.6: What should we do next?</h2>
+when we say that <code>%.out</code> depends on <code>%.in</code>,
+we wind up with a node for <code>%.in</code> that doesn't have any recipes.</p>
+<p>We can fix our problem by changing the <code>build_graph</code> method
+so that it saves pattern rules in a dictionary
+and then builds the graph from the non-pattern rules:</p>
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">build_graph</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">patterns</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">r</span><span class="p">[</span><span class="s2">&quot;target&quot;</span><span class="p">]:</span><span class="n">r</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">rules</span>
+            <span class="k">if</span> <span class="s2">&quot;%&quot;</span> <span class="ow">in</span> <span class="n">r</span><span class="p">[</span><span class="s2">&quot;target&quot;</span><span class="p">]</span>
+        <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rules</span> <span class="o">=</span> <span class="p">[</span><span class="n">r</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">rules</span> <span class="k">if</span> <span class="s2">&quot;%&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">r</span><span class="p">[</span><span class="s2">&quot;target&quot;</span><span class="p">]]</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">build_graph</span><span class="p">()</span>
+</code></pre></div>
+<p>Expanding rules relies on two helper methods:</p>
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">expand_rules</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">target</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">rule</span> <span class="o">:=</span> <span class="bp">self</span><span class="o">.</span><span class="n">find_rule</span><span class="p">(</span><span class="n">target</span><span class="p">)):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">fill_in</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">rule</span><span class="p">)</span>
+</code></pre></div>
+<p>The first helper finds rules:</p>
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">find_rule</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+        <span class="k">if</span> <span class="s2">&quot;.&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">target</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="n">suffix</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;%.</span><span class="si">{</span><span class="n">suffix</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">patterns</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+</code></pre></div>
+<p class="continue">and the second adds links and recipes to the graph:</p>
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">fill_in</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">rule</span><span class="p">):</span>
+        <span class="n">stem</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">target</span><span class="p">][</span><span class="s2">&quot;recipes&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">rule</span><span class="p">[</span><span class="s2">&quot;recipes&quot;</span><span class="p">]</span>
+        <span class="n">depends</span> <span class="o">=</span> <span class="p">[</span><span class="n">d</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;%&quot;</span><span class="p">,</span> <span class="n">stem</span><span class="p">)</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">rule</span><span class="p">[</span><span class="s2">&quot;depends&quot;</span><span class="p">]]</span>
+        <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">depends</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span>
+</code></pre></div>
+<p>We're finally ready to test:</p>
+<div class="highlight"><pre><span></span><code>python pattern_final.py pattern_rules.yml pattern_times.yml
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>4: START
+- right.out (4):
+  - update left.out from left.in
+- left.out (5):
+  - update left.out from left.in
+6: END
+</code></pre></div>
+<h2 id="builder-discuss">Section 7.7: Discussion</h2>
 <p>We have added a lot of steps to our original template method,
 which makes it a bit of a stretch to claim that the overall operation hasn't changed.
 Knowing what we know now,
@@ -604,38 +912,24 @@ to include those extra steps and provide do-nothing implementations.</p>
 when we wrote our template method.
 It typically takes a few child classes for this to settle down;
 if it never does,
-then Template Method is probably the wrong pattern for our situation.
+then <span class="ix-entry" ix-key="Template Method pattern;design pattern!Template Method" markdown="1">Template Method</span> is probably the wrong pattern for our situation.
 Realizing this isn't a failure in initial design:
 we always learn about our problem as we try to capture it in code,
 and if we know enough to anticipate 100% of the issues that are going to come up,
 it's time to put what we've learned in a library for future use.</p>
-<h2 id="builder-exercises">Section 7.7: Exercises</h2>
+<h2 id="builder-exercises">Section 7.8: Exercises</h2>
 <h3 class="exercise">Handle failure</h3>
 <ol>
 <li>
 <p>Modify the build manager to accommodate build steps that fail.</p>
 </li>
 <li>
-<p>Write Mocha tests to check that this change works correctly.</p>
+<p>Write tests to check that this change works correctly.</p>
 </li>
 </ol>
-<h3 class="exercise">Dry run</h3>
-<p>Add an option to the build manager to show what commands would be executed and why
-if a build were actually run.
-For example,
-the output should display things like, "'update A' because A older than B".</p>
-<h3 class="exercise">Change directories</h3>
-<p>Modify the build manager so that:</p>
-<div class="highlight"><pre><span></span><code>node build.js -C some/sub/directory rules.yml timestamps.yml
-</code></pre></div>
-<p class="continue">runs the build in the specified directory rather than the current directory.</p>
 <h3 class="exercise">Merge files</h3>
-<p>Modify the build manager so that it can read multiple configuration files
-and execute their combines rules.</p>
-<h3 class="exercise">Show recipes</h3>
-<p>Add a method to build manager to display all unique recipes,
-i.e.,
-all of the commands it might execute if asked to rebuild everything.</p>
+<p>Modify the build manager so that it can read multiple build files
+and execute their combined rules.</p>
 <h3 class="exercise">Conditional execution</h3>
 <p>Modify the build manager so that:</p>
 <ol>
@@ -649,10 +943,8 @@ all of the commands it might execute if asked to rebuild everything.</p>
 <li>
 <p>Those rules are only executed if the variable is defined and true.</p>
 </li>
-<li>
-<p>Write Mocha tests to check that this works correctly.</p>
-</li>
 </ol>
+<p>Write tests to check that this works correctly.</p>
 <h3 class="exercise">Define filesets</h3>
 <p>Modify the build manager so that users can define sets of files:</p>
 <div class="highlight"><pre><span></span><code>fileset:
@@ -681,34 +973,15 @@ all of the commands it might execute if asked to rebuild everything.</p>
 <h3 class="exercise">Use hashes</h3>
 <ol>
 <li>
-<p>Write a program called <code>build-init.js</code> that calculates a hash
+<p>Write a program called <code>build_init.py</code> that calculates a hash
     for every file mentioned in the build configuration
-    and stores the hash along with the file's name in <code>build-hash.json</code>.</p>
+    and stores the hash along with the file's name in <code>build_hash.json</code>.</p>
 </li>
 <li>
 <p>Modify the build manager to compare the current hashes of files
-    with those stored in <code>build-hash.json</code>
+    with those stored in <code>build_hash.json</code>
     in order to determine what is out of date,
-    and to update <code>build-hash.json</code> each time it runs.</p>
-</li>
-</ol>
-<h3 class="exercise">Auxiliary functions</h3>
-<ol>
-<li>
-<p>Modify the builder manager so that it takes an extra argument <code>auxiliaries</code>
-    containing zero or more named functions:</p>
-<div class="highlight"><pre><span></span><code><span class="kd">const</span><span class="w"> </span><span class="nx">builder</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">ExtensibleBuilder</span><span class="p">(</span><span class="nx">configFile</span><span class="p">,</span><span class="w"> </span><span class="nx">timesFile</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">  </span><span class="nx">slice</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">node</span><span class="p">,</span><span class="w"> </span><span class="nx">graph</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">simplify</span><span class="p">(</span><span class="nx">node</span><span class="p">,</span><span class="w"> </span><span class="nx">graph</span><span class="p">,</span><span class="w"> </span><span class="mf">1</span><span class="p">)</span><span class="w"></span>
-<span class="p">})</span><span class="w"></span>
-</code></pre></div>
-</li>
-<li>
-<p>Modify the <code>run</code> method to call these functions
-    before executing the rules for a node,
-    and to only execute the rules if all of them return <code>true</code>.</p>
-</li>
-<li>
-<p>Write Mocha tests to check that this works correctly.</p>
+    and to update <code>build_hash.json</code> each time it runs.</p>
 </li>
 </ol>
         </main>
