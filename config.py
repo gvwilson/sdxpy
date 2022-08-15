@@ -116,6 +116,7 @@ exclude = [
     "*.svg",
     "*.tll",
     "*.txt",
+    "*.yml",
     "*~",
     "*/__pycache__",
     "*/.pytest_cache",
