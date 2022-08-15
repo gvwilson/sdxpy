@@ -31,12 +31,12 @@ we should be able to parse `^(a|b|$)*z$` as
 "a single 'z',
 and "end of text".
 To keep our discussion focused on parsing
-we will create a tree of objects ([%f parser-tree %])
+we will create a tree of objects ([%f parser-parse-tree %])
 rather than instances of the regular expression classes from [%x matching %];
 the exercises will tackle the latter.
 
 [% figure
-   slug="parser-tree"
+   slug="parser-parse-tree"
    img="expression_tree.svg"
    alt="Expression tree for regular expression"
    caption="Representing the result of parsing a regular expression as an tree."
