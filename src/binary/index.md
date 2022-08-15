@@ -92,7 +92,7 @@ two hexadecimal digits is exactly one byte.
 | 15      | F           | 1111 |
 </div>
 
-## Bitwise Operations {: #binary-ops}
+## Bitwise Operations {: #binary-bitops}
 
 Like most languages based on C,
 Python provides four operators for working with bits:
