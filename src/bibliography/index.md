@@ -3,4 +3,3 @@ title: "Bibliography"
 ---
 
 [% bibliography %]
-

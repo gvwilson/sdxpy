@@ -166,7 +166,7 @@ If we all give a little,
 we all get a lot.
 
 <div class="center" markdown="1">
-  *This one's for Mike*
+  *This one's for Mike:*
   <br/>
-  *I'm glad you've always found it hard to say "no"*
+  *I'm glad you've always found it hard to say no.*
 </div>
