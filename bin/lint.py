@@ -40,6 +40,7 @@ CONFIGURATION = [
 ]
 IGNORE_FILE = ".mccoleignore"
 INDEX_FILE = "index.md"
+MAKEFILE = "Makefile"
 RE_CODE_BLOCK = re.compile('```.+?```', re.DOTALL)
 RE_CODE_INLINE = re.compile('`.+?`')
 RE_FILE = re.compile(r'\[%\s*excerpt\b.+?f="(.+?)".+?%\]')
@@ -142,7 +143,7 @@ def get_html(options):
 
 def get_ignores(dirname):
     """Get list of files in a directory that are intentionally unreferenced."""
-    result = {IGNORE_FILE}
+    result = {IGNORE_FILE, MAKEFILE}
     ignore = Path(dirname, ".mccoleignore")
     if ignore.exists():
         with open(ignore, "r") as reader:

@@ -1,7 +1,9 @@
 ---
 title: "Matching Regular Expressions"
 syllabus:
-- FIXME
+- Use regular expressions to match patterns in text and extra data.
+- Have objects control other objects using the Chain of Responsibility design pattern.
+- Use inheritance to make matchers composable.
 ---
 
 Sooner or later everyone needs to scrape data out of text files.
@@ -14,7 +16,7 @@ in [% b Oram2007 %].
 
 Our matcher will initially handle just the five cases shown in
 [%t pattern-matching-cases %].
-These cases are a small subset of what JavaScript provides,
+These cases are a small subset of what Python's `re` module provides,
 but as [%i "Kernighan, Brian" %]Kernighan[%/i%] wrote,
 "This is quite a useful class;
 in my own experience of using regular expressions on a day-to-day basis,
