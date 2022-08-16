@@ -102,11 +102,13 @@ copy = [
 # Exclusions (don't process).
 exclude = [
     "*/Makefile",
+    "*.as",
     "*.csv",
     "*.gz",
     "*.ht",
     "*.json",
     "*.mk",
+    "*.mx",
     "*.out",
     "*.pdf",
     "*.png",
@@ -116,6 +118,7 @@ exclude = [
     "*.svg",
     "*.tll",
     "*.txt",
+    "*.yml",
     "*~",
     "*/__pycache__",
     "*/.pytest_cache",
