@@ -102,11 +102,13 @@ copy = [
 # Exclusions (don't process).
 exclude = [
     "*/Makefile",
+    "*.as",
     "*.csv",
     "*.gz",
     "*.ht",
     "*.json",
     "*.mk",
+    "*.mx",
     "*.out",
     "*.pdf",
     "*.png",
