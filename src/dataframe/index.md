@@ -19,7 +19,7 @@ we measure their performance.
 
 ## Storing Columns {: #dataframe-cols}
 
-We start by creating an [%g abstract_base_class "abstract base class" %]
+We start by creating an [%g abstract_class "abstract class" %]
 that defines the methods our two dataframe classes will support.
 This class (unimaginatively called `DF`)
 requires [%g concrete_class "concrete classes" %] to implement eight methods:

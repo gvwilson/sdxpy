@@ -37,7 +37,7 @@ def heading_ref(pargs, kwargs, node):
 
 @ivy.events.register(ivy.events.Event.INIT)
 def headings_collect():
-    """Collect table information using regular expressions."""
+    """Collect heading information using regular expressions."""
     major = util.make_major()
     headings = {}
     ivy.nodes.root().walk(lambda node: _parse_headings(node, major, headings))

@@ -274,4 +274,3 @@ which it will display as an icon in the address bar if it exists.
 ## Exercises {: #server-exercises}
 
 FIXME
-

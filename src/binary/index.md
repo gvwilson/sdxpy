@@ -92,7 +92,7 @@ two hexadecimal digits is exactly one byte.
 | 15      | F           | 1111 |
 </div>
 
-## Bitwise Operations {: #binary-ops}
+## Bitwise Operations {: #binary-bitops}
 
 Like most languages based on C,
 Python provides four operators for working with bits:
@@ -102,7 +102,7 @@ Python provides four operators for working with bits:
 and `~` (not).
 `&` yields a 1 only if both its arguments are 1's,
 while `|` yields 1 if either or both of its arguments are 1.
-`^`, called [%g exclusive_or "exclusive or" %] or [%g xor "xor" %],
+`^`, called [%g exclusive_or "exclusive or" %] or "xor" (pronounced "ex-or"),
 produces 1 if either but *not* both of its arguments are 1.
 Putting it another way,
 `^` produces 0 if its inputs are the same and 1 if they are different.
@@ -130,7 +130,7 @@ the bit we set is guaranteed to come out 1;
 the other bits will be left as they are.
 Similarly,
 to  set a bit to zero,
-create a value in which that bit is 0 and the others are 1,
+create a [%g bit_mask "mask" %] in which that bit is 0 and the others are 1,
 then use `&` to combine the two.
 To make things easier to read,
 programmers often set a single bit,
@@ -183,7 +183,7 @@ different pieces of software used them to represent different symbols:
 non-Latin characters,
 graphic characters like boxes,
 and so on.
-The chaos was eventually tamed by the [%g ansi_character "ANSI" %] standard
+The chaos was eventually tamed by the [%g ansi_encoding "ANSI" %] standard
 which (for example) defined the value 231 to mean the character "ç".
 
 But the ANSI standard only solved part of the problem.
