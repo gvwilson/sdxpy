@@ -1,134 +1,120 @@
-import assert from 'assert'
+from architecture import OPS, OP_SHIFT, OP_WIDTH, NUM_REG
 
-import {
-  OPS,
-  OP_SHIFT,
-  OP_WIDTH,
-  NUM_REG
-} from './architecture.js'
+class Assembler:
 
-class Assembler {
-  // [assemble]
-  assemble (lines) {
-    lines = this.cleanLines(lines)
-    const labels = this.findLabels(lines)
-    const instructions = lines.filter(line => !this.isLabel(line))
-    const compiled = instructions.map(instr => this.compile(instr, labels))
-    const program = this.instructionsToText(compiled)
-    return program
-  }
+    # [assemble]
+    def assemble(self, lines):
+        lines = self.clean_lines(lines)
+        labels = self.find_labels(lines)
+        instructions = [ln for ln in lines if not self.is_label(ln)]
+        compiled = [self.compile(instr, labels) for instr in instructions]
+        program = self.instructions_to_text(compiled)
+        return program
 
-  cleanLines (lines) {
-    return lines
-      .map(line => line.trim())
-      .filter(line => line.length > 0)
-      .filter(line => !this.isComment(line))
-  }
+    def clean_lines(self, lines):
+        lines = [ln.strip() for ln in lines]
+        lines = [ln for ln in lines if len(ln) > 0]
+        lines = [ln for ln in lines if not self.is_comment(ln)]
+        return lines
 
-  isComment (line) {
-    return line.startsWith('#')
-  }
-  // [/assemble]
+    def is_comment(self, line):
+        return line.startswith("#")
+    # [/assemble]
 
-  // [find-labels]
-  findLabels (lines) {
-    const result = {}
-    let index = 0
-    lines.forEach(line => {
-      if (this.isLabel(line)) {
-        const label = line.slice(0, -1)
-        assert(!(label in result),
-          `Duplicate label ${label}`)
-        result[label] = index
-      } else {
-        index += 1
-      }
-    })
-    return result
-  }
+    # [find-labels]
+    def find_labels(self, lines):
+        result = {}
+        loc = 0
+        for ln in lines:
+            if self.is_label(ln):
+                label = ln[:-1]
+                assert label not in result, \
+                    f"Duplicate label {label}"
+                result[label] = loc
+            else:
+                loc += 1
+        return result
 
-  isLabel (line) {
-    return line.endsWith(':')
-  }
-  // [/find-labels]
+    def is_label(self, line):
+        return line.endswith(":")
+    # [/find-labels]
 
-  // [compile]
-  compile (instruction, labels) {
-    const [op, ...args] = instruction.split(/\s+/)
-    assert(op in OPS,
-      `Unknown operation "${op}"`)
-    let result = 0
-    switch (OPS[op].fmt) {
-      case '--':
-        result = this.combine(
-          OPS[op].code
-        )
-        break
-      case 'r-':
-        result = this.combine(
-          this.register(args[0]),
-          OPS[op].code
-        )
-        break
-      case 'rr':
-        result = this.combine(
-          this.register(args[1]),
-          this.register(args[0]),
-          OPS[op].code
-        )
-        break
-      case 'rv':
-        result = this.combine(
-          this.value(args[1], labels),
-          this.register(args[0]),
-          OPS[op].code
-        )
-        break
-      default:
-        assert(false,
-          `Unknown instruction format ${OPS[op].fmt}`)
-    }
-    return result
-  }
-  // [/compile]
+    # [compile]
+    def compile(self, instruction, labels):
+        tokens = instruction.split()
+        op, args = tokens[0], tokens[1:]
+        assert op in OPS, \
+            f"Unknown operation {op}"
 
-  // [combine]
-  combine (...args) {
-    assert(args.length > 0,
-      'Cannot combine no arguments')
-    let result = 0
-    for (const a of args) {
-      result <<= OP_SHIFT
-      result |= a
-    }
-    return result
-  }
-  // [/combine]
+        result = 0
+        if OPS[op]["fmt"] == "--":
+            result = self.combine(OPS[op]["code"])
 
-  // [utilities]
-  instructionsToText (program) {
-    return program.map(op => op.toString(16).padStart(OP_WIDTH, '0'))
-  }
+        elif OPS[op]["fmt"] == "r-":
+            result = self.combine(self.register(args[0]), OPS[op]["code"])
 
-  register (token) {
-    assert(token[0] === 'R',
-      `Register "${token}" does not start with 'R'`)
-    const r = parseInt(token.slice(1))
-    assert((0 <= r) && (r < NUM_REG),
-      `Illegal register ${token}`)
-    return r
-  }
+        elif OPS[op]["fmt"] == "rr":
+            result = self.combine(self.register(args[1]), self.register(args[0]), OPS[op]["code"])
 
-  value (token, labels) {
-    if (token[0] !== '@') {
-      return parseInt(token)
-    }
-    const labelName = token.slice(1)
-    assert(labelName in labels,
-      `Unknown label "${token}"`)
-    return labels[labelName]
-  }
-  // [/utilities]
-}
+        elif OPS[op]["fmt"] == "rv":
+            result = self.combine(self.value(args[1], labels), self.register(args[0]), OPS[op]["code"])
 
-export default Assembler
+        else:
+            assert False, \
+                f"Unknown instruction format {OPS[op]['fmt']}"
+
+        return result
+    # [/compile]
+
+
+    # [combine]
+    def combine(self, *args):
+        assert len(args) > 0, \
+            "Cannot combine no arguments"
+        result = 0
+        for a in args:
+            result <<= OP_SHIFT
+            result |= a
+        return result
+    # [/combine]
+
+    # [utilities]
+    def instructions_to_text(self, program):
+        return [f"{op:06x}" for op in program]
+
+    def register(self, token):
+        assert token[0] == "R", \
+            f"Register '{token}' does not start with 'R'"
+        r = int(token[1:])
+        assert 0 <= r < NUM_REG, \
+            f"Illegal register {token}"
+        return r
+
+    def value(self, token, labels):
+        if token[0] != "@":
+            return int(token)
+
+        lbl = token[1:]
+        assert lbl in labels, \
+            f"Unknown label '{token}'"
+        return labels[lbl]
+    # [/utilities]
+
+    # [driver]
+    @classmethod
+    def main(cls):
+        import sys
+        assert len(sys.argv) == 3, f"Usage: {sys.argv[0]} input|- output|-"
+        reader = open(sys.argv[1], "r") if (sys.argv[1] != "-") else sys.stdin
+        writer = open(sys.argv[2], "w") if (sys.argv[2] != "-") else sys.stdout
+        lines = reader.readlines()
+        assembler = cls()
+        program = assembler.assemble(lines)
+        for instruction in program:
+            print(instruction, file=writer)
+    # [/driver]
+
+# [main]
+if __name__ == "__main__":
+    Assembler.main()
+# [/main]

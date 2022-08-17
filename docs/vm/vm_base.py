@@ -1,79 +1,75 @@
-import assert from 'assert'
+from architecture import OP_MASK, OP_SHIFT, NUM_REG, RAM_LEN
 
-import {
-  OP_MASK,
-  OP_SHIFT,
-  NUM_REG,
-  RAM_LEN
-} from './architecture.js'
+COLUMNS = 4
+DIGITS = 8
 
-const COLUMNS = 4
-const DIGITS = 8
+class VirtualMachineBase:
 
-class VirtualMachineBase {
-  constructor () {
-    this.ip = 0
-    this.reg = Array(NUM_REG)
-    this.ram = Array(RAM_LEN)
-    this.prompt = '>>'
-  }
+    def __init__(self):
+        self.initialize([])
+        self.prompt = '>>'
 
-  // [skip]
-  // [initialize]
-  initialize (program) {
-    assert(program.length <= this.ram.length,
-      'Program is too long for memory')
-    for (let i = 0; i < this.ram.length; i += 1) {
-      if (i < program.length) {
-        this.ram[i] = program[i]
-      } else {
-        this.ram[i] = 0
-      }
-    }
-    this.ip = 0
-    this.reg.fill(0)
-  }
-  // [/initialize]
+    # [skip]
+    # [initialize]
+    def initialize(self, program):
+        assert len(program) <= RAM_LEN, \
+            "Program is too long for memory"
+        self.ram = [
+            program[i] if (i < len(program)) else 0
+            for i in range(RAM_LEN)
+        ]
+        self.ip = 0
+        self.reg = [0] * NUM_REG
+    # [/initialize]
 
-  // [fetch]
-  fetch () {
-    assert((0 <= this.ip) && (this.ip < RAM_LEN),
-      `Program counter ${this.ip} out of range 0..${RAM_LEN}`)
-    let instruction = this.ram[this.ip]
-    this.ip += 1
-    const op = instruction & OP_MASK
-    instruction >>= OP_SHIFT
-    const arg0 = instruction & OP_MASK
-    instruction >>= OP_SHIFT
-    const arg1 = instruction & OP_MASK
-    return [op, arg0, arg1]
-  }
-  // [/fetch]
+    # [fetch]
+    def fetch(self):
+        assert 0 <= self.ip < len(self.ram), \
+            f"Program counter {self.ip:06x} out of range 0..{len(self.ram):06x}"
+        instruction = self.ram[self.ip]
+        self.ip += 1
+        op = instruction & OP_MASK
+        instruction >>= OP_SHIFT
+        arg0 = instruction & OP_MASK
+        instruction >>= OP_SHIFT
+        arg1 = instruction & OP_MASK
+        return [op, arg0, arg1]
+    # [/fetch]
 
-  show () {
-    // Show registers
-    for (let i = 0 ; i < NUM_REG; i += 1) {
-      console.log(`R${i} = ${this.reg[i]}`)
-    }
+    def show(self, writer):
+        # Show registers
+        for (i, r) in enumerate(self.reg):
+            print(f"R{i:06x} = {r:06x}", file=writer)
 
-    // How much memory to show
-    let top = RAM_LEN - 1
-    while ((top >= 0) && (this.ram[top] === 0)) {
-      top -= 1
-    }
+        # How much memory to show
+        top = max(i for (i, m) in enumerate(self.ram) if m != 0)
 
-    // Show memory
-    let base = 0
-    while (base <= top) {
-      let output = base.toString(16) + ': '
-      for (let i = 0; i < COLUMNS; i += 1) {
-        output += '  ' + this.ram[base + i].toString(16).padStart(DIGITS, '0')
-      }
-      console.log(output)
-      base += COLUMNS
-    }
-  }
-  // [/skip]
-}
+        # Show memory
+        base = 0
+        while (base <= top):
+            output = f"{base:06x}: "
+            for i in range(COLUMNS):
+                output += f"  {self.ram[base + i]:06x}"
+            print(output, file=writer)
+            base += COLUMNS
+    # [/skip]
 
-export default VirtualMachineBase
+    # [driver]
+    @classmethod
+    def main(cls):
+        import sys
+        assert len(sys.argv) == 3, f"Usage: {sys.argv[0]} input|- output|-"
+        reader = open(sys.argv[1], "r") if (sys.argv[1] != "-") else sys.stdin
+        writer = open(sys.argv[2], "w") if (sys.argv[2] != "-") else sys.stdout
+
+        lines = [ln.strip() for ln in reader.readlines()]
+        program = [int(ln, 16) for ln in lines if ln]
+        vm = cls()
+        vm.initialize(program)
+        vm.run()
+        vm.show(writer)
+
+# [main]
+if __name__ == "__main__":
+    VirtualMachineBase.main()
+# [/main]

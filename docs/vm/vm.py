@@ -1,108 +1,86 @@
-import assert from 'assert'
+from architecture import OPS
+from vm_base import VirtualMachineBase
 
-import {
-  OPS
-} from './architecture.js'
+class VirtualMachine(VirtualMachineBase):
+    def run(self):
+        running = True
+        while (running):
+            op, arg0, arg1 = self.fetch()
+            if op == OPS["hlt"]["code"]:
+                running = False
 
-import VirtualMachineBase from './vm-base.js'
+            elif op == OPS["ldc"]["code"]:
+                self.assert_is_register(arg0)
+                self.reg[arg0] = arg1
 
-class VirtualMachine extends VirtualMachineBase {
-  run () {
-    let running = true
-    while (running) {
-      const [op, arg0, arg1] = this.fetch()
-      switch (op) {
-        case OPS.hlt.code:
-          running = false
-          break
+            # [skip]
+            elif op == OPS["ldr"]["code"]:
+                self.assert_is_register(arg0)
+                self.assert_is_register(arg1)
+                self.reg[arg0] = self.ram[self.reg[arg1]]
 
-        case OPS.ldc.code:
-          this.assertIsRegister(arg0, op)
-          this.reg[arg0] = arg1
-          break
+            elif op == OPS["cpy"]["code"]:
+                self.assert_is_register(arg0)
+                self.assert_is_register(arg1)
+                self.reg[arg0] = self.reg[arg1]
 
-        // [skip]
-        case OPS.ldr.code:
-          this.assertIsRegister(arg0, op)
-          this.assertIsRegister(arg1, op)
-          this.reg[arg0] = this.ram[this.reg[arg1]]
-          break
+            # [op_str]
+            elif op == OPS["str"]["code"]:
+                self.assert_is_register(arg0)
+                self.assert_is_register(arg1)
+                self.assert_is_address(self.reg[arg1])
+                self.ram[self.reg[arg1]] = self.reg[arg0]
+            # [/op_str]
 
-        case OPS.cpy.code:
-          this.assertIsRegister(arg0, op)
-          this.assertIsRegister(arg1, op)
-          this.reg[arg0] = this.reg[arg1]
-          break
+            # [op_add]
+            elif op == OPS["add"]["code"]:
+                self.assert_is_register(arg0)
+                self.assert_is_register(arg1)
+                self.reg[arg0] += self.reg[arg1]
+            # [/op_add]
 
-        // [op_str]
-        case OPS.str.code:
-          this.assertIsRegister(arg0, op)
-          this.assertIsRegister(arg1, op)
-          this.assertIsAddress(this.reg[arg1], op)
-          this.ram[this.reg[arg1]] = this.reg[arg0]
-          break
-        // [/op_str]
+            elif op == OPS["sub"]["code"]:
+                self.assert_is_register(arg0)
+                self.assert_is_register(arg1)
+                self.reg[arg0] -= self.reg[arg1]
 
-        // [op_add]
-        case OPS.add.code:
-          this.assertIsRegister(arg0, op)
-          this.assertIsRegister(arg1, op)
-          this.reg[arg0] += this.reg[arg1]
-          break
-        // [/op_add]
+            # [op_beq]
+            elif op == OPS["beq"]["code"]:
+                self.assert_is_register(arg0)
+                self.assert_is_address(arg1)
+                if self.reg[arg0] == 0:
+                    self.ip = arg1
+            # [/op_beq]
 
-        case OPS.sub.code:
-          this.assertIsRegister(arg0, op)
-          this.assertIsRegister(arg1, op)
-          this.reg[arg0] -= this.reg[arg1]
-          break
+            elif op == OPS["bne"]["code"]:
+                self.assert_is_register(arg0)
+                self.assert_is_address(arg1)
+                if self.reg[arg0] != 0:
+                    self.ip = arg1
 
-        // [op_beq]
-        case OPS.beq.code:
-          this.assertIsRegister(arg0, op)
-          this.assertIsAddress(arg1, op)
-          if (this.reg[arg0] === 0) {
-            this.ip = arg1
-          }
-          break
-        // [/op_beq]
+            elif op == OPS["prr"]["code"]:
+                self.assert_is_register(arg0)
+                print(self.prompt, self.reg[arg0])
 
-        case OPS.bne.code:
-          this.assertIsRegister(arg0, op)
-          this.assertIsAddress(arg1, op)
-          if (this.reg[arg0] !== 0) {
-            this.ip = arg1
-          }
-          break
+            elif op == OPS["prm"]["code"]:
+                self.assert_is_register(arg0)
+                self.assert_is_address(self.reg[arg0])
+                print(self.prompt, self.ram[self.reg[arg0]])
+            # [/skip]
 
-        case OPS.prr.code:
-          this.assertIsRegister(arg0)
-          console.log(this.prompt, this.reg[arg0])
-          break
+            else:
+                assert False, f"Unknown op {op:06x}"
 
-        case OPS.prm.code:
-          this.assertIsRegister(arg0)
-          this.assertIsAddress(this.reg[arg0])
-          console.log(this.prompt, this.ram[this.reg[arg0]])
-          break
-        // [/skip]
 
-        default:
-          assert(false, `Unknown op ${op}`)
-          break
-      }
-    }
-  }
+    def assert_is_register(self, reg):
+        assert 0 <= reg < len(self.reg), \
+            f"Invalid register {reg:06x}"
 
-  assertIsRegister (reg) {
-    assert((0 <= reg) && (reg < this.reg.length),
-      `Invalid register ${reg}`)
-  }
+    def assert_is_address(self, addr):
+        assert 0 <= addr < len(self.ram), \
+            f"Invalid register {addr:06x}"
 
-  assertIsAddress (addr) {
-    assert((0 <= addr) && (addr < this.ram.length),
-      `Invalid register ${addr}`)
-  }
-}
-
-export default VirtualMachine
+# [main]
+if __name__ == "__main__":
+    VirtualMachine.main()
+# [/main]

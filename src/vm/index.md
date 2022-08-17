@@ -164,7 +164,8 @@ We could figure out numerical op codes by hand,
 and in fact that's what [the first programmers][eniac_programmers] did.
 However,
 it is much easier to use an [%i "assembler" %][%g assembler "assembler" %][%/i%],
-which is just a small compiler for a language that very closely represents actual machine instructions.
+which is just a small compiler for a language
+that very closely represents actual machine instructions.
 
 Each command in our assembly languages matches an instruction in the VM.
 Here's an assembly language program to print the value stored in R1 and then halt:
@@ -251,7 +252,7 @@ this program counts up to three:
 
 [% excerpt pat="count_up.*" fill="as out" %]
 
-## How can we store data? {: #vm-data}
+## Arrays
 
 It is tedious to write interesting programs when each value needs a unique name.
 We can do a lot more once we have collections like [%i "array!implementation of" %]arrays[%/i%],
@@ -276,14 +277,14 @@ This enhancement only requires a few changes to the assembler.
 First,
 we need to split the lines into instructions and data allocations:
 
-[% excerpt f="allocate_data.py" keep="assemble" %]
+[% excerpt f="data_allocator.py" keep="assemble" %]
 
-[% excerpt f="allocate_data.py" keep="split-allocations" %]
+[% excerpt f="data_allocator.py" keep="split-allocations" %]
 
 Second,
 we need to figure out where each allocation lies and create a label accordingly:
 
-[% excerpt f="allocate_data.py" keep="add-allocations" %]
+[% excerpt f="data_allocator.py" keep="add-allocations" %]
 
 And that's it:
 no other changes are needed to either compilation or execution.
