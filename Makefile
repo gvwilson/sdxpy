@@ -10,7 +10,7 @@ INFO := info/bibliography.bib info/credits.yml info/glossary.yml info/links.yml
 FIG_SVG := $(wildcard src/*/*.svg)
 IVY := $(wildcard lib/mccole/*/*.*)
 TEX := info/head.tex info/foot.tex
-SRC := $(wildcard *.md) $(wildcard src/*.md) $(wildcard src/*/index.md)
+SRC := $(wildcard *.md) $(wildcard src/*.md) $(wildcard src/*/index.md) $(wildcard src/*/slides.html)
 
 # Calculated variables.
 DOCS := docs/index.html $(patsubst src/%.md,docs/%.html,$(wildcard src/*/index.md))
