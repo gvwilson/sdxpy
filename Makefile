@@ -1,7 +1,8 @@
 .DEFAULT: commands
 
 # Local configuration.
-ABBREV := $(shell python ./config.py --abbrev)
+CONFIG := ./config.py
+ABBREV := $(shell python ${CONFIG} --abbrev)
 
 # Direct variables.
 EXAMPLES := $(patsubst %/Makefile,%,$(wildcard src/*/Makefile))
@@ -9,6 +10,7 @@ HTML := info/head.html info/foot.html
 INFO := info/bibliography.bib info/credits.yml info/glossary.yml info/links.yml
 FIG_SVG := $(wildcard src/*/*.svg)
 IVY := $(wildcard lib/mccole/*/*.*)
+RES := $(wildcard res/*.*)
 TEX := info/head.tex info/foot.tex
 SRC := $(wildcard *.md) $(wildcard src/*.md) $(wildcard src/*/index.md) $(wildcard src/*/slides.html)
 
@@ -24,7 +26,7 @@ commands:
 
 ## build: rebuild site without running server
 build: ./docs/index.html
-./docs/index.html: ${SRC} ${INFO} ${IVY} config.py
+./docs/index.html: ${SRC} ${INFO} ${IVY} ${RES} config.py
 	ivy build && touch $@
 
 ## serve: build site and run server
@@ -39,15 +41,15 @@ docs/all.html: ./docs/index.html ${HTML} bin/single.py
 	--head info/head.html \
 	--foot info/foot.html \
 	--root docs \
-	--title "$$(python ./config.py --title)" \
-	--tagline "$$(python ./config.py --tagline)" \
+	--title "$$(python ${CONFIG} --title)" \
+	--tagline "$$(python ${CONFIG} --tagline)" \
 	> docs/all.html
 
 ## latex: create LaTeX document
 latex: docs/${ABBREV}.tex
-docs/${ABBREV}.tex: docs/all.html ${TEX} bin/html2tex.py ./config.py
+docs/${ABBREV}.tex: docs/all.html ${TEX} bin/html2tex.py ${CONFIG}
 	python ./bin/html2tex.py --head info/head.tex --foot info/foot.tex < docs/all.html > docs/${ABBREV}.tex
-	python ./config.py --latex > docs/config.tex
+	python ${CONFIG} --latex > docs/config.tex
 
 ## pdf: create PDF document
 pdf: docs/${ABBREV}.tex ${FIG_PDF}
