@@ -43,6 +43,12 @@
   </li>
   
   <li>
+    <a href="../backup/">
+      <strong>Versioned File Backups</strong>
+    </a>
+  </li>
+  
+  <li>
     <a href="../interpreter/">
       An Interpreter
     </a>
@@ -51,12 +57,6 @@
   <li>
     <a href="../dataframe/">
       A Dataframe
-    </a>
-  </li>
-  
-  <li>
-    <a href="../backup/">
-      <strong>Versioned File Backups</strong>
     </a>
   </li>
   
@@ -231,14 +231,10 @@
       <div class="column bordered">
         <main>
 	  
-  <h1>Chapter 5: Versioned File Backups</h1>
+  <h1>Chapter 3: Versioned File Backups</h1>
 
 
           
-  
-
-  
-
   
 
   
@@ -247,6 +243,10 @@
   <li markdown="1">FIXME</li>
   
   </ul>
+  
+
+  
+
   
 
   
@@ -300,10 +300,523 @@
   
 
   
+  <p class="definitions">
+    Terms defined:
+    <a class="gl-ref" href="../glossary/#api" markdown="1">Application Programming Interface</a>, <a class="gl-ref" href="../glossary/#collision" markdown="1">collision</a>, <a class="gl-ref" href="../glossary/#utc" markdown="1">Coordinated Universal Time</a>, <a class="gl-ref" href="../glossary/#cryptographic_hash_function" markdown="1">cryptographic hash function</a>, <a class="gl-ref" href="../glossary/#data_migration" markdown="1">data migration</a>, <a class="gl-ref" href="../glossary/#hash_code" markdown="1">hash code</a>, <a class="gl-ref" href="../glossary/#hash_function" markdown="1">hash function</a>, <a class="gl-ref" href="../glossary/#mock_object" markdown="1">mock object</a>, <a class="gl-ref" href="../glossary/#race_condition" markdown="1">race condition</a>, <a class="gl-ref" href="../glossary/#sha256" markdown="1">SHA-256 hash code</a>, <a class="gl-ref" href="../glossary/#streaming_api" markdown="1">streaming API</a>, <a class="gl-ref" href="../glossary/#toctou" markdown="1">time of check - time of use</a>, <a class="gl-ref" href="../glossary/#timestamp" markdown="1">timestamp</a>, <a class="gl-ref" href="../glossary/#version_control_system" markdown="1">version control system</a>
+  </p>
+  
+
+  
 
 
-          <p>FIXME
--   Show functions as parameters to warm up for the interpreter chapter.</p>
+          <p>A <span class="ix-entry" ix-key="version control system" markdown="1"><a class="gl-ref" href="../glossary/#version_control_system" markdown="1">version control system</a></span>
+like <span class="ix-entry" ix-key="Git;version control system!Git" markdown="1"><a href="https://git-scm.com/">Git</a></span>
+keeps track of changes to files
+so that we can see what we've changed and recover old versions.
+Its core is a way to archive files that:</p>
+<ol>
+<li>records which versions of which files existed at the same time
+    (so that we can go back to a consistent previous state), and</li>
+<li>stores any particular version of a file only once,
+    so that we don't waste disk space.</li>
+</ol>
+<p>This chapter builds a tool that does both tasks.
+It won't let us create and merge branches;
+if you would like to know how that works,
+please see <span class="ix-entry" ix-key="Cook, Mary Rose" markdown="1">[Mary Rose Cook's][cook-mary-rose]</span> <a href="http://gitlet.maryrosecook.com/">Gitlet</a>.</p>
+<h2 id="backup-unique">Section 3.1: Identifying Unique Files</h2>
+<p>To avoid storing redundant copies of files,
+we need a way to tell when two files contain the same data.
+We can't rely on names because files can be renamed or moved over time;
+we could compare the files byte by byte,
+but a quicker way is to use a <span class="ix-entry" ix-key="hash function" markdown="1"><a class="gl-ref" href="../glossary/#hash_function" markdown="1">hash function</a></span>
+that turns arbitrary data into a fixed-length string of bits
+(<a class="fig-ref" href="../backup/#backup-hash-function">Figure 3.1</a>).</p>
+<figure id="backup-hash-function">
+  <img src="./hash-function.svg" alt="Hash functions"/>
+  <figcaption markdown="1">Figure 3.1: How hash functions speed up lookup.</figcaption>
+</figure>
+
+<p>A hash function always produces the same <span class="ix-entry" ix-key="hash code" markdown="1"><a class="gl-ref" href="../glossary/#hash_code" markdown="1">hash code</a></span> for a given input.
+A <span class="ix-entry" ix-key="cryptographic hash function;hash function!cryptographic" markdown="1"><a class="gl-ref" href="../glossary/#cryptographic_hash_function" markdown="1">cryptographic hash function</a></span>
+has two extra properties:</p>
+<ol>
+<li>
+<p>The output depends on the entire input:
+    changing even a single byte almost certainly results in a different hash code.</p>
+</li>
+<li>
+<p>The outputs look like random numbers:
+    they are unpredictable and evenly distributed
+    (i.e., the odds of getting any specific hash code are the same).</p>
+</li>
+</ol>
+<p>It's easy to write a bad hash function,
+but very hard to write one that qualifies as cryptographic.
+We will therefore use Python's [<code>hashlib</code>][hashlib] module
+to calculate <span class="ix-entry" ix-key="hash code!SHA256;SHA256 hash code" markdown="1"><a class="gl-ref" href="../glossary/#sha256" markdown="1">SHA256</a></span> hashes of our files.
+These are not random enough to keep data secret from a patient, well-funded attacker,
+but that's not what we're using them for:
+we just want hashes that are random to make
+<span class="ix-entry" ix-key="hash function!collision;collision (in hashing)" markdown="1"><a class="gl-ref" href="../glossary/#collision" markdown="1">collision</a></span>
+extremely unlikely.</p>
+<div class="callout">
+<h3>The Birthday Problem</h3>
+<p>The odds that two people share a birthday are 1/365 (ignoring February 29).
+The odds that they <em>don't</em> are therefore 364/365.
+When we add a third person,
+the odds that they don't share a birthday with either of the preceding two people are 363/365,
+so the overall odds that nobody shares a birthday are (364/365)×(363/365).
+If we keep going,
+there's a 50% chance of two people sharing a birthday in a group of just 23 people,
+and a 99.9% chance with 70 people.</p>
+<p>We can use the same math to calculate how many files we need to hash before there's a 50% chance of a collision.
+Alternative,
+we can <a href="https://en.wikipedia.org/wiki/Birthday_problem">check Wikipedia</a>,
+which tells us we need to have approximately \(4{\times}10^{38}\) files
+in order to have a 50% chance of a collision.
+We're willing to take that risk…</p>
+</div>
+<p>To calculate the hash of a file,
+we create an object that keeps track of the current state of the hashing calculation
+and then feed it some bytes.
+When we are done,
+we call its <code>hexdigest</code> method to  get the final result:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">hashlib</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="n">BUFFER_SIZE</span> <span class="o">=</span> <span class="mi">4</span> <span class="o">*</span> <span class="mi">1024</span> <span class="c1"># how much data to read at once</span>
+
+<span class="k">def</span> <span class="nf">hash_stream</span><span class="p">(</span><span class="n">reader</span><span class="p">):</span>
+    <span class="n">sha256</span> <span class="o">=</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">sha256</span><span class="p">()</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="n">block</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">BUFFER_SIZE</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">block</span><span class="p">:</span>
+            <span class="k">break</span>
+        <span class="n">sha256</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">block</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">sha256</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">reader</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">hash_stream</span><span class="p">(</span><span class="n">reader</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>python hash_stream.py frankenstein.txt
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>0219696507d0db0e8c21c28e1b2de642b94de91be5ad9cfff0c27e5c51456987
+</code></pre></div>
+<p>To prove that it really does generate a unique code,
+let's calculate the hash of the novel <em>Dracula</em> instead:</p>
+<div class="highlight"><pre><span></span><code>python hash_stream.py dracula.txt
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>15d9da9ec739b9c59225ddf9bd5ca26441d761b63556fa92be556ebbf5ad442c
+</code></pre></div>
+<div class="callout">
+<h3>Streaming</h3>
+<p>This chunk-at-a-time interface is called
+a <span class="ix-entry" ix-key="streaming API;execution!streaming" markdown="1"><a class="gl-ref" href="../glossary/#streaming_api" markdown="1">streaming</a></span> <a class="gl-ref" href="../glossary/#api" markdown="1">API</a>
+because it processes a stream of data one piece at a time
+rather than requiring all of the data to be in memory at once.
+Many applications use streams
+so that programs don't have to read entire (possibly large) files into memory.</p>
+</div>
+<h2 id="backup-files">Section 3.2: Saving Files</h2>
+<p>Many files only change occasionally after they're created, or not at all.
+It would be wasteful for a version control system to make copies
+each time the user wanted to save a snapshot of a project,
+so instead our tool will copy each unique file to something like <code>abcd1234.bck</code>,
+where <code>abcd1234</code> is a hash of the file's contents.
+It will then store a data structure that records the filenames and hash keys for each snapshot.
+The hash keys tell it which unique files are part of the snapshot,
+while the filenames tell us what each file's contents were called when the snapshot was made
+(since files can be moved or renamed).
+To restore a particular snapshot,
+we will copy the <code>.bck</code> files back to where they were
+(<a class="fig-ref" href="../backup/#backup-storage">Figure 3.2</a>).</p>
+<figure id="backup-storage">
+  <img src="./storage.svg" alt="Backup file storage"/>
+  <figcaption markdown="1">Figure 3.2: Organization of backup file storage.</figcaption>
+</figure>
+
+<p>The first step is to find all the files in or below a given directory
+and calculate their hashes.
+The easiest way to find files is to use Python's [<code>glob</code>][glob] module
+to do simple pattern matching.
+If we have this directory structure:</p>
+<div class="highlight"><pre><span></span><code>tree sample_dir
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>sample_dir
+├── a.txt
+├── b.txt
+└── subdir
+    └── c.txt
+
+1 directory, 3 files
+</code></pre></div>
+<p class="continue">then a single call to <code>glob.glob</code> will find all the files with two-part names:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">glob</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="n">root_dir</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+<span class="k">for</span> <span class="n">filename</span> <span class="ow">in</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">&quot;**/*.*&quot;</span><span class="p">,</span> <span class="n">root_dir</span><span class="o">=</span><span class="n">root_dir</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>python try_glob.py sample_dir
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>b.txt
+a.txt
+subdir/c.txt
+</code></pre></div>
+<p>Let's combine the two to create a table of files and hashes:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">csv</span>
+<span class="kn">import</span> <span class="nn">glob</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="kn">from</span> <span class="nn">hash_stream</span> <span class="kn">import</span> <span class="n">hash_stream</span>
+
+<span class="k">def</span> <span class="nf">hash_all</span><span class="p">(</span><span class="n">root_dir</span><span class="p">):</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">filename</span> <span class="ow">in</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">&quot;**/*.*&quot;</span><span class="p">,</span> <span class="n">root_dir</span><span class="o">=</span><span class="n">root_dir</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="n">full_name</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">root_dir</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">full_name</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">reader</span><span class="p">:</span>
+            <span class="n">hash_code</span> <span class="o">=</span> <span class="n">hash_stream</span><span class="p">(</span><span class="n">reader</span><span class="p">)</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">filename</span><span class="p">,</span> <span class="n">hash_code</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">result</span>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">root_dir</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">table</span> <span class="o">=</span> <span class="n">hash_all</span><span class="p">(</span><span class="n">root_dir</span><span class="p">)</span>
+    <span class="n">writer</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">writer</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="p">)</span>
+    <span class="n">writer</span><span class="o">.</span><span class="n">writerow</span><span class="p">([</span><span class="s2">&quot;filename&quot;</span><span class="p">,</span> <span class="s2">&quot;hash&quot;</span><span class="p">])</span>
+    <span class="n">writer</span><span class="o">.</span><span class="n">writerows</span><span class="p">(</span><span class="n">table</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>python hash_all.py sample_dir
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>filename,hash
+b.txt,3cf9a1a81f6bdeaf08a343c1e1c73e89cf44c06ac2427a892382cae825e7c9c1
+a.txt,17e682f060b5f8e47ea04c5c4855908b0a5ad612022260fe50e11ecb0cc0ab76
+subdir/c.txt,5695d82a086b677962a0b0428ed1a213208285b7b40d7d3604876d36a710302a
+</code></pre></div>
+<h2 id="backup-test">Section 3.3: Testing</h2>
+<p>Before we go any further
+we need to figure out how we're going to test our code.
+The obvious approach is to create directories and sub-directories full of little files to use as fixtures.
+However,
+as soon as we start backing things up and restoring them
+we are going to be changing or deleting those files.
+In order to make sure early tests don't contaminate later ones
+we would have to re-create those files and directories after each teach.</p>
+<p>A better approach is to use a <span class="ix-entry" ix-key="mock object" markdown="1"><a class="gl-ref" href="../glossary/#mock_object" markdown="1">mock object</a></span>
+instead of the real filesystem.
+As described in <a class="x-ref" href="../tester/">Chapter 2</a>,
+a mock object has the same interface as the the thing it replaces,
+but is designed to be used solely for testing.
+The [<code>pyfakefs</code>][pyfakefs] module replaces key functions like <code>read</code>
+with functions that act the same
+but act on "files" stores in memory
+(<a class="fig-ref" href="../backup/#backup-mock-fs">Figure 3.3</a>).
+This prevents our tests from accidentally disturbing the filesystem,
+and also makes tests much faster
+(since in-memory operations are thousands of times faster than operations that touch the disk).</p>
+<figure id="backup-mock-fs">
+  <img src="./mock-fs.svg" alt="Mock filesystem"/>
+  <figcaption markdown="1">Figure 3.3: Using a mock filesystem to simplify testing.</figcaption>
+</figure>
+
+<p>If we <code>import pyfakefs</code>,
+we automatically get a <span class="ix-entry" ix-key="fixture" markdown="1">fixture</span> called <code>fs</code>
+that we can use to create files:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+
+<span class="k">def</span> <span class="nf">test_simple_example</span><span class="p">(</span><span class="n">fs</span><span class="p">):</span>
+    <span class="n">sentence</span> <span class="o">=</span> <span class="s2">&quot;This file contains one sentence.&quot;</span>
+    <span class="n">fs</span><span class="o">.</span><span class="n">create_file</span><span class="p">(</span><span class="s2">&quot;alpha.txt&quot;</span><span class="p">,</span> <span class="n">contents</span><span class="o">=</span><span class="n">sentence</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;alpha.txt&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;alpha.txt&quot;</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">reader</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">reader</span><span class="o">.</span><span class="n">read</span><span class="p">()</span> <span class="o">==</span> <span class="n">sentence</span>
+</code></pre></div>
+<p>We can use <code>fs</code> to create more complicated fixtures of our own
+with multiple directories and files:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">import</span> <span class="nn">pytest</span>
+
+<span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span>
+<span class="k">def</span> <span class="nf">our_fs</span><span class="p">(</span><span class="n">fs</span><span class="p">):</span>
+    <span class="n">fs</span><span class="o">.</span><span class="n">create_file</span><span class="p">(</span><span class="s2">&quot;a.txt&quot;</span><span class="p">,</span> <span class="n">contents</span><span class="o">=</span><span class="s2">&quot;aaa&quot;</span><span class="p">)</span>
+    <span class="n">fs</span><span class="o">.</span><span class="n">create_file</span><span class="p">(</span><span class="s2">&quot;b.txt&quot;</span><span class="p">,</span> <span class="n">contents</span><span class="o">=</span><span class="s2">&quot;bbb&quot;</span><span class="p">)</span>
+    <span class="n">fs</span><span class="o">.</span><span class="n">create_file</span><span class="p">(</span><span class="s2">&quot;subdir/c.txt&quot;</span><span class="p">,</span> <span class="n">contents</span><span class="o">=</span><span class="s2">&quot;ccc&quot;</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">test_nested_example</span><span class="p">(</span><span class="n">our_fs</span><span class="p">):</span>
+    <span class="k">assert</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;a.txt&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span>
+    <span class="k">assert</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;b.txt&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span>
+    <span class="k">assert</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;subdir/c.txt&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span>
+
+<span class="k">def</span> <span class="nf">test_deletion_example</span><span class="p">(</span><span class="n">our_fs</span><span class="p">):</span>
+    <span class="k">assert</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;a.txt&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span>
+    <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;a.txt&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">unlink</span><span class="p">()</span>
+    <span class="k">assert</span> <span class="ow">not</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;a.txt&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span>
+</code></pre></div>
+<p class="continue">and then test that <code>hash_all</code> finds all the files:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">import</span> <span class="nn">pytest</span>
+
+<span class="kn">from</span> <span class="nn">hash_all</span> <span class="kn">import</span> <span class="n">hash_all</span>
+
+<span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span>
+<span class="k">def</span> <span class="nf">our_fs</span><span class="p">(</span><span class="n">fs</span><span class="p">):</span>
+    <span class="n">fs</span><span class="o">.</span><span class="n">create_file</span><span class="p">(</span><span class="s2">&quot;a.txt&quot;</span><span class="p">,</span> <span class="n">contents</span><span class="o">=</span><span class="s2">&quot;aaa&quot;</span><span class="p">)</span>
+    <span class="n">fs</span><span class="o">.</span><span class="n">create_file</span><span class="p">(</span><span class="s2">&quot;b.txt&quot;</span><span class="p">,</span> <span class="n">contents</span><span class="o">=</span><span class="s2">&quot;bbb&quot;</span><span class="p">)</span>
+    <span class="n">fs</span><span class="o">.</span><span class="n">create_file</span><span class="p">(</span><span class="s2">&quot;subdir/c.txt&quot;</span><span class="p">,</span> <span class="n">contents</span><span class="o">=</span><span class="s2">&quot;ccc&quot;</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">test_hashing</span><span class="p">(</span><span class="n">our_fs</span><span class="p">):</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">hash_all</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="p">{</span><span class="n">r</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">result</span><span class="p">}</span> <span class="o">==</span> <span class="p">{</span><span class="s2">&quot;a.txt&quot;</span><span class="p">,</span> <span class="s2">&quot;b.txt&quot;</span><span class="p">,</span> <span class="s2">&quot;subdir/c.txt&quot;</span><span class="p">}</span>
+    <span class="k">assert</span> <span class="nb">all</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">==</span> <span class="mi">64</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">result</span><span class="p">)</span>
+</code></pre></div>
+<p class="continue">and that hashes change when files change:</p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">test_change</span><span class="p">(</span><span class="n">our_fs</span><span class="p">):</span>
+    <span class="n">original</span> <span class="o">=</span> <span class="n">hash_all</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)</span>
+    <span class="n">original</span> <span class="o">=</span> <span class="p">[</span><span class="n">entry</span> <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">original</span> <span class="k">if</span> <span class="n">entry</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;a.txt&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;a.txt&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">writer</span><span class="p">:</span>
+        <span class="n">writer</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;this is new content for a.txt&quot;</span><span class="p">)</span>
+    <span class="n">changed</span> <span class="o">=</span> <span class="n">hash_all</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)</span>
+    <span class="n">changed</span> <span class="o">=</span> <span class="p">[</span><span class="n">entry</span> <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">changed</span> <span class="k">if</span> <span class="n">entry</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;a.txt&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">assert</span> <span class="n">original</span> <span class="o">!=</span> <span class="n">changed</span>
+</code></pre></div>
+<h2 id="backup-track">Section 3.4: Tracking Backups</h2>
+<p>The second part of our backup tool keeps track of which files have and haven't been backed up already.
+It stores backups in a directory that contains files like <code>abcd1234.bck</code>
+(the hash followed by <code>.bck</code>)
+and CSV manifests that describe the contents of particular snapshots.
+The latter are named <code>ssssssssss.csv</code>,
+where <code>ssssssssss</code> is the <a class="gl-ref" href="../glossary/#utc" markdown="1">UTC</a> <a class="gl-ref" href="../glossary/#timestamp" markdown="1">timestamp</a> of the backup's creation.</p>
+<div class="callout">
+<h3>Time of check/time of use</h3>
+<p>Our naming convention for index files will fail if we try to create more than one backup per second.
+This might seem very unlikely,
+but many faults and security holes are the result of programmers assuming things weren't going to happen.</p>
+<p>We could try to avoid this problem by using a two-part naming scheme <code>ssssssss-a.csv</code>,
+<code>ssssssss-b.csv</code>, and so on,
+but this leads to a <span class="ix-entry" ix-key="race condition" markdown="1"><a class="gl-ref" href="../glossary/#race_condition" markdown="1">race condition</a></span>
+called <span class="ix-entry" ix-key="race condition!time of check/time of use;time of check/time of use" markdown="1"><a class="gl-ref" href="../glossary/#toctou" markdown="1">time of check/time of use</a></span>.
+If two users run the backup tool at the same time,
+they will both see that there isn't a file (yet) with the current timestamp,
+so they will both try to create the first one.</p>
+</div>
+<p>Here's a function that creates a backup:</p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">backup</span><span class="p">(</span><span class="n">source_dir</span><span class="p">,</span> <span class="n">backup_dir</span><span class="p">):</span>
+    <span class="n">manifest</span> <span class="o">=</span> <span class="n">hash_all</span><span class="p">(</span><span class="n">source_dir</span><span class="p">)</span>
+    <span class="n">timestamp</span> <span class="o">=</span> <span class="n">current_time</span><span class="p">()</span>
+    <span class="n">write_manifest</span><span class="p">(</span><span class="n">backup_dir</span><span class="p">,</span> <span class="n">timestamp</span><span class="p">,</span> <span class="n">manifest</span><span class="p">)</span>
+    <span class="n">copy_files</span><span class="p">(</span><span class="n">source_dir</span><span class="p">,</span> <span class="n">backup_dir</span><span class="p">,</span> <span class="n">manifest</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">manifest</span>
+</code></pre></div>
+<p>When writing the manifest,
+we check that the backup directory exists,
+create it if it does not,
+and then save the manifest as CSV:</p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">write_manifest</span><span class="p">(</span><span class="n">backup_dir</span><span class="p">,</span> <span class="n">timestamp</span><span class="p">,</span> <span class="n">manifest</span><span class="p">):</span>
+    <span class="n">backup_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">backup_dir</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">backup_dir</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+        <span class="n">backup_dir</span><span class="o">.</span><span class="n">mkdir</span><span class="p">()</span>
+    <span class="n">manifest_file</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">backup_dir</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">timestamp</span><span class="si">}</span><span class="s2">.csv&quot;</span><span class="p">)</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">manifest_file</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">raw</span><span class="p">:</span>
+        <span class="n">writer</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">writer</span><span class="p">(</span><span class="n">raw</span><span class="p">)</span>
+        <span class="n">writer</span><span class="o">.</span><span class="n">writerow</span><span class="p">([</span><span class="s2">&quot;filename&quot;</span><span class="p">,</span> <span class="s2">&quot;hash&quot;</span><span class="p">])</span>
+        <span class="n">writer</span><span class="o">.</span><span class="n">writerows</span><span class="p">(</span><span class="n">manifest</span><span class="p">)</span>
+</code></pre></div>
+<p class="continue">We then copy those files that <em>haven't</em> already been saved:</p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">copy_files</span><span class="p">(</span><span class="n">source_dir</span><span class="p">,</span> <span class="n">backup_dir</span><span class="p">,</span> <span class="n">manifest</span><span class="p">):</span>
+    <span class="k">for</span> <span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">hash_code</span><span class="p">)</span> <span class="ow">in</span> <span class="n">manifest</span><span class="p">:</span>
+        <span class="n">source_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">source_dir</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+        <span class="n">backup_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">backup_dir</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">hash_code</span><span class="si">}</span><span class="s2">.bck&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">backup_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+            <span class="n">shutil</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">source_path</span><span class="p">,</span> <span class="n">backup_path</span><span class="p">)</span>
+</code></pre></div>
+<p class="continue">Finally,
+we could call <code>time.time()</code> directly to get the current time,
+but we will wrap it up to give ourselves something
+that we can easily replace with a mock for testing:</p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">current_time</span><span class="p">():</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+</code></pre></div>
+<p>We do one test with real files:</p>
+<div class="highlight"><pre><span></span><code>python backup.py sample_dir /tmp/backups
+tree /tmp/backups
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>/tmp/backups
+├── 1661105984.csv
+├── 1661106007.csv
+├── 1661106079.csv
+├── 1661106087.csv
+├── 1661107385.csv
+├── 1661107490.csv
+├── 17e682f060b5f8e47ea04c5c4855908b0a5ad612022260fe50e11ecb0cc0ab76.bck
+├── 3cf9a1a81f6bdeaf08a343c1e1c73e89cf44c06ac2427a892382cae825e7c9c1.bck
+└── 5695d82a086b677962a0b0428ed1a213208285b7b40d7d3604876d36a710302a.bck
+
+0 directories, 9 files
+</code></pre></div>
+<p>The rest of our tests use a fake filesystem
+and a mock replacement for the <code>current_time</code> function
+(so that we know what the manifest file will be called).
+The setup is:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">import</span> <span class="nn">pytest</span>
+<span class="kn">from</span> <span class="nn">unittest.mock</span> <span class="kn">import</span> <span class="n">patch</span>
+<span class="kn">from</span> <span class="nn">backup</span> <span class="kn">import</span> <span class="n">backup</span>
+
+<span class="n">FILES</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;a.txt&quot;</span><span class="p">:</span> <span class="s2">&quot;aaa&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;b.txt&quot;</span><span class="p">:</span> <span class="s2">&quot;bbb&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;subdir/c.txt&quot;</span><span class="p">:</span> <span class="s2">&quot;ccc&quot;</span>
+<span class="p">}</span>
+
+<span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span>
+<span class="k">def</span> <span class="nf">our_fs</span><span class="p">(</span><span class="n">fs</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">contents</span> <span class="ow">in</span> <span class="n">FILES</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">fs</span><span class="o">.</span><span class="n">create_file</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">contents</span><span class="o">=</span><span class="n">contents</span><span class="p">)</span>
+</code></pre></div>
+<p class="continue">and an example of a single test is:</p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">test_nested_example</span><span class="p">(</span><span class="n">our_fs</span><span class="p">):</span>
+    <span class="k">with</span> <span class="n">patch</span><span class="p">(</span><span class="s2">&quot;backup.current_time&quot;</span><span class="p">,</span> <span class="n">return_value</span><span class="o">=</span><span class="mi">1234</span><span class="p">):</span>
+        <span class="n">manifest</span> <span class="o">=</span> <span class="n">backup</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">,</span> <span class="s2">&quot;/backup&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">filename</span><span class="p">,</span> <span class="n">hash_code</span> <span class="ow">in</span> <span class="n">manifest</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;/backup&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">hash_code</span><span class="si">}</span><span class="s2">.bck&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span>
+        <span class="k">assert</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;/backup&quot;</span><span class="p">,</span> <span class="s2">&quot;1234.csv&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span>
+</code></pre></div>
+<h2 id="backup-exercises">Section 3.5: Exercises</h2>
+<h3 class="exercise">Odds of collision</h3>
+<p>If hashes were only 2 bits long,
+then the chances of collision with each successive file
+assuming no previous collision are:</p>
+<table>
+<thead>
+<tr>
+<th>Number of Files</th>
+<th>Odds of Collision</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>0%</td>
+</tr>
+<tr>
+<td>2</td>
+<td>25%</td>
+</tr>
+<tr>
+<td>3</td>
+<td>50%</td>
+</tr>
+<tr>
+<td>4</td>
+<td>75%</td>
+</tr>
+<tr>
+<td>5</td>
+<td>100%</td>
+</tr>
+</tbody>
+</table>
+<p>A colleague of yours says this means that if we hash four files,
+there's only a 75% chance of any collision occurring.
+What are the actual odds?</p>
+<h3 class="exercise">Streaming I/O</h3>
+<p>Write a small program using <code>fs.createReadStream</code> and <code>fs.createWriteStream</code>
+that copies a file piece by piece
+instead of reading it into memory and then writing it out again.</p>
+<h3 class="exercise">Sequencing backups</h3>
+<p>Modify the backup program so that manifests are numbered sequentially
+as <code>00000001.csv</code>, <code>00000002.csv</code>, and so on
+rather than being timestamped.
+Why doesn't this solve the time of check/time of use race condition mentioned earlier.</p>
+<h3 class="exercise">JSON manifests</h3>
+<ol>
+<li>
+<p>Modify <code>backup.py</code> so that it can save JSON manifests as well as CSV manifests
+    based on a command-line flag.</p>
+</li>
+<li>
+<p>Write another program called <code>migrate.py</code> that converts a set of manifests
+    from CSV to JSON.
+    (The program's name comes from the term <a class="gl-ref" href="../glossary/#data_migration" markdown="1">data migration</a>.)</p>
+</li>
+<li>
+<p>Modify <code>backup.py</code> programs so that each manifest stores the user name of the person who created it
+    along with file hashes,
+    and then modify <code>migrate.py</code> to transform old files into the new format.</p>
+</li>
+</ol>
+<h3 class="exercise">Mock hashes</h3>
+<ol>
+<li>
+<p>Modify the file backup program so that it uses a function called <code>ourHash</code> to hash files.</p>
+</li>
+<li>
+<p>Create a replacement that returns some predictable value, such as the first few characters of the data.</p>
+</li>
+<li>
+<p>Rewrite the tests to use this function.</p>
+</li>
+</ol>
+<p>How did you modify the main program so that the tests could control which hashing function is used?</p>
+<h3 class="exercise">Comparing manifests</h3>
+<p>Write a program <code>compare-manifests.py</code> that reads two manifest files and reports:</p>
+<ul>
+<li>
+<p>Which files have the same names but different hashes
+    (i.e., their contents have changed).</p>
+</li>
+<li>
+<p>Which files have the same hashes but different names
+    (i.e., they have been renamed).</p>
+</li>
+<li>
+<p>Which files are in the first hash but neither their names nor their hashes are in the second
+    (i.e., they have been deleted).</p>
+</li>
+<li>
+<p>Which files are in the second hash but neither their names nor their hashes are in the first
+    (i.e., they have been added).</p>
+</li>
+</ul>
+<h3 class="exercise">From one state to another</h3>
+<ol>
+<li>
+<p>Write a program called <code>from_to.py</code> that takes the name of a directory
+    and the name of a manifest file
+    as its command-line arguments,
+    then adds, removes, and/or renames files in the directory
+    to restore the state described in the manifest.
+    The program should only perform file operations when it needs to,
+    e.g.,
+    it should not delete a file and re-add it if the contents have not changed.</p>
+</li>
+<li>
+<p>Write some tests for <code>from_to.py</code> using pytest and a mock filesystem.</p>
+</li>
+</ol>
+<h3 class="exercise">File history</h3>
+<ol>
+<li>
+<p>Write a program called <code>file_history.py</code>
+    that takes the name of a file as a command-line argument
+    and displays the history of that file
+    by tracing it back in time through the available manifests.</p>
+</li>
+<li>
+<p>Write tests for your program using pytest and a mock filesystem.</p>
+</li>
+</ol>
+<h3 class="exercise">Pre-commit hooks</h3>
+<p>Modify <code>backup.py</code> to load and run a function called <code>pre_commit</code> from a file called <code>pre_commit.py</code>
+stored in the root directory of the files being backed up.
+If <code>pre_commit</code> returns <code>True</code>, the backup proceeds;
+if it returns <code>False</code> or throws an exception,
+no backup is created.</p>
         </main>
       </div>
     </div>

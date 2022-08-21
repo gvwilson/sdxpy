@@ -18,9 +18,9 @@ author = "Greg Wilson"
 chapters = [
     "introduction",
     "tester",
+    "backup",
     "interpreter",
     "dataframe",
-    "backup",
     "pipeline",
     "builder",
     "matching",
@@ -122,6 +122,7 @@ exclude = [
     "*~",
     "*/__pycache__",
     "*/.pytest_cache",
+    "*/sample_dir"
 ]
 
 # Display values for LaTeX generation.
