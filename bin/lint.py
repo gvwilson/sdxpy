@@ -10,6 +10,7 @@ from pathlib import Path
 
 import utils
 from bs4 import BeautifulSoup, Tag
+from yaml_header_tools import get_header_from_file, NoValidHeader
 
 
 CONFIGURATION = [
@@ -48,6 +49,10 @@ RE_FIGURE = re.compile(r'\[%\s*figure\b.+?img="(.+?)".+?%\]', re.DOTALL)
 RE_LINK = re.compile(r'\[[^]]+?\]\[(\w+?)\]')
 RE_PAT = re.compile(r'\[%\s*excerpt\b.+?pat="(.+?)"\s+fill="(.+?)".+?%\]')
 RE_SHORTCODE = re.compile(r'\[%.+?%\]')
+SLIDES_FILE = "slides.html"
+SLIDES_TEMPLATE = "slides"
+
+EXPECTED_FILES = {INDEX_FILE, SLIDES_FILE}
 
 
 def main():
@@ -58,6 +63,7 @@ def main():
 
     source_files = get_src(options)
     check_files(source_files)
+    check_slides(source_files)
     check_links(options.links, source_files)
 
     html_files = get_html(options)
@@ -109,6 +115,27 @@ def check_links(links_file, source_files):
     report("links", referenced, existing)
 
 
+def check_slides(source_files):
+    """Check slides.html files if they exist."""
+    for (dir_path, index_file) in source_files:
+        slides_path = Path(dir_path, SLIDES_FILE)
+        if not slides_path.exists():
+            continue
+        try:
+            slides_header = get_header_from_file(slides_path)
+        except NoValidHeader:
+            continue
+
+        slides_template = slides_header["template"][0]
+        if slides_template != SLIDES_TEMPLATE:
+            print(f"wrong template {slides_template} in {slides_path}")
+
+        index_path = Path(dir_path, index_file)
+        index_header = get_header_from_file(index_path)
+        if slides_header["title"] != index_header["title"]:
+            print(f"title mismatch: {slides_path} vs. {index_path}")
+
+
 def get_excerpts(filename):
     """Find excerpt filenames."""
     with open(filename, "r") as reader:
@@ -125,7 +152,7 @@ def get_files(dirname):
     return set(
         f.name
         for f in Path(dirname).iterdir()
-        if f.is_file() and (f.name != INDEX_FILE)
+        if f.is_file() and (f.name not in EXPECTED_FILES)
     )
 
 
