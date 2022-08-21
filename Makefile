@@ -10,7 +10,6 @@ HTML := info/head.html info/foot.html
 INFO := info/bibliography.bib info/credits.yml info/glossary.yml info/links.yml
 FIG_SVG := $(wildcard src/*/*.svg)
 IVY := $(wildcard lib/mccole/*/*.*)
-RES := $(wildcard res/*.*)
 TEX := info/head.tex info/foot.tex
 SRC := $(wildcard *.md) $(wildcard src/*.md) $(wildcard src/*/index.md) $(wildcard src/*/slides.html)
 
@@ -26,7 +25,7 @@ commands:
 
 ## build: rebuild site without running server
 build: ./docs/index.html
-./docs/index.html: ${SRC} ${INFO} ${IVY} ${RES} config.py
+./docs/index.html: ${SRC} ${INFO} ${IVY} config.py
 	ivy build && touch $@
 
 ## serve: build site and run server
