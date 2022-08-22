@@ -290,7 +290,10 @@
   
 
   
-
+  <p class="definitions">
+    Terms defined:
+    <a class="gl-ref" href="../glossary/#attribute" markdown="1">attribute</a>, <a class="gl-ref" href="../glossary/#cache" markdown="1">cache</a>, <a class="gl-ref" href="../glossary/#confirmation_bias" markdown="1">confirmation bias</a>, <a class="gl-ref" href="../glossary/#design_by_contract" markdown="1">design by contract</a>, <a class="gl-ref" href="../glossary/#easy_mode" markdown="1">easy mode</a>, <a class="gl-ref" href="../glossary/#layout_engine" markdown="1">layout engine</a>, <a class="gl-ref" href="../glossary/#liskov_substitution_principle" markdown="1">Liskov Substitution Principle</a>, <a class="gl-ref" href="../glossary/#query_selector" markdown="1">query selector</a>, <a class="gl-ref" href="../glossary/#signature" markdown="1">signature</a>, <a class="gl-ref" href="../glossary/#z_buffering" markdown="1">z-buffering</a>
+  </p>
   
 
   
@@ -303,8 +306,394 @@
 
   
 
+  
 
-          <p>FIXME</p>
+  
+
+
+          <p>You might be reading this as an HTML page,
+an e-book (which is basically the same thing),
+or on the printed page.
+In all three cases,
+a <span class="ix-entry" ix-key="layout engine" markdown="1"><a class="gl-ref" href="../glossary/#layout_engine" markdown="1">layout engine</a></span> took some text and some layout instructions
+and decided where to put each character and image.
+We will build a small layout engine in this chapter
+based on <span class="ix-entry" ix-key="Brubeck, Matt" markdown="1"><a href="https://limpet.net/mbrubeck/">Matt Brubeck's</a></span> <a href="https://limpet.net/mbrubeck/2014/08/08/toy-layout-engine-1.html">tutorial</a>
+to explore how browsers decide what to put where.</p>
+<p>Our inputs will be a very small subset of HTML and an equally small subset of CSS.
+We will create our own classes to represent these
+instead of using those provided by various Node libraries;
+to translate the combination of HTML and CSS into text on the screen,
+we will label each node in the DOM tree with the appropriate styles,
+walk that tree to figure out where each visible element belongs,
+and then draw the result as text on the screen.</p>
+<div class="callout">
+<h3>Upside down</h3>
+<p>The <span class="ix-entry" ix-key="coordinate system" markdown="1">coordinate systems</span> for screens
+puts (0, 0) in the upper left corner instead of the lower left.
+X increases to the right as usual,
+but Y increases as we go down, rather than up
+(<a class="fig-ref" href="../layout/#layout-coordinate-system">Figure 17.1</a>).
+This convention is a holdover from the days of teletype terminals
+that printed lines on rolls of paper;
+as <span class="ix-entry" ix-key="Hoye, Mike" markdown="1"><a href="http://exple.tive.org/blarg/">Mike Hoye</a></span> has <a href="http://exple.tive.org/blarg/2020/11/26/punching-holes/">repeatedly observed</a>,
+the past is all around us.</p>
+<figure id="layout-coordinate-system">
+  <img src="./coordinate_system.svg" alt="Coordinate system"/>
+  <figcaption>Figure 17.1: Coordinate system with (0, 0) in the upper left corner.</figcaption>
+</figure>
+<h2 id="layout-size">Section 17.2: Sizing</h2>
+<p>Let's start on <a class="gl-ref" href="../glossary/#easy_mode" markdown="1">easy mode</a>
+without margins, padding, line-wrapping, or other complications.
+Everything we can put on the screen is represented as a rectangular cell,
+and every cell is either a row, a column, or a block.
+A block has a fixed width and height:</p>
+<p><span class="FIXME">FIXME</span></p>
+<p>A row arranges one or more cells horizontally;
+its width is the sum of the widths of its children,
+while its height is the height of its tallest child
+(<a class="fig-ref" href="../layout/#layout-sizing">Figure 17.2</a>):</p>
+<p><span class="FIXME">FIXME</span></p>
+<figure id="layout-sizing">
+  <img src="./sizing.svg" alt="Calculating sizes of fixed blocks"/>
+  <figcaption>Figure 17.2: Calculating sizes of blocks with fixed width and height.</figcaption>
+</figure>
+<p>Finally,
+a column arranges one or more cells vertically;
+its width is the width of its widest child
+and its height is the sum of the heights of its children.
+(Here and elsewhere we use the abbreviation <code>col</code> when referring to columns.)</p>
+<p><span class="FIXME">FIXME</span></p>
+<p>Rows and columns nest inside one another:
+a row cannot span two or more columns,
+and a column cannot cross the boundary between two rows.
+Any time we have a structure with that property
+we can represent it as a tree of nested objects.
+Given such a tree,
+we can calculate the width and height of each cell every time we need to.
+This is simple but inefficient:
+we could calculate both width and height at the same time
+and <span class="ix-entry" ix-key="cache!calculated values" markdown="1"><a class="gl-ref" href="../glossary/#cache" markdown="1">cache</a></span> those values to avoid recalculation,
+but we called this "easy mode" for a reason.</p>
+<p>As simple as it is,
+this code could still contain errors (and did during development),
+so we write some Mocha tests to check that it works as desired
+before trying to build anything more complicated:</p>
+<p><span class="FIXME">FIXME</span>
+<span class="FIXME">FIXME</span></p>
+<h2 id="layout-position">Section 17.3: Positioning</h2>
+<p>Now that we know how big each cell is
+we can figure out where to put it.
+Suppose we start with the upper left corner of the browser:
+upper because we lay out the page top-to-bottom
+and left because we are doing left-to-right layout.
+If the cell is a block, we place it there.
+If the cell is a row, on the other hand,
+we get its height
+and then calculate its lower edge as y1 = y0 + height.
+We then place the first child's lower-left corner at (x0, y1),
+the second child's at (x0 + width0, y1), and so on
+(<a class="fig-ref" href="../layout/#layout-layout">Figure 17.3</a>).
+Similarly,
+if the cell is a column
+we place the first child at (x0, y0),
+the next at (x0, y0 + height0),
+and so on.</p>
+<figure id="layout-layout">
+  <img src="./layout.svg" alt="Laying out rows and columns"/>
+  <figcaption>Figure 17.3: Laying out rows and columns of fixed-size blocks.</figcaption>
+</figure>
+<p>To save ourselves some testing we will derive the classes that know how to do layout
+from the classes we wrote before.
+Our blocks are:</p>
+<p><span class="FIXME">FIXME</span></p>
+<p class="continue">while our columns are:</p>
+<p><span class="FIXME">FIXME</span></p>
+<p class="continue">and our rows are:</p>
+<p><span class="FIXME">FIXME</span></p>
+<p>Once again,
+we write and run some tests to check that everything is doing what it's supposed to:</p>
+<p><span class="FIXME">FIXME</span>
+<span class="FIXME">FIXME</span></p>
+<h2 id="layout-render">Section 17.4: Rendering</h2>
+<p>We drew the blocks on a piece of graph paper
+in order to figure out the expected answers for the tests shown above.
+We can do something similar in software by creating a "screen" of space characters
+and then having each block draw itself in the right place.
+If we do this starting at the root of the tree,
+child blocks will overwrite the markings made by their parents,
+which will automatically produce the right appearance
+(<a class="fig-ref" href="../layout/#layout-draw-over">Figure 17.4</a>).
+(A more sophisticated version of this called <a class="gl-ref" href="../glossary/#z_buffering" markdown="1">z-buffering</a>
+keeps track of the visual depth of each pixel
+in order to draw things in three dimensions.)</p>
+<figure id="layout-draw-over">
+  <img src="./draw_over.svg" alt="Children drawing over their parents"/>
+  <figcaption>Figure 17.4: Render blocks by drawing child nodes on top of parent nodes.</figcaption>
+</figure>
+<p>Our pretended screen is just an array of arrays of characters:</p>
+<p><span class="FIXME">FIXME</span></p>
+<p>We will use successive lower-case characters to show each block,
+i.e.,
+the root block will draw itself using 'a',
+while its children will be 'b', 'c', and so on.</p>
+<p><span class="FIXME">FIXME</span></p>
+<p>To teach each kind of cell how to render itself,
+we have to derive a new class from each of the ones we have
+and give the new class a <code>render</code> method with the same
+<span class="ix-entry" ix-key="signature!of function;function signature" markdown="1"><a class="gl-ref" href="../glossary/#signature" markdown="1">signature</a></span>:</p>
+<p><span class="FIXME">FIXME</span></p>
+<p class="continue">These <code>render</code> methods do exactly the same thing,
+so we have each one call a shared function that does the actual work.
+If we were building a real layout engine,
+a cleaner solution would be to go back and create a class called <code>Cell</code> with this <code>render</code> method,
+then derive our <code>Block</code>, <code>Row</code>, and <code>Col</code> classes from that.
+In general,
+if two or more classes need to be able to do something,
+we should add a method to do that to their lowest common ancestor.</p>
+<p>Our simpler tests are a little easier to read once we have rendering in place,
+though we still had to draw things on paper to figure out our complex ones:</p>
+<p><span class="FIXME">FIXME</span></p>
+<p class="continue">The fact that we find our own tests difficult to understand
+is a sign that we should do more testing.
+It would be very easy for us to get a wrong result
+and convince ourselves that it was actually correct;
+<span class="ix-entry" ix-key="confirmation bias" markdown="1"><a class="gl-ref" href="../glossary/#confirmation_bias" markdown="1">confirmation bias</a></span> of this kind
+is very common in software development.</p>
+<h2 id="layout-fit">Section 17.5: Wrapping</h2>
+<p>One of the biggest differences between a browser and a printed page
+is that the text in the browser wraps itself automatically as the window is resized.
+(The other, these days, is that the printed page doesn't spy on us,
+though someone is undoubtedly working on that.)</p>
+<p>To add wrapping to our layout engine,
+suppose we fix the width of a row.
+If the total width of the children is greater than the row's width,
+the layout engine needs to wrap the children around.
+This assumes that columns can be made as big as they need to be,
+i.e.,
+that we can grow vertically to make up for limited space horizontally.
+It also assumes that all of the row's children are no wider than the width of the row;
+we will look at what happens when they're not in the exercises.</p>
+<p>Our layout engine manages wrapping by transforming the tree.
+The height and width of blocks are fixed,
+so they become themselves.
+Columns become themselves as well,
+but since they have children that might need to wrap,
+the class representing columns needs a new method:</p>
+<p><span class="FIXME">FIXME</span></p>
+<p>Rows do all the hard work.
+Each original row is replaced with a new row that contains a single column with one or more rows,
+each of which is one "line" of wrapped cells
+(<a class="fig-ref" href="../layout/#layout-wrap">Figure 17.5</a>).
+This replacement is unnecessary when everything will fit on a single row,
+but it's easiest to write the code that does it every time;
+we will look at making this more efficient in the exercises.</p>
+<figure id="layout-wrap">
+  <img src="./wrap.svg" alt="Wrapping rows"/>
+  <figcaption>Figure 17.5: Wrapping rows by introducing a new row and column.</figcaption>
+</figure>
+<p>Our new wrappable row's constructor takes a fixed width followed by the children
+and returns that fixed width when asked for its size:</p>
+<p><span class="FIXME">FIXME</span></p>
+<p class="continue">Wrapping puts the row's children into buckets,
+then converts the buckets to a row of a column of rows:</p>
+<p><span class="FIXME">FIXME</span></p>
+<p>Once again we bring forward all the previous tests
+and write some new ones to test the functionality we've added:</p>
+<p><span class="FIXME">FIXME</span>
+<span class="FIXME">FIXME</span></p>
+<div class="callout">
+<h3>The Liskov Substitution Principle</h3>
+<p>We are able to re-use tests like this because of
+the <span class="ix-entry" ix-key="Liskov Substitution Principle;software design!Liskov Substitution Principle" markdown="1"><a class="gl-ref" href="../glossary/#liskov_substitution_principle" markdown="1">Liskov Substitution Principle</a></span>,
+which states that
+it should be possible to replace objects in a program
+with objects of derived classes
+without breaking anything.
+In order to satisfy this principle,
+new code must handle the same set of inputs as the old code,
+though it may be able to process more inputs as well.
+Conversely,
+its output must be a subset of what the old code produced
+so that whatever is downstream from it won't be surprised.
+Thinking in these terms leads to a methodology called
+<span class="ix-entry" ix-key="design by contract;software design!design by contract" markdown="1"><a class="gl-ref" href="../glossary/#design_by_contract" markdown="1">design by contract</a></span>.</p>
+</div>
+<h2 id="layout-css">Section 17.6: Styling</h2>
+<p>It's finally time to style pages that contain text.
+Our final subset of HTML has rows, columns, and text blocks as before.
+Each text block has one or more lines of text;
+the number of lines determines the block's height
+and the length of the longest line determines its width.</p>
+<p>Rows and columns can have <a class="gl-ref" href="../glossary/#attribute" markdown="1">attributes</a> just as they can in real HTML,
+and each attribute must have a single value in quotes.
+Rows no longer take a fixed width:
+instead,
+we will specify that with our little subset of <span class="ix-entry" ix-key="CSS" markdown="1">CSS</span>.
+Together,
+these three classes are just over 40 lines of code:</p>
+<p><span class="FIXME">FIXME</span></p>
+<p>We will use regular expressions to parse HTML
+(though as we explained in <a class="x-ref" href="../parser/">Chapter 9</a>,
+<a href="https://stackoverflow.com/questions/1732348/regex-match-open-tags-except-xhtml-self-contained-tags/1732454#1732454">this is a sin</a>).
+The main body of our parser is:</p>
+<p><span class="FIXME">FIXME</span></p>
+<p class="continue">while the two functions that do most of the work are:</p>
+<p><span class="FIXME">FIXME</span></p>
+<p class="continue">and:</p>
+<p><span class="FIXME">FIXME</span></p>
+<p>The next step is to define a generic class for CSS rules
+with a subclass for each type of rule.
+From highest precedence to lowest,
+the three types of rules we support identify specific nodes via their ID,
+classes of nodes via their <code>class</code> attribute,
+and types of nodes via their element name.
+We keep track of which rules take precedence over which through the simple expedient of numbering the classes:</p>
+<p><span class="FIXME">FIXME</span></p>
+<p>An ID rule's <span class="ix-entry" ix-key="query selector" markdown="1"><a class="gl-ref" href="../glossary/#query_selector" markdown="1">query selector</a></span> is written as <code>#name</code>
+and matches HTML like <code>&lt;tag id="name"&gt;...&lt;/tag&gt;</code> (where <code>tag</code> is <code>row</code> or <code>col</code>):</p>
+<p><span class="FIXME">FIXME</span></p>
+<p>A class rule's query selector is written as <code>.kind</code> and matches HTML like <code>&lt;tag class="kind"&gt;...&lt;/tag&gt;</code>.
+Unlike real CSS,
+we only allow one class per node:</p>
+<p><span class="FIXME">FIXME</span></p>
+<p>Finally,
+tag rules just have the name of the type of node they apply to without any punctuation:</p>
+<p><span class="FIXME">FIXME</span></p>
+<p>We could build yet another parser to read a subset of CSS and convert it to objects,
+but this chapter is long enough,
+so we will write our rules as JSON:</p>
+<div class="highlight"><pre><span></span><code><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="s1">&#39;row&#39;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">width</span><span class="o">:</span><span class="w"> </span><span class="mf">20</span><span class="w"> </span><span class="p">},</span><span class="w"></span>
+<span class="w">  </span><span class="s1">&#39;.kind&#39;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">width</span><span class="o">:</span><span class="w"> </span><span class="mf">5</span><span class="w"> </span><span class="p">},</span><span class="w"></span>
+<span class="w">  </span><span class="s1">&#39;#name&#39;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">height</span><span class="o">:</span><span class="w"> </span><span class="mf">10</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</code></pre></div>
+<p class="continue">and build a class that converts this representation to a set of objects:</p>
+<p><span class="FIXME">FIXME</span></p>
+<p>Our CSS ruleset class also has a method for finding the rules for a given DOM node.
+This method relies on the precedence values we defined for our classes
+in order to sort them
+so that we can find the most specific.</p>
+<p>Here's our final set of tests:</p>
+<p><span class="FIXME">FIXME</span></p>
+<p>If we were going on,
+we would override the cells' <code>getWidth</code> and <code>getHeight</code> methods to pay attention to styles.
+We would also decide what to do with cells that don't have any styles defined:
+use a default,
+flag it as an error,
+or make a choice based on the contents of the child nodes.
+We will explore these possibilities in the exercises.</p>
+<h2 id="layout-exercises">Section 17.7: Exercises</h2>
+<h3 class="exercise">Refactoring the node classes</h3>
+<p>Refactor the classes used to represent blocks, rows, and columns so that:</p>
+<ol>
+<li>
+<p>They all derive from a common parent.</p>
+</li>
+<li>
+<p>All common behavior is defined in that parent (if only with placeholder methods).</p>
+</li>
+</ol>
+<h3 class="exercise">Handling rule conflicts</h3>
+<p>Modify the rule lookup mechanism so that if two conflicting rules are defined,
+the one that is defined second takes precedence.
+For example,
+if there are two definitions for <code>row.bold</code>,
+whichever comes last in the JSON representation of the CSS wins.</p>
+<h3 class="exercise">Handling arbitrary tags</h3>
+<p>Modify the existing code to handle arbitrary HTML elements.</p>
+<ol>
+<li>
+<p>The parser should recognize <code>&lt;anyTag&gt;...&lt;/anyTag&gt;</code>.</p>
+</li>
+<li>
+<p>Instead of separate classes for rows and columns,
+    there should be one class <code>Node</code> whose <code>tag</code> attribute identifies its type.</p>
+</li>
+</ol>
+<h3 class="exercise">Recycling nodes</h3>
+<p>Modify the wrapping code so that new rows and columns are only created if needed.
+For example,
+if a row of width 10 contains a text node with the string "fits",
+a new row and column are <em>not</em> inserted.</p>
+<h3 class="exercise">Rendering a clear background</h3>
+<p>Modify the rendering code so that only the text in block nodes is shown,
+i.e.,
+so that the empty space in rows and columns is rendered as spaces.</p>
+<h3 class="exercise">Clipping text</h3>
+<ol>
+<li>
+<p>Modify the wrapping and rendering so that
+    if a block of text is too wide for the available space
+    the extra characters are clipped.
+    For example,
+    if a column of width 5 contains a line "unfittable",
+    only "unfit" appears.</p>
+</li>
+<li>
+<p>Extend your solution to break lines on spaces as needed
+    in order to avoid clipping.</p>
+</li>
+</ol>
+<h3 class="exercise">Bidirectional rendering</h3>
+<p>Modify the existing software to do either left-to-right or right-to-left rendering
+upon request.</p>
+<h3 class="exercise">Equal sizing</h3>
+<p>Modify the existing code to support elastic columns,
+i.e.,
+so that all of the columns in a row are automatically sized to have the same width.
+If the number of columns does not divide evenly into the width of the row,
+allocate the extra space as equally as possible from left to right.</p>
+<h3 class="exercise">Padding elements</h3>
+<p>Modify the existing code so that:</p>
+<ol>
+<li>
+<p>Authors can define a <code>padding</code> attribute for row and column elements.</p>
+</li>
+<li>
+<p>When the node is rendered, that many blank spaces are added on all four sides of the contents.</p>
+</li>
+</ol>
+<p class="continue">For example, the HTML <code>&lt;row&gt;text&lt;/row&gt;</code> would render as:</p>
+<div class="highlight"><pre><span></span><code>+------+
+|      |
+| text |
+|      |
++------+
+</code></pre></div>
+<p class="continue">where the lines show the outer border of the rendering.</p>
+<h3 class="exercise">Drawing borders</h3>
+<ol>
+<li>
+<p>Modify the existing code so that elements may specify <code>border: true</code> or <code>border: false</code>
+    (with the latter being the default).
+    If an element's <code>border</code> property is <code>true</code>,
+    it is drawn with a dashed border.
+    For example,
+    if the <code>border</code> property of <code>row</code> is <code>true</code>,
+    then <code>&lt;row&gt;text&lt;/row&gt;</code> is rendered as:</p>
+<div class="highlight"><pre><span></span><code>+----+
+|text|
++----+
+</code></pre></div>
+</li>
+<li>
+<p>Extend your solution so that if two adjacent cells both have borders,
+    only a single border is drawn.
+    For example,
+    if the <code>border</code> property of <code>col</code> is <code>true</code>,
+    then:</p>
+<div class="highlight"><pre><span></span><code><span class="p">&lt;</span><span class="nt">row</span><span class="p">&gt;&lt;</span><span class="nt">col</span><span class="p">&gt;</span>left<span class="p">&lt;/</span><span class="nt">col</span><span class="p">&gt;&lt;</span><span class="nt">col</span><span class="p">&gt;</span>right<span class="p">&lt;/</span><span class="nt">col</span><span class="p">&gt;&lt;/</span><span class="nt">row</span><span class="p">&gt;</span>
+</code></pre></div>
+<p class="continue">is rendered as:</p>
+<div class="highlight"><pre><span></span><code>+----+-----+
+|left|right|
++----+-----+
+</code></pre></div>
+</li>
+</ol>
+</div>
         </main>
       </div>
     </div>
