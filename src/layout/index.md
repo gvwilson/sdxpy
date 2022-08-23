@@ -299,24 +299,24 @@ we will specify that with our little subset of [%i "CSS" %]CSS[%/i%].
 Together,
 these three classes are just over 40 lines of code:
 
-[% fixme f="micro_dom.js" omit="erase" %]
+[% excerpt f="micro_dom.py" omit="erase" %]
 
 We will use regular expressions to parse HTML
 (though as we explained in [%x parser %],
 [this is a sin][stack_overflow_html_regex]).
 The main body of our parser is:
 
-[% fixme f="parse.js" omit="skip" %]
+[% excerpt f="parse.js" omit="skip" %]
 
 while the two functions that do most of the work are:
 {: .continue}
 
-[% fixme f="parse.js" keep="makenode" %]
+[% excerpt f="parse.js" keep="makenode" %]
 
 and:
 {: .continue}
 
-[% fixme f="parse.js" keep="makeopening" %]
+[% excerpt f="parse.js" keep="makeopening" %]
 
 The next step is to define a generic class for CSS rules
 with a subclass for each type of rule.
@@ -326,12 +326,12 @@ classes of nodes via their `class` attribute,
 and types of nodes via their element name.
 We keep track of which rules take precedence over which through the simple expedient of numbering the classes:
 
-[% fixme f="micro_css.js" keep="css" %]
+[% excerpt f="micro_css.js" keep="css" %]
 
 An ID rule's [%i "query selector" %][%g query_selector "query selector" %][%/i%] is written as `#name`
 and matches HTML like `<tag id="name">...</tag>` (where `tag` is `row` or `col`):
 
-[% fixme f="micro_css.js" keep="id" %]
+[% excerpt f="micro_css.js" keep="id" %]
 
 A class rule's query selector is written as `.kind` and matches HTML like `<tag class="kind">...</tag>`.
 Unlike real CSS,
