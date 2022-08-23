@@ -125,28 +125,28 @@ To save ourselves some testing we will derive the classes that know how to do la
 from the classes we wrote before.
 Our blocks are:
 
-[% fixme f="placed.js" keep="block" %]
+[% excerpt f="placed.py" keep="block" %]
 
 while our columns are:
 {: .continue}
 
-[% fixme f="placed.js" keep="col" %]
+[% excerpt f="placed.py" keep="col" %]
 
 and our rows are:
 {: .continue}
 
-[% fixme f="placed.js" keep="row" %]
+[% excerpt f="placed.py" keep="row" %]
 
 Once again,
 we write and run some tests to check that everything is doing what it's supposed to:
 
-[% fixme f="test_placed.js" omit="large" %]
-[% fixme f="test_placed.out" %]
+[% excerpt f="test_placed.py" omit="large" %]
+[% excerpt f="test_placed.out" %]
 
 ## Rendering {: #layout-render}
 
-We drew the blocks on a piece of graph paper
-in order to figure out the expected answers for the tests shown above.
+We drew blocks on graph paper
+to figure out the expected answers for the tests shown above.
 We can do something similar in software by creating a "screen" of space characters
 and then having each block draw itself in the right place.
 If we do this starting at the root of the tree,
@@ -166,24 +166,23 @@ in order to draw things in three dimensions.)
 
 Our pretended screen is just an array of arrays of characters:
 
-[% fixme f="render.js" keep="makeScreen" %]
+[% excerpt f="render.py" keep="make_screen" %]
 
 We will use successive lower-case characters to show each block,
 i.e.,
 the root block will draw itself using 'a',
 while its children will be 'b', 'c', and so on.
 
-[% fixme f="render.js" keep="draw" %]
+[% excerpt f="render.py" keep="draw" %]
 
 To teach each kind of cell how to render itself,
 we have to derive a new class from each of the ones we have
 and give the new class a `render` method with the same
-[%i "signature!of function" "function signature" %][%g signature "signature" %][%/i%]:
+[%i "signature!of function" "function signature" %][%g signature "signature" %][%/i%].
+We use a [%i "mixin class" %][%g mixin "mixin" %][%/i%] class to do this:
 
-[% fixme f="rendered.js" %]
+[% excerpt f="rendered.py" %]
 
-These `render` methods do exactly the same thing,
-so we have each one call a shared function that does the actual work.
 If we were building a real layout engine,
 a cleaner solution would be to go back and create a class called `Cell` with this `render` method,
 then derive our `Block`, `Row`, and `Col` classes from that.
@@ -195,9 +194,9 @@ we should add a method to do that to their lowest common ancestor.
 Our simpler tests are a little easier to read once we have rendering in place,
 though we still had to draw things on paper to figure out our complex ones:
 
-[% fixme f="test_rendered.js" keep="large" %]
+[% excerpt f="test_rendered.js" keep="large" %]
 
-The fact that we find our own tests difficult to understand
+The fact that our tests are difficult to understand
 is a sign that we should do more testing.
 It would be very easy for us to get a wrong result
 and convince ourselves that it was actually correct;
