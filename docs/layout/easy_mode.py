@@ -14,7 +14,7 @@ class Block:
 # [row]
 class Row:
     def __init__(self, *children):
-        self.children = children
+        self.children = list(children)
 
     def get_width(self):
         return sum([c.get_width() for c in self.children])
@@ -26,7 +26,7 @@ class Row:
 # [col]
 class Col:
     def __init__(self, *children):
-        self.children = children
+        self.children = list(children)
 
     def get_width(self):
         return max([c.get_width() for c in self.children], default=0)

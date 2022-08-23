@@ -194,7 +194,7 @@ we should add a method to do that to their lowest common ancestor.
 Our simpler tests are a little easier to read once we have rendering in place,
 though we still had to draw things on paper to figure out our complex ones:
 
-[% excerpt f="test_rendered.js" keep="large" %]
+[% excerpt f="test_rendered.py" keep="large" %]
 
 The fact that our tests are difficult to understand
 is a sign that we should do more testing.
@@ -228,7 +228,7 @@ Columns become themselves as well,
 but since they have children that might need to wrap,
 the class representing columns needs a new method:
 
-[% fixme f="wrapped.js" keep="blockcol" %]
+[% excerpt f="wrapped.py" keep="blockcol" %]
 
 Rows do all the hard work.
 Each original row is replaced with a new row that contains a single column with one or more rows,
@@ -248,19 +248,19 @@ we will look at making this more efficient in the exercises.
 Our new wrappable row's constructor takes a fixed width followed by the children
 and returns that fixed width when asked for its size:
 
-[% fixme f="wrapped.js" keep="row" omit="wrap" %]
+[% excerpt f="wrapped.py" keep="row" omit="wrap" %]
 
 Wrapping puts the row's children into buckets,
 then converts the buckets to a row of a column of rows:
 {: .continue}
 
-[% fixme f="wrapped.js" keep="wrap" %]
+[% excerpt f="wrapped.py" keep="wrap" %]
 
 Once again we bring forward all the previous tests
 and write some new ones to test the functionality we've added:
 
-[% fixme f="test_wrapped.js" keep="example" %]
-[% fixme f="test_wrapped.out" %]
+[% excerpt f="test_wrapped.py" keep="example" %]
+[% excerpt f="test_wrapped.out" %]
 
 <div class="callout" markdown="1">
 
