@@ -1,1 +1,1 @@
-pytest test_tokenizer.py
+COLUMNS=72 pytest test_tokenizer.py

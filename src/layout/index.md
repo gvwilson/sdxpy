@@ -7,7 +7,7 @@ syllabus:
 You might be reading this as an HTML page,
 an e-book (which is basically the same thing),
 or on the printed page.
-In all three cases,
+In all three cases
 a [%i "layout engine" %][%g layout_engine "layout engine" %][%/i%] took some text and some layout instructions
 and decided where to put each character and image.
 We will build a small layout engine in this chapter
@@ -51,14 +51,14 @@ Everything we can put on the screen is represented as a rectangular cell,
 and every cell is either a row, a column, or a block.
 A block has a fixed width and height:
 
-[% fixme f="easy_mode.js" keep="block" %]
+[% excerpt f="easy_mode.py" keep="block" %]
 
 A row arranges one or more cells horizontally;
 its width is the sum of the widths of its children,
 while its height is the height of its tallest child
 ([%f layout-sizing %]):
 
-[% fixme f="easy-mode.js" keep="row" %]
+[% excerpt f="easy_mode.py" keep="row" %]
 
 [% figure
    slug="layout-sizing"
@@ -73,7 +73,7 @@ its width is the width of its widest child
 and its height is the sum of the heights of its children.
 (Here and elsewhere we use the abbreviation `col` when referring to columns.)
 
-[% fixme f="easy_mode.js" keep="col" %]
+[% excerpt f="easy_mode.py" keep="col" %]
 
 Rows and columns nest inside one another:
 a row cannot span two or more columns,
@@ -92,8 +92,7 @@ this code could still contain errors (and did during development),
 so we write some Mocha tests to check that it works as desired
 before trying to build anything more complicated:
 
-[% fixme f="test_easy_mode.js" %]
-[% fixme f="test_easy_mode.out" %]
+[% excerpt pat="test_easy_mode.*" fill="py out" %]
 
 ## Positioning {: #layout-position}
 

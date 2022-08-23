@@ -1,1 +1,1 @@
-pytest test_parser.py
+COLUMNS=72 pytest test_parser.py
