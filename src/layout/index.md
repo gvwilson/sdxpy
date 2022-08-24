@@ -296,27 +296,33 @@ and each attribute must have a single value in quotes.
 Rows no longer take a fixed width:
 instead,
 we will specify that with our little subset of [%i "CSS" %]CSS[%/i%].
-Together,
-these three classes are just over 40 lines of code:
+The classes that represent these elements should seem familiar by now;
+for example, the class that represents a column is:
 
-[% excerpt f="micro_dom.py" omit="erase" %]
+[% excerpt f="micro_dom.py" keep="col" omit="omit" %]
+
+Since `DomCol` shares a lot of code with `DomRow` and `DomBlock`,
+but we don't want to go back and rewrite the parent,
+we use another mixin class for common methods that are being introduced late:
+
+[% excerpt f="micro_dom.py" keep="mixin" %]
 
 We will use regular expressions to parse HTML
 (though as we explained in [%x parser %],
 [this is a sin][stack_overflow_html_regex]).
 The main body of our parser is:
 
-[% excerpt f="parse.js" omit="skip" %]
+[% excerpt f="parse_html.py" omit="skip" %]
 
 while the two functions that do most of the work are:
 {: .continue}
 
-[% excerpt f="parse.js" keep="makenode" %]
+[% excerpt f="parse_html.py" keep="makenode" %]
 
 and:
 {: .continue}
 
-[% excerpt f="parse.js" keep="makeopening" %]
+[% excerpt f="parse_html.py" keep="makeopening" %]
 
 The next step is to define a generic class for CSS rules
 with a subclass for each type of rule.
@@ -326,23 +332,23 @@ classes of nodes via their `class` attribute,
 and types of nodes via their element name.
 We keep track of which rules take precedence over which through the simple expedient of numbering the classes:
 
-[% excerpt f="micro_css.js" keep="css" %]
+[% excerpt f="micro_css.py" keep="css" %]
 
 An ID rule's [%i "query selector" %][%g query_selector "query selector" %][%/i%] is written as `#name`
 and matches HTML like `<tag id="name">...</tag>` (where `tag` is `row` or `col`):
 
-[% excerpt f="micro_css.js" keep="id" %]
+[% excerpt f="micro_css.py" keep="id" %]
 
 A class rule's query selector is written as `.kind` and matches HTML like `<tag class="kind">...</tag>`.
 Unlike real CSS,
 we only allow one class per node:
 
-[% excerpt f="micro_css.js" keep="class" %]
+[% excerpt f="micro_css.py" keep="class" %]
 
 Finally,
 tag rules just have the name of the type of node they apply to without any punctuation:
 
-[% excerpt f="micro_css.js" keep="tag" %]
+[% excerpt f="micro_css.py" keep="tag" %]
 
 We could build yet another parser to read a subset of CSS and convert it to objects,
 but this chapter is long enough,
@@ -353,7 +359,7 @@ so we will write our rules as JSON:
 and build a class that converts this representation to a set of objects:
 {: .continue}
 
-[% excerpt f="micro_css.js" keep="ruleset" %]
+[% excerpt f="micro_css.py" keep="ruleset" %]
 
 Our CSS ruleset class also has a method for finding the rules for a given DOM node.
 This method relies on the precedence values we defined for our classes

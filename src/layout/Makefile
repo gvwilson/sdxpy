@@ -1,6 +1,7 @@
 TARGETS=\
   test_easy_mode.out \
   test_placed.out \
+  test_parse_html.out \
   test_wrapped.out
 
 include ../../examples.mk
