@@ -283,19 +283,16 @@ Thinking in these terms leads to a methodology called
 
 </div>
 
-## Styling {: #layout-css}
+## Customizing {: #layout-custom}
 
-It's finally time to style pages that contain text.
+It's finally time to style pages with variable-sized elements.
 Our final subset of HTML has rows, columns, and text blocks as before.
 Each text block has one or more lines of text;
 the number of lines determines the block's height
 and the length of the longest line determines its width.
 
 Rows and columns can have [%g attribute "attributes" %] just as they can in real HTML,
-and each attribute must have a single value in quotes.
-Rows no longer take a fixed width:
-instead,
-we will specify that with our little subset of [%i "CSS" %]CSS[%/i%].
+and those attributes can specify the row's height, width, or both.
 The classes that represent these elements should seem familiar by now;
 for example, the class that represents a column is:
 
@@ -303,7 +300,7 @@ for example, the class that represents a column is:
 
 Since `DomCol` shares a lot of code with `DomRow` and `DomBlock`,
 but we don't want to go back and rewrite the parent,
-we use another mixin class for common methods that are being introduced late:
+we use a mixin class for common methods that are being added at this stage:
 
 [% excerpt f="micro_dom.py" keep="mixin" %]
 
@@ -324,47 +321,7 @@ and:
 
 [% excerpt f="parse_html.py" keep="makeopening" %]
 
-The next step is to define a generic class for CSS rules
-with a subclass for each type of rule.
-From highest precedence to lowest,
-the three types of rules we support identify specific nodes via their ID,
-classes of nodes via their `class` attribute,
-and types of nodes via their element name.
-We keep track of which rules take precedence over which through the simple expedient of numbering the classes:
-
-[% excerpt f="micro_css.py" keep="css" %]
-
-An ID rule's [%i "query selector" %][%g query_selector "query selector" %][%/i%] is written as `#name`
-and matches HTML like `<tag id="name">...</tag>` (where `tag` is `row` or `col`):
-
-[% excerpt f="micro_css.py" keep="id" %]
-
-A class rule's query selector is written as `.kind` and matches HTML like `<tag class="kind">...</tag>`.
-Unlike real CSS,
-we only allow one class per node:
-
-[% excerpt f="micro_css.py" keep="class" %]
-
-Finally,
-tag rules just have the name of the type of node they apply to without any punctuation:
-
-[% excerpt f="micro_css.py" keep="tag" %]
-
-We could build yet another parser to read a subset of CSS and convert it to objects,
-but this chapter is long enough,
-so we will write our rules as JSON:
-
-[% excerpt f="css_example.js" %]
-
-and build a class that converts this representation to a set of objects:
-{: .continue}
-
-[% excerpt f="micro_css.py" keep="ruleset" %]
-
-Our CSS ruleset class also has a method for finding the rules for a given DOM node.
-This method relies on the precedence values we defined for our classes
-in order to sort them
-so that we can find the most specific.
+FIXME
 
 Here's our final set of tests:
 

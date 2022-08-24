@@ -22,7 +22,7 @@ def chunkify(text):
             break
         raw.append(matches[1])
         raw.append(matches[2])
-        text = matches[3]
+        text = matches[3].strip()
 
     if text:
         raw.append(text)
@@ -65,11 +65,15 @@ def make_opening(chunk):
     attributes = {
         k:v for k,v in KEY_AND_VALUE.finditer(outer[2].strip())
     }
+    assert all(k in {"width", "height"} for k in attributes.keys()), \
+        f"Unknown node attribute(s) {attributes}"
+    width = attributes.get("width", 0)
+    height = attributes.get("height", 0)
 
     if tag == "col":
-        return DomCol(attributes)
+        return DomCol(width, height)
     if tag == "row":
-        return DomRow(attributes)
+        return DomRow(width, height)
     assert False, f"Unrecognized tag name {tag}"
 # [/makeopening]
 # [/skip]
