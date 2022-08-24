@@ -2,11 +2,11 @@ import re
 
 from micro_dom import DomBlock, DomCol, DomRow
 
-TEXT_AND_TAG = re.compile(r"^([^<]*)(<[^]+?>)(.*)$", re.MULTILINE)
+TEXT_AND_TAG = re.compile(r"^([^<]*)(<[^>]+?>)(.*)$", re.MULTILINE)
 TAG_AND_ATTR = re.compile(r"<(\w+)([^>]*)>")
 KEY_AND_VALUE = re.compile(r'\s*(\w+)="([^"]*)"\s*/')
 
-def parseHTML(text):
+def parse_html(text):
     chunks = chunkify(text.strip())
     assert(is_element(chunks[0]), "Must have enclosing outer node")
     node, remainder = make_node(chunks)

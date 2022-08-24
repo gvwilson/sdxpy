@@ -26,7 +26,7 @@ class ClassRule(CssRule):
     ORDER = 1
 
     def __init__(self, selector, styles):
-        assert selector.startsWith(".") and (len(selector) > 1), \
+        assert selector.startswith(".") and (len(selector) > 1), \
             f"Class rule ${selector} must start with . and have a selector"
         super().__init__(ClassRule.ORDER, selector[1:], styles)
 
@@ -59,7 +59,7 @@ class CssRuleSet:
                 "Require non-empty string as selector"
             if selector.startswith("#"):
                 result.append(IdRule(selector, parameters))
-            elif selector.startsWith("."):
+            elif selector.startswith("."):
                 result.append(ClassRule(selector, parameters))
             else:
                 result.append(TagRule(selector, parameters))

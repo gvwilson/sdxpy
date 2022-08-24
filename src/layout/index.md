@@ -337,12 +337,12 @@ A class rule's query selector is written as `.kind` and matches HTML like `<tag 
 Unlike real CSS,
 we only allow one class per node:
 
-[% fixme f="micro_css.js" keep="class" %]
+[% excerpt f="micro_css.js" keep="class" %]
 
 Finally,
 tag rules just have the name of the type of node they apply to without any punctuation:
 
-[% fixme f="micro_css.js" keep="tag" %]
+[% excerpt f="micro_css.js" keep="tag" %]
 
 We could build yet another parser to read a subset of CSS and convert it to objects,
 but this chapter is long enough,
@@ -353,7 +353,7 @@ so we will write our rules as JSON:
 and build a class that converts this representation to a set of objects:
 {: .continue}
 
-[% fixme f="micro_css.js" keep="ruleset" %]
+[% excerpt f="micro_css.js" keep="ruleset" %]
 
 Our CSS ruleset class also has a method for finding the rules for a given DOM node.
 This method relies on the precedence values we defined for our classes
@@ -362,10 +362,10 @@ so that we can find the most specific.
 
 Here's our final set of tests:
 
-[% fixme f="test_styled.js" keep="test" %]
+[% excerpt f="test_styled.py" keep="test" %]
 
 If we were going on,
-we would override the cells' `getWidth` and `getHeight` methods to pay attention to styles.
+we would override the cells' `get_width` and `get_height` methods to pay attention to styles.
 We would also decide what to do with cells that don't have any styles defined:
 use a default,
 flag it as an error,
