@@ -109,6 +109,11 @@ wordlist: ./docs/index.html
 count:
 	@wc -w ${SRC} | sort -n
 
+## progress: show historical progress
+.PHONY: progress
+progress:
+	@python bin/progress.py info/progress.csv
+
 ## valid: run html5validator on generated files
 .PHONY: valid
 valid: docs/all.html
