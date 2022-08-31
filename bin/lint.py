@@ -59,15 +59,22 @@ def main():
     """Main driver."""
     options = parse_args()
 
-    check_config(options.config)
+    config = check_config(options.config)
+    src_dir = getattr(config, "src_dir")
+    out_dir = getattr(config, "out_dir")
+    links_file = getattr(config, "links")
+    dom_file = getattr(config, "dom")
+    glossary_file = getattr(config, "glossary")
+    language = getattr(config, "lang")
 
-    source_files = get_src(options)
+    source_files = get_src(src_dir)
+    html_files = get_html(out_dir)
+
     check_files(source_files)
     check_slides(source_files)
-    check_links(options.links, source_files)
-
-    html_files = get_html(options)
-    check_dom(options.dom, html_files)
+    check_links(links_file, source_files)
+    check_dom(dom_file, html_files)
+    check_glossary(glossary_file, language)
 
 
 def check_config(config_path):
@@ -84,6 +91,8 @@ def check_config(config_path):
 
     for (field, kind) in CONFIGURATION:
         _require(module, field, kind)
+
+    return module
 
 
 def check_dom(dom_spec, html_files):
@@ -104,6 +113,24 @@ def check_files(source_files):
         referenced = get_excerpts(filepath) | get_figures(filepath)
         existing = get_files(dirname) - get_ignores(dirname)
         report(f"{dirname}: excerpts", referenced, existing)
+
+
+def check_glossary(glossary_file, language):
+    """Check internal consistency of glossary."""
+    glossary = utils.read_yaml(glossary_file)
+    missing_keys = [g for g in glossary if "key" not in g]
+    if missing_keys:
+        print("glossary entries without keys: {missing_keys}")
+        return
+
+    glossary = {g["key"]:g for g in glossary}
+    for (key, entry) in sorted(glossary.items()):
+        if language not in entry:
+            print("glossary entry {key} missing {language}")
+        elif "ref" in entry and any(r not in glossary for r in entry["ref"]):
+            print("missing ref(s) in glossary entry {key}")
+        elif "def" not in entry[language]:
+            print("glossary entry {key}/{language} missing 'def'")
 
 
 def check_links(links_file, source_files):
@@ -163,9 +190,9 @@ def get_figures(filepath):
         return {m.group(1) for m in RE_FIGURE.finditer(text)}
 
 
-def get_html(options):
+def get_html(out_dir):
     """Get paths to HTML files for processing."""
-    return list(Path(options.html).glob("**/*.html"))
+    return list(Path(out_dir).glob("**/*.html"))
 
 
 def get_ignores(dirname):
@@ -188,10 +215,10 @@ def get_links(filename):
         return {m.group(1) for m in RE_LINK.finditer(text)}
 
 
-def get_src(options):
+def get_src(src_dir):
     """Get (file, dir) pairs for processing."""
-    result = [(options.src, INDEX_FILE)]
-    subdirs = [s for s in Path(options.src).iterdir() if s.is_dir()]
+    result = [(src_dir, INDEX_FILE)]
+    subdirs = [s for s in Path(src_dir).iterdir() if s.is_dir()]
     return result + [(s, INDEX_FILE) for s in subdirs]
 
 
@@ -199,10 +226,6 @@ def parse_args():
     """Parse arguments."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", required=True, help="Configuration file")
-    parser.add_argument("--dom", required=True, help="YAML spec of allowed DOM")
-    parser.add_argument("--html", required=True, help="HTML directory")
-    parser.add_argument("--links", required=True, help="YAML file of links")
-    parser.add_argument("--src", required=True, help="Source directory")
     return parser.parse_args()
 
 

@@ -77,6 +77,7 @@ bibliography_style = "unsrt"
 credits = "info/credits.yml"
 glossary = "info/glossary.yml"
 links = "info/links.yml"
+dom = "info/dom.yml"
 
 # Language code.
 lang = "en"

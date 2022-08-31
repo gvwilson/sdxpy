@@ -78,11 +78,7 @@ check: lint
 .PHONY: lint
 lint: clean build
 	@python ./bin/lint.py \
-	--config config.py \
-	--dom info/dom.yml \
-	--links info/links.yml \
-	--html docs \
-	--src src
+	--config config.py
 
 ## examples: re-run examples
 .PHONY: examples
