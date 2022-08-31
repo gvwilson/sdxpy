@@ -7,7 +7,7 @@ class WrappedBlock(PlacedBlock):
 
 class WrappedCol(PlacedCol):
     def wrap(self):
-        return PlacedCol(*[c.wrap() for c in self.children]) # FIXME
+        return PlacedCol(*[c.wrap() for c in self.children]) # FIXME explain generator
 # [/blockcol]
 
 # [row]
