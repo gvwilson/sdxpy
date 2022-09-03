@@ -46,7 +46,7 @@ a persistence framework has to make one of the following choices:
     it has to trust that those methods aren't doing anything malicious.
 
 This chapter starts by implementing the first option (built-in types only),
-then extends it to handle [%g aliasing "aliasing" %]
+then extends it to handle [%g alias "aliases" %]
 (which the JSON standard does not),
 and finally adds ways to convert user-defined types to storable data.
 To keep testing simple
