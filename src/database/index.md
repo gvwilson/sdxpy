@@ -1,5 +1,5 @@
 ---
-title: "Key-Value Store"
+title: "A Database"
 syllabus:
 - FIXME
 ---

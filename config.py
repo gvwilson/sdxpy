@@ -54,6 +54,17 @@ appendices = [
     "contents",
 ]
 
+# To do.
+todo = {
+    "pipeline",
+    "filecache",
+    "database",
+    "packman",
+    "linter",
+    "docgen",
+    "debugger",
+}
+
 # Debug.
 debug = True
 
