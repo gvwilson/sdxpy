@@ -1,1 +1,1 @@
-tree sample_dir
+tree --charset ascii sample_dir
