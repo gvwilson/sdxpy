@@ -4,9 +4,10 @@ from pathlib import Path
 
 import ivy
 import shortcodes
-import util
 from pybtex.database import parse_file
 from pybtex.plugin import find_plugin
+
+import util
 
 
 @shortcodes.register("b")
@@ -17,8 +18,9 @@ def bibliography_ref(pargs, kwargs, node):
     used = util.make_config("bibliography")
     used.update(pargs)
 
+    base = "@root/bibliography"
     links = [
-        f'<a class="bib-ref" href="@root/bibliography/#{k}">{k}</a>' for k in pargs
+        f'<a class="bib-ref" href="{base}/#{k}">{k}</a>' for k in pargs
     ]
     links = ", ".join(links)
     return f'<span class="bib-ref">[{links}]</span>'

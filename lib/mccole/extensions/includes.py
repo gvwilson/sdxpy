@@ -164,7 +164,9 @@ def _keep_lines(filepath, lines, key):
 def _make_html(name, kind, lines):
     """Construct HTML inclusion from lines."""
     body = "\n".join(x.rstrip() for x in lines)
-    return f'<div class="code-sample lang-{kind}" title="{name}" markdown="1">\n```{kind}\n{body}\n```\n</div>'
+    cls = f'class="code-sample lang-{kind}"'
+    md = 'markdown="1"'
+    return f'<div {cls} title="{name}" {md}>\n```{kind}\n{body}\n```\n</div>'
 
 
 def _omit_lines(filepath, lines, key):

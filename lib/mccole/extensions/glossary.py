@@ -1,31 +1,14 @@
 """Handle glossary references and glossary."""
 
 import re
-from pathlib import Path
 
 import ivy
 import shortcodes
+
 import util
-import yaml
 
 # Regex to extract internal cross-references from bodies of definitions.
 INTERNAL_REF = re.compile(r"\]\(#(.+?)\)")
-
-
-@ivy.events.register(ivy.events.Event.INIT)
-def glossary_collect():
-    """Collect terms defined in each document."""
-    if (filename := ivy.site.config.get("glossary", None)) is None:
-        return '<p class="warning">No glossary specified.</p>'
-    if (lang := ivy.site.config.get("lang", None)) is None:
-        return '<p class="warning">No language specified.</p>'
-    glossary = _read_glossary(filename)
-    glossary = {item["key"]:item[lang]["term"] for item in glossary}
-
-    parser = shortcodes.Parser(inherit_globals=False, ignore_unknown=True)
-    parser.register(_parse_g, "g")
-    defs = util.make_config("definitions")
-    ivy.nodes.root().walk(lambda node: _parse_shortcodes(node, parser, defs, glossary))
 
 
 @shortcodes.register("g")
@@ -49,13 +32,14 @@ def glossary(pargs, kwargs, node):
     if (lang := ivy.site.config.get("lang", None)) is None:
         return '<p class="warning">No language specified.</p>'
 
-    glossary = _read_glossary(filename)
+    glossary = util.read_glossary(filename)
     try:
         glossary.sort(key=lambda x: x[lang]["term"].lower())
     except KeyError as exc:
         util.fail(f"Glossary entries missing key, term, or {lang}: {exc}.")
 
-    entries = "\n\n".join(_as_markdown(glossary, lang, entry) for entry in glossary)
+    markdown = [_as_markdown(glossary, lang, entry) for entry in glossary]
+    entries = "\n\n".join(markdown)
     return f'<div class="glossary" markdown="1">\n{entries}\n</div>'
 
 
@@ -67,7 +51,7 @@ def check():
     if (lang := ivy.site.config.get("lang", None)) is None:
         util.fail("No language defined for glossary")
 
-    glossary = _read_glossary(filename)
+    glossary = util.read_glossary(filename)
     defined = {entry["key"] for entry in glossary}
 
     if (used := util.get_config("glossary")) is None:
@@ -94,7 +78,7 @@ def _as_markdown(glossary, lang, entry):
         try:
             refs = [f"[{glossary[r]}](#{r})" for r in entry[lang]["ref"]]
         except KeyError as exc:
-            util.fail(f"Unknown glossary cross-ref key in {entry['key']}: {exc}")
+            util.fail(f"Unknown glossary cross-ref in {entry['key']}: {exc}")
         body += f"<br/>{seealso}: {', '.join(refs)}."
 
     result = f"{first}\n:   {body}"
@@ -122,27 +106,3 @@ def _internal_references(glossary, lang):
         for match in INTERNAL_REF.finditer(entry[lang]["def"]):
             result.add(match.group(1))
     return result
-
-
-def _parse_shortcodes(node, parser, defs, glossary):
-    """Collect information from node."""
-    used = set()
-    parser.parse(node.text, used)
-    if not used:
-        return
-    terms = [(key, glossary[key]) for key in glossary if key in used]
-    terms.sort(key=lambda item: item[1].lower())
-    defs.append((node.slug, terms))
-
-
-def _parse_g(pargs, kwargs, extra):
-    """Collect information from a single glossary shortcode."""
-    extra.add(pargs[0])
-    return ""
-
-
-def _read_glossary(filename):
-    """Load the glossary definitions."""
-    filename = Path(ivy.site.home(), filename)
-    with open(filename, "r") as reader:
-        return yaml.safe_load(reader) or {}

@@ -18,7 +18,7 @@ so instead tables are represented as:
 
 -   Each instance of the `Table` class stores information about a single table.
 
--   `table_ref` uses collected information to fill in table reference shortcodes
+-   `table_ref` uses collected information to fill in shortcodes
     of the form `[% t slug %]`.  It assumes there is a language defined by
     `config["lang"]` that matches a language in `util.TRANSLATIONS`
 
@@ -42,21 +42,10 @@ so instead tables are represented as:
 -   `collect` scans Markdown files to find tables and number them.
 """
 
-from dataclasses import dataclass
-
 import ivy
 import shortcodes
+
 import util
-
-
-@dataclass
-class Table:
-    """Keep track of information about a single table."""
-
-    fileslug: str = ""
-    slug: str = ""
-    caption: str = ""
-    number: tuple = ()
 
 
 @shortcodes.register("t")
@@ -70,10 +59,11 @@ def table_ref(pargs, kwargs, node):
 
     slug = pargs[0]
     if slug not in tables:
-        util.fail(f"Unknown table cross-reference slug {slug} in {node.filepath}")
+        util.fail(f"Unknown table reference slug {slug} in {node.filepath}")
     table = tables[slug]
     label = util.make_label("table", table.number)
-    return f'<a class="tbl-ref" href="@root/{table.fileslug}/#{slug}">{label}</a>'
+    cls = 'class="tbl-ref"'
+    return f'<a {cls} href="@root/{table.fileslug}/#{slug}">{label}</a>'
 
 
 @ivy.filters.register(ivy.filters.Filter.NODE_HTML)
@@ -86,40 +76,7 @@ def table_caption(text, node):
         slug = match.group(4)
         table = util.get_config("tables")[slug]
         label = util.make_label("table", table.number)
-        return f'<div class="{cls}"><table id="{slug}"><caption>{label}: {caption}</caption>'
+        cap = f"<caption>{label}: {caption}</caption>"
+        return f'<div class="{cls}"><table id="{slug}">{cap}'
 
     return util.TABLE_DIV.sub(_replace, text)
-
-
-@ivy.events.register(ivy.events.Event.INIT)
-def collect():
-    """Collect table information using regular expressions."""
-    tables = {}
-    ivy.nodes.root().walk(lambda node: _process_tables(node, tables))
-    _flatten_tables(tables)
-
-
-def _process_tables(node, tables):
-    """Collect table information."""
-    tables[node.slug] = []
-    for (i, match) in enumerate(util.TABLE.finditer(node.text)):
-        if (caption := util.TABLE_CAPTION.search(match.group(0))) is None:
-            util.fail(
-                f"Table div '{match.group(0)}' without caption in {node.filepath}"
-            )
-        if (slug := util.TABLE_ID.search(match.group(0))) is None:
-            util.fail(f"Table div '{match.group(0)}' without ID in {node.filepath}")
-        tables[node.slug].append(
-            Table(fileslug=node.slug, caption=caption.group(1), slug=slug.group(1))
-        )
-
-
-def _flatten_tables(collected):
-    """Convert collected table information to flat lookup table."""
-    major = util.make_major()
-    tables = util.make_config("tables")
-    for fileslug in collected:
-        if fileslug in major:
-            for (i, entry) in enumerate(collected[fileslug]):
-                entry.number = (str(major[fileslug]), str(i + 1))
-                tables[entry.slug] = entry

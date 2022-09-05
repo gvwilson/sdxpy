@@ -2,8 +2,10 @@
 
 import os
 import re
+from pathlib import Path
 
 import ivy
+import yaml
 
 # Configuration sections and their default values.
 # These are added to the config dynamically under the `mccole` key,
@@ -122,7 +124,10 @@ def make_major():
     This function relies on the configuration containing `"chapters"`
     and `"appendices"`, which must be lists of slugs.
     """
-    chapters = {slug: i + 1 for (i, slug) in enumerate(ivy.site.config["chapters"])}
+    chapters = {
+        slug: i+1
+        for (i, slug) in enumerate(ivy.site.config["chapters"])
+    }
     appendices = {
         slug: chr(ord("A") + i)
         for (i, slug) in enumerate(ivy.site.config["appendices"])
@@ -133,6 +138,13 @@ def make_major():
 def mccole():
     """Get configuration section, creating if necessary."""
     return ivy.site.config.setdefault("mccole", {})
+
+
+def read_glossary(filename):
+    """Load the glossary definitions."""
+    filename = Path(ivy.site.home(), filename)
+    with open(filename, "r") as reader:
+        return yaml.safe_load(reader) or {}
 
 
 def require(cond, msg):

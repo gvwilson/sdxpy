@@ -5,10 +5,11 @@ from pathlib import Path
 import ivy
 import markdown
 import shortcodes
-import util
 import yaml
 from markdown.extensions import Extension
 from markdown.treeprocessors import Treeprocessor
+
+import util
 
 
 @ivy.events.register(ivy.events.Event.INIT)
@@ -37,8 +38,9 @@ def links_table(pargs, kwargs, node):
 
     links = _read_links()
     links.sort(key=lambda x: _link_key(x, lang))
+    cls = 'class="link-ref"'
     links = "\n".join(
-        f'<li>{x[lang]}: <a class="link-ref" href="{x["url"]}">{x["url"]}</a></li>'
+        f'<li>{x[lang]}: <a {cls} href="{x["url"]}">{x["url"]}</a></li>'
         for x in links
     )
     return f"<ul>\n{links}\n</ul>"
@@ -67,7 +69,8 @@ class LinkCollectorExtension(Extension):
         self.used = used
 
     def extendMarkdown(self, md):
-        md.treeprocessors.register(LinkCollector(md, self.used), "linkcollector", 15)
+        coll = LinkCollector(md, self.used)
+        md.treeprocessors.register(coll, "linkcollector", 15)
 
 
 class LinkCollector(Treeprocessor):

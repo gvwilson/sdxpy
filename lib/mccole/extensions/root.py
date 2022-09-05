@@ -5,6 +5,7 @@ from pathlib import Path
 
 import ivy
 import shortcodes
+
 import util
 
 TITLE = re.compile(r"^#\s+.+?\n")

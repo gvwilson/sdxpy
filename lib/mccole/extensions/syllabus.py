@@ -1,25 +1,6 @@
-import ivy
 import shortcodes
+
 import util
-
-
-@ivy.events.register(ivy.events.Event.INIT)
-def collect_syllabi():
-    """Collect chapter syllabi."""
-    info = {}
-    ivy.nodes.root().walk(lambda node: _collect(info, node))
-    syllabi = [
-        (slug, info[slug][0], info[slug][1])
-        for slug in ivy.site.config["chapters"]
-        if slug in info
-    ]
-    util.make_config("syllabus", syllabi)
-
-
-def _collect(info, node):
-    if "syllabus" in node.meta:
-        assert "title" in node.meta
-        info[node.slug] = (node.meta["title"], node.meta.get("syllabus", []))
 
 
 @shortcodes.register("syllabus")
