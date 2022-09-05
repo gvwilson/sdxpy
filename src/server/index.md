@@ -221,7 +221,7 @@ Let's start at the bottom and work our way up.
 2.  The `HTTPServer` class takes care of parsing requests and sending back responses.
     When we construct it,
     we give it the server address and the name of the class we've written
-    that handles requests the way we want---in this case, `RequestHandler`.
+    that handles requests the way we want—in this case, `RequestHandler`.
 3.  Finally, we call the server's `serve_forever` method.
     It will then run until it crashes or we stop it with Ctrl-C.
 
@@ -231,7 +231,7 @@ So what does `RequestHandler` do?
     it looks in the request handler for a method called `do_GET`.
     (If it gets a `POST`, it looks for `do_POST` and so on.)
 2.  `do_GET` converts the text of the page we want to send back
-    from characters to bytes---we'll talk about this below.
+    from characters to bytes—we'll talk about this below.
 3.  It then sends a response code (200),
     a couple of headers to say what the content type is
     and how many bytes the receiver should expect,

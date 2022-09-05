@@ -319,8 +319,8 @@ This simple approach does what it's supposed to, but:
 1.  It doesn't tell us which tests have passed or failed.
 
 1.  The description of the test is separate from the test code.
-    Some people argue that tests shouldn't need descriptions---that
-    we should instead give them long names that describe what they're doing---but
+    Some people argue that tests shouldn't need descriptions—that
+    we should instead give them long names that describe what they're doing—but
     we should support string-style explanations for those who want them.
 
 1.  It doesn't discover tests on its own:

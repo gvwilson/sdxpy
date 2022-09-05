@@ -391,7 +391,7 @@ If `stream` is an open file,
 then `stream.read(N)` hands back up to the next N bytes from the file
 ("up to", because there might not be that much data left).
 The result is returned as a string,
-but---and this is crucial---there is no guarantee that the values represent characters.
+but—and this is crucial—there is no guarantee that the values represent characters.
 We can concatenate other data onto it,
 but if the underlying file is a PNG image,
 text-oriented methods like `string.upper`

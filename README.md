@@ -11,4 +11,4 @@ and to give some insights into how experienced programmers think.
 
 > We shape our tools, and thereafter our tools shape us.
 >
-> --- Marshall McLuhan
+> — Marshall McLuhan

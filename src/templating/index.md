@@ -190,7 +190,7 @@ Any class derived from `Visitor` must defined these two methods.
 The `Expander` class is specialization of `Visitor`
 that uses an `Env` to keep track of variables.
 It imports a handler
-for each type of special node we support---we will write those in a moment---and
+for each type of special node we support—we will write those in a moment—and
 uses them to process each type of node:
 
 1.  If the node is plain text, copy it to the output.
