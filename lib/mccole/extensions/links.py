@@ -31,12 +31,14 @@ def links_append():
 def links_table(pargs, kwargs, node):
     """Create a table of links."""
     if "links" not in ivy.site.config:
-        return "<p>NO LINKS</p>"
+        return '<p class="warning">NO LINKS</p>'
+    if (lang := ivy.site.config.get("lang", None)) is None:
+        return '<p class="warning">No language specified.</p>'
 
     links = _read_links()
-    links.sort(key=_link_key)
+    links.sort(key=lambda x: _link_key(x, lang))
     links = "\n".join(
-        f'<li>{x["title"]}: <a class="link-ref" href="{x["url"]}">{x["url"]}</a></li>'
+        f'<li>{x[lang]}: <a class="link-ref" href="{x["url"]}">{x["url"]}</a></li>'
         for x in links
     )
     return f"<ul>\n{links}\n</ul>"
@@ -79,9 +81,9 @@ class LinkCollector(Treeprocessor):
         return root
 
 
-def _link_key(item):
+def _link_key(item, lang):
     """Create sorting key for link."""
-    key = item["title"].lower()
+    key = item[lang].lower()
     if key.startswith("a "):
         key = key[2:]
     elif key.startswith("the "):
