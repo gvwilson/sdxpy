@@ -36,6 +36,7 @@ To make this work:
     does nothing; otehrwise, it dispatches to a case-specific handler.
 """
 
+from pathlib import Path
 import shutil
 
 import ivy
@@ -147,7 +148,7 @@ def _include_file(node, filepath, *filters):
             lines = reader.readlines()
             for f in filters:
                 lines = f(lines)
-            return _make_html(kind, lines)
+            return _make_html(Path(filepath).name, kind, lines)
     except OSError:
         util.fail(f"Unable to read inclusion '{filepath}' in {node.filepath}.")
 
@@ -160,10 +161,10 @@ def _keep_lines(filepath, lines, key):
     return lines[start + 1 : stop]  # noqa e203
 
 
-def _make_html(kind, lines):
+def _make_html(name, kind, lines):
     """Construct HTML inclusion from lines."""
     body = "\n".join(x.rstrip() for x in lines)
-    return f"```{kind}\n{body}\n```"
+    return f'<div class="lang-{kind}" title="{name}" markdown="1">\n```{kind}\n{body}\n```\n</div>'
 
 
 def _omit_lines(filepath, lines, key):

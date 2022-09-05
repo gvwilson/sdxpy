@@ -414,6 +414,7 @@ This classification guides the design of our parser:</p>
 <p>We can translate these rules almost directly into code
 to create a list of dictionaries whose keys are <code>"kind"</code> and <code>"loc"</code> (short for location),
 with the extra key <code>"value"</code> for literal values:</p>
+<div class="lang-py" title="tokenizer_collapse.py">
 <div class="highlight"><pre><span></span><code><span class="n">SIMPLE</span> <span class="o">=</span> <span class="p">{</span>
   <span class="s2">&quot;*&quot;</span><span class="p">:</span> <span class="s2">&quot;Any&quot;</span><span class="p">,</span>
   <span class="s2">&quot;|&quot;</span><span class="p">:</span> <span class="s2">&quot;Alt&quot;</span><span class="p">,</span>
@@ -434,18 +435,22 @@ with the extra key <code>"value"</code> for literal values:</p>
             <span class="n">combine_or_push</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">result</span>
 </code></pre></div>
+</div>
 <p>The helper function <code>combine_or_push</code> does exactly what its name says.
 If the thing most recently added to the list of tokens isn't a literal,
 the new character becomes a new token;
 otherwise,
 it appends the new character to the literal:</p>
+<div class="lang-py" title="tokenizer_collapse.py">
 <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">combine_or_push</span><span class="p">(</span><span class="n">so_far</span><span class="p">,</span> <span class="n">character</span><span class="p">,</span> <span class="n">location</span><span class="p">):</span>
   <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">so_far</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">so_far</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;kind&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">&quot;Lit&quot;</span><span class="p">):</span>
       <span class="n">so_far</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;kind&quot;</span><span class="p">:</span> <span class="s2">&quot;Lit&quot;</span><span class="p">,</span> <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="n">character</span><span class="p">,</span> <span class="s2">&quot;loc&quot;</span><span class="p">:</span> <span class="n">location</span><span class="p">})</span>
   <span class="k">else</span><span class="p">:</span>
       <span class="n">so_far</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;value&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">character</span>
 </code></pre></div>
+</div>
 <p>We can try this out with a three-line test program:</p>
+<div class="lang-py" title="tokenizer_collapse_example.py">
 <div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">json</span>
 
 <span class="kn">from</span> <span class="nn">tokenizer_collapse</span> <span class="kn">import</span> <span class="n">tokenize</span>
@@ -454,6 +459,8 @@ it appends the new character to the literal:</p>
 <span class="n">result</span> <span class="o">=</span> <span class="n">tokenize</span><span class="p">(</span><span class="n">test</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">test</span><span class="p">,</span> <span class="s2">&quot;=&gt;&quot;</span><span class="p">,</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
 </code></pre></div>
+</div>
+<div class="lang-out" title="tokenizer_collapse_example.out">
 <div class="highlight"><pre><span></span><code>^a^b* =&gt; [
   {
     &quot;kind&quot;: &quot;Start&quot;,
@@ -470,11 +477,13 @@ it appends the new character to the literal:</p>
   }
 ]
 </code></pre></div>
+</div>
 <p>This simple tokenizer is readable, efficient, and wrong.
 The problem is that the expression <code>ab*</code> means "a single <code>a</code> followed by zero or more <code>b</code>".
 If we combine the letters <code>a</code> and <code>b</code> as we read them,
 though,
 we wind up with "zero or more repetitions of <code>ab</code>":</p>
+<div class="lang-py" title="tokenizer_collapse_error.py">
 <div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">json</span>
 
 <span class="kn">from</span> <span class="nn">tokenizer_collapse</span> <span class="kn">import</span> <span class="n">tokenize</span>
@@ -483,6 +492,8 @@ we wind up with "zero or more repetitions of <code>ab</code>":</p>
 <span class="n">result</span> <span class="o">=</span> <span class="n">tokenize</span><span class="p">(</span><span class="n">test</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">test</span><span class="p">,</span> <span class="s2">&quot;=&gt;&quot;</span><span class="p">,</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
 </code></pre></div>
+</div>
+<div class="lang-out" title="tokenizer_collapse_error.out">
 <div class="highlight"><pre><span></span><code>ab* =&gt; [
   {
     &quot;kind&quot;: &quot;Lit&quot;,
@@ -495,9 +506,11 @@ we wind up with "zero or more repetitions of <code>ab</code>":</p>
   }
 ]
 </code></pre></div>
+</div>
 <p>The solution is to treat each regular character as its own literal in this stage
 and then combine things later:
 Doing this lets us get rid of the nested <code>if</code> for handling <code>^</code> and <code>$</code> as well:</p>
+<div class="lang-py" title="tokenizer.py">
 <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">tokenize</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
     <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
@@ -511,11 +524,13 @@ Doing this lets us get rid of the nested <code>if</code> for handling <code>^</c
             <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;kind&quot;</span><span class="p">:</span> <span class="s2">&quot;Lit&quot;</span><span class="p">,</span> <span class="s2">&quot;loc&quot;</span><span class="p">:</span> <span class="n">i</span><span class="p">,</span> <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="n">c</span><span class="p">})</span>
     <span class="k">return</span> <span class="n">result</span>
 </code></pre></div>
+</div>
 <p>Software isn't done until it's tested,
 so let's build some tests.
 The listing below shows a few of these
 along with the output for the full set:</p>
-<p><div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">tokenizer</span> <span class="kn">import</span> <span class="n">tokenize</span>
+<div class="lang-py" title="test_tokenizer.py">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">tokenizer</span> <span class="kn">import</span> <span class="n">tokenize</span>
 
 
 <span class="k">def</span> <span class="nf">test_tokenize_single_character</span><span class="p">():</span>
@@ -566,6 +581,8 @@ along with the output for the full set:</p>
         <span class="p">{</span><span class="s2">&quot;kind&quot;</span><span class="p">:</span> <span class="s2">&quot;End&quot;</span><span class="p">,</span> <span class="s2">&quot;loc&quot;</span><span class="p">:</span> <span class="mi">16</span><span class="p">}</span>
     <span class="p">]</span>
 </code></pre></div>
+</div>
+<div class="lang-out" title="test_tokenizer.out">
 <div class="highlight"><pre><span></span><code>============================= test session starts ==============================
 platform darwin -- Python 3.10.4, pytest-7.1.2, pluggy-1.0.0
 rootdir: /Users/gregwilson/sdpy/src/parser
@@ -574,7 +591,8 @@ collected 18 items
 test_tokenizer.py ..................                                     [100%]
 
 ============================== 18 passed in 0.02s ==============================
-</code></pre></div></p>
+</code></pre></div>
+</div>
 <h2 id="parser-tree">Section 9.3: Assembling the Tree</h2>
 <p>We now have a list of tokens,
 but we need a tree that represents the nesting introduced by parentheses
@@ -642,6 +660,7 @@ If our input is <code>a|b</code> we can:</p>
 
 <p>Let's turn this idea into code.
 The main structure of our parser is:</p>
+<div class="lang-py" title="parser.py">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">tokenizer</span> <span class="kn">import</span> <span class="n">tokenize</span>
 
 <span class="k">def</span> <span class="nf">parse</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
@@ -652,8 +671,10 @@ The main structure of our parser is:</p>
         <span class="n">handle</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">token</span><span class="p">,</span> <span class="n">is_last</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">compress</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
 </code></pre></div>
+</div>
 <p>We handle tokens case by case
 (with a few assertions to check that patterns are <a class="gl-ref" href="../glossary/#well_formed" markdown="1">well formed</a>):</p>
+<div class="lang-py" title="parser.py">
 <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">handle</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">token</span><span class="p">,</span> <span class="n">is_last</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">token</span><span class="p">[</span><span class="s2">&quot;kind&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;Lit&quot;</span><span class="p">:</span>
         <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
@@ -683,10 +704,12 @@ The main structure of our parser is:</p>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">assert</span> <span class="kc">False</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;UNIMPLEMENTED </span><span class="si">{</span><span class="n">token</span><span class="p">[</span><span class="s2">&quot;kind&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1">&#39;</span>
 </code></pre></div>
+</div>
 <p>When we find the <code>)</code> that marks the end of a group,
 we take items from the end of the output list
 until we find the matching start
 and use them to create a group:</p>
+<div class="lang-py" title="parser.py">
 <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">group_end</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">token</span><span class="p">):</span>
     <span class="n">group</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s2">&quot;kind&quot;</span><span class="p">:</span> <span class="s2">&quot;Group&quot;</span><span class="p">,</span>
@@ -704,9 +727,11 @@ and use them to create a group:</p>
         <span class="n">group</span><span class="p">[</span><span class="s2">&quot;children&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">child</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">group</span>
 </code></pre></div>
+</div>
 <p>Finally,
 when we have finished with the input,
 we go through the output list one last time to fill in the right side of <code>Alt</code>s:</p>
+<div class="lang-py" title="parser.py">
 <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">compress</span><span class="p">(</span><span class="n">raw</span><span class="p">):</span>
     <span class="n">cooked</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">raw</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
@@ -718,9 +743,11 @@ we go through the output list one last time to fill in the right side of <code>A
         <span class="n">cooked</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">token</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">cooked</span>
 </code></pre></div>
+</div>
 <p>Once again,
 it's not done until we've tested it:</p>
-<p><div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">parser</span> <span class="kn">import</span> <span class="n">parse</span>
+<div class="lang-py" title="test_parser.py">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">parser</span> <span class="kn">import</span> <span class="n">parse</span>
 
 
 <span class="k">def</span> <span class="nf">test_parse_empty_string</span><span class="p">():</span>
@@ -759,6 +786,8 @@ it's not done until we've tested it:</p>
     <span class="p">}</span>
   <span class="p">]</span>
 </code></pre></div>
+</div>
+<div class="lang-out" title="test_parser.out">
 <div class="highlight"><pre><span></span><code>============================= test session starts ==============================
 platform darwin -- Python 3.10.4, pytest-7.1.2, pluggy-1.0.0
 rootdir: /Users/gregwilson/sdpy/src/parser
@@ -767,7 +796,8 @@ collected 15 items
 test_parser.py ...............                                           [100%]
 
 ============================== 15 passed in 0.01s ==============================
-</code></pre></div></p>
+</code></pre></div>
+</div>
 <p>Our tokenizer and parser is less than 100 lines of code combined,
 but they are doing some complex things.
 Compared to parsers for things like JSON and YAML,

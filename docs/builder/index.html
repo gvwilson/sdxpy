@@ -404,6 +404,7 @@ then (B, C, A) and (C, B, A) are both valid topological orders of the graph.</p>
 </div>
 <h2 id="builder-rules">Section 7.2: Representing Rules</h2>
 <p>We will store our rules in <a class="gl-ref" href="../glossary/#yaml" markdown="1">YAML</a> files like this:</p>
+<div class="lang-yml" title="three_simple_rules.yml">
 <div class="highlight"><pre><span></span><code>- target: A
   depends:
   - B
@@ -419,6 +420,7 @@ then (B, C, A) and (C, B, A) are both valid topological orders of the graph.</p>
   depends: []
   recipes: []
 </code></pre></div>
+</div>
 <p class="continue">We could equally well have used <a class="gl-ref" href="../glossary/#json" markdown="1">JSON</a>,
 but it wouldn't have made sense to use <a class="gl-ref" href="../glossary/#csv" markdown="1">CSV</a>:
 rules have a nested structure,
@@ -426,6 +428,7 @@ and CSV doesn't represent nesting gracefully.</p>
 <p>We would normally implement all of the methods required by the builder at once,
 but to make the evolving code easier to follow we will write them them one by one.
 Let's start by writing a class that loads a configuration file:</p>
+<div class="lang-py" title="config_loader.py">
 <div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">yaml</span>
 
 <span class="k">class</span> <span class="nc">ConfigLoader</span><span class="p">:</span>
@@ -445,8 +448,10 @@ Let's start by writing a class that loads a configuration file:</p>
         <span class="k">for</span> <span class="n">rule</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">rules</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_check</span><span class="p">(</span><span class="n">rule</span><span class="p">)</span>
 </code></pre></div>
+</div>
 <p>We need to check each rule because YAML is a generic file format
 that doesn't know anything about the extra requirements of our rules:</p>
+<div class="lang-py" title="config_loader.py">
 <div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">_check</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Check a single rule.&quot;&quot;&quot;</span>
         <span class="k">assert</span> <span class="p">(</span><span class="s2">&quot;target&quot;</span> <span class="ow">in</span> <span class="n">rule</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">rule</span><span class="p">[</span><span class="s2">&quot;target&quot;</span><span class="p">],</span> <span class="nb">str</span><span class="p">),</span> \
@@ -462,9 +467,11 @@ that doesn't know anything about the extra requirements of our rules:</p>
             <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">rule</span><span class="p">[</span><span class="s2">&quot;recipes&quot;</span><span class="p">]),</span> \
             <span class="sa">f</span><span class="s2">&quot;Bad &#39;recipes&#39; for rule </span><span class="si">{</span><span class="n">rule</span><span class="si">}</span><span class="s2">&quot;</span>
 </code></pre></div>
+</div>
 <p>The next step is to turn the configuration into a graph in memory.
 We derive a class from <code>ConfigLoader</code> so that we can recycle the code we've already written
 and call a couple of methods that we are planning to add:</p>
+<div class="lang-py" title="graph_creator.py">
 <div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
 <span class="kn">from</span> <span class="nn">networkx.readwrite</span> <span class="kn">import</span> <span class="n">json_graph</span>
 
@@ -477,9 +484,11 @@ and call a couple of methods that we are planning to add:</p>
         <span class="bp">self</span><span class="o">.</span><span class="n">build_graph</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">check_cycles</span><span class="p">()</span>
 </code></pre></div>
+</div>
 <p>We use the [<code>networkx</code>][networkx] module to manage nodes and links
 rather than writing our own classes for graphs,
 and store the recipe to rebuild a node in that node:</p>
+<div class="lang-py" title="graph_creator.py">
 <div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">build_graph</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">graph</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">()</span>
 
@@ -490,24 +499,32 @@ and store the recipe to rebuild a node in that node:</p>
             <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">rule</span><span class="p">[</span><span class="s2">&quot;depends&quot;</span><span class="p">]:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">rule</span><span class="p">[</span><span class="s2">&quot;target&quot;</span><span class="p">])</span>
 </code></pre></div>
+</div>
 <p><code>networkx</code> provides implementations of some common graph algorithms,
 including one to find cycles,
 so let's write that next:</p>
+<div class="lang-py" title="graph_creator.py">
 <div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">check_cycles</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">cycles</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">nx</span><span class="o">.</span><span class="n">algorithms</span><span class="o">.</span><span class="n">simple_cycles</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="p">))</span>
         <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">cycles</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> \
             <span class="sa">f</span><span class="s2">&quot;Dependency graph contains cycles </span><span class="si">{</span><span class="n">cycles</span><span class="si">}</span><span class="s2">&quot;</span>
 </code></pre></div>
+</div>
 <p>Finally,
 we write a <code>__str__</code> method so we can see what we've built:</p>
+<div class="lang-py" title="graph_creator.py">
 <div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">temp</span> <span class="o">=</span> <span class="n">json_graph</span><span class="o">.</span><span class="n">node_link_data</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="p">)</span>
         <span class="n">temp</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span><span class="n">v</span> <span class="k">for</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="ow">in</span> <span class="n">temp</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;nodes&quot;</span><span class="p">,</span> <span class="s2">&quot;links&quot;</span><span class="p">}}</span>
         <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">temp</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 </code></pre></div>
+</div>
 <p>When we run this with our three simple rules as input we get:</p>
+<div class="lang-sh" title="graph_creator.sh">
 <div class="highlight"><pre><span></span><code>python graph_creator.py three_simple_rules.yml
 </code></pre></div>
+</div>
+<div class="lang-out" title="graph_creator.out">
 <div class="highlight"><pre><span></span><code>{
   &quot;nodes&quot;: [
     {
@@ -543,8 +560,10 @@ we write a <code>__str__</code> method so we can see what we've built:</p>
   ]
 }
 </code></pre></div>
+</div>
 <p>Let's write a quick test to make sure the cycle detector works as intended:</p>
-<p><div class="highlight"><pre><span></span><code>- target: A
+<div class="lang-yml" title="circular_rules.yml">
+<div class="highlight"><pre><span></span><code>- target: A
   depends:
   - B
   recipes:
@@ -555,10 +574,15 @@ we write a <code>__str__</code> method so we can see what we've built:</p>
   recipes:
   - &quot;update B from A&quot;
 </code></pre></div>
+</div>
+<div class="lang-sh" title="check_cycles.sh">
 <div class="highlight"><pre><span></span><code>python graph_creator.py circular_rules.yml
-</code></pre></div></p>
+</code></pre></div>
+</div>
+<div class="lang-out" title="check_cycles.out">
 <div class="highlight"><pre><span></span><code>
 </code></pre></div>
+</div>
 <h2 id="builder-timestamp">Section 7.3: Stale Files</h2>
 <p>The next step is to figure out which files are out of date.
 Make does this by comparing the <span class="ix-entry" ix-key="timestamp!in build;build!timestamp" markdown="1">timestamps</span> of the files in question,
@@ -573,13 +597,16 @@ We looked at hashing in <a class="x-ref" href="../backup/">Chapter 3</a>,
 so we will use the timestamp approach here,
 but instead of using a mock filesystem
 we will load another configuration file that specifies fake timestamps for files:</p>
+<div class="lang-yml" title="add_timestamps.yml">
 <div class="highlight"><pre><span></span><code>A: 2
 B: 5
 C: 8
 </code></pre></div>
+</div>
 <p>Since we want to associate those timestamps with files,
 we add steps to the constructor and the <code>build</code> method
 to read the timestamp file and add information to the graph's nodes:</p>
+<div class="lang-py" title="add_timestamps.py">
 <div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">AddTimestamps</span><span class="p">(</span><span class="n">GraphCreator</span><span class="p">):</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rules_file</span><span class="p">,</span> <span class="n">times_file</span><span class="p">):</span>
@@ -592,7 +619,9 @@ to read the timestamp file and add information to the graph's nodes:</p>
         <span class="bp">self</span><span class="o">.</span><span class="n">add_timestamps</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">check_cycles</span><span class="p">()</span>
 </code></pre></div>
+</div>
 <p class="continue">and then implement <code>add_timestamps</code>:</p>
+<div class="lang-py" title="add_timestamps.py">
 <div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">add_timestamps</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">times_file</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">reader</span><span class="p">:</span>
             <span class="n">times</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">reader</span><span class="p">,</span> <span class="n">Loader</span><span class="o">=</span><span class="n">yaml</span><span class="o">.</span><span class="n">FullLoader</span><span class="p">)</span>
@@ -601,10 +630,14 @@ to read the timestamp file and add information to the graph's nodes:</p>
             <span class="sa">f</span><span class="s2">&quot;Name(s) missing from times: </span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">missing</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="n">nx</span><span class="o">.</span><span class="n">set_node_attributes</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="p">,</span> <span class="n">times</span><span class="p">,</span> <span class="s2">&quot;timestamp&quot;</span><span class="p">)</span>
 </code></pre></div>
+</div>
 <p>Before we move on,
 let's make sure that adding timestamps works as we want:</p>
+<div class="lang-sh" title="add_timestamps.sh">
 <div class="highlight"><pre><span></span><code>python add_timestamps.py three_simple_rules.yml add_timestamps.yml
 </code></pre></div>
+</div>
+<div class="lang-out" title="add_timestamps.out">
 <div class="highlight"><pre><span></span><code>{
   &quot;nodes&quot;: [
     {
@@ -643,6 +676,7 @@ let's make sure that adding timestamps works as we want:</p>
   ]
 }
 </code></pre></div>
+</div>
 <h2 id="builder-update">Section 7.4: Updating Files</h2>
 <p>To figure out which recipes to execute and in which order,
 we set the pretended current time to the latest time of any file,
@@ -652,6 +686,7 @@ we update the file <em>and</em> its pretended timestamp
 to trigger an update of anything that depends on it.
 First,
 we add a step to <code>build</code>:</p>
+<div class="lang-py" title="update_timestamps.py">
 <div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">UpdateTimestamps</span><span class="p">(</span><span class="n">AddTimestamps</span><span class="p">):</span>
 
     <span class="k">def</span> <span class="nf">build</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -661,12 +696,14 @@ we add a step to <code>build</code>:</p>
         <span class="bp">self</span><span class="o">.</span><span class="n">check_cycles</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 </code></pre></div>
+</div>
 <p>Next,
 we implement the <code>run</code> method.
 We can pretend that updating a file always takes one unit of time,
 so we advance our fictional clock by one for each build.
 Using <code>networkx.topological_sort</code> to create the topological order,
 we get this:</p>
+<div class="lang-py" title="update_timestamps.py">
 <div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">times</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">get_node_attributes</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="p">,</span> <span class="s2">&quot;timestamp&quot;</span><span class="p">)</span>
         <span class="n">current_time</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">+</span> <span class="nb">max</span><span class="p">(</span><span class="n">times</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
@@ -678,6 +715,7 @@ we get this:</p>
                 <span class="n">current_time</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">current_time</span><span class="si">}</span><span class="s2">: END&quot;</span><span class="p">)</span>
 </code></pre></div>
+</div>
 <p>The <code>run</code> method:</p>
 <ol>
 <li>
@@ -696,22 +734,29 @@ we get this:</p>
 <p>In order to check if a file is stale,
 we see if any of its dependencies currently have timestamps
 greater than or equal to the target's timestamp:</p>
+<div class="lang-py" title="update_timestamps.py">
 <div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">is_stale</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">any</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">p</span><span class="p">][</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span>
             <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">predecessors</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
         <span class="p">)</span>
 </code></pre></div>
+</div>
 <p>Our <code>update</code> method simply prints the actions it would take:</p>
+<div class="lang-py" title="update_timestamps.py">
 <div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">time</span><span class="p">):</span>
         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;- </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">time</span><span class="si">}</span><span class="s2">):&quot;</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;recipes&quot;</span><span class="p">]:</span>
             <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  - </span><span class="si">{</span><span class="n">r</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 </code></pre></div>
+</div>
 <p>When we run this,
 it seems to do the right thing:</p>
+<div class="lang-sh" title="update_timestamps.sh">
 <div class="highlight"><pre><span></span><code>python update_timestamps.py three_simple_rules.yml add_timestamps.yml
 </code></pre></div>
+</div>
+<div class="lang-out" title="update_timestamps.out">
 <div class="highlight"><pre><span></span><code>9: START
 - A (9):
   - update A from B and C
@@ -719,6 +764,7 @@ it seems to do the right thing:</p>
   - update B from C
 11: END
 </code></pre></div>
+</div>
 <h2 id="builder-variables">Section 7.5: Variables</h2>
 <p>We don't want to have to write a hundred nearly-identical recipes
 if our website has a hundred blog posts
@@ -757,6 +803,7 @@ and <code>@DEP[1]</code>, <code>@DEP[2]</code>, and so on for specific dependenc
 </figure>
 
 <p>Our variable expander looks like this:</p>
+<div class="lang-py" title="expand_variables.py">
 <div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">expand_variables</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">target</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">expand_one</span><span class="p">(</span><span class="n">target</span><span class="p">)</span>
@@ -772,10 +819,14 @@ and <code>@DEP[1]</code>, <code>@DEP[2]</code>, and so on for specific dependenc
                 <span class="n">result</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;@DEP[</span><span class="si">{</span><span class="nb">id</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">,</span> <span class="n">d</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">target</span><span class="p">][</span><span class="s2">&quot;recipes&quot;</span><span class="p">][</span><span class="n">ir</span><span class="p">]</span> <span class="o">=</span> <span class="n">result</span>
 </code></pre></div>
+</div>
 <p>The first thing we do is test that it works when there <em>aren't</em> any variables to expand
 by running it on the same example we used previously:</p>
+<div class="lang-sh" title="expand_variables_no_vars.sh">
 <div class="highlight"><pre><span></span><code>python expand_variables.py three_simple_rules.yml add_timestamps.yml
 </code></pre></div>
+</div>
+<div class="lang-out" title="expand_variables_no_vars.out">
 <div class="highlight"><pre><span></span><code>9: START
 - A (9):
   - update A from B and C
@@ -783,11 +834,13 @@ by running it on the same example we used previously:</p>
   - update B from C
 11: END
 </code></pre></div>
+</div>
 <p class="continue">This is perhaps the most important reason to create tests:
 they tell us if something we have added or changed
 has broken something that used to work
 so that we have a solid base for new code.</p>
-<p><div class="highlight"><pre><span></span><code>- target: A
+<div class="lang-yml" title="three_variable_rules.yml">
+<div class="highlight"><pre><span></span><code>- target: A
   depends:
   - B
   - C
@@ -802,8 +855,12 @@ so that we have a solid base for new code.</p>
   depends: []
   recipes: []
 </code></pre></div>
+</div>
+<div class="lang-sh" title="expand_variables_with_vars.sh">
 <div class="highlight"><pre><span></span><code>python expand_variables.py three_variable_rules.yml add_timestamps.yml
-</code></pre></div></p>
+</code></pre></div>
+</div>
+<div class="lang-out" title="expand_variables_with_vars.out">
 <div class="highlight"><pre><span></span><code>9: START
 - A (9):
   - update A from B C
@@ -811,9 +868,11 @@ so that we have a solid base for new code.</p>
   - update B from C
 11: END
 </code></pre></div>
+</div>
 <h2 id="builder-generic">Section 7.6: Generic Rules</h2>
 <p>Now we need to add <span class="ix-entry" ix-key="pattern rule (in build);build!pattern rule" markdown="1"><a class="gl-ref" href="../glossary/#pattern_rule" markdown="1">pattern rules</a></span>:
 Our test rules file is:</p>
+<div class="lang-yml" title="pattern_rules.yml">
 <div class="highlight"><pre><span></span><code>- target: left.out
   depends: []
   recipes: []
@@ -832,7 +891,9 @@ Our test rules file is:</p>
   recipes:
   - &quot;update @TARGET from @DEPENDENCIES&quot;
 </code></pre></div>
+</div>
 <p class="continue">and our first attempt at reading it extracts rules before expanding variables:</p>
+<div class="lang-py" title="pattern_attempt.py">
 <div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">PatternAttempt</span><span class="p">(</span><span class="n">ExpandVariables</span><span class="p">):</span>
 
     <span class="k">def</span> <span class="nf">build</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -853,10 +914,14 @@ Our test rules file is:</p>
         <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">rules</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">remove_node</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
 </code></pre></div>
+</div>
 <p>However,
 it doesn't work:</p>
+<div class="lang-sh" title="pattern_attempt.sh">
 <div class="highlight"><pre><span></span><code>python pattern_attempt.py pattern_rules.yml pattern_times.yml
 </code></pre></div>
+</div>
+<div class="lang-out" title="pattern_attempt.out">
 <div class="highlight"><pre><span></span><code>Traceback (most recent call last):
   File &quot;/u/sdpy/builder/pattern_attempt.py&quot;, line 33, in &lt;module&gt;
     builder.build()
@@ -866,6 +931,7 @@ it doesn't work:</p>
     self.rules[target] = self.graph.nodes[target][&quot;recipes&quot;]
 KeyError: &#39;recipes&#39;
 </code></pre></div>
+</div>
 <p>After a bit of poking around we realize that
 we're looking at the rule for <code>%.in</code>.
 A bit more poking around and we realize that
@@ -878,6 +944,7 @@ we wind up with a node for <code>%.in</code> that doesn't have any recipes.</p>
 <p>We can fix our problem by changing the <code>build_graph</code> method
 so that it saves pattern rules in a dictionary
 and then builds the graph from the non-pattern rules:</p>
+<div class="lang-py" title="pattern_final.py">
 <div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">build_graph</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">patterns</span> <span class="o">=</span> <span class="p">{</span>
             <span class="n">r</span><span class="p">[</span><span class="s2">&quot;target&quot;</span><span class="p">]:</span><span class="n">r</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">rules</span>
@@ -886,13 +953,17 @@ and then builds the graph from the non-pattern rules:</p>
         <span class="bp">self</span><span class="o">.</span><span class="n">rules</span> <span class="o">=</span> <span class="p">[</span><span class="n">r</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">rules</span> <span class="k">if</span> <span class="s2">&quot;%&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">r</span><span class="p">[</span><span class="s2">&quot;target&quot;</span><span class="p">]]</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">build_graph</span><span class="p">()</span>
 </code></pre></div>
+</div>
 <p>Expanding rules relies on two helper methods:</p>
+<div class="lang-py" title="pattern_final.py">
 <div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">expand_rules</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">target</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">:</span>
             <span class="k">if</span> <span class="p">(</span><span class="n">rule</span> <span class="o">:=</span> <span class="bp">self</span><span class="o">.</span><span class="n">find_rule</span><span class="p">(</span><span class="n">target</span><span class="p">)):</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">fill_in</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">rule</span><span class="p">)</span>
 </code></pre></div>
+</div>
 <p>The first helper finds rules:</p>
+<div class="lang-py" title="pattern_final.py">
 <div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">find_rule</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
         <span class="k">if</span> <span class="s2">&quot;.&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">target</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">None</span>
@@ -900,7 +971,9 @@ and then builds the graph from the non-pattern rules:</p>
         <span class="n">key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;%.</span><span class="si">{</span><span class="n">suffix</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">patterns</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
 </code></pre></div>
+</div>
 <p class="continue">and the second adds links and recipes to the graph:</p>
+<div class="lang-py" title="pattern_final.py">
 <div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">fill_in</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">rule</span><span class="p">):</span>
         <span class="n">stem</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">target</span><span class="p">][</span><span class="s2">&quot;recipes&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">rule</span><span class="p">[</span><span class="s2">&quot;recipes&quot;</span><span class="p">]</span>
@@ -908,9 +981,13 @@ and then builds the graph from the non-pattern rules:</p>
         <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">depends</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span>
 </code></pre></div>
+</div>
 <p>We're finally ready to test:</p>
+<div class="lang-sh" title="pattern_final.sh">
 <div class="highlight"><pre><span></span><code>python pattern_final.py pattern_rules.yml pattern_times.yml
 </code></pre></div>
+</div>
+<div class="lang-out" title="pattern_final.out">
 <div class="highlight"><pre><span></span><code>4: START
 - right.out (4):
   - update left.out from left.in
@@ -918,6 +995,7 @@ and then builds the graph from the non-pattern rules:</p>
   - update left.out from left.in
 6: END
 </code></pre></div>
+</div>
 <h2 id="builder-discuss">Section 7.7: Discussion</h2>
 <p>We have added a lot of steps to our original template method,
 which makes it a bit of a stretch to claim that the overall operation hasn't changed.

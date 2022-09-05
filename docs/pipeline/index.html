@@ -363,6 +363,7 @@ but can be error-prone.
 instead of <code>data</code>?)</p>
 <p>But a function is just another kind of object,
 so we can put it in a list along with its arguments like this:</p>
+<div class="lang-py" title="direct_list.py">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">functions</span> <span class="kn">import</span> <span class="o">*</span>
 
 <span class="n">pipeline</span> <span class="o">=</span> <span class="p">[</span>
@@ -379,16 +380,22 @@ so we can put it in a list along with its arguments like this:</p>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">data</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="o">*</span><span class="n">params</span><span class="p">)</span>
 </code></pre></div>
+</div>
 <h2 id="pipeline-config">Section 6.2: Configuration</h2>
 <p>Every function remembers the name it was given when it was defined:</p>
+<div class="lang-py" title="func_name.py">
 <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">proof</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
     <span class="k">pass</span>
 
 <span class="nb">print</span><span class="p">(</span><span class="n">proof</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
 </code></pre></div>
+</div>
+<div class="lang-out" title="func_name.out">
 <div class="highlight"><pre><span></span><code>proof
 </code></pre></div>
+</div>
 <p class="continue">so we can convert a list of functions into a lookup table:</p>
+<div class="lang-py" title="func_table.py">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">functions</span> <span class="kn">import</span> <span class="n">left</span><span class="p">,</span> <span class="n">right</span>
 
 <span class="k">def</span> <span class="nf">make_table</span><span class="p">(</span><span class="o">*</span><span class="n">functions</span><span class="p">):</span>
@@ -397,12 +404,16 @@ so we can put it in a list along with its arguments like this:</p>
 <span class="n">table</span> <span class="o">=</span> <span class="n">make_table</span><span class="p">(</span><span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">table</span><span class="p">)</span>
 </code></pre></div>
+</div>
+<div class="lang-out" title="func_table.out">
 <div class="highlight"><pre><span></span><code>{&#39;left&#39;: &lt;function left at 0x10f938310&gt;, &#39;right&#39;: &lt;function right at 0x10f9383a0&gt;}
 </code></pre></div>
+</div>
 <p>We should therefore be able to construct a pipeline
 from a YAML file like this
 without needing a long set of <code>if</code> statements
 to match names to functions:</p>
+<div class="lang-yml" title="pipeline_manual.yml">
 <div class="highlight"><pre><span></span><code>- name: read
   params:
   - sample_data.csv
@@ -416,9 +427,11 @@ to match names to functions:</p>
   params:
   - 2
 </code></pre></div>
+</div>
 <p>The code that runs the steps described in this pipeline
 creates the lookup table
 and then calls each stage with the given parameters:</p>
+<div class="lang-py" title="pipeline_manual.py">
 <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">pipeline</span><span class="p">(</span><span class="n">config_file</span><span class="p">,</span> <span class="o">*</span><span class="n">functions</span><span class="p">):</span>
     <span class="n">functions</span> <span class="o">=</span> <span class="p">{</span><span class="n">f</span><span class="o">.</span><span class="vm">__name__</span><span class="p">:</span> <span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">functions</span><span class="p">}</span>
 
@@ -436,18 +449,22 @@ and then calls each stage with the given parameters:</p>
 
     <span class="k">return</span> <span class="n">data</span>
 </code></pre></div>
+</div>
 <h2 id="pipeline-collect">Section 6.3: Collecting Functions</h2>
 <p>Our <code>pipeline</code> function works,
 but the call to it isn't any prettier
 than the nested function calls we set out to replace:</p>
+<div class="lang-py" title="pipeline_manual.py">
 <div class="highlight"><pre><span></span><code><span class="n">result</span> <span class="o">=</span> <span class="n">pipeline</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">read</span><span class="p">,</span> <span class="n">head</span><span class="p">,</span> <span class="n">tail</span><span class="p">,</span> <span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="p">)</span>
 </code></pre></div>
+</div>
 <p>We could move the line that turns a list of functions into a dictionary
 out of <code>pipeline</code>
 and require the user to build that lookup table for us,
 but there's a cleaner way.
 Let's define a <a class="gl-ref" href="../glossary/#decorator" markdown="1">decorator</a>
 that adds a function to a lookup table:</p>
+<div class="lang-py" title="decorated.py">
 <div class="highlight"><pre><span></span><code><span class="n">EXPORTS</span> <span class="o">=</span> <span class="p">{}</span>
 
 <span class="k">def</span> <span class="nf">export</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
@@ -455,9 +472,11 @@ that adds a function to a lookup table:</p>
     <span class="n">EXPORTS</span><span class="p">[</span><span class="n">func</span><span class="o">.</span><span class="vm">__name__</span><span class="p">]</span> <span class="o">=</span> <span class="n">func</span>
     <span class="k">return</span> <span class="n">func</span>
 </code></pre></div>
+</div>
 <p class="continue">We can then use this decorator
 to mark the functions that we want to make available
 to the pipeline:</p>
+<div class="lang-py" title="decorated.py">
 <div class="highlight"><pre><span></span><code><span class="nd">@export</span>
 <span class="k">def</span> <span class="nf">read</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
     <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">reader</span><span class="p">:</span>
@@ -467,14 +486,19 @@ to the pipeline:</p>
 <span class="k">def</span> <span class="nf">head</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">num</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">data</span><span class="p">[:</span><span class="n">num</span><span class="p">]</span>
 </code></pre></div>
+</div>
 <p class="continue">and then in our pipeline code
 we can import the <code>EXPORTS</code> table
 (renaming it to make its purpose a little clearer):</p>
+<div class="lang-py" title="pipeline_decorated.py">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">decorated</span> <span class="kn">import</span> <span class="n">EXPORTS</span> <span class="k">as</span> <span class="n">functions</span>
 </code></pre></div>
+</div>
 <p class="continue">The call to <code>pipeline</code> is then:</p>
+<div class="lang-py" title="pipeline_decorated.py">
 <div class="highlight"><pre><span></span><code><span class="n">result</span> <span class="o">=</span> <span class="n">pipeline</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">functions</span><span class="p">)</span>
 </code></pre></div>
+</div>
 <p>If we want to make functions from many files
 available to our pipeline,
 we'll have to merge their exported dictionaries.
@@ -489,6 +513,7 @@ we want to be able to pass some global parameters to all stages of the pipeline
 as well as local (per-stage) parameters.
 When we're done,
 our configuration file will like this:</p>
+<div class="lang-yml" title="pipeline_global.yml">
 <div class="highlight"><pre><span></span><code>overall:
   debug: true
 pipeline:
@@ -505,10 +530,12 @@ pipeline:
     params:
     - 2
 </code></pre></div>
+</div>
 <p>We don't want our generic <code>pipeline</code> function
 to have to know about the functions it runs,
 so let's modify all of the latter to take optional arguments
 as shown below:</p>
+<div class="lang-py" title="generic.py">
 <div class="highlight"><pre><span></span><code><span class="nd">@export</span>
 <span class="k">def</span> <span class="nf">read</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">reader</span><span class="p">:</span>
@@ -518,7 +545,9 @@ as shown below:</p>
 <span class="k">def</span> <span class="nf">head</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">num</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">data</span><span class="p">[:</span><span class="n">num</span><span class="p">]</span>
 </code></pre></div>
+</div>
 <p>Our revised <code>pipeline</code> function is now:</p>
+<div class="lang-py" title="pipeline_global.py">
 <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">pipeline</span><span class="p">(</span><span class="n">config_file</span><span class="p">,</span> <span class="n">functions</span><span class="p">):</span>
     <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">config_file</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">reader</span><span class="p">:</span>
         <span class="n">config</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">reader</span><span class="p">)</span>
@@ -535,8 +564,10 @@ as shown below:</p>
 
     <span class="k">return</span> <span class="n">data</span>
 </code></pre></div>
+</div>
 <p>We also want to know what each run of a pipeline actually did.
 Let's rewrite the runner to create a list of provenance records:</p>
+<div class="lang-py" title="pipeline_provenance.py">
 <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">pipeline</span><span class="p">(</span><span class="n">config_file</span><span class="p">,</span> <span class="n">functions</span><span class="p">):</span>
     <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">config_file</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">reader</span><span class="p">:</span>
         <span class="n">config</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">reader</span><span class="p">)</span>
@@ -552,11 +583,13 @@ Let's rewrite the runner to create a list of provenance records:</p>
 
     <span class="k">return</span> <span class="n">data</span><span class="p">,</span> <span class="n">provenance</span>
 </code></pre></div>
+</div>
 <p>The <code>run</code> function finds and runs the requested function,
 then records its name,
 its parameters,
 how long it took to execute,
 and how big its output was:</p>
+<div class="lang-py" title="pipeline_provenance.py">
 <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="n">functions</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">func_name</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">overall</span><span class="p">):</span>
     <span class="n">info</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">func_name</span><span class="p">,</span>
@@ -575,7 +608,9 @@ and how big its output was:</p>
 <span class="k">def</span> <span class="nf">data_size</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
     <span class="k">return</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">data</span> <span class="k">else</span> <span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">])]</span>
 </code></pre></div>
+</div>
 <p>If we run this and dump the provenance record as YAML we get:</p>
+<div class="lang-out" title="pipeline_provenance.out">
 <div class="highlight"><pre><span></span><code>- name: read
   params:
   - sample_data.csv
@@ -605,6 +640,7 @@ and how big its output was:</p>
   - 2
   time: 4.0531158447265625e-06
 </code></pre></div>
+</div>
 <p>Let's come back to configuration.
 Right now we have put everything for our pipeline in one self-contained file,
 but in real situations our pipelines will probably share a lot of settings.
@@ -627,6 +663,7 @@ Many large applicatons allow up to four layers of configuration:</p>
 because each level overrides the ones before it.
 It's more complex that our example needs,
 but is worth building to see how it's done:</p>
+<div class="lang-py" title="load_config.py">
 <div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
 <span class="kn">import</span> <span class="nn">yaml</span>
@@ -655,6 +692,7 @@ but is worth building to see how it's done:</p>
     <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">reader</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">reader</span><span class="p">)</span>
 </code></pre></div>
+</div>
 <h2 id="pipeline-exercises">Section 6.5: Exercises</h2>
 <h3>Merging functions</h3>
 <p>Modify the pipeline code so that it can load runnable functions from many different files.
