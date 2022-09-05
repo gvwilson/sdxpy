@@ -345,10 +345,10 @@ If we do want to compare floating point numbers
 we can use something like [the `approx` class][pytest_approx] from [pytest][pytest]
 which checks whether two numbers are within some tolerance of each other.
 A completely different approach is to use something like
-[the `fractions` package][python_fractions],
+the [fractions][py_fractions] module,
 which (as its name suggests) uses numerators and denominators
 to avoid some precision issues.
-[This post][textualize_fraction] describes one clever use of the package.
+[This post][textualize_fraction] describes one clever use of the module.
 
 ## And Now, Persistence {: #binary-binary}
 
@@ -666,4 +666,4 @@ For example,
 1.  Calculate the absolute and relative differences between corresponding values
     (which should be identical).
 1.  Repeat the exercise using the `Fraction` class
-    from the [`fractions`][python_fractions] package.
+    from the [fractions][py_fractions] module.

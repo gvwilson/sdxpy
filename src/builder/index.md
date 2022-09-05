@@ -29,7 +29,7 @@ determines an order in which to rebuild things,
 and then does whatever is required and only what is required [% b Smith2011 %].
 
 The first build manager,
-[%i "Make" %][Make][gnu-make][%/i%],
+[%i "Make" %][Make][gnu_make][%/i%],
 was created to handle compilation of C programs,
 but build managers are used to update packages,
 regenerate websites ([%x templating %]),
@@ -117,7 +117,7 @@ and call a couple of methods that we are planning to add:
 
 [% inc file="graph_creator.py" keep="body" %]
 
-We use the [`networkx`][networkx] module to manage nodes and links
+We use the [networkx][networkx] module to manage nodes and links
 rather than writing our own classes for graphs,
 and store the recipe to rebuild a node in that node:
 

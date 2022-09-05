@@ -18,7 +18,7 @@ Its core is a way to archive files that:
 This chapter builds a tool that does both tasks.
 It won't let us create and merge branches;
 if you would like to know how that works,
-please see [%i "Cook, Mary Rose" %][Mary Rose Cook's][cook-mary-rose][%/i%] [Gitlet][gitlet].
+please see [%i "Cook, Mary Rose" %][Mary Rose Cook's][cook_mary_rose][%/i%] [Gitlet][gitlet].
 
 ## Identifying Unique Files {: #backup-unique}
 
@@ -50,7 +50,7 @@ has two extra properties:
 
 It's easy to write a bad hash function,
 but very hard to write one that qualifies as cryptographic.
-We will therefore use Python's [`hashlib`][hashlib] module
+We will therefore use Python's [hashlib][py_hashlib] module
 to calculate [%i "hash code!SHA256" "SHA256 hash code" %][%g sha256 "SHA256" %][%/i%] hashes of our files.
 These are not random enough to keep data secret from a patient, well-funded attacker,
 but that's not what we're using them for:
@@ -130,7 +130,7 @@ we will copy the `.bck` files back to where they were
 
 The first step is to find all the files in or below a given directory
 and calculate their hashes.
-The easiest way to find files is to use Python's [`glob`][glob] module
+The easiest way to find files is to use Python's [glob][py_glob] module
 to do simple pattern matching.
 If we have this directory structure:
 
@@ -161,7 +161,7 @@ instead of the real filesystem.
 As described in [%x tester %],
 a mock object has the same interface as the the thing it replaces,
 but is designed to be used solely for testing.
-The [`pyfakefs`][pyfakefs] module replaces key functions like `read`
+The [pyfakefs][pyfakefs] module replaces key functions like `read`
 with functions that act the same
 but act on "files" stores in memory
 ([% f backup-mock-fs %]).

@@ -159,6 +159,10 @@ def handle(node, state, accum, doEscape):
     elif node_match(node, "div", "break-before"):
         children(node, state, accum, doEscape)
 
+    # <div class="code-sample"> => pass through
+    elif node_match(node, "div", "code-sample"):
+        children(node, state, accum, doEscape)
+
     # <div class="glossary"> => pass through
     elif node_match(node, "div", "glossary"):
         children(node, state, accum, doEscape)

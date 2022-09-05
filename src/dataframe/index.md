@@ -229,7 +229,7 @@ while filtering is 1.8 times slower.
 | 10000 | 10000 | 19.0       | 0.00234    | 9.97       | 5.57       |
 </div>
 
-We can get much more insight using Python [cProfile][cprofile] module:
+We can get much more insight using Python [cProfile][py_cprofile] module:
 
 [% inc pat="profile.*" fill="sh out" %]
 
