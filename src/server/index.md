@@ -44,7 +44,7 @@ anyone else can use the remaining ports.
 
 Here's a simple socket client:
 
-[% excerpt f="socket_client.py" %]
+[% inc file="socket_client.py" %]
 
 From top to bottom, it:
 
@@ -67,7 +67,7 @@ From top to bottom, it:
 
 The receiving end is only a little more complicated:
 
-[% excerpt f="socket_server.py" %]
+[% inc file="socket_server.py" %]
 
 Python's `socketserver` library provides two things:
 a class called `TCPServer` that listens for incoming connections
@@ -185,7 +185,7 @@ Constructing HTTP requests is tedious,
 so most people use libraries to do most of the work.
 The most popular such library in Python is called [requests][requests].
 
-[% excerpt pat="requests_example.*" fill="py out" %]
+[% inc pat="requests_example.*" fill="py out" %]
 
 `request.get` sends an HTTP GET request to a server
 and returns an object containing the response.
@@ -212,7 +212,7 @@ that contains tools to do that for us
 so that we just have to take care of steps 3-5.
 Here's our first working web server:
 
-[% excerpt f="basic_http_server.py" %]
+[% inc file="basic_http_server.py" %]
 
 Let's start at the bottom and work our way up.
 

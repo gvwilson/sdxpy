@@ -51,14 +51,14 @@ Everything we can put on the screen is represented as a rectangular cell,
 and every cell is either a row, a column, or a block.
 A block has a fixed width and height:
 
-[% excerpt f="easy_mode.py" keep="block" %]
+[% inc file="easy_mode.py" keep="block" %]
 
 A row arranges one or more cells horizontally;
 its width is the sum of the widths of its children,
 while its height is the height of its tallest child
 ([%f layout-sizing %]):
 
-[% excerpt f="easy_mode.py" keep="row" %]
+[% inc file="easy_mode.py" keep="row" %]
 
 [% figure
    slug="layout-sizing"
@@ -73,7 +73,7 @@ its width is the width of its widest child
 and its height is the sum of the heights of its children.
 (Here and elsewhere we use the abbreviation `col` when referring to columns.)
 
-[% excerpt f="easy_mode.py" keep="col" %]
+[% inc file="easy_mode.py" keep="col" %]
 
 Rows and columns nest inside one another:
 a row cannot span two or more columns,
@@ -92,7 +92,7 @@ this code could still contain errors (and did during development),
 so we write some Mocha tests to check that it works as desired
 before trying to build anything more complicated:
 
-[% excerpt pat="test_easy_mode.*" fill="py out" %]
+[% inc pat="test_easy_mode.*" fill="py out" %]
 
 ## Positioning {: #layout-position}
 
@@ -125,23 +125,23 @@ To save ourselves some testing we will derive the classes that know how to do la
 from the classes we wrote before.
 Our blocks are:
 
-[% excerpt f="placed.py" keep="block" %]
+[% inc file="placed.py" keep="block" %]
 
 while our columns are:
 {: .continue}
 
-[% excerpt f="placed.py" keep="col" %]
+[% inc file="placed.py" keep="col" %]
 
 and our rows are:
 {: .continue}
 
-[% excerpt f="placed.py" keep="row" %]
+[% inc file="placed.py" keep="row" %]
 
 Once again,
 we write and run some tests to check that everything is doing what it's supposed to:
 
-[% excerpt f="test_placed.py" omit="large" %]
-[% excerpt f="test_placed.out" %]
+[% inc file="test_placed.py" omit="large" %]
+[% inc file="test_placed.out" %]
 
 ## Rendering {: #layout-render}
 
@@ -166,14 +166,14 @@ in order to draw things in three dimensions.)
 
 Our pretended screen is just an array of arrays of characters:
 
-[% excerpt f="render.py" keep="make_screen" %]
+[% inc file="render.py" keep="make_screen" %]
 
 We will use successive lower-case characters to show each block,
 i.e.,
 the root block will draw itself using 'a',
 while its children will be 'b', 'c', and so on.
 
-[% excerpt f="render.py" keep="draw" %]
+[% inc file="render.py" keep="draw" %]
 
 To teach each kind of cell how to render itself,
 we have to derive a new class from each of the ones we have
@@ -181,7 +181,7 @@ and give the new class a `render` method with the same
 [%i "signature!of function" "function signature" %][%g signature "signature" %][%/i%].
 We use a [%i "mixin class" %][%g mixin "mixin" %][%/i%] class to do this:
 
-[% excerpt f="rendered.py" %]
+[% inc file="rendered.py" %]
 
 If we were building a real layout engine,
 a cleaner solution would be to go back and create a class called `Cell` with this `render` method,
@@ -194,7 +194,7 @@ we should add a method to do that to their lowest common ancestor.
 Our simpler tests are a little easier to read once we have rendering in place,
 though we still had to draw things on paper to figure out our complex ones:
 
-[% excerpt f="test_rendered.py" keep="large" %]
+[% inc file="test_rendered.py" keep="large" %]
 
 The fact that our tests are difficult to understand
 is a sign that we should do more testing.
@@ -228,7 +228,7 @@ Columns become themselves as well,
 but since they have children that might need to wrap,
 the class representing columns needs a new method:
 
-[% excerpt f="wrapped.py" keep="blockcol" %]
+[% inc file="wrapped.py" keep="blockcol" %]
 
 Rows do all the hard work.
 Each original row is replaced with a new row that contains a single column with one or more rows,
@@ -248,19 +248,19 @@ we will look at making this more efficient in the exercises.
 Our new wrappable row's constructor takes a fixed width followed by the children
 and returns that fixed width when asked for its size:
 
-[% excerpt f="wrapped.py" keep="row" omit="wrap" %]
+[% inc file="wrapped.py" keep="row" omit="wrap" %]
 
 Wrapping puts the row's children into buckets,
 then converts the buckets to a row of a column of rows:
 {: .continue}
 
-[% excerpt f="wrapped.py" keep="wrap" %]
+[% inc file="wrapped.py" keep="wrap" %]
 
 Once again we bring forward all the previous tests
 and write some new ones to test the functionality we've added:
 
-[% excerpt f="test_wrapped.py" keep="example" %]
-[% excerpt f="test_wrapped.out" %]
+[% inc file="test_wrapped.py" keep="example" %]
+[% inc file="test_wrapped.out" %]
 
 <div class="callout" markdown="1">
 
@@ -296,36 +296,36 @@ and those attributes can specify the row's height, width, or both.
 The classes that represent these elements should seem familiar by now;
 for example, the class that represents a column is:
 
-[% excerpt f="micro_dom.py" keep="col" omit="omit" %]
+[% inc file="micro_dom.py" keep="col" omit="omit" %]
 
 Since `DomCol` shares a lot of code with `DomRow` and `DomBlock`,
 but we don't want to go back and rewrite the parent,
 we use a mixin class for common methods that are being added at this stage:
 
-[% excerpt f="micro_dom.py" keep="mixin" %]
+[% inc file="micro_dom.py" keep="mixin" %]
 
 We will use regular expressions to parse HTML
 (though as we explained in [%x parser %],
 [this is a sin][stack_overflow_html_regex]).
 The main body of our parser is:
 
-[% excerpt f="parse_html.py" omit="skip" %]
+[% inc file="parse_html.py" omit="skip" %]
 
 while the two functions that do most of the work are:
 {: .continue}
 
-[% excerpt f="parse_html.py" keep="makenode" %]
+[% inc file="parse_html.py" keep="makenode" %]
 
 and:
 {: .continue}
 
-[% excerpt f="parse_html.py" keep="makeopening" %]
+[% inc file="parse_html.py" keep="makeopening" %]
 
 FIXME
 
 Here's our final set of tests:
 
-[% excerpt f="test_styled.py" keep="test" %]
+[% inc file="test_styled.py" keep="test" %]
 
 If we were going on,
 we would override the cells' `get_width` and `get_height` methods to pay attention to styles.

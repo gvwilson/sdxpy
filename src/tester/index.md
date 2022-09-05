@@ -283,7 +283,7 @@ Instead,
 the function `hope_that` saves a descriptive message and a function that implements a test
 in an array:
 
-[% excerpt f="dry_run.py" keep="save" %]
+[% inc file="dry_run.py" keep="save" %]
 
 > ### Independence
 >
@@ -296,7 +296,7 @@ in an array:
 
 The function `main` runs all registered tests:
 
-[% excerpt f="dry_run.py" keep="main" %]
+[% inc file="dry_run.py" keep="main" %]
 
 If a test completes without an exception, it passes.
 If any of the `assert` calls inside the test raises an `AssertionError`,
@@ -309,8 +309,8 @@ After all tests are run,
 
 Let's try it out:
 
-[% excerpt f="dry_run.py" keep="use" %]
-[% excerpt f="dry_run.out" %]
+[% inc file="dry_run.py" keep="use" %]
+[% inc file="dry_run.out" %]
 
 ## Discovery {: #tester-discovery}
 
@@ -339,18 +339,18 @@ We can solve several of these problems at once by looking up test functions dyna
 Python stores the variables and functions we define in a dictionary.
 We can get that dictionary by calling the function `globals`:
 
-[% excerpt pat="show_globals.*" fill="py out" %]
+[% inc pat="show_globals.*" fill="py out" %]
 
 We can loop over the keys of this dictionary and find things with particular names:
 
-[% excerpt pat="show_tests.*" fill="py out" %]
+[% inc pat="show_tests.*" fill="py out" %]
 
 which means we can find all the tests in a module,
 call them,
 and keep track of their results:
 {: .continue}
 
-[% excerpt pat="discovery.*" fill="py out" %]
+[% inc pat="discovery.*" fill="py out" %]
 
 This approach is less typing and less fragile than our first,
 but we can improve it by showing the test function's [%g docstring "docstring" %]
@@ -375,16 +375,16 @@ we could decide that the string `"test:skip"` means "skip this test",
 while `"test:fail"` means "we expect this test to fail".
 Let's rewrite our tests to show this off:
 
-[% excerpt f="docstring.py" keep="tests" %]
+[% inc file="docstring.py" keep="tests" %]
 
 and then modify `run_tests` to look for these strings and act accordingly:
 {: .continue}
 
-[% excerpt f="docstring.py" keep="run" %]
+[% inc file="docstring.py" keep="run" %]
 
 The output is now:
 
-[% excerpt f="docstring.out" %]
+[% inc file="docstring.out" %]
 
 ## Mock Objects
 
@@ -405,7 +405,7 @@ because they mimic the essential behavior of the real objects in the program.
 We usually use objects even if the thing we're replacing is a function,
 and rely on the fact that Python lets us create objects that can be called just like functions:
 
-[% excerpt pat="callable.*" fill="py out" %]
+[% inc pat="callable.*" fill="py out" %]
 
 Let's create a class that:
 
@@ -417,7 +417,7 @@ Let's create a class that:
 
 The whole thing looks like this:
 
-[% excerpt f="mock_object.py" keep="fake" %]
+[% inc file="mock_object.py" keep="fake" %]
 
 For convenience,
 let's also define a function that replaces some function we've already defined
@@ -425,29 +425,29 @@ with an instance of our `Fake` class.
 This function takes either a fixed value or another function as an argument
 and passes those to `Fake`'s constructor:
 
-[% excerpt f="mock_object.py" keep="fixit" %]
+[% inc file="mock_object.py" keep="fixit" %]
 
 Next,
 we'll define a function that adds two numbers
 and write a test for it:
 
-[% excerpt f="mock_object.py" keep="test_real" %]
+[% inc file="mock_object.py" keep="test_real" %]
 
 But we can also use `fixit` to replace the real `adder` function
 with a mock object that always returns 99
 and check that it actually does:
 
-[% excerpt f="mock_object.py" keep="test_fixed" %]
+[% inc file="mock_object.py" keep="test_fixed" %]
 
 Another test proves that our `Fake` class records
 all of the calls:
 
-[% excerpt f="mock_object.py" keep="test_record" %]
+[% inc file="mock_object.py" keep="test_record" %]
 
 And finally,
 the user can provide a function to calculate a return value:
 
-[% excerpt f="mock_object.py" keep="test_calc" %]
+[% inc file="mock_object.py" keep="test_calc" %]
 
 We can run all of these tests using the same "lookup and call" trick
 we developed earlier,
@@ -458,7 +458,7 @@ As a result,
 any test that *doesn't* replace `adder` will run with
 whatever mock object was last put in place:
 
-[% excerpt f="mock_object.out" %]
+[% inc file="mock_object.out" %]
 
 We could fix this by asking users to remember to swap things back when they're done,
 but people are forgetful.
@@ -490,12 +490,12 @@ so the context manager always has a chance to clean up after itself.
 Here's a mock object that inherits all the capabilities of `Fake`
 and adds the two methods needed by `with`:
 
-[% excerpt f="mock_context.py" keep="contextfake" %]
+[% inc file="mock_context.py" keep="contextfake" %]
 
 And here's a test to prove that it works:
 {: .continue}
 
-[% excerpt f="mock_context.py" keep="test" %]
+[% inc file="mock_context.py" keep="test" %]
 
 ## Exercises {: #tester-exercises}
 

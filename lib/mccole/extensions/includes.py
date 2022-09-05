@@ -1,23 +1,23 @@
-"""Handle file excerpts.
+"""Handle file inclusions
 
-The `[% excerpt ... %]` shortcode includes other files or portions of
+The `[% inc ... %]` shortcode includes other files or portions of
 other files:
 
--   `[% excerpt f="path" %]` includes an entire file. The path is
+-   `[% inc file="path" %]` includes an entire file. The path is
     relative to the including file.
 
--   `[% excerpt f="path" keep="key" %]` includes everything between
+-   `[% inc file="path" keep="key" %]` includes everything between
     lines marked with `[key]` and `[/key]`.  (These markers are usually
     placed in comments.)
 
--   `[% excerpt f="path" omit="key" %]` omits everything between
+-   `[% inc file="path" omit="key" %]` omits everything between
     markers.
 
--   `[% excerpt f="path" keep="outer" omit="inner" %]` selects the
+-   `[% inc file="path" keep="outer" omit="inner" %]` selects the
     lines within the `outer` section, then omits lines within that
     section marked with `inner`.
 
--   `[% excerpt pat="path.*" fill="one two" %]` includes the files
+-   `[% inc pat="path.*" fill="one two" %]` includes the files
     `path.one` and `path.two` (i.e., replaces `*` in `pat` with each
     of the tokens in `fill`, then includes all of that file).
 
@@ -31,7 +31,7 @@ To make this work:
     a chapter or appendix `A` generates `docs/A/index.html` so that
     the included file can be copied to `docs/A/whatever`.
 
--   `excerpt` handles file inclusion.  If the `node` argument is
+-   `include` handles file inclusion.  If the `node` argument is
     empty, it's too early in the processing cycle, so the function
     does nothing; otehrwise, it dispatches to a case-specific handler.
 """
@@ -62,8 +62,8 @@ def copy_files():
         shutil.copy(src, dst)
 
 
-@shortcodes.register("excerpt")
-def excerpt(pargs, kwargs, node):
+@shortcodes.register("inc")
+def include(pargs, kwargs, node):
     """Handle a file inclusion, possibly excerpting."""
     # Error checking.
     if pargs:
@@ -73,7 +73,7 @@ def excerpt(pargs, kwargs, node):
     inclusions = util.make_config("inclusions")
     if ("pat" in kwargs) and ("fill" in kwargs):
         return _multi(inclusions, node, **kwargs)
-    elif "f" not in kwargs:
+    elif "file" not in kwargs:
         util.fail(f"Badly-formatted excerpt shortcode with {kwargs} in {node.filepath}")
     elif ("keep" in kwargs) and ("omit" in kwargs):
         return _keep_omit(inclusions, node, **kwargs)
@@ -85,21 +85,21 @@ def excerpt(pargs, kwargs, node):
         return _file(inclusions, node, **kwargs)
 
 
-def _file(inclusions, node, f):
+def _file(inclusions, node, file):
     """Handle a simple file inclusion."""
-    filepath = _inclusion_filepath(inclusions, node, f)
+    filepath = _inclusion_filepath(inclusions, node, file)
     return _include_file(node, filepath)
 
 
-def _keep(inclusions, node, f, keep):
+def _keep(inclusions, node, file, keep):
     """Handle a sliced file inclusion."""
-    filepath = _inclusion_filepath(inclusions, node, f)
+    filepath = _inclusion_filepath(inclusions, node, file)
     return _include_file(node, filepath, lambda lns: _keep_lines(filepath, lns, keep))
 
 
-def _keep_omit(inclusions, node, f, keep, omit):
+def _keep_omit(inclusions, node, file, keep, omit):
     """Handle an inclusion that keeps some content but omits other."""
-    filepath = _inclusion_filepath(inclusions, node, f)
+    filepath = _inclusion_filepath(inclusions, node, file)
     return _include_file(
         node,
         filepath,
@@ -119,9 +119,9 @@ def _multi(inclusions, node, pat, fill):
     return "\n\n".join(result)
 
 
-def _omit(inclusions, node, f, omit):
+def _omit(inclusions, node, file, omit):
     """Handle an erasing file inclusion."""
-    filepath = _inclusion_filepath(inclusions, node, f)
+    filepath = _inclusion_filepath(inclusions, node, file)
     return _include_file(node, filepath, lambda lns: _omit_lines(filepath, lns, omit))
 
 
@@ -174,8 +174,8 @@ def _omit_lines(filepath, lines, key):
     return lines[:start] + lines[stop + 1 :]  # noqa e203
 
 
-def _inclusion_filepath(inclusions, node, f):
+def _inclusion_filepath(inclusions, node, file):
     """Make path to included file."""
-    src, dst = util.make_copy_paths(node, f)
+    src, dst = util.make_copy_paths(node, file)
     inclusions[src] = dst
     return src

@@ -81,7 +81,7 @@ and `a` indicates an address.
 We put our VM's architectural details in a file
 that can be shared by other components:
 
-[% excerpt f="architecture.py" %]
+[% inc file="architecture.py" %]
 
 There isn't a name for this design pattern,
 but putting all the constants that define a system in one file
@@ -96,13 +96,13 @@ we will split a class that would normally be written in one piece into several p
 We start by defining a class with an instruction pointer, some registers, and some memory
 along with a prompt for output:
 
-[% excerpt f="vm_base.py" omit="skip" %]
+[% inc file="vm_base.py" omit="skip" %]
 
 A program is just an array of numbers representing instructions.
 To load one,
 we copy those numbers into memory and reset the instruction pointer and registers:
 
-[% excerpt f="vm_base.py" keep="initialize" %]
+[% inc file="vm_base.py" keep="initialize" %]
 
 In order to handle the next instruction,
 the VM gets the value in memory that the instruction pointer currently refers to
@@ -111,7 +111,7 @@ It then uses [%i "bitwise operation" %][%g bitwise_operation "bitwise operations
 to extract the op code and operands from the instruction
 ([%f vm-unpacking %]):
 
-[% excerpt f="vm_base.py" keep="fetch" %]
+[% inc file="vm_base.py" keep="fetch" %]
 
 [% figure
    slug="vm-unpacking"
@@ -136,13 +136,13 @@ The next step is to extend our base class with one that has a `run` method.
 As its name suggests,
 this runs the program by fetching instructions and executing them until told to stop:
 
-[% excerpt f="vm.py" omit="skip" %]
+[% inc file="vm.py" omit="skip" %]
 
 Some instructions are very similar to others,
 so we will only look at three here.
 The first stores the value of one register in the address held by another register:
 
-[% excerpt f="vm.py" keep="op_str" %]
+[% inc file="vm.py" keep="op_str" %]
 
 The first three lines check that the operation is legal;
 the fourth one uses the value in one register as an address,
@@ -151,12 +151,12 @@ which is why it has nested array indexing.
 
 Adding the value in one register to the value in another register is simpler:
 
-[% excerpt f="vm.py" keep="op_add" %]
+[% inc file="vm.py" keep="op_add" %]
 
 as is jumping to a fixed address if the value in a register is zero:
 {: .continue}
 
-[% excerpt f="vm.py" keep="op_beq" %]
+[% inc file="vm.py" keep="op_beq" %]
 
 ## Assembly Code {: #vm-assembly}
 
@@ -170,12 +170,12 @@ that very closely represents actual machine instructions.
 Each command in our assembly languages matches an instruction in the VM.
 Here's an assembly language program to print the value stored in R1 and then halt:
 
-[% excerpt f="print_r1.as" %]
+[% inc file="print_r1.as" %]
 
 Its numeric representation is:
 {: .continue}
 
-[% excerpt f="print_r1.mx" %]
+[% inc file="print_r1.mx" %]
 
 One thing the assembly language has that the instruction set doesn't
 is [%i "label (on address)" %][%g label_address "labels on addresses" %][%/i%].
@@ -187,7 +187,7 @@ For example,
 this program prints the numbers from 0 to 2
 ([%f vm-count_up %]):
 
-[% excerpt pat="count_up.*" fill="as mx" %]
+[% inc pat="count_up.*" fill="as mx" %]
 
 [% figure
    slug="vm-count_up"
@@ -220,29 +220,29 @@ The main method gets interesting lines,
 finds the addresses of labels,
 and turns each remaining line into an instruction:
 
-[% excerpt f="assembler.py" keep="assemble" %]
+[% inc file="assembler.py" keep="assemble" %]
 
 To find labels,
 we go through the lines one by one
 and either save the label *or* increment the current address
 (because labels don't take up space):
 
-[% excerpt f="assembler.py" keep="find-labels" %]
+[% inc file="assembler.py" keep="find-labels" %]
 
 To compile a single instruction we break the line into tokens,
 look up the format for the operands,
 and pack them into a single value:
 
-[% excerpt f="assembler.py" keep="compile" %]
+[% inc file="assembler.py" keep="compile" %]
 
 Combining op codes and operands into a single value
 is the reverse of the unpacking done by the virtual machine:
 
-[% excerpt f="assembler.py" keep="combine" %]
+[% inc file="assembler.py" keep="combine" %]
 
 Finally, we need few utility functions:
 
-[% excerpt f="assembler.py" keep="utilities" %]
+[% inc file="assembler.py" keep="utilities" %]
 
 Let's try assembling a program and display its output,
 the registers,
@@ -250,7 +250,7 @@ and the interesting contents of memory.
 As a test,
 this program counts up to three:
 
-[% excerpt pat="count_up.*" fill="as out" %]
+[% inc pat="count_up.*" fill="as out" %]
 
 ## Arrays
 
@@ -277,21 +277,21 @@ This enhancement only requires a few changes to the assembler.
 First,
 we need to split the lines into instructions and data allocations:
 
-[% excerpt f="data_allocator.py" keep="assemble" %]
+[% inc file="data_allocator.py" keep="assemble" %]
 
-[% excerpt f="data_allocator.py" keep="split-allocations" %]
+[% inc file="data_allocator.py" keep="split-allocations" %]
 
 Second,
 we need to figure out where each allocation lies and create a label accordingly:
 
-[% excerpt f="data_allocator.py" keep="add-allocations" %]
+[% inc file="data_allocator.py" keep="add-allocations" %]
 
 And that's it:
 no other changes are needed to either compilation or execution.
 To test it,
 let's fill an array with the numbers from 0 to 3:
 
-[% excerpt pat="fill_array.*" fill="as out"%]
+[% inc pat="fill_array.*" fill="as out"%]
 
 <div class="callout" markdown="1">
 

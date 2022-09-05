@@ -69,7 +69,7 @@ int:123
 
 The function `save` handles three of Python's built-in types to start with:
 
-[% excerpt f="builtin.py" keep="save" omit="extras" %]
+[% inc file="builtin.py" keep="save" omit="extras" %]
 
 The function that loads data starts by reading a single line,
 stripping off the newline at the end
@@ -79,7 +79,7 @@ After checking that there are two fields,
 it uses the type name in the first field
 to decide how to handle the second:
 
-[% excerpt f="builtin.py" keep="load" omit="extras" %]
+[% inc file="builtin.py" keep="load" omit="extras" %]
 
 Saving a list is almost as easy:
 we save the number of items in the list,
@@ -96,11 +96,11 @@ float:2.71
 
 The code to do this is:
 
-[% excerpt f="builtin.py" keep="save_list" %]
+[% inc file="builtin.py" keep="save_list" %]
 
 To load data we just read the specified number of items back into a list:
 
-[% excerpt f="builtin.py" keep="load_list" %]
+[% inc file="builtin.py" keep="load_list" %]
 
 Notice that these two functions don't need to know
 what kinds of values are in the list.
@@ -115,7 +115,7 @@ To save a dictionary,
 we save the number of entries
 and then save each key and value in turn:
 
-[% excerpt f="builtin.py" keep="save_dict" %]
+[% inc file="builtin.py" keep="save_dict" %]
 
 The code to load a dictionary is analogous.
 {: .continue}
@@ -135,7 +135,7 @@ We will use two tricks when doing this:
     the same way we indent our Python code,
     which makes the test easier to read.
 
-[% excerpt f="test_builtin.py" keep="test_save_list_flat" %]
+[% inc file="test_builtin.py" keep="test_save_list_flat" %]
 
 We still need to decide how to save strings.
 We can't just print them out because they might contain newlines,
@@ -157,12 +157,12 @@ there
 
 The `elif` branch to do this in `save` is:
 
-[% excerpt f="builtin.py" keep="save_str" %]
+[% inc file="builtin.py" keep="save_str" %]
 
 and the corresponding clause in `load` is:
 {: .continue}
 
-[% excerpt f="builtin.py" keep="load_str" %]
+[% inc file="builtin.py" keep="load_str" %]
 
 ## Converting to Classes {: #persistance-oop}
 
@@ -182,7 +182,7 @@ to handle each item
 instead of a multiway `if` statement.
 The core of our saving class is:
 
-[% excerpt f="oop.py" keep="save" %]
+[% inc file="oop.py" keep="save" %]
 
 (We have called it `SaveOop` instead of just `Save`
 because we are going to create several variations on it.)
@@ -199,16 +199,16 @@ so that they can be called interchangeably.
 For example,
 the methods that write integers and strings are:
 
-[% excerpt f="oop.py" keep="save_examples" %]
+[% inc file="oop.py" keep="save_examples" %]
 
 `LoadOop.load` combines dynamic dispatch with
 the string handling of our original `load` function:
 
-[% excerpt f="oop.py" keep="load" %]
+[% inc file="oop.py" keep="load" %]
 
 The methods that load individual items are even simpler:
 
-[% excerpt f="oop.py" keep="load_float" %]
+[% inc file="oop.py" keep="load_float" %]
 
 ## Aliasing {: #persistence-aliasing}
 
@@ -259,7 +259,7 @@ We can use this to:
 
 Here's the start of `SaveAlias`:
 
-[% excerpt f="aliasing_wrong.py" keep="save" %]
+[% inc file="aliasing_wrong.py" keep="save" %]
 
 Its constructor creates an empty set of IDs-seen-so-far.
 If `SaveAlias.save` notices that the object it's about to save
@@ -277,7 +277,7 @@ it saves the object's type,
 its ID,
 and either its value or its length:
 
-[% excerpt f="aliasing_wrong.py" keep="save_list" %]
+[% inc file="aliasing_wrong.py" keep="save_list" %]
 
 `SaveAlias._list` is a little different from `SaveOop._list`
 because it has to save each object's identifier
@@ -290,16 +290,16 @@ All that has to change is the `load` method itself,
 which looks to see if we're restoring aliased data
 or loading something new:
 
-[% excerpt f="aliasing_wrong.py" keep="load" %]
+[% inc file="aliasing_wrong.py" keep="load" %]
 
 The first test of our new code is:
 
-[% excerpt f="test_aliasing_wrong.py" keep="no_aliasing" %]
+[% inc file="test_aliasing_wrong.py" keep="no_aliasing" %]
 
 which uses this helper function:
 {: .continue}
 
-[% excerpt f="test_aliasing_wrong.py" keep="roundtrip" %]
+[% inc file="test_aliasing_wrong.py" keep="roundtrip" %]
 
 There isn't any aliasing in the test case,
 but that's deliberate:
@@ -309,7 +309,7 @@ before we move on.
 
 Here's a test that actually includes some aliasing:
 
-[% excerpt f="test_aliasing_wrong.py" keep="shared" %]
+[% inc file="test_aliasing_wrong.py" keep="shared" %]
 
 It checks that the aliased sub-list is actually aliased after the data is restored,
 and then checks that modifying that sub-list works as it should
@@ -345,12 +345,12 @@ but then says it can't find the object being referred to.
 
 The problem is in these lines in `LoadAlias.load`:
 
-[% excerpt f="aliasing_wrong.py" keep="mistake" %]
+[% inc file="aliasing_wrong.py" keep="mistake" %]
 
 in combination with these lines inherited from `LoadOop`:
 {: .continue}
 
-[% excerpt f="oop.py" keep="load_list" %]
+[% inc file="oop.py" keep="load_list" %]
 
 Let's trace execution for the saved data:
 {: .continue}
@@ -377,7 +377,7 @@ which unfortunately means writing new versions
 of all the methods defined in `LoadOop`.
 The new implementation of `_list` is:
 
-[% excerpt f="aliasing.py" keep="load_list" %]
+[% inc file="aliasing.py" keep="load_list" %]
 
 This method creates the list it's going to return,
 adds that list to the `seen` dictionary immediately,
@@ -392,17 +392,17 @@ but the changes to `_set` and `_dict` follow exactly the same pattern.
 It's time to extend our framework to handle user-defined classes.
 We'll start by refactoring our code so that the `save` method doesn't get any larger:
 
-[% excerpt f="extend.py" keep="save" omit="omit_extension" %]
+[% inc file="extend.py" keep="save" omit="omit_extension" %]
 
 The method to handle built-in types is:
 {: .continue}
 
-[% excerpt f="extend.py" keep="save_builtin" %]
+[% inc file="extend.py" keep="save_builtin" %]
 
 and the one that handles aliases is:
 {: .continue}
 
-[% excerpt f="extend.py" keep="save_aliased" %]
+[% inc file="extend.py" keep="save_aliased" %]
 
 None of this code is new:
 we've just moved things into methods
@@ -424,7 +424,7 @@ we will save a line indicating that
 this dictionary should be used to reconstruct an object
 of a particular class:
 
-[% excerpt f="extend.py" keep="save_extension" %]
+[% inc file="extend.py" keep="save_extension" %]
 
 Loading user-defined classes requires more work
 because we have to map class names back to actual classes.
@@ -432,7 +432,7 @@ We start by modifying the loader's constructor
 to take zero or more extension classes as arguments
 and then build a name-to-class lookup table from them:
 
-[% excerpt f="extend.py" keep="load_constructor" %]
+[% inc file="extend.py" keep="load_constructor" %]
 
 The `load` method then looks for aliases,
 built-in types,
@@ -446,12 +446,12 @@ it throws a `KeyError`,
 and if none of the methods handle a case
 we fail:
 
-[% excerpt f="extend.py" keep="load_load" %]
+[% inc file="extend.py" keep="load_load" %]
 
 The code to handle built-ins and aliases is copied from our previous work
 and modified to raise `KeyError`:
 
-[% excerpt f="extend.py" keep="inherited" %]
+[% inc file="extend.py" keep="inherited" %]
 
 The method that handles extensions
 checks that the value on the line just read indicates an extension,
@@ -459,15 +459,15 @@ then reads the dictionary containing the object's contents
 from the input stream
 and uses it to build an instance of the right class:
 
-[% excerpt f="extend.py" keep="load_extension" %]
+[% inc file="extend.py" keep="load_extension" %]
 
 Here's a class that defines the required method:
 
-[% excerpt f="user_classes.py" keep="parent" %]
+[% inc file="user_classes.py" keep="parent" %]
 
 and here's a test to make sure everything works:
 
-[% excerpt f="test_extend.py" keep="test_parent" %]
+[% inc file="test_extend.py" keep="test_parent" %]
 
 <div class="callout" markdown="1">
 ### What's in a name?

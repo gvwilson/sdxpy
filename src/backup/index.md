@@ -86,12 +86,12 @@ and then feed it some bytes.
 When we are done,
 we call its `hexdigest` method to  get the final result:
 
-[% excerpt pat="hash_stream.*" fill="py sh out" %]
+[% inc pat="hash_stream.*" fill="py sh out" %]
 
 To prove that it really does generate a unique code,
 let's calculate the hash of the novel *Dracula* instead:
 
-[% excerpt pat="hash_stream_dracula.*" fill="sh out" %]
+[% inc pat="hash_stream_dracula.*" fill="sh out" %]
 
 <div class="callout" markdown="1">
 
@@ -134,16 +134,16 @@ The easiest way to find files is to use Python's [`glob`][glob] module
 to do simple pattern matching.
 If we have this directory structure:
 
-[% excerpt pat="show_try_glob.*" fill="sh out" %]
+[% inc pat="show_try_glob.*" fill="sh out" %]
 
 then a single call to `glob.glob` will find all the files with two-part names:
 {: .continue}
 
-[% excerpt pat="try_glob.*" fill="py sh out" %]
+[% inc pat="try_glob.*" fill="py sh out" %]
 
 Let's combine the two to create a table of files and hashes:
 
-[% excerpt pat="hash_all.*" fill="py sh out" %]
+[% inc pat="hash_all.*" fill="py sh out" %]
 
 ## Testing {: #backup-test}
 
@@ -180,22 +180,22 @@ If we `import pyfakefs`,
 we automatically get a [%i "fixture" %]fixture[%/i%] called `fs`
 that we can use to create files:
 
-[% excerpt f="test_mock_fs.py" %]
+[% inc file="test_mock_fs.py" %]
 
 We can use `fs` to create more complicated fixtures of our own
 with multiple directories and files:
 
-[% excerpt f="test_mock_tree.py" %]
+[% inc file="test_mock_tree.py" %]
 
 and then test that `hash_all` finds all the files:
 {: .continue}
 
-[% excerpt f="test_hash_all.py" omit="change" %]
+[% inc file="test_hash_all.py" omit="change" %]
 
 and that hashes change when files change:
 {: .continue}
 
-[% excerpt f="test_hash_all.py" keep="change" %]
+[% inc file="test_hash_all.py" keep="change" %]
 
 ## Tracking Backups {: #backup-track}
 
@@ -226,19 +226,19 @@ so they will both try to create the first one.
 
 Here's a function that creates a backup:
 
-[% excerpt f="backup.py" keep="backup" %]
+[% inc file="backup.py" keep="backup" %]
 
 When writing the manifest,
 we check that the backup directory exists,
 create it if it does not,
 and then save the manifest as CSV:
 
-[% excerpt f="backup.py" keep="write" %]
+[% inc file="backup.py" keep="write" %]
 
 We then copy those files that *haven't* already been saved:
 {: .continue}
 
-[% excerpt f="backup.py" keep="copy" %]
+[% inc file="backup.py" keep="copy" %]
 
 Finally,
 we could call `time.time()` directly to get the current time,
@@ -246,23 +246,23 @@ but we will wrap it up to give ourselves something
 that we can easily replace with a mock for testing:
 {: .continue}
 
-[% excerpt f="backup.py" keep="time" %]
+[% inc file="backup.py" keep="time" %]
 
 We do one test with real files:
 
-[% excerpt pat="test_backup_manual.*" fill="sh out" %]
+[% inc pat="test_backup_manual.*" fill="sh out" %]
 
 The rest of our tests use a fake filesystem
 and a mock replacement for the `current_time` function
 (so that we know what the manifest file will be called).
 The setup is:
 
-[% excerpt f="test_backup.py" keep="setup" %]
+[% inc file="test_backup.py" keep="setup" %]
 
 and an example of a single test is:
 {: .continue}
 
-[% excerpt f="test_backup.py" keep="test" %]
+[% inc file="test_backup.py" keep="test" %]
 
 ## Exercises {: #backup-exercises}
 

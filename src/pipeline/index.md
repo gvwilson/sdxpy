@@ -63,31 +63,31 @@ instead of `data`?)
 But a function is just another kind of object,
 so we can put it in a list along with its arguments like this:
 
-[% excerpt f="direct_list.py" omit="omit" %]
+[% inc file="direct_list.py" omit="omit" %]
 
 ## Configuration {: #pipeline-config}
 
 Every function remembers the name it was given when it was defined:
 
-[% excerpt pat="func_name.*" fill="py out" %]
+[% inc pat="func_name.*" fill="py out" %]
 
 so we can convert a list of functions into a lookup table:
 {: .continue}
 
-[% excerpt pat="func_table.*" fill="py out" %]
+[% inc pat="func_table.*" fill="py out" %]
 
 We should therefore be able to construct a pipeline
 from a YAML file like this
 without needing a long set of `if` statements
 to match names to functions:
 
-[% excerpt f="pipeline_manual.yml" %]
+[% inc file="pipeline_manual.yml" %]
 
 The code that runs the steps described in this pipeline
 creates the lookup table
 and then calls each stage with the given parameters:
 
-[% excerpt f="pipeline_manual.py" keep="func" %]
+[% inc file="pipeline_manual.py" keep="func" %]
 
 ## Collecting Functions {: #pipeline-collect}
 
@@ -95,7 +95,7 @@ Our `pipeline` function works,
 but the call to it isn't any prettier
 than the nested function calls we set out to replace:
 
-[% excerpt f="pipeline_manual.py" keep="call" %]
+[% inc file="pipeline_manual.py" keep="call" %]
 
 We could move the line that turns a list of functions into a dictionary
 out of `pipeline`
@@ -104,26 +104,26 @@ but there's a cleaner way.
 Let's define a [%g decorator "decorator" %]
 that adds a function to a lookup table:
 
-[% excerpt f="decorated.py" keep="decorator" %]
+[% inc file="decorated.py" keep="decorator" %]
 
 We can then use this decorator
 to mark the functions that we want to make available
 to the pipeline:
 {: .continue}
 
-[% excerpt f="decorated.py" keep="sample" %]
+[% inc file="decorated.py" keep="sample" %]
 
 and then in our pipeline code
 we can import the `EXPORTS` table
 (renaming it to make its purpose a little clearer):
 {: .continue}
 
-[% excerpt f="pipeline_decorated.py" keep="import" %]
+[% inc file="pipeline_decorated.py" keep="import" %]
 
 The call to `pipeline` is then:
 {: .continue}
 
-[% excerpt f="pipeline_decorated.py" keep="call" %]
+[% inc file="pipeline_decorated.py" keep="call" %]
 
 If we want to make functions from many files
 available to our pipeline,
@@ -143,23 +143,23 @@ as well as local (per-stage) parameters.
 When we're done,
 our configuration file will like this:
 
-[% excerpt f="pipeline_global.yml" %]
+[% inc file="pipeline_global.yml" %]
 
 We don't want our generic `pipeline` function
 to have to know about the functions it runs,
 so let's modify all of the latter to take optional arguments
 as shown below:
 
-[% excerpt f="generic.py" keep="sample" %]
+[% inc file="generic.py" keep="sample" %]
 
 Our revised `pipeline` function is now:
 
-[% excerpt f="pipeline_global.py" keep="func" %]
+[% inc file="pipeline_global.py" keep="func" %]
 
 We also want to know what each run of a pipeline actually did.
 Let's rewrite the runner to create a list of provenance records:
 
-[% excerpt f="pipeline_provenance.py" keep="func" %]
+[% inc file="pipeline_provenance.py" keep="func" %]
 
 The `run` function finds and runs the requested function,
 then records its name,
@@ -167,11 +167,11 @@ its parameters,
 how long it took to execute,
 and how big its output was:
 
-[% excerpt f="pipeline_provenance.py" keep="run" %]
+[% inc file="pipeline_provenance.py" keep="run" %]
 
 If we run this and dump the provenance record as YAML we get:
 
-[% excerpt f="pipeline_provenance.out" %]
+[% inc file="pipeline_provenance.out" %]
 
 Let's come back to configuration.
 Right now we have put everything for our pipeline in one self-contained file,
@@ -191,7 +191,7 @@ because each level overrides the ones before it.
 It's more complex that our example needs,
 but is worth building to see how it's done:
 
-[% excerpt f="load_config.py" %]
+[% inc file="load_config.py" %]
 
 ## Exercises {: #pipeline-exercises}
 

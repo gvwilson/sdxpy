@@ -109,7 +109,7 @@ or from some mix of the two;
 for the moment,
 we will just pass them into the expansion function as an object:
 
-[% excerpt f="example_call.py" %]
+[% inc file="example_call.py" %]
 
 ## Managing Variables {: #templating-values}
 
@@ -152,7 +152,7 @@ if the variable can't be found,
 `Env.find` returns `None` instead of throwing an exception
 ([%f templating-stack %]).
 
-[% excerpt f="env.py" %]
+[% inc file="env.py" %]
 
 [% figure
    slug="templating-stack"
@@ -172,7 +172,7 @@ it starts recursing from that saved root;
 if `.walk` is given a value (as it is during recursive calls),
 it uses that instead.
 
-[% excerpt f="visitor.py" %]
+[% inc file="visitor.py" %]
 
 `Visitor` defines two [%g abstract_method "abstract methods" %] `open` and `close`
 that are called when we first arrive at a node and when we are finished with it
@@ -205,11 +205,11 @@ uses them to process each type of node:
 To check if there is a handler for a particular node and get that handler
 we just look at the node's attributes:
 
-[% excerpt f="expander.py" keep="handlers" %]
+[% inc file="expander.py" keep="handlers" %]
 
 Finally, we need a few helper methods to show tags and generate output:
 
-[% excerpt f="expander.py" keep="helpers" %]
+[% inc file="expander.py" keep="helpers" %]
 
 Notice that this class adds strings to an array and joins them all right at the end
 rather than concatenating strings repeatedly.
@@ -224,7 +224,7 @@ we have built a lot of infrastructure but haven't actually processed any special
 To do that,
 let's write a handler that copies a constant number into the output:
 
-[% excerpt f="z_num.py" %]
+[% inc file="z_num.py" %]
 
 The `z_num` expander is a class,
 but we don't plan to create instances of it.
@@ -243,7 +243,7 @@ it just knows that whoever called it implements the low-level operations it need
 
 So much for constants; what about variables?
 
-[% excerpt f="z_var.py" %]
+[% inc file="z_var.py" %]
 
 This code is almost the same as the previous example.
 The only difference is that instead of copying the attribute's value
@@ -257,35 +257,35 @@ we can build a program that loads variable definitions from a JSON file,
 reads an HTML template,
 and does the expansion:
 
-[% excerpt f="template.py" %]
+[% inc file="template.py" %]
 
 We added new variables for our test cases one by one
 as we were writing this chapter.
 To avoid repeating text repeatedly,
 we show the entire set once:
 
-[% excerpt f="vars.json" %]
+[% inc file="vars.json" %]
 
 Our first test:
 is static text copied over as-is?
 
-[% excerpt pat="static_text.*" fill="ht out" %]
+[% inc pat="static_text.*" fill="ht out" %]
 
 Good.
 Now, does the expander handle constants?
 
-[% excerpt pat="single_constant.*" fill="ht out" %]
+[% inc pat="single_constant.*" fill="ht out" %]
 
 What about a single variable?
 
-[% excerpt pat="single_variable.*" fill="ht out" %]
+[% inc pat="single_variable.*" fill="ht out" %]
 
 What about a page containing multiple variables?
 There's no reason it should fail if the single-variable case works,
 but we should still check—again,
 software isn't done until it has been tested.
 
-[% excerpt pat="multiple_variables.*" fill="ht out" %]
+[% inc pat="multiple_variables.*" fill="ht out" %]
 
 ## Control flow {: #templating-flow}
 
@@ -295,11 +295,11 @@ Since we don't support Boolean expressions like `and` and `or`,
 implementing a conditional is as simple as looking up a variable
 and then expanding the node if the value is true:
 
-[% excerpt f="z_if.py" %]
+[% inc file="z_if.py" %]
 
 Let's test it:
 
-[% excerpt pat="conditional.*" fill="ht out" %]
+[% inc pat="conditional.*" fill="ht out" %]
 
 <div class="callout" markdown="1">
 
@@ -329,12 +329,12 @@ That "something" is:
 
 1.  Pop the stack frame to get rid of the temporary variable.
 
-[% excerpt f="z_loop.py" %]
+[% inc file="z_loop.py" %]
 
 Once again,
 it's not done until we test it:
 
-[% excerpt pat="loop.*" fill="ht out" %]
+[% inc pat="loop.*" fill="ht out" %]
 
 ## How We Got Here {: #templating-learning}
 

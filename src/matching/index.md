@@ -42,16 +42,16 @@ matching the start of the target string being searched.
 It then tries the pattern against each successive substring of the target string
 until it finds a match or runs out of characters:
 
-[% excerpt f="simple_regexp.py" keep="match" %]
+[% inc file="simple_regexp.py" keep="match" %]
 
 `match_here` does the matching and recursing:
 
-[% excerpt f="simple_regexp.py" keep="match_here" %]
+[% inc file="simple_regexp.py" keep="match_here" %]
 
 We use a table of test cases and expected results to test it:
 
-[% excerpt f="simple_regexp.py" keep="tests" %]
-[% excerpt f="simple_regexp.out" %]
+[% inc file="simple_regexp.py" keep="tests" %]
+[% inc file="simple_regexp.out" %]
 
 This program seems to work,
 but it actually contains an error that we will correct in the exercises.
@@ -84,7 +84,7 @@ We can combine these objects to match complex patterns.
 The first step to implement this is to write test cases,
 which forces us to define how our classes will work:
 
-[% excerpt f="direct.py" keep="tests" %]
+[% inc file="direct.py" keep="tests" %]
 
 Next,
 we define a [%g base_class "base class" %] that all matchers will inherit from.
@@ -92,7 +92,7 @@ This class contains the `match` method that users will call
 so that we can start matching right away
 no matter what kind of matcher we have at the top level of our pattern.
 
-[% excerpt f="direct.py" keep="base_class" %]
+[% inc file="direct.py" keep="base_class" %]
 
 The base class defines a `match` method
 that other classes will fill in with actual matching code.
@@ -104,7 +104,7 @@ matching will always fail.
 We can now define each matching class,
 like this one for literal characters:
 
-[% excerpt f="direct.py" keep="lit" %]
+[% inc file="direct.py" keep="lit" %]
 
 Our tests now run, but most of them fail:
 "most" because we expect some tests not to match,
@@ -134,7 +134,7 @@ and have each matcher take its own arguments and a `rest` parameter containing t
 so we don't have to type `None` over and over again.)
 Each matcher will try each of its possibilities and then see if the rest will also match:
 
-[% excerpt f="re_base.py" %]
+[% inc file="re_base.py" %]
 
 [% fixme
    slug="pattern-matching-rest"
@@ -153,7 +153,7 @@ Lit("a", Any(Lit("b"), Lit("c")))
 
 Here's how this strategy works for matching a literal expression:
 
-[% excerpt f="re_lit.py" %]
+[% inc file="re_lit.py" %]
 
 The `_match` method checks whether all of the pattern matches the target text
 starting at the current location.
@@ -161,15 +161,15 @@ If so,
 it checks whether the rest of the overall pattern matches what's left.
 Matching the start `^` and end `$` anchors is just as straightforward.
 
-[% excerpt f="re_start.py" %]
+[% inc file="re_start.py" %]
 
-[% excerpt f="re_end.py" %]
+[% inc file="re_end.py" %]
 
 Matching either/or is done by trying the first pattern and the rest,
 and if that fails,
 trying the second pattern and the rest:
 
-[% excerpt f="re_alt.py" %]
+[% inc file="re_alt.py" %]
 
 To match a repetition,
 we figure out the maximum number of matches that might be left,
@@ -178,7 +178,7 @@ then count down until something succeeds.
 Each non-empty repetition matches at least one character,
 so the number of remaining characters is the maximum number of matches worth trying.
 
-[% excerpt f="re_any.py" %]
+[% inc file="re_any.py" %]
 
 With these classes in place,
 our tests all pass:

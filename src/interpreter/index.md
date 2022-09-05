@@ -53,7 +53,7 @@ We put the name of the operation first to make it easy to find.
 
 The function to add two expressions looks like this:
 
-[%excerpt f="expr.py" keep="do_add" %]
+[%inc file="expr.py" keep="do_add" %]
 
 Its single parameter is a list containing
 the two sub-expressions to be evaluated and added.
@@ -84,13 +84,13 @@ works the same way.
 The only differences are that it expects one value instead of two
 and calculates a different return value:
 
-[%excerpt f="expr.py" keep="do_abs" %]
+[%inc file="expr.py" keep="do_abs" %]
 
 `do_add` and `do_abs` both rely on `do`,
 which figures out what function corresponds to an operation name
 and calls it:
 
-[%excerpt f="expr.py" keep="do" %]
+[%inc file="expr.py" keep="do" %]
 
 `do` starts by checking if its input is an integer.
 If so,
@@ -109,18 +109,18 @@ the file containing the instructions to execute,
 calls `do`,
 and prints the result:
 
-[%excerpt f="expr.py" keep="main" %]
+[%inc file="expr.py" keep="main" %]
 
 Since our instructions are a list (of lists of lists…)
 we can use `json.load` to read the input file.
 If that file is:
 
-[% excerpt f="expr.tll" %]
+[% inc file="expr.tll" %]
 
 then our little interpreter prints:
 {: .continue}
 
-[% excerpt f="expr.out" %]
+[% inc file="expr.out" %]
 
 This is a lot of code to do something that Python already does,
 but the key point is that
@@ -149,18 +149,18 @@ because it is the setting in which expressions are evaluated.
 We can easily modify existing functions like `do_abs`
 to take an environment as an extra parameter and pass it on to `do` as needed:
 
-[% excerpt f="vars.py" keep="do_abs" %]
+[% inc file="vars.py" keep="do_abs" %]
 
 Looking up variables when we need their values is straightfoward.
 We check that we have a variable name and that the name is in the environment,
 then return the stored value:
 
-[% excerpt f="vars.py" keep="do_get" %]
+[% inc file="vars.py" keep="do_get" %]
 
 To define a new variable or change an existing one,
 we evaluate an expression and store its value in the environment:
 
-[% excerpt f="vars.py" keep="do_get" %]
+[% inc file="vars.py" keep="do_get" %]
 
 We need to add one more function to make this all work.
 Our programs no longer consist of a single expression;
@@ -170,17 +170,17 @@ and then use them in calculations.
 To handle this,
 we can add a function `do_seq` that runs a sequence of expressions one by one:
 
-[% excerpt f="vars.py" keep="do_seq" %]
+[% inc file="vars.py" keep="do_seq" %]
 
 Let's try it out.
 Our test program is:
 
-[% excerpt f="vars.tll" %]
+[% inc file="vars.tll" %]
 
 and its output is:
 {: .continue}
 
-[% excerpt f="vars.out" %]
+[% inc file="vars.out" %]
 
 ## Reflection {: #interpreter-reflection}
 
@@ -189,18 +189,18 @@ that controls when and how other expressions are evaluated.
 Before we add more (and more basic operations)
 let's have a look at the current state of `do`:
 
-[% excerpt f="vars.py" keep="do" %]
+[% inc file="vars.py" keep="do" %]
 
 The sequence of `if` statements that decide what function to call
 is going to become unreadably long.
 Let's create a lookup table instead:
 
-[% excerpt f="vars_table.py" keep="lookup" %]
+[% inc file="vars_table.py" keep="lookup" %]
 
 and then look up the function we want:
 {: .continue}
 
-[% excerpt f="vars_table.py" keep="do" %]
+[% inc file="vars_table.py" keep="do" %]
 
 This lookup table is the central point of this chapter.
 A program is just a data structure
@@ -261,7 +261,7 @@ our variable shows up along with the predefined ones:
 Let's use this to add every function whose name starts with `do_`
 to the `OPS` lookup table:
 
-[% excerpt f="vars_reflect.py" keep="lookup" %]
+[% inc file="vars_reflect.py" keep="lookup" %]
 
 Line by line:
 {: .continue}
@@ -284,12 +284,12 @@ We're finally ready to add some more control flow to our little languages.
 Our goal is to execute this program,
 which starts with the number 1 and doubles it four times:
 
-[% excerpt f="doubling.tll" %]
+[% inc file="doubling.tll" %]
 
 The simplest of the new operations is `comment`,
 which does nothing and returns `None`:
 
-[% excerpt f="stmt.py" keep="comment" %]
+[% inc file="stmt.py" keep="comment" %]
 
 An `if` statement is a bit more complex.
 If its first argument is true it evaluates and returns its second argument
@@ -297,7 +297,7 @@ If its first argument is true it evaluates and returns its second argument
 Otherwise,
 it evaluates and returns its second argument (the "else" branch):
 
-[% excerpt f="stmt.py" keep="if" %]
+[% inc file="stmt.py" keep="if" %]
 
 This is called [% g lazy_evaluation "lazy evaluation" %]:
 `do_if` only evaluates what it absolutely needs to.
@@ -389,20 +389,20 @@ Doing this makes the code less than 60 lines longer:
 
 Here's the implementation of `do_def`:
 
-[% excerpt f="func.py" keep="def" %]
+[% inc file="func.py" keep="def" %]
 
 And here's the implementation of `do_call`:
 
-[% excerpt f="func.py" keep="def" %]
+[% inc file="func.py" keep="def" %]
 
 Our test program looks like this:
 
-[% excerpt f="func.tll" %]
+[% inc file="func.tll" %]
 
 and its output is:
 {: .continue}
 
-[% excerpt f="func.out" %]
+[% inc file="func.out" %]
 
 Once again,
 the key point is that

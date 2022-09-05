@@ -96,12 +96,12 @@ Please do *not* add links directly with `[text](http://some.url)`:
 keeping the links in `./info/links.yml` ensures consistency
 and makes it easier to create a table of external links.
 
-### Code Excerpts
+### Code Inclusions
 
 1.  To include an entire file as a code sample write:
 
     ```markdown
-    [% excerpt f="some_name.py" %]
+    [% inc file="some_name.py" %]
     ```
 
     The file must be in or below the directory containing the Markdown file.
@@ -109,7 +109,7 @@ and makes it easier to create a table of external links.
 1.  To include only part of a file write:
 
     ```markdown
-    [% excerpt f="some_name.py" keep="some_key" %]
+    [% inc file="some_name.py" keep="some_key" %]
     ```
 
     and put matching tags in the file like this:
@@ -123,7 +123,7 @@ and makes it easier to create a table of external links.
 1.  To include several files (such as a program and its output) write:
 
     ```markdown
-    [% excerpt pat="some_stem.*" fill="py out" %]
+    [% inc pat="some_stem.*" fill="py out" %]
     ```
 
     This includes `some_stem.py` and `some_stem.out` in that order.

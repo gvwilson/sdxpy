@@ -92,7 +92,7 @@ then (B, C, A) and (C, B, A) are both valid topological orders of the graph.
 
 We will store our rules in [%g yaml "YAML" %] files like this:
 
-[% excerpt f="three_simple_rules.yml" %]
+[% inc file="three_simple_rules.yml" %]
 
 We could equally well have used [%g json "JSON" %],
 but it wouldn't have made sense to use [%g csv "CSV" %]:
@@ -104,44 +104,44 @@ We would normally implement all of the methods required by the builder at once,
 but to make the evolving code easier to follow we will write them them one by one.
 Let's start by writing a class that loads a configuration file:
 
-[% excerpt f="config_loader.py" keep="body" %]
+[% inc file="config_loader.py" keep="body" %]
 
 We need to check each rule because YAML is a generic file format
 that doesn't know anything about the extra requirements of our rules:
 
-[% excerpt f="config_loader.py" keep="check" %]
+[% inc file="config_loader.py" keep="check" %]
 
 The next step is to turn the configuration into a graph in memory.
 We derive a class from `ConfigLoader` so that we can recycle the code we've already written
 and call a couple of methods that we are planning to add:
 
-[% excerpt f="graph_creator.py" keep="body" %]
+[% inc file="graph_creator.py" keep="body" %]
 
 We use the [`networkx`][networkx] module to manage nodes and links
 rather than writing our own classes for graphs,
 and store the recipe to rebuild a node in that node:
 
-[% excerpt f="graph_creator.py" keep="build" %]
+[% inc file="graph_creator.py" keep="build" %]
 
 `networkx` provides implementations of some common graph algorithms,
 including one to find cycles,
 so let's write that next:
 
-[% excerpt f="graph_creator.py" keep="check" %]
+[% inc file="graph_creator.py" keep="check" %]
 
 Finally,
 we write a `__str__` method so we can see what we've built:
 
-[% excerpt f="graph_creator.py" keep="str" %]
+[% inc file="graph_creator.py" keep="str" %]
 
 When we run this with our three simple rules as input we get:
 
-[% excerpt pat="graph_creator.*" fill="sh out" %]
+[% inc pat="graph_creator.*" fill="sh out" %]
 
 Let's write a quick test to make sure the cycle detector works as intended:
 
-[% excerpt f="circular_rules.yml" %]
-[% excerpt pat="check_cycles.*" fill="sh out" %]
+[% inc file="circular_rules.yml" %]
+[% inc pat="check_cycles.*" fill="sh out" %]
 
 ## Stale Files {: #builder-timestamp}
 
@@ -160,23 +160,23 @@ so we will use the timestamp approach here,
 but instead of using a mock filesystem
 we will load another configuration file that specifies fake timestamps for files:
 
-[% excerpt f="add_timestamps.yml" %]
+[% inc file="add_timestamps.yml" %]
 
 Since we want to associate those timestamps with files,
 we add steps to the constructor and the `build` method
 to read the timestamp file and add information to the graph's nodes:
 
-[% excerpt f="add_timestamps.py" keep="body" %]
+[% inc file="add_timestamps.py" keep="body" %]
 
 and then implement `add_timestamps`:
 {: .continue}
 
-[% excerpt f="add_timestamps.py" keep="timestamps" %]
+[% inc file="add_timestamps.py" keep="timestamps" %]
 
 Before we move on,
 let's make sure that adding timestamps works as we want:
 
-[% excerpt pat="add_timestamps.*" fill="sh out" %]
+[% inc pat="add_timestamps.*" fill="sh out" %]
 
 ## Updating Files {: #builder-update}
 
@@ -189,7 +189,7 @@ to trigger an update of anything that depends on it.
 First,
 we add a step to `build`:
 
-[% excerpt f="update_timestamps.py" keep="body" %]
+[% inc file="update_timestamps.py" keep="body" %]
 
 Next,
 we implement the `run` method.
@@ -198,7 +198,7 @@ so we advance our fictional clock by one for each build.
 Using `networkx.topological_sort` to create the topological order,
 we get this:
 
-[% excerpt f="update_timestamps.py" keep="run" %]
+[% inc file="update_timestamps.py" keep="run" %]
 
 The `run` method:
 
@@ -215,16 +215,16 @@ In order to check if a file is stale,
 we see if any of its dependencies currently have timestamps
 greater than or equal to the target's timestamp:
 
-[% excerpt f="update_timestamps.py" keep="stale" %]
+[% inc file="update_timestamps.py" keep="stale" %]
 
 Our `update` method simply prints the actions it would take:
 
-[% excerpt f="update_timestamps.py" keep="update" %]
+[% inc file="update_timestamps.py" keep="update" %]
 
 When we run this,
 it seems to do the right thing:
 
-[% excerpt pat="update_timestamps.*" fill="sh out" %]
+[% inc pat="update_timestamps.*" fill="sh out" %]
 
 ## Variables {: #builder-variables}
 
@@ -266,12 +266,12 @@ and `@DEP[1]`, `@DEP[2]`, and so on for specific dependencies
 
 Our variable expander looks like this:
 
-[% excerpt f="expand_variables.py" keep="expand" %]
+[% inc file="expand_variables.py" keep="expand" %]
 
 The first thing we do is test that it works when there *aren't* any variables to expand
 by running it on the same example we used previously:
 
-[% excerpt pat="expand_variables_no_vars.*" fill="sh out" %]
+[% inc pat="expand_variables_no_vars.*" fill="sh out" %]
 
 This is perhaps the most important reason to create tests:
 they tell us if something we have added or changed
@@ -279,25 +279,25 @@ has broken something that used to work
 so that we have a solid base for new code.
 {: .continue}
 
-[% excerpt f="three_variable_rules.yml" %]
-[% excerpt pat="expand_variables_with_vars.*" fill="sh out" %]
+[% inc file="three_variable_rules.yml" %]
+[% inc pat="expand_variables_with_vars.*" fill="sh out" %]
 
 ## Generic Rules {: #builder-generic}
 
 Now we need to add [%i "pattern rule (in build)" "build!pattern rule" %][%g pattern_rule "pattern rules" %][%/i%]:
 Our test rules file is:
 
-[% excerpt f="pattern_rules.yml" %]
+[% inc file="pattern_rules.yml" %]
 
 and our first attempt at reading it extracts rules before expanding variables:
 {: .continue}
 
-[% excerpt f="pattern_attempt.py" keep="body" %]
+[% inc file="pattern_attempt.py" keep="body" %]
 
 However,
 it doesn't work:
 
-[% excerpt pat="pattern_attempt.*" fill="sh out" %]
+[% inc pat="pattern_attempt.*" fill="sh out" %]
 
 After a bit of poking around we realize that
 we're looking at the rule for `%.in`.
@@ -313,24 +313,24 @@ We can fix our problem by changing the `build_graph` method
 so that it saves pattern rules in a dictionary
 and then builds the graph from the non-pattern rules:
 
-[% excerpt f="pattern_final.py" keep="build" %]
+[% inc file="pattern_final.py" keep="build" %]
 
 Expanding rules relies on two helper methods:
 
-[% excerpt f="pattern_final.py" keep="expand" %]
+[% inc file="pattern_final.py" keep="expand" %]
 
 The first helper finds rules:
 
-[% excerpt f="pattern_final.py" keep="find" %]
+[% inc file="pattern_final.py" keep="find" %]
 
 and the second adds links and recipes to the graph:
 {: .continue}
 
-[% excerpt f="pattern_final.py" keep="fill" %]
+[% inc file="pattern_final.py" keep="fill" %]
 
 We're finally ready to test:
 
-[% excerpt pat="pattern_final.*" fill="sh out" %]
+[% inc pat="pattern_final.*" fill="sh out" %]
 
 ## Discussion {: #builder-discuss}
 

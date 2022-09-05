@@ -80,7 +80,7 @@ We can translate these rules almost directly into code
 to create a list of dictionaries whose keys are `"kind"` and `"loc"` (short for location),
 with the extra key `"value"` for literal values:
 
-[% excerpt f="tokenizer_collapse.py" omit="combine" %]
+[% inc file="tokenizer_collapse.py" omit="combine" %]
 
 The helper function `combine_or_push` does exactly what its name says.
 If the thing most recently added to the list of tokens isn't a literal,
@@ -88,11 +88,11 @@ the new character becomes a new token;
 otherwise,
 it appends the new character to the literal:
 
-[% excerpt f="tokenizer_collapse.py" keep="combine" %]
+[% inc file="tokenizer_collapse.py" keep="combine" %]
 
 We can try this out with a three-line test program:
 
-[% excerpt pat="tokenizer_collapse_example.*" fill="py out" %]
+[% inc pat="tokenizer_collapse_example.*" fill="py out" %]
 
 This simple tokenizer is readable, efficient, and wrong.
 The problem is that the expression `ab*` means "a single `a` followed by zero or more `b`".
@@ -100,21 +100,21 @@ If we combine the letters `a` and `b` as we read them,
 though,
 we wind up with "zero or more repetitions of `ab`":
 
-[% excerpt pat="tokenizer_collapse_error.*" fill="py out" %]
+[% inc pat="tokenizer_collapse_error.*" fill="py out" %]
 
 The solution is to treat each regular character as its own literal in this stage
 and then combine things later:
 Doing this lets us get rid of the nested `if` for handling `^` and `$` as well:
 
-[% excerpt f="tokenizer.py" keep="tokenize" %]
+[% inc file="tokenizer.py" keep="tokenize" %]
 
 Software isn't done until it's tested,
 so let's build some tests.
 The listing below shows a few of these
 along with the output for the full set:
 
-[% excerpt f="test_tokenizer.py" omit="omit" %]
-[% excerpt f="test_tokenizer.out" %]
+[% inc file="test_tokenizer.py" omit="omit" %]
+[% inc file="test_tokenizer.out" %]
 
 ## Assembling the Tree {: #parser-tree}
 
@@ -179,31 +179,31 @@ Again, this automatically handles patterns like `(ab)|c*|(de)`.
 Let's turn this idea into code.
 The main structure of our parser is:
 
-[% excerpt f="parser.py" omit="skip" %]
+[% inc file="parser.py" omit="skip" %]
 
 We handle tokens case by case
 (with a few assertions to check that patterns are [%g well_formed "well formed" %]):
 
-[% excerpt f="parser.py" keep="handle" %]
+[% inc file="parser.py" keep="handle" %]
 
 When we find the `)` that marks the end of a group,
 we take items from the end of the output list
 until we find the matching start
 and use them to create a group:
 
-[% excerpt f="parser.py" keep="groupend" %]
+[% inc file="parser.py" keep="groupend" %]
 
 Finally,
 when we have finished with the input,
 we go through the output list one last time to fill in the right side of `Alt`s:
 
-[% excerpt f="parser.py" keep="compress" %]
+[% inc file="parser.py" keep="compress" %]
 
 Once again,
 it's not done until we've tested it:
 
-[% excerpt f="test_parser.py" omit="omit" %]
-[% excerpt f="test_parser.out" %]
+[% inc file="test_parser.py" omit="omit" %]
+[% inc file="test_parser.out" %]
 
 Our tokenizer and parser is less than 100 lines of code combined,
 but they are doing some complex things.

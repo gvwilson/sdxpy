@@ -33,7 +33,7 @@ requires [%g concrete_class "concrete classes" %] to implement eight methods:
 -   `select`: create a new dataframe containing some or all of the original's columns.
 -   `filter`: create a new dataframe containing some or all of the original's rows.
 
-[% excerpt f="df_base.py" %]
+[% inc file="df_base.py" %]
 
 <div class="callout" markdown="1">
 
@@ -49,14 +49,14 @@ all of which are of the same type.
 The dataframe is a dictionary of such lists,
 all of which have the same length:
 
-[% excerpt f="df_col.py" keep="top" %]
+[% inc file="df_col.py" keep="top" %]
 
 Some methods are almost trivial to implement on top of this storage mechanism;
 others are more difficult.
 Three of the easy ones return the number of rows and columns
 and the names of the columns:
 
-[% excerpt f="df_col.py" keep="simple" %]
+[% inc file="df_col.py" keep="simple" %]
 
 [% fixme "why pop" %]
 
@@ -64,7 +64,7 @@ Testing for equality is also relatively simple.
 Two dataframes are the same if they have exactly the same columns
 and the same values in every column:
 
-[% excerpt f="df_col.py" keep="eq" %]
+[% inc file="df_col.py" keep="eq" %]
 
 Notice that we use `other.cols()` and `other.get()`
 rather than reaching into the other dataframe.
@@ -76,12 +76,12 @@ so we can only rely on the interface defined in the base class.
 
 Getting individual values is straightforward:
 
-[% excerpt f="df_col.py" keep="get" %]
+[% inc file="df_col.py" keep="get" %]
 
 Selecting a subset of columns is also straightforward:
 {: .continue}
 
-[% excerpt f="df_col.py" keep="select" %]
+[% inc file="df_col.py" keep="select" %]
 
 Notice,
 though,
@@ -95,12 +95,12 @@ so long as their contents are never changed in place.
 Time to write some tests.
 This one checks that we can construct a dataframe with some values:
 
-[% excerpt f="test_df_col.py" keep="test_two_pairs" %]
+[% inc file="test_df_col.py" keep="test_two_pairs" %]
 
 while this one checks that `filter` works correctly:
 {: .continue}
 
-[% excerpt f="test_df_col.py" keep="test_filter" %]
+[% inc file="test_df_col.py" keep="test_filter" %]
 
 ## Storing Rows
 
@@ -113,7 +113,7 @@ However,
 it stores data as a single list of dictionaries,
 each with the same keys and the same types of values:
 
-[% excerpt f="df_row.py" keep="top" %]
+[% inc file="df_row.py" keep="top" %]
 
 Notice that `DfRow`'s constructor *doesn't* have the same signature as `DfCol`.
 At some point in our code we have to decide which of the two classes to construct.
@@ -125,7 +125,7 @@ it's OK for the constructors to be different.
 
 The basic operations `ncol`, `nrow`, and `cols` are straightforward:
 
-[% excerpt f="df_row.py" keep="simple" %]
+[% inc file="df_row.py" keep="simple" %]
 
 Whenever we need information about columns,
 we look at the first row.
@@ -141,13 +141,13 @@ since they are the whole point of this implementation.
 To select columns we must build a new list of dictionaries,
 each of which has only some of the keys of the original:
 
-[% excerpt f="df_row.py" keep="select" %]
+[% inc file="df_row.py" keep="select" %]
 
 To filter,
 we simply pass each row to the user-supplied filter function:
 {: .continue}
 
-[% excerpt f="df_row.py" keep="filter" %]
+[% inc file="df_row.py" keep="filter" %]
 
 These operations are the inverses of their `DfCol` counterparts:
 we have to rearrange data to select
@@ -160,14 +160,14 @@ We obviously need to change the objects we construct,
 so let's use this opportunity to write helper functions
 to create the dataframes we use in multiple tests:
 
-[% excerpt f="test_df_row.py" keep="fixture" %]
+[% inc file="test_df_row.py" keep="fixture" %]
 
 Creating fixtures in functions is so common
 that [pytest][pytest] has built-in support for it;
 we will explore this in the exercises.
 With these functions in hand our tests look like:
 
-[% excerpt f="test_df_row.py" keep="test_two_pairs" %]
+[% inc file="test_df_row.py" keep="test_two_pairs" %]
 
 ## Performance {: #dataframe-performance}
 
@@ -181,7 +181,7 @@ and whose values are all integers in the range 0–9.
 A thorough set of [%g benchmark "benchmarks" %] would create columns of other kinds as well,
 but this is enough to illustrate the technique.
 
-[% excerpt f="timing.py" keep="create" %]
+[% inc file="timing.py" keep="create" %]
 
 To time filtering,
 we arbitrarily decide that we will keep rows an even value in the first column.
@@ -191,7 +191,7 @@ we would look at some actual programs
 to see what fraction of rows filtering usually kept,
 and then model that.
 
-[% excerpt f="timing.py" keep="filter" %]
+[% inc file="timing.py" keep="filter" %]
 
 Notice that `time_filter` doesn't know or care
 whether it's being given a `DfCol` or a `DfRow`.
@@ -204,7 +204,7 @@ Again,
 we make an arbitrary decision about how many columns to keep
 (in this case one third):
 
-[% excerpt f="timing.py" keep="select" %]
+[% inc file="timing.py" keep="select" %]
 
 Finally,
 we write a function that takes a list of strings like `3x3` or `100x20`,
@@ -212,7 +212,7 @@ creates a dataframe of each kind and of each size,
 times operations,
 and reports the results:
 
-[% excerpt f="timing.py" keep="sweep" %]
+[% inc file="timing.py" keep="sweep" %]
 
 The results are shown in [%t dataframe-timing %].
 For a 1000 by 1000 dataframe
@@ -231,7 +231,7 @@ while filtering is 1.8 times slower.
 
 We can get much more insight using Python [cProfile][cprofile] module:
 
-[% excerpt pat="profile.*" fill="sh out" %]
+[% inc pat="profile.*" fill="sh out" %]
 
 Ignoring the first two lines (which are the output of our program),
 the table tells us:

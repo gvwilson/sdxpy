@@ -44,10 +44,10 @@ INDEX_FILE = "index.md"
 MAKEFILE = "Makefile"
 RE_CODE_BLOCK = re.compile('```.+?```', re.DOTALL)
 RE_CODE_INLINE = re.compile('`.+?`')
-RE_FILE = re.compile(r'\[%\s*excerpt\b.+?f="(.+?)".+?%\]')
+RE_FILE = re.compile(r'\[%\s*inc\b.+?file="(.+?)".+?%\]')
 RE_FIGURE = re.compile(r'\[%\s*figure\b.+?img="(.+?)".+?%\]', re.DOTALL)
 RE_LINK = re.compile(r'\[[^]]+?\]\[(\w+?)\]')
-RE_PAT = re.compile(r'\[%\s*excerpt\b.+?pat="(.+?)"\s+fill="(.+?)".+?%\]')
+RE_PAT = re.compile(r'\[%\s*inc\b.+?pat="(.+?)"\s+fill="(.+?)".+?%\]')
 RE_SHORTCODE = re.compile(r'\[%.+?%\]')
 SLIDES_FILE = "slides.html"
 SLIDES_TEMPLATE = "slides"
@@ -107,12 +107,12 @@ def check_dom(dom_spec, html_files):
 
 
 def check_files(source_files):
-    """Check for excerpts and figures."""
+    """Check for inclusions and figures."""
     for (dirname, filename) in source_files:
         filepath = Path(dirname, filename)
-        referenced = get_excerpts(filepath) | get_figures(filepath)
+        referenced = get_inclusions(filepath) | get_figures(filepath)
         existing = get_files(dirname) - get_ignores(dirname)
-        report(f"{dirname}: excerpts", referenced, existing)
+        report(f"{dirname}: inclusions", referenced, existing)
 
 
 def check_glossary(glossary_file, language):
@@ -163,8 +163,8 @@ def check_slides(source_files):
             print(f"title mismatch: {slides_path} vs. {index_path}")
 
 
-def get_excerpts(filename):
-    """Find excerpt filenames."""
+def get_inclusions(filename):
+    """Find inclusion filenames."""
     with open(filename, "r") as reader:
         text = reader.read()
         result = {m.group(1) for m in RE_FILE.finditer(text)}

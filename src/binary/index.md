@@ -137,7 +137,7 @@ programmers often set a single bit,
 negative it with `~`,
 and then use `&`:
 
-[% excerpt f="bit_mask.py" %]
+[% inc file="bit_mask.py" %]
 
 Most C-inspired languages also provide [%g bit_shift "bit shifting" %] operators.
 that move bits left or right.
@@ -488,7 +488,7 @@ The inverse function, `unpack(format, string)` takes such a string and a format
 and returns a tuple containing the unpacked values.
 Here's an example:
 
-[% excerpt pat="simple_struct.*" fill="py out" %]
+[% inc pat="simple_struct.*" fill="py out" %]
 
 What is `\x1f` and why is it in our data?
 If Python finds a character in a string that doesn't have a printable representation,
@@ -530,7 +530,7 @@ only store 16 bits per sample.)
 Any format can be preceded by a count,
 so the format `"3i"` means "three integers":
 
-[% excerpt pat="pack_count.*" fill="py out" %]
+[% inc pat="pack_count.*" fill="py out" %]
 
 We get the wrong answer in the last call
 because we only told Python to pack five characters.
