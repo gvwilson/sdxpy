@@ -119,6 +119,11 @@ valid: docs/all.html
 	'Attribute "ix-ref" not allowed on element "a"' \
 	'Attribute "markdown" not allowed on element'
 
+## profile: profile compilation
+.PHONY: profile
+profile:
+	python bin/run_profile.py
+
 ## release: create archive of standard files
 .PHONY: release
 release:
