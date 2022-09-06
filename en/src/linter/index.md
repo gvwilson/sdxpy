@@ -10,9 +10,10 @@ syllabus:
 
 - `walk_ast.py`
 
-## Variable Usage {: #linter-vars}
+## Duplicate Keys in Dictionaries
 
-
+- `has_duplicate_keys.py` produces `has_duplicate_keys_ast.out`
+- `find_duplicate_keys.py` with `has_duplicate_keys.py`
 
 # Exercises {: #linter-exercises}
 
