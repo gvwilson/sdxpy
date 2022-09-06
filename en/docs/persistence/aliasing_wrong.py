@@ -66,7 +66,7 @@ class LoadAlias(LoadOop):
         assert len(fields) == 3, f"Badly-formed line {line}"
         key, ident, value = fields
 
-        # [mistake]
+        # the lines below contain a bug
         if key == "alias":
             assert ident in self.seen
             return self.seen[ident]
@@ -76,5 +76,4 @@ class LoadAlias(LoadOop):
         result = getattr(self, method)(value)
         self.seen[ident] = result
         return result
-        # [/mistake]
 # [/load]

@@ -343,10 +343,8 @@ but then says it can't find the object being referred to.
    caption="FIXME"
 %]
 
-The problem is in these lines in `LoadAlias.load`:
-
-[% inc file="aliasing_wrong.py" keep="mistake" %]
-
+The problem is these lines in `LoadAlias.load`
+marked as containing a bug,
 in combination with these lines inherited from `LoadOop`:
 {: .continue}
 
