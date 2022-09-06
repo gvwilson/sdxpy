@@ -4,4 +4,8 @@ syllabus:
 - FIXME
 ---
 
-FIXME
+- `dump_ast.py`
+
+- `walk_ast.py`
+
+
