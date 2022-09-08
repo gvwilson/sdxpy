@@ -1,6 +1,7 @@
 import ast
 import sys
 
+# [class]
 class CollectNames(ast.NodeVisitor):
     def __init__(self):
         super().__init__()
@@ -22,10 +23,13 @@ class CollectNames(ast.NodeVisitor):
 
     def position(self, node):
         return ({node.lineno}, {node.col_offset})
+# [/class]
 
+# [main]
 with open(sys.argv[1], "r") as reader:
     source = reader.read()
 tree = ast.parse(source)
 collector = CollectNames()
 collector.visit(tree)
 print(collector.names)
+# [/main]

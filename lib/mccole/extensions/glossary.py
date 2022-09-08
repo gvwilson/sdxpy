@@ -4,7 +4,6 @@ import re
 
 import ivy
 import shortcodes
-
 import util
 
 # Regex to extract internal cross-references from bodies of definitions.

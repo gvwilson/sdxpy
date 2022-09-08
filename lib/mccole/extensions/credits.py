@@ -2,9 +2,8 @@
 
 import ivy
 import shortcodes
-import yaml
-
 import util
+import yaml
 
 
 @shortcodes.register("credits")

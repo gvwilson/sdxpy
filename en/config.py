@@ -59,7 +59,6 @@ todo = {
     "filecache",
     "database",
     "packman",
-    "linter",
     "docgen",
     "debugger",
 }

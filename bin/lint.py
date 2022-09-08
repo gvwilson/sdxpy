@@ -10,8 +10,7 @@ from pathlib import Path
 
 import utils
 from bs4 import BeautifulSoup, Tag
-from yaml_header_tools import get_header_from_file, NoValidHeader
-
+from yaml_header_tools import NoValidHeader, get_header_from_file
 
 CONFIGURATION = [
     ("abbrev", str),
@@ -42,13 +41,13 @@ CONFIGURATION = [
 IGNORE_FILE = ".mccoleignore"
 INDEX_FILE = "index.md"
 MAKEFILE = "Makefile"
-RE_CODE_BLOCK = re.compile('```.+?```', re.DOTALL)
-RE_CODE_INLINE = re.compile('`.+?`')
+RE_CODE_BLOCK = re.compile("```.+?```", re.DOTALL)
+RE_CODE_INLINE = re.compile("`.+?`")
 RE_FILE = re.compile(r'\[%\s*inc\b.+?file="(.+?)".+?%\]')
 RE_FIGURE = re.compile(r'\[%\s*figure\b.+?img="(.+?)".+?%\]', re.DOTALL)
-RE_LINK = re.compile(r'\[[^]]+?\]\[(\w+?)\]')
+RE_LINK = re.compile(r"\[[^]]+?\]\[(\w+?)\]")
 RE_PAT = re.compile(r'\[%\s*inc\b.+?pat="(.+?)"\s+fill="(.+?)".+?%\]')
-RE_SHORTCODE = re.compile(r'\[%.+?%\]')
+RE_SHORTCODE = re.compile(r"\[%.+?%\]")
 SLIDES_FILE = "slides.html"
 SLIDES_TEMPLATE = "slides"
 
@@ -79,6 +78,7 @@ def main():
 
 def check_config(config_path):
     """Check configuration file."""
+
     def _require(m, field, kind):
         if field not in dir(m):
             print(f"Configuration does not have {field}")
@@ -123,7 +123,7 @@ def check_glossary(glossary_file, language):
         print("glossary entries without keys: {missing_keys}")
         return
 
-    glossary = {g["key"]:g for g in glossary}
+    glossary = {g["key"]: g for g in glossary}
     for (key, entry) in sorted(glossary.items()):
         if language not in entry:
             print("glossary entry {key} missing {language}")

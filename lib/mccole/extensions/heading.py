@@ -3,7 +3,6 @@
 import sys
 
 import shortcodes
-
 import util
 
 

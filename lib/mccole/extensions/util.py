@@ -124,10 +124,7 @@ def make_major():
     This function relies on the configuration containing `"chapters"`
     and `"appendices"`, which must be lists of slugs.
     """
-    chapters = {
-        slug: i+1
-        for (i, slug) in enumerate(ivy.site.config["chapters"])
-    }
+    chapters = {slug: i + 1 for (i, slug) in enumerate(ivy.site.config["chapters"])}
     appendices = {
         slug: chr(ord("A") + i)
         for (i, slug) in enumerate(ivy.site.config["appendices"])

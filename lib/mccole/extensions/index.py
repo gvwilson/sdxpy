@@ -14,7 +14,6 @@ around the glossary shortcode:
 """
 
 import shortcodes
-
 import util
 
 

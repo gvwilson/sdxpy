@@ -2,7 +2,6 @@ from dataclasses import dataclass
 
 import ivy
 import shortcodes
-
 import util
 
 
@@ -309,10 +308,7 @@ def titles_collect():
     ivy.nodes.root().walk(lambda node: _titles_collect(info, node))
     chapters = [(slug, info[slug]) for slug in ivy.site.config["chapters"]]
     appendices = [(slug, info[slug]) for slug in ivy.site.config["appendices"]]
-    util.make_config(
-        "titles",
-        {"chapters": chapters, "appendices": appendices}
-    )
+    util.make_config("titles", {"chapters": chapters, "appendices": appendices})
 
 
 def _titles_collect(info, node):

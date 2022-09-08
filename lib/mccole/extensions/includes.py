@@ -36,8 +36,8 @@ To make this work:
     does nothing; otehrwise, it dispatches to a case-specific handler.
 """
 
-from pathlib import Path
 import shutil
+from pathlib import Path
 
 import ivy
 import shortcodes

@@ -25,7 +25,7 @@ commands:
 
 ## build: rebuild site without running server
 build: ./docs/index.html
-./docs/index.html: ${SRC} ${INFO} ${IVY} config.py
+./docs/index.html: ${SRC} ${INFO} ${IVY} ${CONFIG}
 	ivy build && touch $@
 
 ## serve: build site and run server
@@ -78,7 +78,7 @@ check: lint
 .PHONY: lint
 lint: clean build
 	@python ./bin/lint.py \
-	--config config.py
+	--config ${CONFIG}
 
 ## examples: re-run examples
 .PHONY: examples
