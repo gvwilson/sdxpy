@@ -54,7 +54,7 @@ Some of these rely on scripts in the `./bin/` directory.
 ### Chapters and Appendices
 
 1.  Each chapter or appendix has a unique slug such as `topic`.
-    Its text lives in <code>./src/<em>topic</em>/index.md</code>,
+    Its text lives in <code>./<em>lang</em>/src/<em>topic</em>/index.md</code>,
     and there is an entry for it in the `chapters` or `appendices` list in `./config.py`
     (which control ordering).
 
@@ -74,17 +74,20 @@ Some of these rely on scripts in the `./bin/` directory.
 1.  To create a cross-reference to a chapter or appendix write:
 
     ```markdown
-    [% x topic %]
+    [%x topic %]
     ```
 
     where `topic` is the slug of the chapter being referred to.
-    This shortcode is converted to `Chapter N` or `Appendix N` as appropriate.
+    This shortcode is converted to `Chapter N` or `Appendix N`
+    or the equivalent in other languages.
     Please only refer to chapters or appendices, not to sections.
 
 ### External Links
 
 1.  The table of external links lives in `./info/links.yml`.
-    Please add entries as needed.
+    Please add entries as needed,
+    or add translations of URLs to existing entries using
+    a two-letter language code as a key.
 
 1.  To refer to an external link write:
 
@@ -142,10 +145,12 @@ and makes it easier to create a table of external links.
     %]
     ```
 
+    Please use underscores in filenames for consistency.
+
 1.  To refer to a figure write:
 
     ```markdown
-    [% f topic-someword %]
+    [%f topic-someword %]
     ```
 
     This is converted to `Figure N.K`.
@@ -153,7 +158,7 @@ and makes it easier to create a table of external links.
 1.  Use [diagrams.net][diagrams] to create SVG diagrams
     using the "sketch" style and a 12-point Comic Sans font.
 
-1.  Avoid screenshots if at all possible:
+1.  Avoid screenshots:
     making them display correctly in print is difficult.
 
 ### Tables
@@ -175,7 +180,7 @@ so we must do something a bit clumsy.
 1.  To refer to a table write:
 
     ```markdown
-    [% t topic-someword %]
+    [%t topic-someword %]
     ```
 
     This is converted to `Table N.K`.
@@ -193,43 +198,42 @@ so we must do something a bit clumsy.
 1.  To cite bibliography entries write:
 
     ```markdown
-    [% b key1 key2 key3 %]
+    [%b key1 key2 key3 %]
     ```
 
 ### Glossary
 
-Please do not worry about adding entries for now;
-we will fill in the glossary during the final editing pass.
-
 1.  The glossary lives in `./info/glossary.yml` and uses [Glosario][glosario] format.
+
+1.  When translating the glossary,
+    please add definitions and acronyms under a two-letter language key
+    rather than duplicating entries.
+    Please do *not* translate entries' `key` values.
 
 1.  To cite glossary entries write:
 
     ```markdown
-    [% g some_key "text for document" %]
+    [%g some_key "text for document" %]
     ```
 
 ### Index
 
-Please do not worry about adding entries for now;
-we will fill in the index during the final editing pass.
-
 1.  To create a simple index entry write:
 
     ```markdown
-    [% i "index text" %]body text[% /i %]
+    [%i "index text" %]body text[%/i%]
     ```
 
 1.  Separate multiple index entries with semi-colons:
 
     ```markdown
-    [% i "first; second; third" %]body text[% /i %]
+    [%i "first; second; third" %]body text[%/i%]
     ```
 
 1.  Create sub-entries using `!`:
 
     ```markdown
-    [% i "major!minor" %]body text[% /i %]
+    [%i "major!minor" %]body text[%/i%]
     ```
 
 ### Minor Formatting
@@ -262,15 +266,24 @@ we will fill in the index during the final editing pass.
     You *must* include `markdown="1"` in the opening `<div>` tag
     to ensure that Markdown inside the callout is processed.
 
-    Note: earlier versions of this template used `blockquote` rather than `div` callouts.
-    Please only use the former for actual quotations.
+## Building the HTML
+
+1.  Pages use the template in `lib/mccole/templates/node.ibis`,
+    which includes snippets from the same directory.
+
+1.  Our CSS is in `lib/mccole/resources/mccole.css`.
+    We also use `lib/mccole/resources/tango.css` for styling code fragments.
+    We do *not* rely on any JavaScript in our pages.
+
+1.  To produce HTML, run `make build` in <code>./<em>lang</em></code>
+    to update the files in <code>./<em>lang</em>/docs</code>.
+    You can also run `make serve` to preview files locally
+    or `make lint` to check for common errors.
 
 ## Building the PDF
 
 We use LaTeX to build the PDF version of this book.
-Please don't worry about this for now,
-but if you want to see what the print version will look like
-you will need to install this packages:
+you will need these packages with `tlmgr` in order to build the PDF:
 
 -   `babel-english`
 -   `babel-greek`
