@@ -295,7 +295,16 @@ none of that requires us to inspect the AST.
 | red | X |   | X | X
 </div>
 
-# Exercises {: #linter-exercises}
+## Extension {: #linter-extension}
+
+- `injection.py` to show that we can add handlers
+  - but what if we want to add lots?
+
+- `register.py` uses a generic mechanism
+  - have to create our own visitor with overrides for all the methods
+  - but then we can add as much as we want
+
+## Exercises {: #linter-exercises}
 
 FIXME
 

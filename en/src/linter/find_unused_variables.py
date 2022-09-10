@@ -1,5 +1,5 @@
 import ast
-from collections import Counter, namedtuple
+from collections import namedtuple
 import sys
 
 # [scope]
