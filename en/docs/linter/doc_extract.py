@@ -5,6 +5,7 @@ from pathlib import Path
 import sys
 
 
+# [start]
 class Extract(ast.NodeVisitor):
     """Extraction class."""
 
@@ -19,18 +20,14 @@ class Extract(ast.NodeVisitor):
                 module_name = Path(filename).stem
                 extracter.extract_from(module_name, tree)
         return extracter.seen
+# [/start]
 
+    # [body]
     def __init__(self):
         """Constructor."""
         super().__init__()
         self.stack = []
         self.seen = {}
-
-    def extract_from(self, module_name, tree):
-        """Start extraction for a module."""
-        self.save("module", module_name, tree)
-        self.visit(tree)
-        self.stack.pop()
 
     def visit_ClassDef(self, node):
         """Get docstring from class."""
@@ -38,10 +35,10 @@ class Extract(ast.NodeVisitor):
         self.generic_visit(node)
         self.stack.pop()
 
-    def visit_FunctionDef(self, node):
-        """Get docstring from function."""
-        self.save("function", node.name, node)
-        self.generic_visit(node)
+    def extract_from(self, module_name, tree):
+        """Start extraction for a module."""
+        self.save("module", module_name, tree)
+        self.visit(tree)
         self.stack.pop()
 
     def save(self, kind, name, node):
@@ -49,6 +46,13 @@ class Extract(ast.NodeVisitor):
         self.stack.append(name)
         docstring = ast.get_docstring(node)
         self.seen[".".join(self.stack)] = (kind, docstring)
+    # [/body]
+
+    def visit_FunctionDef(self, node):
+        """Get docstring from function."""
+        self.save("function", node.name, node)
+        self.generic_visit(node)
+        self.stack.pop()
 
 
 if __name__ == "__main__":

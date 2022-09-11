@@ -3,6 +3,9 @@
 def function(param):
     """Docstring for function."""
 
+def undocumented(param):
+    pass
+
 class Sample:
     """Docstring for class."""
 

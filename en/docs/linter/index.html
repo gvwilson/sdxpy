@@ -138,12 +138,6 @@
     </a>
   </li>
   
-  <li class="todo">
-    <a href="../docgen/">
-      A Documentation Generator
-    </a>
-  </li>
-  
   <li>
     <a href="../codegen/">
       A Code Generator
@@ -273,8 +267,6 @@
   <li markdown="1">FIXME</li>
   
   </ul>
-  
-
   
 
   
@@ -936,7 +928,127 @@ for each kind of node.
 And as with the pipelines in <a class="x-ref" href="../pipeline/">Chapter 6</a>,
 we can use configuration files to control
 which handlers are loaded.</p>
-<h2 id="linter-exercises">Section 18.4: Exercises</h2>
+<h2 id="linter-docs">Section 18.4: Generating Documentation</h2>
+<p>Many programmers believe they're more likely to write documentation and keep it up to date
+if it is close to the code.
+Tools that extract specially-formatted comments from code and turn them into documentation
+have been around since at least the 1980s;
+both <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a href="https://www.mkdocs.org/">MkDocs</a> are popular ones for Python.</p>
+<p>Generating documentation isn't the same as checking code style,
+but they share some tooling.
+Let's start by building a <code>NodeVisitor</code> that extracts and saves docstrings:</p>
+<div class="code-sample lang-py" title="doc_extract.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Extract</span><span class="p">(</span><span class="n">ast</span><span class="o">.</span><span class="n">NodeVisitor</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Extraction class.&quot;&quot;&quot;</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">extract</span><span class="p">(</span><span class="n">filenames</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Entry-level method.&quot;&quot;&quot;</span>
+        <span class="n">extracter</span> <span class="o">=</span> <span class="n">Extract</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">filename</span> <span class="ow">in</span> <span class="n">filenames</span><span class="p">:</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">reader</span><span class="p">:</span>
+                <span class="n">source</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+                <span class="n">tree</span> <span class="o">=</span> <span class="n">ast</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+                <span class="n">module_name</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span><span class="o">.</span><span class="n">stem</span>
+                <span class="n">extracter</span><span class="o">.</span><span class="n">extract_from</span><span class="p">(</span><span class="n">module_name</span><span class="p">,</span> <span class="n">tree</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">extracter</span><span class="o">.</span><span class="n">seen</span>
+</code></pre></div>
+</div>
+<p>The code to create a stack,
+extract docstrings,
+and save them in a dictionary should look familiar by now:</p>
+<div class="code-sample lang-py" title="doc_extract.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Constructor.&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stack</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">seen</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">def</span> <span class="nf">visit_ClassDef</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get docstring from class.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s2">&quot;class&quot;</span><span class="p">,</span> <span class="n">node</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">node</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">generic_visit</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stack</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">extract_from</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module_name</span><span class="p">,</span> <span class="n">tree</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Start extraction for a module.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s2">&quot;module&quot;</span><span class="p">,</span> <span class="n">module_name</span><span class="p">,</span> <span class="n">tree</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stack</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kind</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Save information about a docstring.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stack</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="n">docstring</span> <span class="o">=</span> <span class="n">ast</span><span class="o">.</span><span class="n">get_docstring</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">seen</span><span class="p">[</span><span class="s2">&quot;.&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stack</span><span class="p">)]</span> <span class="o">=</span> <span class="p">(</span><span class="n">kind</span><span class="p">,</span> <span class="n">docstring</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<p>To format the docstrings,
+we create a Markdown page with module, class, and function names as headers:</p>
+<div class="code-sample lang-py" title="doc_format.py">
+<div class="highlight"><pre><span></span><code><span class="n">HEADING</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;module&quot;</span><span class="p">:</span> <span class="s2">&quot;#&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;class&quot;</span><span class="p">:</span> <span class="s2">&quot;##&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;function&quot;</span><span class="p">:</span> <span class="s2">&quot;##&quot;</span>
+<span class="p">}</span>
+
+<span class="n">MISSING</span> <span class="o">=</span> <span class="s2">&quot;**No documentation.**&quot;</span>
+
+<span class="k">def</span> <span class="nf">format</span><span class="p">(</span><span class="n">docstrings</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Convert dictionary of docstrings to HTML page.&quot;&quot;&quot;</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="p">(</span><span class="n">kind</span><span class="p">,</span> <span class="n">docstring</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">docstrings</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+        <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">make_heading</span><span class="p">(</span><span class="n">kind</span><span class="p">,</span> <span class="n">key</span><span class="p">))</span>
+        <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">docstring</span> <span class="k">if</span> <span class="n">docstring</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">MISSING</span><span class="p">)</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">markdown</span><span class="o">.</span><span class="n">markdown</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">extensions</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;markdown.extensions.extra&quot;</span><span class="p">])</span>
+
+<span class="k">def</span> <span class="nf">format_key</span><span class="p">(</span><span class="n">key</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">key</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">,</span> <span class="s2">&quot;-&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;\_&quot;</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">make_heading</span><span class="p">(</span><span class="n">kind</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">HEADING</span><span class="p">[</span><span class="n">kind</span><span class="p">]</span><span class="si">}</span><span class="s2"> `</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">` </span><span class="se">{{</span><span class="s2">: #</span><span class="si">{</span><span class="n">format_key</span><span class="p">(</span><span class="n">key</span><span class="p">)</span><span class="si">}</span><span class="se">}}</span><span class="s2">&quot;</span>
+</code></pre></div>
+</div>
+<p>If our input file looks like this:</p>
+<div class="code-sample lang-py" title="doc_sample.py">
+<div class="highlight"><pre><span></span><code><span class="sd">&quot;&quot;&quot;Docstring for module.&quot;&quot;&quot;</span>
+
+<span class="k">def</span> <span class="nf">function</span><span class="p">(</span><span class="n">param</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Docstring for function.&quot;&quot;&quot;</span>
+
+<span class="k">def</span> <span class="nf">undocumented</span><span class="p">(</span><span class="n">param</span><span class="p">):</span>
+    <span class="k">pass</span>
+
+<span class="k">class</span> <span class="nc">Sample</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Docstring for class.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Docstring for constructor.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+
+    <span class="k">def</span> <span class="nf">rename</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Docstring for method.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">new_name</span>
+</code></pre></div>
+</div>
+<p class="continue">then our output is:</p>
+<div class="html">
+<h1 id="doc_sample"><code>doc_sample</code></h1>
+<p>Docstring for module.</p>
+<h2 id="doc_sample-Sample"><code>doc_sample.Sample</code></h2>
+<p>Docstring for class.</p>
+<h2 id="doc_sample-Sample-__init__"><code>doc_sample.Sample.__init__</code></h2>
+<p>Docstring for constructor.</p>
+<h2 id="doc_sample-Sample-rename"><code>doc_sample.Sample.rename</code></h2>
+<p>Docstring for method.</p>
+<h2 id="doc_sample-function"><code>doc_sample.function</code></h2>
+<p>Docstring for function.</p>
+<h2 id="doc_sample-undocumented"><code>doc_sample.undocumented</code></h2>
+<p><strong>No documentation.</strong></p>
+</div>
+
+<h2 id="linter-exercises">Section 18.5: Exercises</h2>
 <h3 class="exercise">Finding unused parameters</h3>
 <p>Modify the code that finds unused variables
 to report unused function parameters as well.</p>

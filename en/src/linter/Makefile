@@ -1,4 +1,5 @@
 TARGETS=\
+  doc_sample.out \
   dump_ast_double.out \
   dump_ast_simple.out \
   find_unused_variables.out \
@@ -7,6 +8,9 @@ TARGETS=\
   walk_ast.out
 
 include ../../examples.mk
+
+doc_sample.out: doc_sample.py doc_extract.py doc_format.py
+	python doc_format.py doc_sample.py > $@
 
 dump_ast_simple.out: dump_ast.py simple.py
 dump_ast_double.out: dump_ast.py double.py

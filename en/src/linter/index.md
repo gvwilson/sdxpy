@@ -375,6 +375,40 @@ And as with the pipelines in [%x pipeline %],
 we can use configuration files to control
 which handlers are loaded.
 
+## Generating Documentation {: #linter-docs}
+
+Many programmers believe they're more likely to write documentation and keep it up to date
+if it is close to the code.
+Tools that extract specially-formatted comments from code and turn them into documentation
+have been around since at least the 1980s;
+both [Sphinx][sphinx] and [MkDocs][mkdocs] are popular ones for Python.
+
+Generating documentation isn't the same as checking code style,
+but they share some tooling.
+Let's start by building a `NodeVisitor` that extracts and saves docstrings:
+
+[% inc file="doc_extract.py" keep="start" %]
+
+The code to create a stack,
+extract docstrings,
+and save them in a dictionary should look familiar by now:
+
+[% inc file="doc_extract.py" keep="body" %]
+
+To format the docstrings,
+we create a Markdown page with module, class, and function names as headers:
+
+[% inc file="doc_format.py" keep="format" %]
+
+If our input file looks like this:
+
+[% inc file="doc_sample.py" %]
+
+then our output is:
+{: .continue}
+
+[% inc html="doc_sample.out" %]
+
 ## Exercises {: #linter-exercises}
 
 ### Finding unused parameters {: .exercise}

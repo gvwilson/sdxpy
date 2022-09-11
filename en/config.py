@@ -34,7 +34,6 @@ chapters = [
     "packman",
     "layout",
     "linter",
-    "docgen",
     "codegen",
     "vm",
     "debugger",
@@ -59,7 +58,6 @@ todo = {
     "filecache",
     "database",
     "packman",
-    "docgen",
     "debugger",
 }
 

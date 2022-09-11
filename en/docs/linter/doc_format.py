@@ -5,9 +5,10 @@ import sys
 import markdown
 from markdown.extensions import Extension
 
-from extract import Extract
+from doc_extract import Extract
 
 
+# [format]
 HEADING = {
     "module": "#",
     "class": "##",
@@ -15,7 +16,6 @@ HEADING = {
 }
 
 MISSING = "**No documentation.**"
-
 
 def format(docstrings):
     """Convert dictionary of docstrings to HTML page."""
@@ -26,9 +26,12 @@ def format(docstrings):
     result = "\n\n".join(result)
     return markdown.markdown(result, extensions=["markdown.extensions.extra"])
 
+def format_key(key):
+    return key.replace(".", "-").replace("_", r"\_")
 
 def make_heading(kind, key):
-    return f"{HEADING[kind]} `{key}` {{: .{key.replace('.', '-')}}}"
+    return f"{HEADING[kind]} `{key}` {{: #{format_key(key)}}}"
+# [/format]
 
 
 def main(filenames):

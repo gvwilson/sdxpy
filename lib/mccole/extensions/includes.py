@@ -68,12 +68,14 @@ def include(pargs, kwargs, node):
     """Handle a file inclusion, possibly excerpting."""
     # Error checking.
     if pargs:
-        util.fail(f"Badly-formatted excerpt shortcode with {pargs} in {node.filepath}")
+        util.fail(f"Badly-formatted 'inc' shortcode with {pargs} in {node.filepath}")
 
     # Handle by cases.
     inclusions = util.make_config("inclusions")
     if ("pat" in kwargs) and ("fill" in kwargs):
         return _multi(inclusions, node, **kwargs)
+    elif "html" in kwargs:
+        return _html(inclusions, node, **kwargs)
     elif "file" not in kwargs:
         util.fail(f"Badly-formatted excerpt shortcode with {kwargs} in {node.filepath}")
     elif ("keep" in kwargs) and ("omit" in kwargs):
@@ -90,6 +92,14 @@ def _file(inclusions, node, file):
     """Handle a simple file inclusion."""
     filepath = _inclusion_filepath(inclusions, node, file)
     return _include_file(node, filepath)
+
+
+def _html(inclusions, node, html):
+    """Handle an HTML file inclusion."""
+    filepath = _inclusion_filepath(inclusions, node, html)
+    with open(filepath, "r") as reader:
+        content = reader.read().rstrip()
+    return f'<div class="html">\n{content}\n</div>'
 
 
 def _keep(inclusions, node, file, keep):

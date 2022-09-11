@@ -33,7 +33,7 @@ The first build manager,
 was created to handle compilation of C programs,
 but build managers are used to update packages,
 regenerate websites ([%x templating %]),
-or re-create documentation from source code ([%x docgen %]).
+or re-create documentation from source code.
 This chapter creates a simple build manager to illustrate how they work.
 
 ## Structure {: #builder-structure}
