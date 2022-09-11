@@ -296,7 +296,7 @@
   
   <p class="definitions">
     Terms defined:
-    <a class="gl-ref" href="../glossary/#abstract_syntax_tree" markdown="1">abstract syntax tree</a>, <a class="gl-ref" href="../glossary/#false_negative" markdown="1">false negative</a>, <a class="gl-ref" href="../glossary/#linter" markdown="1">linter</a>, <a class="gl-ref" href="../glossary/#scope" markdown="1">scope</a>
+    <a class="gl-ref" href="../glossary/#abstract_syntax_tree" markdown="1">abstract syntax tree</a>, <a class="gl-ref" href="../glossary/#false_negative" markdown="1">false negative</a>, <a class="gl-ref" href="../glossary/#linter" markdown="1">linter</a>, <a class="gl-ref" href="../glossary/#method_injection" markdown="1">method injection</a>, <a class="gl-ref" href="../glossary/#scope" markdown="1">scope</a>, <a class="gl-ref" href="../glossary/#topological_order" markdown="1">topological order</a>
   </p>
   
 
@@ -822,10 +822,147 @@ none of that requires us to inspect the AST.</p>
 | orange | X |   |   |
 | red | X |   | X | X</p>
 </div>
-<h1 id="linter-exercises">Section 18.2.2: Exercises</h1>
-<p>FIXME</p>
-<p>find unused parameters as well as unused variables</p>
-<p>check that class names are CamelCase but functions and variable are pothole_case</p>
+<h2 id="linter-extension">Section 18.3: Extension</h2>
+<p>It's easy to check a single style rule by extending <code>NodeVisitor</code>,
+but what if we want to check dozens of rules?
+Traversing the AST dozens of times would be inefficient.
+And what if we want people to be able to add their own rules?
+Inheritance is the wrong tool for this:
+if several people each create their own <code>NodeVisitor</code> with a <code>visit_Name</code> method,
+we'd have to inherit from all those classes
+and then have the new class's <code>visit_Name</code> call up to all of its parents' equivalent methods.</p>
+<p>One way around this is to <a class="gl-ref" href="../glossary/#method_injection" markdown="1">inject</a> methods into classes
+after they have been defined.
+The code fragment below creates a new class called <code>BlankNodeVisitor</code>
+that doesn't add anything to <code>NodeVisitor</code>,
+then uses <code>setattr</code> to add a method to it after it has been defined:</p>
+<div class="code-sample lang-py" title="injection.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">BlankNodeVisitor</span><span class="p">(</span><span class="n">ast</span><span class="o">.</span><span class="n">NodeVisitor</span><span class="p">):</span>
+    <span class="k">pass</span>
+
+<span class="k">def</span> <span class="nf">print_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+
+<span class="nb">setattr</span><span class="p">(</span><span class="n">BlankNodeVisitor</span><span class="p">,</span> <span class="s2">&quot;visit_Name&quot;</span><span class="p">,</span> <span class="n">print_name</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<p>This trick works because classes and objects are just specialized dictionaries
+(for some large value of "just").
+If we create an object of <code>BlankNodeVisitor</code> and call its <code>visit</code> method:</p>
+<div class="code-sample lang-py" title="injection.py">
+<div class="highlight"><pre><span></span><code><span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">reader</span><span class="p">:</span>
+    <span class="n">source</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+<span class="n">tree</span> <span class="o">=</span> <span class="n">ast</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+<span class="n">finder</span> <span class="o">=</span> <span class="n">BlankNodeVisitor</span><span class="p">()</span>
+<span class="n">finder</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<p>then the inherited <code>generic_visit</code> method does what it always does.
+When it encounters a <code>Name</code> node,
+it looks in the object for something called <code>visit_Name</code>.
+Since it doesn't find anything,
+it looks in the object's class for something with that name,
+finds our injected method,
+and calls it.</p>
+<p>With a bit more work we could have our injected method save and then call
+whatever <code>visit_Name</code> method was there when it was added to the class,
+but we would quickly run into a problem.
+As we've seen in earlier examples,
+the methods that handle nodes are responsible for deciding
+whether and when to recurse into those nodes' children.
+If we pile method on top of one another,
+then either each one is going to trigger recursion
+(so we recurse many times)
+or there will have to be some way for each one to signal
+whether it did that
+so that other methods don't.</p>
+<p>To avoid this complication,
+most systems use a different approach.
+Consider this class:</p>
+<div class="code-sample lang-py" title="register.py">
+<div class="highlight"><pre><span></span><code><span class="n">Handler</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s2">&quot;Handler&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;func&quot;</span><span class="p">,</span> <span class="s2">&quot;data&quot;</span><span class="p">])</span>
+
+<span class="k">class</span> <span class="nc">RegisterNodeVisitor</span><span class="p">(</span><span class="n">ast</span><span class="o">.</span><span class="n">NodeVisitor</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">handlers</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">def</span> <span class="nf">add_handler</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nodeType</span><span class="p">,</span> <span class="n">func</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">handler</span> <span class="o">=</span> <span class="n">Handler</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">nodeType</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">handlers</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">handlers</span><span class="p">[</span><span class="n">nodeType</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">handlers</span><span class="p">[</span><span class="n">nodeType</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">handler</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">visit_Name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">handler</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">handlers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">ast</span><span class="o">.</span><span class="n">Name</span><span class="p">,</span> <span class="p">[]):</span>
+            <span class="n">handler</span><span class="o">.</span><span class="n">func</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">handler</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<p>The <code>add_handler</code> method takes three parameters:
+the type of node a callback function is meant to handel,
+the function itself,
+and an optional extra piece of data to pass to the function
+along with an AST node.
+It saves the handler function and the data in a lookup table
+indexed by the type of node the function is meant to handle.
+Each of the methods inherited from <code>NodeVisitor</code>
+then looks up handlers for its node type and runs them.</p>
+<p>So what do handlers look like?
+Each one is a function that takes a node and some data as input
+and does whatever it's supposed to do:</p>
+<div class="code-sample lang-py" title="register.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">count_names</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">counter</span><span class="p">):</span>
+    <span class="n">counter</span><span class="p">[</span><span class="n">node</span><span class="o">.</span><span class="n">id</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+</code></pre></div>
+</div>
+<p>Setting up the visitor is a bit more complicated,
+since we have to create and register the handler:</p>
+<div class="code-sample lang-py" title="register.py">
+<div class="highlight"><pre><span></span><code><span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">reader</span><span class="p">:</span>
+    <span class="n">source</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+<span class="n">tree</span> <span class="o">=</span> <span class="n">ast</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+
+<span class="n">finder</span> <span class="o">=</span> <span class="n">RegisterNodeVisitor</span><span class="p">()</span>
+<span class="n">counter</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">()</span>
+<span class="n">finder</span><span class="o">.</span><span class="n">add_handler</span><span class="p">(</span><span class="n">ast</span><span class="o">.</span><span class="n">Name</span><span class="p">,</span> <span class="n">count_names</span><span class="p">,</span> <span class="n">counter</span><span class="p">)</span>
+
+<span class="n">finder</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">counter</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<p>However,
+we can now register as many handlers as we want
+for each kind of node.
+And as with the pipelines in <a class="x-ref" href="../pipeline/">Chapter 6</a>,
+we can use configuration files to control
+which handlers are loaded.</p>
+<h2 id="linter-exercises">Section 18.4: Exercises</h2>
+<h3 class="exercise">Finding unused parameters</h3>
+<p>Modify the code that finds unused variables
+to report unused function parameters as well.</p>
+<h3 class="exercise">Checking names</h3>
+<p>Write a linter that checks that
+class names are written in CamelCase
+but function and variable names are pothole_case.</p>
+<h3 class="exercise">Nested functions</h3>
+<p>Modify the inheritance table code
+so that class names are shown in parent-to-child order
+and methods are shown in the order in which they are first defined.
+(You may find the discussion of
+<span class="ix-entry" ix-key="topological order" markdown="1"><a class="gl-ref" href="../glossary/#topological_order" markdown="1">topological ordering</a></span>
+in <a class="x-ref" href="../builder/">Chapter 7</a> useful.)</p>
+<h3 class="exercise">Chaining methods</h3>
+<ol>
+<li>
+<p>Modify the code that injects methods into <code>NodeVisitor</code>
+    so that any previously-injected methods are also called.</p>
+</li>
+<li>
+<p>Modify the methods again so that each one signals
+    whether or not it has handled recursion
+    (either directly or indirectly).</p>
+</li>
+</ol>
         </main>
       </div>
     </div>
