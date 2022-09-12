@@ -1,9 +1,8 @@
+"""Define behavior of caches."""
+
 from abc import ABC, abstractmethod
 
-class CacheException(Exception):
-    """Signal a caching error."""
-    def __init__(self, message):
-        self.message = message
+from _util import CacheException
 
 
 class CacheBase(ABC):
@@ -14,6 +13,7 @@ class CacheBase(ABC):
         self.index = index
         self.local_dir = local_dir
         self.local_size = local_size
+        self.index.set_local_dir(self.local_dir)
 
     @abstractmethod
     def add(self, identifier, local_path, update=False):
