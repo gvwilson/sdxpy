@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractmethod
 
-from _util import CacheException
+from exceptions import CacheException
 
 
 class CacheBase(ABC):
@@ -15,13 +15,12 @@ class CacheBase(ABC):
         self.local_size = local_size
         self.index.set_local_dir(self.local_dir)
 
-    @abstractmethod
-    def add(self, identifier, local_path, update=False):
-        """Add a file to the system, replacing existing if told to do so."""
-
-    @abstractmethod
-    def _localize_file(self, identifier, local_path):
-        """Get a local copy of a file."""
+    def add(self, local_path):
+        """Add a file to the system, returning the file ID."""
+        identifier = self._make_identifier(local_path)
+        self._add(identifier, local_path)
+        self.index.add(identifier)
+        return identifier
 
     def has(self, identifier, local_only=False):
         """Is this file available (locally)?"""
@@ -55,3 +54,10 @@ class CacheBase(ABC):
         """Construct the path to a localized file."""
         return Path(self.local_dir, f"{identifier}.cache")
 
+    @abstractmethod
+    def _add(self, identifier, local_path):
+        """Add a file using the given identifier."""
+
+    @abstractmethod
+    def _localize_file(self, identifier, local_path):
+        """Get a local copy of a file."""

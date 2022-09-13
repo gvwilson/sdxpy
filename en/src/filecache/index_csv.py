@@ -4,6 +4,7 @@ import csv
 from pathlib import Path
 
 from index_base import IndexBase, CacheEntry
+from exceptions import CacheException
 
 
 class IndexCSV(IndexBase):
