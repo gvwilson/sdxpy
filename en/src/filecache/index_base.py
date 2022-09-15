@@ -11,9 +11,9 @@ CacheEntry = namedtuple("CacheEntry", ["identifier", "timestamp"])
 class IndexBase(ABC):
     """Define operations on cache index."""
 
-    def __init__(self):
+    def __init__(self, local_dir=None):
         """Initialize."""
-        self.local_dir = None
+        self.local_dir = local_dir
 
     def set_local_dir(self, local_dir):
         """Specify local directory."""

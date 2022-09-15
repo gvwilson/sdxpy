@@ -3,6 +3,7 @@
 from abc import ABC, abstractmethod
 
 from exceptions import CacheException
+from hash_stream import hash_stream
 
 
 class CacheBase(ABC):
@@ -49,6 +50,11 @@ class CacheBase(ABC):
                 continue
             delete_path = self._make_local_path(identifier)
             delete_path.unlink()
+
+    def _make_identifier(self, local_path):
+        """Create a unique identifier based on file contents."""
+        with open(local_path, "rb") as reader:
+            return hash_stream(reader)
 
     def _make_local_path(self, identifier):
         """Construct the path to a localized file."""
