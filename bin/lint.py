@@ -43,7 +43,7 @@ INDEX_FILE = "index.md"
 MAKEFILE = "Makefile"
 RE_CODE_BLOCK = re.compile("```.+?```", re.DOTALL)
 RE_CODE_INLINE = re.compile("`.+?`")
-RE_FILE = re.compile(r'\[%\s*inc\b.+?file="(.+?)".+?%\]')
+RE_FILE = re.compile(r'\[%\s*inc\b.+?(file|html)="(.+?)".+?%\]')
 RE_FIGURE = re.compile(r'\[%\s*figure\b.+?img="(.+?)".+?%\]', re.DOTALL)
 RE_LINK = re.compile(r"\[[^]]+?\]\[(\w+?)\]")
 RE_PAT = re.compile(r'\[%\s*inc\b.+?pat="(.+?)"\s+fill="(.+?)".+?%\]')
@@ -167,7 +167,7 @@ def get_inclusions(filename):
     """Find inclusion filenames."""
     with open(filename, "r") as reader:
         text = reader.read()
-        result = {m.group(1) for m in RE_FILE.finditer(text)}
+        result = {m.group(2) for m in RE_FILE.finditer(text)}
         pats = [(m.group(1), m.group(2)) for m in RE_PAT.finditer(text)]
         for (pat, fill) in pats:
             result |= {pat.replace("*", f) for f in fill.split()}
