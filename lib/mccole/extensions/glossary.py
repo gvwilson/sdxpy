@@ -4,6 +4,7 @@ import re
 
 import ivy
 import shortcodes
+
 import util
 
 # Regex to extract internal cross-references from bodies of definitions.
@@ -13,7 +14,10 @@ INTERNAL_REF = re.compile(r"\]\(#(.+?)\)")
 @shortcodes.register("g")
 def glossary_ref(pargs, kwargs, node):
     """Handle [% g slug "text" %] glossary reference shortcodes."""
-    util.require((len(pargs) == 2) and (not kwargs), "Bad 'g' shortcode")
+    util.require(
+        (len(pargs) == 2) and (not kwargs),
+        f"Bad 'g' shortcode {pargs} and {kwargs}"
+    )
     slug = pargs[0]
     text = pargs[1]
 
@@ -25,11 +29,16 @@ def glossary_ref(pargs, kwargs, node):
 @shortcodes.register("glossary")
 def glossary(pargs, kwargs, node):
     """Convert glossary to Markdown."""
-    util.require((not pargs) and (not kwargs), "Bad 'glossary' shortcode")
-    if (filename := ivy.site.config.get("glossary", None)) is None:
-        return '<p class="warning">No glossary specified.</p>'
-    if (lang := ivy.site.config.get("lang", None)) is None:
-        return '<p class="warning">No language specified.</p>'
+    util.require(
+        (not pargs) and (not kwargs),
+        f"Bad 'glossary' shortcode {pargs} and {kwargs}"
+    )
+
+    filename = ivy.site.config.get("glossary", None)
+    util.require(filename is not None, "No glossary specified")
+
+    lang = ivy.site.config.get("lang", None)
+    util.require(lang is not None, "No language specified")
 
     glossary = util.read_glossary(filename)
     try:
@@ -45,10 +54,11 @@ def glossary(pargs, kwargs, node):
 @ivy.events.register(ivy.events.Event.EXIT)
 def check():
     """Check that glossary entries are defined and used."""
-    if (filename := ivy.site.config.get("glossary", None)) is None:
-        return '<p class="warning">No glossary specified.</p>'
-    if (lang := ivy.site.config.get("lang", None)) is None:
-        util.fail("No language defined for glossary")
+    filename = ivy.site.config.get("glossary", None)
+    util.require(filename is not None, "No glossary specified")
+
+    lang = ivy.site.config.get("lang", None)
+    util.require(lang is not None, "No language defined for glossary")
 
     glossary = util.read_glossary(filename)
     defined = {entry["key"] for entry in glossary}

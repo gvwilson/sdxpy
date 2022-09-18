@@ -1,6 +1,6 @@
 import ast
-from collections import namedtuple
 import sys
+from collections import namedtuple
 
 # [scope]
 Scope = namedtuple("Scope", ["name", "load", "store"])
@@ -17,7 +17,8 @@ class FindUnusedVariables(ast.NodeVisitor):
 
     def visit_FunctionDef(self, node):
         self.search(node.name, node)
-# [/class]
+
+    # [/class]
 
     # [search]
     def search(self, name, node):
@@ -31,6 +32,7 @@ class FindUnusedVariables(ast.NodeVisitor):
         if unused:
             names = ", ".join(sorted(unused))
             print(f"unused in {scope.name}: {names}")
+
     # [/search]
 
     # [name]
@@ -42,7 +44,9 @@ class FindUnusedVariables(ast.NodeVisitor):
         else:
             assert False, f"Unknown context"
         self.generic_visit(node)
+
     # [/name]
+
 
 # [main]
 with open(sys.argv[1], "r") as reader:

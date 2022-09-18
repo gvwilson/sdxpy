@@ -1,6 +1,7 @@
 import ast
-from collections import Counter
 import sys
+from collections import Counter
+
 
 # [init]
 class FindClassesAndMethods(ast.NodeVisitor):
@@ -9,9 +10,10 @@ class FindClassesAndMethods(ast.NodeVisitor):
         self.stack = []
         self.parents = {}
         self.methods = {}
-# [/init]
 
-# [classdef]
+    # [/init]
+
+    # [classdef]
     def visit_ClassDef(self, node):
         class_name = node.name
         assert class_name not in self.methods
@@ -20,9 +22,10 @@ class FindClassesAndMethods(ast.NodeVisitor):
         self.parents[class_name] = {p.id for p in node.bases}
         self.generic_visit(node)
         self.stack.pop()
-# [/classdef]
 
-# [methoddef]
+    # [/classdef]
+
+    # [methoddef]
     def visit_FunctionDef(self, node):
         if not self.stack:
             return
@@ -31,7 +34,8 @@ class FindClassesAndMethods(ast.NodeVisitor):
         method_name = node.name
         assert method_name not in self.methods[class_name]
         self.methods[class_name].add(method_name)
-# [/methoddef]
+
+    # [/methoddef]
 
     def report(self, stream):
         assert set(self.methods.keys()) == set(self.parents.keys())
@@ -42,8 +46,9 @@ class FindClassesAndMethods(ast.NodeVisitor):
         all_methods = sorted(all_methods)
         print(f"| | {' | '.join(all_classes)} |")
         for m in all_methods:
-            defined = ['X' if m in self.methods[c] else ' ' for c in all_classes]
+            defined = ["X" if m in self.methods[c] else " " for c in all_classes]
             print(f"| {m} | {' | '.join(defined)}")
+
 
 def main():
     collector = FindClassesAndMethods()

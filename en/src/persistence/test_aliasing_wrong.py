@@ -1,8 +1,9 @@
 from io import StringIO
 
 import pytest
+from aliasing_wrong import LoadAlias as Load
+from aliasing_wrong import SaveAlias as Save
 
-from aliasing_wrong import SaveAlias as Save, LoadAlias as Load
 
 # [roundtrip]
 def roundtrip(fixture):
@@ -10,12 +11,16 @@ def roundtrip(fixture):
     Save(writer).save(fixture)
     reader = StringIO(writer.getvalue())
     return Load(reader).load()
+
+
 # [/roundtrip]
 
 # [no_aliasing]
 def test_aliasing_no_aliasing():
     fixture = ["a", {"b": True, 7: {"c": "d"}}]
     assert roundtrip(fixture) == fixture
+
+
 # [/no_aliasing]
 
 # [shared]
@@ -27,7 +32,10 @@ def test_aliasing_shared_child():
     assert id(result[0]) == id(result[1])
     result[0][0] = "changed"
     assert result[1][0] == "changed"
+
+
 # [/shared]
+
 
 @pytest.mark.xfail
 def test_aliasing_circular():

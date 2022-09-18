@@ -1,12 +1,15 @@
 import ast
 import sys
 
+
 # [attach]
 class BlankNodeVisitor(ast.NodeVisitor):
     pass
 
+
 def print_name(self, node):
     print(node.id)
+
 
 setattr(BlankNodeVisitor, "visit_Name", print_name)
 # [/attach]

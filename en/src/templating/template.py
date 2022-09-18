@@ -2,7 +2,6 @@ import json
 import sys
 
 from bs4 import BeautifulSoup
-
 from expander import Expander
 
 

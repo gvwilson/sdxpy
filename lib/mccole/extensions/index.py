@@ -14,17 +14,18 @@ around the glossary shortcode:
 """
 
 import shortcodes
+
 import util
 
 
 @shortcodes.register("i", "/i")
 def index_ref(pargs, kwargs, node, content):
-    """Handle [% i "some" "key" %]...text...[% /i %] index shortcodes."""
-    # Badly formatted.
-    if len(pargs) == 0:
-        util.fail(f"Badly-formatted 'i' shortcode {pargs} in {node.filepath}")
+    """Handle [%i "some" "key" %]...text...[% /i %] index shortcodes."""
+    util.require(
+        pargs,
+        f"Badly-formatted 'i' shortcode {pargs} in {node.filepath}"
+    )
 
-    # Format.
     joined = ";".join(pargs)
     cls = 'class="ix-entry"'
     return f'<span {cls} ix-key="{joined}" markdown="1">{content}</span>'
@@ -32,7 +33,7 @@ def index_ref(pargs, kwargs, node, content):
 
 @shortcodes.register("index")
 def make_index(pargs, kwargs, node):
-    """Handle [% index %] using saved data."""
+    """Handle [%index %] using saved data."""
     # No entries.
     if not (content := util.get_config("index")):
         return ""
@@ -48,15 +49,19 @@ def make_index(pargs, kwargs, node):
             links = _make_links(current[0], occurrences)
             result.append(f"<li>{current[0]}: {links}</li>")
             previous = current[0]
-        elif len(current) != 2:
-            util.fail(f"Internal error index key '{current}' in {occurrences}")
-        else:
-            if current[0] != previous:
-                result.append(f"<li>{current[0]}</li>")
-            links = _make_links(current[1], occurrences)
-            result.append(f"<li>…{current[1]}: {links}</li>")
-    result.append("</ul>")
+            continue
 
+        util.require(
+            len(current) == 2,
+            f"Internal error index key '{current}' in {occurrences}"
+        )
+
+        if current[0] != previous:
+            result.append(f"<li>{current[0]}</li>")
+        links = _make_links(current[1], occurrences)
+        result.append(f"<li>…{current[1]}: {links}</li>")
+
+    result.append("</ul>")
     return "\n".join(result)
 
 

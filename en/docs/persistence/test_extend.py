@@ -1,6 +1,9 @@
 from io import StringIO
-from extend import SaveExtend as Save, LoadExtend as Load
-from user_classes import Parent, Child
+
+from extend import LoadExtend as Load
+from extend import SaveExtend as Save
+from user_classes import Child, Parent
+
 
 def roundtrip(fixture, *extensions):
     writer = StringIO()
@@ -8,9 +11,11 @@ def roundtrip(fixture, *extensions):
     reader = StringIO(writer.getvalue())
     return Load(reader, *extensions).load()
 
+
 def test_extend_no_aliasing():
     fixture = ["a", {"b": True, 7: {"c": "d"}}]
     assert roundtrip(fixture) == fixture
+
 
 def test_extend_circular():
     fixture = []
@@ -18,6 +23,7 @@ def test_extend_circular():
     result = roundtrip(fixture)
     assert len(result) == 1
     assert id(result) == id(result[0])
+
 
 # [test_parent]
 def test_extend_extension_class():
@@ -28,7 +34,10 @@ def test_extend_extension_class():
     result = Load(reader, Parent).load()
     assert isinstance(result, Parent)
     assert result.name == fixture.name
+
+
 # [/test_parent]
+
 
 def test_extend_derived_class():
     fixture = Child("derived", False)

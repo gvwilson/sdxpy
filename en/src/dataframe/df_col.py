@@ -2,9 +2,9 @@
 
 import inspect
 
-from util import all_eq
 # [top]
 from df_base import DF
+from util import all_eq
 
 
 class DfCol(DF):
@@ -17,9 +17,10 @@ class DfCol(DF):
         for k in kwargs:
             assert all_eq(type(v) for v in kwargs[k])
         self._data = kwargs
-# [/top]
 
-# [simple]
+    # [/top]
+
+    # [simple]
     def ncol(self):
         """Report the number of columns."""
         return len(self._data)
@@ -32,9 +33,10 @@ class DfCol(DF):
     def cols(self):
         """Return the set of column names."""
         return set(self._data.keys())
-# [/simple]
 
-# [eq]
+    # [/simple]
+
+    # [eq]
     def eq(self, other):
         """Check equality of two dataframes."""
         assert isinstance(other, DF)
@@ -45,35 +47,39 @@ class DfCol(DF):
                 if self.get(n, i) != other.get(n, i):
                     return False
         return True
-# [/eq]
 
-# [get]
+    # [/eq]
+
+    # [get]
     def get(self, col, row):
         """Get a scalar value."""
         assert col in self._data
         assert 0 <= row < len(self._data[col])
         return self._data[col][row]
-# [/get]
 
-# [select]
+    # [/get]
+
+    # [select]
     def select(self, *names):
         """Select a subset of columns."""
         assert all(n in self._data for n in names)
-        return DfCol(**{n:self._data[n] for n in names})
-# [/select]
+        return DfCol(**{n: self._data[n] for n in names})
 
-# [filter]
+    # [/select]
+
+    # [filter]
     def filter(self, func):
         """Select a subset of rows."""
         params = list(inspect.signature(func).parameters.keys())
-        result = {n:[] for n in self._data}
+        result = {n: [] for n in self._data}
         for i in range(self.nrow()):
-            args = {n:self._data[n][i] for n in self._data}
+            args = {n: self._data[n][i] for n in self._data}
             if func(**args):
                 for n in self._data:
                     result[n].append(self._data[n][i])
         return DfCol(**result)
-# [/filter]
+
+    # [/filter]
 
     def __str__(self):
         return str(self._data)

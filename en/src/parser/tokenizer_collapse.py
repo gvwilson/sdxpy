@@ -1,9 +1,5 @@
-SIMPLE = {
-  "*": "Any",
-  "|": "Alt",
-  "(": "GroupStart",
-  ")": "GroupEnd"
-}
+SIMPLE = {"*": "Any", "|": "Alt", "(": "GroupStart", ")": "GroupEnd"}
+
 
 def tokenize(text):
     result = []
@@ -18,10 +14,13 @@ def tokenize(text):
             combine_or_push(result, c, i)
     return result
 
+
 # [combine]
 def combine_or_push(so_far, character, location):
-  if (len(so_far) == 0) or (so_far[-1]["kind"] != "Lit"):
-      so_far.append({"kind": "Lit", "value": character, "loc": location})
-  else:
-      so_far[-1]["value"] += character
+    if (len(so_far) == 0) or (so_far[-1]["kind"] != "Lit"):
+        so_far.append({"kind": "Lit", "value": character, "loc": location})
+    else:
+        so_far[-1]["value"] += character
+
+
 # [/combine]

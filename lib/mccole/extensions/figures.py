@@ -3,6 +3,7 @@
 from textwrap import dedent
 
 import shortcodes
+
 import util
 
 
@@ -17,7 +18,9 @@ def figure_ref(pargs, kwargs, node):
 
     # Create cross-reference.
     slug = pargs[0]
-    util.require(slug in figures, f"Unknown figure reference {slug} ({node.filepath})")
+    util.require(
+        slug in figures, f"Unknown figure reference {slug} ({node.filepath})"
+    )
     figure = figures[slug]
     label = util.make_label("figure", figure.number)
     cls = 'class="fig-ref"'
@@ -28,22 +31,24 @@ def figure_ref(pargs, kwargs, node):
 @shortcodes.register("figure")
 def figure_def(pargs, kwargs, node):
     """Handle figure definition."""
-    allowed = {"slug", "img", "alt", "caption"}
+    allowed = {"cls", "slug", "img", "alt", "caption"}
     util.require(
         (not pargs) and allowed.issuperset(kwargs.keys()),
-        "Bad 'figure' shortcode",
+        f"Bad 'figure' shortcode {pargs} and {kwargs}",
     )
+    cls = kwargs.get("cls", None)
+    cls = f' class="{cls}"' if cls is not None else ""
     slug = kwargs["slug"]
     img = kwargs["img"]
-    alt = kwargs["alt"]
-    caption = kwargs["caption"]
+    alt = util.markdownify(kwargs["alt"])
+    caption = util.markdownify(kwargs["caption"])
 
     figure = util.get_config("figures")[slug]
     label = util.make_label("figure", figure.number)
 
     return dedent(
         f"""\
-    <figure id="{slug}">
+    <figure id="{slug}"{cls}>
       <img src="./{img}" alt="{alt}"/>
       <figcaption markdown="1">{label}: {caption}</figcaption>
     </figure>

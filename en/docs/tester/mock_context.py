@@ -1,5 +1,6 @@
-from util import run_tests
 from mock_object import Fake
+from util import run_tests
+
 
 # [contextfake]
 class ContextFake(Fake):
@@ -21,6 +22,8 @@ class ContextFake(Fake):
     def __exit__(self, exc_type, exc_value, exc_traceback):
         """Put everything back."""
         globals()[self.name] = self.original
+
+
 # [/contextfake]
 
 
@@ -37,6 +40,8 @@ def check_no_lasting_effects():
         assert subber(2, 3) == 1234
         assert len(fake.calls) == 1
     assert subber(2, 3) == -1
+
+
 # [/test]
 
 

@@ -2,26 +2,33 @@
 
 import ivy
 import shortcodes
-import util
 import yaml
+
+import util
 
 EMPTY_ENTRY = "<td></td>"
 WIDTH = 3
 
 
 @shortcodes.register("acknowledgments")
-def bibliography(pargs, kwargs, node):
+def acknowledgments(pargs, kwargs, node):
     """Convert acknowledgments to HTML table."""
-    util.require((not pargs) and (not kwargs), "Bad 'acknowledgments' shortcode")
-    if (filename := ivy.site.config.get("acknowledgments", None)) is None:
-        return '<p class="warning">No acknowledgments specified.</p>'
+    util.require(
+        (not pargs) and (not kwargs),
+        "Bad 'acknowledgments' shortcode"
+    )
+    filename = ivy.site.config.get("acknowledgments", None)
+    require(filename is not None, "No acnowledgments specified")
+
     with open(filename, "r") as reader:
         entries = yaml.safe_load(reader)
     entries = [_format_entry(e) for e in entries]
     while (len(entries) % WIDTH) != 0:
         entries.append(EMPTY_ENTRY)
     span = range(0, len(entries), WIDTH)
-    rows = "\n".join([_format_row(entries[i : (i + WIDTH)]) for i in span])
+    rows = "\n".join(
+        [_format_row(entries[i:(i + WIDTH)]) for i in span]
+    )
     return f'<table class="acknowledgments"><tbody>{rows}\n</tbody></table>\n'
 
 

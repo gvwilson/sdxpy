@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 
-class Visitor(ABC):
 
+class Visitor(ABC):
     def __init__(self, root):
         self.root = root
 

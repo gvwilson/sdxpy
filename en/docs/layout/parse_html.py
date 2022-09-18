@@ -6,6 +6,7 @@ TEXT_AND_TAG = re.compile(r"^([^<]*)(<[^>]+?>)(.*)$", re.DOTALL | re.MULTILINE)
 TAG_AND_ATTR = re.compile(r"<(\w+)([^>]*)>")
 KEY_AND_VALUE = re.compile(r'\s*(\w+)="([^"]*)"\s*/')
 
+
 def parse_html(text):
     chunks = chunkify(text.strip())
     assert is_element(chunks[0]), "Must have enclosing outer node"
@@ -16,7 +17,7 @@ def parse_html(text):
 
 def chunkify(text):
     raw = []
-    while (text):
+    while text:
         matches = TEXT_AND_TAG.search(text)
         if not matches:
             break
@@ -51,10 +52,13 @@ def make_node(chunks):
         child, remainder = make_node(remainder)
         node.children.append(child)
 
-    assert remainder and (remainder[0] == closing), \
-        f"Node with tag {node.tag} not closed"
+    assert remainder and (
+        remainder[0] == closing
+    ), f"Node with tag {node.tag} not closed"
 
     return node, remainder[1:]
+
+
 # [/makenode]
 
 # [makeopening]
@@ -62,11 +66,10 @@ def make_opening(chunk):
     outer = TAG_AND_ATTR.search(chunk)
     tag = outer[1]
 
-    attributes = {
-        k:v for k,v in KEY_AND_VALUE.finditer(outer[2].strip())
-    }
-    assert all(k in {"width", "height"} for k in attributes.keys()), \
-        f"Unknown node attribute(s) {attributes}"
+    attributes = {k: v for k, v in KEY_AND_VALUE.finditer(outer[2].strip())}
+    assert all(
+        k in {"width", "height"} for k in attributes.keys()
+    ), f"Unknown node attribute(s) {attributes}"
     width = attributes.get("width", 0)
     height = attributes.get("height", 0)
 
@@ -75,5 +78,7 @@ def make_opening(chunk):
     if tag == "row":
         return DomRow(width, height)
     assert False, f"Unrecognized tag name {tag}"
+
+
 # [/makeopening]
 # [/skip]

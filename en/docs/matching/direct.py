@@ -5,6 +5,8 @@ class MatchBase:
 
     def match(self, text, start=0):
         return None
+
+
 # [/base_class]
 
 
@@ -35,6 +37,8 @@ class Lit(MatchBase):
         if text[start:nextIndex] != self.chars:
             return None
         return nextIndex
+
+
 # [/lit]
 
 
@@ -70,12 +74,14 @@ def main():
         ["ab|cd", "xaby", True, Alt(Lit("ab"), Lit("cd"))],
         ["ab|cd", "acdc", True, Alt(Lit("ab"), Lit("cd"))],
         ["a(b|c)d", "xabdy", True, Seq(Lit("a"), Alt(Lit("b"), Lit("c")), Lit("d"))],
-        ["a(b|c)d", "xabady", False, Seq(Lit("a"), Alt(Lit("b"), Lit("c")), Lit("d"))]
+        ["a(b|c)d", "xabady", False, Seq(Lit("a"), Alt(Lit("b"), Lit("c")), Lit("d"))],
     ]
     for (pattern, text, expected, matcher) in tests:
         actual = matcher.match(text)
         result = "pass" if actual == expected else "fail"
         print(f"'{pattern}' X '{text}' == {actual}: {result}")
+
+
 # [/tests]
 
 

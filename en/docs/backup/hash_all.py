@@ -1,9 +1,10 @@
 import csv
 import glob
-from pathlib import Path
 import sys
+from pathlib import Path
 
 from hash_stream import hash_stream
+
 
 def hash_all(root_dir):
     result = []
@@ -13,6 +14,7 @@ def hash_all(root_dir):
             hash_code = hash_stream(reader)
             result.append((filename, hash_code))
     return result
+
 
 if __name__ == "__main__":
     root_dir = sys.argv[1]

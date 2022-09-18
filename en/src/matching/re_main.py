@@ -4,6 +4,7 @@ from re_end import End
 from re_lit import Lit
 from re_start import Start
 
+
 def main():
     tests = [
         ["a", "a", True, Lit("a")],
@@ -26,7 +27,7 @@ def main():
         ["ab|cd", "xaby", True, Alt(Lit("ab"), Lit("cd"))],
         ["ab|cd", "acdc", True, Alt(Lit("ab"), Lit("cd"))],
         ["a(b|c)d", "xabdy", True, Lit("a", Alt(Lit("b"), Lit("c"), Lit("d")))],
-        ["a(b|c)d", "xabady", False, Lit("a", Alt(Lit("b"), Lit("c"), Lit("d")))]
+        ["a(b|c)d", "xabady", False, Lit("a", Alt(Lit("b"), Lit("c"), Lit("d")))],
     ]
     for (pattern, text, expected, matcher) in tests:
         actual = matcher.match(text)

@@ -3,6 +3,8 @@
 # Local configuration.
 CONFIG := ./config.py
 ABBREV := $(shell python ${CONFIG} --abbrev)
+BUILD_DATE := $(shell date '+%Y-%m-%d')
+STEM := ${ABBREV}-${BUILD_DATE}
 
 # Direct variables.
 EXAMPLES := $(patsubst %/Makefile,%,$(wildcard src/*/Makefile))
@@ -21,11 +23,13 @@ PORT := 4000
 
 ## commands: show available commands
 commands:
-	@grep -h -E '^##' ${MAKEFILE_LIST} | sed -e 's/## //g' | column -t -s ':'
+	@grep -h -E '^##' ${MAKEFILE_LIST} \
+	| sed -e 's/## //g' \
+	| column -t -s ':'
 
 ## build: rebuild site without running server
 build: ./docs/index.html
-./docs/index.html: ${SRC} ${INFO} ${IVY} ${CONFIG}
+./docs/index.html: ${SRC} ${INFO} ${IVY} config.py
 	ivy build && touch $@
 
 ## serve: build site and run server
@@ -45,19 +49,28 @@ docs/all.html: ./docs/index.html ${HTML} bin/single.py
 	> docs/all.html
 
 ## latex: create LaTeX document
-latex: docs/${ABBREV}.tex
-docs/${ABBREV}.tex: docs/all.html ${TEX} bin/html2tex.py ${CONFIG}
-	python ./bin/html2tex.py --head info/head.tex --foot info/foot.tex < docs/all.html > docs/${ABBREV}.tex
+latex: docs/${STEM}.tex
+docs/${STEM}.tex: docs/all.html ${TEX} bin/html2tex.py ${CONFIG}
+	python ./bin/html2tex.py \
+	--head info/head.tex \
+	--foot info/foot.tex \
+	--debug \
+	< docs/all.html \
+	> docs/${STEM}.tex
 	python ${CONFIG} --latex > docs/config.tex
 
 ## pdf: create PDF document
-pdf: docs/${ABBREV}.tex ${FIG_PDF}
+pdf: docs/${STEM}.tex ${FIG_PDF}
 	cp info/bibliography.bib docs
-	cd docs && pdflatex ${ABBREV}
-	cd docs && biber ${ABBREV}
-	cd docs && makeindex ${ABBREV}
-	cd docs && pdflatex ${ABBREV}
-	cd docs && pdflatex ${ABBREV}
+	cd docs && pdflatex ${STEM}
+	cd docs && biber ${STEM}
+	cd docs && makeindex ${STEM}
+	cd docs && pdflatex ${STEM}
+	cd docs && pdflatex ${STEM}
+
+## pdf-once: create PDF document with a single compilation
+pdf-once: docs/${STEM}.tex ${FIG_PDF}
+	cd docs && pdflatex ${STEM}
 
 docs/%.pdf: src/%.svg
 	@convert $< $@
@@ -67,18 +80,11 @@ clean:
 	@find . -name '*~' -exec rm {} \;
 	@find . -type d -name __pycache__ | xargs rm -r
 
-## check: check code and project structure
-.PHONY: check
-check: lint
-	-flake8
-	-isort --check .
-	-black --check .
-
 ## lint: check project structure
 .PHONY: lint
 lint: clean build
 	@python ./bin/lint.py \
-	--config ${CONFIG}
+	--config config.py
 
 ## examples: re-run examples
 .PHONY: examples
@@ -151,6 +157,7 @@ release:
 .PHONY: vars
 vars:
 	@echo ABBREV ${ABBREV}
+	@echo BUILD_DATE ${BUILD_DATE}
 	@echo DOCS ${DOCS}
 	@echo FIG_SVG ${FIG_SVG}
 	@echo FIG_PDF ${FIG_PDF}
@@ -158,4 +165,8 @@ vars:
 	@echo INFO ${INFO}
 	@echo IVY ${IVY}
 	@echo SRC ${SRC}
+	@echo STEM ${STEM}
 	@echo TEX ${TEX}
+
+# local rules (if any).
+-include local.mk

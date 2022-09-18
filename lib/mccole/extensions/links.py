@@ -3,12 +3,12 @@
 from pathlib import Path
 
 import ivy
-import markdown
 import shortcodes
-import util
 import yaml
 from markdown.extensions import Extension
 from markdown.treeprocessors import Treeprocessor
+
+import util
 
 
 @ivy.events.register(ivy.events.Event.INIT)
@@ -30,16 +30,17 @@ def links_append():
 @shortcodes.register("links")
 def links_table(pargs, kwargs, node):
     """Create a table of links."""
-    if "links" not in ivy.site.config:
-        return '<p class="warning">NO LINKS</p>'
-    if (lang := ivy.site.config.get("lang", None)) is None:
-        return '<p class="warning">No language specified.</p>'
+    util.require("links" in ivy.site.config, "No links specified")
+
+    lang = ivy.site.config.get("lang", None)
+    util.require(lang is not None, "No language specified")
 
     links = _read_links()
     links.sort(key=lambda x: _link_key(x, lang))
     cls = 'class="link-ref"'
     links = "\n".join(
-        f'<li>{x[lang]}: <a {cls} href="{x["url"]}">{x["url"]}</a></li>' for x in links
+        f'<li>{x[lang]}: <a {cls} href="{x["url"]}">{x["url"]}</a></li>'
+        for x in links
     )
     return f"<ul>\n{links}\n</ul>"
 
@@ -50,9 +51,7 @@ def check():
     used = set()
     ext = LinkCollectorExtension(used)
     ivy.nodes.root().walk(
-        lambda node: markdown.markdown(
-            node.text, extensions=[ext, "markdown.extensions.extra"]
-        )
+        lambda node: util.markdownify(node.text, ext=ext, strip=False)
     )
 
     defined = {d["url"] for d in _read_links()}

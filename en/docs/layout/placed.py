@@ -1,5 +1,6 @@
 from easy_mode import Block, Col, Row
 
+
 # [block]
 class PlacedBlock(Block):
     def __init__(self, width, height):
@@ -12,11 +13,9 @@ class PlacedBlock(Block):
         self.y0 = y0
 
     def report(self):
-        return [
-            "block", self.x0, self.y0,
-            self.x0 + self.width,
-            self.y0 + self.height
-        ]
+        return ["block", self.x0, self.y0, self.x0 + self.width, self.y0 + self.height]
+
+
 # [/block]
 
 # [col]
@@ -37,10 +36,14 @@ class PlacedCol(Col):
 
     def report(self):
         return [
-            "col", self.x0, self.y0,
+            "col",
+            self.x0,
+            self.y0,
             self.x0 + self.get_width(),
-            self.y0 + self.get_height()
+            self.y0 + self.get_height(),
         ] + [c.report() for c in self.children]
+
+
 # [/col]
 
 # [row]
@@ -63,8 +66,12 @@ class PlacedRow(Row):
 
     def report(self):
         return [
-            "row", self.x0, self.y0,
+            "row",
+            self.x0,
+            self.y0,
             self.x0 + self.get_width(),
-            self.y0 + self.get_height()
+            self.y0 + self.get_height(),
         ] + [c.report() for c in self.children]
+
+
 # [/row]

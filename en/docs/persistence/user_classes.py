@@ -5,7 +5,10 @@ class Parent:
 
     def to_dict(self):
         return {"name": self.name}
+
+
 # [/parent]
+
 
 class Child(Parent):
     def __init__(self, name, check):

@@ -10,6 +10,8 @@ def do_abs(args):
     assert len(args) == 1
     val = do(args[0])
     return abs(val)
+
+
 # [/do_abs]
 
 
@@ -20,6 +22,8 @@ def do_add(args):
     left = do(args[0])
     right = do(args[1])
     return left + right
+
+
 # [/do_add]
 
 
@@ -38,6 +42,8 @@ def do(expr):
     if expr[0] == "add":
         return do_add(expr[1:])
     assert False, f"Unknown operation {expr[0]}"
+
+
 # [/do]
 
 

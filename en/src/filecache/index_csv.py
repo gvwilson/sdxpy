@@ -4,8 +4,8 @@ import csv
 from datetime import datetime
 from pathlib import Path
 
-from index_base import IndexBase, CacheEntry
 from exceptions import CacheException
+from index_base import CacheEntry, IndexBase
 
 
 class IndexCSV(IndexBase):
@@ -24,7 +24,10 @@ class IndexCSV(IndexBase):
 
         with open(indexpath, "r") as stream:
             reader = csv.reader(stream)
-            return [CacheEntry(r[0], datetime.strptime(r[1], self.TIME_FORMAT)) for r in reader]
+            return [
+                CacheEntry(r[0], datetime.strptime(r[1], self.TIME_FORMAT))
+                for r in reader
+            ]
 
     def save(self, index):
         """Save entire index."""

@@ -1,9 +1,8 @@
 """Required behavior of cache index."""
 
+import datetime
 from abc import ABC, abstractmethod
 from collections import namedtuple
-import datetime
-
 
 CacheEntry = namedtuple("CacheEntry", ["identifier", "timestamp"])
 
@@ -11,9 +10,11 @@ CacheEntry = namedtuple("CacheEntry", ["identifier", "timestamp"])
 class IndexBase(ABC):
     """Define operations on cache index."""
 
-    def __init__(self):
+    TIME_FORMAT = "%Y-%m-%d:%H:%M:%S"
+
+    def __init__(self, local_dir=None):
         """Initialize."""
-        self.local_dir = None
+        self.local_dir = local_dir
 
     def set_local_dir(self, local_dir):
         """Specify local directory."""
@@ -22,12 +23,13 @@ class IndexBase(ABC):
     def has(self, identifier):
         """Is the identifier present in the index?"""
         index = self.load()
-        return any(entry.id == identifier for entry in index)
+        return any(entry.identifier == identifier for entry in index)
 
     def least_recently_used(self):
         """Return all items, least-recently-used first."""
         index = self.load()
-        index.sort(key=lambda x: x.modified)
+        index.sort(key=lambda x: x.timestamp)
+        return index
 
     def add(self, identifier):
         """Add a record to the index."""
@@ -47,4 +49,4 @@ class IndexBase(ABC):
 
 def current_time():
     """Get time (separate to make mocking easier)."""
-    return str(datetime.datetime.now())
+    return datetime.datetime.now()

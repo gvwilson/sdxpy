@@ -1,10 +1,11 @@
 from architecture import OPS
 from vm_base import VirtualMachineBase
 
+
 class VirtualMachine(VirtualMachineBase):
     def run(self):
         running = True
-        while (running):
+        while running:
             op, arg0, arg1 = self.fetch()
             if op == OPS["hlt"]["code"]:
                 running = False
@@ -71,14 +72,12 @@ class VirtualMachine(VirtualMachineBase):
             else:
                 assert False, f"Unknown op {op:06x}"
 
-
     def assert_is_register(self, reg):
-        assert 0 <= reg < len(self.reg), \
-            f"Invalid register {reg:06x}"
+        assert 0 <= reg < len(self.reg), f"Invalid register {reg:06x}"
 
     def assert_is_address(self, addr):
-        assert 0 <= addr < len(self.ram), \
-            f"Invalid register {addr:06x}"
+        assert 0 <= addr < len(self.ram), f"Invalid register {addr:06x}"
+
 
 # [main]
 if __name__ == "__main__":

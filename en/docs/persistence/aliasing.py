@@ -1,4 +1,5 @@
-from oop import SaveOop, LoadOop
+from oop import LoadOop, SaveOop
+
 
 class SaveAlias(SaveOop):
     def __init__(self, writer):
@@ -88,6 +89,7 @@ class LoadAlias(LoadOop):
         for _ in range(int(value)):
             result.append(self.load())
         return result
+
     # [/load_list]
 
     def _set(self, ident, value):

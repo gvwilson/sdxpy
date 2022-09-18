@@ -9,6 +9,8 @@ class Block:
 
     def get_height(self):
         return self.height
+
+
 # [/block]
 
 # [row]
@@ -21,6 +23,8 @@ class Row:
 
     def get_height(self):
         return max([c.get_height() for c in self.children], default=0)
+
+
 # [/row]
 
 # [col]
@@ -33,4 +37,6 @@ class Col:
 
     def get_height(self):
         return sum([c.get_height() for c in self.children])
+
+
 # [/col]

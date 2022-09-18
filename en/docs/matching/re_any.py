@@ -1,5 +1,6 @@
 from re_base import RegexBase
 
+
 class Any(RegexBase):
     def __init__(self, child, rest=None):
         super().__init__(rest)

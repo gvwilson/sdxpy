@@ -8,6 +8,8 @@ def odd_even():
 
 def a_only():
     return DfRow([{"a": 1}, {"a": 2}])
+
+
 # [/fixture]
 
 
@@ -23,6 +25,8 @@ def test_construct_with_two_pairs():
     assert df.get("a", 1) == 2
     assert df.get("b", 0) == 3
     assert df.get("b", 1) == 4
+
+
 # [/test_two_pairs]
 
 
@@ -56,5 +60,6 @@ def test_select():
 def test_filter():
     def odd(a, b):
         return (a % 2) == 1
+
     df = odd_even()
     assert df.filter(odd).eq(DfRow([{"a": 1, "b": 3}]))

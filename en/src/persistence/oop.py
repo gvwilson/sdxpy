@@ -8,7 +8,8 @@ class SaveOop:
         method = f"_{typename}"
         assert hasattr(self, method), f"Unknown object type {typename}"
         getattr(self, method)(thing)
-# [/save]
+
+    # [/save]
 
     def _write(self, *fields):
         print(":".join(str(f) for f in fields), file=self.writer)
@@ -28,6 +29,7 @@ class SaveOop:
         self._write("str", len(lines))
         for line in lines:
             print(line, file=self.writer)
+
     # [/save_examples]
 
     def _list(self, thing):
@@ -61,7 +63,8 @@ class LoadOop:
         method = f"_{key}"
         assert hasattr(self, method), f"Unknown object type {key}"
         return getattr(self, method)(value)
-# [/load]
+
+    # [/load]
 
     def _bool(self, value):
         names = {"True": True, "False": False}
@@ -71,6 +74,7 @@ class LoadOop:
     # [load_float]
     def _float(self, value):
         return float(value)
+
     # [/load_float]
 
     def _int(self, value):
@@ -82,6 +86,7 @@ class LoadOop:
     # [load_list]
     def _list(self, value):
         return [self.load() for _ in range(int(value))]
+
     # [/load_list]
 
     def _set(self, value):

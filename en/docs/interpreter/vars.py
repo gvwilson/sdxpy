@@ -10,6 +10,8 @@ def do_abs(env, args):
     assert len(args) == 1
     val = do(env, args[0])
     return abs(val)
+
+
 # [/do_abs]
 
 
@@ -28,6 +30,8 @@ def do_get(env, args):
     assert isinstance(args[0], str)
     assert args[0] in env, f"Unknown variable {args[0]}"
     return env[args[0]]
+
+
 # [/do_get]
 
 
@@ -38,6 +42,8 @@ def do_seq(env, args):
     for item in args:
         result = do(env, item)
     return result
+
+
 # [/do_seq]
 
 
@@ -49,6 +55,8 @@ def do_set(env, args):
     value = do(env, args[1])
     env[args[0]] = value
     return value
+
+
 # [/do_set]
 
 
@@ -73,6 +81,8 @@ def do(env, expr):
     if expr[0] == "set":
         return do_set(env, expr[1:])
     assert False, f"Unknown operation {expr[0]}"
+
+
 # [/do]
 
 

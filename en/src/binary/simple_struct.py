@@ -1,6 +1,6 @@
 import struct
 
-fmt = "ii" # two 32-bit integers
+fmt = "ii"  # two 32-bit integers
 x = 31
 y = 65
 

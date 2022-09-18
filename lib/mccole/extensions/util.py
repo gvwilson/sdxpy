@@ -2,9 +2,11 @@
 
 import os
 import re
+import sys
 from pathlib import Path
 
 import ivy
+import markdown
 import yaml
 
 # Configuration sections and their default values.
@@ -43,35 +45,35 @@ TRANSLATIONS = {
     },
 }
 
-# Regex to match a Markdown heading with optional attributes.
+# Match a Markdown heading with optional attributes.
 HEADING = re.compile(r"^(#+)\s*(.+?)(\{:\s*#(.+\b)\})?$", re.MULTILINE)
 
-# Regex to turn multiple whitespace characters into a single space.
+# Used to turn multiple whitespace characters into a single space.
 MULTISPACE = re.compile(r"\s+", re.DOTALL)
 
-# Regex to match table elements. (See `tables.py` for explanation.)
-TABLE = re.compile(r'<div\s+class="table(\s+break-before)?"[^>]*?>')
+# Match table elements.
+TABLE = re.compile(r'<div\s+class="table(\s+[^"]+)?"[^>]*?>')
 TABLE_CAPTION = re.compile(r'caption="(.+?)"')
 TABLE_ID = re.compile(r'id="(.+?)"')
 TABLE_DIV = re.compile(
-    r'<div\s+caption="(.+?)"\s+class="(table(\s+break-before)?)"\s+id="(.+?)">\s*<table>',
+    r'<div\s+caption="(.+?)"\s+class="(table(\s+[^"]+)?)"\s+id="(.+?)">\s*<table>',
     re.DOTALL,
 )
 
 
 def fail(msg):
     """Fail unilaterally."""
+    print(msg, file=sys.stderr)
     raise AssertionError(msg)
 
 
 def get_config(part):
     """Get configuration subsection or `None`.
 
-    A result of `None` indicates that the request is being made
-    too early in the processing cycle.
+    A result of `None` indicates the request is being made too early
+    in the processing cycle.
     """
-    if part not in CONFIGURATIONS:
-        fail(f"Unknown configuration section '{part}'")
+    require(part in CONFIGURATIONS, f"Unknown configuration section '{part}'")
     mccole = ivy.site.config.setdefault("mccole", {})
     return mccole.get(part, None)
 
@@ -79,11 +81,10 @@ def get_config(part):
 def make_config(part, filler=None):
     """Make configuration subsection.
 
-    If `filler` is not `None`, it is used as the initial value.
+    If `filler` is provided, it is used as the initial value.
     Otherwise, the value from `CONFIGURATIONS` is used.
     """
-    if part not in CONFIGURATIONS:
-        fail(f"Unknown configuration section '{part}'")
+    require(part in CONFIGURATIONS, f"Unknown configuration section '{part}'")
     filler = filler if (filler is not None) else CONFIGURATIONS[part]
     return ivy.site.config.setdefault("mccole", {}).setdefault(part, filler)
 
@@ -124,12 +125,26 @@ def make_major():
     This function relies on the configuration containing `"chapters"`
     and `"appendices"`, which must be lists of slugs.
     """
-    chapters = {slug: i + 1 for (i, slug) in enumerate(ivy.site.config["chapters"])}
+    chapters = {
+        slug: i+1
+        for (i, slug) in enumerate(ivy.site.config["chapters"])
+    }
     appendices = {
         slug: chr(ord("A") + i)
         for (i, slug) in enumerate(ivy.site.config["appendices"])
     }
     return chapters | appendices
+
+
+def markdownify(text, ext=None, strip=True):
+    """Convert to Markdown."""
+    extensions = ["markdown.extensions.extra", "markdown.extensions.smarty"]
+    if ext:
+        extensions = [ext, *extensions]
+    result = markdown.markdown(text, extensions=extensions)
+    if strip and result.startswith("<p>"):
+        result = result[3:-4]  # remove trailing '</p>' as well
+    return result
 
 
 def mccole():
@@ -146,7 +161,8 @@ def read_glossary(filename):
 
 def require(cond, msg):
     """Fail if condition untrue."""
-    assert cond, msg
+    if not cond:
+        fail(msg)
 
 
 def warn(title, items):

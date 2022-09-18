@@ -39,6 +39,8 @@ def do_call(env, args):
 
     # Report.
     return result
+
+
 # [/call]
 
 
@@ -62,6 +64,8 @@ def do_def(env, args):
     body = args[2]
     env_set(env, name, ["func", params, body])
     return None
+
+
 # [/def]
 
 

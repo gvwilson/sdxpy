@@ -1,7 +1,7 @@
 from update_timestamps import UpdateTimestamps
 
-class ExpandVariables(UpdateTimestamps):
 
+class ExpandVariables(UpdateTimestamps):
     def build(self):
         self.load_config()
         self.build_graph()
@@ -19,18 +19,20 @@ class ExpandVariables(UpdateTimestamps):
         dependencies = list(self.graph.predecessors(target))
         recipes = self.graph.nodes[target]["recipes"]
         for (ir, recipe) in enumerate(recipes):
-            result = recipe\
-                .replace("@TARGET", target)\
-                .replace("@DEPENDENCIES", " ".join(dependencies))
+            result = recipe.replace("@TARGET", target).replace(
+                "@DEPENDENCIES", " ".join(dependencies)
+            )
             for (id, d) in enumerate(dependencies):
                 result = result.replace(f"@DEP[{id+1}]", d)
             self.graph.nodes[target]["recipes"][ir] = result
+
     # [/expand]
 
 
 # [main]
 if __name__ == "__main__":
     import sys
+
     assert len(sys.argv) == 3, f"Expect config and timestamp file not {sys.argv}"
     builder = ExpandVariables(sys.argv[1], sys.argv[2])
     builder.build()

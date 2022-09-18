@@ -12,5 +12,5 @@ sock.sendall(bytes(message, "utf-8"))
 print(f"client sent {len(message)} bytes")
 
 received = sock.recv(KILOBYTE)
-received_str = str(received, 'utf-8')
+received_str = str(received, "utf-8")
 print(f"client received {len(received)} bytes: '{receiver_str}'")

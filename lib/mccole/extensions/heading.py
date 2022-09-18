@@ -3,13 +3,17 @@
 import sys
 
 import shortcodes
+
 import util
 
 
 @shortcodes.register("x")
 def heading_ref(pargs, kwargs, node):
-    """Handle [% x slug %] section reference."""
-    util.require((len(pargs) == 1) and not kwargs, "Bad 'x' shortcode")
+    """Handle [%x slug %] section reference."""
+    util.require(
+        (len(pargs) == 1) and not kwargs,
+        f"Bad 'x' shortcode {pargs} and {kwargs}"
+    )
     headings = util.get_config("headings")
     slug = pargs[0]
     try:

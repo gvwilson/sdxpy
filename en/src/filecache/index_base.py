@@ -1,9 +1,8 @@
 """Required behavior of cache index."""
 
+import datetime
 from abc import ABC, abstractmethod
 from collections import namedtuple
-import datetime
-
 
 CacheEntry = namedtuple("CacheEntry", ["identifier", "timestamp"])
 

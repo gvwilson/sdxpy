@@ -41,6 +41,8 @@ def save(writer, thing):
     # [/extras]
     else:
         raise ValueError(f"unknown type of thing {type(thing)}")
+
+
 # [/save]
 
 # [load]
@@ -87,4 +89,6 @@ def load(reader):
     # [/extras]
     else:
         raise ValueError(f"unknown type of thing {line}")
+
+
 # [/load]

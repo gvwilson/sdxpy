@@ -1,10 +1,10 @@
 """A column-oriented dataframe."""
 
 import inspect
-from util import dict_match
 
 # [top]
 from df_base import DF
+from util import dict_match
 
 
 class DfRow(DF):
@@ -15,9 +15,10 @@ class DfRow(DF):
         assert len(rows) > 0
         assert all(dict_match(r, rows[0]) for r in rows)
         self._data = rows
-# [/top]
 
-# [simple]
+    # [/top]
+
+    # [simple]
     def ncol(self):
         """Report the number of columns."""
         return len(self._data[0].keys())
@@ -29,7 +30,8 @@ class DfRow(DF):
     def cols(self):
         """Return the set of column names."""
         return set(self._data[0].keys())
-# [/simple]
+
+    # [/simple]
 
     def eq(self, other):
         """Check equality of two dataframes."""
@@ -48,21 +50,23 @@ class DfRow(DF):
         assert 0 <= row < len(self._data)
         return self._data[row][col]
 
-# [select]
+    # [select]
     def select(self, *names):
         """Select a subset of columns."""
         assert all(n in self._data[0] for n in names)
-        rows = [{key:r[key] for key in names} for r in self._data]
+        rows = [{key: r[key] for key in names} for r in self._data]
         return DfRow(rows)
-# [/select]
 
-# [filter]
+    # [/select]
+
+    # [filter]
     def filter(self, func):
         """Select a subset of rows."""
         params = list(inspect.signature(func).parameters.keys())
         result = [r for r in self._data if func(**r)]
         return DfRow(result)
-# [/filter]
+
+    # [/filter]
 
     def __str__(self):
         return str(self._data)

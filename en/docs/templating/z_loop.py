@@ -1,7 +1,7 @@
 class z_loop:
     @staticmethod
     def open(expander, node):
-        index_name, target_name = node.attrs["z-loop"].split(':')
+        index_name, target_name = node.attrs["z-loop"].split(":")
         # delete node.attrs['z-loop']
         expander.showTag(node, False)
         target = expander.env.find(target_name)

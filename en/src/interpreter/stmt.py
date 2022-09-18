@@ -22,7 +22,9 @@ def do_comment(env, args):
     ["comment" "text"] => None
     """
     return None
-#[/comment]
+
+
+# [/comment]
 
 
 def do_get(env, args):
@@ -54,6 +56,8 @@ def do_if(env, args):
     cond = do(env, args[0])
     choice = args[1] if cond else args[2]
     return do(env, choice)
+
+
 # [/if]
 
 

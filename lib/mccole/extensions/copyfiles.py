@@ -10,8 +10,13 @@ import ivy
 @ivy.events.register(ivy.events.Event.INIT)
 def copy_files():
     """Copy files."""
-    if (patterns := ivy.site.config.get("copy", None)) is None:
+    patterns = ivy.site.config.get("copy", None)
+
+    # Nothing to copy.
+    if patterns is None:
         return
+
+    # Copy everything that matches.
     for pat in patterns:
         src_dir = ivy.site.src()
         out_dir = ivy.site.out()

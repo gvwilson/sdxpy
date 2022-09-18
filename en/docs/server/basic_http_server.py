@@ -1,4 +1,4 @@
-from http.server import HTTPServer, BaseHTTPRequestHandler
+from http.server import BaseHTTPRequestHandler, HTTPServer
 
 # Page to send back.
 PAGE = """\
@@ -8,6 +8,7 @@ PAGE = """\
 </body>
 </html>
 """
+
 
 class RequestHandler(BaseHTTPRequestHandler):
     """Handle HTTP requests by returning a fixed "page"."""

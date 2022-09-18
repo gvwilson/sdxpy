@@ -4,7 +4,7 @@ def match(pattern, text):
         return True
 
     # "^" at start of pattern matches start of text.
-    if (pattern[0] == "^"):
+    if pattern[0] == "^":
         return match_here(pattern, 1, text, 0)
 
     # Try all possible starting points for pattern.
@@ -12,7 +12,7 @@ def match(pattern, text):
     # matching an empty string.
     i_text = 0
     while True:
-        if (match_here(pattern, 0, text, i_text)):
+        if match_here(pattern, 0, text, i_text):
             return True
         i_text += 1
         if i_text == len(text):
@@ -20,6 +20,8 @@ def match(pattern, text):
 
     # Nothing worked.
     return False
+
+
 # [/match]
 
 # [match_here]
@@ -29,12 +31,16 @@ def match_here(pattern, i_pattern, text, i_text):
         return True
 
     # "$" at end of pattern matches end of text.
-    if ((i_pattern == (len(pattern) - 1)) and (pattern[i_pattern] == "$") and (i_text == len(text))):
+    if (
+        (i_pattern == (len(pattern) - 1))
+        and (pattern[i_pattern] == "$")
+        and (i_text == len(text))
+    ):
         return True
 
     # "*" following current character means match many.
-    if (((len(pattern) - i_pattern) > 1) and (pattern[i_pattern + 1] == "*")):
-        while ((i_text < len(text)) and (text[i_text] == pattern[i_pattern])):
+    if ((len(pattern) - i_pattern) > 1) and (pattern[i_pattern + 1] == "*"):
+        while (i_text < len(text)) and (text[i_text] == pattern[i_pattern]):
             i_text += 1
         return match_here(pattern, i_pattern + 2, text, i_text)
 
@@ -43,11 +49,13 @@ def match_here(pattern, i_pattern, text, i_text):
         return False
 
     # Match a single character.
-    if ((pattern[i_pattern] == ".") or (pattern[i_pattern] == text[i_text])):
+    if (pattern[i_pattern] == ".") or (pattern[i_pattern] == text[i_text]):
         return match_here(pattern, i_pattern + 1, text, i_text + 1)
 
     # Nothing worked.
     return False
+
+
 # [/match_here]
 
 # [tests]
@@ -68,12 +76,13 @@ def main():
         ["ab*c", "ac", True],
         ["ab*c", "abc", True],
         ["ab*c", "abbbc", True],
-        ["ab*c", "abxc", False]
+        ["ab*c", "abxc", False],
     ]
     for (regexp, text, expected) in tests:
         actual = match(regexp, text)
         result = "pass" if actual == expected else "fail"
         print(f"'{regexp}' X '{text}' == {actual}: {result}")
+
 
 main()
 # [/tests]

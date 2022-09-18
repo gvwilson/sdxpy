@@ -1,4 +1,5 @@
-from architecture import OPS, OP_SHIFT, OP_WIDTH, NUM_REG
+from architecture import NUM_REG, OP_SHIFT, OP_WIDTH, OPS
+
 
 class Assembler:
 
@@ -19,6 +20,7 @@ class Assembler:
 
     def is_comment(self, line):
         return line.startswith("#")
+
     # [/assemble]
 
     # [find-labels]
@@ -28,8 +30,7 @@ class Assembler:
         for ln in lines:
             if self.is_label(ln):
                 label = ln[:-1]
-                assert label not in result, \
-                    f"Duplicate label {label}"
+                assert label not in result, f"Duplicate label {label}"
                 result[label] = loc
             else:
                 loc += 1
@@ -37,14 +38,14 @@ class Assembler:
 
     def is_label(self, line):
         return line.endswith(":")
+
     # [/find-labels]
 
     # [compile]
     def compile(self, instruction, labels):
         tokens = instruction.split()
         op, args = tokens[0], tokens[1:]
-        assert op in OPS, \
-            f"Unknown operation {op}"
+        assert op in OPS, f"Unknown operation {op}"
 
         result = 0
         if OPS[op]["fmt"] == "--":
@@ -54,28 +55,31 @@ class Assembler:
             result = self.combine(self.register(args[0]), OPS[op]["code"])
 
         elif OPS[op]["fmt"] == "rr":
-            result = self.combine(self.register(args[1]), self.register(args[0]), OPS[op]["code"])
+            result = self.combine(
+                self.register(args[1]), self.register(args[0]), OPS[op]["code"]
+            )
 
         elif OPS[op]["fmt"] == "rv":
-            result = self.combine(self.value(args[1], labels), self.register(args[0]), OPS[op]["code"])
+            result = self.combine(
+                self.value(args[1], labels), self.register(args[0]), OPS[op]["code"]
+            )
 
         else:
-            assert False, \
-                f"Unknown instruction format {OPS[op]['fmt']}"
+            assert False, f"Unknown instruction format {OPS[op]['fmt']}"
 
         return result
-    # [/compile]
 
+    # [/compile]
 
     # [combine]
     def combine(self, *args):
-        assert len(args) > 0, \
-            "Cannot combine no arguments"
+        assert len(args) > 0, "Cannot combine no arguments"
         result = 0
         for a in args:
             result <<= OP_SHIFT
             result |= a
         return result
+
     # [/combine]
 
     # [utilities]
@@ -83,11 +87,9 @@ class Assembler:
         return [f"{op:06x}" for op in program]
 
     def register(self, token):
-        assert token[0] == "R", \
-            f"Register '{token}' does not start with 'R'"
+        assert token[0] == "R", f"Register '{token}' does not start with 'R'"
         r = int(token[1:])
-        assert 0 <= r < NUM_REG, \
-            f"Illegal register {token}"
+        assert 0 <= r < NUM_REG, f"Illegal register {token}"
         return r
 
     def value(self, token, labels):
@@ -95,15 +97,16 @@ class Assembler:
             return int(token)
 
         lbl = token[1:]
-        assert lbl in labels, \
-            f"Unknown label '{token}'"
+        assert lbl in labels, f"Unknown label '{token}'"
         return labels[lbl]
+
     # [/utilities]
 
     # [driver]
     @classmethod
     def main(cls):
         import sys
+
         assert len(sys.argv) == 3, f"Usage: {sys.argv[0]} input|- output|-"
         reader = open(sys.argv[1], "r") if (sys.argv[1] != "-") else sys.stdin
         writer = open(sys.argv[2], "w") if (sys.argv[2] != "-") else sys.stdout
@@ -112,7 +115,9 @@ class Assembler:
         program = assembler.assemble(lines)
         for instruction in program:
             print(instruction, file=writer)
+
     # [/driver]
+
 
 # [main]
 if __name__ == "__main__":

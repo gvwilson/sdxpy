@@ -2,6 +2,7 @@ from dataclasses import dataclass
 
 import ivy
 import shortcodes
+
 import util
 
 
@@ -11,6 +12,7 @@ class Figure:
 
     node: ivy.nodes.Node = None
     fileslug: str = ""
+    cls: str = ""
     slug: str = ""
     img: str = ""
     alt: str = ""
@@ -30,7 +32,7 @@ def figures_collect():
 
 
 def _figures_parse_shortcodes(node, parser, figures):
-    """Collect information from node."""
+    """Collect figure information from a node."""
     extra = {"node": node, "seen": []}
     parser.parse(node.text, extra)
     figures[node.slug] = extra["seen"]
@@ -60,10 +62,12 @@ def _figures_flatten(collected):
 @ivy.events.register(ivy.events.Event.INIT)
 def glossary_collect():
     """Collect terms defined in each document."""
-    if (filename := ivy.site.config.get("glossary", None)) is None:
-        return '<p class="warning">No glossary specified.</p>'
-    if (lang := ivy.site.config.get("lang", None)) is None:
-        return '<p class="warning">No language specified.</p>'
+    filename = ivy.site.config.get("glossary", None)
+    util.require(filename is not None, "No glossary specified")
+
+    lang = ivy.site.config.get("lang", None)
+    util.require(lang is not None, "No language specified")
+
     glossary = util.read_glossary(filename)
     glossary = {item["key"]: item[lang]["term"] for item in glossary}
 
@@ -217,16 +221,16 @@ def _index_process(pargs, kwargs, extra, content):
     node = extra["node"]
     index = extra["index"]
 
-    if not pargs:
-        util.fail(f"Empty index key in {node.filepath}")
+    util.require(pargs, f"Empty index key in {node.filepath}")
 
     for entry in [key.strip() for key in pargs]:
         entry = util.MULTISPACE.sub(" ", entry)
         entry = tuple(s.strip() for s in entry.split("!") if s.strip())
-        if 1 <= len(entry) <= 2:
-            index.setdefault(entry, set()).add(node.slug)
-        else:
-            util.fail(f"Badly-formatted index key {entry} in {node.filepath}")
+        util.require(
+            1 <= len(entry) <= 2,
+            f"Badly-formatted index key {entry} in {node.filepath}"
+        )
+        index.setdefault(entry, set()).add(node.slug)
 
 
 # ----------------------------------------------------------------------
@@ -276,12 +280,18 @@ def _tables_process(node, tables):
     """Collect table information."""
     tables[node.slug] = []
     for (i, match) in enumerate(util.TABLE.finditer(node.text)):
-        if (caption := util.TABLE_CAPTION.search(match.group(0))) is None:
-            util.fail(
-                f"Table div '{match.group(0)}' without caption in {node.filepath}"
-            )
-        if (slug := util.TABLE_ID.search(match.group(0))) is None:
-            util.fail(f"Table div '{match.group(0)}' without ID in {node.filepath}")
+        caption = util.TABLE_CAPTION.search(match.group(0))
+        util.require(
+            caption is not None,
+            "Table div '{match.group(0)}' without caption in {node.filepath}"
+        )
+
+        slug = util.TABLE_ID.search(match.group(0))
+        util.require(
+            slug is not None,
+            f"Table div '{match.group(0)}' without ID in {node.filepath}"
+        )
+
         tables[node.slug].append(
             Table(fileslug=node.slug, caption=caption.group(1), slug=slug.group(1))
         )
@@ -308,7 +318,10 @@ def titles_collect():
     ivy.nodes.root().walk(lambda node: _titles_collect(info, node))
     chapters = [(slug, info[slug]) for slug in ivy.site.config["chapters"]]
     appendices = [(slug, info[slug]) for slug in ivy.site.config["appendices"]]
-    util.make_config("titles", {"chapters": chapters, "appendices": appendices})
+    util.make_config(
+        "titles",
+        {"chapters": chapters, "appendices": appendices}
+    )
 
 
 def _titles_collect(info, node):

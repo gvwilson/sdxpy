@@ -1,5 +1,4 @@
 class Env:
-
     def __init__(self, initial):
         self.stack = [initial.copy()]
 

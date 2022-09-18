@@ -1,20 +1,17 @@
-from extend import SaveExtend, LoadExtend
+from extend import LoadExtend, SaveExtend
+
 
 class PersistenceError(Exception):
     def __init__(self, message):
         super().__init__()
         self.message = message
 
+
 class SaveOther(SaveExtend):
     def __init__(self, writer, handlers):
         super().__init__(writer)
         self.handlers = handlers
-        self.methods = (
-            self._aliased,
-            self._builtin,
-            self._extension,
-            self._other
-        )
+        self.methods = (self._aliased, self._builtin, self._extension, self._other)
 
     def save(self, thing):
         for method in self.methods:
@@ -24,7 +21,7 @@ class SaveOther(SaveExtend):
 
     def _other(self, thing):
         cls = thing.__class__
-        if  cls not in self.handlers:
+        if cls not in self.handlers:
             return False
         self._write("@other", id(thing), cls.__name__)
         handler = self.handlers[cls]
@@ -33,16 +30,12 @@ class SaveOther(SaveExtend):
         self.save(handler(thing))
         return True
 
+
 class LoadOther(LoadExtend):
     def __init__(self, reader, extensions, handlers):
         super().__init__(reader, *extensions)
-        self.handlers = {cls.__name__:func for cls, func in handlers.items()}
-        self.methods = (
-            self._aliased,
-            self._builtin,
-            self._extension,
-            self._other
-        )
+        self.handlers = {cls.__name__: func for cls, func in handlers.items()}
+        self.methods = (self._aliased, self._builtin, self._extension, self._other)
 
     def load(self):
         key, ident, value = self._next()

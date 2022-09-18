@@ -28,6 +28,8 @@ def test_sign_zero():
 def test_sign_error():
     """Expect an error."""
     assert sgn(1) == 1
+
+
 # [/tests]
 
 
@@ -51,6 +53,8 @@ def run_tests(prefix):
         except Exception as e:
             doc = f"/{func.__doc__}" if func.__doc__ else ""
             print(f"error: {name}{doc} {str(e)}")
+
+
 # [/run]
 
 

@@ -6,6 +6,7 @@ from pathlib import Path
 
 from hash_all import hash_all
 
+
 # [backup]
 def backup(source_dir, backup_dir):
     manifest = hash_all(source_dir)
@@ -13,6 +14,8 @@ def backup(source_dir, backup_dir):
     write_manifest(backup_dir, timestamp, manifest)
     copy_files(source_dir, backup_dir, manifest)
     return manifest
+
+
 # [/backup]
 
 # [copy]
@@ -22,11 +25,15 @@ def copy_files(source_dir, backup_dir, manifest):
         backup_path = Path(backup_dir, f"{hash_code}.bck")
         if not backup_path.exists():
             shutil.copy(source_path, backup_path)
+
+
 # [/copy]
 
 # [time]
 def current_time():
     return f"{time.time()}".split(".")[0]
+
+
 # [/time]
 
 # [write]
@@ -39,9 +46,10 @@ def write_manifest(backup_dir, timestamp, manifest):
         writer = csv.writer(raw)
         writer.writerow(["filename", "hash"])
         writer.writerows(manifest)
+
+
 # [/write]
 
 if __name__ == "__main__":
-    assert len(sys.argv) == 3, \
-        "Usage: backup.py source_dir backup_dir"
+    assert len(sys.argv) == 3, "Usage: backup.py source_dir backup_dir"
     backup(sys.argv[1], sys.argv[2])

@@ -1,9 +1,4 @@
-SIMPLE = {
-  "*": "Any",
-  "|": "Alt",
-  "(": "GroupStart",
-  ")": "GroupEnd"
-}
+SIMPLE = {"*": "Any", "|": "Alt", "(": "GroupStart", ")": "GroupEnd"}
 
 # [tokenize]
 def tokenize(text):
@@ -18,4 +13,6 @@ def tokenize(text):
         else:
             result.append({"kind": "Lit", "loc": i, "value": c})
     return result
+
+
 # [/tokenize]

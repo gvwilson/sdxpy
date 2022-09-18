@@ -1,9 +1,10 @@
 import ast
-from collections import Counter, namedtuple
 import sys
+from collections import Counter, namedtuple
 
 # [class]
 Handler = namedtuple("Handler", ["func", "data"])
+
 
 class RegisterNodeVisitor(ast.NodeVisitor):
     def __init__(self):
@@ -19,11 +20,15 @@ class RegisterNodeVisitor(ast.NodeVisitor):
     def visit_Name(self, node):
         for handler in self.handlers.get(ast.Name, []):
             handler.func(node, handler.data)
+
+
 # [/class]
 
 # [handler]
 def count_names(node, counter):
     counter[node.id] += 1
+
+
 # [/handler]
 
 # [main]

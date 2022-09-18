@@ -1,8 +1,8 @@
 """Extract docstrings."""
 
 import ast
-from pathlib import Path
 import sys
+from pathlib import Path
 
 
 # [start]
@@ -20,7 +20,8 @@ class Extract(ast.NodeVisitor):
                 module_name = Path(filename).stem
                 extracter.extract_from(module_name, tree)
         return extracter.seen
-# [/start]
+
+    # [/start]
 
     # [body]
     def __init__(self):
@@ -46,6 +47,7 @@ class Extract(ast.NodeVisitor):
         self.stack.append(name)
         docstring = ast.get_docstring(node)
         self.seen[".".join(self.stack)] = (kind, docstring)
+
     # [/body]
 
     def visit_FunctionDef(self, node):

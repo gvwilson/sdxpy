@@ -4,6 +4,7 @@ import ivy
 import shortcodes
 import yaml
 
+import util
 
 @shortcodes.register("reviewers")
 def reviewers_list(pargs, kwargs, node):
@@ -14,6 +15,7 @@ def reviewers_list(pargs, kwargs, node):
             return f'<li><a href="{entry["url"]}">{entry["name"]}</a></li>'
         return f'<li>{entry["name"]}</li>'
 
+    util.require("reviewers" in ivy.site.config, "No reviewers specified")
     with open(ivy.site.config["reviewers"], "r") as reader:
         reviewers = yaml.safe_load(reader)
     reviewers = [_format(r) for r in reviewers]

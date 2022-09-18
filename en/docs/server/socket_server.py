@@ -1,6 +1,5 @@
 import socketserver
 
-
 KILOBYTE = 1024
 SERVER_ADDRESS = ("", 8080)
 

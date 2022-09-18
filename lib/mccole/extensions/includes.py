@@ -36,8 +36,9 @@ To make this work:
     does nothing; otehrwise, it dispatches to a case-specific handler.
 """
 
-import shutil
 from pathlib import Path
+import re
+import shutil
 
 import ivy
 import shortcodes
@@ -63,19 +64,32 @@ def copy_files():
         shutil.copy(src, dst)
 
 
+@shortcodes.register("linecount")
+def linecount(pargs, kwargs, node):
+    """Count lines in an include file."""
+    util.require(
+        not kwargs,
+        f"Badly-formatted linecount shortcode with {kwargs} in {node.filepath}"
+    )
+
+    inclusions = util.make_config("inclusions")
+    filepath = _inclusion_filepath(inclusions, node, pargs[0])
+    with open(filepath, "r") as reader:
+        return str(len(reader.readlines()))
+
+
 @shortcodes.register("inc")
 def include(pargs, kwargs, node):
     """Handle a file inclusion, possibly excerpting."""
-    # Error checking.
-    if pargs:
-        util.fail(f"Badly-formatted 'inc' shortcode with {pargs} in {node.filepath}")
+    util.require(
+        not pargs,
+        f"Badly-formatted excerpt shortcode with {pargs} in {node.filepath}"
+    )
 
     # Handle by cases.
     inclusions = util.make_config("inclusions")
     if ("pat" in kwargs) and ("fill" in kwargs):
         return _multi(inclusions, node, **kwargs)
-    elif "html" in kwargs:
-        return _html(inclusions, node, **kwargs)
     elif "file" not in kwargs:
         util.fail(f"Badly-formatted excerpt shortcode with {kwargs} in {node.filepath}")
     elif ("keep" in kwargs) and ("omit" in kwargs):
@@ -92,14 +106,6 @@ def _file(inclusions, node, file):
     """Handle a simple file inclusion."""
     filepath = _inclusion_filepath(inclusions, node, file)
     return _include_file(node, filepath)
-
-
-def _html(inclusions, node, html):
-    """Handle an HTML file inclusion."""
-    filepath = _inclusion_filepath(inclusions, node, html)
-    with open(filepath, "r") as reader:
-        content = reader.read().rstrip()
-    return f'<div class="html">\n{content}\n</div>'
 
 
 def _keep(inclusions, node, file, keep):
@@ -156,6 +162,8 @@ def _include_file(node, filepath, *filters):
     try:
         with open(filepath, "r") as reader:
             lines = reader.readlines()
+            for f in STANDARD_FILTERS:
+                lines = f(lines)
             for f in filters:
                 lines = f(lines)
             return _make_html(Path(filepath).name, kind, lines)
@@ -166,8 +174,10 @@ def _include_file(node, filepath, *filters):
 def _keep_lines(filepath, lines, key):
     """Select lines between markers."""
     start, stop = _find_markers(lines, key)
-    if (start is None) or (stop is None):
-        util.fail(f"Failed to match inclusion 'keep' key {key} in {filepath}")
+    util.require(
+        (start is not None) and (stop is not None),
+        f"Failed to match inclusion 'keep' key {key} in {filepath}"
+    )
     return lines[start + 1 : stop]  # noqa e203
 
 
@@ -182,8 +192,10 @@ def _make_html(name, kind, lines):
 def _omit_lines(filepath, lines, key):
     """Remove lines between markers."""
     start, stop = _find_markers(lines, key)
-    if (start is None) or (stop is None):
-        util.fail(f"Failed to match inclusion 'omit' key {key} in {filepath}")
+    util.require(
+        (start is not None) and (stop is not None),
+        f"Failed to match inclusion 'omit' key {key} in {filepath}"
+    )
     return lines[:start] + lines[stop + 1 :]  # noqa e203
 
 
@@ -192,3 +204,29 @@ def _inclusion_filepath(inclusions, node, file):
     src, dst = util.make_copy_paths(node, file)
     inclusions[src] = dst
     return src
+
+
+ESLINT_FULL_LINE = re.compile(r"^\s*//\s*eslint-")
+ESLINT_TRAILING = re.compile(r"\s*//\s*eslint-.+$")
+
+def _remove_eslint(lines):
+    """Remove eslint markers."""
+    lines = [ln for ln in lines if not ESLINT_FULL_LINE.match(ln)]
+    lines = [ESLINT_TRAILING.sub("", ln) for ln in lines]
+    return lines
+
+
+FLAKE8_FULL_LINE = re.compile(r"^\s*#\s*noqa")
+FLAKE8_TRAILING = re.compile(r"\s*#\s*noqa.+$")
+
+def _remove_flake8(lines):
+    """Remove flake8 markers."""
+    lines = [ln for ln in lines if not FLAKE8_FULL_LINE.match(ln)]
+    lines = [FLAKE8_TRAILING.sub("", ln) for ln in lines]
+    return lines
+
+
+STANDARD_FILTERS = [
+    _remove_eslint,
+    _remove_flake8
+]
