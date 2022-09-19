@@ -32,7 +32,7 @@ that turns arbitrary data into a fixed-length string of bits
 
 [% figure
    slug="backup-hash-function"
-   img="hash-function.svg"
+   img="hash_function.svg"
    alt="Hash functions"
    caption="How hash functions speed up lookup."
 %]
@@ -171,7 +171,7 @@ and also makes tests much faster
 
 [% figure
    slug="backup-mock-fs"
-   img="mock-fs.svg"
+   img="mock_fs.svg"
    alt="Mock filesystem"
    caption="Using a mock filesystem to simplify testing."
 %]
