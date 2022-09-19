@@ -36,6 +36,8 @@ that printed lines on rolls of paper;
 as [%i "Hoye, Mike" %][Mike Hoye][hoye_mike][%/i%] has [repeatedly observed][punching_holes],
 the past is all around us.
 
+</div>
+
 [% figure
    slug="layout-coordinate-system"
    img="coordinate_system.svg"

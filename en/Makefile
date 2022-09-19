@@ -72,9 +72,6 @@ pdf: docs/${STEM}.tex ${FIG_PDF}
 pdf-once: docs/${STEM}.tex ${FIG_PDF}
 	cd docs && pdflatex ${STEM}
 
-docs/%.pdf: src/%.svg
-	@convert $< $@
-
 ## clean: clean up stray files
 clean:
 	@find . -name '*~' -exec rm {} \;

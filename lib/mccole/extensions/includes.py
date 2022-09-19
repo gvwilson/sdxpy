@@ -90,8 +90,6 @@ def include(pargs, kwargs, node):
     inclusions = util.make_config("inclusions")
     if ("pat" in kwargs) and ("fill" in kwargs):
         return _multi(inclusions, node, **kwargs)
-    elif "html" in kwargs:
-        return _html(inclusions, node, **kwargs)
     elif "file" not in kwargs:
         util.fail(f"Badly-formatted excerpt shortcode with {kwargs} in {node.filepath}")
     elif ("keep" in kwargs) and ("omit" in kwargs):

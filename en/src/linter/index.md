@@ -407,7 +407,7 @@ If our input file looks like this:
 then our output is:
 {: .continue}
 
-[% inc html="doc_sample.out" %]
+[% inc file="doc_sample.out" %]
 
 ## Exercises {: #linter-exercises}
 

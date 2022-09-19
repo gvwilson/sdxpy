@@ -16,7 +16,7 @@ def main():
     text = sys.stdin.read()
     text = text.replace(r"\(", "<math>").replace(r"\)", "</math>")
     soup = BeautifulSoup(text, "html.parser")
-    state = {"appendix": False, "unknown": set()}
+    state = {"appendix": False, "seen": {}, "unknown": set()}
     accum = []
     for child in soup.find_all("section", class_="new-chapter"):
         accum = handle(child, state, accum, True)
@@ -29,8 +29,15 @@ def main():
         print(reader.read())
 
     if options.debug:
-        for key in sorted(state["unknown"]):
+        if state["unknown"]:
+            print("Unknown:", file=sys.stderr)
+            for key in sorted(state["unknown"]):
+                print(key, file=sys.stderr)
+        print("Seen", file=sys.stderr)
+        for key in sorted(state["seen"]):
             print(key, file=sys.stderr)
+            for value in sorted(state["seen"][key]):
+                print(f"- {', '.join(value)}", file=sys.stderr)
 
 
 def children(node, state, accum, doEscape):
@@ -74,14 +81,26 @@ def figure(node, state, accum, doEscape):
     """Convert a figure."""
     assert node.name == "figure", "Not a figure"
     label = node["id"]
+
+    if node.has_attr("class") and "figure-here" in node["class"]:
+        command = "figpdfhere"
+    else:
+        command = "figpdf"
+
+    if node.has_attr("class") and "latex-small" in node["class"]:
+        scale = 0.4
+    else:
+        scale = 0.6
+
     path = node.img["src"].replace(".svg", ".pdf")
     caption = "".join(children(node.figcaption, state, [], True))
     caption = caption.split(":", 1)[1].strip()
-    accum.append(f"\\figpdf{{{label}}}{{{path}}}{{{caption}}}{{0.6}}\n")
+    accum.append(f"\\{command}{{{label}}}{{{path}}}{{{caption}}}{{{scale}}}\n")
 
 
 def handle(node, state, accum, doEscape):
     """Handle nodes by type."""
+    record_seen(node, state)
 
     # Pure text
     if isinstance(node, NavigableString):
@@ -138,11 +157,11 @@ def handle(node, state, accum, doEscape):
             accum.append(escape(node["href"], True))
             accum.append("}")
 
-    # <blockquote> => callout (formatted as quotation)
+    # <blockquote> => quotation
     elif node_match(node, "blockquote"):
-        accum.append("\\begin{callout}\n")
+        accum.append("\\begin{quotation}\n")
         children(node, state, accum, doEscape)
-        accum.append("\\end{callout}\n")
+        accum.append("\\end{quotation}\n")
 
     # <code> => inline typewriter text
     elif node_match(node, "code"):
@@ -155,9 +174,17 @@ def handle(node, state, accum, doEscape):
         children(node, state, accum, doEscape)
         accum.append("\n\n")
 
-    # <div class="break-before"> => pass through
-    elif node_match(node, "div", "break-before"):
+    # <div class="callout"> => create a callout
+    elif node_match(node, "div", "callout"):
+        accum.append("\\begin{callout}\n")
         children(node, state, accum, doEscape)
+        accum.append("\\end{callout}\n")
+
+    # <div class="center"> => center a block of text
+    elif node_match(node, "div", "center"):
+        accum.append("\\begin{center}\n")
+        children(node, state, accum, doEscape)
+        accum.append("\\end{center}\n")
 
     # <div class="code-sample"> => pass through
     elif node_match(node, "div", "code-sample"):
@@ -205,7 +232,7 @@ def handle(node, state, accum, doEscape):
 
     # <h1> => chapter title
     elif node_match(node, "h1"):
-        assert node.has_attr("id")
+        assert node.has_attr("id"), f"H1 without ID {node}"
         state["slug"] = node["id"]
         content = "".join(children(node, state, [], doEscape))
         kind, title = content.split(":", 1)
@@ -234,8 +261,8 @@ def handle(node, state, accum, doEscape):
             accum.append(title)
             accum.append("}\n")
 
-    # <h3> inside <blockquote> => callout title
-    elif (node.name == "h3") and (node.parent.name == "blockquote"):
+    # <h3> inside <div class="callout"> => callout title
+    elif (node.name == "h3") and (node.parent.name == "div") and has_class(node.parent, "callout"):
         accum.append("\n")
         accum.append(r"\subsubsection*{")
         children(node, state, accum, doEscape)
@@ -273,12 +300,29 @@ def handle(node, state, accum, doEscape):
 
     # <pre> => preformatted text
     elif node_match(node, "pre"):
-        assert len(node.contents) == 2, f"Bad code node {node}"
-        title, body = node.contents[0], node.contents[1]
-        assert title.name == "span", "Expected span as title node of pre"
-        title = ""  # FIXME
+        assert 1 <= len(node.contents) <= 2, f"Bad code node {node}"
+
+        # Direct code (not an include file, no language specified).
+        if len(node.contents) == 1:
+            title, body = "", node.contents[0]
+
+        # Code inclusion with language and title.
+        else:
+            title, body = node.contents[0], node.contents[1]
+            assert title.name == "span", "Expected span as title node of pre"
+
+        # Are we switching display type based on language?
+        background = ""
+        frame = "tblr"
+        if node_match(node.parent.parent, "div", "code-sample"):
+            if has_class(node.parent.parent, {"lang-html", "lang-out", "lang-txt"}):
+                background = r",backgroundcolor=\color{black!5}"
+            if has_class(node.parent.parent, {"lang-sh"}):
+                frame = "shadowbox"
+
+        # Build code.
         assert body.name == "code", "Expected code as body of pre"
-        accum.append(f"\\begin{{lstlisting}}[{title}frame=single,frameround=tttt]\n")
+        accum.append(f"\\begin{{lstlisting}}[frame={frame}{background}]\n")
         children(body, state, accum, False)
         accum.append("\\end{lstlisting}\n")
 
@@ -295,7 +339,7 @@ def handle(node, state, accum, doEscape):
 
     # <span class="gl-key"> => format glossary key
     elif node_match(node, "span", "gl-key"):
-        accum.append(r"\glosskey{")
+        accum.append(r"{\newline}\glosskey{")
         children(node, state, accum, doEscape)
         accum.append(r"}")
 
@@ -384,6 +428,7 @@ def noindent(node):
 
 
 def parse_args():
+    """Handle command-line arguments."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--debug", action="store_true", help="show debugging")
     parser.add_argument("--head", required=True, help="LaTeX head")
@@ -391,10 +436,25 @@ def parse_args():
     return parser.parse_args()
 
 
+def record_seen(node, state):
+    """Record which node types have been seen."""
+    if not isinstance(node, Tag):
+        return
+    seen = state["seen"]
+    if node.name not in seen:
+        seen[node.name] = set()
+    if node.has_attr("class"):
+        seen[node.name].add(tuple(sorted(node["class"])))
+    else:
+        seen[node.name].add(("None",))
+
+
 def table(node, state, accum, doEscape):
     """Convert a table."""
     assert node.name == "table", "Node is not a table"
     label = node["id"] if node.has_attr("id") else None
+    position = node["class"] if node.has_attr("class") else None
+    position = "[h]" if position is not None else ""
 
     assert node.tbody, f"Table node does not have body {node}"
     rows = [table_row(row, state, doEscape, "td") for row in node.tbody.find_all("tr")]
@@ -413,7 +473,7 @@ def table(node, state, accum, doEscape):
     if label:
         caption = "".join(children(node.caption, state, [], True))
         caption = caption.split(":")[1].strip()
-        accum.append("\\begin{table}\n")
+        accum.append(f"\\begin{{table}}{position}\n")
     else:
         accum.append("\n\\vspace{\\baselineskip}\n")
 

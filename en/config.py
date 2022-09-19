@@ -3,7 +3,7 @@
 # ----------------------------------------
 
 # Abbreviation for this document.
-abbrev = "sdpy"
+abbrev = "sdxpy"
 
 # GitHub repository.
 github = "https://github.com/gvwilson/sdpy"
@@ -48,7 +48,6 @@ appendices = [
     "conduct",
     "contributing",
     "glossary",
-    "links",
     "credits",
     "contents",
 ]
