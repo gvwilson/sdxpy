@@ -75,6 +75,21 @@ pdf-once: docs/${STEM}.tex ${FIG_PDF}
 clean:
 	@find . -name '*~' -exec rm {} \;
 	@find . -type d -name __pycache__ | xargs rm -r
+	@rm -f \
+	docs/*.aux \
+	docs/*.bbl \
+	docs/*.bcf \
+	docs/*.blg \
+	docs/*.idx \
+	docs/*.ilg \
+	docs/*.ind \
+	docs/*.log \
+	docs/*.out \
+	docs/*.pdf \
+	docs/*.run.xml \
+	docs/*.tex \
+	docs/*.toc
+
 
 ## lint: check project structure
 .PHONY: lint
