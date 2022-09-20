@@ -54,7 +54,6 @@ docs/${STEM}.tex: docs/all.html ${TEX} bin/html2tex.py ${CONFIG}
 	python ./bin/html2tex.py \
 	--head info/head.tex \
 	--foot info/foot.tex \
-	--debug \
 	< docs/all.html \
 	> docs/${STEM}.tex
 	python ${CONFIG} --latex > docs/config.tex

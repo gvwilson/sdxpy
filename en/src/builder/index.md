@@ -59,7 +59,12 @@ The graph is directed because "A depends on B" is a one-way relationship,
 while "acyclic" means it cannot contains loops:
 if something depends on itself we can never finish updating it.
 
-[% figure slug="builder-dependencies" img="dependencies.svg" alt="Respecting dependencies" caption="How a build manager finds and respects dependencies." %]
+[% figure
+   slug="builder-dependencies"
+   img="dependencies.svg"
+   alt="Respecting dependencies"
+   caption="How a build manager finds and respects dependencies."
+%]
 
 We say that a target is [%i "stale (in build)" "build!stale" %][%g build_stale "stale" %][%/i%]
 if it is older than any of its dependencies.
