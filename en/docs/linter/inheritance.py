@@ -45,6 +45,7 @@ class FindClassesAndMethods(ast.NodeVisitor):
             all_methods |= v
         all_methods = sorted(all_methods)
         print(f"| | {' | '.join(all_classes)} |")
+        print(f"|{'|'.join([' --- '] * (len(all_classes) + 1))}|")
         for m in all_methods:
             defined = ["X" if m in self.methods[c] else " " for c in all_classes]
             print(f"| {m} | {' | '.join(defined)}")

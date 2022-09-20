@@ -62,7 +62,7 @@ where `r` indicates a register identifier,
 `c` indicates a constant,
 and `a` indicates an address.
 
-<div class="table" id="vm-op-codes" caption="Virtual machine op codes." markdown="1">
+<div class="table" id="vm-op-codes" caption="Virtual machine op codes" markdown="1">
 | Instruction | Code | Format | Action              | Example      | Equivalent                |
 | ----------- | ---- | ------ | ------------------- | ------------ | ------------------------- |
 |  `hlt`      |    1 | `--`   | Halt program        | `hlt`        | `process.exit(0)`         |

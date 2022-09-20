@@ -289,6 +289,7 @@ none of that requires us to inspect the AST.
 
 <div class="table" id="linter-inheritance" caption="Inheritance and methods" markdown="1">
 | | GrandChild | LeftChild | Parent | RightChild |
+| --- | --- | --- | --- | --- |
 | blue | X | X |   | X
 | green |   | X | X |
 | orange | X |   |   |

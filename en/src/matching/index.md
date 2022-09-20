@@ -22,7 +22,7 @@ but as [%i "Kernighan, Brian" %]Kernighan[%/i%] wrote,
 in my own experience of using regular expressions on a day-to-day basis,
 it easily accounts for 95 percent of all instances."
 
-<div class="table" id="pattern-matching-cases" caption="Pattern matching cases." markdown="1">
+<div class="table" id="pattern-matching-cases" caption="Pattern matching cases" markdown="1">
 | Meaning                   | Character |
 | ------------------------- | --------- |
 | Any literal character *c* | *c*       |

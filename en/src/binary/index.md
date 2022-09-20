@@ -28,7 +28,7 @@ called {% g twos_complement "two's complement" %].
 Instead of mirroring positive values,
 two's complement rolls over when going below zero like an odometer.
 For example,
-with three-bit integers we get the values in [%t binary-3bit %]
+with three-bit integers we get the values in [%t binary-3bit %].
 
 <div class="table" id="binary-3bit" caption="3-bit integer values" markdown="1">
 | Base 10 | Base 2 |
