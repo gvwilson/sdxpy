@@ -21,84 +21,6 @@ class Figure:
     width: str = ""
 
 
-@ivy.events.register(ivy.events.Event.INIT)
-def figures_collect():
-    """Collect information by parsing shortcodes."""
-    parser = shortcodes.Parser(inherit_globals=False, ignore_unknown=True)
-    parser.register(_figure_parse, "figure")
-    figures = {}
-    ivy.nodes.root().walk(lambda node: _figures_parse_shortcodes(node, parser, figures))
-    _figures_flatten(figures)
-
-
-def _figures_parse_shortcodes(node, parser, figures):
-    """Collect figure information from a node."""
-    extra = {"node": node, "seen": []}
-    parser.parse(node.text, extra)
-    figures[node.slug] = extra["seen"]
-
-
-def _figure_parse(pargs, kwargs, extra):
-    """Collect information from a single figure shortcode."""
-    extra["seen"].append(Figure(extra["node"], **kwargs))
-    return ""
-
-
-def _figures_flatten(collected):
-    """Convert collected figures information to flat lookup table."""
-    major = util.make_major()
-    figures = util.make_config("figures")
-    for fileslug in collected:
-        if fileslug in major:
-            for (i, entry) in enumerate(collected[fileslug]):
-                entry.fileslug = fileslug
-                entry.number = (str(major[fileslug]), str(i + 1))
-                figures[entry.slug] = entry
-
-
-# ----------------------------------------------------------------------
-
-
-@ivy.events.register(ivy.events.Event.INIT)
-def glossary_collect():
-    """Collect terms defined in each document."""
-    filename = ivy.site.config.get("glossary", None)
-    util.require(filename is not None, "No glossary specified")
-
-    lang = ivy.site.config.get("lang", None)
-    util.require(lang is not None, "No language specified")
-
-    glossary = util.read_glossary(filename)
-    glossary = {item["key"]: item[lang]["term"] for item in glossary}
-
-    parser = shortcodes.Parser(inherit_globals=False, ignore_unknown=True)
-    parser.register(_glossary_parse_entry, "g")
-    defs = util.make_config("definitions")
-    ivy.nodes.root().walk(
-        lambda node: _glossary_parse_shortcodes(node, parser, defs, glossary)
-    )
-
-
-def _glossary_parse_shortcodes(node, parser, defs, glossary):
-    """Collect information from node."""
-    used = set()
-    parser.parse(node.text, used)
-    if not used:
-        return
-    terms = [(key, glossary[key]) for key in glossary if key in used]
-    terms.sort(key=lambda item: item[1].lower())
-    defs.append((node.slug, terms))
-
-
-def _glossary_parse_entry(pargs, kwargs, extra):
-    """Collect information from a single glossary shortcode."""
-    extra.add(pargs[0])
-    return ""
-
-
-# ----------------------------------------------------------------------
-
-
 @dataclass
 class Heading:
     """Keep track of heading information."""
@@ -110,16 +32,139 @@ class Heading:
     number: tuple = ()
 
 
-@ivy.events.register(ivy.events.Event.INIT)
-def headings_collect():
-    """Collect heading information using regular expressions."""
-    major = util.make_major()
-    headings = {}
-    ivy.nodes.root().walk(lambda node: _headings_parse(node, major, headings))
+@dataclass
+class Table:
+    """Keep track of information about a single table."""
 
-    _headings_number(major, headings)
-    _headings_flatten(headings)
-    ivy.nodes.root().walk(_headings_modify)
+    fileslug: str = ""
+    slug: str = ""
+    caption: str = ""
+    number: tuple = ()
+
+
+@ivy.events.register(ivy.events.Event.INIT)
+def collect():
+    """Collect information from pages."""
+    # Gather data.
+    major = util.make_major()
+    data = {
+        "definitions": {},
+        "figures": {},
+        "headings": {},
+        "index": util.make_config("index"),
+        "syllabus": {},
+        "tables": {},
+        "titles": {},
+    }
+
+    ivy.nodes.root().walk(lambda node: _node_collect(node, major, data))
+
+    # Clean up data.
+    _figures_cleanup(data["figures"])
+    _headings_cleanup(data["headings"], major)
+    _syllabus_cleanup(data["syllabus"])
+    _tables_cleanup(data["tables"])
+    _titles_cleanup(data["titles"])
+
+    # Post-processing.
+    ivy.nodes.root().walk(_node_modify)
+    data["definitions"] = _glossary_cleanup(data["definitions"])
+
+
+def _node_collect(node, major, data):
+    """Pull data from a single node."""
+    # Non-shortcodes.
+    _headings_parse(node, major, data["headings"])
+    _syllabus_parse(node, data["syllabus"])
+    _tables_parse(node, data["tables"])
+    _titles_parse(node, data["titles"])
+
+    # Shortcodes.
+    parser = shortcodes.Parser(inherit_globals=False, ignore_unknown=True)
+    parser.register(_figure_parse, "figure")
+    parser.register(_glossary_parse, "g")
+    parser.register(_index_parse, "i", "/i")
+
+    data["node"] = node
+    data["collected_figures"] = []
+    data["collected_glossary"] = set()
+
+    parser.parse(node.text, data)
+
+    data["definitions"][node.slug] = data["collected_glossary"]
+    data["figures"][node.slug] = data["collected_figures"]
+
+
+def _node_modify(node):
+    """Post-processing changes."""
+    # Headings.
+    node.text = util.HEADING.sub(_headings_patch, node.text)
+    headings = util.get_config("headings")
+    if node.slug in headings:
+        node.meta["major"] = util.make_label("part", headings[node.slug].number)
+
+
+# ----------------------------------------------------------------------
+# Figures
+# ----------------------------------------------------------------------
+
+
+def _figures_cleanup(collected):
+    """Convert collected figures information to flat lookup table."""
+    major = util.make_major()
+    figures = util.make_config("figures")
+    for fileslug in collected:
+        if fileslug in major:
+            for (i, entry) in enumerate(collected[fileslug]):
+                entry.fileslug = fileslug
+                entry.number = (str(major[fileslug]), str(i + 1))
+                figures[entry.slug] = entry
+
+
+def _figure_parse(pargs, kwargs, data):
+    """Collect information from a single figure shortcode."""
+    data["collected_figures"].append(Figure(data["node"], **kwargs))
+    return ""
+
+
+# ----------------------------------------------------------------------
+# Glossary
+# ----------------------------------------------------------------------
+
+
+def _glossary_cleanup(definitions):
+    """Translate glossary definitions into required form."""
+    filename = ivy.site.config.get("glossary", None)
+    util.require(filename is not None, "No glossary specified")
+
+    lang = ivy.site.config.get("lang", None)
+    util.require(lang is not None, "No language specified")
+
+    glossary = util.read_glossary(filename)
+    glossary = {item["key"]: item[lang]["term"] for item in glossary}
+
+    result = util.make_config("definitions")
+    for (slug, seen) in definitions.items():
+        terms = [(key, glossary[key]) for key in glossary if key in seen]
+        terms.sort(key=lambda item: item[1].lower())
+        result.append((slug, terms))
+
+
+def _glossary_parse(pargs, kwargs, data):
+    """Collect information from a single glossary shortcode."""
+    data["collected_glossary"].add(pargs[0])
+    return ""
+
+
+# ----------------------------------------------------------------------
+# Headings
+# ----------------------------------------------------------------------
+
+
+def _headings_cleanup(collected, major):
+    """Clean up collected headings."""
+    _headings_number(collected, major)
+    _headings_flatten(collected)
 
 
 def _headings_flatten(collected):
@@ -130,14 +175,7 @@ def _headings_flatten(collected):
             headings[entry.slug] = entry
 
 
-def _headings_modify(node):
-    node.text = util.HEADING.sub(_headings_patch, node.text)
-    headings = util.get_config("headings")
-    if node.slug in headings:
-        node.meta["major"] = util.make_label("part", headings[node.slug].number)
-
-
-def _headings_number(major, headings):
+def _headings_number(headings, major):
     """Calculate heading numberings."""
     for slug in major:
         stack = [major[slug]]
@@ -203,20 +241,11 @@ def _headings_patch(match):
 
 
 # ----------------------------------------------------------------------
+# Index
+# ----------------------------------------------------------------------
 
 
-@ivy.events.register(ivy.events.Event.INIT)
-def index_collect():
-    """Collect information by parsing shortcodes."""
-    parser = shortcodes.Parser(inherit_globals=False, ignore_unknown=True)
-    parser.register(_index_process, "i", "/i")
-    index = util.make_config("index")
-    ivy.nodes.root().walk(
-        lambda node: parser.parse(node.text, {"node": node, "index": index})
-    )
-
-
-def _index_process(pargs, kwargs, extra, content):
+def _index_parse(pargs, kwargs, extra, content):
     """Gather information from a single index shortcode."""
     node = extra["node"]
     index = extra["index"]
@@ -234,49 +263,42 @@ def _index_process(pargs, kwargs, extra, content):
 
 
 # ----------------------------------------------------------------------
+# Syllabus
+# ----------------------------------------------------------------------
 
 
-@ivy.events.register(ivy.events.Event.INIT)
-def syllabus_collect():
-    """Collect chapter syllabi."""
-    info = {}
-    ivy.nodes.root().walk(lambda node: _syllabus_collect(info, node))
+def _syllabus_cleanup(collected):
     syllabi = [
-        (slug, info[slug][0], info[slug][1])
+        (slug, collected[slug][0], collected[slug][1])
         for slug in ivy.site.config["chapters"]
-        if slug in info
+        if slug in collected
     ]
     util.make_config("syllabus", syllabi)
 
 
-def _syllabus_collect(info, node):
+def _syllabus_parse(node, info):
     if "syllabus" in node.meta:
         assert "title" in node.meta
         info[node.slug] = (node.meta["title"], node.meta.get("syllabus", []))
 
 
 # ----------------------------------------------------------------------
+# Tables
+# ----------------------------------------------------------------------
 
 
-@dataclass
-class Table:
-    """Keep track of information about a single table."""
-
-    fileslug: str = ""
-    slug: str = ""
-    caption: str = ""
-    number: tuple = ()
-
-
-@ivy.events.register(ivy.events.Event.INIT)
-def tables_collect():
-    """Collect table information using regular expressions."""
-    tables = {}
-    ivy.nodes.root().walk(lambda node: _tables_process(node, tables))
-    _tables_flatten(tables)
+def _tables_cleanup(collected):
+    """Convert collected table information to flat lookup table."""
+    major = util.make_major()
+    tables = util.make_config("tables")
+    for fileslug in collected:
+        if fileslug in major:
+            for (i, entry) in enumerate(collected[fileslug]):
+                entry.number = (str(major[fileslug]), str(i + 1))
+                tables[entry.slug] = entry
 
 
-def _tables_process(node, tables):
+def _tables_parse(node, tables):
     """Collect table information."""
     tables[node.slug] = []
     for (i, match) in enumerate(util.TABLE.finditer(node.text)):
@@ -297,33 +319,20 @@ def _tables_process(node, tables):
         )
 
 
-def _tables_flatten(collected):
-    """Convert collected table information to flat lookup table."""
-    major = util.make_major()
-    tables = util.make_config("tables")
-    for fileslug in collected:
-        if fileslug in major:
-            for (i, entry) in enumerate(collected[fileslug]):
-                entry.number = (str(major[fileslug]), str(i + 1))
-                tables[entry.slug] = entry
-
-
+# ----------------------------------------------------------------------
+# Titles
 # ----------------------------------------------------------------------
 
 
-@ivy.events.register(ivy.events.Event.INIT)
-def titles_collect():
-    """Collect page titles."""
-    info = {}
-    ivy.nodes.root().walk(lambda node: _titles_collect(info, node))
-    chapters = [(slug, info[slug]) for slug in ivy.site.config["chapters"]]
-    appendices = [(slug, info[slug]) for slug in ivy.site.config["appendices"]]
+def _titles_cleanup(collected):
+    chapters = [(slug, collected[slug]) for slug in ivy.site.config["chapters"]]
+    appendices = [(slug, collected[slug]) for slug in ivy.site.config["appendices"]]
     util.make_config(
         "titles",
         {"chapters": chapters, "appendices": appendices}
     )
 
 
-def _titles_collect(info, node):
+def _titles_parse(node, info):
     if "title" in node.meta:
         info[node.slug] = node.meta["title"]
