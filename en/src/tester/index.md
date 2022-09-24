@@ -89,6 +89,7 @@ def show_off(some_parameter):
 
 show_off("hello")
 ```
+
 ```txt
 local values {'some_parameter': 'hello', 'some_variable': 'hellohello'}
 ```
@@ -114,6 +115,7 @@ Here's proof:
 alias = example
 alias()
 ```
+
 ```text
 in example
 ```
@@ -127,6 +129,7 @@ def replacement():
 example = replacement
 example()
 ```
+
 ```text
 in replacement
 ```
@@ -142,6 +145,7 @@ def example():
 
 print(dir(example))
 ```
+
 ```text
 [
     '__annotations__', '__builtins__', '__call__', '__class__'
@@ -163,6 +167,7 @@ and `__name__` holds its original name:
 print("docstring:", example.__doc__)
 print("name:", example.__name__)
 ```
+
 ```text
 docstring: Docstring for example.
 name: example
@@ -191,6 +196,7 @@ def find_tests():
 
 print("all the test functions", find_tests())
 ```
+
 ```text
 all the test functions [
     <function test_addition at 0x1008d7d90>,
@@ -231,6 +237,7 @@ def run_tests():
 
 run_tests()
 ```
+
 ```text
 test_addition passed
 test_multiplication passed
