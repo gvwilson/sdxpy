@@ -2,9 +2,9 @@
 
 import ivy
 import shortcodes
+import util
 import yaml
 
-import util
 
 @shortcodes.register("reviewers")
 def reviewers_list(pargs, kwargs, node):

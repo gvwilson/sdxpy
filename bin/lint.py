@@ -10,6 +10,7 @@ from pathlib import Path
 
 import utils
 from bs4 import BeautifulSoup, Tag
+from mccole.util import DIRECTIVES_FILE, read_directives
 from yaml_header_tools import NoValidHeader, get_header_from_file
 
 CONFIGURATION = [
@@ -26,32 +27,31 @@ CONFIGURATION = [
     ("debug", bool),
     ("exclude", list),
     ("extension", str),
-    ("github", str),
     ("glossary", str),
     ("lang", str),
     ("links", str),
     ("markdown_settings", dict),
     ("out_dir", str),
+    ("repo", str),
     ("src_dir", str),
     ("tagline", str),
     ("theme", str),
     ("title", str),
     ("warnings", bool),
 ]
-IGNORE_FILE = ".mccoleignore"
 INDEX_FILE = "index.md"
 MAKEFILE = "Makefile"
 RE_CODE_BLOCK = re.compile("```.+?```", re.DOTALL)
 RE_CODE_INLINE = re.compile("`.+?`")
 RE_FILE = re.compile(r'\[%\s*inc\b.+?(file|html)="(.+?)".+?%\]')
 RE_FIGURE = re.compile(r'\[%\s*figure\b.+?img="(.+?)".+?%\]', re.DOTALL)
-RE_LINK = re.compile(r"\[[^]]+?\]\[(\w+?)\]")
+RE_LINK = re.compile(r"\[[^]]*?\]\[(\w+?)\]")
 RE_PAT = re.compile(r'\[%\s*inc\b.+?pat="(.+?)"\s+fill="(.+?)".+?%\]')
 RE_SHORTCODE = re.compile(r"\[%.+?%\]")
 SLIDES_FILE = "slides.html"
 SLIDES_TEMPLATE = "slides"
 
-EXPECTED_FILES = {INDEX_FILE, SLIDES_FILE}
+EXPECTED_FILES = {DIRECTIVES_FILE, INDEX_FILE, MAKEFILE, SLIDES_FILE}
 
 
 def main():
@@ -59,21 +59,21 @@ def main():
     options = parse_args()
 
     config = check_config(options.config)
-    src_dir = getattr(config, "src_dir")
-    out_dir = getattr(config, "out_dir")
-    links_file = getattr(config, "links")
     dom_file = getattr(config, "dom")
     glossary_file = getattr(config, "glossary")
     language = getattr(config, "lang")
+    links_file = getattr(config, "links")
+    out_dir = getattr(config, "out_dir")
+    src_dir = getattr(config, "src_dir")
 
     source_files = get_src(src_dir)
-    html_files = get_html(out_dir)
-
-    check_files(source_files)
-    check_slides(source_files)
-    check_links(links_file, source_files)
-    check_dom(dom_file, html_files)
+    check_files(src_dir, source_files)
     check_glossary(glossary_file, language)
+    check_links(links_file, source_files)
+    check_slides(source_files)
+
+    html_files = get_html(out_dir)
+    check_dom(dom_file, html_files)
 
 
 def check_config(config_path):
@@ -106,12 +106,12 @@ def check_dom(dom_spec, html_files):
     _diff_dom(seen, allowed)
 
 
-def check_files(source_files):
+def check_files(source_dir, source_files):
     """Check for inclusions and figures."""
     for (dirname, filename) in source_files:
         filepath = Path(dirname, filename)
         referenced = get_inclusions(filepath) | get_figures(filepath)
-        existing = get_files(dirname) - get_ignores(dirname)
+        existing = get_files(source_dir, dirname) - get_ignores(dirname)
         report(f"{dirname}: inclusions", referenced, existing)
 
 
@@ -174,13 +174,15 @@ def get_inclusions(filename):
         return result
 
 
-def get_files(dirname):
-    """Return set of files."""
-    return set(
-        f.name
-        for f in Path(dirname).iterdir()
-        if f.is_file() and (f.name not in EXPECTED_FILES)
-    )
+def get_files(source_dir, dirname):
+    """Return set of files in or below this directory."""
+    if dirname == source_dir:
+        candidates = set(Path(dirname).glob("*"))
+    else:
+        candidates = set(Path(dirname).rglob("**/*"))
+    prefix_len = len(str(dirname)) + 1
+    result = set(str(f)[prefix_len:] for f in candidates if Path(f).is_file())
+    return result - EXPECTED_FILES
 
 
 def get_figures(filepath):
@@ -197,12 +199,7 @@ def get_html(out_dir):
 
 def get_ignores(dirname):
     """Get list of files in a directory that are intentionally unreferenced."""
-    result = {IGNORE_FILE, MAKEFILE}
-    ignore = Path(dirname, ".mccoleignore")
-    if ignore.exists():
-        with open(ignore, "r") as reader:
-            result |= {x.strip() for x in reader.readlines()}
-    return result
+    return set(read_directives(dirname, "unreferenced"))
 
 
 def get_links(filename):

@@ -13,7 +13,6 @@ PROTOCOL = "file://"
 
 # Home directory replacement.
 HERE = os.path.abspath(os.path.join(os.getcwd(), os.pardir))
-FAKE = "/u/sdpy"
 
 # How to show removed lines. (Can't use literal ellipsis '…' because it confuses LaTeX.)
 REMOVED = "..."
@@ -45,7 +44,7 @@ def wrap(options, lines):
     """Wrap lines."""
     result = []
     for line in lines:
-        line = line.replace(PROTOCOL, "").replace(HERE, FAKE)
+        line = line.replace(PROTOCOL, "").replace(HERE, options.home)
         if len(line) == 0:
             result.append(line)
             continue
@@ -70,5 +69,8 @@ def split(line):
 
 
 if __name__ == "__main__":
-    options = utils.get_options(["--slice", None, "Take slice out of input?"])
+    options = utils.get_options(
+        ["--home", None, "Substitute home directory"],
+        ["--slice", None, "Take slice out of input?"],
+    )
     reformat(options)

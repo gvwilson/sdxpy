@@ -7,7 +7,7 @@ TARGETS=\
   inheritance_example.out \
   walk_ast.out
 
-include ../../examples.mk
+include ../examples.mk
 
 doc_sample.out: doc_sample.py doc_extract.py doc_format.py
 	python doc_format.py doc_sample.py > $@

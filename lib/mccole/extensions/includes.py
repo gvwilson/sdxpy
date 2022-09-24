@@ -36,9 +36,8 @@ To make this work:
     does nothing; otehrwise, it dispatches to a case-specific handler.
 """
 
-from pathlib import Path
 import re
-import shutil
+from pathlib import Path
 
 import ivy
 import shortcodes
@@ -52,24 +51,12 @@ def filter_files(value, filepath):
     return result
 
 
-@ivy.events.register(ivy.events.Event.EXIT_BUILD)
-def copy_files():
-    """Copy all included files."""
-    # Wrong part of the cycle.
-    if (inclusions := util.get_config("inclusions")) is None:
-        return
-
-    # Copy files.
-    for (src, dst) in inclusions.items():
-        shutil.copy(src, dst)
-
-
 @shortcodes.register("linecount")
 def linecount(pargs, kwargs, node):
     """Count lines in an include file."""
     util.require(
         not kwargs,
-        f"Badly-formatted linecount shortcode with {kwargs} in {node.filepath}"
+        f"Badly-formatted linecount shortcode with {kwargs} in {node.filepath}",
     )
 
     inclusions = util.make_config("inclusions")
@@ -82,8 +69,7 @@ def linecount(pargs, kwargs, node):
 def include(pargs, kwargs, node):
     """Handle a file inclusion, possibly excerpting."""
     util.require(
-        not pargs,
-        f"Badly-formatted excerpt shortcode with {pargs} in {node.filepath}"
+        not pargs, f"Badly-formatted excerpt shortcode with {pargs} in {node.filepath}"
     )
 
     # Handle by cases.
@@ -184,7 +170,7 @@ def _keep_lines(filepath, lines, key):
     start, stop = _find_markers(lines, key)
     util.require(
         (start is not None) and (stop is not None),
-        f"Failed to match inclusion 'keep' key {key} in {filepath}"
+        f"Failed to match inclusion 'keep' key {key} in {filepath}",
     )
     return lines[start + 1 : stop]  # noqa e203
 
@@ -202,7 +188,7 @@ def _omit_lines(filepath, lines, key):
     start, stop = _find_markers(lines, key)
     util.require(
         (start is not None) and (stop is not None),
-        f"Failed to match inclusion 'omit' key {key} in {filepath}"
+        f"Failed to match inclusion 'omit' key {key} in {filepath}",
     )
     return lines[:start] + lines[stop + 1 :]  # noqa e203
 
@@ -217,6 +203,7 @@ def _inclusion_filepath(inclusions, node, file):
 ESLINT_FULL_LINE = re.compile(r"^\s*//\s*eslint-")
 ESLINT_TRAILING = re.compile(r"\s*//\s*eslint-.+$")
 
+
 def _remove_eslint(lines):
     """Remove eslint markers."""
     lines = [ln for ln in lines if not ESLINT_FULL_LINE.match(ln)]
@@ -227,6 +214,7 @@ def _remove_eslint(lines):
 FLAKE8_FULL_LINE = re.compile(r"^\s*#\s*noqa")
 FLAKE8_TRAILING = re.compile(r"\s*#\s*noqa.+$")
 
+
 def _remove_flake8(lines):
     """Remove flake8 markers."""
     lines = [ln for ln in lines if not FLAKE8_FULL_LINE.match(ln)]
@@ -234,7 +222,4 @@ def _remove_flake8(lines):
     return lines
 
 
-STANDARD_FILTERS = [
-    _remove_eslint,
-    _remove_flake8
-]
+STANDARD_FILTERS = [_remove_eslint, _remove_flake8]

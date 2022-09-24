@@ -6,7 +6,7 @@ TARGETS=\
   test_backup_manual.out \
   try_glob.out
 
-include ../../examples.mk
+include ../examples.mk
 
 hash_all.out: hash_all.sh hash_all.py
 	bash $< 2>&1 > $@

@@ -16,4 +16,4 @@ TARGETS=\
   single_variable.out \
   static_text.out \
 
-include ../../examples.mk
+include ../examples.mk

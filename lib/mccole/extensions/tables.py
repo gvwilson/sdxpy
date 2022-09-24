@@ -44,7 +44,6 @@ so tables are represented as:
 
 import ivy
 import shortcodes
-
 import util
 
 
@@ -52,8 +51,7 @@ import util
 def table_ref(pargs, kwargs, node):
     """Handle [%t slug %] table reference."""
     util.require(
-        len(pargs) == 1,
-        f"Badly-formatted 't' shortcode {pargs} in {node.filepath}"
+        len(pargs) == 1, f"Badly-formatted 't' shortcode {pargs} in {node.filepath}"
     )
 
     # Too early in the processing cycle.
@@ -62,7 +60,9 @@ def table_ref(pargs, kwargs, node):
 
     # Fill in.
     slug = pargs[0]
-    util.require(slug in tables, f"Unknown table reference slug {slug} in {node.filepath}")
+    util.require(
+        slug in tables, f"Unknown table reference slug {slug} in {node.filepath}"
+    )
     table = tables[slug]
     label = util.make_label("table", table.number)
     cls = 'class="tbl-ref"'

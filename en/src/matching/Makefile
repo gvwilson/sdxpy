@@ -1,4 +1,4 @@
 TARGETS=\
   simple_regexp.out
 
-include ../../examples.mk
+include ../examples.mk

@@ -4,10 +4,9 @@ from pathlib import Path
 
 import ivy
 import shortcodes
+import util
 from pybtex.database import parse_file
 from pybtex.plugin import find_plugin
-
-import util
 
 
 @shortcodes.register("b")
@@ -15,16 +14,14 @@ def bibliography_ref(pargs, kwargs, node):
     """Handle [%b key1 key2 %] biblography reference shortcodes."""
     util.require(
         (len(pargs) > 0) and (not kwargs),
-        f"Bad 'b' shortcode with {pargs} and {kwargs}"
+        f"Bad 'b' shortcode with {pargs} and {kwargs}",
     )
 
     used = util.make_config("bibliography")
     used.update(pargs)
 
     base = "@root/bibliography"
-    links = [
-        f'<a class="bib-ref" href="{base}/#{k}">{k}</a>' for k in pargs
-    ]
+    links = [f'<a class="bib-ref" href="{base}/#{k}">{k}</a>' for k in pargs]
     links = ", ".join(links)
     return f'<span class="bib-ref">[{links}]</span>'
 
@@ -34,7 +31,7 @@ def bibliography(pargs, kwargs, node):
     """Convert bibliography to HTML."""
     util.require(
         (not pargs) and (not kwargs),
-        f"Bad 'bibliography' shortcode {pargs} and {kwargs}"
+        f"Bad 'bibliography' shortcode {pargs} and {kwargs}",
     )
 
     filename = ivy.site.config.get("bibliography", None)

@@ -4,7 +4,6 @@ import re
 
 import ivy
 import shortcodes
-
 import util
 
 # Regex to extract internal cross-references from bodies of definitions.
@@ -15,8 +14,7 @@ INTERNAL_REF = re.compile(r"\]\(#(.+?)\)")
 def glossary_ref(pargs, kwargs, node):
     """Handle [% g slug "text" %] glossary reference shortcodes."""
     util.require(
-        (len(pargs) == 2) and (not kwargs),
-        f"Bad 'g' shortcode {pargs} and {kwargs}"
+        (len(pargs) == 2) and (not kwargs), f"Bad 'g' shortcode {pargs} and {kwargs}"
     )
     slug = pargs[0]
     text = pargs[1]
@@ -30,8 +28,7 @@ def glossary_ref(pargs, kwargs, node):
 def glossary(pargs, kwargs, node):
     """Convert glossary to Markdown."""
     util.require(
-        (not pargs) and (not kwargs),
-        f"Bad 'glossary' shortcode {pargs} and {kwargs}"
+        (not pargs) and (not kwargs), f"Bad 'glossary' shortcode {pargs} and {kwargs}"
     )
 
     filename = ivy.site.config.get("glossary", None)

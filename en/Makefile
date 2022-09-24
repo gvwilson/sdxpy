@@ -13,6 +13,7 @@ INFO := info/bibliography.bib info/credits.yml info/glossary.yml info/links.yml
 FIG_SVG := $(wildcard src/*/*.svg)
 IVY := $(wildcard lib/mccole/*/*.*)
 TEX := info/head.tex info/foot.tex
+TEX_COPY := info/krantz.cls info/dedication.tex
 SRC := $(wildcard *.md) $(wildcard src/*.md) $(wildcard src/*/index.md) $(wildcard src/*/slides.html)
 
 # Calculated variables.
@@ -50,13 +51,14 @@ docs/all.html: ./docs/index.html ${HTML} bin/single.py
 
 ## latex: create LaTeX document
 latex: docs/${STEM}.tex
-docs/${STEM}.tex: docs/all.html ${TEX} bin/html2tex.py ${CONFIG}
+docs/${STEM}.tex: docs/all.html bin/html2tex.py ${CONFIG} ${TEX} ${TEX_COPY}
 	python ./bin/html2tex.py \
 	--head info/head.tex \
 	--foot info/foot.tex \
 	< docs/all.html \
 	> docs/${STEM}.tex
 	python ${CONFIG} --latex > docs/config.tex
+	cp ${TEX_COPY} docs
 
 ## pdf: create PDF document
 pdf: docs/${STEM}.tex ${FIG_PDF}
@@ -70,6 +72,11 @@ pdf: docs/${STEM}.tex ${FIG_PDF}
 ## pdf-once: create PDF document with a single compilation
 pdf-once: docs/${STEM}.tex ${FIG_PDF}
 	cd docs && pdflatex ${STEM}
+
+## diagrams: convert diagrams from SVG to pdf
+diagrams: ${FIG_PDF}
+docs/%.pdf: src/%.svg
+	draw.io --export --crop --output $@ $<
 
 ## clean: clean up stray files
 clean:
@@ -120,11 +127,6 @@ wordlist: ./docs/index.html
 .PHONY: count
 count:
 	@wc -w ${SRC} | sort -n
-
-## progress: show historical progress
-.PHONY: progress
-progress:
-	@python bin/progress.py info/progress.csv
 
 ## valid: run html5validator on generated files
 .PHONY: valid

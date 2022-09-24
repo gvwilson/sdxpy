@@ -3,7 +3,6 @@
 from textwrap import dedent
 
 import shortcodes
-
 import util
 
 
@@ -18,9 +17,7 @@ def figure_ref(pargs, kwargs, node):
 
     # Create cross-reference.
     slug = pargs[0]
-    util.require(
-        slug in figures, f"Unknown figure reference {slug} ({node.filepath})"
-    )
+    util.require(slug in figures, f"Unknown figure reference {slug} ({node.filepath})")
     figure = figures[slug]
     label = util.make_label("figure", figure.number)
     cls = 'class="fig-ref"'

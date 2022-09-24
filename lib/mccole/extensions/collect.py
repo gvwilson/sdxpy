@@ -2,7 +2,6 @@ from dataclasses import dataclass
 
 import ivy
 import shortcodes
-
 import util
 
 
@@ -257,7 +256,7 @@ def _index_parse(pargs, kwargs, extra, content):
         entry = tuple(s.strip() for s in entry.split("!") if s.strip())
         util.require(
             1 <= len(entry) <= 2,
-            f"Badly-formatted index key {entry} in {node.filepath}"
+            f"Badly-formatted index key {entry} in {node.filepath}",
         )
         index.setdefault(entry, set()).add(node.slug)
 
@@ -305,13 +304,13 @@ def _tables_parse(node, tables):
         caption = util.TABLE_CAPTION.search(match.group(0))
         util.require(
             caption is not None,
-            "Table div '{match.group(0)}' without caption in {node.filepath}"
+            "Table div '{match.group(0)}' without caption in {node.filepath}",
         )
 
         slug = util.TABLE_ID.search(match.group(0))
         util.require(
             slug is not None,
-            f"Table div '{match.group(0)}' without ID in {node.filepath}"
+            f"Table div '{match.group(0)}' without ID in {node.filepath}",
         )
 
         tables[node.slug].append(
@@ -327,10 +326,7 @@ def _tables_parse(node, tables):
 def _titles_cleanup(collected):
     chapters = [(slug, collected[slug]) for slug in ivy.site.config["chapters"]]
     appendices = [(slug, collected[slug]) for slug in ivy.site.config["appendices"]]
-    util.make_config(
-        "titles",
-        {"chapters": chapters, "appendices": appendices}
-    )
+    util.make_config("titles", {"chapters": chapters, "appendices": appendices})
 
 
 def _titles_parse(node, info):

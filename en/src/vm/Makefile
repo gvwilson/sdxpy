@@ -4,7 +4,7 @@ TARGETS=\
   halt.out \
   print_r1.out
 
-include ../../examples.mk
+include ../examples.mk
 
 %.out: %_run.sh %.mx vm.py
 	bash $< 2>&1 > $@

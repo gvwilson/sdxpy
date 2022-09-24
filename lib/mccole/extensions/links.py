@@ -4,11 +4,10 @@ from pathlib import Path
 
 import ivy
 import shortcodes
+import util
 import yaml
 from markdown.extensions import Extension
 from markdown.treeprocessors import Treeprocessor
-
-import util
 
 
 @ivy.events.register(ivy.events.Event.INIT)
@@ -39,8 +38,7 @@ def links_table(pargs, kwargs, node):
     links.sort(key=lambda x: _link_key(x, lang))
     cls = 'class="link-ref"'
     links = "\n".join(
-        f'<li>{x[lang]}: <a {cls} href="{x["url"]}">{x["url"]}</a></li>'
-        for x in links
+        f'<li>{x[lang]}: <a {cls} href="{x["url"]}">{x["url"]}</a></li>' for x in links
     )
     return f"<ul>\n{links}\n</ul>"
 

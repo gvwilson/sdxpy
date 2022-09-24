@@ -8,4 +8,4 @@ TARGETS=\
   pattern_final.out \
   update_timestamps.out
 
-include ../../examples.mk
+include ../examples.mk

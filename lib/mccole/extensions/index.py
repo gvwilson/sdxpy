@@ -14,17 +14,13 @@ around the glossary shortcode:
 """
 
 import shortcodes
-
 import util
 
 
 @shortcodes.register("i", "/i")
 def index_ref(pargs, kwargs, node, content):
     """Handle [%i "some" "key" %]...text...[% /i %] index shortcodes."""
-    util.require(
-        pargs,
-        f"Badly-formatted 'i' shortcode {pargs} in {node.filepath}"
-    )
+    util.require(pargs, f"Badly-formatted 'i' shortcode {pargs} in {node.filepath}")
 
     joined = ";".join(pargs)
     cls = 'class="ix-entry"'
@@ -52,8 +48,7 @@ def make_index(pargs, kwargs, node):
             continue
 
         util.require(
-            len(current) == 2,
-            f"Internal error index key '{current}' in {occurrences}"
+            len(current) == 2, f"Internal error index key '{current}' in {occurrences}"
         )
 
         if current[0] != previous:

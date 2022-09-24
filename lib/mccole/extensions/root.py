@@ -5,7 +5,6 @@ from pathlib import Path
 
 import ivy
 import shortcodes
-
 import util
 
 TITLE = re.compile(r"^#\s+.+?\n")
@@ -15,8 +14,8 @@ TITLE = re.compile(r"^#\s+.+?\n")
 def root(pargs, kwargs, node):
     """Include a file from the root directory, stripping off its h1 title."""
     util.require(
-        (len(pargs) == 1) and not kwargs,
-        f"Bad 'root' shortcode in {node.filepath}")
+        (len(pargs) == 1) and not kwargs, f"Bad 'root' shortcode in {node.filepath}"
+    )
 
     filename = pargs[0]
     fullpath = Path(ivy.site.home(), filename)
