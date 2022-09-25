@@ -15,7 +15,7 @@ class IndexCSV(IndexBase):
 
     def load(self):
         """Load entire index."""
-        if not self.cache_dir:
+        if not self.index_dir:
             raise CacheException("Cache directory not set in index")
 
         index_path = self._make_index_path()
@@ -31,7 +31,7 @@ class IndexCSV(IndexBase):
 
     def save(self, index):
         """Save entire index."""
-        if not self.cache_dir:
+        if not self.index_dir:
             raise CacheException("Cache directory not set in index")
 
         index_path = self._make_index_path()
@@ -47,6 +47,6 @@ class IndexCSV(IndexBase):
 
     def _make_index_path(self):
         """Create index file path."""
-        if not self.cache_dir:
+        if not self.index_dir:
             raise CacheException("Cache directory not set in index")
-        return Path(self.cache_dir, self.INDEX_FILE)
+        return Path(self.index_dir, self.INDEX_FILE)

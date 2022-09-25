@@ -26,7 +26,7 @@ chapters = [
     "matching",
     "parser",
     "server",
-    "filecache",
+    "cache",
     "database",
     "persistence",
     "binary",
@@ -37,6 +37,7 @@ chapters = [
     "codegen",
     "vm",
     "debugger",
+    "prover",
     "conclusion",
 ]
 

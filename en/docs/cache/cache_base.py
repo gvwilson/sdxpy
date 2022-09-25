@@ -10,15 +10,18 @@ from hash_stream import hash_stream
 class CacheBase(ABC):
     """Manage file cache."""
 
-    def __init__(self, index):
+    CACHE_SUFFIX = "cache"
+
+    def __init__(self, index, cache_dir):
         """Initialize cache."""
         self.index = index
+        self.cache_dir = cache_dir
 
     def add(self, local_path):
         """Add a file to the system, returning the file ID."""
         identifier = self._make_identifier(local_path)
-        self._add(identifier, local_path)
         self.index.add(identifier)
+        self._add(identifier, local_path)
         return identifier
 
     def get_cache_path(self, identifier):
@@ -42,8 +45,8 @@ class CacheBase(ABC):
 
     def _make_cache_path(self, identifier):
         """Construct the path to a localized file."""
-        return Path(self.index.get_cache_dir(), f"{identifier}.cache")
+        return Path(self.cache_dir, f"{identifier}.{self.CACHE_SUFFIX}")
 
     @abstractmethod
     def _add(self, identifier, local_path):
-        """Add a file using the given identifier."""
+        """Add a file with a given identifer from a given local path."""

@@ -17,7 +17,7 @@ def disk(fs):
 
 @pytest.fixture
 def cache():
-    return CacheFilesystem(IndexCSV(CACHE_DIR))
+    return CacheFilesystem(IndexCSV(CACHE_DIR), CACHE_DIR)
 
 
 def test_filesystem_no_files_before_add(disk, cache):
@@ -34,12 +34,11 @@ def test_filesystem_single_file_present_after_add(disk, cache):
 
 
 def test_filesystem_two_files_present_after_add(disk, cache):
-    idents = {}
-    for prefix in ["a", "b"]:
-        contents = prefix * 3
-        filename = f"{prefix}.txt"
-        disk.create_file(filename, contents=contents)
-        idents[prefix] = cache.add(filename)
+    names = "ab"
+    for name in names:
+        filename = f"{name}.txt"
+        disk.create_file(filename, contents=name)
+        cache.add(filename)
     assert len(cache.known()) == 2
 
 
@@ -56,4 +55,14 @@ def test_filesystem_file_can_be_reloaded_after_deletion(disk, cache):
     Path("test.txt").unlink()
     with open(cache.get_cache_path(ident), "r") as reader:
         assert reader.read() == "xyz"
+    assert len(cache.known()) == 1
+
+
+def test_filesystem_duplicate_content_only_saved_once(disk, cache):
+    contents = "xyz"
+    disk.create_file("first.txt", contents=contents)
+    ident_first = cache.add("first.txt")
+    disk.create_file("second.txt", contents=contents)
+    ident_second = cache.add("second.txt")
+    assert ident_first == ident_second
     assert len(cache.known()) == 1

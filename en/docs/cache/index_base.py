@@ -12,17 +12,17 @@ class IndexBase(ABC):
 
     TIME_FORMAT = "%Y-%m-%d:%H:%M:%S"
 
-    def __init__(self, cache_dir=None):
+    def __init__(self, index_dir=None):
         """Initialize."""
-        self.set_cache_dir(cache_dir)
+        self.set_index_dir(index_dir)
 
-    def get_cache_dir(self):
+    def get_index_dir(self):
         """Where are files cached?"""
-        return self.cache_dir
+        return self.index_dir
 
-    def set_cache_dir(self, cache_dir):
+    def set_index_dir(self, index_dir):
         """Post-initialize."""
-        self.cache_dir = cache_dir
+        self.index_dir = index_dir
         self._initialize_index()
 
     def has(self, identifier):
