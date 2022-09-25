@@ -15,14 +15,14 @@ class IndexCSV(IndexBase):
 
     def load(self):
         """Load entire index."""
-        if not self.local_dir:
-            raise CacheException("Local directory not set in index")
+        if not self.index_dir:
+            raise CacheException("Cache directory not set in index")
 
-        indexpath = Path(self.local_dir, self.INDEX_FILE)
-        if not indexpath.exists():
-            raise CacheException(f"Index file {indexpath} not found")
+        index_path = self._make_index_path()
+        if not index_path.exists():
+            raise CacheException(f"Index file {index_path} not found")
 
-        with open(indexpath, "r") as stream:
+        with open(index_path, "r") as stream:
             reader = csv.reader(stream)
             return [
                 CacheEntry(r[0], datetime.strptime(r[1], self.TIME_FORMAT))
@@ -31,12 +31,22 @@ class IndexCSV(IndexBase):
 
     def save(self, index):
         """Save entire index."""
-        if not self.local_dir:
-            raise CacheException("Local directory not set in index")
+        if not self.index_dir:
+            raise CacheException("Cache directory not set in index")
 
-        indexpath = Path(self.local_dir, self.INDEX_FILE)
-        with open(indexpath, "w") as stream:
+        index_path = self._make_index_path()
+        with open(index_path, "w") as stream:
             writer = csv.writer(stream)
             for entry in index:
                 when = entry.timestamp.strftime(self.TIME_FORMAT)
                 writer.writerow((entry.identifier, when))
+
+    def _initialize_index(self):
+        """Initialize index file if necessary."""
+        self._make_index_path().touch()
+
+    def _make_index_path(self):
+        """Create index file path."""
+        if not self.index_dir:
+            raise CacheException("Cache directory not set in index")
+        return Path(self.index_dir, self.INDEX_FILE)
