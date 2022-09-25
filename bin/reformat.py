@@ -2,6 +2,7 @@
 
 """Wrap long lines and do other cleanup for code output."""
 
+import argparse
 import os
 import re
 import sys
@@ -69,8 +70,8 @@ def split(line):
 
 
 if __name__ == "__main__":
-    options = utils.get_options(
-        ["--home", None, "Substitute home directory"],
-        ["--slice", None, "Take slice out of input?"],
-    )
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--home", help="Substitute home directory")
+    parser.add_argument("--slice", action="store_true", help="Take slice out of input?")
+    options = parser.parse_args()
     reformat(options)

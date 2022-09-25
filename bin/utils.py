@@ -1,7 +1,6 @@
 """Utilities used across all tools."""
 
 
-import argparse
 import re
 import sys
 
@@ -125,19 +124,6 @@ def get_matches(pattern, filename, group=1, scrub=True, duplicates=None, split="
                 duplicates.append(word)
             result.add(word.strip())
     return result
-
-
-def get_options(*options):
-    """Get command-line options."""
-    parser = argparse.ArgumentParser()
-    for [flag, nargs, explain] in options:
-        if nargs is None:
-            parser.add_argument(flag, action="store_true", help=explain)
-        elif nargs:
-            parser.add_argument(flag, nargs="+", help=explain)
-        else:
-            parser.add_argument(flag, help=explain)
-    return parser.parse_args()
 
 
 def read_file(filename, scrub=True):
