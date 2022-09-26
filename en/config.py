@@ -37,7 +37,6 @@ chapters = [
     "codegen",
     "vm",
     "debugger",
-    "prover",
     "conclusion",
 ]
 

@@ -1,4 +1,0 @@
----
-title: "Prover"
-template: slides
----
