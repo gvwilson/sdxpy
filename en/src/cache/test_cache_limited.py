@@ -20,12 +20,12 @@ def disk(fs):
 
 
 @pytest.fixture
-def cache():
+def cache(disk):
     index = IndexCSV(PERMANENT_DIR)
     return CacheLimited(index, CACHE_DIR, PERMANENT_DIR, LOCAL_LIMIT)
 
 
-def test_limited_no_files_before_add(disk, cache):
+def test_limited_no_files_before_add(cache):
     assert cache.known() == set()
 
 

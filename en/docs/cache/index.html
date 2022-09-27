@@ -272,11 +272,185 @@
 
 	  
 <p class="definitions">
-  Terms defined: 
+  Terms defined: <a class="gl-ref" href="../glossary/#context_manager" markdown="1">context manager</a>
 </p>
 
 
-          <p>FIXME</p>
+          <ul>
+<li>Data scientists often want to analyze the same files in several projects<ul>
+<li>Those files might be too sensitive or too large to store in version control</li>
+<li>And shouldn't be duplicated anyway</li>
+</ul>
+</li>
+<li>Tools like <a href="https://git-lfs.github.io/">Git LFS</a> and <a href="https://dvc.org/">DVC</a> are an alternative<ul>
+<li>Replace the file with a marker containing a unique ID</li>
+<li>Store the file in the cloud using that ID</li>
+<li>Create a cache of recently-used files</li>
+</ul>
+</li>
+<li>Our system has several parts<ul>
+<li>The permanent archive</li>
+<li>An index of all the files it contains</li>
+<li>The local cache</li>
+<li>The replacements in version control</li>
+</ul>
+</li>
+<li>Several ways to implement each of these<ul>
+<li>Which gives us a chance to explore some ideas in object-oriented programming</li>
+</ul>
+</li>
+</ul>
+<h2 id="cache-index">Section 11.1: A File Index</h2>
+<ul>
+<li><code>index_base.py</code></li>
+<li>Define a named tuple <code>CacheEntry</code> to record identifier (hash) and timestamp (when file added)</li>
+<li>
+<p>Create a base class that specifies all the operations a file index can do</p>
+<ul>
+<li>Get and set the directory where the index file is stored</li>
+<li>Check if a particular file is known (using its identifier, not its name)</li>
+<li>Get a list of all known files (by identifier, not name)</li>
+<li>Add an identifier to the index (with a timestamp)</li>
+<li>Three abstract methods:</li>
+<li>Initialize the index if it doesn't already exist<ul>
+<li>Load the index</li>
+</ul>
+</li>
+<li>Save the index</li>
+<li>Note: create a function <code>current_time</code> rather than using <code>datetime.now</code> to simplify mocking</li>
+</ul>
+</li>
+<li>
+<p><code>index_csv.py</code></p>
+</li>
+<li>Specifies that the index is stored in <code>index.csv</code> in the index directory</li>
+<li>Loads the index by reading the CSV file and converting rows to <code>CacheEntry</code></li>
+<li>Saves the index</li>
+<li>
+<p>Creates an empty CSV file if necessary</p>
+</li>
+<li>
+<p><code>test_index_csv.py</code></p>
+</li>
+<li>Can we load the index immediately (i.e., is it automatically created)?</li>
+<li>Can we save and inspect entries?</li>
+</ul>
+<h2 id="cache-local">Section 11.2: A Local Cache</h2>
+<ul>
+<li><code>cache_base.py</code> defines behavior every cache must have<ul>
+<li>How are cached files named? (identifier plus <code>.cache</code> suffix)</li>
+<li>Add a local file to the cache if it isn't already there<ul>
+<li>Relies on abstract method <code>_add</code> that does everything that won't be common to all implementations</li>
+</ul>
+</li>
+<li>Get the path to a local (cached) copy of a file given its identifier</li>
+<li>Does the cache have a particular file and what files are known?<ul>
+<li>Relies on the index</li>
+</ul>
+</li>
+<li>Which is hidden from the user: has-a rather than is-a or exposing components</li>
+</ul>
+</li>
+<li><code>cache_filesystem.py</code> copies files to the cache but doesn't do anything else<ul>
+<li>Primarily for testing</li>
+<li>But useful in its own right (use it to share large files between projects on the same machine)</li>
+</ul>
+</li>
+<li><code>test_cache_filesystem.py</code><ul>
+<li>Is the cache initially empty?</li>
+<li>Can we add files?</li>
+<li>Can we find files we've added?</li>
+</ul>
+</li>
+<li>Note: so far it's up to the user to remember the mapping between <code>name.txt</code> and <code>abcd1234</code><ul>
+<li>We'll fix this soon</li>
+</ul>
+</li>
+</ul>
+<h2 id="cache-limit">Section 11.3: A Limited Cache</h2>
+<ul>
+<li>Next step is to store all the files remotely and only store a few locally</li>
+<li>We will simulate cloud storage using a second directory on our own machine</li>
+<li>And put a limit on the size of the local cache<ul>
+<li>Should be based on total size of files</li>
+<li>For simplicity, we will limit it by the number of files</li>
+</ul>
+</li>
+<li><code>CacheLimited</code> has two copies of <code>abcd1234.cache</code><ul>
+<li>One in the cache directory (which will be present in the final system)</li>
+<li>One in the archive directory (which will probably be remote in the final system)</li>
+</ul>
+</li>
+<li>If we add a file when the cache is full<ul>
+<li>Delete a file from the cache</li>
+<li>Add the new file to the cache</li>
+<li>Add it to archival storage</li>
+</ul>
+</li>
+<li>If we try to access a file that isn't in the cache when the cache is full<ul>
+<li>Delete a file from the cache</li>
+<li>Copy the file from archival storage to the cache</li>
+</ul>
+</li>
+<li>Where does the index live?<ul>
+<li>For the moment we'll keep a single copy in the archive directory</li>
+</ul>
+</li>
+</ul>
+<h2 id="cache-markers">Section 11.4: Markers</h2>
+<ul>
+<li>Create files in repositories that hold metadata about actual file<ul>
+<li>In our case, the cache entry identifier</li>
+</ul>
+</li>
+<li><code>cache_save</code> saves the actual file in the cache and creates a marker file<ul>
+<li>Users can now delete the actual file if they want</li>
+<li>Or at least add it to <code>.gitignore</code> or equivalent</li>
+</ul>
+</li>
+<li><code>cache_open</code> opens cached file for reading<ul>
+<li>Do <em>not</em> allow writing: that would put contents out of sync with identifier</li>
+<li>Equivalent to mutable dictionary keys</li>
+</ul>
+</li>
+</ul>
+<h2 id="cache-exercises">Section 11.5: Exercises</h2>
+<h3 class="exercise">An alternative index</h3>
+<p>Create a new class <code>IndexJSON</code> that stores the index as a JSON file
+instead of as CSV.
+You should be able to use your new class with the existing cache classes
+without changing the latter.</p>
+<h3 class="exercise">Another alternative index</h3>
+<p>Create a new class <code>IndexSQLite</code> that stores the index in a SQLite database
+instead of as CSV.
+You should be able to use your new class with the existing cache classes
+without changing the latter.</p>
+<h3 class="exercise">Least recently used</h3>
+<ol>
+<li>Modify the cache and index to keep track of when files are used
+    as well as when they are created.</li>
+<li>Modify the cache cleanup code to delete least recently used file
+    when extra space is needed.</li>
+</ol>
+<h3 class="exercise">Cache size</h3>
+<ol>
+<li>Modify the cache so that it only stores files up to a specified total size.</li>
+<li>How should the cache decide which files to delete
+    when a new file would put it over its size limit?</li>
+<li>What should the cache do if someone tries to add a file
+    that is larger than the size limit?</li>
+</ol>
+<h3 class="exercise">Reading cached files</h3>
+<p>Modify <code>cache_open</code> so that files can be opened in binary mode
+and so that the function can be used in <code>with</code> statements.
+(Hint: look up <a class="gl-ref" href="../glossary/#context_manager" markdown="1">context manager</a>.)</p>
+<h3 class="exercise">Storing files remotely</h3>
+<ol>
+<li>Create a small web server (<a class="x-ref" href="../server/">Chapter 10</a>) that accepts
+    file upload and file download requests.</li>
+<li>Modify the cache so that it sends new files to the server
+    and downloads files from the server on demand.</li>
+</ol>
         </main>
       </div>
     </div>

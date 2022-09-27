@@ -6,6 +6,7 @@
 import argparse
 import importlib.util
 import re
+from fnmatch import fnmatch
 from pathlib import Path
 
 import utils
@@ -111,7 +112,7 @@ def check_files(source_dir, source_files):
     for (dirname, filename) in source_files:
         filepath = Path(dirname, filename)
         referenced = get_inclusions(filepath) | get_figures(filepath)
-        existing = get_files(source_dir, dirname) - get_ignores(dirname)
+        existing = get_files(source_dir, dirname)
         report(f"{dirname}: inclusions", referenced, existing)
 
 
@@ -180,8 +181,13 @@ def get_files(source_dir, dirname):
         candidates = set(Path(dirname).glob("*"))
     else:
         candidates = set(Path(dirname).rglob("**/*"))
+
     prefix_len = len(str(dirname)) + 1
-    result = set(str(f)[prefix_len:] for f in candidates if Path(f).is_file())
+    result = set(str(f)[prefix_len:] for f in candidates if f.is_file())
+
+    ignores = read_directives(dirname, "unreferenced")
+    result = {f for f in result if not any(fnmatch(f, pat) for pat in ignores)}
+
     return result - EXPECTED_FILES
 
 
@@ -195,11 +201,6 @@ def get_figures(filepath):
 def get_html(out_dir):
     """Get paths to HTML files for processing."""
     return list(Path(out_dir).glob("**/*.html"))
-
-
-def get_ignores(dirname):
-    """Get list of files in a directory that are intentionally unreferenced."""
-    return set(read_directives(dirname, "unreferenced"))
 
 
 def get_links(filename):

@@ -1,7 +1,7 @@
 import sys
 
 from architecture import OPS
-from vm import VirtualMachine
+from vm import VirtualMachine, run
 
 
 class VirtualMachineBreak(VirtualMachine):
@@ -29,3 +29,7 @@ class VirtualMachineBreak(VirtualMachine):
 
     def single_step(self):
         pass
+
+
+if __name__ == "__main__":
+    run(VirtualMachineBreak)
