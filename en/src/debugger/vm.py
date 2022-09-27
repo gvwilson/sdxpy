@@ -7,19 +7,6 @@ DIGITS = 8
 
 
 class VirtualMachine:
-    @classmethod
-    def main(cls):
-        assert len(sys.argv) == 3, f"Usage: {sys.argv[0]} input|- output|-"
-        reader = open(sys.argv[1], "r") if (sys.argv[1] != "-") else sys.stdin
-        writer = open(sys.argv[2], "w") if (sys.argv[2] != "-") else sys.stdout
-
-        lines = [ln.strip() for ln in reader.readlines()]
-        program = [int(ln, 16) for ln in lines if ln]
-        vm = cls()
-        vm.initialize(program)
-        vm.run()
-        vm.show(writer)
-
     def __init__(self):
         self.initialize([])
         self.prompt = ">>"
@@ -134,5 +121,19 @@ class VirtualMachine:
         assert 0 <= addr < len(self.ram), f"Invalid register {addr:06x}"
 
 
+def run(cls):
+    assert len(sys.argv) == 3, f"Usage: {sys.argv[0]} input|- output|-"
+    reader = open(sys.argv[1], "r") if (sys.argv[1] != "-") else sys.stdin
+    writer = open(sys.argv[2], "w") if (sys.argv[2] != "-") else sys.stdout
+
+    lines = [ln.strip() for ln in reader.readlines()]
+    program = [int(ln, 16) for ln in lines if ln]
+
+    vm = cls()
+    vm.initialize(program)
+    vm.run()
+    vm.show(writer)
+
+
 if __name__ == "__main__":
-    VirtualMachine.main()
+    run(VirtualMachine)
