@@ -44,7 +44,7 @@ syllabus:
 -   Can we load the index immediately (i.e., is it automatically created)?
 -   Can we save and inspect entries?
 
-## A Simple Cache {: #cache-simple}
+## A Local Cache {: #cache-local}
 
 -   `cache_base.py` defines behavior every cache must have
     -   How are cached files named? (identifier plus `.cache` suffix)
@@ -63,3 +63,23 @@ syllabus:
     -   Can we find files we've added?
 -   Note: so far it's up to the user to remember the mapping between `name.txt` and `abcd1234`
     -   We'll fix this soon
+
+## A Limited Cache  {: #cache-limit}
+
+-   Next step is to store all the files remotely and only store a few locally
+-   We will simulate cloud storage using a second directory on our own machine
+-   And put a limit on the size of the local cache
+    -   Should be based on total size of files
+    -   For simplicity, we will limit it by the number of files
+-   `CacheLimited` has two copies of `abcd1234.cache`
+    -   One in the cache directory (which will be present in the final system)
+    -   One in the archive directory (which will probably be remote in the final system)
+-   If we add a file when the cache is full
+    -   Delete a file from the cache
+    -   Add the new file to the cache
+    -   Add it to archival storage
+-   If we try to access a file that isn't in the cache when the cache is full
+    -   Delete a file from the cache
+    -   Copy the file from archival storage to the cache
+-   Where does the index live?
+    -   For the moment we'll keep a single copy in the archive directory

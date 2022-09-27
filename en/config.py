@@ -54,7 +54,6 @@ appendices = [
 
 # To do.
 todo = {
-    "filecache",
     "database",
     "packman",
     "debugger",
