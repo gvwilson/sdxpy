@@ -6,7 +6,7 @@
 abbrev = "sdxpy"
 
 # GitHub repository.
-github = "https://github.com/gvwilson/sdpy"
+repo = "https://github.com/gvwilson/sdpy"
 
 # Site title and subtitle.
 title = "Software Design in Python"
