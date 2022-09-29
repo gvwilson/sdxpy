@@ -83,3 +83,58 @@ syllabus:
     -   Copy the file from archival storage to the cache
 -   Where does the index live?
     -   For the moment we'll keep a single copy in the archive directory
+
+## Markers {: #cache-markers}
+
+-   Create files in repositories that hold metadata about actual file
+    -   In our case, the cache entry identifier
+-   `cache_save` saves the actual file in the cache and creates a marker file
+    -   Users can now delete the actual file if they want
+    -   Or at least add it to `.gitignore` or equivalent
+-   `cache_open` opens cached file for reading
+    -   Do *not* allow writing: that would put contents out of sync with identifier
+    -   Equivalent to mutable dictionary keys
+
+## Exercises {: #cache-exercises}
+
+### An alternative index {: .exercise}
+
+Create a new class `IndexJSON` that stores the index as a JSON file
+instead of as CSV.
+You should be able to use your new class with the existing cache classes
+without changing the latter.
+
+### Another alternative index {: .exercise}
+
+Create a new class `IndexSQLite` that stores the index in a SQLite database
+instead of as CSV.
+You should be able to use your new class with the existing cache classes
+without changing the latter.
+
+### Least recently used {: .exercise}
+
+1.  Modify the cache and index to keep track of when files are used
+    as well as when they are created.
+1.  Modify the cache cleanup code to delete least recently used file
+    when extra space is needed.
+
+### Cache size {: .exercise}
+
+1.  Modify the cache so that it only stores files up to a specified total size.
+1.  How should the cache decide which files to delete
+    when a new file would put it over its size limit?
+1.  What should the cache do if someone tries to add a file
+    that is larger than the size limit?
+
+### Reading cached files {: .exercise}
+
+Modify `cache_open` so that files can be opened in binary mode
+and so that the function can be used in `with` statements.
+(Hint: look up [%g context_manager "context manager" %].)
+
+### Storing files remotely {: .exercise}
+
+1.  Create a small web server ([%x server%]) that accepts
+    file upload and file download requests.
+1.  Modify the cache so that it sends new files to the server
+    and downloads files from the server on demand.
