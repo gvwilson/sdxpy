@@ -1,0 +1,2 @@
+# Stop immediately.
+hlt
