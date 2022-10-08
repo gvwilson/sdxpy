@@ -14,7 +14,8 @@ FIG_SVG := $(wildcard src/*/*.svg)
 IVY := $(wildcard lib/mccole/*/*.*)
 TEX := info/head.tex info/foot.tex
 TEX_COPY := info/krantz.cls info/dedication.tex
-SRC := $(wildcard *.md) $(wildcard src/*.md) $(wildcard src/*/index.md) $(wildcard src/*/slides.html)
+SRC_MD := $(wildcard src/*.md) $(wildcard src/*/index.md)
+SRC := ${SRC} $(wildcard src/*/slides.html)
 
 # Calculated variables.
 DOCS := docs/index.html $(patsubst src/%.md,docs/%.html,$(wildcard src/*/index.md))
@@ -126,7 +127,7 @@ wordlist: ./docs/index.html
 ## count: words per file
 .PHONY: count
 count:
-	@wc -w ${SRC} | sort -n
+	@wc -w ${SRC_MD} | sort -n
 
 ## valid: run html5validator on generated files
 .PHONY: valid
