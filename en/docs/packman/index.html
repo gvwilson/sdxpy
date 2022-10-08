@@ -120,7 +120,7 @@
     </a>
   </li>
   
-  <li class="todo">
+  <li>
     <a href="../packman/">
       <strong>A Package Manager</strong>
     </a>
@@ -150,7 +150,7 @@
     </a>
   </li>
   
-  <li class="todo">
+  <li>
     <a href="../debugger/">
       Debugger
     </a>
@@ -216,7 +216,7 @@
 </ol>
 
       </div>
-      <div id="printable" class="column bordered todo">
+      <div id="printable" class="column bordered">
         <main>
 	  
   <h1>Chapter 16: A Package Manager</h1>
@@ -276,7 +276,160 @@
 </p>
 
 
-          <p>FIXME</p>
+          <h2 id="packman-exhaustive">Section 16.1: Exhaustive Search</h2>
+<ul>
+<li>Specify package dependencies</li>
+</ul>
+<div class="code-sample lang-py" title="triple.py">
+<div class="highlight"><pre><span></span><code><span class="n">versions</span> <span class="o">=</span> <span class="p">{</span>
+  <span class="s2">&quot;A&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="mi">3</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;B&quot;</span><span class="p">:</span> <span class="p">{</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">},</span> <span class="s2">&quot;C&quot;</span><span class="p">:</span> <span class="p">{</span><span class="mi">2</span><span class="p">}},</span>
+    <span class="mi">2</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;B&quot;</span><span class="p">:</span> <span class="p">{</span><span class="mi">2</span><span class="p">},</span>    <span class="s2">&quot;C&quot;</span><span class="p">:</span> <span class="p">{</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">}},</span>
+    <span class="mi">1</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;B&quot;</span><span class="p">:</span> <span class="p">{</span><span class="mi">1</span><span class="p">}}</span>
+  <span class="p">},</span>
+  <span class="s2">&quot;B&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="mi">3</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;C&quot;</span><span class="p">:</span> <span class="p">{</span><span class="mi">2</span><span class="p">}},</span>
+    <span class="mi">2</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;C&quot;</span><span class="p">:</span> <span class="p">{</span><span class="mi">1</span><span class="p">}},</span>
+    <span class="mi">1</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;C&quot;</span><span class="p">:</span> <span class="p">{</span><span class="mi">1</span><span class="p">}}</span>
+  <span class="p">},</span>
+  <span class="s2">&quot;C&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="mi">2</span><span class="p">:</span> <span class="p">{},</span>
+    <span class="mi">1</span><span class="p">:</span> <span class="p">{}</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+</div>
+<ul>
+<li>Generate possibilities and then see which ones fit constraints</li>
+</ul>
+<div class="code-sample lang-py" title="exhaustive.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+    <span class="n">versions</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">versions</span>
+    <span class="n">possible</span> <span class="o">=</span> <span class="n">make_possibilities</span><span class="p">(</span><span class="n">versions</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">possible</span><span class="p">)</span><span class="si">}</span><span class="s2"> possibilities&quot;</span><span class="p">)</span>
+    <span class="n">actual</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">possible</span> <span class="k">if</span> <span class="n">compatible</span><span class="p">(</span><span class="n">versions</span><span class="p">,</span> <span class="n">p</span><span class="p">)]</span>
+    <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">actual</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<ul>
+<li>Generate possibilities with recursive enumeration</li>
+</ul>
+<div class="code-sample lang-py" title="exhaustive.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">make_possibilities</span><span class="p">(</span><span class="n">versions</span><span class="p">):</span>
+    <span class="n">available</span> <span class="o">=</span> <span class="p">[(</span><span class="n">k</span><span class="p">,</span> <span class="nb">set</span><span class="p">(</span><span class="n">versions</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">versions</span><span class="p">]</span>
+    <span class="n">allowed</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">_make_possible</span><span class="p">(</span><span class="n">available</span><span class="p">,</span> <span class="n">allowed</span><span class="p">,</span> <span class="p">{})</span>
+    <span class="k">return</span> <span class="n">allowed</span>
+
+
+<span class="k">def</span> <span class="nf">_make_possible</span><span class="p">(</span><span class="n">available</span><span class="p">,</span> <span class="n">allowed</span><span class="p">,</span> <span class="n">current</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">available</span><span class="p">:</span>
+        <span class="n">allowed</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">current</span><span class="p">)</span>
+        <span class="k">return</span>
+
+    <span class="p">(</span><span class="n">package</span><span class="p">,</span> <span class="n">versions</span><span class="p">),</span> <span class="n">remainder</span> <span class="o">=</span> <span class="n">available</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">available</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+    <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">versions</span><span class="p">:</span>
+        <span class="n">_make_possible</span><span class="p">(</span><span class="n">remainder</span><span class="p">,</span> <span class="n">allowed</span><span class="p">,</span> <span class="n">current</span> <span class="o">|</span> <span class="p">{</span><span class="n">package</span><span class="p">:</span> <span class="n">v</span><span class="p">})</span>
+</code></pre></div>
+</div>
+<ul>
+<li>Check for compatibility</li>
+</ul>
+<div class="code-sample lang-py" title="exhaustive.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">compatible</span><span class="p">(</span><span class="n">constraints</span><span class="p">,</span> <span class="n">combination</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">package_i</span><span class="p">,</span> <span class="n">version_i</span> <span class="ow">in</span> <span class="n">combination</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">lookup_i</span> <span class="o">=</span> <span class="n">constraints</span><span class="p">[</span><span class="n">package_i</span><span class="p">][</span><span class="n">version_i</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">package_j</span><span class="p">,</span> <span class="n">version_j</span> <span class="ow">in</span> <span class="n">combination</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">package_i</span> <span class="o">==</span> <span class="n">package_j</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="n">package_j</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">lookup_i</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="n">version_j</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">lookup_i</span><span class="p">[</span><span class="n">package_j</span><span class="p">]:</span>
+                <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">return</span> <span class="kc">True</span>
+</code></pre></div>
+</div>
+<ul>
+<li>18 possibilities reduce to 3 valid combinations</li>
+</ul>
+<div class="code-sample lang-out" title="exhaustive.out">
+<div class="highlight"><pre><span></span><code>18 possibilities
+{&#39;A&#39;: 1, &#39;B&#39;: 1, &#39;C&#39;: 1}
+{&#39;A&#39;: 2, &#39;B&#39;: 2, &#39;C&#39;: 1}
+{&#39;A&#39;: 3, &#39;B&#39;: 3, &#39;C&#39;: 2}
+</code></pre></div>
+</div>
+<h2 id="packman-incremental">Section 16.2: Incremental Search</h2>
+<ul>
+<li>Can we thin out possibilities as we go?<ul>
+<li>Reverse the search order to make a point later</li>
+</ul>
+</li>
+</ul>
+<div class="code-sample lang-py" title="incremental.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+    <span class="n">versions</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">versions</span>
+    <span class="n">packages</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">versions</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">packages</span><span class="o">.</span><span class="n">reverse</span><span class="p">()</span>
+
+    <span class="n">allowed</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">examined</span> <span class="o">=</span> <span class="n">find</span><span class="p">(</span><span class="n">versions</span><span class="p">,</span> <span class="n">packages</span><span class="p">,</span> <span class="n">allowed</span><span class="p">,</span> <span class="p">{},</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;examined </span><span class="si">{</span><span class="n">examined</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">allowed</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<ul>
+<li>Check compatibility so far as we go</li>
+</ul>
+<div class="code-sample lang-py" title="incremental.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">find</span><span class="p">(</span><span class="n">constraints</span><span class="p">,</span> <span class="n">remaining</span><span class="p">,</span> <span class="n">allowed</span><span class="p">,</span> <span class="n">current</span><span class="p">,</span> <span class="n">so_far</span><span class="p">):</span>
+    <span class="n">so_far</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">remaining</span><span class="p">:</span>
+        <span class="n">allowed</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">current</span><span class="p">)</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">package</span><span class="p">,</span> <span class="n">rest</span> <span class="o">=</span> <span class="n">remaining</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">remaining</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+        <span class="k">for</span> <span class="n">version</span> <span class="ow">in</span> <span class="n">constraints</span><span class="p">[</span><span class="n">package</span><span class="p">]:</span>
+            <span class="n">candidate</span> <span class="o">=</span> <span class="n">current</span> <span class="o">|</span> <span class="p">{</span><span class="n">package</span><span class="p">:</span> <span class="n">version</span><span class="p">}</span>
+            <span class="k">if</span> <span class="n">compatible</span><span class="p">(</span><span class="n">constraints</span><span class="p">,</span> <span class="n">candidate</span><span class="p">):</span>
+                <span class="n">so_far</span> <span class="o">=</span> <span class="n">find</span><span class="p">(</span><span class="n">constraints</span><span class="p">,</span> <span class="n">rest</span><span class="p">,</span> <span class="n">allowed</span><span class="p">,</span> <span class="n">candidate</span><span class="p">,</span> <span class="n">so_far</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">so_far</span>
+</code></pre></div>
+</div>
+<ul>
+<li>Search in the order keys are given</li>
+</ul>
+<div class="code-sample lang-sh" title="incremental.sh">
+<div class="highlight"><pre><span></span><code>python incremental.py triple
+</code></pre></div>
+</div>
+<div class="code-sample lang-out" title="incremental.out">
+<div class="highlight"><pre><span></span><code>examined 11
+{&#39;A&#39;: 3, &#39;B&#39;: 3, &#39;C&#39;: 2}
+{&#39;A&#39;: 2, &#39;B&#39;: 2, &#39;C&#39;: 1}
+{&#39;A&#39;: 1, &#39;B&#39;: 1, &#39;C&#39;: 1}
+</code></pre></div>
+</div>
+<ul>
+<li>Search in reverse order</li>
+</ul>
+<div class="code-sample lang-sh" title="incremental_reverse.sh">
+<div class="highlight"><pre><span></span><code>python incremental.py triple reversed
+</code></pre></div>
+</div>
+<div class="code-sample lang-out" title="incremental_reverse.out">
+<div class="highlight"><pre><span></span><code>examined 9
+{&#39;C&#39;: 2, &#39;B&#39;: 3, &#39;A&#39;: 3}
+{&#39;C&#39;: 1, &#39;B&#39;: 2, &#39;A&#39;: 2}
+{&#39;C&#39;: 1, &#39;B&#39;: 1, &#39;A&#39;: 1}
+</code></pre></div>
+</div>
+<h2 id="packman-exercises">Section 16.3: Exercises</h2>
+<p>FIXME</p>
         </main>
       </div>
     </div>

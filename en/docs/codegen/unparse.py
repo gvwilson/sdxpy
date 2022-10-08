@@ -1,20 +1,26 @@
 import ast
+import sys
 
-original = """\
-def double(x):
-    return 2 * x
+action = sys.argv[1]
 
-print(double(3))
-"""
+with open("double_and_print.py", "r") as reader:
+    original = reader.read()
 
-print(f"original code\n{original}")
+if action == "original":
+    print(original)
 
+# [modify]
 code = ast.parse(original)
 print_stmt = code.body[1]
 code.body.append(print_stmt)
+modified = ast.unparse(code)
+# [/modify]
+if action == "modified":
+    print(modified)
 
-updated = ast.unparse(code)
-print(f"updated code\n{updated}")
-
+if action != "exec":
+    sys.exit(0)
+# [exec]
 bytecode = compile(code, filename="example", mode="exec")
 exec(bytecode)
+# [/exec]

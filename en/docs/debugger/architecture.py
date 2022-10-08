@@ -1,3 +1,6 @@
+from enum import Enum
+
+
 OPS = {
     "hlt": {"code": 1, "fmt": "--"},  # Halt program
     "ldc": {"code": 2, "fmt": "rv"},  # Load immediate
@@ -19,3 +22,9 @@ OP_WIDTH = 6  # op width in characters when printing
 
 NUM_REG = 4  # number of registers
 RAM_LEN = 256  # number of words in RAM
+
+class VMState(Enum):
+    """Virtual machine states."""
+    FINISHED = 0
+    STEPPING = 1
+    RUNNING = 2
