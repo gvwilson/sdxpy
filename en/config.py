@@ -56,7 +56,6 @@ appendices = [
 todo = {
     "database",
     "packman",
-    "debugger",
 }
 
 # Debug.
