@@ -1,8 +1,8 @@
 from pathlib import Path
 
-from page import PAGE_SIZE, Page
+from page_memory import PAGE_SIZE, PageMemory
 
-class PageFile(Page):
+class PageFile(PageMemory):
     def __init__(self, page_number, page_size=PAGE_SIZE):
         super().__init__(page_size)
         self._page_number = page_number
@@ -19,4 +19,4 @@ class PageFile(Page):
             writer.write(self._data)
 
     def _make_path(self, db_dir):
-        return Path(db_dir, f"{self._page_number:04x}.page")
+        return Path(db_dir, f"{self._page_number:04d}.page")

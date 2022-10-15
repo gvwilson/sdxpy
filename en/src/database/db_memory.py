@@ -1,5 +1,6 @@
-from convert import record_size
-from page import PAGE_SIZE, DBError, Page
+from util import PAGE_SIZE, DBError, record_size
+from page_memory import PageMemory as Page
+
 
 class DBMemory:
     def __init__(self, page_size=PAGE_SIZE):

@@ -1,15 +1,9 @@
-from convert import record_size
+from util import PAGE_SIZE, DBError, record_size
 
 RECORD_SIZE = record_size()
-PAGE_SIZE = 1024
 
 
-class DBError(Exception):
-    def __init__(self, message):
-        self.message = message
-
-
-class Page:
+class PageMemory:
     def __init__(self, page_size=PAGE_SIZE):
         assert page_size > 0
         self._page_size = page_size
