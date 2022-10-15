@@ -18,7 +18,8 @@ Its core is a way to archive files that:
 This chapter builds a tool that does both tasks.
 It won't let us create and merge branches;
 if you would like to know how that works,
-please see [%i "Cook, Mary Rose" %][Mary Rose Cook's][cook_mary_rose][%/i%] [Gitlet][gitlet].
+please see [%i "Cook, Mary Rose" %][Mary Rose Cook's][cook_mary_rose][%/i%] [Gitlet][gitlet]
+or [%i "Polge, Thibault" %]Thibault Polge[%/i%]'s [Write yourself a Git][write_yourself_a_git].
 
 ## Identifying Unique Files {: #backup-unique}
 
