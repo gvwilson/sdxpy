@@ -12,10 +12,10 @@ class DBError(Exception):
 class Page:
     def __init__(self, page_size=PAGE_SIZE):
         assert page_size > 0
-        self.page_size = page_size
-        self.record_size = RECORD_SIZE
-        self.data = bytearray(self.page_size)
-        self.top = 0
+        self._page_size = page_size
+        self._record_size = RECORD_SIZE
+        self._data = bytearray(self._page_size)
+        self._top = 0
 
     def append(self, buf):
         if not len(buf) == RECORD_SIZE:
@@ -23,19 +23,19 @@ class Page:
         if not self.fits(buf):
             raise DBError("No room for record")
         for b in buf:
-            self.data[self.top] = b
-            self.top += 1
+            self._data[self._top] = b
+            self._top += 1
 
     def fits(self, buf):
         if not len(buf) == RECORD_SIZE:
             raise DBError("Wrong size of record")
-        return self.top + len(buf) <= self.page_size
+        return self._top + len(buf) <= self._page_size
 
     def get(self, index):
-        if not (0 <= index < (self.page_size // self.record_size)):
+        if not (0 <= index < (self._page_size // self._record_size)):
             raise DBError("Index out of range")
-        start = self.record_size * index
-        return self.data[start:(start+self.record_size)]
+        start = self._record_size * index
+        return self._data[start:(start+self._record_size)]
 
     def size(self):
-        return self.top
+        return self._top
