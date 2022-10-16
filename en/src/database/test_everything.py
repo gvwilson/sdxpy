@@ -8,6 +8,7 @@ from page_memory import DBError, PageMemory
 from db_memory import DBMemory
 from page_file import PageFile
 from db_file import DBFile
+from db_swap import DBSwap
 
 DB_DIR = "/db"
 
@@ -60,10 +61,7 @@ def test_db_memory():
     with pytest.raises(DBError):
         db.get(6)
 
-def test_db_file_single(our_fs):
-    page_size = 2 * record_size() + 1
-    db = DBFile(DB_DIR, page_size)
-
+def do_common_tests(db):
     assert len(os.listdir(DB_DIR)) == 0
 
     record = b"a" * record_size()
@@ -80,3 +78,13 @@ def test_db_file_single(our_fs):
     assert db.get(0) == record
     assert db.get(1) == b"b" * record_size()
     assert db.get(2) == b"c" * record_size()
+
+def test_db_file(our_fs):
+    page_size = 2 * record_size() + 1
+    db = DBFile(DB_DIR, page_size)
+    do_common_tests(db)
+
+def test_db_swap_no_swapping(our_fs):
+    page_size = 2 * record_size() + 1
+    db = DBSwap(DB_DIR, 1000, page_size)
+    do_common_tests(db)
