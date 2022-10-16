@@ -89,8 +89,8 @@ We occasionally wrap lines in source code in unnatural ways to make listings fit
 and sometimes use `...` to show where lines have been omitted.
 Where we need to break lines of output for the same reason,
 we end all but the last line with a single backslash `\`.
-The full listings are all available in [our Git repository][sdpy_repo]
-and [on our website][sdpy_site].
+The full listings are all available in [our Git repository][sdxpy_repo]
+and [on our website][sdxpy_site].
 
 Finally,
 we write functions as `function_name` rather than `function_name()`;

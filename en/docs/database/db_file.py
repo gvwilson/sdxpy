@@ -11,8 +11,7 @@ class DBFile:
 
     def append(self, buf):
         self._ensure_space(buf)
-        current_page = max(self._cache.keys())
-        self._cache[current_page].append(buf)
+        self._get_current_page().append(buf)
 
     def size(self):
         return sum(page.size() for page in self._cache.values())
@@ -30,8 +29,7 @@ class DBFile:
     def fill(self):
         for filename in Path(self._db_dir).iterdir():
             page_number = int(filename.stem)
-            self._cache[page_number] = Page(page_number, self._page_size)
-            self._cache[page_number].load(self._db_dir)
+            self._ensure_in_memory(page_number)
 
     def flush(self):
         for page in self._cache.values():
@@ -45,9 +43,13 @@ class DBFile:
         if len(self._cache) == 0:
             self._cache[0] = Page(0, self._page_size)
             return
-        current_page = max(self._cache.keys())
-        if self._cache[current_page].fits(buf):
+        current_page = self._get_current_page()
+        if current_page.fits(buf):
             return
-        self._cache[current_page].save(self._db_dir)
-        next_page = current_page + 1
+        current_page.save(self._db_dir)
+        next_page = current_page.page_number() + 1
         self._cache[next_page] = Page(next_page, self._page_size)
+
+    def _get_current_page(self):
+        page_id = max(self._cache.keys())
+        return self._cache[page_id]
