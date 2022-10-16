@@ -17,13 +17,16 @@ class DBSwap(DBFile):
     def num_pages(self):
         return self._current_page.page_number() + 1
 
+    def in_memory(self):
+        return set(self._cache.keys())
+
     def _ensure_in_memory(self, page_number):
         if page_number in self._cache:
             return
         page = Page(page_number, self._page_size)
         page.load(self._db_dir)
         self._cache[page_number] = page
-        self._maintain_cache()
+        self._maintain_cache(page_number)
 
     def _ensure_space(self, buf):
         current_page = self._get_current_page()
@@ -39,10 +42,13 @@ class DBSwap(DBFile):
     def _get_current_page(self):
         return self._current_page
 
-    def _maintain_cache(self):
+    def _maintain_cache(self, keep=None):
         if len(self._cache) <= self._max_pages:
             return
-        candidates = set(self._cache.keys()) - {self._current_page.page_number()}
+        exclude = {self._current_page.page_number()}
+        if keep is not None:
+            exclude.add(keep)
+        candidates = set(self._cache.keys()) - exclude
         selected = min(candidates)
         self._cache[selected].save(self._db_dir)
         del self._cache[selected]
