@@ -1,7 +1,7 @@
 import networkx as nx
 import yaml
-from graph_creator import GraphCreator
 
+from graph_creator import GraphCreator
 
 # [body]
 class AddTimestamps(GraphCreator):
@@ -14,7 +14,6 @@ class AddTimestamps(GraphCreator):
         self.build_graph()
         self.add_timestamps()
         self.check_cycles()
-
     # [/body]
 
     # [timestamps]
@@ -24,14 +23,11 @@ class AddTimestamps(GraphCreator):
         missing = {n for n in self.graph.nodes} - {n for n in times.keys()}
         assert not missing, f"Name(s) missing from times: {', '.join(missing)}"
         nx.set_node_attributes(self.graph, times, "timestamp")
-
-
-# [/timestamps]
+    # [/timestamps]
 
 # [main]
 if __name__ == "__main__":
     import sys
-
     assert len(sys.argv) == 3, f"Expect config and timestamp file not {sys.argv}"
     builder = AddTimestamps(sys.argv[1], sys.argv[2])
     builder.build()

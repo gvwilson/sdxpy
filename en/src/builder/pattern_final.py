@@ -1,6 +1,6 @@
 import networkx as nx
-from expand_variables import ExpandVariables
 
+from expand_variables import ExpandVariables
 
 class PatternFinal(ExpandVariables):
     def build(self):
@@ -17,7 +17,6 @@ class PatternFinal(ExpandVariables):
         self.patterns = {r["target"]: r for r in self.rules if "%" in r["target"]}
         self.rules = [r for r in self.rules if "%" not in r["target"]]
         super().build_graph()
-
     # [/build]
 
     # [expand]
@@ -25,7 +24,6 @@ class PatternFinal(ExpandVariables):
         for target in self.graph.nodes:
             if rule := self.find_rule(target):
                 self.fill_in(target, rule)
-
     # [/expand]
 
     # [find]
@@ -35,7 +33,6 @@ class PatternFinal(ExpandVariables):
         suffix = target.split(".")[-1]
         key = f"%.{suffix}"
         return self.patterns.get(key, None)
-
     # [/find]
 
     # [fill]
@@ -45,14 +42,12 @@ class PatternFinal(ExpandVariables):
         depends = [d.replace("%", stem) for d in rule["depends"]]
         for d in depends:
             self.graph.add_edge(d, target)
-
     # [/fill]
 
 
 # [main]
 if __name__ == "__main__":
     import sys
-
     assert len(sys.argv) == 3, f"Expect config and timestamp file not {sys.argv}"
     builder = PatternFinal(sys.argv[1], sys.argv[2])
     builder.build()

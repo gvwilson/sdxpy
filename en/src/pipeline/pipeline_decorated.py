@@ -1,10 +1,8 @@
 import sys
-
 import yaml
 
 # [import]
 from decorated import EXPORTS as functions
-
 # [/import]
 
 # [func]
@@ -22,8 +20,6 @@ def pipeline(config_file, functions):
             data = func(data, *params)
 
     return data
-
-
 # [/func]
 
 # [call]
@@ -31,5 +27,4 @@ result = pipeline(sys.argv[1], functions)
 # [/call]
 
 import csv
-
 csv.writer(sys.stdout).writerows(result)

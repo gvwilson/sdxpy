@@ -1,6 +1,5 @@
 from tokenizer import tokenize
 
-
 def parse(text):
     result = []
     all_tokens = tokenize(text)
@@ -8,7 +7,6 @@ def parse(text):
         is_last = i == len(all_tokens) - 1
         handle(result, token, is_last)
     return compress(result)
-
 
 # [skip]
 # [handle]
@@ -36,8 +34,6 @@ def handle(result, token, is_last):
         result.append(token)
     else:
         assert False, f'UNIMPLEMENTED {token["kind"]}'
-
-
 # [/handle]
 
 # [groupend]
@@ -51,8 +47,6 @@ def group_end(result, token):
             break
         group["children"].insert(0, child)
     return group
-
-
 # [/groupend]
 
 # [compress]
@@ -65,7 +59,5 @@ def compress(raw):
             token["right"] = cooked.pop(0)
         cooked.insert(0, token)
     return cooked
-
-
 # [/compress]
 # [/skip]

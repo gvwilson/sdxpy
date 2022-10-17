@@ -1,9 +1,7 @@
 from tokenizer import tokenize
 
-
 def test_tokenize_single_character():
     assert tokenize("a") == [{"kind": "Lit", "value": "a", "loc": 0}]
-
 
 def test_tokenize_char_sequence():
     assert tokenize("ab") == [
@@ -11,10 +9,8 @@ def test_tokenize_char_sequence():
         {"kind": "Lit", "value": "b", "loc": 1},
     ]
 
-
 def test_tokenize_start_anchor_alone():
     assert tokenize("^") == [{"kind": "Start", "loc": 0}]
-
 
 def test_tokenize_start_anchor_followed_by_characters():
     assert tokenize("^a") == [
@@ -22,10 +18,7 @@ def test_tokenize_start_anchor_followed_by_characters():
         {"kind": "Lit", "value": "a", "loc": 1},
     ]
 
-
 # [omit]
-
-
 def test_tokenize_circumflex_not_at_start():
     assert tokenize("a^b") == [
         {"kind": "Lit", "value": "a", "loc": 0},
@@ -33,17 +26,14 @@ def test_tokenize_circumflex_not_at_start():
         {"kind": "Lit", "value": "b", "loc": 2},
     ]
 
-
 def test_tokenize_start_anchor_alone():
     assert tokenize("$") == [{"kind": "End", "loc": 0}]
-
 
 def test_tokenize_nd_anchor_preceded_by_characters():
     assert tokenize("a$") == [
         {"kind": "Lit", "value": "a", "loc": 0},
         {"kind": "End", "loc": 1},
     ]
-
 
 def test_tokenize_dollar_sign_not_at_end():
     assert tokenize("a$b") == [
@@ -52,10 +42,8 @@ def test_tokenize_dollar_sign_not_at_end():
         {"kind": "Lit", "value": "b", "loc": 2},
     ]
 
-
 def test_tokenize_repetition_alone():
     assert tokenize("*") == [{"kind": "Any", "loc": 0}]
-
 
 def test_tokenize_repetition_in_string():
     assert tokenize("a*b") == [
@@ -64,17 +52,14 @@ def test_tokenize_repetition_in_string():
         {"kind": "Lit", "value": "b", "loc": 2},
     ]
 
-
 def test_tokenize_repetition_at_end_of_string():
     assert tokenize("a*") == [
         {"kind": "Lit", "value": "a", "loc": 0},
         {"kind": "Any", "loc": 1},
     ]
 
-
 def test_tokenize_alternation_alone():
     assert tokenize("|") == [{"kind": "Alt", "loc": 0}]
-
 
 def test_tokenize_alternation_in_string():
     assert tokenize("a|b") == [
@@ -83,17 +68,14 @@ def test_tokenize_alternation_in_string():
         {"kind": "Lit", "value": "b", "loc": 2},
     ]
 
-
 def test_tokenize_alternation_at_start_of_string():
     assert tokenize("|a") == [
         {"kind": "Alt", "loc": 0},
         {"kind": "Lit", "value": "a", "loc": 1},
     ]
 
-
 def test_tokenize_start_of_group_alone():
     assert tokenize("(") == [{"kind": "GroupStart", "loc": 0}]
-
 
 def test_tokenize_start_of_group_in_string():
     assert tokenize("a(b") == [
@@ -102,20 +84,15 @@ def test_tokenize_start_of_group_in_string():
         {"kind": "Lit", "value": "b", "loc": 2},
     ]
 
-
 def test_tokenize_end_of_group_alone():
     assert tokenize(")") == [{"kind": "GroupEnd", "loc": 0}]
-
 
 def test_tokenize_end_of_group_at_the_end_of_string():
     assert tokenize("a)") == [
         {"kind": "Lit", "value": "a", "loc": 0},
         {"kind": "GroupEnd", "loc": 1},
     ]
-
-
 # [/omit]
-
 
 def test_tokenize_complex_expression():
     assert tokenize("^a*(bcd|e^)*f$gh$") == [

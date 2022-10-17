@@ -1,6 +1,5 @@
 from re_base import RegexBase
 
-
 class Start(RegexBase):
     def _match(self, text, start):
         if start != 0:

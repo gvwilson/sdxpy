@@ -350,7 +350,8 @@ We can get that dictionary by calling the function `globals`:
 
 We can loop over the keys of this dictionary and find things with particular names:
 
-[% inc pat="show_tests.*" fill="py out" %]
+[% inc file="show_tests.py" omit="sign" %]
+[% inc file="show_tests.out" %]
 
 which means we can find all the tests in a module,
 call them,

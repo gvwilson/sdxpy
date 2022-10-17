@@ -1,9 +1,6 @@
 from abc import ABC
 
-
 class DF(ABC):
-    """Dataframe interface."""
-
     def ncol(self):
         """Report the number of columns."""
 

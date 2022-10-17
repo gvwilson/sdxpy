@@ -1,9 +1,8 @@
 import csv
 import sys
-
 import yaml
-from generic import EXPORTS as functions
 
+from generic import EXPORTS as functions
 
 # [func]
 def pipeline(config_file, functions):
@@ -21,8 +20,6 @@ def pipeline(config_file, functions):
             data = func(data, *params, **overall)
 
     return data
-
-
 # [/func]
 
 result = pipeline(sys.argv[1], functions)

@@ -12,6 +12,5 @@ for (i, step) in enumerate(pipeline):
 # [omit]
 import csv
 import sys
-
 csv.writer(sys.stdout).writerows(data)
 # [/omit]

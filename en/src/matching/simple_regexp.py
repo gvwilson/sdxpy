@@ -20,8 +20,6 @@ def match(pattern, text):
 
     # Nothing worked.
     return False
-
-
 # [/match]
 
 # [match_here]
@@ -54,8 +52,6 @@ def match_here(pattern, i_pattern, text, i_text):
 
     # Nothing worked.
     return False
-
-
 # [/match_here]
 
 # [tests]
@@ -82,7 +78,6 @@ def main():
         actual = match(regexp, text)
         result = "pass" if actual == expected else "fail"
         print(f"'{regexp}' X '{text}' == {actual}: {result}")
-
 
 main()
 # [/tests]

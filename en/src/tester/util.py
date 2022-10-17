@@ -1,5 +1,4 @@
 def run_tests(available, prefix):
-    """Run all the functions whose names start with the given prefix."""
     for name in [n for n in available if n.startswith(prefix)]:
         try:
             available[name]()

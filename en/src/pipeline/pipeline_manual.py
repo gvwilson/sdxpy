@@ -1,8 +1,7 @@
 import sys
-
 import yaml
-from functions import *
 
+from functions import *
 
 # [func]
 def pipeline(config_file, *functions):
@@ -21,8 +20,6 @@ def pipeline(config_file, *functions):
             data = func(data, *params)
 
     return data
-
-
 # [/func]
 
 # [call]
@@ -30,5 +27,4 @@ result = pipeline(sys.argv[1], read, head, tail, left, right)
 # [/call]
 
 import csv
-
 csv.writer(sys.stdout).writerows(result)
