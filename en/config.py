@@ -52,11 +52,6 @@ appendices = [
     "contents",
 ]
 
-# To do.
-todo = {
-    "database",
-}
-
 # Debug.
 debug = True
 
