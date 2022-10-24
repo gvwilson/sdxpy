@@ -1,6 +1,5 @@
 from re_base import RegexBase
 
-
 class Lit(RegexBase):
     def __init__(self, chars, rest=None):
         super().__init__(rest)

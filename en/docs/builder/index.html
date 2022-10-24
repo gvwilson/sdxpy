@@ -6,6 +6,7 @@
   <link rel="icon" type="image/x-icon" href="../favicon.ico">
   <link rel="stylesheet" href="../mccole.css">
   <link rel="stylesheet" href="../tango.css">
+  
   <script>
     MathJax = {
       tex: {
@@ -290,8 +291,8 @@ to create a runnable program
   <figcaption markdown="1">Figure 7.1: Compiling source files and linking the resulting modules.</figcaption>
 </figure>
 
-<p>If a source file hasn't changed,
-there's no need to recompile it before linking.
+<p>If a source file hasn&rsquo;t changed,
+there&rsquo;s no need to recompile it before linking.
 A <span class="ix-entry" ix-key="build manager" markdown="1"><a class="gl-ref" href="../glossary/#build_manager" markdown="1">build manager</a></span> takes a description of what depends on what,
 figures out which files are out of date,
 determines an order in which to rebuild things,
@@ -325,8 +326,8 @@ each of which has:</p>
 <p>The target of one rule can be a dependency of another rule,
 so their relationships form a <span class="ix-entry" ix-key="directed acyclic graph (DAG);DAG" markdown="1"><a class="gl-ref" href="../glossary/#dag" markdown="1">directed acyclic graph</a></span>
 (<a class="fig-ref" href="../builder/#builder-dependencies">Figure 7.2</a>).
-The graph is directed because "A depends on B" is a one-way relationship,
-while "acyclic" means it cannot contains loops:
+The graph is directed because &ldquo;A depends on B&rdquo; is a one-way relationship,
+while &ldquo;acyclic&rdquo; means it cannot contains loops:
 if something depends on itself we can never finish updating it.</p>
 <figure id="builder-dependencies">
   <img src="./dependencies.svg" alt="Respecting dependencies"/>
@@ -381,15 +382,14 @@ then (B, C, A) and (C, B, A) are both valid topological orders of the graph.</p>
 </code></pre></div>
 </div>
 <p class="continue">We could equally well have used <a class="gl-ref" href="../glossary/#json" markdown="1">JSON</a>,
-but it wouldn't have made sense to use <a class="gl-ref" href="../glossary/#csv" markdown="1">CSV</a>:
+but it wouldn&rsquo;t have made sense to use <a class="gl-ref" href="../glossary/#csv" markdown="1">CSV</a>:
 rules have a nested structure,
-and CSV doesn't represent nesting gracefully.</p>
+and CSV doesn&rsquo;t represent nesting gracefully.</p>
 <p>We would normally implement all of the methods required by the builder at once,
 but to make the evolving code easier to follow we will write them them one by one.
-Let's start by writing a class that loads a configuration file:</p>
+Let&rsquo;s start by writing a class that loads a configuration file:</p>
 <div class="code-sample lang-py" title="config_loader.py">
 <div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">yaml</span>
-
 
 <span class="k">class</span> <span class="nc">ConfigLoader</span><span class="p">:</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rules_file</span><span class="p">):</span>
@@ -401,15 +401,13 @@ Let's start by writing a class that loads a configuration file:</p>
     <span class="k">def</span> <span class="nf">load_config</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rules_file</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">reader</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">rules</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">reader</span><span class="p">,</span> <span class="n">Loader</span><span class="o">=</span><span class="n">yaml</span><span class="o">.</span><span class="n">FullLoader</span><span class="p">)</span>
-
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rules</span><span class="p">,</span> <span class="nb">list</span><span class="p">),</span> <span class="s2">&quot;Configuration must be array&quot;</span>
-
         <span class="k">for</span> <span class="n">rule</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">rules</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_check</span><span class="p">(</span><span class="n">rule</span><span class="p">)</span>
 </code></pre></div>
 </div>
 <p>We need to check each rule because YAML is a generic file format
-that doesn't know anything about the extra requirements of our rules:</p>
+that doesn&rsquo;t know anything about the extra requirements of our rules:</p>
 <div class="code-sample lang-py" title="config_loader.py">
 <div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">_check</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rule</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Check a single rule.&quot;&quot;&quot;</span>
@@ -431,13 +429,12 @@ that doesn't know anything about the extra requirements of our rules:</p>
 </code></pre></div>
 </div>
 <p>The next step is to turn the configuration into a graph in memory.
-We derive a class from <code>ConfigLoader</code> so that we can recycle the code we've already written
+We derive a class from <code>ConfigLoader</code> so that we can recycle the code we&rsquo;ve already written
 and call a couple of methods that we are planning to add:</p>
 <div class="code-sample lang-py" title="graph_creator.py">
 <div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
 <span class="kn">from</span> <span class="nn">config_loader</span> <span class="kn">import</span> <span class="n">ConfigLoader</span>
 <span class="kn">from</span> <span class="nn">networkx.readwrite</span> <span class="kn">import</span> <span class="n">json_graph</span>
-
 
 <span class="k">class</span> <span class="nc">GraphCreator</span><span class="p">(</span><span class="n">ConfigLoader</span><span class="p">):</span>
     <span class="k">def</span> <span class="nf">build</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -463,7 +460,7 @@ and store the recipe to rebuild a node in that node:</p>
 </div>
 <p><code>networkx</code> provides implementations of some common graph algorithms,
 including one to find cycles,
-so let's write that next:</p>
+so let&rsquo;s write that next:</p>
 <div class="code-sample lang-py" title="graph_creator.py">
 <div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">check_cycles</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">cycles</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">nx</span><span class="o">.</span><span class="n">algorithms</span><span class="o">.</span><span class="n">simple_cycles</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="p">))</span>
@@ -471,7 +468,7 @@ so let's write that next:</p>
 </code></pre></div>
 </div>
 <p>Finally,
-we write a <code>__str__</code> method so we can see what we've built:</p>
+we write a <code>__str__</code> method so we can see what we&rsquo;ve built:</p>
 <div class="code-sample lang-py" title="graph_creator.py">
 <div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">temp</span> <span class="o">=</span> <span class="n">json_graph</span><span class="o">.</span><span class="n">node_link_data</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="p">)</span>
@@ -521,7 +518,7 @@ we write a <code>__str__</code> method so we can see what we've built:</p>
 }
 </code></pre></div>
 </div>
-<p>Let's write a quick test to make sure the cycle detector works as intended:</p>
+<p>Let&rsquo;s write a quick test to make sure the cycle detector works as intended:</p>
 <div class="code-sample lang-yml" title="circular_rules.yml">
 <div class="highlight"><pre><span></span><code>- target: A
   depends:
@@ -546,12 +543,12 @@ we write a <code>__str__</code> method so we can see what we've built:</p>
 <h2 id="builder-timestamp">Section 7.3: Stale Files</h2>
 <p>The next step is to figure out which files are out of date.
 Make does this by comparing the <span class="ix-entry" ix-key="timestamp!in build;build!timestamp" markdown="1">timestamps</span> of the files in question,
-but this isn't always reliable:
-<span class="ix-entry" ix-key="clock synchronization (in build);build!clock synchronization" markdown="1">computers' clocks may be slightly out of sync</span>,
+but this isn&rsquo;t always reliable:
+<span class="ix-entry" ix-key="clock synchronization (in build);build!clock synchronization" markdown="1">computers&rsquo; clocks may be slightly out of sync</span>,
 which can produce a wrong answer on a networked filesystem,
 and the operating system may only report file update times to the nearest millisecond
 (which seemed very short in 1970 but seems very long today).</p>
-<p>More modern build systems store a <span class="ix-entry" ix-key="hash code!in build;build!hash code" markdown="1">hash</span> of each file's contents
+<p>More modern build systems store a <span class="ix-entry" ix-key="hash code!in build;build!hash code" markdown="1">hash</span> of each file&rsquo;s contents
 and compare the current hash to the stored one to see if the file has changed.
 We looked at hashing in <a class="x-ref" href="../backup/">Chapter 3</a>,
 so we will use the timestamp approach here,
@@ -565,7 +562,7 @@ C: 8
 </div>
 <p>Since we want to associate those timestamps with files,
 we add steps to the constructor and the <code>build</code> method
-to read the timestamp file and add information to the graph's nodes:</p>
+to read the timestamp file and add information to the graph&rsquo;s nodes:</p>
 <div class="code-sample lang-py" title="add_timestamps.py">
 <div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">AddTimestamps</span><span class="p">(</span><span class="n">GraphCreator</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rules_file</span><span class="p">,</span> <span class="n">times_file</span><span class="p">):</span>
@@ -590,7 +587,7 @@ to read the timestamp file and add information to the graph's nodes:</p>
 </code></pre></div>
 </div>
 <p>Before we move on,
-let's make sure that adding timestamps works as we want:</p>
+let&rsquo;s make sure that adding timestamps works as we want:</p>
 <div class="code-sample lang-sh" title="add_timestamps.sh">
 <div class="highlight"><pre><span></span><code>python add_timestamps.py three_simple_rules.yml add_timestamps.yml
 </code></pre></div>
@@ -684,13 +681,13 @@ we get this:</p>
 <li>
 <p>Checks each file in order.
     If that file is stale,
-    we print the steps we would run and then update the file's timestamp.
+    we print the steps we would run and then update the file&rsquo;s timestamp.
     We only advance the notional current time when we do an update.</p>
 </li>
 </ol>
 <p>In order to check if a file is stale,
 we see if any of its dependencies currently have timestamps
-greater than or equal to the target's timestamp:</p>
+greater than or equal to the target&rsquo;s timestamp:</p>
 <div class="code-sample lang-py" title="update_timestamps.py">
 <div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">is_stale</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">any</span><span class="p">(</span>
@@ -723,7 +720,7 @@ it seems to do the right thing:</p>
 </code></pre></div>
 </div>
 <h2 id="builder-variables">Section 7.5: Variables</h2>
-<p>We don't want to have to write a hundred nearly-identical recipes
+<p>We don&rsquo;t want to have to write a hundred nearly-identical recipes
 if our website has a hundred blog posts
 or a hundred pages of documentation.
 Instead,
@@ -777,7 +774,7 @@ and <code>@DEP[1]</code>, <code>@DEP[2]</code>, and so on for specific dependenc
             <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">target</span><span class="p">][</span><span class="s2">&quot;recipes&quot;</span><span class="p">][</span><span class="n">ir</span><span class="p">]</span> <span class="o">=</span> <span class="n">result</span>
 </code></pre></div>
 </div>
-<p>The first thing we do is test that it works when there <em>aren't</em> any variables to expand
+<p>The first thing we do is test that it works when there <em>aren&rsquo;t</em> any variables to expand
 by running it on the same example we used previously:</p>
 <div class="code-sample lang-sh" title="expand_variables_no_vars.sh">
 <div class="highlight"><pre><span></span><code>python expand_variables.py three_simple_rules.yml add_timestamps.yml
@@ -872,7 +869,7 @@ Our test rules file is:</p>
 </code></pre></div>
 </div>
 <p>However,
-it doesn't work:</p>
+it doesn&rsquo;t work:</p>
 <div class="code-sample lang-sh" title="pattern_attempt.sh">
 <div class="highlight"><pre><span></span><code>python pattern_attempt.py pattern_rules.yml pattern_times.yml
 </code></pre></div>
@@ -889,14 +886,14 @@ KeyError: &#39;recipes&#39;
 </code></pre></div>
 </div>
 <p>After a bit of poking around we realize that
-we're looking at the rule for <code>%.in</code>.
+we&rsquo;re looking at the rule for <code>%.in</code>.
 A bit more poking around and we realize that
 when we created edges in the graph between a target and its dependencies,
 <code>networkx</code> automatically added a node for the dependency
-if one didn't exist yet.
+if one didn&rsquo;t exist yet.
 As a result,
 when we say that <code>%.out</code> depends on <code>%.in</code>,
-we wind up with a node for <code>%.in</code> that doesn't have any recipes.</p>
+we wind up with a node for <code>%.in</code> that doesn&rsquo;t have any recipes.</p>
 <p>We can fix our problem by changing the <code>build_graph</code> method
 so that it saves pattern rules in a dictionary
 and then builds the graph from the non-pattern rules:</p>
@@ -935,7 +932,7 @@ and then builds the graph from the non-pattern rules:</p>
             <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span>
 </code></pre></div>
 </div>
-<p>We're finally ready to test:</p>
+<p>We&rsquo;re finally ready to test:</p>
 <div class="code-sample lang-sh" title="pattern_final.sh">
 <div class="highlight"><pre><span></span><code>python pattern_final.py pattern_rules.yml pattern_times.yml
 </code></pre></div>
@@ -951,19 +948,19 @@ and then builds the graph from the non-pattern rules:</p>
 </div>
 <h2 id="builder-discuss">Section 7.7: Discussion</h2>
 <p>We have added a lot of steps to our original template method,
-which makes it a bit of a stretch to claim that the overall operation hasn't changed.
+which makes it a bit of a stretch to claim that the overall operation hasn&rsquo;t changed.
 Knowing what we know now,
 we could go back and modify the original <code>SkeletonBuilder.build</code> method
 to include those extra steps and provide do-nothing implementations.</p>
-<p>The root of the problem is that we didn't anticipate all the steps that would be involved
+<p>The root of the problem is that we didn&rsquo;t anticipate all the steps that would be involved
 when we wrote our template method.
 It typically takes a few child classes for this to settle down;
 if it never does,
 then <span class="ix-entry" ix-key="Template Method pattern;design pattern!Template Method" markdown="1">Template Method</span> is probably the wrong pattern for our situation.
-Realizing this isn't a failure in initial design:
+Realizing this isn&rsquo;t a failure in initial design:
 we always learn about our problem as we try to capture it in code,
 and if we know enough to anticipate 100% of the issues that are going to come up,
-it's time to put what we've learned in a library for future use.</p>
+it&rsquo;s time to put what we&rsquo;ve learned in a library for future use.</p>
 <h2 id="builder-exercises">Section 7.8: Exercises</h2>
 <h3 class="exercise">Handle failure</h3>
 <ol>
@@ -1022,7 +1019,7 @@ and execute their combined rules.</p>
 <li>
 <p>Write a program called <code>build_init.py</code> that calculates a hash
     for every file mentioned in the build configuration
-    and stores the hash along with the file's name in <code>build_hash.json</code>.</p>
+    and stores the hash along with the file&rsquo;s name in <code>build_hash.json</code>.</p>
 </li>
 <li>
 <p>Modify the build manager to compare the current hashes of files

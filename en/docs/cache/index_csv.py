@@ -1,5 +1,3 @@
-"""CSV-based index."""
-
 import csv
 from datetime import datetime
 from pathlib import Path
@@ -7,14 +5,10 @@ from pathlib import Path
 from exceptions import CacheException
 from index_base import CacheEntry, IndexBase
 
-
 class IndexCSV(IndexBase):
-    """Store index as CSV file."""
-
     INDEX_FILE = "index.csv"
 
     def load(self):
-        """Load entire index."""
         if not self.index_dir:
             raise CacheException("Cache directory not set in index")
 
@@ -30,7 +24,6 @@ class IndexCSV(IndexBase):
             ]
 
     def save(self, index):
-        """Save entire index."""
         if not self.index_dir:
             raise CacheException("Cache directory not set in index")
 
@@ -42,11 +35,9 @@ class IndexCSV(IndexBase):
                 writer.writerow((entry.identifier, when))
 
     def _initialize_index(self):
-        """Initialize index file if necessary."""
         self._make_index_path().touch()
 
     def _make_index_path(self):
-        """Create index file path."""
         if not self.index_dir:
             raise CacheException("Cache directory not set in index")
         return Path(self.index_dir, self.INDEX_FILE)

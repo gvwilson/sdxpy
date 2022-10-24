@@ -1,10 +1,9 @@
 import csv
 import sys
 import time
-
 import yaml
-from generic import EXPORTS as functions
 
+from generic import EXPORTS as functions
 
 # [func]
 def pipeline(config_file, functions):
@@ -21,8 +20,6 @@ def pipeline(config_file, functions):
         provenance.append(info)
 
     return data, provenance
-
-
 # [/func]
 
 # [run]
@@ -38,13 +35,9 @@ def run(functions, data, func_name, params, overall):
     info["size"] = data_size(data)
     return data, info
 
-
 def data_size(data):
     return [0, 0] if not data else [len(data), len(data[0])]
-
-
 # [/run]
 
 result, provenance = pipeline(sys.argv[1], functions)
-# csv.writer(sys.stdout).writerows(result)
 yaml.dump(provenance, sys.stdout)

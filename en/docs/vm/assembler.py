@@ -1,5 +1,4 @@
-from architecture import NUM_REG, OP_SHIFT, OP_WIDTH, OPS
-
+from architecture import NUM_REG, OP_SHIFT, OPS
 
 class Assembler:
 
@@ -20,7 +19,6 @@ class Assembler:
 
     def is_comment(self, line):
         return line.startswith("#")
-
     # [/assemble]
 
     # [find-labels]
@@ -38,7 +36,6 @@ class Assembler:
 
     def is_label(self, line):
         return line.endswith(":")
-
     # [/find-labels]
 
     # [compile]
@@ -68,7 +65,6 @@ class Assembler:
             assert False, f"Unknown instruction format {OPS[op]['fmt']}"
 
         return result
-
     # [/compile]
 
     # [combine]
@@ -79,7 +75,6 @@ class Assembler:
             result <<= OP_SHIFT
             result |= a
         return result
-
     # [/combine]
 
     # [utilities]
@@ -99,7 +94,6 @@ class Assembler:
         lbl = token[1:]
         assert lbl in labels, f"Unknown label '{token}'"
         return labels[lbl]
-
     # [/utilities]
 
     # [driver]
@@ -115,9 +109,7 @@ class Assembler:
         program = assembler.assemble(lines)
         for instruction in program:
             print(instruction, file=writer)
-
     # [/driver]
-
 
 # [main]
 if __name__ == "__main__":

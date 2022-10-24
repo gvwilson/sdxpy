@@ -13,6 +13,4 @@ def tokenize(text):
         else:
             result.append({"kind": "Lit", "loc": i, "value": c})
     return result
-
-
 # [/tokenize]

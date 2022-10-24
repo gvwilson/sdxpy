@@ -1,7 +1,6 @@
 # [body]
 import yaml
 
-
 class ConfigLoader:
     def __init__(self, rules_file):
         self.rules_file = rules_file
@@ -12,12 +11,9 @@ class ConfigLoader:
     def load_config(self):
         with open(self.rules_file, "r") as reader:
             self.rules = yaml.load(reader, Loader=yaml.FullLoader)
-
         assert isinstance(self.rules, list), "Configuration must be array"
-
         for rule in self.rules:
             self._check(rule)
-
     # [/body]
 
     # [check]
@@ -38,14 +34,12 @@ class ConfigLoader:
             and isinstance(rule["recipes"], list)
             and all(isinstance(r, str) for r in rule["recipes"])
         ), f"Bad 'recipes' for rule {rule}"
-
     # [/check]
 
 
 # [main]
 if __name__ == "__main__":
     import sys
-
     assert len(sys.argv) == 2, f"Expect config file not {sys.argv}"
     builder = ConfigLoader(sys.argv[1])
     builder.build()

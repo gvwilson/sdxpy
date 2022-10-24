@@ -1,15 +1,11 @@
-"""A tiny expression evaluator with variables."""
-
 import json
 import sys
-
 
 def do_abs(env, args):
     """Get absolute value of expression."""
     assert len(args) == 1
     val = do(env, args[0])
     return abs(val)
-
 
 def do_add(env, args):
     """Add two expressions."""
@@ -18,14 +14,12 @@ def do_add(env, args):
     right = do(env, args[1])
     return left + right
 
-
 def do_get(env, args):
     """Get the value of a variable."""
     assert len(args) == 1
     assert isinstance(args[0], str)
     assert args[0] in env, f"Unknown variable {args[0]}"
     return env[args[0]]
-
 
 def do_seq(env, args):
     """Execute a sequence of operations."""
@@ -34,7 +28,6 @@ def do_seq(env, args):
         result = do(env, item)
     return result
 
-
 def do_set(env, args):
     """Set the value of a variable."""
     assert len(args) == 2
@@ -42,7 +35,6 @@ def do_set(env, args):
     value = do(env, args[1])
     env[args[0]] = value
     return value
-
 
 # [lookup]
 OPS = {
@@ -54,11 +46,8 @@ OPS = {
 }
 # [/lookup]
 
-
 # [do]
 def do(env, expr):
-    """Evaluate an expression in an environment."""
-
     # Integers evaluate to themselves.
     if isinstance(expr, int):
         return expr
@@ -68,10 +57,7 @@ def do(env, expr):
     assert expr[0] in OPS, f"Unknown operation {expr[0]}"
     func = OPS[expr[0]]
     return func(env, expr[1:])
-
-
 # [/do]
-
 
 def main():
     assert len(sys.argv) == 2, "Usage: vars_table.py filename"
@@ -79,7 +65,6 @@ def main():
         program = json.load(reader)
     result = do({}, program)
     print(f"=> {result}")
-
 
 if __name__ == "__main__":
     main()

@@ -4,7 +4,6 @@ from re_end import End
 from re_lit import Lit
 from re_start import Start
 
-
 def main():
     tests = [
         ["a", "a", True, Lit("a")],
@@ -33,7 +32,6 @@ def main():
         actual = matcher.match(text)
         result = "pass" if actual == expected else "fail"
         print(f"'{pattern}' X '{text}' == {actual}: {result}")
-
 
 if __name__ == "__main__":
     main()

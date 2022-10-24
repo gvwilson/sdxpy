@@ -1,6 +1,5 @@
 from re_base import RegexBase
 
-
 class Alt(RegexBase):
     def __init__(self, left, right, rest=None):
         super().__init__(rest)

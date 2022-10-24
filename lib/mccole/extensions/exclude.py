@@ -16,8 +16,7 @@ def keep_file(value, filepath):
 @ivy.filters.register(ivy.filters.Filter.LOAD_NODE_DIR)
 def keep_dir(value, dirpath):
     """Do not process directories excluded by parent."""
-    result = not _ignore(Path(dirpath).parent, dirpath)
-    return result
+    return not _ignore(Path(dirpath).parent, dirpath)
 
 
 def _ignore(dirpath, filepath):
