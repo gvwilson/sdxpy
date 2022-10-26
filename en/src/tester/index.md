@@ -263,13 +263,13 @@ against the [%g expected_result "expected result" %].
 The outcome can be exactly one of:
 
 -   [%g pass_test "Pass" %]:
-    the test works as expected.
+    the test subject works as expected.
 
 -   [%g fail_test "Fail" %]:
     something is wrong with the test subject.
 
 -   [%g error_test "Error" %]:
-    something wrong in the test itself,
+    something is wrong in the test itself,
     which means we don't know whether the test subject is working properly or not.
 
 To make this work,
@@ -277,7 +277,7 @@ we need some way to distinguish failing tests from broken ones.
 Our solution relies on the fact that exceptions are objects
 and that a program can use [%g introspection "introspection" %]
 to determine the class of an object.
-If a test [%g throw_exception "throws an exception" %] whose class is `assert.AssertionError`,
+If a test [%g throw_exception "throws an exception" %] whose class is `AssertionError`,
 then we will assume the exception came from
 one of the assertions we put in the test as a check.
 Any other kind of assertion indicates that the test itself contains an error.
@@ -292,14 +292,18 @@ in an array:
 
 [% inc file="dry_run.py" keep="save" %]
 
-> ### Independence
->
-> Because we're appending tests to an array,
-> they will be run in the order in which they are registered,
-> but we shouldn't rely on that.
-> Every unit test should work independently of every other
-> so that an error or failure in an early test
-> doesn't affect the result of a later one.
+<div class="callout" markdown="1">
+
+### Independence
+
+Because we're appending tests to an array,
+they will be run in the order in which they are registered,
+but we shouldn't rely on that.
+Every unit test should work independently of every other
+so that an error or failure in an early test
+doesn't affect the result of a later one.
+
+</div>
 
 The function `main` runs all registered tests:
 
