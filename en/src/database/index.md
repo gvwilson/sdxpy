@@ -5,6 +5,8 @@ syllabus:
 ---
 
 -   [%i "Stack, Connor" %]Connor Stack[%/i%]'s [Let's Build a Simple Database][db_tutorial] tutorial
+-   https://fly.io/blog/sqlite-internals-btree/
+-   https://fly.io/blog/sqlite-internals-rollback-journal/
 
 ## In Memory {: #database-memory}
 

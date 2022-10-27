@@ -172,6 +172,10 @@ def handle(node, state, accum, doEscape):
         children(node, state, accum, doEscape)
         accum.append("\\end{quotation}\n")
 
+    # <br> => newline
+    elif node_match(node, "br"):
+        accum.append("\\\\\n")
+
     # <code> => inline typewriter text
     elif node_match(node, "code"):
         temp = "".join(children(node, state, [], True))

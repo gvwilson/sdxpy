@@ -20,6 +20,10 @@ syllabus:
 
 [% inc file="vm_break.py" %]
 
+## Testing
+
+FIXME
+
 ## Exercises {: #debugger-exercises}
 
 FIXME

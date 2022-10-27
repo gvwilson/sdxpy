@@ -4,6 +4,9 @@ syllabus:
 - FIXME
 ---
 
+- https://eerielinux.wordpress.com/2017/08/15/the-history-of-nix-package-management/
+- https://twitter.com/stephenrkell/status/1559930052464283650
+
 ## Exhaustive Search {: #packman-exhaustive}
 
 -   Specify package dependencies
