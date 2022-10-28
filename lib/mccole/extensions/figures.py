@@ -1,10 +1,67 @@
 """Handle figures and figure references."""
 
+from dataclasses import dataclass
 from textwrap import dedent
 
+import ivy
 import shortcodes
 import util
 
+# ----------------------------------------------------------------------
+
+@dataclass
+class Figure:
+    """Keep track of information about a figure."""
+
+    node: ivy.nodes.Node = None
+    fileslug: str = ""
+    cls: str = ""
+    slug: str = ""
+    img: str = ""
+    alt: str = ""
+    caption: str = ""
+    number: tuple = ()
+    width: str = ""
+
+
+@ivy.events.register(ivy.events.Event.INIT)
+def collect():
+    """Collect information from pages."""
+    # Gather data.
+    major = util.make_major()
+    collected = {}
+    ivy.nodes.root().walk(lambda node: _collect(node, major, collected))
+    _cleanup(major, collected)
+
+
+def _collect(node, major, collected):
+    """Pull data from a single node."""
+    parser = shortcodes.Parser(inherit_globals=False, ignore_unknown=True)
+    parser.register(_parse, "figure")
+    collected[node.slug] = []
+    parser.parse(node.text, {
+        "node": node,
+        "values": collected[node.slug]
+    })
+
+
+def _cleanup(major, collected):
+    """Convert collected figures information to flat lookup table."""
+    figures = util.make_config("figures")
+    for fileslug in collected:
+        if fileslug in major:
+            for (i, entry) in enumerate(collected[fileslug]):
+                entry.fileslug = fileslug
+                entry.number = (str(major[fileslug]), str(i + 1))
+                figures[entry.slug] = entry
+
+
+def _parse(pargs, kwargs, data):
+    """Collect information from a single figure shortcode."""
+    data["values"].append(Figure(data["node"], **kwargs))
+    return ""
+
+# ----------------------------------------------------------------------
 
 @shortcodes.register("f")
 def figure_ref(pargs, kwargs, node):

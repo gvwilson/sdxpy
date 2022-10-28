@@ -1,10 +1,119 @@
 """Headings and cross-references."""
 
+from dataclasses import dataclass
 import sys
 
+import ivy
 import shortcodes
 import util
 
+
+@dataclass
+class Heading:
+    """Keep track of heading information."""
+
+    fileslug: str = ""
+    depth: int = 0
+    title: str = ""
+    slug: str = ""
+    number: tuple = ()
+
+
+@ivy.events.register(ivy.events.Event.INIT)
+def collect():
+    """Collect information from pages."""
+    # Gather data.
+    major = util.make_major()
+    collected = {}
+    ivy.nodes.root().walk(lambda node: _collect(node, major, collected))
+    _number(collected, major)
+    _flatten(collected)
+    ivy.nodes.root().walk(_modify)
+
+
+def _collect(node, major, collected):
+    """Pull data from a single node."""
+    # Home page is untitled.
+    if node.slug not in major:
+        return
+
+    # Use page metadata to create entry for level-1 heading.
+    try:
+        title = node.meta["title"]
+    except KeyError:
+        util.fail(f"No title in metadata of {node.filepath}")
+    collected[node.slug] = [Heading(node.slug, 1, title, node.slug)]
+
+    # Collect depth, text, and slug from each heading.
+    collected[node.slug].extend(
+        [
+            Heading(node.slug, len(m.group(1)), m.group(2), m.group(4))
+            for m in util.HEADING.finditer(node.text)
+        ]
+    )
+
+
+def _number(headings, major):
+    """Calculate heading numberings."""
+    for slug in major:
+        stack = [major[slug]]
+        for entry in headings[slug]:
+            depth = entry.depth
+
+            # Level-1 heading is already in the stack.
+            if depth == 1:
+                pass
+
+            # Deeper heading, so extend stack.
+            elif depth > len(stack):
+                while len(stack) < depth:
+                    stack.append(1)
+
+            # Heading at the same level, so increment.
+            elif depth == len(stack):
+                stack[-1] += 1
+
+            # Shallower heading, so shrink stack and increment.
+            elif depth < len(stack):
+                stack = stack[:depth]
+                stack[-1] += 1
+
+            # Record number as tuple of strings.
+            entry.number = tuple(str(s) for s in stack)
+
+
+def _flatten(collected):
+    """Create flat cross-reference table."""
+    headings = util.make_config("headings")
+    for group in collected.values():
+        for entry in group:
+            headings[entry.slug] = entry
+
+
+def _modify(node):
+    """Post-processing changes."""
+    node.text = util.HEADING.sub(_patch, node.text)
+    headings = util.get_config("headings")
+    if node.slug in headings:
+        node.meta["major"] = util.make_label("part", headings[node.slug].number)
+
+
+def _patch(match):
+    """Modify a single heading."""
+    headings = util.get_config("headings")
+    prefix = match.group(1)
+    text = match.group(2)
+    attributes = match.group(3) or ""
+    slug = match.group(4)
+
+    if slug is None:
+        return f"{prefix} {text} {attributes}".rstrip()
+    else:
+        label = util.make_label("part", headings[slug].number)
+        return f"{prefix} {label}: {text} {attributes}"
+
+
+# ----------------------------------------------------------------------
 
 @shortcodes.register("x")
 def heading_ref(pargs, kwargs, node):

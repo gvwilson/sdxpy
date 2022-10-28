@@ -13,9 +13,46 @@ around the glossary shortcode:
 -   `make_index` displays the entire index.
 """
 
+import ivy
 import shortcodes
 import util
 
+
+@ivy.events.register(ivy.events.Event.INIT)
+def collect():
+    """Collect information from pages."""
+    major = util.make_major()
+    collected = util.make_config("index")
+    ivy.nodes.root().walk(lambda node: _collect(node, major, collected))
+
+
+def _collect(node, major, collected):
+    """Pull data from a single node."""
+    parser = shortcodes.Parser(inherit_globals=False, ignore_unknown=True)
+    parser.register(_parse, "i", "/i")
+    temp = {
+        "node": node,
+        "index": collected
+    }
+    parser.parse(node.text, temp)
+
+
+def _parse(pargs, kwargs, extra, content):
+    """Gather information from a single index shortcode."""
+    node = extra["node"]
+    index = extra["index"]
+    util.require(pargs, f"Empty index key in {node.filepath}")
+    for entry in [key.strip() for key in pargs]:
+        entry = util.MULTISPACE.sub(" ", entry)
+        entry = tuple(s.strip() for s in entry.split("!") if s.strip())
+        util.require(
+            1 <= len(entry) <= 2,
+            f"Badly-formatted index key {entry} in {node.filepath}",
+        )
+        index.setdefault(entry, set()).add(node.slug)
+
+
+# ----------------------------------------------------------------------
 
 @shortcodes.register("i", "/i")
 def index_ref(pargs, kwargs, node, content):

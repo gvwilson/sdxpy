@@ -42,10 +42,65 @@ so tables are represented as:
 
 """
 
+from dataclasses import dataclass
+
 import ivy
 import shortcodes
 import util
 
+# ----------------------------------------------------------------------
+
+@dataclass
+class Table:
+    """Keep track of information about a single table."""
+
+    fileslug: str = ""
+    slug: str = ""
+    caption: str = ""
+    number: tuple = ()
+
+
+@ivy.events.register(ivy.events.Event.INIT)
+def collect():
+    """Collect information from pages."""
+    major = util.make_major()
+    collected = {}
+    ivy.nodes.root().walk(lambda node: _collect(node, major, collected))
+    _cleanup(major, collected)
+
+
+def _collect(node, major, collected):
+    """Pull data from a single node."""
+    collected[node.slug] = []
+    for (i, match) in enumerate(util.TABLE.finditer(node.text)):
+        caption = util.TABLE_CAPTION.search(match.group(0))
+        util.require(
+            caption is not None,
+            "Table div '{match.group(0)}' without caption in {node.filepath}",
+        )
+
+        slug = util.TABLE_ID.search(match.group(0))
+        util.require(
+            slug is not None,
+            f"Table div '{match.group(0)}' without ID in {node.filepath}",
+        )
+
+        collected[node.slug].append(
+            Table(fileslug=node.slug, caption=caption.group(1), slug=slug.group(1))
+        )
+
+
+def _cleanup(major, collected):
+    """Convert collected table information to flat lookup table."""
+    tables = util.make_config("tables")
+    for fileslug in collected:
+        if fileslug in major:
+            for (i, entry) in enumerate(collected[fileslug]):
+                entry.number = (str(major[fileslug]), str(i + 1))
+                tables[entry.slug] = entry
+
+
+# ----------------------------------------------------------------------
 
 @shortcodes.register("t")
 def table_ref(pargs, kwargs, node):
