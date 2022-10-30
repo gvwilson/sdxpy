@@ -18,6 +18,7 @@ title = "Software Design in Python"
 acronym = "SDPy"
 tagline = "a tool-based introduction"
 author = "Greg Wilson"
+email = "gvwilson@third-bit.com"
 plausible = "" # "third-bit.com"
 
 # Chapters.
