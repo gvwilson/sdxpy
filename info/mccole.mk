@@ -192,7 +192,3 @@ vars:
 	@echo SRC ${SRC}
 	@echo STEM ${STEM}
 	@echo TEX ${TEX}
-
-# Miscellaneous dependencies.
-config.py: info/mccole.py
-	touch $@
