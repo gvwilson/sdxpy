@@ -54,7 +54,27 @@ appendices = [
 ]
 
 # To do.
-todo = []
+todo = [
+    "backup",
+    "interpreter",
+    "dataframe",
+    "pipeline",
+    "builder",
+    "matching",
+    "parser",
+    "server",
+    "cache",
+    "database",
+    "persistence",
+    "binary",
+    "templating",
+    "packman",
+    "layout",
+    "linter",
+    "codegen",
+    "vm",
+    "debugger",
+]
 
 # Files to copy verbatim.
 copy = [
