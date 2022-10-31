@@ -8,93 +8,25 @@ syllabus:
 - Temporarily replacing functions with mock objects can simplify testing.
 ---
 
-We are going to write many small programs in the coming chapters
-but not a lot of re-runnable tests.
-That's OK for exploratory programming,
-but if our software is going to be used instead of just read,
-we should try to make sure it works.
-
-A tool for writing and running [%g unit_test "unit tests" %] is a good first step.
-Such a tool should:
-
--   find files containing tests;
--   find the tests in those files;
--   run the tests;
--   capture their results; and
--   report each test's result and a summary of those results.
+We're going to write a lot of programs in this book,
+which means we're going to write a lot of [%g unit_test "unit tests" %].
+A tool to manage these should find and run tests automatically
+so that we don't overlook them when we're tired,
+distracted,
+or up against a deadline.
 
 Our design is inspired by [pytest][pytest],
 which was in turn inspired by many tools built for other languages
 from the 1980s onward [%b Meszaros2007 %].
+It introduces the single most important idea in this book:
+
+<div class="center" markdown="1">
+  A program is just another kind of data.
+</div>
 
 ## Functions as Objects {: #tester-funcobj}
 
-[% fixme "explain that functions are objects" %]
-
-## Finding Functions {: #tester-reflection}
-
-The first thing we need to understand is how Python stores variables.
-The answer is, "In a dictionary."
-Run the Python interpreter and call the `globals` function:
-
-```
->>> globals()
-{
-    '__name__': '__main__',
-    '__doc__': None,
-    '__package__': None,
-    '__loader__': <class '_frozen_importlib.BuiltinImporter'>,
-    '__spec__': None,
-    '__annotations__': {},
-    '__builtins__': <module 'builtins' (built-in)>
-}
-```
-
-`globals` returns a copy of the dictionary that Python uses
-to store all the variables at the top (global) level of your program.
-Since we just started the interpreter,
-what we get are the variables that Python defines automatically:
-it uses double underscores like `__name__` for these variables,
-but they're just string keys in a dictionary.
-
-Let's define a variable of our own:
-
-```
->>> my_variable = 123
->>> globals()
-{
-    '__name__': '__main__',
-    '__doc__': None,
-    '__package__': None,
-    '__loader__': <class '_frozen_importlib.BuiltinImporter'>,
-    '__spec__': None,
-    '__annotations__': {},
-    '__builtins__': <module 'builtins' (built-in)>,
-    'my_variable': 123
-}
-```
-
-There's our variable `my_variable` and its value.
-
-There's another function called `locals` that returns a dictionary full of
-all the variables defined in the current (local) scope.
-Let's create a function that takes a parameter,
-creates a local variable,
-and then shows what's in scope:
-
-```python
-def show_off(some_parameter):
-    some_variable = some_parameter * 2
-    print("local values", locals())
-
-show_off("hello")
-```
-
-```txt
-local values {'some_parameter': 'hello', 'some_variable': 'hellohello'}
-```
-
-The second thing we need to understand is that
+The first thing we need to understand is that
 a function is just another kind of object:
 while a string object holds characters
 and an image object holds pixels,
@@ -173,7 +105,71 @@ docstring: Docstring for example.
 name: example
 ```
 
-If a program's variables are stored in a dictionary,
+## Finding Functions {: #tester-reflection}
+
+The second thing we need to understand is how Python stores variables.
+The answer is, "In a dictionary."
+Run the Python interpreter and call the `globals` function:
+
+```
+>>> globals()
+{
+    '__name__': '__main__',
+    '__doc__': None,
+    '__package__': None,
+    '__loader__': <class '_frozen_importlib.BuiltinImporter'>,
+    '__spec__': None,
+    '__annotations__': {},
+    '__builtins__': <module 'builtins' (built-in)>
+}
+```
+
+`globals` returns a copy of the dictionary that Python uses
+to store all the variables at the top (global) level of your program.
+Since we just started the interpreter,
+what we get are the variables that Python defines automatically:
+it uses double underscores like `__name__` for these variables,
+but they're just string keys in a dictionary.
+
+Let's define a variable of our own:
+
+```
+>>> my_variable = 123
+>>> globals()
+{
+    '__name__': '__main__',
+    '__doc__': None,
+    '__package__': None,
+    '__loader__': <class '_frozen_importlib.BuiltinImporter'>,
+    '__spec__': None,
+    '__annotations__': {},
+    '__builtins__': <module 'builtins' (built-in)>,
+    'my_variable': 123
+}
+```
+
+There's our variable `my_variable` and its value.
+
+There's another function called `locals` that returns a dictionary full of
+all the variables defined in the current (local) scope.
+Let's create a function that takes a parameter,
+creates a local variable,
+and then shows what's in scope:
+
+```python
+def show_off(some_parameter):
+    some_variable = some_parameter * 2
+    print("local values", locals())
+
+show_off("hello")
+```
+
+```txt
+local values {'some_parameter': 'hello', 'some_variable': 'hellohello'}
+```
+
+So:
+if a program's variables are stored in a dictionary,
 we can iterate over them.
 Let's do that to find all the functions whose names start with `test_`:
 
