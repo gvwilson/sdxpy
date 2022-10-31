@@ -178,6 +178,15 @@ publisher:
 	docs/krantz.cls \
 	docs/*/*.pdf
 
+## export: export files for publishing on the web
+.PHONY: export
+export:
+	@zip -r ${STEM}-docs.zip \
+	${DOCS} \
+	docs/*.css \
+	docs/*.svg \
+	$(patsubst src/%.svg,docs/%.svg,${FIG_SVG})
+
 ## vars: show variables
 .PHONY: vars
 vars:
