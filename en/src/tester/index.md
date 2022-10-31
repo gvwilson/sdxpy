@@ -1,11 +1,11 @@
 ---
 title: "A Testing Framework"
 syllabus:
-- Functions are objects that can be saved in data structures or passed as arguments to other functions.
+- Functions are objects you can save in data structures or pass to other functions.
 - Python stores variables in a structure like a dictionary.
-- A unit test is a function that takes a fixture, performs an operation, and passes, fails, or produces an error.
-- Use reflection to discover functions and other values in programs at runtime.
-- Replace actual functions with mock objects temporarily to simplify testing.
+- A unit test is a function that performs an operation on a fixture and passes, fails, or produces an error.
+- You can find functions and other values in running programs using reflection.
+- Temporarily replacing functions with mock objects can simplify testing.
 ---
 
 We are going to write many small programs in the coming chapters
