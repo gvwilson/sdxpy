@@ -43,7 +43,7 @@ def run_tests(prefix):
         except Exception as e:
             doc = f"/{func.__doc__}" if func.__doc__ else ""
             print(f"error: {name}{doc} {str(e)}")
+
+run_tests("test_")
 # [/run]
 
-if __name__ == "__main__":
-    run_tests("test_")

@@ -284,38 +284,37 @@
 
 	  
 <p class="definitions">
-  Terms defined: <a class="gl-ref" href="../glossary/#absolute_error" markdown="1">absolute error</a>, <a class="gl-ref" href="../glossary/#actual_result" markdown="1">actual result (of test)</a>, <a class="gl-ref" href="../glossary/#alias" markdown="1">alias</a>, <a class="gl-ref" href="../glossary/#assertion" markdown="1">assertion</a>, <a class="gl-ref" href="../glossary/#context_manager" markdown="1">context manager</a>, <a class="gl-ref" href="../glossary/#defensive_programming" markdown="1">defensive programming</a>, <a class="gl-ref" href="../glossary/#docstring" markdown="1">docstring</a>, <a class="gl-ref" href="../glossary/#error_test" markdown="1">error (result of test)</a>, <a class="gl-ref" href="../glossary/#expected_result" markdown="1">expected result (of test)</a>, <a class="gl-ref" href="../glossary/#fail_test" markdown="1">failure (result of test)</a>, <a class="gl-ref" href="../glossary/#fixture" markdown="1">fixture</a>, <a class="gl-ref" href="../glossary/#introspection" markdown="1">introspection</a>, <a class="gl-ref" href="../glossary/#mock_object" markdown="1">mock object</a>, <a class="gl-ref" href="../glossary/#pass_test" markdown="1">pass (result of test)</a>, <a class="gl-ref" href="../glossary/#relative_error" markdown="1">relative error</a>, <a class="gl-ref" href="../glossary/#throw_exception" markdown="1">throw exception</a>, <a class="gl-ref" href="../glossary/#unit_test" markdown="1">unit test</a>
+  Terms defined: <a class="gl-ref" href="../glossary/#absolute_error" markdown="1">absolute error</a>, <a class="gl-ref" href="../glossary/#actual_result" markdown="1">actual result (of test)</a>, <a class="gl-ref" href="../glossary/#assertion" markdown="1">assertion</a>, <a class="gl-ref" href="../glossary/#context_manager" markdown="1">context manager</a>, <a class="gl-ref" href="../glossary/#defensive_programming" markdown="1">defensive programming</a>, <a class="gl-ref" href="../glossary/#docstring" markdown="1">docstring</a>, <a class="gl-ref" href="../glossary/#error_test" markdown="1">error (result of test)</a>, <a class="gl-ref" href="../glossary/#expected_result" markdown="1">expected result (of test)</a>, <a class="gl-ref" href="../glossary/#fail_test" markdown="1">failure (result of test)</a>, <a class="gl-ref" href="../glossary/#fixture" markdown="1">fixture</a>, <a class="gl-ref" href="../glossary/#introspection" markdown="1">introspection</a>, <a class="gl-ref" href="../glossary/#mock_object" markdown="1">mock object</a>, <a class="gl-ref" href="../glossary/#pass_test" markdown="1">pass (result of test)</a>, <a class="gl-ref" href="../glossary/#relative_error" markdown="1">relative error</a>, <a class="gl-ref" href="../glossary/#throw_exception" markdown="1">throw exception</a>, <a class="gl-ref" href="../glossary/#unit_test" markdown="1">unit test</a>
 </p>
 
 
-          <p>We&rsquo;re going to write a lot of programs in this book,
-which means we&rsquo;re going to write a lot of <a class="gl-ref" href="../glossary/#unit_test" markdown="1">unit tests</a>.
-A tool to manage these should find and run tests automatically
-so that we don&rsquo;t overlook them when we&rsquo;re tired,
-distracted,
-or up against a deadline.</p>
-<p>Our design was inspired by <a href="https://docs.pytest.org/">pytest</a>,
-which in turn was inspired by earlier tools <span class="bib-ref">[<a class="bib-ref" href="../bibliography/#Meszaros2007">Meszaros2007</a>]</span>.
-It introduces the single most important idea in this book:</p>
+          <p>We&rsquo;re going to write a lot of programs in this book.
+To make sure they work correctly,
+we&rsquo;re going to write a lot of <a class="gl-ref" href="../glossary/#unit_test" markdown="1">unit tests</a> using <a href="https://docs.pytest.org/">pytest</a>.
+Like the earlier tools that inspired it <span class="bib-ref">[<a class="bib-ref" href="../bibliography/#Meszaros2007">Meszaros2007</a>]</span>,
+<a href="https://docs.pytest.org/">pytest</a> finds and runs tests automatically;
+to show how,
+this chapter builds a simple unit testing framework.
+It also introduces the single most important idea in this book:</p>
 <div class="center">
-<p><em>A program is just another kind of data.</em></p>
+<p><em>Programs are just another kind of data.</em></p>
 </div>
 <h2 id="tester-funcobj">Section 2.1: Storing and Running Tests</h2>
 <p>The first thing we need to understand is that a function is an object.
-While a string&rsquo;s bytes represent characters
-and an image&rsquo;s bytes represent pixels,
-a function&rsquo;s bytes represent instructions.
-The code:</p>
+While the bytes in a string represent characters
+and the bytes in an image represent pixels,
+the bytes in a function are instructions
+(<span class="fixme">FIXME figure tester-func-obj</span>).
+When Python executes the code below,
+it creates an object in memory
+that contains the instructions to print a string
+and assigns that object to the variable <code>example</code>:</p>
 <div class="code-sample lang-py" title="func_obj.py">
 <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">example</span><span class="p">():</span>
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;in example&quot;</span><span class="p">)</span>
 </code></pre></div>
 </div>
-<p class="continue">tells Python to create an object in memory
-that contains the instructions to print a string
-and assign that object to the variable <code>example</code>.&rdquo;
-We can create an <a class="gl-ref" href="../glossary/#alias" markdown="1">alias</a> for the function
-by assigning it to another variable:</p>
+<p>We can assign the function to another variable:</p>
 <div class="code-sample lang-py" title="func_obj.py">
 <div class="highlight"><pre><span></span><code><span class="n">alias</span> <span class="o">=</span> <span class="n">example</span>
 <span class="n">alias</span><span class="p">()</span>
@@ -339,7 +338,8 @@ to the original variable:</p>
 <div class="highlight"><pre><span></span><code>in replacement
 </code></pre></div>
 </div>
-<p>We can also store functions in a list just like numbers or strings:</p>
+<p>We can also store functions in a list just like numbers or strings
+(<span class="fixme">FIXME figure tester-func-list</span>):</p>
 <div class="code-sample lang-py" title="func_list.py">
 <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">first</span><span class="p">():</span>
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;First&quot;</span><span class="p">)</span>
@@ -365,27 +365,19 @@ Third
 Python assigns each function to the variable <code>func</code> in turn.
 We can then call the function as <code>func()</code>
 just as we called <code>example</code> using <code>alias()</code>.</p>
-<p>With this in hand,
-we can register tests by appending functions to a list:</p>
-<div class="code-sample lang-py" title="dry_run.py">
-<div class="highlight"><pre><span></span><code><span class="n">HOPE_TESTS</span> <span class="o">=</span> <span class="p">[]</span>
-
-<span class="k">def</span> <span class="nf">hope_that</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
-    <span class="n">HOPE_TESTS</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
-</code></pre></div>
-</div>
-<p>Each test does something to a <a class="gl-ref" href="../glossary/#fixture" markdown="1">fixture</a>
-and uses <a class="gl-ref" href="../glossary/#assertion" markdown="1">assertions</a>
-to compare the <a class="gl-ref" href="../glossary/#actual_result" markdown="1">actual result</a>
-against the <a class="gl-ref" href="../glossary/#expected_result" markdown="1">expected result</a>:</p>
+<p>Now suppose we have a function we want to test:</p>
 <div class="code-sample lang-py" title="dry_run.py">
 <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">sign</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">value</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
         <span class="k">return</span> <span class="o">-</span><span class="mi">1</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">return</span> <span class="mi">1</span>
-
-<span class="k">def</span> <span class="nf">test_sign_negative</span><span class="p">():</span>
+</code></pre></div>
+</div>
+<p class="continue">and some functions that test it
+(two of which contain deliberate errors):</p>
+<div class="code-sample lang-py" title="dry_run.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">test_sign_negative</span><span class="p">():</span>
     <span class="k">assert</span> <span class="n">sign</span><span class="p">(</span><span class="o">-</span><span class="mi">3</span><span class="p">)</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span>
 
 <span class="k">def</span> <span class="nf">test_sign_positive</span><span class="p">():</span>
@@ -396,14 +388,24 @@ against the <a class="gl-ref" href="../glossary/#expected_result" markdown="1">e
 
 <span class="k">def</span> <span class="nf">test_sign_error</span><span class="p">():</span>
     <span class="k">assert</span> <span class="n">sgn</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
-
-<span class="n">hope_that</span><span class="p">(</span><span class="n">test_sign_negative</span><span class="p">)</span>
-<span class="n">hope_that</span><span class="p">(</span><span class="n">test_sign_positive</span><span class="p">)</span>
-<span class="n">hope_that</span><span class="p">(</span><span class="n">test_sign_zero</span><span class="p">)</span>
-<span class="n">hope_that</span><span class="p">(</span><span class="n">test_sign_error</span><span class="p">)</span>
 </code></pre></div>
 </div>
-<p>The outcome of each test is exactly one of:</p>
+<p>We can put all the test functions in a list:</p>
+<div class="code-sample lang-py" title="dry_run.py">
+<div class="highlight"><pre><span></span><code><span class="n">TESTS</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">test_sign_negative</span><span class="p">,</span>
+    <span class="n">test_sign_positive</span><span class="p">,</span>
+    <span class="n">test_sign_zero</span><span class="p">,</span>
+    <span class="n">test_sign_error</span>
+<span class="p">]</span>
+</code></pre></div>
+</div>
+<p>Each test does something to a <a class="gl-ref" href="../glossary/#fixture" markdown="1">fixture</a>
+(such as the number -3)
+and uses <a class="gl-ref" href="../glossary/#assertion" markdown="1">assertions</a>
+to compare the <a class="gl-ref" href="../glossary/#actual_result" markdown="1">actual result</a>
+against the <a class="gl-ref" href="../glossary/#expected_result" markdown="1">expected result</a>.
+The outcome of each test is exactly one of:</p>
 <ul>
 <li>
 <p><a class="gl-ref" href="../glossary/#pass_test" markdown="1">Pass</a>:
@@ -416,22 +418,23 @@ against the <a class="gl-ref" href="../glossary/#expected_result" markdown="1">e
 <li>
 <p><a class="gl-ref" href="../glossary/#error_test" markdown="1">Error</a>:
     something is wrong in the test itself,
-    which means we don&rsquo;t know whether the test subject is working properly or not.</p>
+    which means we don&rsquo;t know if
+    the thing we&rsquo;re testing is working properly or not.</p>
 </li>
 </ul>
-<p>We need to distinguish failing tests from broken ones
-in order to implement this classification scheme.
+<p>In order to implement this classification scheme
+we need to distinguish failing tests from broken ones.
 Our rule is that
 if a test <a class="gl-ref" href="../glossary/#throw_exception" markdown="1">throws</a> an <code>AssertionError</code>
 then one of our checks is reporting a failure,
 while any other kind of exception indicates that the test contains an error.</p>
-<p>Putting this all together gives us a function <code>run_tests</code>
-that runs all registered tests
+<p>Translating that rules into code gives us the function <code>run_tests</code>
+that runs every test in a list
 and counts how many outcomes of each kind it sees:</p>
 <div class="code-sample lang-py" title="dry_run.py">
-<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">run_tests</span><span class="p">():</span>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">run_tests</span><span class="p">(</span><span class="n">all_tests</span><span class="p">):</span>
     <span class="n">results</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;pass&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;fail&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">}</span>
-    <span class="k">for</span> <span class="n">test</span> <span class="ow">in</span> <span class="n">HOPE_TESTS</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">test</span> <span class="ow">in</span> <span class="n">all_tests</span><span class="p">:</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">test</span><span class="p">()</span>
             <span class="n">results</span><span class="p">[</span><span class="s2">&quot;pass&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
@@ -443,14 +446,12 @@ and counts how many outcomes of each kind it sees:</p>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;fail </span><span class="si">{</span><span class="n">results</span><span class="p">[</span><span class="s1">&#39;fail&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;error </span><span class="si">{</span><span class="n">results</span><span class="p">[</span><span class="s1">&#39;error&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
-<span class="n">run_tests</span><span class="p">()</span>
+<span class="n">run_tests</span><span class="p">(</span><span class="n">TESTS</span><span class="p">)</span>
 </code></pre></div>
 </div>
 <p class="continue">If a test completes without an exception, it passes.
 If any of the assertions inside it raise an <code>AssertionError</code> the test fails,
-and if it raises any other exception it&rsquo;s an error.
-After all tests are run,
-<code>run_tests</code> reports the number of results of each kind:</p>
+and if it raises any other exception it&rsquo;s an error.</p>
 <div class="code-sample lang-out" title="dry_run.out">
 <div class="highlight"><pre><span></span><code>pass 2
 fail 1
@@ -459,19 +460,18 @@ error 1
 </div>
 <div class="callout">
 <h3>Independence</h3>
-<p>We&rsquo;re appending tests to a list,
-so they will be run in the order in which they are registered.
-We should not rely on that:
+<p>Our function runs tests in the order they appear in the list.
+The tests should not rely on that:
 every unit test should work independently
 so that an error or failure in an early test
 doesn&rsquo;t affect other tests&rsquo; behavior.</p>
 </div>
 <h2 id="tester-reflection">Section 2.2: Finding Functions</h2>
-<p>Registering tests by hand is clumsy and error-prone:
+<p>Making lists of functions is clumsy and error-prone:
 sooner or later we&rsquo;ll add a test twice or forget to add it at all.
-We would therefore like our tool to find tests for itself.
-It can do this by exploiting the fact that
-Python stores our variables in a structure similar to a dictionary.</p>
+We&rsquo;d therefore like our test runner to find tests for itself,
+which it can do by exploiting the fact that
+Python stores variables in a structure similar to a dictionary.</p>
 <p>Run the Python interpreter and call the <code>globals</code> function:</p>
 <div class="highlight"><pre><span></span><code>&gt;&gt;&gt; globals()
 {
@@ -485,8 +485,8 @@ Python stores our variables in a structure similar to a dictionary.</p>
 }
 </code></pre></div>
 <p class="continue">As the output shows,
-<code>globals</code> returns a copy of the dictionary that Python uses
-to store all the variables at the top (global) level of your program.
+<code>globals</code> a dictionary containing
+all the variables at the top (global) level of the program.
 Since we just started the interpreter,
 we see the variables that Python defines automatically.
 (By convention,
@@ -506,7 +506,7 @@ Python uses double underscores for names that mean something special to it.)</p>
 }
 </code></pre></div>
 <p class="continue">Sure enough,
-<code>my_variable</code> is now in the global dictionary.</p>
+<code>my_variable</code> is now in the dictionary.</p>
 <div class="callout">
 <h3>Local Variables</h3>
 <p>Another function called <code>locals</code> returns
@@ -524,63 +524,54 @@ all the variables defined in the current (local) scope:</p>
 </code></pre></div>
 </div>
 </div>
-<p>If a program&rsquo;s variables are stored in a dictionary,
-we can iterate over that dictionary&rsquo;s keys
-to find all the functions whose names start with <code>test_</code>
-and put them in a list:</p>
+<p>If function names are just variables
+and a program&rsquo;s variables are stored in a dictionary,
+we can loop over that dictionary
+to find all the functions whose names start with <code>test_</code>:</p>
 <div class="code-sample lang-py" title="find_list_test_funcs.py">
-<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">test_addition</span><span class="p">():</span>
-    <span class="k">assert</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">4</span>
-
-<span class="k">def</span> <span class="nf">test_multiplication</span><span class="p">():</span>
-    <span class="k">assert</span> <span class="mi">3</span> <span class="o">*</span> <span class="mi">3</span> <span class="o">==</span> <span class="mi">9</span>
-
-<span class="k">def</span> <span class="nf">test_remainder</span><span class="p">():</span>
-    <span class="k">assert</span> <span class="mi">15</span> <span class="o">%</span> <span class="mi">4</span> <span class="o">==</span> <span class="mi">0</span> <span class="c1"># this is wrong</span>
-
-<span class="k">def</span> <span class="nf">find_tests</span><span class="p">():</span>
-    <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">find_tests</span><span class="p">(</span><span class="n">prefix</span><span class="p">):</span>
     <span class="k">for</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">func</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">globals</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-        <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;test_&quot;</span><span class="p">):</span>
-            <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">result</span>
+        <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">prefix</span><span class="p">):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">func</span><span class="p">)</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;all the test functions&quot;</span><span class="p">,</span> <span class="n">find_tests</span><span class="p">())</span>
+<span class="n">find_tests</span><span class="p">(</span><span class="s2">&quot;test_&quot;</span><span class="p">)</span>
 </code></pre></div>
 </div>
 <div class="code-sample lang-out" title="find_list_test_funcs.out">
-<div class="highlight"><pre><span></span><code>all the test functions [&lt;function test_addition at 0x10659e160&gt;, \
-&lt;function test_multiplication at 0x106769a60&gt;, &lt;function test_remainder \
-at 0x106769ee0&gt;]
+<div class="highlight"><pre><span></span><code>test_sign_negative &lt;function test_sign_negative at 0x10cad39d0&gt;
+test_sign_positive &lt;function test_sign_positive at 0x10cad3e50&gt;
+test_sign_zero &lt;function test_sign_zero at 0x10cad3ee0&gt;
+test_sign_error &lt;function test_sign_error at 0x10cad3f70&gt;
 </code></pre></div>
 </div>
-<p class="continue">Having a program find things in itself as it&rsquo;s running is called <a class="gl-ref" href="../glossary/#introspection" markdown="1">introspection</a>;
-we will use it in several upcoming chapters.
-Notice that when we print a function,
-Python shows us its name and its address in memory.
-We have no use for the address,
-but we&rsquo;ll come back to the name shortly.</p>
-<p>Combining introspection with the pass-fail-error pattern of the previous section
-gives us something that will look up test functions,
-run them,
-and summarize their results:</p>
+<p class="continue">Notice that when we print a function,
+Python shows us its name and its address in memory.</p>
+<p>Having a program find things in itself like this at runtime
+is called <a class="gl-ref" href="../glossary/#introspection" markdown="1">introspection</a>.
+Combining introspection with the pass-fail-error pattern of the previous section
+gives us something that finds test functions,
+runs them,
+and summarizes their results:</p>
 <div class="code-sample lang-py" title="find_report_tests.py">
-<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">run_tests</span><span class="p">():</span>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">run_tests</span><span class="p">(</span><span class="n">prefix</span><span class="p">):</span>
     <span class="k">for</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">func</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">globals</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-        <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;test_&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">prefix</span><span class="p">):</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">func</span><span class="p">()</span>
-                <span class="nb">print</span><span class="p">(</span><span class="n">func</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="s2">&quot;passed&quot;</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;passed&quot;</span><span class="p">)</span>
             <span class="k">except</span> <span class="ne">AssertionError</span><span class="p">:</span>
-                <span class="nb">print</span><span class="p">(</span><span class="n">func</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="s2">&quot;failed&quot;</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;failed&quot;</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;had error&quot;</span><span class="p">)</span>
 
-<span class="n">run_tests</span><span class="p">()</span>
+<span class="n">run_tests</span><span class="p">(</span><span class="s2">&quot;test_&quot;</span><span class="p">)</span>
 </code></pre></div>
 </div>
 <div class="code-sample lang-out" title="find_report_tests.out">
-<div class="highlight"><pre><span></span><code>test_addition passed
-test_multiplication passed
-test_remainder failed
+<div class="highlight"><pre><span></span><code>test_sign_negative passed
+test_sign_positive passed
+test_sign_zero failed
+test_sign_error had error
 </code></pre></div>
 </div>
 <div class="callout">
@@ -593,19 +584,16 @@ test_remainder failed
     or</p>
 </li>
 <li>
-<p>the function uses <code>*args*</code> or <code>**kwargs</code>
-    to capture any number of &ldquo;extra&rdquo; arguments.</p>
+<p>the function uses <code>*args*</code> or <code>**kwargs</code> to capture &ldquo;extra&rdquo; arguments.</p>
 </li>
 </ol>
 <p>To keep things simple,
-most testing frameworks require unit test functions to take no parameters
+most unit testing frameworks require test functions to take no parameters
 so that they can be called as <code>test()</code>.</p>
 </div>
 <h2 id="tester-further">Section 2.3: Going Further</h2>
-<p>The next step is to get our tool to tell us which tests have passed or failed
-and to use test functions&rsquo; docstrings to control which tests are run.
-The key to doing both is the fact that functions can have attributes
-just like any other object in Python.
+<p>Since functions are objects,
+they can have attributes.
 The function <code>dir</code> (short for &ldquo;directory&rdquo;) returns a list of those attributes&rsquo; names:</p>
 <div class="code-sample lang-py" title="func_dir.py">
 <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">example</span><span class="p">():</span>
@@ -626,8 +614,8 @@ The function <code>dir</code> (short for &ldquo;directory&rdquo;) returns a list
 </code></pre></div>
 </div>
 <p>Most programmers never need to use most of these,
-but <code>__doc__</code> holds the function&rsquo;s <a class="gl-ref" href="../glossary/#docstring" markdown="1">docstring</a>
-and <code>__name__</code> holds its original name:</p>
+but <code>__name__</code> holds the function&rsquo;s original name
+and <code>__doc__</code> holds its <a class="gl-ref" href="../glossary/#docstring" markdown="1">docstring</a>:</p>
 <div class="code-sample lang-py" title="func_attr.py">
 <div class="highlight"><pre><span></span><code><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;docstring:&quot;</span><span class="p">,</span> <span class="n">example</span><span class="o">.</span><span class="vm">__doc__</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;name:&quot;</span><span class="p">,</span> <span class="n">example</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
@@ -638,11 +626,35 @@ and <code>__name__</code> holds its original name:</p>
 name: example
 </code></pre></div>
 </div>
-<p>We can print each function&rsquo;s name when reporting problems,
-but we can also embed instructions for the test framework in them.
-For example,
-we could decide that the string <code>"test:skip"</code> means &ldquo;skip this test&rdquo;,
-while <code>"test:fail"</code> means &ldquo;we expect this test to fail&rdquo;.
+<p>We can modify our test runner to use this for reporting tests&rsquo; results
+using the function&rsquo;s <code>__name__</code> attribute
+instead of the key in the <code>globals</code> dictionary:</p>
+<div class="code-sample lang-py" title="with_name.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">run_tests</span><span class="p">(</span><span class="n">prefix</span><span class="p">):</span>
+    <span class="k">for</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">func</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">globals</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">prefix</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">func</span><span class="p">()</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">func</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="s2">&quot;passed&quot;</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">AssertionError</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">func</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="s2">&quot;failed&quot;</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">func</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="s2">&quot;had error&quot;</span><span class="p">)</span>
+
+<span class="n">run_tests</span><span class="p">(</span><span class="s2">&quot;test_&quot;</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<div class="code-sample lang-out" title="with_name.out">
+<div class="highlight"><pre><span></span><code>test_sign_negative passed
+test_sign_positive passed
+test_sign_zero failed
+test_sign_error had error
+</code></pre></div>
+</div>
+<p>More usefully,
+we can say that if a test function&rsquo;s docstring contains the string <code>"test:skip"</code>
+then we should skip the test,
+while <code>"test:fail"</code> means we expect this test to fail.
 Let&rsquo;s rewrite our tests to show this off:</p>
 <div class="code-sample lang-py" title="docstring.py">
 <div class="highlight"><pre><span></span><code><span class="n">TEST_FAIL</span> <span class="o">=</span> <span class="s2">&quot;test:fail&quot;</span>
@@ -684,6 +696,8 @@ Let&rsquo;s rewrite our tests to show this off:</p>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="n">doc</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;/</span><span class="si">{</span><span class="n">func</span><span class="o">.</span><span class="vm">__doc__</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="n">func</span><span class="o">.</span><span class="vm">__doc__</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
             <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;error: </span><span class="si">{</span><span class="n">name</span><span class="si">}{</span><span class="n">doc</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="n">run_tests</span><span class="p">(</span><span class="s2">&quot;test_&quot;</span><span class="p">)</span>
 </code></pre></div>
 </div>
 <p>The output is now:</p>
@@ -694,23 +708,97 @@ pass (expected failure): test_sign_zero
 error: test_sign_error/Expect an error. name &#39;sgn&#39; is not defined
 </code></pre></div>
 </div>
-<h2>Mock Objects</h2>
+<p>Instead of (ab)using docstrings like this,
+we can add attributes of our own to test functions.
+Let&rsquo;s say that if a function has an attribute called <code>skip</code> with the value <code>True</code>
+then the function is to be skipped,
+while if it has an attribute called <code>fail</code> whose value is <code>True</code>
+then the test is expected to fail.
+Our tests become:</p>
+<div class="code-sample lang-py" title="attribute.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">test_sign_negative</span><span class="p">():</span>
+    <span class="k">assert</span> <span class="n">sign</span><span class="p">(</span><span class="o">-</span><span class="mi">3</span><span class="p">)</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span>
+<span class="n">test_sign_negative</span><span class="o">.</span><span class="n">skip</span> <span class="o">=</span> <span class="kc">True</span>
+
+<span class="k">def</span> <span class="nf">test_sign_positive</span><span class="p">():</span>
+    <span class="k">assert</span> <span class="n">sign</span><span class="p">(</span><span class="mi">19</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+
+<span class="k">def</span> <span class="nf">test_sign_zero</span><span class="p">():</span>
+    <span class="k">assert</span> <span class="n">sign</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span>
+<span class="n">test_sign_zero</span><span class="o">.</span><span class="n">fail</span> <span class="o">=</span> <span class="kc">True</span>
+
+<span class="k">def</span> <span class="nf">test_sign_error</span><span class="p">():</span>
+    <span class="k">assert</span> <span class="n">sgn</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+</code></pre></div>
+</div>
+<p>We can write a helper function called <code>classify</code> to classify tests.
+Note that it uses <code>hasattr</code> to check if an attribute is present
+before trying to get its value:</p>
+<div class="code-sample lang-py" title="attribute.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">classify</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="s2">&quot;skip&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">func</span><span class="o">.</span><span class="n">skip</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;skip&quot;</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="s2">&quot;fail&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">func</span><span class="o">.</span><span class="n">fail</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;fail&quot;</span>
+    <span class="k">return</span> <span class="s2">&quot;run&quot;</span>
+</code></pre></div>
+</div>
+<p>Finally,
+our test runner becomes:</p>
+<div class="code-sample lang-py" title="attribute.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">run_tests</span><span class="p">(</span><span class="n">prefix</span><span class="p">):</span>
+    <span class="n">prefixed_names</span> <span class="o">=</span> <span class="p">[</span><span class="n">n</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">globals</span><span class="p">()</span> <span class="k">if</span> <span class="n">n</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">prefix</span><span class="p">)]</span>
+    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">prefixed_names</span><span class="p">:</span>
+        <span class="n">func</span> <span class="o">=</span> <span class="nb">globals</span><span class="p">()[</span><span class="n">name</span><span class="p">]</span>
+        <span class="n">kind</span> <span class="o">=</span> <span class="n">classify</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;skip&quot;</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;skip: </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">func</span><span class="p">()</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;pass: </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">AssertionError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;fail&quot;</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;pass (expected failure): </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;fail: </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;error: </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="n">run_tests</span><span class="p">(</span><span class="s2">&quot;test_&quot;</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<h2 id="tester-mock">Section 2.4: Mock Objects</h2>
 <p>We can do more than look up functions:
 we can change them to make testing easier.
 For example,
-if our test relies on the time of day,
+if the function we want to test uses the time of day,
 we can temporarily replace the real <code>time.time</code> function
-with one that returns a specific value.
-Similarly,
-if a test needs data from a database,
-we can temporarily replace the function that gets the data
-with one that returns a small, constant dataset
-that has exactly the properties our test wants.</p>
+with one that returns a specific value
+so we know what result to expect
+(<span class="fixme">FIXME figure tester-mock-time</span>):</p>
+<div class="code-sample lang-py" title="mock_time.py">
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">time</span>
+
+<span class="k">def</span> <span class="nf">elapsed</span><span class="p">(</span><span class="n">since</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">since</span>
+
+<span class="k">def</span> <span class="nf">mock_time</span><span class="p">():</span>
+    <span class="k">return</span> <span class="mi">200</span>
+
+<span class="k">def</span> <span class="nf">test_elapsed</span><span class="p">():</span>
+    <span class="n">time</span><span class="o">.</span><span class="n">time</span> <span class="o">=</span> <span class="n">mock_time</span>
+    <span class="k">assert</span> <span class="n">elapsed</span><span class="p">(</span><span class="mi">50</span><span class="p">)</span> <span class="o">==</span> <span class="mi">150</span>
+</code></pre></div>
+</div>
 <p>Temporary replacements like this are called <a class="gl-ref" href="../glossary/#mock_object" markdown="1">mock objects</a>
-because they mimic the essential behavior of the real objects in the program.
-We usually use objects even if the thing we&rsquo;re replacing is a function;
-we can do this because Python lets us create objects that can be called just like functions
-by defining a <code>__call__</code> method:</p>
+because we usually use objects even if the thing we&rsquo;re replacing is a function.
+We can do this because Python lets us create objects
+that can be &ldquo;called&rdquo; just like functions.
+If an object <code>obj</code> has a <code>__call__</code> method,
+then <code>obj(…)</code> is automatically turned into <code>obj.__call__(…)</code>.
+For example,
+the code below defines a class <code>Adder</code> whose instances add a constant to ther input:</p>
 <div class="code-sample lang-py" title="callable.py">
 <div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Adder</span><span class="p">:</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
@@ -719,8 +807,8 @@ by defining a <code>__call__</code> method:</p>
     <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">arg</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">arg</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span>
 
-<span class="n">add_3</span> <span class="o">=</span> <span class="n">Adder</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>   <span class="c1"># create an object that can be called</span>
-<span class="n">result</span> <span class="o">=</span> <span class="n">add_3</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span>  <span class="c1"># call the object</span>
+<span class="n">add_3</span> <span class="o">=</span> <span class="n">Adder</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">add_3</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;add_3(8): </span><span class="si">{</span><span class="n">result</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 </code></pre></div>
 </div>
@@ -728,7 +816,7 @@ by defining a <code>__call__</code> method:</p>
 <div class="highlight"><pre><span></span><code>add_3(8): 11
 </code></pre></div>
 </div>
-<p>Let&rsquo;s create a class that:</p>
+<p>Let&rsquo;s create a reusable mock object class that:</p>
 <ol>
 <li>
 <p>defines a <code>__call__</code> method so that instances can be called like functions;</p>
@@ -762,9 +850,7 @@ by defining a <code>__call__</code> method:</p>
 </div>
 <p>For convenience,
 let&rsquo;s also define a function that replaces some function we&rsquo;ve already defined
-with an instance of our <code>Fake</code> class.
-This function takes either a fixed value or another function as an argument
-and passes those to <code>Fake</code>&lsquo;s constructor:</p>
+with an instance of our <code>Fake</code> class:</p>
 <div class="code-sample lang-py" title="mock_object.py">
 <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">fixit</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">func</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
     <span class="k">assert</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">globals</span><span class="p">()</span>
@@ -773,7 +859,7 @@ and passes those to <code>Fake</code>&lsquo;s constructor:</p>
     <span class="k">return</span> <span class="n">fake</span>
 </code></pre></div>
 </div>
-<p>Next,
+<p>To show how this works,
 we define a function that adds two numbers
 and write a test for it:</p>
 <div class="code-sample lang-py" title="mock_object.py">
@@ -785,7 +871,8 @@ and write a test for it:</p>
 </code></pre></div>
 </div>
 <p>We then use <code>fixit</code> to replace the real <code>adder</code> function
-with a mock object that always returns 99:</p>
+with a mock object that always returns 99
+(<span class="fixme">FIXME figure tester-mock-timeline</span>):</p>
 <div class="code-sample lang-py" title="mock_object.py">
 <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">test_with_fixed_return_value</span><span class="p">():</span>
     <span class="n">fixit</span><span class="p">(</span><span class="s2">&quot;adder&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mi">99</span><span class="p">)</span>
@@ -810,43 +897,47 @@ the user can provide a function to calculate a return value:</p>
     <span class="k">assert</span> <span class="n">adder</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span> <span class="o">==</span> <span class="mi">23</span>
 </code></pre></div>
 </div>
+<h2 id="tester-protocols">Section 2.5: Protocols</h2>
 <p>Mock objects are very useful,
-but there&rsquo;s a problem with how we&rsquo;re using them.
-Every test except the first one replaces <code>adder</code> with a mock object
+but the way we&rsquo;re using them is going to cause strange errors.
+The problem is that
+every test except the first one replaces <code>adder</code> with a mock object
 that does something different.
 As a result,
 any test that <em>doesn&rsquo;t</em> replace <code>adder</code> will run with
 whatever mock object was last put in place
-rather than with the original <code>adder</code> function:</p>
-<div class="code-sample lang-out" title="mock_object.out">
-<div class="highlight"><pre><span></span><code>pass: test_with_real_function
-pass: test_with_fixed_return_value
-pass: test_fake_records_calls
-pass: test_fake_calculates_result
-adder(2, 3) is now 23
-</code></pre></div>
-</div>
-<p>We could tell users they have to remember to put everthing back after each test,
+rather than with the original <code>adder</code> function.</p>
+<p>We could tell users it&rsquo;s their job to put everthing back after each test,
 but people are forgetful.
-Instead,
-we can create a <a class="gl-ref" href="../glossary/#context_manager" markdown="1">context manager</a> that does this automatically.
-A context manager is a class that defines two methods called <code>__enter__</code> and <code>__exit__</code>.
+It would be better if Python did this automatically;
+luckily for us,
+it provides a <a class="gl-ref" href="../glossary/#protocol" markdown="1">protocol</a> for exactly this purpose.
+A protocol is a rule that specifies how programs can tell Python
+to do specific things at specific moments.
+Giving a class a <code>__call__</code> method is an example of this:
+when Python sees <code>thing(…)</code>,
+it automatically checks if <code>thing</code> has that method.
+Defining an <code>__init__</code> method for a class is another example:
+if a class has a method with that name,
+Python calls it automatically when constructing a new instance of that class.</p>
+<p>What we want for managing mock objects is
+a <a class="gl-ref" href="../glossary/#context_manager" markdown="1">context manager</a>
+that replaces the real function with our mock at the start of a block of code
+and then puts the original back at the end.
+The protocol for this relies on two methods called <code>__enter__</code> and <code>__exit__</code>.
 If the class is called <code>C</code>,
 then when Python executes a <code>with</code> block like this:</p>
 <div class="highlight"><pre><span></span><code><span class="k">with</span> <span class="n">C</span><span class="p">(</span><span class="err">…</span><span class="n">args</span><span class="err">…</span><span class="p">)</span> <span class="k">as</span> <span class="n">name</span><span class="p">:</span>
     <span class="err">…</span><span class="n">do</span> <span class="n">things</span><span class="err">…</span>
 </code></pre></div>
-<p class="continue">it does the following:</p>
+<p class="continue">it does the following (<span class="fixme">FIXME figure tester-context-manager</span>):</p>
 <ol>
-<li>Call <code>C</code>&lsquo;s constructor with the given arguments.</li>
-<li>Assign the result to the variable <code>name</code>.</li>
-<li>Call <code>name.__enter__()</code>.</li>
+<li>Call <code>C</code>&lsquo;s constructor to create an object that it associates with the code block.</li>
+<li>Call that object&rsquo;s <code>__enter__</code> method
+    and assign the result to the variable <code>name</code>.</li>
 <li>Run the code inside the <code>with</code> block.</li>
 <li>Call <code>name.__exit__()</code> when the block finishes.</li>
 </ol>
-<p class="continue">The last step is guaranteed to happen
-even if an exception occurred inside the block
-so that the context manager always has a chance to clean up after itself.</p>
 <p>Here&rsquo;s a mock object that inherits all the capabilities of <code>Fake</code>
 and adds the two methods needed by <code>with</code>:</p>
 <div class="code-sample lang-py" title="mock_context.py">
@@ -866,7 +957,14 @@ and adds the two methods needed by <code>with</code>:</p>
         <span class="nb">globals</span><span class="p">()[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">original</span>
 </code></pre></div>
 </div>
-<p class="continue">And here&rsquo;s a test to prove that it works:</p>
+<p>Notice that <code>__enter__</code> doesn&rsquo;t take any extra parameters:
+anything it needs should be provided to the constructor.
+On the other hand,
+<code>__exit__</code> will always be called with three values
+that tell it whether an exception occurred,
+and if so,
+what the exception was.</p>
+<p class="continue">Here&rsquo;s a test to prove that our context manager works:</p>
 <div class="code-sample lang-py" title="mock_context.py">
 <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">subber</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">a</span> <span class="o">-</span> <span class="n">b</span>
@@ -879,16 +977,7 @@ and adds the two methods needed by <code>with</code>:</p>
     <span class="k">assert</span> <span class="n">subber</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span>
 </code></pre></div>
 </div>
-<div class="callout">
-<h3>Protocols</h3>
-<p><code>__enter__</code> and <code>__exit__</code> are an example of a <a class="gl-ref" href="../glossary/#protocol" markdown="1">protocol</a>:
-a rule that specifies how programs can provide operations
-that Python will execute at specific moments.
-Defining an <code>__init__</code> method for a class is another example:
-if a class has a method with that name,
-Python will call it automatically when constructing a new instance of that class.</p>
-</div>
-<h2 id="tester-exercises">Section 2.5: Exercises</h2>
+<h2 id="tester-exercises">Section 2.6: Exercises</h2>
 <h3 class="exercise">Why a copy?</h3>
 <p>Why does the function <code>globals</code> return a copy of the dictionary
 containing the program&rsquo;s global variables?

@@ -1,17 +1,12 @@
-# [save]
-HOPE_TESTS = []
-
-def hope_that(func):
-    HOPE_TESTS.append(func)
-# [/save]
-
-# [tests]
+# [sign]
 def sign(value):
     if value < 0:
         return -1
     else:
         return 1
+# [/sign]
 
+# [tests]
 def test_sign_negative():
     assert sign(-3) == -1
 
@@ -23,17 +18,21 @@ def test_sign_zero():
 
 def test_sign_error():
     assert sgn(1) == 1
-
-hope_that(test_sign_negative)
-hope_that(test_sign_positive)
-hope_that(test_sign_zero)
-hope_that(test_sign_error)
 # [/tests]
 
-# [run_tests]
-def run_tests():
+# [save]
+TESTS = [
+    test_sign_negative,
+    test_sign_positive,
+    test_sign_zero,
+    test_sign_error
+]
+# [/save]
+
+# [run]
+def run_tests(all_tests):
     results = {"pass": 0, "fail": 0, "error": 0}
-    for test in HOPE_TESTS:
+    for test in all_tests:
         try:
             test()
             results["pass"] += 1
@@ -45,5 +44,5 @@ def run_tests():
     print(f"fail {results['fail']}")
     print(f"error {results['error']}")
 
-run_tests()
-# [/run_tests]
+run_tests(TESTS)
+# [/run]

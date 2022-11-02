@@ -9,37 +9,34 @@ syllabus:
 -   Python defines protocols so that users' code can be triggered by keywords in the language.
 ---
 
-We're going to write a lot of programs in this book,
-which means we're going to write a lot of [%g unit_test "unit tests" %].
-A tool to manage these should find and run tests automatically
-so that we don't overlook them when we're tired,
-distracted,
-or up against a deadline.
-
-Our design was inspired by [pytest][pytest],
-which in turn was inspired by earlier tools [%b Meszaros2007 %].
-It introduces the single most important idea in this book:
+We're going to write a lot of programs in this book.
+To make sure they work correctly,
+we're going to write a lot of [%g unit_test "unit tests" %] using [pytest][pytest].
+Like the earlier tools that inspired it [%b Meszaros2007 %],
+[pytest][pytest] finds and runs tests automatically;
+to show how,
+this chapter builds a simple unit testing framework.
+It also introduces the single most important idea in this book:
 
 <div class="center" markdown="1">
-  *A program is just another kind of data.*
+  *Programs are just another kind of data.*
 </div>
 
 ## Storing and Running Tests {: #tester-funcobj}
 
 The first thing we need to understand is that a function is an object.
-While a string's bytes represent characters
-and an image's bytes represent pixels,
-a function's bytes represent instructions.
-The code:
+While the bytes in a string represent characters
+and the bytes in an image represent pixels,
+the bytes in a function are instructions
+([%fixme figure tester-func-obj %]).
+When Python executes the code below,
+it creates an object in memory
+that contains the instructions to print a string
+and assigns that object to the variable `example`:
 
 [% inc file="func_obj.py" keep="define_example" %]
 
-tells Python to create an object in memory
-that contains the instructions to print a string
-and assign that object to the variable `example`."
-We can create an [%g alias "alias" %] for the function
-by assigning it to another variable:
-{: .continue}
+We can assign the function to another variable:
 
 [% inc file="func_obj.py" keep="alias" %]
 [% inc file="func_obj.out" %]
@@ -51,7 +48,8 @@ to the original variable:
 [% inc file="replacement.py" keep="replacement" %]
 [% inc file="replacement.out" %]
 
-We can also store functions in a list just like numbers or strings:
+We can also store functions in a list just like numbers or strings
+([%fixme figure tester-func-list %]):
 
 [% inc pat="func_list.*" fill="py out" %]
 
@@ -61,18 +59,25 @@ We can then call the function as `func()`
 just as we called `example` using `alias()`.
 {: .continue}
 
-With this in hand,
-we can register tests by appending functions to a list:
+Now suppose we have a function we want to test:
+
+[% inc file="dry_run.py" keep="sign" %]
+
+and some functions that test it
+(two of which contain deliberate errors):
+{: .continue}
+
+[% inc file="dry_run.py" keep="tests" %]
+
+We can put all the test functions in a list:
 
 [% inc file="dry_run.py" keep="save" %]
 
 Each test does something to a [%g fixture "fixture" %]
+(such as the number -3)
 and uses [%g assertion "assertions" %]
 to compare the [%g actual_result "actual result" %]
-against the [%g expected_result "expected result" %]:
-
-[% inc file="dry_run.py" keep="tests" %]
-
+against the [%g expected_result "expected result" %].
 The outcome of each test is exactly one of:
 
 -   [%g pass_test "Pass" %]:
@@ -83,26 +88,25 @@ The outcome of each test is exactly one of:
 
 -   [%g error_test "Error" %]:
     something is wrong in the test itself,
-    which means we don't know whether the test subject is working properly or not.
+    which means we don't know if
+    the thing we're testing is working properly or not.
 
-We need to distinguish failing tests from broken ones
-in order to implement this classification scheme.
+In order to implement this classification scheme
+we need to distinguish failing tests from broken ones.
 Our rule is that
 if a test [%g throw_exception "throws" %] an `AssertionError`
 then one of our checks is reporting a failure,
 while any other kind of exception indicates that the test contains an error.
 
-Putting this all together gives us a function `run_tests`
-that runs all registered tests
+Translating that rules into code gives us the function `run_tests`
+that runs every test in a list
 and counts how many outcomes of each kind it sees:
 
-[% inc file="dry_run.py" keep="run_tests" %]
+[% inc file="dry_run.py" keep="run" %]
 
 If a test completes without an exception, it passes.
 If any of the assertions inside it raise an `AssertionError` the test fails,
 and if it raises any other exception it's an error.
-After all tests are run,
-`run_tests` reports the number of results of each kind:
 {: .continue}
 
 [% inc file="dry_run.out" %]
@@ -111,9 +115,8 @@ After all tests are run,
 
 ### Independence
 
-We're appending tests to a list,
-so they will be run in the order in which they are registered.
-We should not rely on that:
+Our function runs tests in the order they appear in the list.
+The tests should not rely on that:
 every unit test should work independently
 so that an error or failure in an early test
 doesn't affect other tests' behavior.
@@ -122,11 +125,11 @@ doesn't affect other tests' behavior.
 
 ## Finding Functions {: #tester-reflection}
 
-Registering tests by hand is clumsy and error-prone:
+Making lists of functions is clumsy and error-prone:
 sooner or later we'll add a test twice or forget to add it at all.
-We would therefore like our tool to find tests for itself.
-It can do this by exploiting the fact that
-Python stores our variables in a structure similar to a dictionary.
+We'd therefore like our test runner to find tests for itself,
+which it can do by exploiting the fact that
+Python stores variables in a structure similar to a dictionary.
 
 Run the Python interpreter and call the `globals` function:
 
@@ -144,8 +147,8 @@ Run the Python interpreter and call the `globals` function:
 ```
 
 As the output shows,
-`globals` returns a copy of the dictionary that Python uses
-to store all the variables at the top (global) level of your program.
+`globals` a dictionary containing
+all the variables at the top (global) level of the program.
 Since we just started the interpreter,
 we see the variables that Python defines automatically.
 (By convention,
@@ -170,7 +173,7 @@ What happens when we define a variable of our own?
 ```
 
 Sure enough,
-`my_variable` is now in the global dictionary.
+`my_variable` is now in the dictionary.
 {: .continue}
 
 <div class="callout" markdown="1">
@@ -184,25 +187,24 @@ all the variables defined in the current (local) scope:
 
 </div>
 
-If a program's variables are stored in a dictionary,
-we can iterate over that dictionary's keys
-to find all the functions whose names start with `test_`
-and put them in a list:
+If function names are just variables
+and a program's variables are stored in a dictionary,
+we can loop over that dictionary
+to find all the functions whose names start with `test_`:
 
-[% inc pat="find_list_test_funcs.*" fill="py out" %]
+[% inc file="find_list_test_funcs.py" keep="main" %]
+[% inc file="find_list_test_funcs.out" %]
 
-Having a program find things in itself as it's running is called [%g introspection "introspection" %];
-we will use it in several upcoming chapters.
 Notice that when we print a function,
 Python shows us its name and its address in memory.
-We have no use for the address,
-but we'll come back to the name shortly.
 {: .continue}
 
+Having a program find things in itself like this at runtime
+is called [%g introspection "introspection" %].
 Combining introspection with the pass-fail-error pattern of the previous section
-gives us something that will look up test functions,
-run them,
-and summarize their results:
+gives us something that finds test functions,
+runs them,
+and summarizes their results:
 
 [% inc file="find_report_tests.py" keep="runner" %]
 [% inc file="find_report_tests.out" %]
@@ -217,37 +219,40 @@ We actually can't call a function we've found by introspection unless:
     (i.e, how many parameters of what type it needs in what order)
     or
 
-2.  the function uses `*args*` or `**kwargs`
-    to capture any number of "extra" arguments.
+2.  the function uses `*args*` or `**kwargs` to capture "extra" arguments.
 
 To keep things simple,
-most testing frameworks require unit test functions to take no parameters
+most unit testing frameworks require test functions to take no parameters
 so that they can be called as `test()`.
 
 </div>
 
 ## Going Further {: #tester-further}
 
-The next step is to get our tool to tell us which tests have passed or failed
-and to use test functions' docstrings to control which tests are run.
-The key to doing both is the fact that functions can have attributes
-just like any other object in Python.
+Since functions are objects,
+they can have attributes.
 The function `dir` (short for "directory") returns a list of those attributes' names:
 
 [% inc pat="func_dir.*" fill="py out" %]
 
 Most programmers never need to use most of these,
-but `__doc__` holds the function's [%g docstring "docstring" %]
-and `__name__` holds its original name:
+but `__name__` holds the function's original name
+and `__doc__` holds its [%g docstring "docstring" %]:
 
 [% inc file="func_attr.py" keep="print" %]
 [% inc file="func_attr.out" %]
 
-We can print each function's name when reporting problems,
-but we can also embed instructions for the test framework in them.
-For example,
-we could decide that the string `"test:skip"` means "skip this test",
-while `"test:fail"` means "we expect this test to fail".
+We can modify our test runner to use this for reporting tests' results
+using the function's `__name__` attribute
+instead of the key in the `globals` dictionary:
+
+[% inc file="with_name.py" keep="run" %]
+[% inc file="with_name.out" %]
+
+More usefully,
+we can say that if a test function's docstring contains the string `"test:skip"`
+then we should skip the test,
+while `"test:fail"` means we expect this test to fail.
 Let's rewrite our tests to show this off:
 
 [% inc file="docstring.py" keep="tests" %]
@@ -261,29 +266,52 @@ The output is now:
 
 [% inc file="docstring.out" %]
 
-## Mock Objects
+Instead of (ab)using docstrings like this,
+we can add attributes of our own to test functions.
+Let's say that if a function has an attribute called `skip` with the value `True`
+then the function is to be skipped,
+while if it has an attribute called `fail` whose value is `True`
+then the test is expected to fail.
+Our tests become:
+
+[% inc file="attribute.py" keep="tests" %]
+
+We can write a helper function called `classify` to classify tests.
+Note that it uses `hasattr` to check if an attribute is present
+before trying to get its value:
+
+[% inc file="attribute.py" keep="classify" %]
+
+Finally,
+our test runner becomes:
+
+[% inc file="attribute.py" keep="run" %]
+
+## Mock Objects {: #tester-mock}
 
 We can do more than look up functions:
 we can change them to make testing easier.
 For example,
-if our test relies on the time of day,
+if the function we want to test uses the time of day,
 we can temporarily replace the real `time.time` function
-with one that returns a specific value.
-Similarly,
-if a test needs data from a database,
-we can temporarily replace the function that gets the data
-with one that returns a small, constant dataset
-that has exactly the properties our test wants.
+with one that returns a specific value
+so we know what result to expect
+([%fixme figure tester-mock-time %]):
+
+[% inc file="mock_time.py" %]
 
 Temporary replacements like this are called [%g mock_object "mock objects" %]
-because they mimic the essential behavior of the real objects in the program.
-We usually use objects even if the thing we're replacing is a function;
-we can do this because Python lets us create objects that can be called just like functions
-by defining a `__call__` method:
+because we usually use objects even if the thing we're replacing is a function.
+We can do this because Python lets us create objects
+that can be "called" just like functions.
+If an object `obj` has a `__call__` method,
+then `obj(…)` is automatically turned into `obj.__call__(…)`.
+For example,
+the code below defines a class `Adder` whose instances add a constant to ther input:
 
 [% inc pat="callable.*" fill="py out" %]
 
-Let's create a class that:
+Let's create a reusable mock object class that:
 
 1.  defines a `__call__` method so that instances can be called like functions;
 
@@ -301,20 +329,19 @@ The class itself is only 11 lines long:
 
 For convenience,
 let's also define a function that replaces some function we've already defined
-with an instance of our `Fake` class.
-This function takes either a fixed value or another function as an argument
-and passes those to `Fake`'s constructor:
+with an instance of our `Fake` class:
 
 [% inc file="mock_object.py" keep="fixit" %]
 
-Next,
+To show how this works,
 we define a function that adds two numbers
 and write a test for it:
 
 [% inc file="mock_object.py" keep="test_real" %]
 
 We then use `fixit` to replace the real `adder` function
-with a mock object that always returns 99:
+with a mock object that always returns 99
+([%fixme figure tester-mock-timeline %]):
 
 [% inc file="mock_object.py" keep="test_fixed" %]
 
@@ -328,22 +355,37 @@ the user can provide a function to calculate a return value:
 
 [% inc file="mock_object.py" keep="test_calc" %]
 
+## Protocols {: #tester-protocols}
+
 Mock objects are very useful,
-but there's a problem with how we're using them.
-Every test except the first one replaces `adder` with a mock object
+but the way we're using them is going to cause strange errors.
+The problem is that
+every test except the first one replaces `adder` with a mock object
 that does something different.
 As a result,
 any test that *doesn't* replace `adder` will run with
 whatever mock object was last put in place
-rather than with the original `adder` function:
+rather than with the original `adder` function.
 
-[% inc file="mock_object.out" %]
-
-We could tell users they have to remember to put everthing back after each test,
+We could tell users it's their job to put everthing back after each test,
 but people are forgetful.
-Instead,
-we can create a [%g context_manager "context manager" %] that does this automatically.
-A context manager is a class that defines two methods called `__enter__` and `__exit__`.
+It would be better if Python did this automatically;
+luckily for us,
+it provides a [%g protocol "protocol" %] for exactly this purpose.
+A protocol is a rule that specifies how programs can tell Python
+to do specific things at specific moments.
+Giving a class a `__call__` method is an example of this:
+when Python sees `thing(…)`,
+it automatically checks if `thing` has that method.
+Defining an `__init__` method for a class is another example:
+if a class has a method with that name,
+Python calls it automatically when constructing a new instance of that class.
+
+What we want for managing mock objects is
+a [%g context_manager "context manager" %]
+that replaces the real function with our mock at the start of a block of code
+and then puts the original back at the end.
+The protocol for this relies on two methods called `__enter__` and `__exit__`.
 If the class is called `C`,
 then when Python executes a `with` block like this:
 
@@ -352,42 +394,32 @@ with C(…args…) as name:
     …do things…
 ```
 
-it does the following:
+it does the following ([%fixme figure tester-context-manager %]):
 {: .continue}
 
-1.  Call `C`'s constructor with the given arguments.
-2.  Assign the result to the variable `name`.
-3.  Call `name.__enter__()`.
-4.  Run the code inside the `with` block.
-5.  Call `name.__exit__()` when the block finishes.
-
-The last step is guaranteed to happen
-even if an exception occurred inside the block
-so that the context manager always has a chance to clean up after itself.
-{: .continue}
+1.  Call `C`'s constructor to create an object that it associates with the code block.
+2.  Call that object's `__enter__` method
+    and assign the result to the variable `name`.
+3.  Run the code inside the `with` block.
+4.  Call `name.__exit__()` when the block finishes.
 
 Here's a mock object that inherits all the capabilities of `Fake`
 and adds the two methods needed by `with`:
 
 [% inc file="mock_context.py" keep="contextfake" %]
 
-And here's a test to prove that it works:
+Notice that `__enter__` doesn't take any extra parameters:
+anything it needs should be provided to the constructor.
+On the other hand,
+`__exit__` will always be called with three values
+that tell it whether an exception occurred,
+and if so,
+what the exception was.
+
+Here's a test to prove that our context manager works:
 {: .continue}
 
 [% inc file="mock_context.py" keep="test" %]
-
-<div class="callout" markdown="1">
-
-### Protocols
-
-`__enter__` and `__exit__` are an example of a [%g protocol "protocol" %]:
-a rule that specifies how programs can provide operations
-that Python will execute at specific moments.
-Defining an `__init__` method for a class is another example:
-if a class has a method with that name,
-Python will call it automatically when constructing a new instance of that class.
-
-</div>
 
 ## Exercises {: #tester-exercises}
 

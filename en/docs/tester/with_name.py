@@ -16,17 +16,17 @@ def test_sign_zero():
 def test_sign_error():
     assert sgn(1) == 1
 
-# [runner]
+# [run]
 def run_tests(prefix):
     for (name, func) in globals().items():
         if name.startswith(prefix):
             try:
                 func()
-                print(name, "passed")
+                print(func.__name__, "passed")
             except AssertionError:
-                print(name, "failed")
+                print(func.__name__, "failed")
             except Exception:
-                print(name, "had error")
+                print(func.__name__, "had error")
 
 run_tests("test_")
-# [/runner]
+# [/run]

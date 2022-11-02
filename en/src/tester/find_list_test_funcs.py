@@ -1,17 +1,26 @@
-def test_addition():
-    assert 2 + 2 == 4
+def sign(value):
+    if value < 0:
+        return -1
+    else:
+        return 1
 
-def test_multiplication():
-    assert 3 * 3 == 9
+def test_sign_negative():
+    assert sign(-3) == -1
 
-def test_remainder():
-    assert 15 % 4 == 0 # this is wrong
+def test_sign_positive():
+    assert sign(19) == 1
 
-def find_tests():
-    result = []
+def test_sign_zero():
+    assert sign(0) == 0
+
+def test_sign_error():
+    assert sgn(1) == 1
+
+# [main]
+def find_tests(prefix):
     for (name, func) in globals().items():
-        if name.startswith("test_"):
-            result.append(func)
-    return result
+        if name.startswith(prefix):
+            print(name, func)
 
-print("all the test functions", find_tests())
+find_tests("test_")
+# [/main]

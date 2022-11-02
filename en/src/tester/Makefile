@@ -1,4 +1,5 @@
 TARGETS=\
+  attribute.out \
   callable.out \
   docstring.out \
   dry_run.out \
@@ -10,6 +11,7 @@ TARGETS=\
   func_obj.out \
   mock_object.out \
   replacement.out \
-  show_locals.out
+  show_locals.out \
+  with_name.out
 
 include ../examples.mk
