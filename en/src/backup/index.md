@@ -265,6 +265,8 @@ and an example of a single test is:
 
 [% inc file="test_backup.py" keep="test" %]
 
+[% fixme concept-map %]
+
 ## Exercises {: #backup-exercises}
 
 ### Odds of collision {: .exercise}

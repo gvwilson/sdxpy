@@ -410,6 +410,8 @@ then our output is:
 
 [% inc file="doc_sample.out" %]
 
+[% fixme concept-map %]
+
 ## Exercises {: #linter-exercises}
 
 ### Finding unused parameters {: .exercise}

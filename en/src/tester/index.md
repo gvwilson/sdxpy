@@ -421,6 +421,8 @@ Here's a test to prove that our context manager works:
 
 [% inc file="mock_context.py" keep="test" %]
 
+[% fixme concept-map %]
+
 ## Exercises {: #tester-exercises}
 
 ### Why a copy? {: .exercise}

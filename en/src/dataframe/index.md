@@ -274,6 +274,8 @@ A few simple experiments like these can save weeks or months of misguided effort
 
 </div>
 
+[% fixme concept-map %]
+
 ## Exercises {: #dataframe-exercises}
 
 ### Empty dataframes {: .exercise}

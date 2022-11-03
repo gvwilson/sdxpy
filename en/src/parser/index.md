@@ -248,6 +248,8 @@ that can do any conceivable computation.
    caption="A finite state machine equivalent to a regular expression."
 %]
 
+[% fixme concept-map %]
+
 ## Exercises {: #parser-exercises}
 
 ### Create objects {: .exercise}

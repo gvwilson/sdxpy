@@ -51,6 +51,8 @@ syllabus:
 [% inc file="inject.py" keep="exec" %]
 [% inc file="inject_exec.out" %]
 
+[% fixme concept-map %]
+
 ## Exercises {: #codegen-exercises}
 
 FIXME

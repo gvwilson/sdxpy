@@ -24,6 +24,8 @@ syllabus:
 
 FIXME
 
+[% fixme concept-map %]
+
 ## Exercises {: #debugger-exercises}
 
 FIXME

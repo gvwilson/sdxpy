@@ -271,6 +271,8 @@ our browser automatically sends a second request
 for an image file called `/favicon.ico`,
 which it will display as an icon in the address bar if it exists.
 
+[% fixme concept-map %]
+
 ## Exercises {: #server-exercises}
 
 FIXME

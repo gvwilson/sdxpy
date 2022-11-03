@@ -48,6 +48,8 @@ syllabus:
 
 [% inc pat="incremental_reverse.*" fill="sh out" %]
 
+[% fixme concept-map %]
+
 ## Exercises {: #packman-exercises}
 
 FIXME

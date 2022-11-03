@@ -95,6 +95,8 @@ syllabus:
     -   Do *not* allow writing: that would put contents out of sync with identifier
     -   Equivalent to mutable dictionary keys
 
+[% fixme concept-map %]
+
 ## Exercises {: #cache-exercises}
 
 ### An alternative index {: .exercise}

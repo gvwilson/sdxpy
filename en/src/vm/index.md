@@ -306,6 +306,8 @@ and talk to the world,
 
 </div>
 
+[% fixme concept-map %]
+
 ## Exercises {: #vm-exercises}
 
 ### Swapping values {: .exercise}
