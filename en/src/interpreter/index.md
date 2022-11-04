@@ -408,6 +408,8 @@ Once again,
 the key point is that
 *this is how Python and other languages work*.
 
+[% fixme concept-map %]
+
 ## Exercises {: #interpreter-exercises}
 
 ### Arrays {: .exercise}

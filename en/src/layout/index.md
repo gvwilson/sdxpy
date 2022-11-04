@@ -337,6 +337,8 @@ flag it as an error,
 or make a choice based on the contents of the child nodes.
 We will explore these possibilities in the exercises.
 
+[% fixme concept-map %]
+
 ## Exercises {: #layout-exercises}
 
 ### Refactoring the node classes {: .exercise}

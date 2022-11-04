@@ -492,6 +492,8 @@ The tools we have developed do what they're supposed to do,
 but please don't ever use them in real applications:
 the world already has enough data storage formats.
 
+[% fixme concept-map %]
+
 ## Exercises {: #persistence-exercises}
 
 ### Reset {: .exercise}

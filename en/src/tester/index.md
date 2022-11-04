@@ -28,13 +28,20 @@ The first thing we need to understand is that a function is an object.
 While the bytes in a string represent characters
 and the bytes in an image represent pixels,
 the bytes in a function are instructions
-([%fixme figure tester-func-obj %]).
+([%f tester-func-obj %]).
 When Python executes the code below,
 it creates an object in memory
 that contains the instructions to print a string
 and assigns that object to the variable `example`:
 
 [% inc file="func_obj.py" keep="define_example" %]
+
+[% figure
+   slug="tester-func-obj"
+   img="tester-func-obj.svg"
+   alt="Bytes can be interpreted as text, images, instructions, and more."
+   caption="Bytes as characters, pixels, or instructions."
+%]
 
 We can assign the function to another variable:
 
@@ -49,9 +56,16 @@ to the original variable:
 [% inc file="replacement.out" %]
 
 We can also store functions in a list just like numbers or strings
-([%fixme figure tester-func-list %]):
+([%f tester-func-list %]):
 
 [% inc pat="func_list.*" fill="py out" %]
+
+[% figure
+   slug="tester-func-list"
+   img="tester-func-list.svg"
+   alt="A list of functions."
+   caption="A list of functions."
+%]
 
 When we loop over the list `everything`,
 Python assigns each function to the variable `func` in turn.
@@ -295,8 +309,7 @@ For example,
 if the function we want to test uses the time of day,
 we can temporarily replace the real `time.time` function
 with one that returns a specific value
-so we know what result to expect
-([%fixme figure tester-mock-time %]):
+so we know what result to expect:
 
 [% inc file="mock_time.py" %]
 
@@ -341,9 +354,16 @@ and write a test for it:
 
 We then use `fixit` to replace the real `adder` function
 with a mock object that always returns 99
-([%fixme figure tester-mock-timeline %]):
+([%f tester-mock-timeline %]):
 
 [% inc file="mock_object.py" keep="test_fixed" %]
+
+[% figure
+   slug="tester-mock-timeline"
+   img="tester-mock-timeline.svg"
+   alt="Timeline of mock operation."
+   caption="Timeline of mock operation."
+%]
 
 Another test proves that our `Fake` class records
 all of the calls:
@@ -394,7 +414,7 @@ with C(…args…) as name:
     …do things…
 ```
 
-it does the following ([%fixme figure tester-context-manager %]):
+it does the following:
 {: .continue}
 
 1.  Call `C`'s constructor to create an object that it associates with the code block.
@@ -420,6 +440,13 @@ Here's a test to prove that our context manager works:
 {: .continue}
 
 [% inc file="mock_context.py" keep="test" %]
+
+[% figure
+   slug="tester-concept-map"
+   img="tester-concept-map.svg"
+   alt="Concept map of unit testing tool."
+   caption="Unit tester concept map."
+%]
 
 ## Exercises {: #tester-exercises}
 

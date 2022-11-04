@@ -355,6 +355,8 @@ we always learn about our problem as we try to capture it in code,
 and if we know enough to anticipate 100% of the issues that are going to come up,
 it's time to put what we've learned in a library for future use.
 
+[% fixme concept-map %]
+
 ## Exercises {: #builder-exercises}
 
 ### Handle failure {: .exercise}

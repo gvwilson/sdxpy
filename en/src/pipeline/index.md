@@ -193,6 +193,8 @@ but is worth building to see how it's done:
 
 [% inc file="load_config.py" %]
 
+[% fixme concept-map %]
+
 ## Exercises {: #pipeline-exercises}
 
 ### Merging functions

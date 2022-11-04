@@ -56,3 +56,6 @@ syllabus:
 
 [% inc file="db_swap.py" %]
 
+[% fixme concept-map %]
+
+## Exercises {: #database-exercises}

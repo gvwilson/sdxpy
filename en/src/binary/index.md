@@ -644,6 +644,8 @@ Please remember that libraries already exist to handle almost every binary forma
 and to read data from almost every instrument on the market.
 You shouldn't worry about 1's and 0's unless you really have to.
 
+[% fixme concept-map %]
+
 ## Exercises {: #binary-exercises}
 
 FIXME
