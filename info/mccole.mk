@@ -83,6 +83,7 @@ docs/%.pdf: src/%.svg
 ## clean: clean up stray files
 clean:
 	@find . -name '*~' -exec rm {} \;
+	@find . -name '*.bkp' -exec rm {} \;
 	@find . -type d -name __pycache__ | xargs rm -r
 	@rm -f \
 	docs/*.aux \

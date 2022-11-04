@@ -1,5 +1,5 @@
 ---
-title: "A Virtual Machine and Assembler"
+title: "A Virtual Machine"
 syllabus:
 - FIXME
 ---

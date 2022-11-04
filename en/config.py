@@ -19,8 +19,8 @@ plausible = "" # "third-bit.com"
 chapters = [
     "introduction",
     "tester",
-    "backup",
     "interpreter",
+    "backup",
     "dataframe",
     "pipeline",
     "builder",
@@ -56,7 +56,6 @@ appendices = [
 # To do.
 todo = [
     "backup",
-    "interpreter",
     "dataframe",
     "pipeline",
     "builder",
