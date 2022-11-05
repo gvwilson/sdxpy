@@ -38,7 +38,7 @@ and assigns that object to the variable `example`:
 
 [% figure
    slug="tester-func-obj"
-   img="tester-func-obj.svg"
+   img="tester_func_obj.svg"
    alt="Bytes can be interpreted as text, images, instructions, and more."
    caption="Bytes as characters, pixels, or instructions."
 %]
@@ -62,7 +62,7 @@ We can also store functions in a list just like numbers or strings
 
 [% figure
    slug="tester-func-list"
-   img="tester-func-list.svg"
+   img="tester_func_list.svg"
    alt="A list of functions."
    caption="A list of functions."
 %]
@@ -360,7 +360,7 @@ with a mock object that always returns 99
 
 [% figure
    slug="tester-mock-timeline"
-   img="tester-mock-timeline.svg"
+   img="tester_mock_timeline.svg"
    alt="Timeline of mock operation."
    caption="Timeline of mock operation."
 %]
@@ -443,7 +443,7 @@ Here's a test to prove that our context manager works:
 
 [% figure
    slug="tester-concept-map"
-   img="tester-concept-map.svg"
+   img="tester_concept_map.svg"
    alt="Concept map of unit testing tool."
    caption="Unit tester concept map."
 %]

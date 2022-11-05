@@ -1,30 +1,46 @@
 ---
 title: "Versioned File Backups"
 syllabus:
-- FIXME
+-   Version control tools use hashing to uniquely identify each saved file.
+-   Cryptographic hash functions create identifiers that are randomly distributed and depend on every bit in their input.
+-   Hash functions often have streaming interfaces that can process files incrementally.
+-   Each snapshot of a set of files is recorded in a manifest.
+-   Using a mock filesystem to test version control is safer and faster than using the real thing.
 ---
 
+We've written almost a thousand lines of Python so far.
+We could recreate it if we had to,
+but we'd rather not find ourselves in that situation.
+We'd also like to be able to see what we've changed,
+and to collaborate with other people.
 A [%i "version control system" %][%g version_control_system "version control system" %][%/i%]
 like [%i "Git" "version control system!Git" %][Git][git][%/i%]
-keeps track of changes to files
-so that we can see what we've changed and recover old versions.
-Its core is a way to archive files that:
+solves all of these problems at once.
+It keeps track of changes to files
+so that we can see what we've changed,
+recover old versions,
+and merge our changes with those made by other people.
+
+The core of a modern version control tool
+is a way to archive files that:
 
 1.  records which versions of which files existed at the same time
     (so that we can go back to a consistent previous state), and
+
 1.  stores any particular version of a file only once,
     so that we don't waste disk space.
 
 This chapter builds a tool that does both tasks.
-It won't let us create and merge branches;
-if you would like to know how that works,
+It won't create and merge branches,
+but that's a relatively straightforward extension:
+if you would like to see how it works,
 please see [%i "Cook, Mary Rose" %][Mary Rose Cook's][cook_mary_rose][%/i%] [Gitlet][gitlet]
 or [%i "Polge, Thibault" %]Thibault Polge[%/i%]'s [Write yourself a Git][write_yourself_a_git].
 
 ## Identifying Unique Files {: #backup-unique}
 
 To avoid storing redundant copies of files,
-we need a way to tell when two files contain the same data.
+we need a way to know when two files contain the same data.
 We can't rely on names because files can be renamed or moved over time;
 we could compare the files byte by byte,
 but a quicker way is to use a [%i "hash function" %][%g hash_function "hash function" %][%/i%]
@@ -33,7 +49,7 @@ that turns arbitrary data into a fixed-length string of bits
 
 [% figure
    slug="backup-hash-function"
-   img="hash_function.svg"
+   img="backup_hash_function.svg"
    alt="Hash functions"
    caption="How hash functions speed up lookup."
 %]
@@ -42,20 +58,20 @@ A hash function always produces the same [%i "hash code" %][%g hash_code "hash c
 A [%i "cryptographic hash function" "hash function!cryptographic" %][%g cryptographic_hash_function "cryptographic hash function" %][%/i%]
 has two extra properties:
 
-1.  The output depends on the entire input:
-    changing even a single byte almost certainly results in a different hash code.
-
 1.  The outputs look like random numbers:
     they are unpredictable and evenly distributed
     (i.e., the odds of getting any specific hash code are the same).
 
+1.  The output depends on the entire input:
+    changing even a single byte almost certainly changes the hash code.
+
 It's easy to write a bad hash function,
-but very hard to write one that qualifies as cryptographic.
+but very hard to write one that meets these two conditions.
 We will therefore use Python's [hashlib][py_hashlib] module
 to calculate [%i "hash code!SHA256" "SHA256 hash code" %][%g sha256 "SHA256" %][%/i%] hashes of our files.
 These are not random enough to keep data secret from a patient, well-funded attacker,
 but that's not what we're using them for:
-we just want hashes that are random to make
+we just want hashes that are random enough to make
 [%i "hash function!collision" "collision (in hashing)" %][%g collision "collision" %][%/i%]
 extremely unlikely.
 
@@ -72,11 +88,9 @@ If we keep going,
 there's a 50% chance of two people sharing a birthday in a group of just 23 people,
 and a 99.9% chance with 70 people.
 
-We can use the same math to calculate how many files we need to hash before there's a 50% chance of a collision.
-Alternative,
-we can [check Wikipedia][birthday_problem],
-which tells us we need to have approximately \\(4{\times}10^{38}\\) files
-in order to have a 50% chance of a collision.
+The same math can tell us how many files we need to hash before there's a 50% chance of a collision.
+According to [Wikipedia][birthday_problem],
+the answer is approximately \\(4{\times}10^{38}\\) files.
 We're willing to take that risk…
 
 </div>
@@ -90,7 +104,7 @@ we call its `hexdigest` method to  get the final result:
 [% inc pat="hash_stream.*" fill="py sh out" %]
 
 To prove that it really does generate a unique code,
-let's calculate the hash of the novel *Dracula* instead:
+let's calculate the hash of the novel *Dracula*:
 
 [% inc pat="hash_stream_dracula.*" fill="sh out" %]
 
@@ -103,7 +117,7 @@ a [%i "streaming API" "execution!streaming" %][%g streaming_api "streaming" %][%
 because it processes a stream of data one piece at a time
 rather than requiring all of the data to be in memory at once.
 Many applications use streams
-so that programs don't have to read entire (possibly large) files into memory.
+so that programs don't have to read large files into memory.
 
 </div>
 
@@ -111,28 +125,28 @@ so that programs don't have to read entire (possibly large) files into memory.
 
 Many files only change occasionally after they're created, or not at all.
 It would be wasteful for a version control system to make copies
-each time the user wanted to save a snapshot of a project,
+each time the user saved a snapshot of a project,
 so instead our tool will copy each unique file to something like `abcd1234.bck`,
-where `abcd1234` is a hash of the file's contents.
-It will then store a data structure that records the filenames and hash keys for each snapshot.
+where `abcd1234` is the hash of the file's contents.
+It will then keep a record of the filenames and hash keys in each snapshot.
 The hash keys tell it which unique files are part of the snapshot,
 while the filenames tell us what each file's contents were called when the snapshot was made
-(since files can be moved or renamed).
+(so that files can be moved or renamed).
 To restore a particular snapshot,
 we will copy the `.bck` files back to where they were
 ([% f backup-storage %]).
 
 [% figure
    slug="backup-storage"
-   img="storage.svg"
+   img="backup_storage.svg"
    alt="Backup file storage"
    caption="Organization of backup file storage."
 %]
 
 The first step is to find all the files in or below a given directory
-and calculate their hashes.
-The easiest way to find files is to use Python's [glob][py_glob] module
-to do simple pattern matching.
+that we need to save.
+The simple pattern matching in Python's [glob][py_glob] module
+can do this for us.
 If we have this directory structure:
 
 [% inc pat="show_try_glob.*" fill="sh out" %]
@@ -142,7 +156,8 @@ then a single call to `glob.glob` will find all the files with two-part names:
 
 [% inc pat="try_glob.*" fill="py sh out" %]
 
-Let's combine the two to create a table of files and hashes:
+Let's combine this with our hashing function
+to create a table of files and hashes:
 
 [% inc pat="hash_all.*" fill="py sh out" %]
 
@@ -150,36 +165,36 @@ Let's combine the two to create a table of files and hashes:
 
 Before we go any further
 we need to figure out how we're going to test our code.
-The obvious approach is to create directories and sub-directories full of little files to use as fixtures.
+The obvious approach is to create directories and sub-directories
+containing some files we can use as [%i "fixture" %]fixtures[%/i%].
 However,
-as soon as we start backing things up and restoring them
-we are going to be changing or deleting those files.
+we are going to change or delete those files
+as we back things up and restore them.
 In order to make sure early tests don't contaminate later ones
-we would have to re-create those files and directories after each teach.
+we would have to re-create those files and directories after each test.
 
 A better approach is to use a [%i "mock object" %][%g mock_object "mock object" %][%/i%]
-instead of the real filesystem.
-As described in [%x tester %],
-a mock object has the same interface as the the thing it replaces,
-but is designed to be used solely for testing.
+instead of the real filesystem ([%x tester %]).
 The [pyfakefs][pyfakefs] module replaces key functions like `read`
 with functions that act the same
 but act on "files" stores in memory
 ([% f backup-mock-fs %]).
-This prevents our tests from accidentally disturbing the filesystem,
-and also makes tests much faster
-(since in-memory operations are thousands of times faster than operations that touch the disk).
+Using it prevents our tests from accidentally disturbing the filesystem;
+it also makes tests much faster
+since in-memory operations are thousands of times faster than ones that touch the disk.
 
 [% figure
    slug="backup-mock-fs"
-   img="mock_fs.svg"
+   img="backup_mock_fs.svg"
    alt="Mock filesystem"
    caption="Using a mock filesystem to simplify testing."
 %]
 
 If we `import pyfakefs`,
-we automatically get a [%i "fixture" %]fixture[%/i%] called `fs`
-that we can use to create files:
+we automatically get a fixture called `fs`
+that we can use to create files.
+We tell [pytest][pytest] we want to use this fixture
+by passing it as an argument to our testing function:
 
 [% inc file="test_mock_fs.py" %]
 
@@ -203,7 +218,7 @@ and that hashes change when files change:
 The second part of our backup tool keeps track of which files have and haven't been backed up already.
 It stores backups in a directory that contains files like `abcd1234.bck`
 (the hash followed by `.bck`)
-and CSV manifests that describe the contents of particular snapshots.
+and CSV [%g manifest "manifests" %] that describe the contents of particular snapshots.
 The latter are named `ssssssssss.csv`,
 where `ssssssssss` is the [%g utc "UTC" %] [%g timestamp "timestamp" %] of the backup's creation.
 
@@ -222,10 +237,11 @@ called [%i "race condition!time of check/time of use" "time of check/time of use
 If two users run the backup tool at the same time,
 they will both see that there isn't a file (yet) with the current timestamp,
 so they will both try to create the first one.
+We will look at better schemes in the exercises.
 
 </div>
 
-Here's a function that creates a backup:
+This function creates a backup:
 
 [% inc file="backup.py" keep="backup" %]
 
@@ -233,6 +249,7 @@ When writing the manifest,
 we check that the backup directory exists,
 create it if it does not,
 and then save the manifest as CSV:
+{: .continue}
 
 [% inc file="backup.py" keep="write" %]
 
@@ -249,7 +266,7 @@ that we can easily replace with a mock for testing:
 
 [% inc file="backup.py" keep="time" %]
 
-We do one test with real files:
+Let's do one test with real files:
 
 [% inc pat="test_backup_manual.*" fill="sh out" %]
 
@@ -265,7 +282,12 @@ and an example of a single test is:
 
 [% inc file="test_backup.py" keep="test" %]
 
-[% fixme concept-map %]
+[% figure
+   slug="backup-concept-map"
+   img="backup_concept_map.svg"
+   alt="Concept map of file backup"
+   caption="Concept map for hashing-based file backup."
+%]
 
 ## Exercises {: #backup-exercises}
 
@@ -368,3 +390,11 @@ stored in the root directory of the files being backed up.
 If `pre_commit` returns `True`, the backup proceeds;
 if it returns `False` or throws an exception,
 no backup is created.
+
+### Naming manifests {: .exercise}
+
+1.  How does Git keep track of the manifests that record
+    which files are in each snapshot?
+
+1.  Add a simple version of this scheme to the backup tool
+    developed in this chapter.
