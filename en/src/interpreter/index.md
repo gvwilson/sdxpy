@@ -185,7 +185,7 @@ then return the stored value:
 To define a new variable or change an existing one,
 we evaluate an expression and store its value in the environment:
 
-[% inc file="vars.py" keep="do_get" %]
+[% inc file="vars.py" keep="do_set" %]
 
 We need to add one more function to make this all work.
 Our programs no longer consist of a single expression;
