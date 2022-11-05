@@ -185,6 +185,7 @@ export:
 	@zip -r ${STEM}-docs.zip \
 	${DOCS} \
 	docs/*.css \
+	docs/*.ico \
 	docs/*.svg \
 	$(patsubst src/%.svg,docs/%.svg,${FIG_SVG})
 
