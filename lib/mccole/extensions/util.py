@@ -166,7 +166,7 @@ def read_glossary(filename):
     """Load the glossary definitions."""
     filename = Path(ivy.site.home(), filename)
     with open(filename, "r") as reader:
-        return yaml.safe_load(reader) or {}
+        return yaml.safe_load(reader) or []
 
 
 def require(cond, msg):
