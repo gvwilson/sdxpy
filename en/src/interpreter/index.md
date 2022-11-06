@@ -85,7 +85,7 @@ it adds them and returns the result
 [% figure
    slug="interpreter-recursive-evaluation"
    img="interpreter_recursive_evaluation.svg"
-   alt="Recursive evaluation of an expression tree."
+   alt="Recursive evaluation of an expression tree"
    caption="Recursively evaluation an expression tree."
 %]
 
@@ -394,7 +394,7 @@ and executes that operation.
 [% figure
    slug="interpreter-concept-map"
    img="interpreter_concept_map.svg"
-   alt="Concept map of interpreter."
+   alt="Concept map of interpreter"
    caption="Interpreter concept map."
 %]
 

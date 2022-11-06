@@ -39,8 +39,8 @@ and assigns that object to the variable `example`:
 [% figure
    slug="tester-func-obj"
    img="tester_func_obj.svg"
-   alt="Bytes can be interpreted as text, images, instructions, and more."
-   caption="Bytes as characters, pixels, or instructions."
+   alt="Bytes as characters, pixels, or instructions"
+   caption="Bytes can be interpreted as text, images, instructions, and more."
 %]
 
 We can assign the function to another variable:
@@ -63,7 +63,7 @@ We can also store functions in a list just like numbers or strings
 [% figure
    slug="tester-func-list"
    img="tester_func_list.svg"
-   alt="A list of functions."
+   alt="A list of functions"
    caption="A list of functions."
 %]
 
@@ -229,7 +229,7 @@ and summarizes their results:
 
 We actually can't call a function we've found by introspection unless:
 
-1.  we know its [%g function_signature "signature" %]
+1.  we know its [%g signature "signature" %]
     (i.e, how many parameters of what type it needs in what order)
     or
 
@@ -361,7 +361,7 @@ with a mock object that always returns 99
 [% figure
    slug="tester-mock-timeline"
    img="tester_mock_timeline.svg"
-   alt="Timeline of mock operation."
+   alt="Timeline of mock operation"
    caption="Timeline of mock operation."
 %]
 
@@ -444,7 +444,7 @@ Here's a test to prove that our context manager works:
 [% figure
    slug="tester-concept-map"
    img="tester_concept_map.svg"
-   alt="Concept map of unit testing tool."
+   alt="Concept map of unit testing tool"
    caption="Unit tester concept map."
 %]
 

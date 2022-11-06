@@ -1,11 +1,18 @@
 ---
 title: "A Build Manager"
 syllabus:
-- FIXME
+-   Build managers track dependencies between files and update files that are stale.
+-   Every build rule has a target, some dependencies, and a recipe for updating the target.
+-   Build rules form a directed graph which must not contain cycles.
+-   Pattern rules describe the dependencies and recipes for sets of similar files.
+-   Pattern rules can use automatic variables to specify targets and dependencies in recipes.
 ---
 
+We wrote programs in [%x interpreter %] as lists of lists
+which we then interpreted directly.
 Programs in [%i "compiled language" "language!compiled" %][%g compiled_language "compiled languages" %][%/i%]
-like [%i "C" %]C[%/i%] and [%i "Java" %]Java[%/i%]
+like [%i "C" %]C[%/i%] and [%i "Java" %]Java[%/i%],
+on the other hand,
 have to be translated into lower-level forms before they can run.
 There are usually two stages to the translation:
 compiling each source file into some intermediate form,
@@ -13,32 +20,37 @@ and then [%i "linking (compiled language)" "compiled language!linking" %][%g lin
 to each other and to libraries
 to create a runnable program
 ([% f builder-compiling %]).
+If a source file hasn't changed,
+we don't need to recompile it before linking.
+Skipping unnecessary work in this way can save a lot of time
+when we are working with programs that contains thousands or tens of thousands of files.
 
 [% figure
    slug="builder-compiling"
-   img="compiling.svg"
+   img="builder_compiling.svg"
    alt="Compiling and linking"
    caption="Compiling source files and linking the resulting modules."
 %]
 
-If a source file hasn't changed,
-there's no need to recompile it before linking.
-A [%i "build manager" %][%g build_manager "build manager" %][%/i%] takes a description of what depends on what,
+[%i "build manager" %][%g build_manager "Build managers" %][%/i%]
+were invented to keep track of all of this automatically.
+A build manager takes a description of what depends on what,
 figures out which files are out of date,
 determines an order in which to rebuild things,
 and then does whatever is required and only what is required [% b Smith2011 %].
-
 The first build manager,
 [%i "Make" %][Make][gnu_make][%/i%],
-was created to handle compilation of C programs,
+was built to manage C programs,
 but build managers are used to update packages,
 regenerate websites ([%x templating %]),
-or re-create documentation from source code.
+re-create documentation from source code,
+and run tests.
 This chapter creates a simple build manager to illustrate how they work.
 
 ## Structure {: #builder-structure}
 
-The input to a build manager is a set of rules,
+The input to a build manager is
+a set of [%i "build rule" "rule!build" %][%g build_rule "build rules" %][%/i%],
 each of which has:
 
 -   a [%i "build target" "target!build" %][%g build_target "target" %][%/i%],
@@ -61,7 +73,7 @@ if something depends on itself we can never finish updating it.
 
 [% figure
    slug="builder-dependencies"
-   img="dependencies.svg"
+   img="builder_dependencies.svg"
    alt="Respecting dependencies"
    caption="How a build manager finds and respects dependencies."
 %]
@@ -105,13 +117,13 @@ rules have a nested structure,
 and CSV doesn't represent nesting gracefully.
 {: .continue}
 
-We would normally implement all of the methods required by the builder at once,
-but to make the evolving code easier to follow we will write them them one by one.
-Let's start by writing a class that loads a configuration file:
+We would normally implement all of the builder's methods at once,
+but we will instead write them them one by one to make the evolving code easier to follow.
+Let's start by defining a class that loads a configuration file:
 
 [% inc file="config_loader.py" keep="body" %]
 
-We need to check each rule because YAML is a generic file format
+We also need a method to check each rule because YAML is a generic file format
 that doesn't know anything about the extra requirements of our rules:
 
 [% inc file="config_loader.py" keep="check" %]
@@ -128,9 +140,9 @@ and store the recipe to rebuild a node in that node:
 
 [% inc file="graph_creator.py" keep="build" %]
 
-`networkx` provides implementations of some common graph algorithms,
+`networkx` implements some common graph algorithms,
 including one to find cycles,
-so let's write that next:
+so let's add that next:
 
 [% inc file="graph_creator.py" keep="check" %]
 
@@ -161,9 +173,10 @@ and the operating system may only report file update times to the nearest millis
 More modern build systems store a [%i "hash code!in build" "build!hash code" %]hash[%/i%] of each file's contents
 and compare the current hash to the stored one to see if the file has changed.
 We looked at hashing in [%x backup %],
-so we will use the timestamp approach here,
-but instead of using a mock filesystem
-we will load another configuration file that specifies fake timestamps for files:
+so we will use the timestamp approach here.
+We should also test using a mock filesystem,
+but for variety's sake
+we will load another configuration file that specifies timestamps for files:
 
 [% inc file="add_timestamps.yml" %]
 
@@ -216,7 +229,7 @@ The `run` method:
     we print the steps we would run and then update the file's timestamp.
     We only advance the notional current time when we do an update.
 
-In order to check if a file is stale,
+To check if a file is stale,
 we see if any of its dependencies currently have timestamps
 greater than or equal to the target's timestamp:
 
@@ -234,10 +247,10 @@ it seems to do the right thing:
 ## Variables {: #builder-variables}
 
 We don't want to have to write a hundred nearly-identical recipes
-if our website has a hundred blog posts
-or a hundred pages of documentation.
+if our program has a hundred files
+or our website has a hundred blog posts.
 Instead,
-we want to be able to write generic [%i "build!rule" "rule (in build)" %][%g build_rule "build rules" %][%/i%].
+we want to write generic [%i "build!rule" "rule (in build)" %]build rules[%/i%].
 To do this we need:
 
 -   a way to define a set of files;
@@ -249,12 +262,29 @@ To do this we need:
 
 We will achieve this by overriding `build_graph` to replace variables in recipes with values.
 Once again,
-object-oriented programming helps us change only what we need to change,
+object-oriented programming lets us change only what we need to,
 provided we divided our problem into sensible chunks in the first place.
+
+<div class="callout" markdown="1">
+### Extensibility and Experience
+
+[%x interpreter %] said that one way to evaluate a program's design
+is to ask how [%g extensibility "extensible" %] it is.
+In practice,
+extensibility usually comes from experience:
+we can't know what [%g affordance "affordances" %] to provide
+until we've tried extending our code in different ways a couple of times.
+We [%g refactor "refactored" %] the examples in this book several times
+as we wrote the explanations
+so that early versions left room for later ones.
+Don't be surprised or disappointed if you have to do this for your own code;
+after you've extended and refactored something two or three times,
+it usually settles down into its final form.
+</div>
 
 Make provides
 [%i "automatic variable (in build)" "build!automatic variable" %][%g automatic_variable "automatic variables" %][%/i%]
-with names like `$<` and `$@`
+with cryptic names like `$<` and `$@`
 to represent the parts of a rule.
 Our variables will be more readable:
 we will use `@TARGET` for the target,
@@ -264,7 +294,7 @@ and `@DEP[1]`, `@DEP[2]`, and so on for specific dependencies
 
 [% figure
    slug="builder-pattern-rules"
-   img="pattern_rules.svg"
+   img="builder_pattern_rules.svg"
    alt="Pattern rules"
    caption="Turning patterns rules into runnable commands."
 %]
@@ -273,19 +303,20 @@ Our variable expander looks like this:
 
 [% inc file="expand_variables.py" keep="expand" %]
 
-The first thing we do is test that it works when there *aren't* any variables to expand
+After adding this,
+we immediately test that it works when there *aren't* any variables to expand
 by running it on the same example we used previously:
 
 [% inc pat="expand_variables_no_vars.*" fill="sh out" %]
 
 This is perhaps the most important reason to create tests:
 they tell us if something we have added or changed
-has broken something that used to work
-so that we have a solid base for new code.
+has caused a [%g regression "regression" %],
+i.e., has broken something that used to work.
+If so,
+the problem will be easier to fix while
+the breaking change is still fresh in our minds.
 {: .continue}
-
-[% inc file="three_variable_rules.yml" %]
-[% inc pat="expand_variables_with_vars.*" fill="sh out" %]
 
 ## Generic Rules {: #builder-generic}
 
@@ -304,11 +335,11 @@ it doesn't work:
 
 [% inc pat="pattern_attempt.*" fill="sh out" %]
 
-After a bit of poking around we realize that
-we're looking at the rule for `%.in`.
-A bit more poking around and we realize that
-when we created edges in the graph between a target and its dependencies,
-`networkx` automatically added a node for the dependency
+After a bit of poking around with a [%i debugger %]debugger[%/i%]
+we realize that
+the failure occurs when we're looking at the rule for `%.in`.
+When we create edges in the graph between a target and its dependencies,
+`networkx` automatically adds a node for the dependency
 if one didn't exist yet.
 As a result,
 when we say that `%.out` depends on `%.in`,
@@ -321,10 +352,12 @@ and then builds the graph from the non-pattern rules:
 [% inc file="pattern_final.py" keep="build" %]
 
 Expanding rules relies on two helper methods:
+{: .continue}
 
 [% inc file="pattern_final.py" keep="expand" %]
 
 The first helper finds rules:
+{: .continue}
 
 [% inc file="pattern_final.py" keep="find" %]
 
@@ -347,34 +380,77 @@ to include those extra steps and provide do-nothing implementations.
 
 The root of the problem is that we didn't anticipate all the steps that would be involved
 when we wrote our template method.
-It typically takes a few child classes for this to settle down;
-if it never does,
-then [%i "Template Method pattern" "design pattern!Template Method" %]Template Method[%/i%] is probably the wrong pattern for our situation.
+As we said earlier,
+we typically have to refactor our base code
+the first two or three times we try to extend it.
+If it never settles down,
+then [%i "Template Method pattern" "design pattern!Template Method" %]Template Method[%/i%]
+is probably the wrong pattern for our situation.
 Realizing this isn't a failure in initial design:
 we always learn about our problem as we try to capture it in code,
 and if we know enough to anticipate 100% of the issues that are going to come up,
 it's time to put what we've learned in a library for future use.
 
-[% fixme concept-map %]
+[% figure
+   slug="builder-concept-map"
+   img="builder_concept_map.svg"
+   alt="Concept map for build manager"
+   caption="Concepts for build manager."
+%]
 
 ## Exercises {: #builder-exercises}
 
+### Reporting {: .exercise}
+
+1.  Modify the build manager so that it expands all pattern rules
+    and prints out a fully-expanded YAML build file.
+
+2.  Test your extension by having the build manager read and execute
+    the file it just created.
+
 ### Handle failure {: .exercise}
 
-1.  Modify the build manager to accommodate build steps that fail.
+1.  Modify the build manager so that if a recipe fails,
+    other targets that don't depend on it are still built.
 
 2.  Write tests to check that this change works correctly.
 
+### Dry run {: .exercise}
+
+1.  Modify the build manager so that it can show what recipes it would execute
+    without actually executing them.
+    (Doing this is called a [%g dry_run "dry run" %].)
+
+2.  Write tests to make sure that dry runs don't change any files.
+
 ### Merge files {: .exercise}
 
-Modify the build manager so that it can read multiple build files
-and execute their combined rules.
+1.  Modify the build manager so that it can read multiple build files
+    and execute their combined rules.
+
+2.  What does your solution do if two or more files specify rules
+    for the same target?
+    What does the *existing* code do?
+
+### Specific targets {: .exercise}
+
+Modify the build manager so that users can specify
+which targets they want to update.
+The build manager should only execute recipes needed to update those targets.
+
+### Phony targets {: .exercise}
+
+A [%g phony_target "phony target" %] is one that doesn't create or modify a file.
+Programmers often put phony targets in build files
+to do tasks like executing tests in a reproducible way.
+Modify the build manager so that
+users can specify and run phony targets.
 
 ### Conditional execution {: .exercise}
 
 Modify the build manager so that:
 
-1.  The user can pass `variable=true` and `variable=false` arguments on the command-line
+1.  The user can pass `name=true` and `name=false` arguments on the command-line
     to define variables.
 
 2.  Rules can contain an `if: variable` field.
