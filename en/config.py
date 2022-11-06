@@ -21,9 +21,9 @@ chapters = [
     "tester",
     "interpreter",
     "backup",
+    "builder",
     "dataframe",
     "pipeline",
-    "builder",
     "matching",
     "parser",
     "server",
@@ -57,7 +57,6 @@ appendices = [
 todo = [
     "dataframe",
     "pipeline",
-    "builder",
     "matching",
     "parser",
     "server",
