@@ -1,7 +1,11 @@
 ---
-title: "HTML Templating"
+title: "A Static Site Generator"
 syllabus:
-- FIXME
+-   Static site generators create HTML pages from templates, directives, and data.
+-   A static site generator must have the same core features as a programming language.
+-   Programs can use the Visitor pattern to separate traversal of a data structure from operations on its elements.
+-   HTML documents are usually represented in memory as trees using the Document Object Model (DOM).
+-   The style of code that programmers find easiest to read changes as they become more experienced.
 ---
 
 Every program needs documentation in order to be usable,
@@ -14,12 +18,12 @@ to create web pages from templates.
 
 At the heart of every static site generator is a page templating system.
 Thousands of these have been written in the last thirty years
-in every popular programming language
-(and one language, [%i "PHP" %][PHP][php][%/i%], was created for this purpose).
+in every popular programming language,
+and a language called [%i "PHP" %][PHP][php][%/i%] was created primarily for this purpose.
 Most of these systems use one of three designs
 ([%f templating-options %]):
 
-1.  Mix commands in a language such as JavaScript with the HTML or Markdown
+1.  Mix commands in an existing language such as JavaScript with the HTML or Markdown
     using some kind of marker to indicate which parts are commands
     and which parts are to be taken as-is.
     This approach is taken by [%i "EJS" %][EJS][ejs][%/i%].
@@ -37,7 +41,7 @@ Most of these systems use one of three designs
 
 [% figure
    slug="templating-options"
-   img="options.svg"
+   img="templating_options.svg"
    alt="Three options for page templates"
    caption="Three different ways to implement page templating."
 %]
@@ -55,43 +59,38 @@ Let's start by deciding what "done" looks like.
 Suppose we want to turn an array of strings into an HTML list.
 Our page will look like this:
 
-[% fixme file="loop_input.ht" %]
+[% inc file="loop.ht" %]
 
 The attribute `z-loop` tells the tool to repeat the contents of that node;
 the loop variable and the collection being looped over are separated by a colon.
 The `span` with the attribute `z-var`
 tells the tool to fill in the node with the value of the variable.
-{: .continue}
-
 When our tool processes this page,
 the output will be standard HTML without any traces of how it was created:
 
-[% fixme file="loop_output.out" %]
+[% inc file="loop.out" %]
 
 <div class="callout" markdown="1">
 
 ### Human-readable vs. machine-readable
 
-The introduction said that mini-languages for page templating
-quickly start to accumulate extra features.
+Mini-languages for page templating can quickly become unreadable.
 We have already started down that road
 by putting the loop variable and loop target in a single attribute
 and splitting that attribute to get them out.
 Doing this makes loops easy for people to type,
-but hides important information from standard HTML processing tools.
-They can't know that this particular attribute of these particular elements
+but hides important information from standard HTML processing tools:
+they can't know that this particular attribute of these particular elements
 contains multiple values
 or that those values should be extracted by splitting a string on a colon.
-We could instead require people to use two attributes like this:
+We could instead use two attributes like this:
 
 ```html
 <ul z-loop="names" z-loop-var="item">
 ```
 
-but we have decided to err on the side of minimal typing.
-{: .continue}
-
-Strictly speaking,
+but we have decided to save ourselves a little typing.
+And strictly speaking
 we should call our attributes `data-something` instead of `z-something`
 to conform with [%i "HTML5 specification" %][the HTML5 specification][html5-data-attributes][%/i%],
 but by the time we're finished processing our templates,
@@ -114,41 +113,16 @@ we will just pass them into the expansion function as an object:
 ## Managing Variables {: #templating-values}
 
 As soon as we have variables we need a way to track their values.
-These values might change;
-for example,
-a loop variable's value can change each time the loop runs.
 We also need to maintain multiple sets of variables
-so that variables used inside a loop
+so that (for example) variables used inside a loop
 don't conflict with ones used outside it.
-(We don't actually "need" to do this—we could just have one global set of variables—but
-if all our variables are global,
-all of our programs will be buggy.)
+As in [%x interpreter %],
+we will use a stack of environments,
+each of which is a dictionary.
 
-The standard way to manage variables is to create a stack of lookup tables.
-Each [%i "stack frame" %][%g stack_frame "stack frame" %][%/i%] is a dictionary;
-when we need a variable,
-we search the stack frames in order to find it.
-
-<div class="callout" markdown="1">
-
-### Scoping rules
-
-Searching the stack [%i "call stack!stack frame" "stack frame" %]frame[%/i%] by frame
-while the program is running
-is called is [%i "dynamic scoping" "scoping!dynamic" %][%g dynamic_scoping "dynamic scoping" %][%/i%],
-since we find variables while the program is running.
-In contrast,
-most programming languages used [%i "lexical scoping" "scoping!lexical" %][%g lexical_scoping "lexical scoping" %][%/i%],
-which figures out what a variable name refers to based on the structure of the program text.
-
-</div>
-
-The values in a running program are sometimes called
-an [%i "environment (to store variables)" "call stack!environment" %][%g environment "environment" %][%/i%],
-so we call our stack-handling class `Env`.
-Its methods let us push and pop new stack frames
-and find a variable given its name;
-if the variable can't be found,
+Our stack-handling class `Env` has methods  to push and pop new stack frames
+and find a variable given its name.
+If the variable can't be found,
 `Env.find` returns `None` instead of throwing an exception
 ([%f templating-stack %]).
 
@@ -156,7 +130,7 @@ if the variable can't be found,
 
 [% figure
    slug="templating-stack"
-   img="stack.svg"
+   img="templating_stack.svg"
    alt="Variable stack"
    caption="Using a stack to manage variables."
 %]
@@ -177,20 +151,19 @@ it uses that instead.
 `Visitor` defines two [%g abstract_method "abstract methods" %] `open` and `close`
 that are called when we first arrive at a node and when we are finished with it
 ([%f templating-visitor %]).
-Any class derived from `Visitor` must defined these two methods.
+Any class derived from `Visitor` must define these two methods.
 {: .continue}
 
 [% figure
    slug="templating-visitor"
-   img="visitor.svg"
+   img="templating_visitor.svg"
    alt="The Visitor pattern"
    caption="Using the Visitor pattern to evaluate a page template."
 %]
 
 The `Expander` class is specialization of `Visitor`
 that uses an `Env` to keep track of variables.
-It imports a handler
-for each type of special node we support—we will write those in a moment—and
+It imports handlers for each type of special node—we will write those in a moment—and
 uses them to process each type of node:
 
 1.  If the node is plain text, copy it to the output.
@@ -200,9 +173,10 @@ uses them to process each type of node:
 
 1.  Otherwise, open or close a regular tag.
 
-[% fixme file="expander.py" omit="skip" %]
+[% inc file="expander.py" omit="skip" %]
 
-To check if there is a handler for a particular node and get that handler
+To check if there is a handler for a particular node
+and get it if there is
 we just look at the node's attributes:
 
 [% inc file="expander.py" keep="handlers" %]
@@ -213,7 +187,8 @@ Finally, we need a few helper methods to show tags and generate output:
 
 Notice that this class adds strings to an array and joins them all right at the end
 rather than concatenating strings repeatedly.
-Doing this is more efficient and also helps with debugging,
+Doing this is more efficient;
+it also helps with debugging,
 since each string in the array corresponds to a single method call.
 {: .continue}
 
@@ -229,7 +204,8 @@ let's write a handler that copies a constant number into the output:
 The `z_num` expander is a class,
 but we don't plan to create instances of it.
 Instead,
-it's just a way to store two functions named `open` and `close`.
+it's just a way to manage a pair of related `open` and `close` functions,
+which we declare as [%i "static method" %][%g static_method "static methods" %][%/i%].
 When we enter a node like `<span z-num="123"/>`
 this handler asks the expander to show an opening tag
 followed by the value of the `z-num` attribute.
@@ -239,7 +215,6 @@ The handler doesn't know whether things are printed immediately,
 added to an output list,
 or something else;
 it just knows that whoever called it implements the low-level operations it needs.
-{: .continue}
 
 So much for constants; what about variables?
 
@@ -248,13 +223,13 @@ So much for constants; what about variables?
 This code is almost the same as the previous example.
 The only difference is that instead of copying the attribute's value
 directly to the output,
-we use it as a key to look up a value in the environment.
+we use it as a key to look up a value.
 {: .continue}
 
 These two pairs of handlers look plausible, but do they work?
 To find out,
 we can build a program that loads variable definitions from a JSON file,
-reads an HTML template,
+reads an HTML template using the [Beautiful Soup][beautiful_soup] library,
 and does the expansion:
 
 [% inc file="template.py" %]
@@ -262,7 +237,7 @@ and does the expansion:
 We added new variables for our test cases one by one
 as we were writing this chapter.
 To avoid repeating text repeatedly,
-we show the entire set once:
+here's the entire set:
 
 [% inc file="vars.json" %]
 
@@ -277,6 +252,7 @@ Now, does the expander handle constants?
 [% inc pat="single_constant.*" fill="ht out" %]
 
 What about a single variable?
+{: .continue}
 
 [% inc pat="single_variable.*" fill="ht out" %]
 
@@ -287,13 +263,12 @@ software isn't done until it has been tested.
 
 [% inc pat="multiple_variables.*" fill="ht out" %]
 
-## Control flow {: #templating-flow}
+## Control Flow {: #templating-flow}
 
-Our tool supports two types of control flow:
-conditional expressions and loops.
-Since we don't support Boolean expressions like `and` and `or`,
+Our tool supports conditional expressions and loops.
+Since it doesn't handle Boolean expressions like `and` and `or`,
 implementing a conditional is as simple as looking up a variable
-and then expanding the node if the value is true:
+and then expanding the node if Python thinks the value is [%g truthy "truthy" %]:
 
 [% inc file="z_if.py" %]
 
@@ -303,7 +278,7 @@ Let's test it:
 
 <div class="callout" markdown="1">
 
-### Spot the bug
+### Spot the Bug
 
 This implementation of `if` contains a subtle bug.
 The `open` and `close` functions both check the value of the control variable.
@@ -338,7 +313,7 @@ it's not done until we test it:
 
 ## How We Got Here {: #templating-learning}
 
-We have just implemented a simple programming language.
+We have just implemented another simple programming language.
 It can't do arithmetic,
 but if we wanted to add tags like:
 
@@ -353,8 +328,7 @@ unless they had no other choice—but the basic design is there.
 {: .continue}
 
 We didn't invent any of this from scratch,
-any more than we invented the parsing algorithm of [% x parser %]
-or the simple interpreter in [% x interpreter %].
+any more than we invented the simple interpreter in [% x interpreter %].
 Instead,
 we did what you are doing now:
 we read what other programmers had written
@@ -362,7 +336,8 @@ and tried to make sense of the key ideas.
 
 The problem is that "making sense" depends on who we are.
 When we use a low-level language,
-we incur the [%i "cognitive load" %]cognitive load[%/i%] of assembling micro-steps into something more meaningful.
+we incur the [%i "cognitive load" %][%g cognitive_load "cognitive load" %][%/i%]
+of assembling micro-steps into something more meaningful.
 When we use a high-level language,
 on the other hand,
 we incur a similar load translating functions of functions of functions
@@ -370,26 +345,25 @@ into actual operations on actual data.
 
 More experienced programmers are more capable at both ends of the curve,
 but that's not the only thing that changes.
-If a novice's comprehension curve looks like the one on the left
-of [%f templating-comprehension %],
-then an expert's looks like the one on the right.
+If a novice's comprehension curve looks like the lower one in [%f templating-comprehension %],
+then an expert's looks like the upper one.
 Experts don't just understand more at all levels of abstraction;
 their *preferred* level has also shifted
-so that \\(\sqrt{x^2 + y^2}\\)
-is actually more readable than the medieval expression
+so they find \\(\sqrt{x^2 + y^2}\\) easier to read
+than the medieval expression
 "the side of the square whose area is the sum of the areas of the two squares
 whose sides are given by the first part and the second part".
 
 [% figure
    slug="templating-comprehension"
-   img="comprehension.svg"
+   img="templating_comprehension.svg"
    alt="Comprehension curves"
    caption="Novice and expert comprehension curves."
 %]
 
 This curve means that for any given task,
-the software that is quickest for a novice to comprehend
-will almost certainly be different from the software that
+the code that is quickest for a novice to comprehend
+will almost certainly be different from the code that
 an expert can understand most quickly.
 In an ideal world our tools would automatically re-represent programs at different levels
 just as we could change the colors used for syntax highlighting.
@@ -397,7 +371,12 @@ But today's tools don't do that,
 and any IDE smart enough to translate between comprehension levels automatically
 would also be smart enough to write the code without our help.
 
-[% fixme concept-map %]
+[% figure
+   slug="templating-concept-map"
+   img="templating_concept_map.svg"
+   alt="Concept map for HTML templating"
+   caption="HTML templating concept map."
+%]
 
 ## Exercises {: #templating-exercises}
 
@@ -408,7 +387,13 @@ that prints the current value of a variable for debugging.
 
 ### Unit tests {: .exercise}
 
-Write unit tests for template expansion using pytest.
+Write unit tests for template expansion using [pytest][pytest].
+
+### Sub-keys {: .exercise}
+
+Modify the template expander so that a variable name like `person.name`
+looks up the `"name"` value in a dictionary called `"person"`
+in the current environment.
 
 ### Literal text {: .exercise}
 
@@ -478,3 +463,7 @@ or in sub-directories of the first.
 Add a directive `<div z-index="indexName" z-limit="limitName">…</div>`
 that loops from zero to the value in the variable `limitName`,
 putting the current iteration index in `indexName`.
+
+### Boolean expression {: .exercise}
+
+Design and implement a way to express the Boolean operators `and` and `or`.

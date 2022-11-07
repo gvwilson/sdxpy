@@ -33,8 +33,8 @@ class Expander(Visitor):
             self.getHandler(node).close(self, node)
         else:
             self.showTag(node, True)
-
     # [skip]
+
     # [handlers]
     def hasHandler(self, node):
         return any(name in self.handlers for name in node.attrs)
@@ -43,7 +43,6 @@ class Expander(Visitor):
         possible = [name for name in node.attrs if name in self.handlers]
         assert len(possible) == 1, f"Should be exactly one handler"
         return self.handlers[possible[0]]
-
     # [/handlers]
 
     # [helpers]
@@ -62,6 +61,5 @@ class Expander(Visitor):
 
     def getResult(self):
         return "".join(self.result)
-
     # [/helpers]
     # [/skip]

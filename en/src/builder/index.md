@@ -372,6 +372,9 @@ We're finally ready to test:
 
 ## Discussion {: #builder-discuss}
 
+Our design uses the [%i "Template Method pattern" "design pattern!Template Method" %]Template Method[%/i%] pattern:
+a method in a parent class defines the overall order of operations,
+while child classes implement those operations without changing the flow of control.
 We have added a lot of steps to our original template method,
 which makes it a bit of a stretch to claim that the overall operation hasn't changed.
 Knowing what we know now,
@@ -384,8 +387,7 @@ As we said earlier,
 we typically have to refactor our base code
 the first two or three times we try to extend it.
 If it never settles down,
-then [%i "Template Method pattern" "design pattern!Template Method" %]Template Method[%/i%]
-is probably the wrong pattern for our situation.
+then Template Method is probably the wrong pattern for our situation.
 Realizing this isn't a failure in initial design:
 we always learn about our problem as we try to capture it in code,
 and if we know enough to anticipate 100% of the issues that are going to come up,

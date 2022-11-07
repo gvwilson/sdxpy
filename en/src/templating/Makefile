@@ -1,13 +1,3 @@
-SRC=\
-  env.py \
-  expander.py \
-  template.py \
-  visitor.py \
-  z_if.py \
-  z_loop.py \
-  z_num.py \
-  z_var.py
-
 TARGETS=\
   conditional.out \
   loop.out \
@@ -17,3 +7,5 @@ TARGETS=\
   static_text.out \
 
 include ../examples.mk
+
+loop.out: loop.ht

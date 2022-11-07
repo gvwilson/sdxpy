@@ -172,7 +172,7 @@ def env_set(env, name, value):
     if name in env[-1]:
         env[-1][name] = value
     elif name in env[0]:
-        name[name] = value
+        env[0][name] = value
     else:
         env[-1][name] = value
 
