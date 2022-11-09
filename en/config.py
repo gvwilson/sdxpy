@@ -123,6 +123,7 @@ extension = "/"
 
 # Files to copy verbatim.
 copy += [
+    "*.jpg",
     "*.js",
     "*.json",
     "*.out",
@@ -139,6 +140,7 @@ exclude += [
     "Makefile",
     "*.csv",
     "*.ht",
+    "*.jpg",
     "*.js",
     "*.json",
     "*.mk",
