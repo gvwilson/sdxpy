@@ -13,8 +13,6 @@ def make_screen(width, height):
     for i in range(height):
         screen.append([" "] * width)
     return screen
-
-
 # [/make_screen]
 
 # [draw]
@@ -26,9 +24,6 @@ def draw(screen, node, fill=None):
             fill = draw(screen, child, fill)
     return fill
 
-
 def next_fill(fill):
     return "a" if fill is None else chr(ord(fill) + 1)
-
-
 # [/draw]

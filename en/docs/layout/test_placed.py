@@ -2,18 +2,15 @@ from placed import PlacedBlock as Block
 from placed import PlacedCol as Col
 from placed import PlacedRow as Row
 
-
 def test_places_a_single_unit_block():
     fixture = Block(1, 1)
     fixture.place(0, 0)
     assert fixture.report() == ["block", 0, 0, 1, 1]
 
-
 def test_places_a_large_block():
     fixture = Block(3, 4)
     fixture.place(0, 0)
     assert fixture.report() == ["block", 0, 0, 3, 4]
-
 
 def test_places_a_row_of_two_blocks():
     fixture = Row(Block(1, 1), Block(2, 4))
@@ -28,7 +25,6 @@ def test_places_a_row_of_two_blocks():
         ["block", 1, 0, 3, 4],
     ]
 
-
 def test_places_a_column_of_two_blocks():
     fixture = Col(Block(1, 1), Block(2, 4))
     fixture.place(0, 0)
@@ -41,7 +37,6 @@ def test_places_a_column_of_two_blocks():
         ["block", 0, 0, 1, 1],
         ["block", 0, 1, 2, 5],
     ]
-
 
 # [large]
 def test_places_a_grid_of_rows_of_columns():
@@ -66,6 +61,4 @@ def test_places_a_grid_of_rows_of_columns():
             ["col", 5, 4, 14, 22, ["block", 5, 4, 12, 12], ["block", 5, 12, 14, 22]],
         ],
     ]
-
-
 # [/large]

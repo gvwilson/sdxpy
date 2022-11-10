@@ -2,20 +2,17 @@ from wrapped import WrappedBlock as Block
 from wrapped import WrappedCol as Col
 from wrapped import WrappedRow as Row
 
-
 def test_wraps_a_single_unit_block():
     fixture = Block(1, 1)
     wrapped = fixture.wrap()
     wrapped.place(0, 0)
     assert wrapped.report() == ["block", 0, 0, 1, 1]
 
-
 def test_wraps_a_large_block():
     fixture = Block(3, 4)
     wrapped = fixture.wrap()
     wrapped.place(0, 0)
     assert wrapped.report() == ["block", 0, 0, 3, 4]
-
 
 def test_wrap_a_row_of_two_blocks_that_fit_on_one_row():
     fixture = Row(100, Block(1, 1), Block(2, 4))
@@ -37,7 +34,6 @@ def test_wrap_a_row_of_two_blocks_that_fit_on_one_row():
         ],
     ]
 
-
 def test_wraps_a_column_of_two_blocks():
     fixture = Col(Block(1, 1), Block(2, 4))
     wrapped = fixture.wrap()
@@ -51,7 +47,6 @@ def test_wraps_a_column_of_two_blocks():
         ["block", 0, 0, 1, 1],
         ["block", 0, 1, 2, 5],
     ]
-
 
 def test_wraps_a_grid_of_rows_of_columns_that_all_fit_on_their_row():
     fixture = Col(
@@ -114,7 +109,6 @@ def test_wraps_a_grid_of_rows_of_columns_that_all_fit_on_their_row():
         ],
     ]
 
-
 # [example]
 def test_wrap_a_row_of_two_blocks_that_do_not_fit_on_one_row():
     fixture = Row(3, Block(2, 1), Block(2, 1))
@@ -136,10 +130,7 @@ def test_wrap_a_row_of_two_blocks_that_do_not_fit_on_one_row():
             ["row", 0, 1, 2, 2, ["block", 0, 1, 2, 2]],
         ],
     ]
-
-
 # [/example]
-
 
 def test_wrap_multiple_blocks_that_do_not_fit_on_one_row():
     fixture = Row(3, Block(2, 1), Block(2, 1), Block(1, 1), Block(2, 1))
