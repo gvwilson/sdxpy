@@ -441,6 +441,8 @@ Here's a test to prove that our context manager works:
 
 [% inc file="mock_context.py" keep="test" %]
 
+## Summary {: #tester-summary}
+
 [% figure
    slug="tester-concept-map"
    img="tester_concept_map.svg"

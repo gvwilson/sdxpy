@@ -282,6 +282,8 @@ and an example of a single test is:
 
 [% inc file="test_backup.py" keep="test" %]
 
+## Summary {: #backup-summary}
+
 [% figure
    slug="backup-concept-map"
    img="backup_concept_map.svg"

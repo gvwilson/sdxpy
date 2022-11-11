@@ -371,6 +371,8 @@ But today's tools don't do that,
 and any IDE smart enough to translate between comprehension levels automatically
 would also be smart enough to write the code without our help.
 
+## Summary {: #templating-summary}
+
 [% figure
    slug="templating-concept-map"
    img="templating_concept_map.svg"

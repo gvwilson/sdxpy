@@ -305,6 +305,8 @@ Thinking in these terms leads to a methodology called
 
 </div>
 
+## Summary {: #layout-summary}
+
 [% figure
    slug="layout-concept-map"
    img="layout_concept_map.svg"

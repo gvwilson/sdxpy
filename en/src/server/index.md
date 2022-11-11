@@ -62,15 +62,7 @@ waits for requests and the replies to them.
 There are typically many more clients than servers:
 for example,
 there may be hundreds or thousands of browsers fetching pages from this book's website right now,
-but there is only one server handling those requests
-[%f server-architecture %]
-
-[% figure
-   slug="server-architecture"
-   img="server_architecture.svg"
-   alt="Client-server architecture"
-   caption="Client-server architecture."
-%]
+but there is only one server handling those requests.
 
 Here's a simple socket client:
 
@@ -322,7 +314,149 @@ our browser automatically sends a second request
 for an image file called `/favicon.ico`,
 which it will display as an icon in the address bar if it exists.
 
-[% fixme concept-map %]
+## Serving Files {: #server-files}
+
+Serving the same page for every request isn't particularly useful,
+so let's rewrite our simple server to return files.
+The basic logic looks like this:
+
+[% inc file="file_server.py" keep="do_get" %]
+
+We first turn the path in the URL into a local file path.
+(We assume that all paths are [%g path_resolution "resolved" %]
+relative to the directory that the server is running in.)
+If that path corresponds to a file, we send it back to the client.
+If nothing is there,
+or if what's there is not a file,
+we send an error message.
+{: .continue}
+
+It might seem simpler to rewrite `do_GET` to use `if`/`else` instead of `try`/`except`,
+but the latter has an advantage:
+we can handle errors that occur inside methods we're calling (like `handle_file`)
+in the same place and in the same way as we handle errors that occur here.
+This approach is sometimes called "throw low, catch high",
+which means that errors should be flagged in many places
+but handled in a few places high up in the code.
+The method that handles files is an example of this:
+
+[% inc file="file_server.py" keep="handle_file" %]
+
+If there's an error at any point in the processing cycle
+we send a page with an error message
+*and* an error status code:
+
+[% inc file="file_server.py" keep="handle_error" %]
+
+The error page is just HTML with some placeholders for the path and message:
+
+[% inc file="file_server.py" keep="error_page" %]
+
+The code that actually sends the response is similar to what we've seen before:
+{: .continue}
+
+[% inc file="file_server.py" keep="send_content" %]
+
+This server works, but only for a very forgiving definition of "works".
+We are careful not to show clients the actual paths to files on the server
+in our error messages,
+but if someone asked for `http://localhost:8080/../../passwords.txt`,
+this server will happily look two levels up from the directory where it's running
+and try to return that file.
+The server machine's passwords probably aren't stored there,
+but with enough `..`'s and some patience,
+an attacker could poke around large parts of our filesystem.
+We will tackle this security hole in the exercises.
+
+Another problem is that `send_content` always tells clients that
+it is returning an HTML file with the `Content-Type` header.
+It should instead look at the extension on the file's name
+and set the content type appropriately,
+e.g.,
+return `image/png` for a PNG-formatted image.
+
+One thing the server is doing right is character encoding.
+The `send_content` method expects `content` to be a `bytes` object,
+not a string,
+because the HTTP protocol requires the content length to be the number of bytes.
+The server reads files in binary mode
+by using `"rb"` instead of just `"r"` when it opens files in `handle_file`,
+converts the internally-generated error page from characters to bytes
+using the [%g utf_8 "UTF-8" %] encoding,
+and specifies `charset=utf-8` as part of the content type.
+
+## Testing  {: #server-testing}
+
+At this point we really need to figure out how to test the servers we're building.
+The key to our approach is the notion of [%i "fidelity (in testing)" %][%g test_fidelity "fidelity" %][%/i%]:
+how close is what we test to what we use in production?
+In an ideal world they are exactly the same,
+but in cases like this it makes sense to sacrifice a little fidelity for testability's sake.
+
+Let's work backward from a test we want to be able to write.
+We would like to create a file,
+simulate an HTTP GET request,
+and check that the status, headers, and content are correct.
+In the code below,
+the `CombinedHandler` class does double duty:
+it handles the simulated request,
+and also stores the values that the client would receive.
+
+[% inc file="test_testable_server.py" keep="example" %]
+
+The class we are testing is called `CombinedHandler`
+because it is derived from two things:
+a class that implements our application's `do_GET`
+and another class that provides replacements for
+the `BaseHTTPRequestHandler` properties and methods
+that our application actually uses.
+The latter is just a few lines long,
+though it would be larger if our application used
+more of `BaseHTTPRequestHandler`'s functionality:
+
+[% inc file="mock_handler.py" %]
+
+The application-specific class contains the code we've already seen:
+
+[% inc file="testable_server.py" keep="handler" omit="skip" %]
+
+However,
+`ApplicationRequestHandler` *doesn't* inherit from `BaseHTTPRequestHandler`.
+Instead,
+we create a class that combines the two when we need it:
+{: .continue}
+
+[% inc file="testable_server.py" keep="main" %]
+
+and create another class for testing that combines
+the application-specific class with `MockHandler`.
+This class is the `CombinedClass` that our test uses:
+{: .continue}
+
+[% inc file="test_testable_server.py" keep="combined" %]
+
+[%f server-inheritance %] shows the final inheritance hierarchy.
+It's a lot of work to test a GET request for one file,
+but we can re-use `MockRequestHandler` to test
+the application-specific code for other servers.
+Most libraries don't provide helper classes like this to support testing,
+but programmers appreciate those that do.
+
+[% figure
+   slug="server-inheritance"
+   img="server_inheritance.svg"
+   alt="Testing class hierarchy"
+   caption="Class hierarchy for a testable server."
+%]
+
+## Summary {: #server-summary}
+
+[% figure
+   slug="server-concept-map"
+   img="server_concept_map.svg"
+   alt="HTTP server concept map"
+   caption="HTTP server concept map."
+%]
 
 ## Exercises {: #server-exercises}
 

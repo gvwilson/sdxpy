@@ -407,6 +407,8 @@ reads an instruction,
 figures out what operation it corresponds to,
 and executes that operation.
 
+## Summary {: #interpreter-summary}
+
 [% figure
    slug="interpreter-concept-map"
    img="interpreter_concept_map.svg"

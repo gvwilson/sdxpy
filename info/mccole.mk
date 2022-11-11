@@ -9,6 +9,7 @@ STEM := ${ABBREV}-${BUILD_DATE}
 
 # Direct variables.
 EXAMPLES := $(patsubst %/Makefile,%,$(wildcard src/*/Makefile))
+EXPORT_EXCLUDE := '*.pdf'
 HTML := info/head.html info/foot.html
 INFO := info/bibliography.bib info/credits.yml info/glossary.yml info/links.yml
 FIG_SVG := $(wildcard src/*/*.svg)
@@ -19,14 +20,6 @@ SRC := $(wildcard *.md) $(wildcard src/*.md) $(wildcard src/*/index.md) $(wildca
 
 # Calculated variables.
 DOCS := docs/index.html $(patsubst src/%.md,docs/%.html,$(wildcard src/*/index.md))
-EXPORT_FILES := ${DOCS} \
-  docs/*.css \
-  docs/*.ico \
-  docs/*/*.jpg \
-  docs/*.svg \
-  $(patsubst src/%.svg,docs/%.svg,${FIG_SVG}) \
-  ${EXPORT_EXTRA}
-
 FIG_PDF := $(patsubst src/%.svg,docs/%.pdf,${FIG_SVG})
 
 # Miscellaneous variables.
@@ -190,7 +183,7 @@ publisher:
 ## export: export files for publishing on the web
 .PHONY: export
 export:
-	@zip -r ${STEM}-docs.zip ${EXPORT_FILES}
+	@zip -r ${STEM}-docs.zip docs -x ${EXPORT_EXCLUDE}
 
 ## vars: show variables
 .PHONY: vars

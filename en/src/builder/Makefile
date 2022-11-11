@@ -9,3 +9,5 @@ TARGETS=\
   update_timestamps.out
 
 include ../examples.mk
+
+check_cycles.out: circular_rules.yml

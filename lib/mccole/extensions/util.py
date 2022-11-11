@@ -166,7 +166,13 @@ def read_glossary(filename):
     """Load the glossary definitions."""
     filename = Path(ivy.site.home(), filename)
     with open(filename, "r") as reader:
-        return yaml.safe_load(reader) or []
+        result = yaml.safe_load(reader) or []
+        lang = ivy.site.config.get("lang", None)
+        if lang is not None:
+            for entry in result:
+                assert lang in entry, f"Bad glossary entry {entry}"
+                assert "def" in entry[lang], f"Bad glossary entry {entry}"
+        return result
 
 
 def require(cond, msg):
