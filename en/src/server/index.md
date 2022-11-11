@@ -254,34 +254,29 @@ that we can analyze or render.
 
 ## Hello, Web {: #server-static}
 
-We're now ready to write our first simple HTTP server.
-The basic idea is simple:
+We're now ready to write a simple HTTP server that will:
 
-1.  Wait for someone to connect to our server and send an HTTP request;
+1.  wait for someone to connect and send an HTTP request;
 2.  parse that request;
 3.  figure out what it's asking for;
-4.  fetch that data (or generate it dynamically);
-5.  format the data as HTML; and
-6.  send it back.
+4.  send back an HTML page.
 
-Steps 1, 2, and 6 are the same from one application to another,
+Steps 1, 2, and 4 are the same from one application to another,
 so the Python standard library has a module called `http.server`
-that contains tools to do that for us
-so that we just have to take care of steps 3-5.
-Here's our first working web server:
+that contains tools to do that for us.
+Here's the entire server:
 
 [% inc file="basic_http_server.py" %]
 
 Let's start at the bottom and work our way up.
 
-1.  Again, `SERVER_ADDRESS` that specifies the host the server is running on
-    and the port it's listening on.
+1.  Again, `SERVER_ADDRESS` specifies the server's host and port.
 2.  The `HTTPServer` class takes care of parsing requests and sending back responses.
     When we construct it,
     we give it the server address and the name of the class we've written
     that handles requests the way we want—in this case, `RequestHandler`.
-3.  Finally, we call the server's `serve_forever` method.
-    It will then run until it crashes or we stop it with Ctrl-C.
+3.  Finally, we call the server's `serve_forever` method,
+    which runs until it crashes or we stop it with Ctrl-C.
 
 So what does `RequestHandler` do?
 
@@ -302,9 +297,7 @@ So what does `RequestHandler` do?
 If we run this program from the command line,
 it doesn't display anything:
 
-```bash
-$ python serve_static_content.py
-```
+[% inc file="basic_http_server.sh" %]
 
 If we then go to `http://localhost:8080` with our browser,
 though,
