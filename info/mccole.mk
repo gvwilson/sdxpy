@@ -19,6 +19,14 @@ SRC := $(wildcard *.md) $(wildcard src/*.md) $(wildcard src/*/index.md) $(wildca
 
 # Calculated variables.
 DOCS := docs/index.html $(patsubst src/%.md,docs/%.html,$(wildcard src/*/index.md))
+EXPORT_FILES := ${DOCS} \
+  docs/*.css \
+  docs/*.ico \
+  docs/*/*.jpg \
+  docs/*.svg \
+  $(patsubst src/%.svg,docs/%.svg,${FIG_SVG}) \
+  ${EXPORT_EXTRA}
+
 FIG_PDF := $(patsubst src/%.svg,docs/%.pdf,${FIG_SVG})
 
 # Miscellaneous variables.
@@ -182,12 +190,7 @@ publisher:
 ## export: export files for publishing on the web
 .PHONY: export
 export:
-	@zip -r ${STEM}-docs.zip \
-	${DOCS} \
-	docs/*.css \
-	docs/*.ico \
-	docs/*.svg \
-	$(patsubst src/%.svg,docs/%.svg,${FIG_SVG})
+	@zip -r ${STEM}-docs.zip ${EXPORT_FILES}
 
 ## vars: show variables
 .PHONY: vars
@@ -195,6 +198,7 @@ vars:
 	@echo ABBREV ${ABBREV}
 	@echo BUILD_DATE ${BUILD_DATE}
 	@echo DOCS ${DOCS}
+	@echo EXPORT_FILES ${EXPORT_FILES}
 	@echo FIG_SVG ${FIG_SVG}
 	@echo FIG_PDF ${FIG_PDF}
 	@echo HTML ${HTML}
