@@ -155,8 +155,8 @@ or some mix of the two.
 
 The most important thing about an HTTP request is that it's just text:
 any program that wants to can create one or parse one.
-An absolutely minimal HTTP request has just a
-[%g http_method "method" %],
+An absolutely minimal HTTP request has just
+a [%g http_method "method" %],
 a [%g url "URL" %],
 and a [%g http_protocol_version "protocol version" %]
 on a single line separated by spaces:
@@ -460,4 +460,98 @@ but programmers appreciate those that do.
 
 ## Exercises {: #server-exercises}
 
-FIXME
+### Reading and writing chunks {: .exercise}
+
+Modify the socket client and socket server so that:
+
+1.  the client reads any amount of data from standard input
+    (including none at all)
+    and sends it to the server in kilobyte-sized chunks;
+    and
+
+2.  the server reads any amount of data from the socket
+    in chunks of four kilobytes
+    and sends a message with a byte count back to the client.
+
+### Parsing HTTP requests {: .exercise}
+
+Write a function that takes a list of lines of text as input
+and parses them as if they were an HTTP request.
+The result should be a dictionary with the request's method,
+URL,
+protocol version,
+and headers.
+
+### Query parameters {: .exercise}
+
+A URL can contain [%i "query parameter" %][%g query_parameter "query parameters" %][%/i%].
+Read the documentation for the [urlparse][py_urlparse] module
+and then modify the file server example so that
+a URL containing a query parameter `bytes=N`
+(for a positive integer N)
+returns the first N bytes of the requested file.
+
+### Better path resolution {: .exercise}
+
+Modify the file server so that:
+
+1.  it must be given the absolute path to a directory
+    as a command-line argument
+    when started; and
+
+2.  it only serves files in or below that directory
+    (so that paths containing `..` and other tricks
+    can't be used to retrieve arbitrary files).
+
+### Better content types {: .exercise}
+
+Read the documentation for the [mimtypes][py_mimetypes] module
+and then modify the file server to return the correct content type
+for files that aren't HTML (such as images).
+
+### Uploading files {: .exercise}
+
+Modify the file server to handle POST requests.
+
+1.  The URL must specify the name of the file being uploaded.
+
+2.  The body of the request must be the bytes of the file.
+
+3.  All uploaded files are saved in a single directory,
+    i.e.,
+    upload paths cannot contain directory components.
+
+### Checking content length {: .exercise}
+
+Modify the file server so that:
+
+1.  if the client sends more content than indicated in the `Content-Length` header,
+    the extra bytes are read but ignored; and
+
+2.  if the client sends less content,
+    the server doesn't wait indefinitely for the missing bytes.
+
+What status code should the server return to the client in each case?
+
+### Directory listing {: .exercise}
+
+1.  Modify the file server so that
+    if the path portion of the URL identifies a directory,
+    the server returns a plain text list of the directory's contents.
+
+2.  Write tests for this using the [pyfakefs][pyfakefs] module.
+
+### Dynamic results {: .exercise}
+
+Modify the file server so that if the client requests the "file" `/time`,
+the server returns an HTML page that reports the current time on the server's machine.
+
+### Templated results {: .exercise}
+
+Modify the file server to:
+
+1.  turn the query parameter's in the URL into a dictionary;
+
+2.  use that dictionary to fill in a template page ([%x templating %]); and
+
+3.  return the resulting HTML page to the client.
