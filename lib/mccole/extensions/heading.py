@@ -3,6 +3,7 @@
 from dataclasses import dataclass
 import sys
 
+import ibis
 import ivy
 import shortcodes
 import util
@@ -17,6 +18,7 @@ class Heading:
     title: str = ""
     slug: str = ""
     number: tuple = ()
+    label: str = ""
 
 
 @ivy.events.register(ivy.events.Event.INIT)
@@ -29,6 +31,7 @@ def collect():
     _number(collected, major)
     _flatten(collected)
     ivy.nodes.root().walk(_modify)
+    _titles()
 
 
 def _collect(node, major, collected):
@@ -113,6 +116,20 @@ def _patch(match):
         return f"{prefix} {label}: {text} {attributes}"
 
 
+def _titles():
+    """Create list of chapter/appendix titles for contents listing."""
+    headings = util.get_config("headings")
+
+    chapters = [headings[slug] for slug in ivy.site.config["chapters"]]
+    for (i, entry) in enumerate(chapters):
+        entry.label = str(i + 1)
+
+    appendices = [headings[slug] for slug in ivy.site.config["appendices"]]
+    for (i, entry) in enumerate(appendices):
+         entry.label = chr(ord("A") + i)
+
+    util.make_config("titles", {"chapters": chapters, "appendices": appendices})
+
 # ----------------------------------------------------------------------
 
 @shortcodes.register("x")
@@ -132,3 +149,12 @@ def heading_ref(pargs, kwargs, node):
     except KeyError:
         print(f"Unknown part cross-reference key {slug}", file=sys.stderr)
         return "FIXME"
+
+
+@ibis.filters.register("part_name")
+def part_name(slug):
+    """Insert chapter/appendix part name."""
+    headings = util.get_config("headings")
+    util.require(slug in headings, f"Unknown slug for part name {slug}")
+    entry = headings[slug]
+    return f'{util.make_label("part", entry.number)}'
