@@ -183,15 +183,10 @@ publisher:
 ## export: export files for publishing on the web
 .PHONY: export
 export:
-	@zip -r docs/examples.zip \
-	docs/*/*.ht \
-	docs/*/*.json \
-	docs/*/*.out \
-	docs/*/*.py \
-	docs/*/*.sh \
-	docs/*/*.txt \
-	docs/*/*.yml
-	@zip -r ${STEM}-docs.zip docs -x ${EXPORT_EXCLUDE}
+	@zip -q -r docs/${ABBREV}-examples.zip docs \
+	-i '*.ht' '*.json' '*.out' '*.py' '*.sh' '*.txt' '*.yml' \
+	-x '*.html'
+	@zip -q -r ${STEM}-docs.zip docs -x ${EXPORT_EXCLUDE}
 
 ## vars: show variables
 .PHONY: vars

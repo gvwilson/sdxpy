@@ -6,14 +6,15 @@ abbrev = "sdxpy"
 # GitHub repository.
 repo = "https://github.com/gvwilson/sdpy"
 
-# Site title and subtitle.
+# Site settings.
 lang = "en"
 title = "Software Design in Python"
 acronym = "SDPy"
 tagline = "a tool-based introduction"
 author = "Greg Wilson"
 email = "gvwilson@third-bit.com"
-plausible = "" # "third-bit.com"
+plausible = "third-bit.com"
+archive = "examples.zip"
 
 # Chapters.
 chapters = [
