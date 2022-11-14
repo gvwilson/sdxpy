@@ -1,3 +1,21 @@
+const constructTableOfContents = () => {
+    console.log(`constructing table of contents`)
+    const toc = document.querySelector("div.page-toc")
+    if (toc) {
+	const list = document.createElement("ol")
+	list.classList.add("page-toc")
+	toc.appendChild(list)
+	for (const heading of [...document.querySelectorAll("h2")]) {
+	    const item = document.createElement("li")
+	    item.innerHTML = heading.innerHTML.replace(/Section.+:/g, "")
+	    const link = document.createElement("a")
+	    link.href = `#${heading.id}`
+	    link.appendChild(item)
+	    list.appendChild(link)
+	}
+    }
+}
+
 const insertCodeSampleTitles = () => {
   for (const node of [...document.querySelectorAll("div.code-sample")]) {
     if (node.hasAttribute("title")) {
@@ -11,6 +29,7 @@ const insertCodeSampleTitles = () => {
 }
 
 const mccole = () => {
+  constructTableOfContents()
   insertCodeSampleTitles()
 }
 

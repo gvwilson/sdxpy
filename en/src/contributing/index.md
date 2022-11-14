@@ -6,7 +6,7 @@ Contributions are very welcome;
 please contact us by email or by filing an issue on this site.
 All contributors must abide by our Code of Conduct.
 
-## Making Decisions
+## Making Decisions {: #contributing-decisions}
 
 This project uses [Martha's Rules][marthas_rules] for consensus decision making:
 
@@ -47,9 +47,9 @@ This project uses [Martha's Rules][marthas_rules] for consensus decision making:
     "yes" the proposal is implemented.  Otherwise, the proposal is returned to
     the sponsor for further work.
 
-## Formatting
+## Formatting {: #contributing-formatting}
 
-This material uses [Ivy][ivy] with some custom extensions.
-Run `make` in the root directory to get a list of available commands.
-Some of these rely on scripts in the `./bin/` directory.
-Please see our Git repository for up-to-date instructions.
+This material uses [Ivy][ivy] with some custom extensions;
+run `make` in the root directory to get a list of available commands.
+Please see `CONTRIBUTING.md` in the root directory of [our Git repository][sdxpy_repo]
+for more information.

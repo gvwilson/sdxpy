@@ -6,7 +6,7 @@ All of the written material is made available under the Creative
 Commons - Attribution - NonCommercial 4.0 International license (CC-BY-NC-4.0),
 while the software is made available under the Hippocratic License.
 
-## Writing
+## Writing {: #license-writing}
 
 *This is a human-readable summary of (and not a substitute for) the license.
 For the full legal text of this license, please see
@@ -47,7 +47,7 @@ No warranties are given. The license may not give you all of the permissions
 necessary for your intended use. For example, other rights such as publicity,
 privacy, or moral rights may limit how you use the material.
 
-## Software
+## Software {: #license-software}
 
 Licensor hereby grants permission by this license ("License"), free of charge,
 to any person or entity (the "Licensee") obtaining a copy of this software and
