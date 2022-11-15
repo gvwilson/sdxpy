@@ -39,37 +39,3 @@ class Seq(MatchBase):
 
 class Start(MatchBase):
     pass
-
-# [tests]
-def main():
-    tests = [
-        ["a", "a", True, Lit("a")],
-        ["b", "a", False, Lit("b")],
-        ["a", "ab", True, Lit("a")],
-        ["b", "ab", True, Lit("b")],
-        ["ab", "ab", True, Seq(Lit("a"), Lit("b"))],
-        ["ba", "ab", False, Seq(Lit("b"), Lit("a"))],
-        ["ab", "ba", False, Lit("ab")],
-        ["^a", "ab", True, Seq(Start(), Lit("a"))],
-        ["^b", "ab", False, Seq(Start(), Lit("b"))],
-        ["a$", "ab", False, Seq(Lit("a"), End())],
-        ["a$", "ba", True, Seq(Lit("a"), End())],
-        ["a*", "", True, Any("a")],
-        ["a*", "baac", True, Any("a")],
-        ["ab*c", "ac", True, Seq(Lit("a"), Any("b"), Lit("c"))],
-        ["ab*c", "abc", True, Seq(Lit("a"), Any("b"), Lit("c"))],
-        ["ab*c", "abbbc", True, Seq(Lit("a"), Any("b"), Lit("c"))],
-        ["ab*c", "abxc", False, Seq(Lit("a"), Any("b"), Lit("c"))],
-        ["ab|cd", "xaby", True, Alt(Lit("ab"), Lit("cd"))],
-        ["ab|cd", "acdc", True, Alt(Lit("ab"), Lit("cd"))],
-        ["a(b|c)d", "xabdy", True, Seq(Lit("a"), Alt(Lit("b"), Lit("c")), Lit("d"))],
-        ["a(b|c)d", "xabady", False, Seq(Lit("a"), Alt(Lit("b"), Lit("c")), Lit("d"))],
-    ]
-    for (pattern, text, expected, matcher) in tests:
-        actual = matcher.match(text)
-        result = "pass" if actual == expected else "fail"
-        print(f"'{pattern}' X '{text}' == {actual}: {result}")
-# [/tests]
-
-if __name__ == "__main__":
-    main()

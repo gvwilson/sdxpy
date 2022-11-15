@@ -1,5 +1,5 @@
 ---
-title: "Parsing Regular Expressions"
+title: "Parsing Text"
 syllabus:
 - Use existing file formats rather than creating new ones.
 - Tokenize input text and then parse the tokens.

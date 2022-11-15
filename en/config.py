@@ -14,7 +14,7 @@ tagline = "a tool-based introduction"
 author = "Greg Wilson"
 email = "gvwilson@third-bit.com"
 plausible = "third-bit.com"
-archive = "examples.zip"
+archive = f"{abbrev}-examples.zip"
 
 # Chapters.
 chapters = [
@@ -26,9 +26,9 @@ chapters = [
     "templating",
     "layout",
     "server",
+    "matching",
     "dataframe",
     "pipeline",
-    "matching",
     "parser",
     "cache",
     "database",
@@ -58,7 +58,6 @@ appendices = [
 todo = [
     "dataframe",
     "pipeline",
-    "matching",
     "parser",
     "cache",
     "database",
