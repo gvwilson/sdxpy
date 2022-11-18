@@ -27,9 +27,9 @@ chapters = [
     "layout",
     "server",
     "matching",
+    "parser",
     "dataframe",
     "pipeline",
-    "parser",
     "cache",
     "database",
     "persistence",
@@ -58,7 +58,6 @@ appendices = [
 todo = [
     "dataframe",
     "pipeline",
-    "parser",
     "cache",
     "database",
     "persistence",

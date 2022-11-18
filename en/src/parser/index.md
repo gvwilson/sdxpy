@@ -1,10 +1,10 @@
 ---
 title: "Parsing Text"
 syllabus:
-- Use existing file formats rather than creating new ones.
-- Tokenize input text and then parse the tokens.
-- Parsing in two or more passes is often simpler than parsing in a single pass.
-- Every formal language corresponds to an abstract machine and vice versa.
+-   Use existing file formats rather than creating new ones.
+-   Parsing in two or more passes is often simpler than parsing in a single pass.
+-   Tokenize input text and then analyze the tokens.
+-   Every formal language corresponds to an abstract machine and vice versa.
 ---
 
 We constructed objects to create regular expressions in [%x matching %].
@@ -24,20 +24,20 @@ to convert those strings to objects.
 </div>
 
 [%t parser-grammar %] shows the grammar our parser will handle.
-When we are done
-we should be able to parse `^(a|b|$)*z$` as
+When our parser is done
+it should be able to parse `^(a|b|$)*z$` as
 "start of text",
 "any number of 'a', 'b', or '$'",
 "a single 'z',
 and "end of text".
 To keep our discussion focused on parsing
-we will create a tree of objects ([%f parser-parse-tree %])
+we will create a tree of objects ([%f parser-expression-tree %])
 rather than instances of the regular expression classes from [%x matching %];
-the exercises will tackle the latter.
+the exercises will tackle the problem of converting the former to the latter.
 
 [% figure
-   slug="parser-parse-tree"
-   img="expression_tree.svg"
+   slug="parser-expression-tree"
+   img="parser_expression_tree.svg"
    alt="Expression tree for regular expression"
    caption="Representing the result of parsing a regular expression as an tree."
 %]
@@ -46,15 +46,16 @@ the exercises will tackle the latter.
 
 ### Please don't write parsers
 
-Languages that are comfortable for people to read are usually difficult for computers to understand
+Languages that are comfortable for people to read and write
+are usually difficult for computers to understand
 and vice versa,
 so we need parsers to translate the former into the latter.
-That said,
-the world doesn't need more file formats.
+However,
+the world doesn't need more file formats:
 if you need a configuration file or lookup table,
 please use CSV, JSON, [%g yaml "YAML" %],
 or something else that already has an acronym
-rather than inventing a new format.
+rather than inventing something of your own.
 
 </div>
 
@@ -95,15 +96,19 @@ We can try this out with a three-line test program:
 [% inc pat="tokenizer_collapse_example.*" fill="py out" %]
 
 This simple tokenizer is readable, efficient, and wrong.
-The problem is that the expression `ab*` means "a single `a` followed by zero or more `b`".
+The problem is that the expression `ab*` is supposed to mean
+"a single `a` followed by zero or more `b`".
 If we combine the letters `a` and `b` as we read them,
 though,
-we wind up with "zero or more repetitions of `ab`":
+we wind up with "zero or more repetitions of `ab`".
+In jargon terms,
+our parser is [%i "greedy algorithm" "algorithm!greedy" %][%g greedy_algorithm "greedy" %][%/i%],
+but we need it to be [%i "lazy algorithm" "algorithm!lazy" %][%g lazy_matching "lazy" %][%/i%]:
 
 [% inc pat="tokenizer_collapse_error.*" fill="py out" %]
 
 The solution is to treat each regular character as its own literal in this stage
-and then combine things later:
+and combine them later.
 Doing this lets us get rid of the nested `if` for handling `^` and `$` as well:
 
 [% inc file="tokenizer.py" keep="tokenize" %]
@@ -121,9 +126,10 @@ along with the output for the full set:
 We now have a list of tokens,
 but we need a tree that represents the nesting introduced by parentheses
 and the way that `*` applies to whatever comes before it.
-Let's trace a few cases in order to see how to build this tree:
+Let's trace a few cases:
 
-1.  If the regular expression is `a`, we create a `Lit` token for the letter `"a"`.
+1.  If the regular expression is `a`,
+    we create a `Lit` token for the letter `"a"`.
 
 1.  If the regular expression is `a*`,
     we create a `Lit` token for the `"a"` and append it to the output list.
@@ -132,7 +138,7 @@ Let's trace a few cases in order to see how to build this tree:
     and replace it with an `Any` token that has the `Lit` token as its child.
 
 1.  What about the regular expression `(ab)`?
-    We don't know how long the group is going to be when we see the `(`,
+    We don't know how long the group is going to be when we see the opening `(`,
     so we add the parenthesis to the output as a marker.
     We then add the `Lit` tokens for the `"a"` and `"b"` until we see the `)`,
     at which point we pull tokens off the end of the output list
@@ -145,11 +151,11 @@ Let's trace a few cases in order to see how to build this tree:
     We append a `Lit` token for `"a"`, get the `|` and—we're stuck,
     because we don't yet have the next token we need to finish building the `Alt`.
 
-One way to solve this problem is to check to see if the thing on the top of the stack is waiting to combine
+One way to solve this problem is to check to see if the thing on the top of the stack is combinable
 each time we append a new token.
 However,
-this still doesn't handle `a|b*` properly:
-The pattern is supposed to mean "one `"a"` or any number of `"b"`",
+that still doesn't handle `a|b*` properly:
+the pattern is supposed to mean "one `"a"` or any number of `"b"`",
 but the check-and-combine strategy will turn it into the equivalent of `(a|b)*`.
 
 A better solution is to leave some partially-completed tokens in the output
@@ -168,10 +174,11 @@ If our input is `a|b` we can:
     look for partially-completed `Alt` tokens and make whatever comes after them their right child.
 
 Again, this automatically handles patterns like `(ab)|c*|(de)`.
+{: .continue}
 
 [% figure
    slug="parser-mechanics"
-   img="mechanics.svg"
+   img="parser_mechanics.svg"
    alt="Mechanics of combining tokens"
    caption="Mechanics of combining tokens while parsing regular expressions."
 %]
@@ -205,20 +212,21 @@ it's not done until we've tested it:
 [% inc file="test_parser.py" omit="omit" %]
 [% inc file="test_parser.out" %]
 
-Our tokenizer and parser is less than 100 lines of code combined,
-but they are doing some complex things.
-Compared to parsers for things like JSON and YAML,
+Our tokenizer and parser are doing some complex things,
+but are still less than 100 lines of code.
+Compared to parsers for formats like JSON and YAML,
 though,
 they are still quite simple.
 If we have more operators with different
 [%i "operator precedence!implementing" %][%g precedence "precedences" %][%/i%]
 we should switch to the
 [%i "shunting-yard algorithm" "parser!shunting-yard algorithm" %][shunting-yard algorithm][shunting_yard_algorithm][%/i%],
-and if we need to handle a language like JavaScript we should explore tools like [%i "ANTLR" %][ANTLR][antlr][%/i%]
+and if we need to parse something as complex as Python
+we should explore tools like [%i "ANTLR" %][ANTLR][antlr][%/i%]
 that can generate a parser automatically from a description of the language to be parsed.
 As we said at the start,
 though,
-if our design requires us to do either of those things we should come up with a simpler design.
+if our design requires us to write a parser we should come up with a better design.
 
 <div class="callout" markdown="1">
 
@@ -237,18 +245,27 @@ they cannot match things like nested parentheses or HTML tags;
 If you add a stack to the system you can process a much richer set of languages,
 and if you add two stacks you have something equivalent to a [%i "Turing Machine" %][%g turing_machine "Turing Machine" %][%/i%]
 that can do any conceivable computation.
-[% b Conery2021 %] presents this idea and others for self-taught developers.
+[% b Conery2021 %] is a good introduction to this idea
+(and others)
+for self-taught developers.
 
 </div>
 
 [% figure
    slug="parser-fsm"
-   img="finite_state_machine.svg"
+   img="parser_fsm.svg"
    alt="Finite state machine"
    caption="A finite state machine equivalent to a regular expression."
 %]
 
-[% fixme concept-map %]
+## Summary {: #templating-summary}
+
+[% figure
+   slug="parser-concept-map"
+   img="parser_concept_map.svg"
+   alt="Concept map for parser"
+   caption="Parser concept map."
+%]
 
 ## Exercises {: #parser-exercises}
 
@@ -290,6 +307,20 @@ The number may contain any number of digits.
 
 3.  Write tests for your tokenizer.
 
+You may use Python's own [re][py_re] module for tokenization.
+
+### Efficiency {: .exercise}
+
+The parser developed in this chapter creates and discards a lot of objects.
+How can you make it more efficient?
+
+### Nested lists {: .exercise}
+
+Write a function that accepts a string representing nested lists containing numbers
+and returns the actual list.
+For example, the input `[1, [2, [3, 4], 5]]`
+should produce the corresponding Python list.
+
 ### The Shunting Yard Algorithm {: .exercise}
 
 1.  Use the [shunting-yard algorithm][shunting_yard_algorithm]
@@ -300,3 +331,13 @@ The number may contain any number of digits.
     -   the `+`, `*`, and `^` operators, where `+` has the lowest precedence and `^` has the highest
 
 2.  Write tests for your tokenizer.
+
+### Using the right tools {: .exercise}
+
+1.  Rewrite the regular expression parser from this chapter
+    using the [pyparsing][pyparsing] module.
+
+2.  Did learning this module take more or less time
+    than solving the problem without it?
+    How many times would you have to use the module to amortize its learning overhead?
+

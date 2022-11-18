@@ -276,7 +276,7 @@ Rewrite `Any` so that it does not repeatedly re-match text.
 
 The regular expressions we have seen so far are [%g eager_matching "eager" %]:
 they match as much as they can, as early as they can.
-An alternative is [%g lazy_matching "lazy matching" %],
+An alternative is [%i "lazy algorithm" "algorithm!lazy" %][%g lazy_matching "lazy matching" %][%/i%],
 in which expressions match as little as they need to.
 For example,
 given the string `"ab"`,
