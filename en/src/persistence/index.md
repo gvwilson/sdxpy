@@ -236,22 +236,20 @@ The methods that load individual items are even simpler:
 
 ## Aliasing {: #persistence-aliasing}
 
-Consider these two lines of code:
+Consider the two lines of code below,
+which created the data structure show in [%f persistence-shared %].
+If we save this structure and then reload it
+using what we have built so far
+we will wind up duplicating the string `"shared"`.
 
 ```python
 shared = ["shared"]
 fixture = [shared, shared]
 ```
 
-They create the data structure shown on the left in [%fixme persistence-shared %],
-but if we save this structure and then reload it
-using what we have built so far
-we will wind up with the data structure show on the right.
-{: .continue}
-
 [% figure
    slug="persistence-shared"
-   img="persistence_shared_wrong.svg"
+   img="persistence_shared.svg"
    alt="Saving aliased data incorrectly"
    caption="Saving aliased data without respecting aliases."
 %]

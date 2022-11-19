@@ -121,17 +121,17 @@ def check_glossary(glossary_file, language):
     glossary = utils.read_yaml(glossary_file)
     missing_keys = [g for g in glossary if "key" not in g]
     if missing_keys:
-        print("glossary entries without keys: {missing_keys}")
+        print(f"glossary entries without keys: {missing_keys}")
         return
 
     glossary = {g["key"]: g for g in glossary}
     for (key, entry) in sorted(glossary.items()):
         if language not in entry:
-            print("glossary entry {key} missing {language}")
+            print(f"glossary entry {key} missing {language}")
         elif "ref" in entry and any(r not in glossary for r in entry["ref"]):
-            print("missing ref(s) in glossary entry {key}")
+            print(f"missing ref(s) in glossary entry {key}")
         elif "def" not in entry[language]:
-            print("glossary entry {key}/{language} missing 'def'")
+            print(f"glossary entry {key}/{language} missing 'def'")
 
 
 def check_links(links_file, source_files):

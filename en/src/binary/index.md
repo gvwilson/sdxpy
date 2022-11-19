@@ -1,18 +1,24 @@
 ---
 title: "Binary Storage"
 syllabus:
-- FIXME
+-   Programs usually store integers using two's complement rather than sign and magnitude.
+-   Floating-point numbers have a sign, a mantissa, and an exponent.
+-   Characters are usually encoded as bytes using either ASCII, UTF-8, or UTF-32.
+-   Programs can use bitwise operators to manipulate the bits representing data directly.
+-   The relative error in a floating point number is usually more important than the absolute error.
+-   Low-level compiled languages usually store raw values, while high-level interpreted languages use boxed values.
+-   Sets of values can be packed into contiguous byte arrays for efficient transmission and storage.
 ---
 
 Python and other high-level languages shield programmers from low-level details,
 but sooner or later someone has to worry about bits and bytes.
-This chapter explores computers represent numbers and text
-and how to work with binary data.
+This chapter explores how computers represent numbers and text
+and shows how to work with binary data.
 
 ## Integers {: #binary-int}
 
 Let's start by looking at how integers are stored.
-The natural way to do this with ones and zeroes is to use base 2,
+The natural way to do this with ones and zeroes uses base 2,
 so 1001 in binary is (1×8)+(0×4)+(0×2)+(1×1) or 9 base 10.
 We can handle negative numbers by reserving the top bit for the sign,
 so that 01001 is +9 and 11001 is -9.
@@ -24,7 +30,7 @@ More importantly,
 the hardware needed to do arithmetic
 on this [%g sign_magnitude "sign and magnitude" %] representation
 is more complicated than the hardware needed for another scheme
-called {% g twos_complement "two's complement" %].
+called [%g twos_complement "two's complement" %].
 Instead of mirroring positive values,
 two's complement rolls over when going below zero like an odometer.
 For example,
@@ -54,16 +60,14 @@ As a result,
 even if `x` is a valid number,
 `-x` may not be.
 
-### Writing Binary
-
-We can write binary numbers directly in Python by using the `0b` prefix.
-For example, `0b0011` is the number 3.
-Programmers usually use [%g hexadecimal "hexadecimal" %] (base 16) instead:
+We can write binary numbers directly in Python using the `0b` prefix:
+for example,
+`0b0011` is 3 base 10.
+Programmers usually write [%g hexadecimal "hexadecimal" %] (base 16) instead:
 the digits 0–9 have the usual meaning,
-and the letters A-F (or a-f) are used to represent the numbers 11–15.
+and the letters A-F (or a-f) are used to represent the digits 11–15.
 We signal that we're using hexadecimal with a `0x` prefix,
-so `0xF7` is (15×16)+7 or 247.
-
+so `0xF7` is (15×16)+7 or 247 base 10.
 Each hexadecimal digit corresponds to four bits ([%t binary-hex %]),
 which makes it easy to translate bits to digits and vice versa:
 for example,
@@ -95,19 +99,20 @@ two hexadecimal digits is exactly one byte.
 ## Bitwise Operations {: #binary-bitops}
 
 Like most languages based on C,
-Python provides four operators for working with bits:
+Python provides operators for working with bits:
 `&` (and),
 `|` (or),
 `^` (xor),
-and `~` (not).
-`&` yields a 1 only if both its arguments are 1's,
-while `|` yields 1 if either or both of its arguments are 1.
+`~` (not).
+`&` yields a 1 only if both its inputs are 1's,
+while `|` yields 1 if either or both are 1.
 `^`, called [%g exclusive_or "exclusive or" %] or "xor" (pronounced "ex-or"),
-produces 1 if either but *not* both of its arguments are 1.
-Putting it another way,
+produces 1 if either but *not* both of its arguments are 1;
+putting it another way,
 `^` produces 0 if its inputs are the same and 1 if they are different.
 Finally,
 `~` flips its argument: 1 becomes 0, and 0 becomes 1.
+
 When these operators are used on multibit values
 they work on corresponding bits independently as shown in [%t binary-ops %].
 
@@ -139,13 +144,12 @@ and then use `&`:
 
 [% inc file="bit_mask.py" %]
 
-Most C-inspired languages also provide [%g bit_shift "bit shifting" %] operators.
+Python also has [%g bit_shift "bit shifting" %] operators
 that move bits left or right.
 Shifting the bits `0110` left by one place produces `1100`,
 while shifting it right by one place produces `0011`.
 In Python,
 this is written `x << 1` or `x >> 1`.
-
 Just as shifting a decimal number left corresponds to multiplying by 10,
 shifting a binary number left is the same as multiplying it by 2.
 Similarly,
@@ -161,8 +165,8 @@ if we shift `0111` to the left we get `1110` (assuming we fill in the bottom wit
 which is -2.
 
 Different languages deal with this problem in different ways.
-Python always fills with zeroes.
-Java provides two versions of right shift:
+Python always fills with zeroes,
+while Java provides two versions of right shift:
 `>>` fills in the high end with zeroes
 while `>>>` copies in the topmost (sign) bit of the original value.
 C (and by extension C++) lets the underlying hardware decide,
@@ -179,7 +183,7 @@ such as newline, carriage return, and bell.)
 Since computers use 8-bit bytes and the numbers 0–127 only need 7 bits,
 programmers were free to use the numbers 128–255 for other characters.
 Unfortunately,
-different pieces of software used them to represent different symbols:
+different programmers used them to represent different symbols:
 non-Latin characters,
 graphic characters like boxes,
 and so on.
@@ -187,7 +191,7 @@ The chaos was eventually tamed by the [%g ansi_encoding "ANSI" %] standard
 which (for example) defined the value 231 to mean the character "ç".
 
 But the ANSI standard only solved part of the problem.
-The ANSI standard didn't include characters from Turkish, Devanagari, and many other alphabets,
+It didn't include characters from Turkish, Devanagari, and many other alphabets,
 much less the thousands of characters used in some East Asian writing systems.
 One solution would have been to use 16 or even 32 bits per character,
 but:
@@ -195,25 +199,26 @@ but:
 1.  existing text files using ANSI would have to be transcribed, and
 2.  documents would be two or four times larger.
 
-The solution was a new standard called [%g unicode Unicode %] with two parts.
+The solution was a new two-part standard called [%g unicode Unicode %].
 The first part defined a [%g code_point "code point" %] for every character:
 U+0065 for an upper-case Latin "A",
 U+2605 for a black star,
 and so on.
+(The [Unicode Consortium site][unicode] offers a complete list.)
+
 The second part defined ways to store these values in memory.
 The simplest of these is [%g utf_32 "UTF-32" %],
 which stores every character as a 32-bit number.
-This wastes a lot of memory—if the text is written in a Western European language,
-UTF-32 uses four times as much storage as necessary—but
-since each character is exactly the same size it's very easy to process.
+This scheme waste a lot of memory if the text is written in a Western European language,
+since it uses four times as much storage as is absolutely necessary,
+but it's easy to process.
 
 The most popular encoding is [%g utf_8 "UTF-8" %],
-which is a [%g variable_length_encoding "variable length encoding" %].
+which is [%g variable_length_encoding "variable length" %].
 Every code point from 0 to 127 is stored in a single byte whose high bit is 0,
 just as it was in the original ASCII standard.
-
-What if the high bit in the byte is 1?
-In that case,
+If the top bit in the byte is 1,
+on the other hand,
 the number of 1's after the high bit but before the first 0
 tells UTF-8 how many more bytes that character is using.
 For example,
@@ -257,44 +262,44 @@ there will be an infinite number of values between each of them that we can't.
 
 ### Go to the source
 
-The explanation that follows is simplified to keep it manageable.
-If you're doing any calculation on a computer at all,
-please read [%b Goldberg1991 %].
+The explanation that follows is simplified to keep it manageable;
+please read [%b Goldberg1991 %] for more detail.
 
 </div>
 
 Floating point numbers are represented by a sign,
-a magnitude,
-and an exponent.
+a [%g mantissa "mantissa" %],
+and an [%g exponent "exponent" %].
 In a 32-bit [%g word_memory "word" %]
-the IEEE 754 standard calls for 1 bit of sign,
-23 bits for the magnitude (or mantissa),
+the [%i "IEEE 754 standard" %]IEEE 754[%/i%] standard calls for 1 bit of sign,
+23 bits for the mantissa,
 and 8 bits for the exponent.
 We will illustrate how it works using a much smaller representation:
 no sign,
-3 bits for the magnitude,
+3 bits for the mantissa,
 and 2 for the exponent.
+[%f binary-floating-point %] shows the values this scheme can represent.
 
-[% fixme "represent 48" $]
+[% figure
+   slug="binary-floating-point"
+   img="binary_floating_point.svg"
+   alt="Representing floating point numbers"
+   caption="Representing floating point numbers."
+%]
 
-Here are the values we can represent this way:
-
-[% fixme "number line" %]
-
-There is a lot of redundancy here
-which the IEEE standard avoids by shifting things around.
-More importantly,
-this format can't represent a lot of values:
+The IEEE standard avoids the redundancy in this representation by shifting things around.
+Even with that,
+though,
+formats like this can't represent a lot of values:
 for example,
-it can store 8 and 10 but not 9.
+ours can store 8 and 10 but not 9.
 This is exactly like the problem hand calculators have
 with fractions like 1/3:
 in decimal, we have to round that to 0.3333 or 0.3334.
 
 But if this scheme has no representation for 9
 then 8+1 must be stored as either 8 or 10.
-If that's so,
-then what is 8+1+1?
+What should 8+1+1 be?
 If we add from the left,
 (8+1)+1 is 8+1 is 8,
 but if we add from the right,
@@ -303,20 +308,19 @@ Changing the order of operations makes the difference between right and wrong.
 
 The authors of numerical libraries spend a lot of time worrying about things like this.
 In this case
-sorting the values and then add from smallest to largest
+sorting the values and adding them from smallest to largest
 gives the best chance of getting the best possible answer.
 In other situations,
 like inverting a matrix, the rules are much more complicated.
 
-Another observation about our uneven number line is that
-the we can represent are unevenly spaced.
-However,
+Another observation about our number line is that
+while the values are unevenly spaced,
 the *relative* spacing between each set of values stays the same:
 the first group is separated by 1,
 then the separation becomes 2,
 then 4,
 and so on.
-This points us at a couple of useful definitions:
+This observation leads to a couple of useful definitions:
 
 -   The [%g absolute_error "absolute error" %] in an approximation
     is the absolute value of the difference
@@ -352,8 +356,8 @@ to avoid some precision issues.
 
 ## And Now, Persistence {: #binary-binary}
 
-So why store data in a format that can't be edited with Notepad or nano?
-There are generally four reasons:
+[%x persistence %] showed how to store data as human-readable text.
+There are generally four reasons to store it in formats that people can't easily read:
 
 Size
 :   The string `"10239472"` is 8 bytes long,
@@ -382,70 +386,70 @@ Lack of anything better
     Or video?
     It would be possible, but it would hardly be sensible.
 
-Most programs use line-oriented file I/O:
-they read characters until they see an end-of-line marker
-and then hand back those characters as a string.
-We can also use byte-oriented routines,
-the most basic of which is simply called `read`.
-If `stream` is an open file,
-then `stream.read(N)` hands back up to the next N bytes from the file
-("up to", because there might not be that much data left).
-The result is returned as a string,
-but—and this is crucial—there is no guarantee that the values represent characters.
-We can concatenate other data onto it,
-but if the underlying file is a PNG image,
-text-oriented methods like `string.upper`
-won't do anything meaningful.
+The first step toward saving and loading binary data
+is to write it and read it correctly.
+If we open a file for reading using `open("filename", "r")`
+then Python assumes we want to read character strings from the file.
+It therefore:
 
-[% fixme "rewrite this to explain bytes instead of strings" %]
+-   uses our system's default encoding (which is probably UTF-8)
+    to convert bytes to characters, and
 
-Where there's a `read` there's a `write`.
-`stream.write(str)` writes the bytes in the string `str` to a file that has been opened for writing.
-In both the reading and writing cases,
-though,
-it's very important to open the file in [%g binary_mode "binary mode" %] using either:
+-   converts Windows line endings (which are the two characters `"\r\n"`)
+    into their Unix equivalents (the single character `"\n"`)
+    so that our program only has to deal with the latter.
 
-```python
-reader = open('input.dat', 'rb')
-```
+These translations are handy when we're working with text,
+but they mess up binary data:
+we probably don't want the pixels in our PNG image translated in these ways.
+If we use `open("filename", "rb")` with a lower-case 'b' after the 'r',
+on the other hand,
+Python gives us back the file's contents as a `bytes` object
+instead of as character strings.
+In this case we will almost always use `file.read(N)`
+to read `N` bytes at a time
+rather than using the file in a `for` loop
+(which reads up to the next line ending).
 
-or:
-{: .continue}
+What about the values we actually store?
+C and Fortran manipulate "naked" values:
+programs use what the hardware provides directly.
+Python and other dynamic languages,
+on the other hand,
+put each value in a data structure
+that keeps track of its type along with a bit of extra administrative information
+([%f binary-boxing %]).
+Something stored this was is called a [%g boxed_value "boxed value" %];
+this extra data allows the language to do [%g introspection "introspection" %],
+[%g garbage_collection "garbage collection" %],
+and much more.
 
-```python
-writer = open('input.dat', 'wb')
-```
+[% figure
+   slug="binary-boxing"
+   img="binary_boxing.svg"
+   alt="Boxed values"
+   caption="Using boxed values to store metadata."
+%]
 
-The `"b"` at the end of the mode string tells Python
-*not* to translate Windows line endings (which are the two characters `"\r\n"`)
-into Unix line endings (the single character `"\n"`).
-This translation is handy when we're working with text,
-since it means our programs only have to deal with one style of line
-ending no mater what platform the code is running on,
-but it messes up non-textual data.
-
-There's another problem here as well.
-C and Fortran store integers as "naked" 32-bit values:
-the program uses what the machine provides,
-no more and no less.
-Python and other dynamic languages usually don't use raw values.
-Instead,
-they put the value in a larger data structure
-that keeps track of its type along with a bit of extra administrative information.
-That extra data allows those languages to do garbage collection.
-It also allows us to assign values to variables without explicitly declaring their type,
-since the value we're assigning carries its type along with it.
-
-A similar issue comes up when we compare Fortran's arrays to Python's lists.
-Fortran stores the data in an array side by side in one big block of memory.
+The same is true of collections.
+For example,
+Fortran stores the values in an array side by side in one big block of memory
+([%f binary-arrays %]).
 Writing this to disk is easy:
 if the array starts at location L in memory and has N values,
 each of which is B bytes long,
 we just copy the bytes from L to L+NB-1 to the file.
 
+[% figure
+   slug="binary-arrays"
+   img="binary_arrays.svg"
+   alt="Storing arrays"
+   caption="Low-level and high-level array storage."
+%]
+
 A Python list,
 on the other hand,
-stores pointers to values rather than the values themselves.
+stores references to values rather than the values themselves.
 To put the values in a file
 we can either write them one at a time
 or pack them into a contiguous block and write that.
@@ -457,12 +461,8 @@ or read a larger block and then unpack it in memory.
 Packing data is a lot like formatting values for textual output.
 The format specifies what types of data are being packed,
 how big they are (e.g., is this a 32-bit or 64-bit floating point number?),
-and how many values there are.
-The format exactly determines how much memory is required by the packed representation.
-The result of packing values is a block of bytes,
-which Python represents as a string,
-but as mentioned above,
-this isn't a string of characters.
+and how many values there are,
+which in turn exactly determines how much memory is required by the packed representation.
 
 Unpacking reverses this process.
 After reading data into memory
@@ -470,7 +470,8 @@ we can unpack it according to a format.
 The most important thing is that
 *we can unpack data any way we want*.
 We might pack an integer and then unpack it as four characters,
-since both are 32 bits long.
+since both are 32 bits long
+([%f binary-packing-unpacking %]).
 Or we might save two characters,
 an integer,
 and two more characters,
@@ -479,12 +480,20 @@ The bits are just bits:
 it's our responsibility to make sure we keep track of their meaning
 when they're down there on disk.
 
-In Python we can use the `struct` module to pack and unpack data.
+[% figure
+   slug="binary-packing-unpacking"
+   img="binary_packing_unpacking.svg"
+   alt="Packing and unpacking values"
+   caption="Packing and unpacking binary values."
+%]
+
+Python's [struct][py_struct] module packs and unpacks data for us.
 The function `pack(format, val_1, val_2, …)`
-takes a format string and a bunch of values as arguments,
-packs them into a string,
-and gives that back to us.
-The inverse function, `unpack(format, string)` takes such a string and a format
+takes a format string and a bunch of values as arguments
+and packs them into a `bytes` object.
+The inverse function,
+`unpack(format, string)`,
+takes some bytes and a format
 and returns a tuple containing the unpacked values.
 Here's an example:
 
@@ -539,16 +548,17 @@ How can we tell it to pack all the data that's there regardless of length?
 The short answer is that we can't:
 we must specify how much we want packed.
 But that doesn't mean we can't handle variable-length strings;
-it just means that we have to construct the format on the fly:
+it just means that we have to construct the format on the fly
+using an expression like this:
 
 ```python
 format = f"{len(str)}s"
 ```
 
-`len(str)` is just the length of the string `str`,
-so if `str` contains the string `"example"`,
-the expression above will assign the string `"7s"` to `format`,
+If `str` contains the string `"example"`,
+the expression above will assign `"7s"` to `format`,
 which just happens to be exactly the right format to use to pack it.
+{: .continue}
 
 That's fine when we're writing,
 but how do we know how much data to get if we're reading?
@@ -566,31 +576,10 @@ we can read it back safely,
 then use it to figure out how big our string is:
 {: .continue}
 
-```python
->>> def pack_string(str):
-...     header = pack('i', len(str))
-...     body_format = '%ds' % len(str)
-...     body = pack(body_format, str)
-...     return header + body
-...
->>> pack_string('hello')
-'\x05\x00\x00\x00hello'
-```
+[% inc pat="pack_str.*" fill="py out" %]
 
-The unpacking function is almost the same:
-
-```python
->>> def unpack_string(buffer):
-...    header, body = buffer[:4], buffer[4:]
-...    unpacked_header = unpack('i', header)
-...    length = unpacked_header[0]
-...    body_format = '%ds' % length
-...    result = unpack(body_format, body)
-...    return result
-```
-
-First, we break the buffer into two parts:
-a header that's exactly four bytes long
+The unpacking function is analogous.
+We break the buffer into a header that's exactly four bytes long
 (i.e., the right size for an integer)
 and a body made up of whatever's left.
 We then unpack the header,
@@ -600,7 +589,9 @@ Once we've got that we use the trick shown earlier
 to construct the right format on the fly
 and then unpack the string and return it.
 
-Something else to notice here is that
+[% inc pat="unpack_str.*" fill="py out" %]
+
+Something to notice here is that
 the least significant byte of an integer comes first.
 This is called [%g little_endian "little-endian" %] and is used by all Intel processors.
 Some other processors put the most significant byte first,
@@ -626,16 +617,9 @@ the first character of a format string optionally indicates the byte order
 </div>
 
 You should also use the `struct` library's `calcsize` function,
-which tells you how large (in bytes) the data produced or consumed by a format will be.
-For example:
+which tells you how large (in bytes) the data produced or consumed by a format will be:
 
-```python
->>> calcsize('4s')
-4
-
->>> calcsize('3i4s5d')
-56
-```
+[% inc pat="calcsize.*" fill="py out" %]
 
 Binary data is to programming what chemistry is to biology:
 you don't want to spend any more time thinking at its level than you have to,
@@ -644,11 +628,16 @@ Please remember that libraries already exist to handle almost every binary forma
 and to read data from almost every instrument on the market.
 You shouldn't worry about 1's and 0's unless you really have to.
 
-[% fixme concept-map %]
+## Summary {: #binary-summary}
+
+[% figure
+   slug="binary-concept-map"
+   img="binary_concept_map.svg"
+   alt="Concept map for binary data"
+   caption="Concepts for binary data."
+%]
 
 ## Exercises {: #binary-exercises}
-
-FIXME
 
 ### Adding strings {: .exercise}
 
@@ -669,3 +658,59 @@ For example,
     (which should be identical).
 1.  Repeat the exercise using the `Fraction` class
     from the [fractions][py_fractions] module.
+
+### Epsilon {: .exercise}
+
+What is the smallest floating-point number your computer can represent?
+What is the smallest number ε for which 1+ε is different from 1?
+
+### Endian testing {: .exercise}
+
+Write a program that reports whether the machine it is running on
+is big-endian or little-ending.
+
+### Encoding and decoding {: .exercise}
+
+1.  Write a function that takes a list of integers representing Unicode code points as input
+    and returns a list of single-byte integers with their UTF-8 encoding.
+
+2.  Write the complementary function that turns a list of single-byte integers
+    into the corresponding code points
+    and reports an error if anything is incorrectly formatted.
+
+### Binary persistence {: .exercise}
+
+Rewrite the persistence framework of [%x persistence %] to store and load binary data.
+
+### Storing arrays {: .exercise}
+
+Python's [array][py_array] module manages a block of basic values
+(characters, integers, or floating-point numbers).
+Write a function that takes a list as input,
+checks that all values in the list are of the same basic type,
+and if so,
+packs them into an array and then uses the `struct` module to pack that.
+
+### Performance {: .exercise}
+
+Getting a single value out of an array created with the [array][py_array] module takes time,
+since the value must be boxed before it can be used.
+Write some tests to see how much slower working with values in arrays is
+compared to working with values in lists.
+
+### File types {: .exercise}
+
+The first eight bytes of a PNG image file always contain the following (base-10) values:
+
+```
+137 80 78 71 13 10 26 10
+```
+
+Write a program that determines whether a file is a PNG image or not.
+
+### Converting integers to bits {: .exercise}
+
+Using Python's bitwise operators,
+write a function that returns the binary representation of an integer.
+Write another function that converts a string of 1's and 0's into an integer.
+(How) do your functions handle negative values?
