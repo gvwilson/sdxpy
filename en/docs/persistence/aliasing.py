@@ -89,7 +89,6 @@ class LoadAlias(LoadOop):
         for _ in range(int(value)):
             result.append(self.load())
         return result
-
     # [/load_list]
 
     def _set(self, ident, value):

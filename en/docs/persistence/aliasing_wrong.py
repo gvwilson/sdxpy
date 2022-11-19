@@ -18,7 +18,6 @@ class SaveAlias(SaveOop):
         method = f"_{typename}"
         assert hasattr(self, method), f"Unknown object type {typename}"
         getattr(self, method)(thing)
-
     # [/save]
 
     def _bool(self, thing):
@@ -35,7 +34,6 @@ class SaveAlias(SaveOop):
         self._write("list", id(thing), len(thing))
         for item in thing:
             self.save(item)
-
     # [/save_list]
 
     def _set(self, thing):
@@ -79,6 +77,4 @@ class LoadAlias(LoadOop):
         result = getattr(self, method)(value)
         self.seen[ident] = result
         return result
-
-
 # [/load]

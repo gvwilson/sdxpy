@@ -195,7 +195,7 @@ Sure enough,
 ### Local Variables
 
 Another function called `locals` returns
-all the variables defined in the current (local) scope:
+all the variables defined in the current (local) [%g scope "scope" %]:
 
 [% inc pat="show_locals.*" fill="py out" %]
 

@@ -220,19 +220,6 @@ Each component does its part and asks something else to handle the remaining wor
 so long as each component takes the same inputs,
 we can put them together however we want.
 
-> ### The Open-Closed Principle
->
-> The [%i "Open-Closed Principle" "software design!Open-Closed Principle" %][%g open_closed_principle "Open-Closed Principle" %][%/i%] states that
-> software should be open for extension but closed for modification,
-> i.e., that it should be possible to extend functionality
-> without having to rewrite existing code.
-> This allows old code to use new code,
-> but only if our design permits the kinds of extensions people are going to want to make.
-> Since we can't anticipate everything,
-> it is normal to have to revise a design the first two or three times we try to extend it.
-> As [%b Brand1995 %] said of buildings,
-> the things we make learn how to do things better as we use them.
-
 ## Summary {: #templating-summary}
 
 [% figure

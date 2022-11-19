@@ -376,7 +376,7 @@ Doing this takes less than 60 lines:
 The set of active environments makes up the program's
 [%i "call stack" %][%g call_stack "call stack" %][%/i%].
 For historical reasons,
-each environment is sometimes called a [%i "call stack!stack frame" "stack frame" %]frame[%/i%].
+each environment is sometimes called a [%i "call stack!stack frame" "stack frame" %][%g stack_frame "stack frame" %][%/i%].
 Searching through all active stack frames for a variable
 is called is [%i "dynamic scoping" "scoping!dynamic" %][%g dynamic_scoping "dynamic scoping" %][%/i%].
 In contrast,

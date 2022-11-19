@@ -24,7 +24,6 @@ class SaveExtend(SaveAlias):
             return False
         self._write("alias", thing_id, "")
         return True
-
     # [/save_aliased]
 
     # [save_builtin]
@@ -36,7 +35,6 @@ class SaveExtend(SaveAlias):
         self.seen.add(id(thing))
         getattr(self, method)(thing)
         return True
-
     # [/save_builtin]
     # [/save]
 
@@ -47,7 +45,6 @@ class SaveExtend(SaveAlias):
         self._write("@extension", id(thing), thing.__class__.__name__)
         self.save(thing.to_dict())
         return True
-
     # [/save_extension]
 
 
@@ -57,7 +54,6 @@ class LoadExtend(LoadAlias):
         super().__init__(reader)
         self.seen = {}
         self.extensions = {e.__name__: e for e in extensions}
-
     # [/load_constructor]
 
     # [load_load]
@@ -69,7 +65,6 @@ class LoadExtend(LoadAlias):
             except KeyError:
                 pass
         assert False, f"Don't know how to handle {key} {ident} {value}"
-
     # [/load_load]
 
     # [inherited]
@@ -84,7 +79,6 @@ class LoadExtend(LoadAlias):
         if not hasattr(self, method):
             raise KeyError()
         return getattr(self, method)(ident, value)
-
     # [/inherited]
 
     # [load_extension]
@@ -94,7 +88,6 @@ class LoadExtend(LoadAlias):
         cls = self.extensions[value]
         contents = self.load()
         return cls(**contents)
-
     # [/load_extension]
 
     def _next(self):

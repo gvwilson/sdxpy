@@ -59,8 +59,6 @@ def test_save_list_flat():
     output = StringIO()
     save(output, fixture)
     assert output.getvalue() == expected
-
-
 # [/test_save_list_flat]
 
 
