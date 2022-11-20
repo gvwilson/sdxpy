@@ -22,9 +22,9 @@ def make_count(name):
             keywords=[]
         )
     )
-
 constructed = make_count("test")
 # [/make]
+
 if action == "make":
     print(ast.dump(constructed, indent=2))
 

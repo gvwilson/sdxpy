@@ -99,7 +99,8 @@ two hexadecimal digits is exactly one byte.
 ## Bitwise Operations {: #binary-bitops}
 
 Like most languages based on C,
-Python provides operators for working with bits:
+Python provides [%g bitwise_operation "bitwise operations" %]
+for working directly with 1's and 0's in memory:
 `&` (and),
 `|` (or),
 `^` (xor),

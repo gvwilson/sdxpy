@@ -24,8 +24,6 @@ class CollectNames(ast.NodeVisitor):
 
     def position(self, node):
         return ({node.lineno}, {node.col_offset})
-
-
 # [/class]
 
 # [main]

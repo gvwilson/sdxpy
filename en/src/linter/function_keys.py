@@ -1,7 +1,6 @@
 def label():
     return "label"
 
-
 actually_has_duplicate_keys = {
     "label": 1,
     "la" + "bel": 2,

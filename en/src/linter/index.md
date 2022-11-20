@@ -1,7 +1,11 @@
 ---
 title: "A Style Checker"
 syllabus:
-- FIXME
+-   An abstract syntax tree (AST) represents the elements of a program as a data structure.
+-   A linter checks that a program conforms to a set of style and usage rules.
+-   Linters typically use the Visitor design pattern to find nodes of interest in an AST.
+-   Programs can modify a program's AST and then unparse it to create modified versions of the original program.
+-   Dynamic code modification is very powerful, but the technique can produce insecure and unmaintainable code.
 ---
 
 This book relies on about 2500 lines of Python to turn Markdown into HTML,
@@ -14,35 +18,37 @@ that classes and functions have consistent names,
 that modules are imported in a consistent order,
 and dozens of other things.
 
-These tools are often called [%g linter "linters" %]
-(because an early tool like this for the C programming language was called `lint`),
-and many projects insist that code pass their tests
+Checking tools are often called [%g linter "linters" %]
+because an early tool like this for the C programming language was called `lint`.
+Many projects insist that code pass checks like these
 before being committed to version control.
-In order to show how they work,
+To show how they work,
 this chapter builds a trio of simple linting tools
 that find duplicate keys in dictionaries,
 look for unused variables,
 and create a table showing which classes in a hierarchy define which methods.
+As a bonus,
+we then show how these tools can be used to extract documentation
+and to create code as well as check it.
 
 ## Machinery {: #linter-machinery}
 
-Our starting point is Python's [ast][py_ast],
-which parses Python code and produces
-a data structure that represents the structure of the code
-called an [%g abstract_syntax_tree "abstract syntax tree" %].
+Our starting point is Python's [ast][py_ast] module,
+which parses Python code and produces an [%g abstract_syntax_tree "abstract syntax tree" %]
+that represents the structure of the code.
 For example,
 suppose we have this short program:
 
 [% inc file="simple.py" %]
 
-[%fixme linter-ast-simple %] shows the main parts of this program's AST.
+[%f linter-ast-simple %] shows the main parts of this program's AST.
 Each node represents one element of the program,
 and each node's children are the element nested within it.
 {: .continue}
 
-[% fixme
+[% figure
    slug="linter-ast-simple"
-   img="linter-ast-simple.svg"
+   img="linter_ast_simple.svg"
    alt="Simple AST"
    caption="The abstract syntax tree for a simple Python program."
 %]
@@ -51,7 +57,7 @@ We say "main parts of the AST" because
 the full structure includes placeholders for elements
 that aren't present in this program.
 To see the full thing,
-we can use `ast.parse` to turn source code into a tree
+we can use `ast.parse` to turn our short program into an AST
 and `ast.dump` to display it:
 
 [% inc file="dump_ast.py" %]
@@ -70,15 +76,17 @@ If we want a list of all the functions defined in this module,
 we can walk through this tree to find all the `FunctionDef` nodes
 and record their `name` properties.
 Since each node's structure is a little different,
-we'd have to write one function for each type of node
+we would have to write one function for each type of node
 that knew which fields of that node were worth exploring.
 
 Luckily for us,
 the [ast][py_ast] module comes with tools that can do this for us.
-The class `ast.NodeVisitor` knows how to recurse through an AST.
+The class `ast.NodeVisitor` uses
+the [%i "Visitor pattern" "design pattern!Visitor" %][%g visitor_pattern "Visitor" %][%/i%] design pattern
+to recurse through an AST.
 Each time it reaches a new node of type `Thing`,
-it looks for a method called `visit_Thing`,
-e.g.,
+it looks for a method called `visit_Thing`;
+for example,
 when it reaches a `FunctionDef` node it looks for `visit_FunctionDef`.
 If that method has been defined,
 `NodeVisitor` calls it with the node as an argument.
@@ -125,7 +133,7 @@ We'll tackle this in the exercises.
 
 ## Finding Things {: #linter-find}
 
-Many programs store their configuration in dictionaries ([%x pipeline %]).
+Many programs store their configuration in dictionaries.
 As those dictionaries grow larger,
 it's easy for programmer to redefine values by accident.
 Python doesn't consider this an error—for example,
@@ -146,14 +154,13 @@ but it isn't what Python does.
 
 </div>
 
-A linter that finds dictionaries like `has_duplicates`
-is straightforward to build.
+We can built a linter that finds dictionaries like `has_duplicates`
+in just 17 lines of code.
 We define a `visit_Dict` method for `NodeVisitor` to call;
 in it,
-we add each constant key to a `Counter`
+we add each constant key to an instance of `Counter`
 (a specialized `dict` that counts entries`)
-and then look for keys that have been seen more than once.
-The whole thing is just 17 lines long:
+and then look for keys that have been seen more than once:
 
 [% inc file="find_duplicate_keys.py" keep="class" %]
 
@@ -166,16 +173,12 @@ Its output for the file containing our two example dictionaries is:
 
 ### As Far as We Can Go
 
-`FindDuplicateKeys` won't actually find all duplicate dictionary keys.
-To see why not, consider this:
+`FindDuplicateKeys` only considers constant keys,
+so it won't find duplicate keys that are created on the fly:
 
 [% inc file="function_keys.py" %]
 
-`FindDuplicateKeys` only consider constant keys,
-not keys that are created by calling functions,
-concatenating strings,
-and so on.
-We could try adding logic to look for these,
+We could try adding logic to handle this,
 but one of the fundamental theorems of computer science is that
 it's impossible to create a program that can predict the output of arbitrary other programs.
 Our linter can therefore produce [%g false_negative "false negatives" %],
@@ -372,9 +375,7 @@ since we have to create and register the handler:
 However,
 we can now register as many handlers as we want
 for each kind of node.
-And as with the pipelines in [%x pipeline %],
-we can use configuration files to control
-which handlers are loaded.
+{: .continue}
 
 ## Generating Documentation {: #linter-docs}
 
@@ -410,7 +411,110 @@ then our output is:
 
 [% inc file="doc_sample.out" %]
 
-[% fixme concept-map %]
+## Modifying Code {: #codegen-modify}
+
+An AST is a data structure like any other,
+which means we can modify it as well as inspecting it.
+Let's start with this short program:
+
+[% inc file="double_and_print.py" %]
+
+Its AST has two top-level nodes:
+one for the function definition and one for the `print` statement.
+We can duplicate the second of these and then [%g unparsing "unparse" %] the AST
+to produce a new program:
+
+[% inc file="unparse.py" keep="modify" %]
+[% inc file="unparse_modified.out" %]
+
+To run our machine-generated program,
+we have to compile the AST to [%g bytecode "bytecode" %]
+and tell Python to evaluate the result:
+
+[% inc file="unparse.py" keep="exec" %]
+[% inc file="unparse_exec.out" %]
+
+Duplicating a `print` statement isn't particularly useful,
+but other applications of this technique let us do some powerful things.
+Let's have another look at how Python represents a function call.
+Our example is:
+
+[% inc file="call.py" %]
+
+We parse it like this:
+{: .continue}
+
+[% inc file="inject.py" keep="parse" %]
+
+and get this AST:
+{: .continue}
+
+[% inc file="inject_parse.out" %]
+
+But we don't have to parse text to create an AST:
+it's just a bunch of objects,
+so we can construct one by hand
+that mirrors the structure shown above:
+
+[% inc file="inject.py" keep="make" %]
+[% inc file="inject_make.out" %]
+
+Alternatively,
+we can find existing function definitions
+and modify them programmatically:
+
+[% inc file="inject.py" keep="modify" %]
+
+To try this out,
+here's a program that adds and doubles numbers:
+
+[% inc file="add_double.py" %]
+
+The modified version is:
+{: .continue}
+
+[% inc file="inject_modified.out" %]
+
+So what exactly is `call`?
+We want a "function" that keeps track of
+how many times it has been passed different strings,
+so we define a class with a `__call__` method
+so that its instances can be used like functions:
+
+[% inc file="inject.py" keep="counter" %]
+
+Finally,
+when we're evaluating the bytecode generated from our modified AST,
+we pass in a dictionary of variable names and values
+that we want to have in scope.
+The result is exactly what we would get if we had defined all of this in the usual way:
+
+[% inc file="inject.py" keep="exec" %]
+[% inc file="inject_exec.out" %]
+
+<div class="callout" markdown="1">
+
+### There's Such a Thing as "Too Clever"
+
+Modifying code dynamically is the most powerful technique shown in this book.
+It is also the least comprehensible:
+as soon as the code you read and the code that's run can differ in arbitrary ways,
+you have a maintenance headache and a security nightmare.
+Limited forms of program modification,
+such as Python's [metaclasses][py_metaclass] or [%g decorator "decorators" %]
+give most of the power with only some of the headaches;
+please use those rather than the magic shown above.
+
+</div>
+
+## Summary {: #linter-summary}
+
+[% figure
+   slug="linter-concept-map"
+   img="linter_concept_map.svg"
+   alt="Concept map for code manipulation"
+   caption="Concepts for code manipulation."
+%]
 
 ## Exercises {: #linter-exercises}
 
@@ -419,11 +523,38 @@ then our output is:
 Modify the code that finds unused variables
 to report unused function parameters as well.
 
+### Finding redundant assignments {: .exercise}
+
+Write a linter that looks for redundant assignments to variables,
+i.e.,
+assignments that are immediately overwritten:
+
+```python
+x = 1  # redundant
+x = 2
+```
+
+(Redundant assignments are a common result of copying and pasting.)
+{: .continue}
+
 ### Checking names {: .exercise}
 
 Write a linter that checks that
 class names are written in CamelCase
 but function and variable names are pothole\_case.
+
+### Missing documentation {: .exercise}
+
+Write a linter that complains about modules, classes, methods, and functions
+that don't have docstrings.
+
+### Missing tests {: .exercise}
+
+Write a linter that takes two files as input:
+one that defines one or more functions
+and another that defines one or more tests of those functions.
+The linter looks through the tests to see what functions are being called,
+then reports any functions from the first file that it hasn't seen.
 
 ### Nested functions {: .exercise}
 
@@ -442,3 +573,23 @@ in [%x builder %] useful.)
 1.  Modify the methods again so that each one signals
     whether or not it has handled recursion
     (either directly or indirectly).
+
+### Decorating {: .exercise}
+
+Create a `@count` decorator that causes a function to count
+how many times it has been called.
+
+### Name conversion {: .exercise}
+
+Write a tool that find functions with pothole\_case names
+and replaces them with CamelCase names,
+then saves the resulting program as a legal Python file.
+
+### Sorting imports {: .exercise}
+
+[isort][isort] checks that the imports in a file are sorted correctly:
+modules from Python's standard library come first (in alphabetical order),
+then installed modules (also in alphabetical order)
+and finally local imports (ditto).
+Write a linter that reports violations of these rules.
+How did you distinguish between the three cases?

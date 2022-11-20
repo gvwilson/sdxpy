@@ -2,7 +2,6 @@ import ast
 import sys
 from collections import Counter
 
-
 # [class]
 class FindDuplicateKeys(ast.NodeVisitor):
     def __init__(self):
@@ -21,10 +20,7 @@ class FindDuplicateKeys(ast.NodeVisitor):
         if problems:
             msg = ", ".join(p for p in problems)
             print(f"duplicate key(s) {{{msg}}} at line {node.lineno}")
-
-
 # [/class]
-
 
 with open(sys.argv[1], "r") as reader:
     source = reader.read()
