@@ -21,7 +21,7 @@ class Assembler:
         return line.startswith("#")
     # [/assemble]
 
-    # [find-labels]
+    # [labels]
     def find_labels(self, lines):
         result = {}
         loc = 0
@@ -36,7 +36,7 @@ class Assembler:
 
     def is_label(self, line):
         return line.endswith(":")
-    # [/find-labels]
+    # [/labels]
 
     # [compile]
     def compile(self, instruction, labels):

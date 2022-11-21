@@ -31,13 +31,13 @@ chapters = [
     "matching",
     "parser",
     "linter",
+    "vm",
+    "debugger",
     "dataframe",
     "pipeline",
     "cache",
     "database",
     "packman",
-    "vm",
-    "debugger",
     "conclusion",
 ]
 
@@ -60,7 +60,6 @@ todo = [
     "cache",
     "database",
     "packman",
-    "vm",
     "debugger",
 ]
 

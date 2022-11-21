@@ -18,19 +18,15 @@ class DataAllocator(Assembler):
         program = self.instructions_to_text(compiled)
         return program
 
-    # [/assemble]
-
-    # [split-allocations]
     def split_allocations(self, lines):
         try:
             split = lines.index(DIVIDER)
             return lines[0:split], lines[split + 1:]
         except ValueError:
             return lines, []
+    # [/assemble]
 
-    # [/split-allocations]
-
-    # [add-allocations]
+    # [allocate]
     def add_allocations(self, base_of_data, labels, to_allocate):
         for alloc in to_allocate:
             fields = [a.strip() for a in alloc.split(":")]
@@ -43,8 +39,7 @@ class DataAllocator(Assembler):
             ) < RAM_LEN, f"Allocation '{lbl}' requires too much memory"
             labels[lbl] = base_of_data
             base_of_data += num_words
-
-    # [/add-allocations]
+    # [/allocate]
 
 
 # [main]

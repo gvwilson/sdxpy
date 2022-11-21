@@ -16,7 +16,6 @@ class VirtualMachineBase:
         self.ram = [program[i] if (i < len(program)) else 0 for i in range(RAM_LEN)]
         self.ip = 0
         self.reg = [0] * NUM_REG
-
     # [/initialize]
 
     # [fetch]
@@ -32,7 +31,6 @@ class VirtualMachineBase:
         instruction >>= OP_SHIFT
         arg1 = instruction & OP_MASK
         return [op, arg0, arg1]
-
     # [/fetch]
 
     def show(self, writer):
@@ -52,9 +50,6 @@ class VirtualMachineBase:
             print(output, file=writer)
             base += COLUMNS
 
-    # [/skip]
-
-    # [driver]
     @classmethod
     def main(cls):
         import sys
@@ -69,6 +64,7 @@ class VirtualMachineBase:
         vm.initialize(program)
         vm.run()
         vm.show(writer)
+    # [/skip]
 
 
 # [main]

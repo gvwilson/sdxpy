@@ -1,61 +1,65 @@
 ---
 title: "A Virtual Machine"
 syllabus:
-- FIXME
+-   Every computer has a processor with a particular instruction set, some registers, and memory.
+-   Instructions are just numbers, but may be represented as assembly code.
+-   Instructions may refer to registers, memory, both, or neither.
+-   A processor usually executes instructions in order, but may jump to another location based if a conditional is true or false.
+-   An array is a block of adjacent locations in memory that can be indexed using an offset from its base address.
 ---
 
-You might feel there's still magic in our interpreter,
-so let's build something lower-level.
+You might have felt that there was still a lot of magic in our interpreter in [%x interpreter %],
+so this chapter builds something that mimics real hardware more closely.
 If you want to dive deeper,
 have a look at [%i "Nystrom, Bob" %][Bob Nystrom's][nystrom_bob][%/i%]
-*[Crafting Interpreters][crafting_interpreters]* [%b Nystrom2021 %].
-You may also enjoy the game [%i "Human Resource Machine" %][Human Resource Machine][human_resource_machine][%/i%],
-which asks you to solve puzzles of increasing difficulty
-using a processor almost as simple as ours.
+*[Crafting Interpreters][crafting_interpreters]* [%b Nystrom2021 %],
+or at the game [%i "Human Resource Machine" %][Human Resource Machine][human_resource_machine][%/i%].
 
 ## Architecture {: #vm-arch}
 
-Every processor has its own [%i "instruction set" %][%g instruction_set "instruction set" %][%/i%],
-and a compiler translates high-level languages into those instructions.
-Compilers often use an intermediate representation called
-[%i "assembly code" %][%g assembly_code "assembly code" %][%/i%]
-that gives instructions human-readable names instead of numbers.
-Our [%i "virtual machine" %][%g virtual_machine "virtual machine" %][%/i%] simulates
-a computer with three parts
-which are shown in [%f vm-architecture %]
-for a program made up of 110 instructions:
+Our [%i "virtual machine" %][%g virtual_machine "virtual machine" %][%/i%]
+simulates a computer with three parts,
+which are shown in [%f vm-architecture %]:
 
 1.  An [%i "instruction pointer" %][%g instruction_pointer "instruction pointer" %][%/i%] (IP)
-    that holds the memory address of the next instruction to execute.
+    holds the memory address of the next instruction to execute.
     It is automatically initialized to point at address 0,
     which is where every program must start.
     This rule is part of the [%i "Application Binary Interface" %][%g abi "Application Binary Interface" %][%/i%] (ABI)
     for our virtual machine.
 
-1.  Four [%i "register (in computer)" %][%g register "registers" %][%/i%] named R0 to R3 that instructions can access directly.
+1.  Four [%i "register (in computer)" %][%g register "registers" %][%/i%] named R0 to R3
+    that instructions can access directly.
     There are no memory-to-memory operations in our VM:
     everything  happens in or through registers.
 
 1.  256 [%g word_memory "words" %] of memory, each of which can store a single value.
     Both the program and its data live in this single block of memory;
-    we chose the size 256 so that each address will fit in a single byte.
+    we chose the size 256 so that the address of each word will fit in a single byte.
 
 [% figure
    slug="vm-architecture"
-   img="architecture.svg"
+   img="vm_architecture.svg"
    alt="Virtual machine architecture"
    caption="Architecture of the virtual machine."
 %]
 
+Our processor's [%i "instruction set" %][%g instruction_set "instruction set" %][%/i%]
+defines what it can do.
+Instructions are just numbers,
+but we will write them in a simple text format called
+[%i "assembly code" %][%g assembly_code "assembly code" %][%/i%]
+that gives those number human-readable names.
+
 The instructions for our VM are 3 bytes long.
-The [%i "op code" "virtual machine!op code" %][%g op_code "op code" %][%/i%] fits into one byte,
+The [%i "op code" "virtual machine!op code" %][%g op_code "op code" %][%/i%] fits in one byte,
 and each instruction may optionally include one or two single-byte operands.
 Each operand is a register identifier,
 a constant,
 or an address
-(which is just a constant that identifies a location in memory);
-since constants have to fit in one byte,
-the largest number we can represent directly is 256.
+(which is just a constant that identifies a location in memory).
+Since constants have to fit in one byte,
+this means that the largest number we can represent directly is 256.
 [% t vm-op-codes %] uses the letters `r`, `c`, and `a`
 to indicate instruction format,
 where `r` indicates a register identifier,
@@ -78,8 +82,9 @@ and `a` indicates an address.
 |  `prm`      |   11 | `r-`   | Print memory        | `prm R0`     | `console.log(RAM[R0])`    |
 </div>
 
-We put our VM's architectural details in a file
-that can be shared by other components:
+To start building our virtual machine,
+we put the VM's details in a file
+that can be loaded by other modules:
 
 [% inc file="architecture.py" %]
 
@@ -104,10 +109,11 @@ we copy those numbers into memory and reset the instruction pointer and register
 
 [% inc file="vm_base.py" keep="initialize" %]
 
-In order to handle the next instruction,
+To handle the next instruction,
 the VM gets the value in memory that the instruction pointer currently refers to
 and moves the instruction pointer on by one address.
 It then uses [%i "bitwise operation" %][%g bitwise_operation "bitwise operations" %][%/i%]
+([%x binary %])
 to extract the op code and operands from the instruction
 ([%f vm-unpacking %]):
 
@@ -115,7 +121,7 @@ to extract the op code and operands from the instruction
 
 [% figure
    slug="vm-unpacking"
-   img="unpacking.svg"
+   img="vm_unpacking.svg"
    alt="Unpacking instructions"
    caption="Using bitwise operations to unpack instructions."
 %]
@@ -132,19 +138,18 @@ to detect illegal instructions and out-of-bound memory addresses.
 
 </div>
 
-The next step is to extend our base class with one that has a `run` method.
-As its name suggests,
-this runs the program by fetching instructions and executing them until told to stop:
+The next step is to add a `run` method to our VM.
+This method runs the program by fetching instructions and executing them until told to stop:
 
 [% inc file="vm.py" omit="skip" %]
 
 Some instructions are very similar to others,
 so we will only look at three here.
-The first stores the value of one register in the address held by another register:
+The first, `str`, stores the value of one register in the address held by another register:
 
 [% inc file="vm.py" keep="op_str" %]
 
-The first three lines check that the operation is legal;
+Its first three lines check that the operation is legal;
 the fourth one uses the value in one register as an address,
 which is why it has nested array indexing.
 {: .continue}
@@ -158,10 +163,14 @@ as is jumping to a fixed address if the value in a register is zero:
 
 [% inc file="vm.py" keep="op_beq" %]
 
+This [%g conditional_jump "conditional jump" %] instruction is how
+we will implement `if`.
+{: .continue}
+
 ## Assembly Code {: #vm-assembly}
 
-We could figure out numerical op codes by hand,
-and in fact that's what [the first programmers][eniac_programmers] did.
+We could write out numerical op codes by hand,
+just like [the first programmers][eniac_programmers] did.
 However,
 it is much easier to use an [%i "assembler" %][%g assembler "assembler" %][%/i%],
 which is just a small compiler for a language
@@ -172,32 +181,32 @@ Here's an assembly language program to print the value stored in R1 and then hal
 
 [% inc file="print_r1.as" %]
 
-Its numeric representation is:
+Its numeric representation (in hexadecimal) is:
 {: .continue}
 
 [% inc file="print_r1.mx" %]
 
 One thing the assembly language has that the instruction set doesn't
 is [%i "label (on address)" %][%g label_address "labels on addresses" %][%/i%].
-The label `loop` doesn't take up any space;
+A label like `loop` doesn't take up any space;
 instead,
 it tells the assembler to give the address of the next instruction a name
 so that we can refer to that address as `@loop` in jump instructions.
 For example,
 this program prints the numbers from 0 to 2
-([%f vm-count_up %]):
+([%f vm-count-up %]):
 
 [% inc pat="count_up.*" fill="as mx" %]
 
 [% figure
-   slug="vm-count_up"
-   img="count_up.svg"
+   slug="vm-count-up"
+   img="vm_count_up.svg"
    alt="Counting from 0 to 2"
    caption="Flowchart of assembly language program to count up from 0 to 2."
 %]
 
 Let's trace this program's execution
-([%f vm-trace-counter %]):
+([%f vm-count-trace %]):
 
 1.  R0 holds the current loop index.
 1.  R1 holds the loop's upper bound (in this case 3).
@@ -209,8 +218,8 @@ Let's trace this program's execution
 1.  If the program *doesn't* jump back, it halts.
 
 [% figure
-   slug="vm-trace-counter"
-   img="trace_counter.svg"
+   slug="vm-count-trace"
+   img="vm_count_trace.svg"
    alt="Trace counting program"
    caption="Tracing registers and memory values for a simple counting program."
 %]
@@ -227,16 +236,17 @@ we go through the lines one by one
 and either save the label *or* increment the current address
 (because labels don't take up space):
 
-[% inc file="assembler.py" keep="find-labels" %]
+[% inc file="assembler.py" keep="labels" %]
 
 To compile a single instruction we break the line into tokens,
 look up the format for the operands,
-and pack them into a single value:
+and pack the values:
 
 [% inc file="assembler.py" keep="compile" %]
 
 Combining op codes and operands into a single value
 is the reverse of the unpacking done by the virtual machine:
+{: .continue}
 
 [% inc file="assembler.py" keep="combine" %]
 
@@ -264,12 +274,12 @@ but we do need a way to create arrays and refer to them.
 We will allocate storage for arrays at the end of the program
 by using `.data` on a line of its own to mark the start of the data section
 and then `label: number` to give a region a name and allocate some storage space
-([%f vm-storage-allocation %]).
+([%f vm-array %]).
 
 [% figure
-   slug="vm-storage-allocation"
-   img="storage_allocation.svg"
-   alt="Storage allocation"
+   slug="vm-array"
+   img="vm_array.svg"
+   alt="Array storage allocation"
    caption="Allocating storage for arrays in the virtual machine."
 %]
 
@@ -279,12 +289,10 @@ we need to split the lines into instructions and data allocations:
 
 [% inc file="data_allocator.py" keep="assemble" %]
 
-[% inc file="data_allocator.py" keep="split-allocations" %]
-
 Second,
 we need to figure out where each allocation lies and create a label accordingly:
 
-[% inc file="data_allocator.py" keep="add-allocations" %]
+[% inc file="data_allocator.py" keep="allocate" %]
 
 And that's it:
 no other changes are needed to either compilation or execution.
@@ -306,7 +314,14 @@ and talk to the world,
 
 </div>
 
-[% fixme concept-map %]
+## Summary {: #vm-summary}
+
+[% figure
+   slug="vm-concept-map"
+   img="vm_concept_map.svg"
+   alt="Concept map for virtual machine and assembler"
+   caption="Concept map for virtual machine and assembler."
+%]
 
 ## Exercises {: #vm-exercises}
 
