@@ -21,11 +21,11 @@ and better able to use them well.
 
 These [personas][t3_personas] describe who this book is for [%b Wilson2019 %]:
 
--   Aïsha built her first [WordPress][wordpress] site as a teenager.
-    She now uses [Django][django],
-    and wants to know more about designing larger applications.
-    This material will show her how to think about software design
-    and introduce her to some useful tools.
+-   Aïsha has a master's degree in genomics
+    and does very complicated science things in a wet lab.
+    She has taught herself enough Python to do some sophisticated data analysis,
+    but is constantly frustrated by what she *doesn't* know about how software actually works.
+    This material will take away some of the mystery.
 
 -   Rupinder is studying computer science at college.
     He uses Git and style checkers in his assignments
