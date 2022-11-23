@@ -172,7 +172,12 @@ def _keep_lines(filepath, lines, key):
         (start is not None) and (stop is not None),
         f"Failed to match inclusion 'keep' key {key} in {filepath}",
     )
-    return lines[start + 1 : stop]  # noqa e203
+    result = []
+    while start is not None:
+        result += lines[start + 1 : stop]
+        lines = lines[stop:]
+        start, stop = _find_markers(lines, key)
+    return result
 
 
 def _make_html(name, kind, lines):
@@ -190,7 +195,10 @@ def _omit_lines(filepath, lines, key):
         (start is not None) and (stop is not None),
         f"Failed to match inclusion 'omit' key {key} in {filepath}",
     )
-    return lines[:start] + lines[stop + 1 :]  # noqa e203
+    while start is not None:
+        lines = lines[:start] + lines[stop + 1 :]
+        start, stop = _find_markers(lines, key)
+    return lines
 
 
 def _inclusion_filepath(inclusions, node, file):

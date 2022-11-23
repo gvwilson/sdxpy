@@ -60,7 +60,6 @@ todo = [
     "cache",
     "database",
     "packman",
-    "debugger",
 ]
 
 # Files to copy verbatim.
