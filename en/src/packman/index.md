@@ -48,7 +48,18 @@ syllabus:
 
 [% inc pat="incremental_reverse.*" fill="sh out" %]
 
-[% fixme concept-map %]
+## {: #packman-smt}
+
+- https://www.fuzzingbook.org/html/AcademicPrototyping.html
+
+## Summary {: #builder-summary}
+
+[% figure
+   slug="packman-concept-map"
+   img="packman_concept_map.svg"
+   alt="Concept map for package manager."
+   caption="Concepts for package manager."
+%]
 
 ## Exercises {: #packman-exercises}
 
