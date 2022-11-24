@@ -8,47 +8,62 @@ OPS_LOOKUP = {value["code"]: key for key, value in OPS.items()}
 # [/lookup]
 
 class VirtualMachineStep(VirtualMachineBase):
+    # [init]
+    def __init__(self, reader=input, writer=sys.stdout):
+        super().__init__(writer)
+        self.reader = reader
+    # [/init]
+
     # [run]
     def run(self):
         self.state = VMState.STEPPING
-        while self.state != VMState.FINISHED:
-            self.interact(self.ip)
+        while True:
             if self.state == VMState.STEPPING:
-                instruction = self.ram[self.ip]
-                self.ip += 1
-                op, arg0, arg1 = self.decode(instruction)
-                self.execute(op, arg0, arg1)
+                self.interact(self.ip)
+            if self.state == VMState.FINISHED:
+                break
+            instruction = self.ram[self.ip]
+            self.ip += 1
+            op, arg0, arg1 = self.decode(instruction)
+            self.execute(op, arg0, arg1)
     # [/run]
 
     # [interact]
     def interact(self, addr):
         while self.state == VMState.STEPPING:
             try:
-                command = input(f"{addr:06x} [dmn]> ").strip()
+                command = self.read(f"{addr:06x} [dmqrs]> ")
                 if not command:
                     continue
                 elif command in {"d", "dis"}:
-                    print(self.disassemble(self.ram[addr]))
+                    self.write(self.disassemble(addr, self.ram[addr]))
                 elif command in {"m", "memory"}:
-                    self.show(sys.stdout)
-                elif command in {"n", "next"}:
-                    break
+                    self.show()
                 elif command in {"q", "quit"}:
                     self.state = VMState.FINISHED
                     break
+                elif command in {"r", "run"}:
+                    self.state = VMState.RUNNING
+                    break
+                elif command in {"s", "step"}:
+                    break
                 else:
-                    print(f"Unknown command '{command}'")
+                    self.write(f"Unknown command '{command}'")
             except EOFError:
                 self.state = VMState.FINISHED
     # [/interact]
 
     # [disassemble]
-    def disassemble(self, instruction):
+    def disassemble(self, addr, instruction):
         op, arg0, arg1 = self.decode(instruction)
         assert op in OPS_LOOKUP, f"Unknown op code {op} at {addr}"
         return f"{OPS_LOOKUP[op]} | {arg0} | {arg1}"
     # [/disassemble]
-        
+
+    # [read]
+    def read(self, prompt):
+        return self.reader(prompt).strip()
+    # [/read]
 
 if __name__ == "__main__":
     VirtualMachineStep.main()

@@ -4,59 +4,57 @@ from architecture import VMState
 from vm_step import VirtualMachineStep
 
 
-class VirtualMachineInteract(VirtualMachineStep):
-    def __init__(self):
-        super().__init__()
+class VirtualMachineExtend(VirtualMachineStep):
+    # [init]
+    def __init__(self, reader=input, writer=sys.stdout):
+        super().__init__(reader, writer)
         self.handlers = {
             "d": self._do_disassemble,
             "dis": self._do_disassemble,
+            "i": self._do_ip,
+            "ip": self._do_ip,
             "m": self._do_memory,
             "memory": self._do_memory,
-            "n": self._do_next,
-            "next": self._do_next,
             "q": self._do_quit,
             "quit": self._do_quit,
             "r": self._do_run,
             "run": self._do_run,
+            "s": self._do_step,
+            "step": self._do_step,
         }
+    # [/init]
 
-    def run(self):
-        self.state = VMState.STEPPING
-        while self.state != VMState.FINISHED:
-            if self.state == VMState.STEPPING:
-                self.interact()
-            instruction = self.ram[self.ip]
-            self.ip += 1
-            op, arg0, arg1 = self.decode(instruction)
-            self.execute(op, arg0, arg1)
-
-    def interact(self):
+    # [interact]
+    def interact(self, addr):
         prompt = "".join(sorted({key[0] for key in self.handlers}))
         interacting = True
         while interacting:
             try:
-                command = input(f"{self.ip:06x} [{prompt}]> ").strip()
+                command = self.read(f"{addr:06x} [{prompt}]> ")
                 if not command:
                     continue
                 elif command not in self.handlers:
-                    print(f"Unknown command {command}")
+                    self.write(f"Unknown command {command}")
                 else:
                     interacting = self.handlers[command](self.ip)
             except EOFError:
                 self.state = VMState.FINISHED
                 interacting = False
+    # [/interact]
 
     def _do_disassemble(self, addr):
-        print(self.disassemble(addr))
+        self.write(self.disassemble(addr, self.ram[addr]))
         return True
 
+    def _do_ip(self, addr):
+        self.write(f"{self.ip:06x}")
+        return True
+
+    # [memory]
     def _do_memory(self, addr):
-        self.show(sys.stdout)
+        self.show()
         return True
-
-    def _do_next(self, addr):
-        self.state = VMState.STEPPING
-        return False
+    # [/memory]
 
     def _do_quit(self, addr):
         self.state = VMState.FINISHED
@@ -66,6 +64,12 @@ class VirtualMachineInteract(VirtualMachineStep):
         self.state = VMState.RUNNING
         return False
 
+    # [step]
+    def _do_step(self, addr):
+        self.state = VMState.STEPPING
+        return False
+    # [/step]
+
 
 if __name__ == "__main__":
-    VirtualMachineInteract.main()
+    VirtualMachineExtend.main()

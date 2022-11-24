@@ -17,15 +17,16 @@ class Assembler:
         for instruction in program:
             print(instruction, file=writer)
 
-    def assemble(self, lines):
+    def assemble(self, lines, as_text=True):
         lines = self.clean_lines(lines)
         to_compile, to_allocate = self.split_allocations(lines)
         labels = self.find_labels(lines)
         instructions = [ln for ln in to_compile if not self.is_label(ln)]
         base_of_data = len(instructions)
         self.add_allocations(base_of_data, labels, to_allocate)
-        compiled = [self.compile(instr, labels) for instr in instructions]
-        program = self.instructions_to_text(compiled)
+        program = [self.compile(instr, labels) for instr in instructions]
+        if as_text:
+            program = self.instructions_to_text(program)
         return program
 
     def add_allocations(self, base_of_data, labels, to_allocate):

@@ -10,50 +10,40 @@ class VirtualMachineBase:
     @classmethod
     def main(cls):
         """Run a program and show the result."""
-        # [hide]
-        assert len(sys.argv) == 3, f"Usage: {sys.argv[0]} input|- output|-"
-        reader = open(sys.argv[1], "r") if (sys.argv[1] != "-") else sys.stdin
-        writer = open(sys.argv[2], "w") if (sys.argv[2] != "-") else sys.stdout
-
-        lines = [ln.strip() for ln in reader.readlines()]
+        assert len(sys.argv) == 2, f"Usage: {sys.argv[0]} program"
+        with open(sys.argv[1], "r") as reader:
+            lines = [ln.strip() for ln in reader.readlines()]
         program = [int(ln, 16) for ln in lines if ln]
-
         vm = cls()
         vm.initialize(program)
         vm.run()
-        vm.show(writer)
-        # [/hide]
-        
-    def __init__(self):
-        """Set up memory and define the interactive prompt."""
-        # [hide]
+        vm.show()
+
+    # [init]
+    def __init__(self, writer=sys.stdout):
+        """Set up memory."""
+        self.writer = writer
         self.initialize([])
-        self.prompt = ">>"
-        # [/hide]
+    # [/init]
 
     def initialize(self, program):
         """Copy the program into memory and clear everything else."""
-        # [hide]
         assert len(program) <= RAM_LEN, "Program is too long for memory"
         self.ram = [program[i] if (i < len(program)) else 0 for i in range(RAM_LEN)]
         self.ip = 0
         self.reg = [0] * NUM_REG
-        # [/hide]
 
+    # [run]
     def run(self):
         """Execute instructions one by one until the program ends."""
-        # [hide]
-        # [run]
         self.state = VMState.RUNNING
         while self.state != VMState.FINISHED:
             addr, op, arg0, arg1 = self.fetch()
             self.execute(op, arg0, arg1)
-        # [/run]
-        # [/hide]
+    # [/run]
 
     def fetch(self):
         """Get the next instruction."""
-        # [hide]
         assert (
             0 <= self.ip < len(self.ram)
         ), f"Program counter {self.ip:06x} out of range 0..{len(self.ram):06x}"
@@ -61,22 +51,18 @@ class VirtualMachineBase:
         instruction = self.ram[self.ip]
         self.ip += 1
         return (old_ip, *self.decode(instruction))
-        # [/hide]
 
     def decode(self, instruction):
         """Decode an instruction to get an op code and its operands."""
-        # [hide]
         op = instruction & OP_MASK
         instruction >>= OP_SHIFT
         arg0 = instruction & OP_MASK
         instruction >>= OP_SHIFT
         arg1 = instruction & OP_MASK
         return op, arg0, arg1
-        # [/hide]
 
     def execute(self, op, arg0, arg1):
         """Execute a single instruction."""
-        # [hide]
         if op == OPS["hlt"]["code"]:
             self.state = VMState.FINISHED
 
@@ -122,26 +108,26 @@ class VirtualMachineBase:
             if self.reg[arg0] != 0:
                 self.ip = arg1
 
+        # [prr]
         elif op == OPS["prr"]["code"]:
             self.assert_is_register(arg0)
-            print(self.prompt, self.reg[arg0])
+            self.write(f"{self.reg[arg0]:06x}")
+        # [/prr]
 
         elif op == OPS["prm"]["code"]:
             self.assert_is_register(arg0)
             self.assert_is_address(self.reg[arg0])
-            print(self.prompt, self.ram[self.reg[arg0]])
+            self.write(f"{self.ram[self.reg[arg0]]:06x}")
 
         else:
             assert False, f"Unknown op {op:06x}"
-        # [/hide]
 
-    def show(self, writer):
+    def show(self):
         """Show the IP, registers, and memory."""
-        # [hide]
         # Show IP and registers
-        print(f"IP{' ' * 6}= {self.ip:06x}")
+        self.write(f"IP{' ' * 6}= {self.ip:06x}")
         for (i, r) in enumerate(self.reg):
-            print(f"R{i:06x} = {r:06x}", file=writer)
+            self.write(f"R{i:06x} = {r:06x}")
 
         # How much memory to show
         top = max(i for (i, m) in enumerate(self.ram) if m != 0)
@@ -152,18 +138,20 @@ class VirtualMachineBase:
             output = f"{base:06x}: "
             for i in range(COLUMNS):
                 output += f"  {self.ram[base + i]:06x}"
-            print(output, file=writer)
+            self.write(output)
             base += COLUMNS
-        # [/hide]
 
-    # [hide]
     def assert_is_register(self, reg):
         assert 0 <= reg < len(self.reg), f"Invalid register {reg:06x}"
 
     def assert_is_address(self, addr):
         assert 0 <= addr < len(self.ram), f"Invalid register {addr:06x}"
-    # [/hide]
+
+    # [write]
+    def write(self, *args):
+        msg = "".join(args) + "\n"
+        self.writer.write(msg)
+    # [/write]
 
 if __name__ == "__main__":
-    # Create a virtual machine, load a program, and run it."""
     VirtualMachineBase.main()
