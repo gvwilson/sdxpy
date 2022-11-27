@@ -512,5 +512,5 @@ and then refer to them later:
 
 2.  Modify the build manager to compare the current hashes of files
     with those stored in `build_hash.json`
-    in order to determine what is out of date,
+    to determine what is out of date,
     and to update `build_hash.json` each time it runs.

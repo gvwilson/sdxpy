@@ -48,21 +48,21 @@ def time_select(df):
 def sweep(sizes):
     sizes = [s.split("x") for s in sizes]
     sizes = [(int(s[0]), int(s[1])) for s in sizes]
-    results = [["nrow", "ncol", "filter col", "select col", "filter row", "select row"]]
+    writer = csv.writer(sys.stdout)
+    writer.writerow(
+        ["nrow", "ncol", "filter_col", "select_col", "filter_row", "select_row"]
+    )
     for (nrow, ncol) in sizes:
         df_col = make_col(nrow, ncol)
         df_row = make_row(nrow, ncol)
-        results.append(
-            [
-                nrow,
-                ncol,
-                time_filter(df_col),
-                time_select(df_col),
-                time_filter(df_row),
-                time_select(df_row),
-            ]
-        )
-    csv.writer(sys.stdout).writerows(results)
+        times = [
+            time_filter(df_col),
+            time_select(df_col),
+            time_filter(df_row),
+            time_select(df_row),
+        ]
+        times = [f"{t:.2e}" for t in times]
+        writer.writerow([nrow, ncol, *times])
 # [/sweep]
 
 if __name__ == "__main__":

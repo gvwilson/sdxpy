@@ -55,7 +55,6 @@ appendices = [
 
 # To do.
 todo = [
-    "dataframe",
     "pipeline",
     "cache",
     "database",

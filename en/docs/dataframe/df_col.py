@@ -18,7 +18,7 @@ class DfCol(DF):
         return len(self._data)
 
     def nrow(self):
-        n = set(self._data.keys()).pop()
+        n = list(self._data.keys())[0]
         return len(self._data[n])
 
     def cols(self):

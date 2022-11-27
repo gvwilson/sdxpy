@@ -105,7 +105,7 @@ The outcome of each test is exactly one of:
     which means we don't know if
     the thing we're testing is working properly or not.
 
-In order to implement this classification scheme
+To implement this classification scheme
 we need to distinguish failing tests from broken ones.
 Our rule is that
 if a test [%g throw_exception "throws" %] an `AssertionError`
@@ -251,7 +251,7 @@ The function `dir` (short for "directory") returns a list of those attributes' n
 
 Most programmers never need to use most of these,
 but `__name__` holds the function's original name
-and `__doc__` holds its [%g docstring "docstring" %]:
+and `__doc__` holds its [%i "docstring" %][%g docstring "docstring" %][%/i%]:
 
 [% inc file="func_attr.py" keep="print" %]
 [% inc file="func_attr.out" %]

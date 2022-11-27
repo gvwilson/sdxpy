@@ -170,7 +170,7 @@ containing some files we can use as [%i "fixture" %]fixtures[%/i%].
 However,
 we are going to change or delete those files
 as we back things up and restore them.
-In order to make sure early tests don't contaminate later ones
+To make sure early tests don't contaminate later ones
 we would have to re-create those files and directories after each test.
 
 A better approach is to use a [%i "mock object" %][%g mock_object "mock object" %][%/i%]

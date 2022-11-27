@@ -133,7 +133,7 @@ then waits again.
 The waiting is a problem for tools like [pytest][pytest],
 which expect the function being tested to run to completion after being launched.
 
-In order to make our single-stepping VM testable,
+To make our single-stepping VM testable,
 we have to give it input when it wants some
 and capture its output for later inspection.
 We had a similar problem when testing the web server of [%x server %],
