@@ -6,6 +6,7 @@ import pytest
 from cache_filesystem import CacheFilesystem
 from index_csv import IndexCSV
 
+# [setup]
 CACHE_DIR = Path("/cache")
 
 @pytest.fixture
@@ -16,9 +17,12 @@ def disk(fs):
 @pytest.fixture
 def cache():
     return CacheFilesystem(IndexCSV(CACHE_DIR), CACHE_DIR)
+# [/setup]
 
+# [empty]
 def test_filesystem_no_files_before_add(disk, cache):
     assert cache.known() == set()
+# [/empty]
 
 def test_filesystem_single_file_present_after_add(disk, cache):
     disk.create_file("test.txt", contents="xyz")
@@ -28,6 +32,7 @@ def test_filesystem_single_file_present_after_add(disk, cache):
     cache_path = cache.get_cache_path(ident)
     assert str(cache_path.parent) == str(CACHE_DIR)
 
+# [two]
 def test_filesystem_two_files_present_after_add(disk, cache):
     names = "ab"
     for name in names:
@@ -35,6 +40,7 @@ def test_filesystem_two_files_present_after_add(disk, cache):
         disk.create_file(filename, contents=name)
         cache.add(filename)
     assert len(cache.known()) == 2
+# [/two]
 
 def test_filesystem_single_file_can_be_reloaded(disk, cache):
     disk.create_file("test.txt", contents="xyz")

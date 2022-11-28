@@ -3,30 +3,25 @@ from pathlib import Path
 
 from cache_filesystem import CacheFilesystem
 
+# [constructor]
 class CacheLimited(CacheFilesystem):
-    def __init__(self, index, cache_dir, permanent_dir, local_limit):
+    def __init__(self, index, cache_dir, archive_dir, local_limit):
         super().__init__(index, cache_dir)
-        self.permanent_dir = permanent_dir
+        self.archive_dir = archive_dir
         self.local_limit = local_limit
+# [/constructor]
 
+    # [get]
     def get_cache_path(self, identifier):
         cache_path = super().get_cache_path(identifier)
         if not cache_path.exists():
             self._ensure_cache_space()
-            permanent_path = self._make_permanent_path(identifier)
-            shutil.copyfile(permanent_path, cache_path)
+            archive_path = self._make_archive_path(identifier)
+            shutil.copyfile(archive_path, cache_path)
         return cache_path
+    # [/get]
 
-    def _add(self, identifier, local_path):
-        self._add_permanent(identifier, local_path)
-        self._ensure_cache_space()
-        super()._add(identifier, local_path)
-
-    def _add_permanent(self, identifier, local_path):
-        permanent_path = self._make_permanent_path(identifier)
-        if not permanent_path.exists():
-            shutil.copyfile(local_path, permanent_path)
-
+    # [ensure]
     def _ensure_cache_space(self):
         # Check size.
         cache_dir = Path(self.cache_dir)
@@ -39,6 +34,19 @@ class CacheLimited(CacheFilesystem):
         choice = cache_files.pop()
         assert len(cache_files) < self.local_limit
         Path(choice).unlink()
+    # [/ensure]
 
-    def _make_permanent_path(self, identifier):
-        return Path(self.permanent_dir, f"{identifier}.{self.CACHE_SUFFIX}")
+    # [add]
+    def _add(self, identifier, local_path):
+        self._add_archive(identifier, local_path)
+        self._ensure_cache_space()
+        super()._add(identifier, local_path)
+    # [/add]
+
+    def _add_archive(self, identifier, local_path):
+        archive_path = self._make_archive_path(identifier)
+        if not archive_path.exists():
+            shutil.copyfile(local_path, archive_path)
+
+    def _make_archive_path(self, identifier):
+        return Path(self.archive_dir, f"{identifier}.{self.CACHE_SUFFIX}")

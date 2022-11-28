@@ -2,8 +2,7 @@ from pathlib import Path
 
 from cache_base import CacheBase
 
-CACHE_SUFFIX = CacheBase.CACHE_SUFFIX
-
+# [open]
 def cache_open(cache, filename):
     if not filename.endswith(cache.CACHE_SUFFIX):
         filename = f"{filename}.{CACHE_SUFFIX}"
@@ -14,9 +13,12 @@ def cache_open(cache, filename):
         identifier = reader.read().strip()
         cache_path = cache.get_cache_path(identifier)
         return open(cache_path, "r")
+# [/open]
 
+# [save]
 def cache_save(cache, filename):
     identifier = cache.add(filename)
-    identifier_file = Path(f"{filename}.{CACHE_SUFFIX}")
+    identifier_file = Path(f"{filename}.{cache.CACHE_SUFFIX}")
     with open(identifier_file, "w") as writer:
         writer.write(identifier)
+# [/save]

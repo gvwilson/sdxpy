@@ -8,23 +8,24 @@ from cache_limited import CacheLimited
 from index_csv import IndexCSV
 
 CACHE_DIR = Path("/cache")
-PERMANENT_DIR = Path("/permanent")
+ARCHIVE_DIR = Path("/archive")
 LOCAL_LIMIT = 2
 
 @pytest.fixture
 def disk(fs):
     fs.create_dir(CACHE_DIR)
-    fs.create_dir(PERMANENT_DIR)
+    fs.create_dir(ARCHIVE_DIR)
     return fs
 
 @pytest.fixture
 def cache(disk):
-    index = IndexCSV(PERMANENT_DIR)
-    return CacheLimited(index, CACHE_DIR, PERMANENT_DIR, LOCAL_LIMIT)
+    index = IndexCSV(ARCHIVE_DIR)
+    return CacheLimited(index, CACHE_DIR, ARCHIVE_DIR, LOCAL_LIMIT)
 
 def test_limited_no_files_before_add(cache):
     assert cache.known() == set()
 
+# [example]
 def test_limited_single_file_present_after_add(disk, cache):
     disk.create_file("test.txt", contents="xyz")
     ident = cache.add("test.txt")
@@ -32,8 +33,9 @@ def test_limited_single_file_present_after_add(disk, cache):
     assert cache.known() == {ident}
     cache_path = cache.get_cache_path(ident)
     assert str(cache_path.parent) == str(CACHE_DIR)
-    permanent_path = cache._make_permanent_path(ident)
-    assert Path(permanent_path).exists()
+    archive_path = cache._make_archive_path(ident)
+    assert Path(archive_path).exists()
+# [/example]
 
 def test_limited_two_files_present_after_add(disk, cache):
     names = "ab"
@@ -76,7 +78,7 @@ def test_limited_local_cache_size_stays_small(disk, cache):
         cache.add(local_file)
     assert len(cache.known()) == len(names)
     assert len(list(Path(CACHE_DIR).iterdir())) == LOCAL_LIMIT
-    assert len(list(Path(PERMANENT_DIR).iterdir())) == len(names) + 1
+    assert len(list(Path(ARCHIVE_DIR).iterdir())) == len(names) + 1
 
 def test_limited_all_files_can_be_retrieved(disk, cache):
     names = "abcdefg"

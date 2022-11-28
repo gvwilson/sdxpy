@@ -1,2 +1,2 @@
-include info/mccole.mk
+include lib/mccole/generic.mk
 -include local.mk

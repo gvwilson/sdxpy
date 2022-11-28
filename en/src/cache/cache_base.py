@@ -4,6 +4,7 @@ from pathlib import Path
 from exceptions import CacheException
 from hash_stream import hash_stream
 
+# [class]
 class CacheBase(ABC):
     CACHE_SUFFIX = "cache"
 
@@ -38,3 +39,4 @@ class CacheBase(ABC):
     @abstractmethod
     def _add(self, identifier, local_path):
         """Add a file with a given identifer from a given local path."""
+    # [/class]

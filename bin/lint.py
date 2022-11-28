@@ -60,7 +60,6 @@ def main():
     options = parse_args()
 
     config = check_config(options.config)
-    dom_file = getattr(config, "dom")
     glossary_file = getattr(config, "glossary")
     language = getattr(config, "lang")
     links_file = getattr(config, "links")
@@ -74,7 +73,7 @@ def main():
     check_slides(source_files)
 
     html_files = get_html(out_dir)
-    check_dom(dom_file, html_files)
+    check_dom(options.dom, html_files)
 
 
 def check_config(config_path):
@@ -224,6 +223,7 @@ def parse_args():
     """Parse arguments."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", required=True, help="Configuration file")
+    parser.add_argument("--dom", required=True, help="DOM specification file")
     return parser.parse_args()
 
 

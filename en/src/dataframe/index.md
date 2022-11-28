@@ -270,6 +270,27 @@ so how can we choose which to use?
 Performance is one consideration,
 particularly if we're expecting to work with large datasets.
 
+<div class="callout" markdown="1">
+
+### Transactions versus analysis
+
+Regardless of data volumes,
+different storage schemes are better (or worse) for different kinds of work.
+[%i "online transaction processing (OLTP); OLTP (online transaction processing)" %][%g oltp "Online transaction processing" %][%/i%] (OLTP)
+refers to adding or querying individual records,
+such as online sales.
+[%i "online analytical processing (OLAP); OLAP (online analytical processing)" %][%g olap "online analytical processing" %][%/i%] (OLAP),
+on the other hand,
+processes selected columns of a table in bulk to do things like find averages over time.
+Row-wise storage is usually best for OLTP,
+but column-wise storage is better suited for OLAP.
+If data volumes are large,
+[%i "data engineer" %][%g "data_engineer" "data engineers" %][%/i%] will sometimes run two databases in parallel,
+using [%i "batch processing" %][%g batch_processing "batch processing" %][%/i%] jobs
+to copy new or updated records from the OLTP databases over to the OLAP database.
+
+</div>
+
 To compare the speed of these classes,
 let's write a short program to create dataframes of each kind
 and time how long it takes to select their columns and filter their rows.

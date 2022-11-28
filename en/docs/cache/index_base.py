@@ -1,9 +1,13 @@
 import datetime
 from abc import ABC, abstractmethod
+
+# [tuple]
 from collections import namedtuple
 
 CacheEntry = namedtuple("CacheEntry", ["identifier", "timestamp"])
+# [/tuple]
 
+# [class]
 class IndexBase(ABC):
     TIME_FORMAT = "%Y-%m-%d:%H:%M:%S"
 
@@ -29,7 +33,9 @@ class IndexBase(ABC):
         entry = CacheEntry(identifier, current_time())
         index.append(entry)
         self.save(index)
+# [/class]
 
+# [abstract]
     @abstractmethod
     def load(self):
         """Load entire index."""
@@ -41,6 +47,9 @@ class IndexBase(ABC):
     @abstractmethod
     def _initialize_index(self):
         """Initialize index file if necessary."""
+# [/abstract]
 
+# [time]
 def current_time():
     return datetime.datetime.now()
+# [/time]

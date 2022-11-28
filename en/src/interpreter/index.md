@@ -69,7 +69,7 @@ For example, `abs(1+2)` is:
 
 The function to add two expressions looks like this:
 
-[%inc file="expr.py" keep="do_add" %]
+[% inc file="expr.py" keep="do_add" %]
 
 Its single parameter is a list containing
 the two sub-expressions to be evaluated and added.
@@ -109,7 +109,7 @@ works the same way.
 The only differences are that it expects one value instead of two
 and calculates a different return value:
 
-[%inc file="expr.py" keep="do_abs" %]
+[% inc file="expr.py" keep="do_abs" %]
 
 So how does `do` work?
 It starts by checking if its input is an integer.
@@ -123,7 +123,7 @@ and then uses the first value in the list
 to decide what other function to call.
 This process is often called [%g dispatch "dispatch" %].
 
-[%inc file="expr.py" keep="do" %]
+[% inc file="expr.py" keep="do" %]
 
 Finally,
 the main body of the program reads
@@ -131,7 +131,7 @@ the file containing the instructions to execute,
 calls `do`,
 and prints the result:
 
-[%inc file="expr.py" keep="main" %]
+[% inc file="expr.py" keep="main" %]
 
 Our program is a list of lists (of lists…)
 so we can read it as [%g "json" JSON %] using `json.load`.
