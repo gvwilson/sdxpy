@@ -18,7 +18,7 @@ Most systems still follow the rules they did thirty years ago;
 in particular,
 most web servers still handle the same kinds of messages in the same way.
 
-## Sockets {: #server-sockets}
+## Using TCP/IP {: #server-tcpip}
 
 Pretty much every program on the web
 runs on a family of communication standards called

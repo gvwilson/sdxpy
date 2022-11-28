@@ -59,7 +59,7 @@ It is also hard to extend:
 `match_here` is already very complicated,
 and handling parentheses in patterns like `a(bc)*d` will make it more complicated still.
 
-## A Direct Matcher {: #matching-direct}
+## Matching Responsibly {: #matching-responsible}
 
 Instead of packing all our code into one function,
 we can implement each kind of match separately.

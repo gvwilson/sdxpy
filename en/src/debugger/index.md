@@ -270,7 +270,7 @@ So long as new commands don't need anything more than
 the address of the current instruction,
 we never need to modify `interact` again.
 
-## Breakpoints {: #debugger-break}
+## Breakpoints {: #debugger-breakpoints}
 
 Suppose we suspect there's a bug in our program
 that only occurs after several thousand lines of code have been executed.
