@@ -505,7 +505,7 @@ Modify the file server so that:
 
 ### Better content types {: .exercise}
 
-Read the documentation for the [mimtypes][py_mimetypes] module
+Read the documentation for the [mimetypes][py_mimetypes] module
 and then modify the file server to return the correct content type
 for files that aren't HTML (such as images).
 
