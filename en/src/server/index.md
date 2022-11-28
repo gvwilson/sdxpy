@@ -43,8 +43,10 @@ A port is a number in the range 0-65535
 that uniquely identifies the socket on the host machine.
 (If an IP address is like a company's phone number,
 then a port number is like an extension.)
-Ports 0-1023 are reserved for the operating system's use;
-anyone else can use the remaining ports.
+Ports 0-1023 are reserved for well-known TCP/IP applications like web servers;
+custom applications should use the remaining ports
+(and should allow users to decide *which* port,
+since there's always the chance that two different people will pick 1234 or 6789).
 
 [% figure
    slug="server-sockets"
