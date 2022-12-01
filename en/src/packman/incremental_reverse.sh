@@ -1,1 +1,1 @@
-python incremental.py triple reversed
+python incremental.py reversed < triple.json

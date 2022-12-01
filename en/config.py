@@ -34,10 +34,10 @@ chapters = [
     "linter",
     "vm",
     "debugger",
+    "packman",
     "dataframe",
     "pipeline",
     "database",
-    "packman",
     "conclusion",
 ]
 
@@ -57,7 +57,6 @@ appendices = [
 todo = [
     "pipeline",
     "database",
-    "packman",
 ]
 
 # Files to copy verbatim.

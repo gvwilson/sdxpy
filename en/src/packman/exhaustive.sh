@@ -1,1 +1,1 @@
-python exhaustive.py triple
+python exhaustive.py < triple.json
