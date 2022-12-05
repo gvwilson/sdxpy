@@ -352,7 +352,7 @@ Consider this class:
 [% inc file="register.py" keep="class" %]
 
 The `add_handler` method takes three parameters:
-the type of node a callback function is meant to handel,
+the type of node a callback function is meant to handle,
 the function itself,
 and an optional extra piece of data to pass to the function
 along with an AST node.

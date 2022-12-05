@@ -62,7 +62,7 @@ rather than "software engineering",
 our conversations would be intellectually richer today.
 
 I hope this book will help us get there.
-I hope that we learn how to talk amongst ourselves about the beauty of software as well,
+I hope that we learn how to talk about the beauty of software as well,
 because it *is* beautiful,
 and we deserve to have ways to say that.
 

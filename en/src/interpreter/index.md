@@ -4,7 +4,7 @@ syllabus:
 -   Compilers and interpreters are just programs.
 -   Basic arithmetic operations are just functions that have special notation.
 -   Programs can be represented as trees, which can be stored as nested lists.
--   Interpreters recurisvely dispatch operations to functions that implement low-level details.
+-   Interpreters recursively dispatch operations to functions that implement low-level details.
 -   Programs store variables in stacked dictionaries called environments.
 -   One way to evaluate a program's design is to ask how extensible it is.
 ---
@@ -21,7 +21,7 @@ a [%g parser "parser" %] that translates the source code into a data structure i
 and a [%g runtime "runtime" %] that executes the instructions in that data structure.
 This chapter focuses on the runtime;
 [%x parser %] will explore parsing,
-whle [%x vm %] will look at more efficient ways to execute instructions.
+while [%x vm %] will look at more efficient ways to execute instructions.
 
 ## Expressions {: #interpreter-expressions}
 

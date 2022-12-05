@@ -246,7 +246,7 @@ is not an efficient way to search.
 Instead,
 we can modify the recursive generator
 to stop if a partially-generated combination of packages isn't legal.
-Combining generation and checking mades the code more complicated,
+Combining generation and checking made the code more complicated,
 but as we'll see,
 it leads to some significant improvements.
 

@@ -320,7 +320,7 @@ that can be "called" just like functions.
 If an object `obj` has a `__call__` method,
 then `obj(…)` is automatically turned into `obj.__call__(…)`.
 For example,
-the code below defines a class `Adder` whose instances add a constant to ther input:
+the code below defines a class `Adder` whose instances add a constant to their input:
 
 [% inc pat="callable.*" fill="py out" %]
 
@@ -387,7 +387,7 @@ any test that *doesn't* replace `adder` will run with
 whatever mock object was last put in place
 rather than with the original `adder` function.
 
-We could tell users it's their job to put everthing back after each test,
+We could tell users it's their job to put everything back after each test,
 but people are forgetful.
 It would be better if Python did this automatically;
 luckily for us,
