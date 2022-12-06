@@ -161,7 +161,7 @@ Run the Python interpreter and call the `globals` function:
 ```
 
 As the output shows,
-`globals` a dictionary containing
+`globals` is a dictionary containing
 all the variables at the top (global) level of the program.
 Since we just started the interpreter,
 we see the variables that Python defines automatically.
