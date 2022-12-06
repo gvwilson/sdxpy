@@ -119,7 +119,7 @@ and counts how many outcomes of each kind it sees:
 [% inc file="dry_run.py" keep="run" %]
 
 If a test completes without an exception, it passes.
-If any of the assertions inside it raise an `AssertionError` the test fails,
+If any of the assertions inside it raises an `AssertionError` the test fails,
 and if it raises any other exception it's an error.
 {: .continue}
 
