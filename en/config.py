@@ -38,6 +38,7 @@ chapters = [
     "dataframe",
     "pipeline",
     "database",
+    "editor",
     "conclusion",
 ]
 
@@ -57,6 +58,7 @@ appendices = [
 todo = [
     "pipeline",
     "database",
+    "editor",
 ]
 
 # Files to copy verbatim.
