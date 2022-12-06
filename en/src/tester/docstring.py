@@ -30,7 +30,7 @@ def run_tests(prefix):
     for name in prefixed_names:
         func = globals()[name]
         try:
-            if TEST_SKIP in func.__doc__:
+            if func.__doc__ and TEST_SKIP in func.__doc__:
                 print(f"skip: {name}")
             else:
                 func()
