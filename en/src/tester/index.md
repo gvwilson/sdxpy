@@ -13,7 +13,7 @@ We're going to write a lot of programs in this book.
 To make sure they work correctly,
 we're going to write a lot of [%g unit_test "unit tests" %] using [pytest][pytest].
 Like the earlier tools that inspired it [%b Meszaros2007 %],
-[pytest][pytest] finds and runs tests automatically;
+pytest finds and runs tests automatically;
 to show how,
 this chapter builds a simple unit testing framework.
 It also introduces the single most important idea in this book:
