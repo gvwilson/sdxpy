@@ -1,7 +1,7 @@
 from util import PAGE_SIZE, DBError, record_size
 from page_memory import PageMemory as Page
 
-
+# [class]
 class DBMemory:
     def __init__(self, page_size=PAGE_SIZE):
         self._page_size = page_size
@@ -11,13 +11,9 @@ class DBMemory:
         if not self._pages[-1].fits(buf):
             self._pages.append(Page(self._page_size))
         self._pages[-1].append(buf)
+# [/class]
 
-    def size(self):
-        return sum(page.size() for page in self._pages)
-
-    def num_pages(self):
-        return len(self._pages)
-
+    # [get]
     def get(self, index):
         records_per_page = self._page_size // record_size()
         page_number = index // records_per_page
@@ -25,3 +21,12 @@ class DBMemory:
             raise DBError("Index out of range")
         within_page = index % records_per_page
         return self._pages[page_number].get(within_page)
+    # [/get]
+
+    # [util]
+    def size(self):
+        return sum(page.size() for page in self._pages)
+
+    def num_pages(self):
+        return len(self._pages)
+    # [/util]

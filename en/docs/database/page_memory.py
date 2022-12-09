@@ -2,7 +2,6 @@ from util import PAGE_SIZE, DBError, record_size
 
 RECORD_SIZE = record_size()
 
-
 class PageMemory:
     def __init__(self, page_size=PAGE_SIZE):
         assert page_size > 0

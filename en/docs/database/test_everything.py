@@ -27,11 +27,11 @@ def num_page_files():
 
 def test_pack_unpack():
     userid = 12345
-    username = "ghopper"
+    machine = "ghopper"
     timestamp = int(datetime(2022, 1, 2, 3, 4, 5).timestamp())
-    buf = record_pack(userid, username, timestamp)
+    buf = record_pack(userid, machine, timestamp)
     result = record_unpack(buf)
-    assert result == (userid, username, timestamp)
+    assert result == (userid, machine, timestamp)
 
 def test_page():
     page = PageMemory(TEST_PAGE_SIZE)

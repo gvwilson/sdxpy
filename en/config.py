@@ -36,8 +36,8 @@ chapters = [
     "debugger",
     "packman",
     "dataframe",
-    "pipeline",
     "database",
+    "pipeline",
     "editor",
     "conclusion",
 ]
@@ -57,7 +57,6 @@ appendices = [
 # To do.
 todo = [
     "pipeline",
-    "database",
     "editor",
 ]
 
