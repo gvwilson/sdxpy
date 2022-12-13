@@ -42,11 +42,49 @@ syllabus:
 -   Problem is we're trying to write outside the window
 -   Solution is to trim what we're displaying
 -   Define a `Window` class to keep track of the display area
+    -   Why `-1`?
 
 [% inc file="show_large.py" keep="window" %]
 
 -   Initialize it inside `main` and then trim what we're showing
 
 [% inc file="show_large.py" keep="main" %]
+
+## An Editor Object {: #editor-object}
+
+-   Functions with lots of parameters are hard to manage
+-   But `curses.wrapper` requires a function
+-   Solution: create a class with a `__call__` method
+    -   Must use [%i "Delayed Construction pattern" %][%g delayed_construction_pattern "Delayed Construction" %][%/i%] design pattern
+-   Editor
+
+[% inc file="editor_class.py" keep="editor" %]
+
+-   Setup
+
+[% inc file="editor_class.py" keep="setup" %]
+
+-   Interaction
+
+[% inc file="editor_class.py" keep="interact" %]
+
+-   Launch
+
+[% inc file="editor_class.py" keep="launch" %]
+
+-   Then add a lookup table of actions (to be fleshed out later)
+
+[% inc file="editor_interact.py" keep="init" %]
+
+-   Each action must be a method of no arguments (other than `self`)
+
+[% inc file="editor_interact.py" keep="quit" %]
+
+## Moving Around {: #editor-move}
+
+-   Define a `Cursor` to keep track of location
+    -   Multi-cursor editor as an exercise
+-   Move around in response to keys
+    -   But stay inside the text content
 
 ## Exercises {: #editor-exercises}

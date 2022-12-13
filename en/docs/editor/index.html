@@ -152,7 +152,7 @@
     </a>
   </li>
   
-  <li class="todo">
+  <li>
     <a href="../editor/">
       <strong>An Editor</strong>
     </a>
@@ -221,17 +221,281 @@
 
 
       </div>
-      <div id="printable" class="contents bordered todo">
+      <div id="printable" class="contents bordered">
         <main>
           
   <h1>Chapter 21: An Editor</h1>
 
 
           
-            <div class="center">
-  <p class="todo">Coming soon.</p>
-</div>
+            
+  
 
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+  <ul class="syllabus">
+  
+  <li markdown="1">FIXME</li>
+  
+  </ul>
+  
+
+
+            
+<p class="definitions">
+  Terms defined: <a class="gl-ref" href="../glossary/#delayed_construction_pattern" markdown="1">Delayed Construction pattern</a>
+</p>
+
+
+            <div class="page-toc"></div>
+            <ul>
+<li>Early text editors were line-at-a-time like our debugger</li>
+<li>Most of us prefer to use full-screen interactive editors</li>
+<li>Build a simple one to show how they work and how to test them</li>
+<li>Based on <span class="ix-entry" ix-key="Lorgat, Wasim" markdown="1"><a href="https://wasimlorgat.com/">Wasim Lorgat</a></span>&lsquo;s
+    <a href="https://wasimlorgat.com/posts/editor.html">tutorial</a>
+    and <span class="ix-entry" ix-key="Equivias, Cristian" markdown="1">[Cristian Esquivias</span>&lsquo;s
+    <a href="https://github.com/cesquivias/ted"><code>ted</code> editor</a>.</li>
+</ul>
+<h2 id="editor-keystrokes">Section 21.1: Logging Keystrokes</h2>
+<div class="code-sample lang-py" title="log_keystrokes.py">
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">curses</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">scr</span><span class="p">,</span> <span class="n">logfile</span><span class="p">):</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="n">scr</span><span class="o">.</span><span class="n">getkey</span><span class="p">()</span>
+        <span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">key</span><span class="p">),</span> <span class="n">file</span><span class="o">=</span><span class="n">logfile</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="s2">&quot;Qq&quot;</span><span class="p">:</span>
+            <span class="k">break</span>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">writer</span><span class="p">:</span>
+        <span class="n">curses</span><span class="o">.</span><span class="n">wrapper</span><span class="p">(</span><span class="n">main</span><span class="p">,</span> <span class="n">writer</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<ul>
+<li>Test interactively or use standard input</li>
+</ul>
+<div class="code-sample lang-sh" title="log_keystrokes.sh">
+<div class="highlight"><pre><span></span><code><span class="nb">echo</span> <span class="s2">&quot;ABCQ&quot;</span> <span class="p">|</span> python log_keystrokes.py log_keystrokes.out
+</code></pre></div>
+</div>
+<div class="code-sample lang-out" title="log_keystrokes.out">
+<div class="highlight"><pre><span></span><code>&#39;A&#39;
+&#39;B&#39;
+&#39;C&#39;
+&#39;Q&#39;
+</code></pre></div>
+</div>
+<h2 id="editor-file">Section 21.2: Displaying a File</h2>
+<ul>
+<li>As mentioned in <a class="x-ref" href="../layout/">Chapter 10</a>,
+    screen&rsquo;s <span class="ix-entry" ix-key="coordinate system" markdown="1">coordinate system</span> is upside down:
+    y=0 is at the top</li>
+<li>Other than that, ask the screen to display lines and then wait for a quit command</li>
+</ul>
+<div class="code-sample lang-py" title="show_file.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">scr</span><span class="p">,</span> <span class="n">contents</span><span class="p">):</span>
+    <span class="n">scr</span><span class="o">.</span><span class="n">erase</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">line</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">contents</span><span class="p">):</span>
+        <span class="n">scr</span><span class="o">.</span><span class="n">addstr</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">line</span><span class="p">)</span>
+
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="n">scr</span><span class="o">.</span><span class="n">getkey</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="s2">&quot;Qq&quot;</span><span class="p">:</span>
+            <span class="k">break</span>
+</code></pre></div>
+</div>
+<ul>
+<li>Get the file from anywhere</li>
+</ul>
+<div class="code-sample lang-py" title="show_file.py">
+<div class="highlight"><pre><span></span><code><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">contents</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">reader</span><span class="p">:</span>
+            <span class="n">contents</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
+    <span class="n">curses</span><span class="o">.</span><span class="n">wrapper</span><span class="p">(</span><span class="n">main</span><span class="p">,</span> <span class="n">contents</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<ul>
+<li>Works, but only for the right kind of file</li>
+<li>Try to display a thousand lines, each a thousand characters long</li>
+</ul>
+<div class="code-sample lang-py" title="fail_large.py">
+<div class="highlight"><pre><span></span><code><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">contents</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;0123456789&#39;</span> <span class="o">*</span> <span class="mi">100</span><span class="p">]</span> <span class="o">*</span> <span class="mi">1000</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">curses</span><span class="o">.</span><span class="n">wrapper</span><span class="p">(</span><span class="n">main</span><span class="p">,</span> <span class="n">contents</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<div class="code-sample lang-out" title="fail_large.out">
+<div class="highlight"><pre><span></span><code>addwstr() returned ERR
+</code></pre></div>
+</div>
+<ul>
+<li>Problem is we&rsquo;re trying to write outside the window</li>
+<li>Solution is to trim what we&rsquo;re displaying</li>
+<li>Define a <code>Window</code> class to keep track of the display area<ul>
+<li>Why <code>-1</code>?</li>
+</ul>
+</li>
+</ul>
+<div class="code-sample lang-py" title="show_large.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Window</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nrow</span><span class="p">,</span> <span class="n">ncol</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">nrow</span> <span class="ow">and</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">ncol</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nrow</span> <span class="o">=</span> <span class="n">nrow</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ncol</span> <span class="o">=</span> <span class="n">ncol</span>
+</code></pre></div>
+</div>
+<ul>
+<li>Initialize it inside <code>main</code> and then trim what we&rsquo;re showing</li>
+</ul>
+<div class="code-sample lang-py" title="show_large.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">scr</span><span class="p">,</span> <span class="n">contents</span><span class="p">):</span>
+    <span class="n">win</span> <span class="o">=</span> <span class="n">Window</span><span class="p">(</span><span class="n">curses</span><span class="o">.</span><span class="n">LINES</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">curses</span><span class="o">.</span><span class="n">COLS</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">scr</span><span class="o">.</span><span class="n">erase</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">line</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">contents</span><span class="p">[:</span><span class="n">win</span><span class="o">.</span><span class="n">nrow</span><span class="p">]):</span>
+        <span class="n">scr</span><span class="o">.</span><span class="n">addstr</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">line</span><span class="p">[:</span><span class="n">win</span><span class="o">.</span><span class="n">ncol</span><span class="p">])</span>
+
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="n">scr</span><span class="o">.</span><span class="n">getkey</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="s2">&quot;Qq&quot;</span><span class="p">:</span>
+            <span class="k">break</span>
+</code></pre></div>
+</div>
+<h2 id="editor-object">Section 21.3: An Editor Object</h2>
+<ul>
+<li>Functions with lots of parameters are hard to manage</li>
+<li>But <code>curses.wrapper</code> requires a function</li>
+<li>Solution: create a class with a <code>__call__</code> method<ul>
+<li>Must use <span class="ix-entry" ix-key="Delayed Construction pattern" markdown="1"><a class="gl-ref" href="../glossary/#delayed_construction_pattern" markdown="1">Delayed Construction</a></span> design pattern</li>
+</ul>
+</li>
+<li>Editor</li>
+</ul>
+<div class="code-sample lang-py" title="editor_class.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Editor</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scr</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">win</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scr</span><span class="p">,</span> <span class="n">contents</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setup</span><span class="p">(</span><span class="n">scr</span><span class="p">,</span> <span class="n">contents</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">interact</span><span class="p">()</span>
+</code></pre></div>
+</div>
+<ul>
+<li>Setup</li>
+</ul>
+<div class="code-sample lang-py" title="editor_class.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">setup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scr</span><span class="p">,</span> <span class="n">contents</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scr</span> <span class="o">=</span> <span class="n">scr</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">win</span> <span class="o">=</span> <span class="n">Window</span><span class="p">(</span><span class="n">curses</span><span class="o">.</span><span class="n">LINES</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">curses</span><span class="o">.</span><span class="n">COLS</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">scr</span><span class="o">.</span><span class="n">erase</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">line</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">contents</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">win</span><span class="o">.</span><span class="n">nrow</span><span class="p">]):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">scr</span><span class="o">.</span><span class="n">addstr</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">line</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">win</span><span class="o">.</span><span class="n">ncol</span><span class="p">])</span>
+</code></pre></div>
+</div>
+<ul>
+<li>Interaction</li>
+</ul>
+<div class="code-sample lang-py" title="editor_class.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">interact</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scr</span><span class="o">.</span><span class="n">getkey</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="s2">&quot;Qq&quot;</span><span class="p">:</span>
+                <span class="k">break</span>
+</code></pre></div>
+</div>
+<ul>
+<li>Launch</li>
+</ul>
+<div class="code-sample lang-py" title="editor_class.py">
+<div class="highlight"><pre><span></span><code><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">editor</span> <span class="o">=</span> <span class="n">Editor</span><span class="p">()</span>
+    <span class="n">contents</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;0123456789&#39;</span> <span class="o">*</span> <span class="mi">100</span><span class="p">]</span> <span class="o">*</span> <span class="mi">1000</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">curses</span><span class="o">.</span><span class="n">wrapper</span><span class="p">(</span><span class="n">editor</span><span class="p">,</span> <span class="n">contents</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<ul>
+<li>Then add a lookup table of actions (to be fleshed out later)</li>
+</ul>
+<div class="code-sample lang-py" title="editor_interact.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scr</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">win</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">running</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">actions</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;Q&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">quit</span><span class="p">,</span>
+            <span class="s2">&quot;q&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">quit</span>
+        <span class="p">}</span>
+</code></pre></div>
+</div>
+<ul>
+<li>Each action must be a method of no arguments (other than <code>self</code>)</li>
+</ul>
+<div class="code-sample lang-py" title="editor_interact.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">quit</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">running</span> <span class="o">=</span> <span class="kc">False</span>
+</code></pre></div>
+</div>
+<h2 id="editor-move">Section 21.4: Moving Around</h2>
+<ul>
+<li>Define a <code>Cursor</code> to keep track of location<ul>
+<li>Multi-cursor editor as an exercise</li>
+</ul>
+</li>
+<li>Move around in response to keys<ul>
+<li>But stay inside the text content</li>
+</ul>
+</li>
+</ul>
+<h2 id="editor-exercises">Section 21.5: Exercises</h2>
           
         </main>
       </div>

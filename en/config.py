@@ -57,7 +57,6 @@ appendices = [
 # To do.
 todo = [
     "pipeline",
-    "editor",
 ]
 
 # Files to copy verbatim.
