@@ -83,8 +83,18 @@ syllabus:
 ## Moving Around {: #editor-move}
 
 -   Define a `Cursor` to keep track of location
-    -   Multi-cursor editor as an exercise
+
+[% inc file="editor_move.py" keep="cursor" %]
+
 -   Move around in response to keys
-    -   But stay inside the text content
+    -   But stay inside the window *and* the text content
+
+[% inc file="editor_move.py" keep="move" %]
+
+-   Seems to work, except moving from end of long line up or down to shorter line
+    -   Testing is hard…
+-   Solution is to move and then limit the column
+
+[% inc file="editor_move_fixed.py" keep="move" %]
 
 ## Exercises {: #editor-exercises}

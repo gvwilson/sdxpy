@@ -486,15 +486,55 @@
 </div>
 <h2 id="editor-move">Section 21.4: Moving Around</h2>
 <ul>
-<li>Define a <code>Cursor</code> to keep track of location<ul>
-<li>Multi-cursor editor as an exercise</li>
+<li>Define a <code>Cursor</code> to keep track of location</li>
 </ul>
-</li>
+<div class="code-sample lang-py" title="editor_move.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Cursor</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">row</span><span class="p">,</span> <span class="n">col</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">row</span> <span class="ow">and</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">col</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">row</span> <span class="o">=</span> <span class="n">row</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">col</span> <span class="o">=</span> <span class="n">col</span>
+</code></pre></div>
+</div>
+<ul>
 <li>Move around in response to keys<ul>
-<li>But stay inside the text content</li>
+<li>But stay inside the window <em>and</em> the text content</li>
 </ul>
 </li>
 </ul>
+<div class="code-sample lang-py" title="editor_move.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">down</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cur</span><span class="o">.</span><span class="n">row</span> <span class="o">&lt;</span> <span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">win</span><span class="o">.</span><span class="n">nrow</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">contents</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cur</span><span class="o">.</span><span class="n">row</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="k">def</span> <span class="nf">right</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">line_len</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">contents</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">cur</span><span class="o">.</span><span class="n">row</span><span class="p">])</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cur</span><span class="o">.</span><span class="n">col</span> <span class="o">&lt;</span> <span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">win</span><span class="o">.</span><span class="n">ncol</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">line_len</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cur</span><span class="o">.</span><span class="n">col</span> <span class="o">+=</span> <span class="mi">1</span>
+</code></pre></div>
+</div>
+<ul>
+<li>Seems to work, except moving from end of long line up or down to shorter line<ul>
+<li>Testing is hard…</li>
+</ul>
+</li>
+<li>Solution is to move and then limit the column</li>
+</ul>
+<div class="code-sample lang-py" title="editor_move_fixed.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">up</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cur</span><span class="o">.</span><span class="n">row</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cur</span><span class="o">.</span><span class="n">row</span> <span class="o">-=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">limit_col</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">down</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cur</span><span class="o">.</span><span class="n">row</span> <span class="o">&lt;</span> <span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">win</span><span class="o">.</span><span class="n">nrow</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">contents</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cur</span><span class="o">.</span><span class="n">row</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">limit_col</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">limit_col</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cur</span><span class="o">.</span><span class="n">col</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cur</span><span class="o">.</span><span class="n">col</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">contents</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">cur</span><span class="o">.</span><span class="n">row</span><span class="p">])</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+</code></pre></div>
+</div>
 <h2 id="editor-exercises">Section 21.5: Exercises</h2>
           
         </main>
