@@ -8,7 +8,6 @@ class Window:
         self.nrow = nrow
         self.ncol = ncol
         self.row = 0
-        self.col = 0
 
     def bottom(self):
         return self.row + self.nrow - 1
@@ -24,20 +23,14 @@ class Window:
 
     # [translate]
     def translate(self, cur):
-        return cur.row - self.row, cur.col - self.col
+        return cur.row - self.row, cur.col
     # [/translate]
-
-    def __str__(self):
-        return f"win({self.row}, {self.col} / {self.nrow}, {self.ncol})"
 
 class Cursor:
     def __init__(self, row, col):
         assert 0 <= row and 0 <= col
         self.row = row
         self.col = col
-
-    def __str__(self):
-        return f"cur({self.row}, {self.col})"
 
 class Editor:
     def __init__(self):
@@ -62,7 +55,6 @@ class Editor:
         self.scr = scr
         self.contents = contents
         self.win = Window(curses.LINES - 1, curses.COLS - 1)
-        self.win = Window(4, 8)
         self.cur = Cursor(0, 0)
 
     def interact(self):
@@ -95,21 +87,19 @@ class Editor:
             self.cur.col += 1
         self.win.down(self.contents, self.cur)
 
-    # [up]
+    # [updown]
     def up(self):
         if self.cur.row > 0:
             self.cur.row -= 1
         self.limit_col()
         self.win.up(self.cur)
-    # [/up]
 
-    # [down]
     def down(self):
         if self.cur.row < len(self.contents) - 1:
             self.cur.row += 1
         self.limit_col()
         self.win.down(self.contents, self.cur)
-    # [/down]
+    # [/updown]
 
     def limit_col(self):
         self.cur.col = min(self.cur.col, len(self.contents[self.cur.row]) - 1)

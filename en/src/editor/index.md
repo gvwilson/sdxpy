@@ -97,4 +97,26 @@ syllabus:
 
 [% inc file="editor_move_fixed.py" keep="move" %]
 
+-   But we can only see the top left portion of the file
+-   Want to show the available content, which means mapping one coordinate system to another
+-   Enhance the `Window` class to keep track of the top row it's displaying
+    -   Keeping track of column will be left as an exercise
+
+[% inc file="editor_scroll.py" keep="window" %]
+
+-   When we display, we show the rows that are currently visible
+
+[% inc file="editor_scroll.py" keep="display" %]
+
+-   The `translate` method turns the cursor's position into a content position
+
+[% inc file="editor_scroll.py" keep="translate" %]
+
+-   Finally, we adjust the screen when moving
+
+[% inc file="editor_scroll.py" keep="updown" %]
+
+-   Keeping track of the coordinate systems and their relation to each other is hard
+-   Diagrams, diagrams, diagrams…
+
 ## Exercises {: #editor-exercises}
