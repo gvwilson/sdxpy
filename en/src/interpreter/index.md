@@ -392,7 +392,7 @@ Here's the implementation of `do_def`:
 And here's the implementation of `do_call`:
 {: .continue}
 
-[% inc file="func.py" keep="def" %]
+[% inc file="func.py" keep="call" %]
 
 Our test program and its output are:
 {: .continue}
