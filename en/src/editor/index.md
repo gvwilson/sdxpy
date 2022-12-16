@@ -4,13 +4,13 @@ syllabus:
 - FIXME
 ---
 
--   Early text editors were line-at-a-time like our debugger
--   Most of us prefer to use full-screen interactive editors
--   Build a simple one to show how they work and how to test them
--   Based on [%i "Lorgat, Wasim" %][Wasim Lorgat][lorgat_wasim][%/i%]'s
-    [tutorial][lorgat_editor]
-    and [%i "Equivias, Cristian" %][Cristian Esquivias[%/i%]'s
-    [`ted` editor][ted_editor].
+Early text editors were line-at-a-time applications like the debugger of [%x debugger %].
+Most people prefer to use full-screen interactive editors,
+so this chapters builds a simple one to show how they work.
+Our design follows [%i "Lorgat, Wasim" %][Wasim Lorgat][lorgat_wasim][%/i%]'s
+[tutorial][lorgat_editor] closely,
+and borrows a few ideas from [%i "Equivias, Cristian" %][Cristian Esquivias[%/i%]'s
+[`ted` editor][ted_editor] as well.
 
 ## Logging Keystrokes {: #editor-keystrokes}
 
