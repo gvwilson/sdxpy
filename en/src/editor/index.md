@@ -4,13 +4,21 @@ syllabus:
 - FIXME
 ---
 
--   Early text editors were line-at-a-time like our debugger
--   Most of us prefer to use full-screen interactive editors
--   Build a simple one to show how they work and how to test them
--   Based on [%i "Lorgat, Wasim" %][Wasim Lorgat][lorgat_wasim][%/i%]'s
-    [tutorial][lorgat_editor]
-    and [%i "Equivias, Cristian" %][Cristian Esquivias[%/i%]'s
-    [`ted` editor][ted_editor].
+Early text editors were line-at-a-time applications like the debugger of [%x debugger %].
+Most people prefer to use full-screen interactive editors,
+so this chapters builds a simple one to show how they work.
+Our design follows [%i "Lorgat, Wasim" %][Wasim Lorgat][lorgat_wasim][%/i%]'s
+[tutorial][lorgat_editor] closely,
+and borrows a few ideas from [%i "Equivias, Cristian" %][Cristian Esquivias[%/i%]'s
+[`ted` editor][ted_editor] as well.
+
+Our starting point is Python's [curses][py_curses] module.
+It gives programs access to a library called `curses`,
+which provides a uniform interface to terminal applications on several platforms.
+These applications can do much more than most people realize,
+and terminal interface libraries like [Textualize][textualize]
+can do most of what a modern browser can do,
+but we will stick to the basics for now.
 
 ## Logging Keystrokes {: #editor-keystrokes}
 
@@ -118,5 +126,43 @@ syllabus:
 
 -   Keeping track of the coordinate systems and their relation to each other is hard
 -   Diagrams, diagrams, diagrams…
+
+## Editing {: #editor-editing}
+
+-   Long overdue: create a `Buffer` class to store the text being edited
+    -   Check that it's being constructed with a list of strings (rather than a single string)
+    -   Use `__len__` and `__getitem__` so that it looks like a list (no existing code needs to change)
+
+[% inc file="editor_buffer.py" keep="buffer" %]
+
+-   Only significant change to `Editor` is to ask the buffer what its bottom line is:
+
+[% inc file="editor_buffer.py" keep="down" %]
+
+-   Add that method to `Buffer`
+
+[% inc file="editor_buffer.py" keep="bottom" %]
+
+-   Everything else just works, which is a sign of good design
+-   Now define the set of characters users are allowed to insert
+    -   For now, stick to visible characters plus space
+    -   Handle newlines, tabs, etc. in the exercises
+    -   Don't define this ourselves: Python's [string][py_string] module is already there
+    -   Could add all the characters to `Editor.actions` so that they can be remapped, but leave that for exercises
+
+[% inc file="editor_insert.py" keep="string" %]
+
+-   Interaction changes
+    -   If the character is a special action, do that
+    -   Otherwise, if it's insertable, insert it and move right
+    -   Otherwise, ignore it
+
+[% inc file="editor_insert.py" keep="interact" %]
+
+-   Go back to the `Buffer` class and insert the character
+
+[% inc file="editor_insert.py" keep="insert" %]
+
+-   We can now edit the buffer
 
 ## Exercises {: #editor-exercises}

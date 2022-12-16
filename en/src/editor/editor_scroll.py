@@ -16,8 +16,8 @@ class Window:
         if (cur.row == self.row - 1) and (self.row > 0):
             self.row -= 1
 
-    def down(self, contents, cur):
-        if (cur.row == self.bottom() + 1) and (self.bottom() < len(contents) - 1):
+    def down(self, buffer, cur):
+        if (cur.row == self.bottom() + 1) and (self.bottom() < len(buffer) - 1):
             self.row += 1
 # [/window]
 
@@ -47,13 +47,13 @@ class Editor:
             "KEY_RIGHT": self.right
         }
 
-    def __call__(self, scr, contents):
-        self.setup(scr, contents)
+    def __call__(self, scr, buffer):
+        self.setup(scr, buffer)
         self.interact()
 
-    def setup(self, scr, contents):
+    def setup(self, scr, buffer):
         self.scr = scr
-        self.contents = contents
+        self.buffer = buffer
         self.win = Window(curses.LINES - 1, curses.COLS - 1)
         self.cur = Cursor(0, 0)
 
@@ -67,7 +67,7 @@ class Editor:
     # [display]
     def display(self):
         self.scr.erase()
-        visible = self.contents[self.win.row : (self.win.row + self.win.nrow)]
+        visible = self.buffer[self.win.row : (self.win.row + self.win.nrow)]
         for i, line in enumerate(visible):
             self.scr.addstr(i, 0, line[:self.win.ncol])
         self.scr.move(*self.win.translate(self.cur))
@@ -82,10 +82,10 @@ class Editor:
         self.win.up(self.cur)
 
     def right(self):
-        line_len = len(self.contents[self.cur.row])
+        line_len = len(self.buffer[self.cur.row])
         if self.cur.col < min(self.win.ncol - 1, line_len - 1):
             self.cur.col += 1
-        self.win.down(self.contents, self.cur)
+        self.win.down(self.buffer, self.cur)
 
     # [updown]
     def up(self):
@@ -95,16 +95,16 @@ class Editor:
         self.win.up(self.cur)
 
     def down(self):
-        if self.cur.row < len(self.contents) - 1:
+        if self.cur.row < len(self.buffer) - 1:
             self.cur.row += 1
         self.limit_col()
-        self.win.down(self.contents, self.cur)
+        self.win.down(self.buffer, self.cur)
     # [/updown]
 
     def limit_col(self):
-        self.cur.col = min(self.cur.col, len(self.contents[self.cur.row]) - 1)
+        self.cur.col = min(self.cur.col, len(self.buffer[self.cur.row]) - 1)
 
-def make_contents():
+def make_buffer():
     line = '0123456789'
     result = []
     for i in range(100):
@@ -113,8 +113,8 @@ def make_contents():
 
 if __name__ == "__main__":
     editor = Editor()
-    contents = make_contents()
+    buffer = make_buffer()
     try:
-        curses.wrapper(editor, contents)
+        curses.wrapper(editor, buffer)
     except Exception as exc:
         print(exc)
