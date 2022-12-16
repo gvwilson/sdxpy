@@ -2,9 +2,9 @@ import curses
 import sys
 
 # [main]
-def main(scr, contents):
+def main(scr, buffer):
     scr.erase()
-    for i, line in enumerate(contents):
+    for i, line in enumerate(buffer):
         scr.addstr(i, 0, line)
 
     while True:
@@ -15,9 +15,9 @@ def main(scr, contents):
 
 # [launch]
 if __name__ == "__main__":
-    contents = []
+    buffer = []
     if len(sys.argv) > 1:
         with open(sys.argv[1], "r") as reader:
-            contents = reader.readlines()
-    curses.wrapper(main, contents)
+            buffer = reader.readlines()
+    curses.wrapper(main, buffer)
 # [/launch]

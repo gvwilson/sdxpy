@@ -10,10 +10,10 @@ class Window:
 # [/window]
 
 # [main]
-def main(scr, contents):
+def main(scr, buffer):
     win = Window(curses.LINES - 1, curses.COLS - 1)
     scr.erase()
-    for i, line in enumerate(contents[:win.nrow]):
+    for i, line in enumerate(buffer[:win.nrow]):
         scr.addstr(i, 0, line[:win.ncol])
 
     while True:
@@ -23,8 +23,8 @@ def main(scr, contents):
 # [/main]
 
 if __name__ == "__main__":
-    contents = ['0123456789' * 100] * 1000
+    buffer = ['0123456789' * 100] * 1000
     try:
-        curses.wrapper(main, contents)
+        curses.wrapper(main, buffer)
     except Exception as exc:
         print(exc)

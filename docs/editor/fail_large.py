@@ -1,9 +1,9 @@
 import curses
 import sys
 
-def main(scr, contents):
+def main(scr, buffer):
     scr.erase()
-    for i, line in enumerate(contents):
+    for i, line in enumerate(buffer):
         scr.addstr(i, 0, line)
 
     while True:
@@ -13,9 +13,9 @@ def main(scr, contents):
 
 # [launch]
 if __name__ == "__main__":
-    contents = ['0123456789' * 100] * 1000
+    buffer = ['0123456789' * 100] * 1000
     try:
-        curses.wrapper(main, contents)
+        curses.wrapper(main, buffer)
     except Exception as exc:
         print(exc)
 # [/launch]
