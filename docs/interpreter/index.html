@@ -767,16 +767,28 @@ which figures out what a variable name refers to based on the structure of the p
 </div>
 <p class="continue">And here&rsquo;s the implementation of <code>do_call</code>:</p>
 <div class="code-sample lang-py" title="func.py">
-<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">do_def</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Define a new function.</span>
-<span class="sd">    [&quot;def&quot; name [...params...] body] =&gt; None # and define function</span>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">do_call</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Call a function.</span>
+<span class="sd">    [&quot;call&quot; name ...expr...] =&gt; env[name](*expr)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span>
+    <span class="c1"># Set up the call.</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">1</span>
     <span class="n">name</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-    <span class="n">params</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-    <span class="n">body</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
-    <span class="n">env_set</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;func&quot;</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">body</span><span class="p">])</span>
-    <span class="k">return</span> <span class="kc">None</span>
+    <span class="n">values</span> <span class="o">=</span> <span class="p">[</span><span class="n">do</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">a</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">:]]</span>
+
+    <span class="c1"># Find the function.</span>
+    <span class="n">func</span> <span class="o">=</span> <span class="n">env_get</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">func</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;func&quot;</span><span class="p">)</span>
+    <span class="n">params</span><span class="p">,</span> <span class="n">body</span> <span class="o">=</span> <span class="n">func</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">func</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+
+    <span class="c1"># Run in new environment.</span>
+    <span class="n">env</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">values</span><span class="p">)))</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">do</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">body</span><span class="p">)</span>
+    <span class="n">env</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+
+    <span class="c1"># Report.</span>
+    <span class="k">return</span> <span class="n">result</span>
 </code></pre></div>
 </div>
 <p class="continue">Our test program and its output are:</p>
