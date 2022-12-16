@@ -33,13 +33,13 @@ class Editor:
             "KEY_RIGHT": self.right
         }
 
-    def __call__(self, scr, contents):
-        self.setup(scr, contents)
+    def __call__(self, scr, buffer):
+        self.setup(scr, buffer)
         self.interact()
 
-    def setup(self, scr, contents):
+    def setup(self, scr, buffer):
         self.scr = scr
-        self.contents = contents
+        self.buffer = buffer
         self.win = Window(curses.LINES - 1, curses.COLS - 1)
         self.cur = Cursor(0, 0)
 
@@ -52,7 +52,7 @@ class Editor:
 
     def display(self):
         self.scr.erase()
-        for i, line in enumerate(self.contents[:self.win.nrow]):
+        for i, line in enumerate(self.buffer[:self.win.nrow]):
             self.scr.addstr(i, 0, line[:self.win.ncol])
         self.scr.move(self.cur.row, self.cur.col)
 
@@ -69,16 +69,16 @@ class Editor:
 
     # [move]
     def down(self):
-        if self.cur.row < min(self.win.nrow - 1, len(self.contents) - 1):
+        if self.cur.row < min(self.win.nrow - 1, len(self.buffer) - 1):
             self.cur.row += 1
 
     def right(self):
-        line_len = len(self.contents[self.cur.row])
+        line_len = len(self.buffer[self.cur.row])
         if self.cur.col < min(self.win.ncol - 1, line_len - 1):
             self.cur.col += 1
     # [/move]
 
-def make_contents():
+def make_buffer():
     line = '0123456789'
     result = []
     for i in range(len(line)):
@@ -87,8 +87,8 @@ def make_contents():
 
 if __name__ == "__main__":
     editor = Editor()
-    contents = make_contents()
+    buffer = make_buffer()
     try:
-        curses.wrapper(editor, contents)
+        curses.wrapper(editor, buffer)
     except Exception as exc:
         print(exc)
