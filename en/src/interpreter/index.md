@@ -12,7 +12,7 @@ syllabus:
 [%x tester %] introduced the idea that programs are just another kind of data.
 Similarly,
 the compilers and interpreters that make programs run are just programs themselves.
-instead of changing the characters in a block of memory like text editors,
+Instead of changing the characters in a block of memory like text editors,
 or calculating sums and averages like spreadsheets,
 compilers turn text into instructions for interpreters or hardware to run.
 
@@ -166,7 +166,7 @@ but our programs will be easier to read with variables
 that let us give names to values.
 We can add them to our interpreter
 by passing around a dictionary containing all the variables seen so far.
-Such a dictionary is sometimes called an [%g environment "environment %]
+Such a dictionary is sometimes called an [%g environment "environment" %]
 because it is the setting in which expressions are evaluated;
 the dictionaries returned by the `globals` and `locals` functions
 introduced in [%x tester %] are both environments.
@@ -239,7 +239,7 @@ the code to select and run an operation is:
 
 As with unit test functions in [%x tester %],
 the `do_*` functions must have exactly the same [%g signature "signature" %]
-so that we can all any of them with an environment and a list of arguments
+so that we can call any of them with an environment and a list of arguments
 without knowing exactly which function we're calling.
 And as with finding tests,
 introspection is more reliable than a hand-written lookup table,
