@@ -22,6 +22,23 @@ but we will stick to the basics for now.
 
 ## Logging Keystrokes {: #editor-keystrokes}
 
+Let's started by writing a terminal application
+that does nothing except wait for a command to quit:
+
+[% inc file="simplest.py" %]
+
+Our application is in a function called `main`.
+Instead of calling it directly,
+we pass it to `curses.wrapper`,
+which initializes the terminal library for us
+and then calls our function with an object
+that represents the terminal.
+`main` then goes into a loop that gets a keystroke
+and quits if the key is either 'Q' or 'q'.
+
+When we run this program our terminal window goes blank
+and stays that way until we quit.
+
 [% inc file="log_keystrokes.py" %]
 
 -   Test interactively or use standard input
