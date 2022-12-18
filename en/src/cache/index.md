@@ -1,7 +1,7 @@
 ---
 title: "A File Cache"
 syllabus:
--   Software systems often uses caches to store a subset of files in order to use less disk space.
+-   Software systems often use caches to store a subset of files in order to use less disk space.
 -   Caching systems can replace actual files with placeholders containing metadata.
 -   Object-oriented systems are often implemented in stages to break large design problems into smaller, more manageable ones.
 -   In a good design, derived classes only have to override a few (preferably none) of the methods implemented in parent classes.
@@ -144,7 +144,7 @@ and then writes each record to the index file.
 This method automatically creates the index file
 if it doesn't already exist:
 
-[% inc file="index_csv.py" keep="load" %]
+[% inc file="index_csv.py" keep="save" %]
 
 Finally,
 we need to write `_initialize_index`,
