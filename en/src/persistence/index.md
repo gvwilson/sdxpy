@@ -412,7 +412,7 @@ but the changes to `_set` and `_dict` follow exactly the same pattern.
 It's time to extend our framework to handle user-defined classes.
 We'll start by refactoring our code so that the `save` method doesn't get any larger:
 
-[% inc file="extend.py" keep="save" omit="omit_extension" %]
+[% inc file="extend.py" keep="save_base" omit="omit_extension" %]
 
 The method to handle built-in types is:
 {: .continue}
