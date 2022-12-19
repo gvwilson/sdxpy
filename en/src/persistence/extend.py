@@ -1,7 +1,7 @@
 from aliasing import LoadAlias, SaveAlias
 
 
-# [save]
+# [save_base]
 class SaveExtend(SaveAlias):
     def __init__(self, writer):
         super().__init__(writer)
@@ -16,6 +16,7 @@ class SaveExtend(SaveAlias):
             return
         # [/omit_extension]
         assert False, f"Don't know how to handle {thing}"
+    # [/save_base]
 
     # [save_aliased]
     def _aliased(self, thing):
