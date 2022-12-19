@@ -121,7 +121,7 @@ advances the input or output stream
 by precisely as many lines as it needs to.
 Notice also that this approach handles nested lists without any extra work.
 
-Our functions handle sets in exactly the same was as lists;
+Our functions handle sets in exactly the same way as lists;
 the only difference is using the keyword `set` instead of the keyword `list`
 in the opening line.
 To save a dictionary,
