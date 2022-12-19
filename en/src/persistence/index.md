@@ -350,7 +350,7 @@ fixture = []
 fixture.append(fixture)
 ```
 
-create the data structure shown in [%fixme persistence-circular %],
+create the data structure shown in [%f persistence-circular %],
 in which an object contains a reference to itself.
 Our code ought to handle this case but doesn't:
 when we try to read in the saved data,
