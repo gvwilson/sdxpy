@@ -140,7 +140,7 @@ create a [%g bit_mask "mask" %] in which that bit is 0 and the others are 1,
 then use `&` to combine the two.
 To make things easier to read,
 programmers often set a single bit,
-negative it with `~`,
+negate it with `~`,
 and then use `&`:
 
 [% inc file="bit_mask.py" %]
