@@ -380,7 +380,7 @@ Speed
 
 Hardware
 :   Someone, somewhere, has to convert the signal from the thermocouple to a number,
-    and that signal probably arrives arrives as a stream of 1's and 0's.
+    and that signal probably arrives as a stream of 1's and 0's.
     
 Lack of anything better
 :   It's possible to represent images as ASCII art, but sound?
@@ -420,7 +420,7 @@ on the other hand,
 put each value in a data structure
 that keeps track of its type along with a bit of extra administrative information
 ([%f binary-boxing %]).
-Something stored this was is called a [%g boxed_value "boxed value" %];
+Something stored this way is called a [%g boxed_value "boxed value" %];
 this extra data allows the language to do [%g introspection "introspection" %],
 [%g garbage_collection "garbage collection" %],
 and much more.
@@ -564,7 +564,7 @@ which just happens to be exactly the right format to use to pack it.
 That's fine when we're writing,
 but how do we know how much data to get if we're reading?
 For example, suppose we have the two strings "hello" and "Python".
-we can pack them like this:
+We can pack them like this:
 
 ```python
 pack('5s6s', 'hello', 'Python')
@@ -601,7 +601,7 @@ There are pro's and con's to both, which we won't go into here.
 What you *do* need to know is that if you move data from one architecture to another,
 it's your responsibility to flip the bytes around,
 because the machine doesn't know what the bytes mean.
-This is such a pain that the `struct` library and other libraries like
+This is such a pain that the `struct` library and other libraries like it 
 will do things for you if you ask it to.
 If you're using `struct`,
 the first character of a format string optionally indicates the byte order
