@@ -220,7 +220,7 @@ Each component does its part and asks something else to handle the remaining wor
 so long as each component takes the same inputs,
 we can put them together however we want.
 
-## Summary {: #templating-summary}
+## Summary {: #matching-summary}
 
 [% figure
    slug="matching-concept-map"

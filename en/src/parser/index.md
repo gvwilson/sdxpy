@@ -258,7 +258,7 @@ for self-taught developers.
    caption="A finite state machine equivalent to a regular expression."
 %]
 
-## Summary {: #templating-summary}
+## Summary {: #parser-summary}
 
 [% figure
    slug="parser-concept-map"
