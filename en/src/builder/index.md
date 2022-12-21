@@ -378,7 +378,7 @@ while child classes implement those operations without changing the flow of cont
 We have added a lot of steps to our original template method,
 which makes it a bit of a stretch to claim that the overall operation hasn't changed.
 Knowing what we know now,
-we could go back and modify the original `SkeletonBuilder.build` method
+we could go back and modify the original `ConfigLoader.build` method
 to include those extra steps and provide do-nothing implementations.
 
 The root of the problem is that we didn't anticipate all the steps that would be involved
