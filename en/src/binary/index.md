@@ -504,11 +504,11 @@ What is `\x1f` and why is it in our data?
 If Python finds a character in a string that doesn't have a printable representation,
 it prints a 2-digit escape sequence in [%g hexadecimal "hexadecimal" %] (base 16).
 This uses the letters A-F (or a-f) to represent the digits from 10 to 15,
-so that (for example) `3D5` is (3×16^2^)+(13×16^1^)+(5×16^0^), or 981 in decimal.
+so that (for example) `3D5` is \\((3×16^2)+(13×16^1)+(5×16^0)\\), or 981 in decimal.
 Python is therefore telling us that
 our string contains the eight bytes
 `['\x1f', '\x00', '\x00', '\x00', 'A', '\x00', '\x00', '\x00']`.
-`1F` in hex is (1×16^1^)+(15×16^0^), or 31;
+`1F` in hex is \\((1×16^1)+(15×16^0)\\), or 31;
 `'A'` is our 65,
 because the ASCII code for an upper-case letter A is the decimal value 65.
 All the other bytes are zeroes (`"\x00"`)
