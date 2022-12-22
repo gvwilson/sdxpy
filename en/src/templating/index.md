@@ -92,9 +92,10 @@ We could instead use two attributes like this:
 but we have decided to save ourselves a little typing.
 And strictly speaking
 we should call our attributes `data-something` instead of `z-something`
-to conform with [%i "HTML5 specification" %][the HTML5 specification][html5-data-attributes][%/i%],
+to conform with [%i "HTML5 specification" %][the HTML5 specification][html5_data_attributes][%/i%],
 but by the time we're finished processing our templates,
 there shouldn't be any `z-*` attributes left to confuse a browser.
+{: .continue}
 
 </div>
 
