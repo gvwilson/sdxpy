@@ -121,7 +121,7 @@ advances the input or output stream
 by precisely as many lines as it needs to.
 Notice also that this approach handles nested lists without any extra work.
 
-Our functions handle sets in exactly the same was as lists;
+Our functions handle sets in exactly the same way as lists;
 the only difference is using the keyword `set` instead of the keyword `list`
 in the opening line.
 To save a dictionary,
@@ -350,7 +350,7 @@ fixture = []
 fixture.append(fixture)
 ```
 
-create the data structure shown in [%fixme persistence-circular %],
+create the data structure shown in [%f persistence-circular %],
 in which an object contains a reference to itself.
 Our code ought to handle this case but doesn't:
 when we try to read in the saved data,
@@ -412,7 +412,7 @@ but the changes to `_set` and `_dict` follow exactly the same pattern.
 It's time to extend our framework to handle user-defined classes.
 We'll start by refactoring our code so that the `save` method doesn't get any larger:
 
-[% inc file="extend.py" keep="save" omit="omit_extension" %]
+[% inc file="extend.py" keep="save_base" omit="omit_extension" %]
 
 The method to handle built-in types is:
 {: .continue}

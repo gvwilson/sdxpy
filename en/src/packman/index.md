@@ -441,7 +441,7 @@ until the problem becomes unsolvable:
 [% inc file="z3_complete.py" keep="all" %]
 [% inc file="z3_complete.out" %]
 
-## Summary {: #builder-summary}
+## Summary {: #packman-summary}
 
 [% figure
    slug="packman-concept-map"

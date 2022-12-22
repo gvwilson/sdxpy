@@ -10,11 +10,14 @@ def save(writer, thing):
         print(f"int:{thing}", file=writer)
 
     # [extras]
+   
+    # [save_str]
     elif isinstance(thing, str):
         lines = thing.split("\n")
         print(f"str:{len(lines)}", file=writer)
         for line in lines:
             print(line, file=writer)
+    # [/save_str]
 
     # [save_list]
     elif isinstance(thing, list):
@@ -23,12 +26,12 @@ def save(writer, thing):
             save(writer, item)
     # [/save_list]
 
-    # [save_str]
+    # [save_set]
     elif isinstance(thing, set):
         print(f"set:{len(thing)}", file=writer)
         for item in thing:
             save(writer, item)
-    # [/save_str]
+    # [/save_set]
 
     # [save_dict]
     elif isinstance(thing, dict):
