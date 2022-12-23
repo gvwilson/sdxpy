@@ -1,7 +1,7 @@
 ---
 title: "Matching Patterns"
 syllabus:
-- Use regular expressions to match patterns in text and extra data.
+- Use regular expressions to match patterns in text and extract data.
 - Use inheritance to make matchers composable and extensible.
 - Objects can delegate work to other objects using the Chain of Responsibility pattern.
 ---
