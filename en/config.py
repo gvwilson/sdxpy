@@ -37,7 +37,6 @@ chapters = [
     "packman",
     "dataframe",
     "database",
-    "pipeline",
     "editor",
     "conclusion",
 ]
@@ -55,9 +54,7 @@ appendices = [
 ]
 
 # To do.
-todo = [
-    "pipeline",
-]
+todo = []
 
 # Files to copy verbatim.
 copy = [
