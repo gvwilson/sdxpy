@@ -19,6 +19,7 @@ class Cursor:
         return f"({self.row}, {self.col})"
 
 class Editor:
+    # [init]
     def __init__(self):
         self.scr = None
         self.win = None
@@ -32,6 +33,7 @@ class Editor:
             "KEY_LEFT": self.left,
             "KEY_RIGHT": self.right
         }
+        # [/init]
 
     def __call__(self, scr, buffer):
         self.setup(scr, buffer)
@@ -50,11 +52,13 @@ class Editor:
             if key in self.actions:
                 self.actions[key]()
 
+    # [display]
     def display(self):
         self.scr.erase()
         for i, line in enumerate(self.buffer[:self.win.nrow]):
             self.scr.addstr(i, 0, line[:self.win.ncol])
         self.scr.move(self.cur.row, self.cur.col)
+    # [/display]
 
     def quit(self):
         self.running = False

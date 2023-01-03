@@ -7,13 +7,11 @@ class Window:
         self.nrow = nrow
         self.ncol = ncol
 
-# [cursor]
 class Cursor:
     def __init__(self, row, col):
         assert 0 <= row and 0 <= col
         self.row = row
         self.col = col
-# [/cursor]
 
     def __str__(self):
         return f"({self.row}, {self.col})"
