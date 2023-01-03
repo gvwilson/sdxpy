@@ -276,41 +276,49 @@ there are always tools like [ASCIIFlow][asciiflow].
 
 ## Editing {: #editor-editing}
 
--   Long overdue: create a `Buffer` class to store the text being edited
-    -   Check that it's being constructed with a list of strings (rather than a single string)
-    -   Use `__len__` and `__getitem__` so that it looks like a list (no existing code needs to change)
+We are finally ready to actually edit something.
+Since we're going to be changing the text,
+we create a `Buffer` class to store it.
+This class checks that it's being constructed with a list of strings rather than a single string
+(because that was a mistake we made several times when writing the code).
+It also uses `__len__` and `__getitem__` so that it looks like a list,
+which means no existing code needs to change:
 
 [% inc file="editor_buffer.py" keep="buffer" %]
 
--   Only significant change to `Editor` is to ask the buffer what its bottom line is:
+The only significant change to `Editor` is to ask the buffer what its bottom line is:
 
 [% inc file="editor_buffer.py" keep="down" %]
 
--   Add that method to `Buffer`
+That method in the `Buffer` class is just one line long:
+{: .continue}
 
 [% inc file="editor_buffer.py" keep="bottom" %]
 
--   Everything else just works, which is a sign of good design
--   Now define the set of characters users are allowed to insert
-    -   For now, stick to visible characters plus space
-    -   Handle newlines, tabs, etc. in the exercises
-    -   Don't define this ourselves: Python's [string][py_string] module is already there
-    -   Could add all the characters to `Editor.actions` so that they can be remapped, but leave that for exercises
+Everything we have built so far just works after these changes,
+which is a sign of good design.
+{: .continue}
+
+Now we can define the set of characters that users are allowed to insert.
+For now,
+we will stick to visible characters plus space;
+we will handle newlines, tabs, and so on in the exercises.
+We don't define these character classes ourselves:
+instead, we rely on Python's [string][py_string] module.
 
 [% inc file="editor_insert.py" keep="string" %]
 
--   Interaction changes
-    -   If the character is a special action, do that
-    -   Otherwise, if it's insertable, insert it and move right
-    -   Otherwise, ignore it
+We could add an action method for each character,
+but for now it's simpler to modify `interact` to handle two cases separately:
 
 [% inc file="editor_insert.py" keep="interact" %]
 
--   Go back to the `Buffer` class and insert the character
+Finally,
+we can go back to the `Buffer` class and insert the character:
 
 [% inc file="editor_insert.py" keep="insert" %]
 
--   We can now edit the buffer
+We are now able to edit a file.
 
 ## Exercises {: #editor-exercises}
 
@@ -331,3 +339,39 @@ Modify the editor to handle this.
 ### Horizontal scrolling {: .exercise}
 
 Modify the editor to support horizontal scrolling as well as vertical scrolling.
+
+### Deleting characters {: .exercise}
+
+Modify the editor so that users can delete characters.
+What happens if someone tries to delete a character when the cursor is at the start of the line?
+
+### Saving changes {: .exercise}
+
+Modify the editor so that if it was launched by reading a file,
+typing Ctrl-W will write (save) that same file.
+
+### Splitting lines {: .exercise}
+
+Modify the editor so that if the user types Enter in the middle of a line,
+the line splits.
+
+### Paging {: .exercise}
+
+Use the curses module to create a tool for paging up and down through files
+like the Unix `less` command.
+
+### Marking locations {: .exercise}
+
+Modify the editor so that Ctrl-X records the current location of the cursor
+and Ctrl-J jumps the cursor back to that location.
+
+### Status line {: .exercise}
+
+Add a status line to the bottom of the editor
+that shows the name of the file currently being edited
+and the XY coordinates of the cursor within the text buffer.
+
+### Justify paragraphs {: .exercise}
+
+Modify the editor so that when the user types Ctrl-U
+it justifies the text in the current paragraph.
