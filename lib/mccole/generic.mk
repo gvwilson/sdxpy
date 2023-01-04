@@ -132,7 +132,7 @@ wordlist: ./docs/index.html
 ## count: words per file
 .PHONY: count
 count:
-	@wc -w ${MARKDOWN} | sort -n
+	@(wc -w ${MARKDOWN} && grep -c '\[% figure' ${MARKDOWN}) | python bin/count.py
 
 ## valid: run html5validator on generated files
 .PHONY: valid
