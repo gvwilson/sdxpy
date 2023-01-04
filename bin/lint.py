@@ -135,7 +135,7 @@ def check_glossary(glossary_file, language):
 
 def check_links(links_file, source_files):
     """Check that all links are known."""
-    existing = {entry["key"] for entry in utils.read_yaml(links_file)}
+    existing = {entry["key"] for entry in utils.read_yaml(links_file) if not entry.get("direct", False)}
     referenced = set()
     for (dirname, filename) in source_files:
         referenced |= get_links(Path(dirname, filename))

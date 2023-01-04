@@ -1,7 +1,12 @@
 ---
 title: "An Editor"
 syllabus:
-- FIXME
+-   A terminal UI (TUI) can do most of the things that graphical UIs can do.
+-   TUI libraries provide a screen abstraction to encapsulate the details of different platforms' terminal applications.
+-   Most terminal applications are built around an event loop that waits for user input and takes appropriate action.
+-   When testing user interfaces, we usually assume that the rendering layer is working correctly.
+-   A text editor must translate between the coordinate systems of the text and the screen.
+-   Using a lookup table to map events to actions simplifies design and testing.
 ---
 
 Early text editors were line-at-a-time applications like the debugger of [%x debugger %].
@@ -15,10 +20,10 @@ and borrows a few ideas from [%i "Equivias, Cristian" %][Cristian Esquivias[%/i%
 Our starting point is Python's [curses][py_curses] module.
 It gives programs access to a library called `curses`,
 which provides a uniform interface to terminal applications on several platforms.
-These applications can do much more than most people realize,
-and terminal interface libraries like [Textualize][textualize]
-can do most of what a modern browser can do,
-but we will stick to the basics for now.
+These applications can do much more than most people realize—libraries like [Textualize][textualize]
+can create [%i "terminal UI (TUI)" %][%g tui "terminal UIs" %][%/i%] (TUIs)
+that can do most of what a modern browser can do,
+but we will keep things simple for now.
 
 ## Logging Keystrokes {: #editor-keystrokes}
 
@@ -33,7 +38,8 @@ we pass it to `curses.wrapper`,
 which initializes the terminal library for us
 and then calls our function with an object
 that represents the terminal.
-`main` then goes into a loop that gets a keystroke
+`main` then goes into an [%i "event loop" %][%g event_loop "event loop" %][%/i%]
+that waits for a keystroke
 and quits if the key is either 'Q' or 'q'.
 
 When we run this program our terminal window goes blank
