@@ -370,7 +370,7 @@ and the solver duly tells us that:
 [% inc file="z3_unequal.py" keep="solve" %]
 [% inc file="z3_unequal.out" %]
 
-Theorem provers are powerful tools.
+Theorem provers like Z3 and [PicoSAT][picosat]are powerful tools.
 We can,
 for example,
 use them to generate test cases.
