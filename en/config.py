@@ -26,7 +26,6 @@ chapters = [
     "dataframe",
     "persistence",
     "binary",
-    "database",
     "builder",
     "templating",
     "layout",
