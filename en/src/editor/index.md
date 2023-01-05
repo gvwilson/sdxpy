@@ -132,9 +132,17 @@ Let's define a `Window` class to keep track of the display area:
 When the main program starts,
 it askes the curses module how many lines and columns are available,
 uses those values to initialize a `Window`,
-and then only shows the text that lies inside the window:
+and then only shows the text that lies inside the window
+([% f editor-window %]):
 
 [% inc file="show_large.py" keep="main" %]
+
+[% figure
+   slug="editor-window"
+   img="editor_window.svg"
+   alt="Relationship between window and screen"
+   caption="Relationship between window and screen."
+%]
 
 We don't really need a `Window` class
 if all we want to do is trim some lines of text to fit a window.
@@ -256,9 +264,17 @@ so that we can scroll vertically
 
 [% inc file="editor_scroll.py" keep="window" %]
 
-When we display, we show the rows that are currently visible:
+When we display, we show the rows that are currently visible
+([% f editor-scrolling %]):
 
 [% inc file="editor_scroll.py" keep="display" %]
+
+[% figure
+   slug="editor-scrolling"
+   img="editor_scrolling.svg"
+   alt="Scrolling text in a window"
+   caption="Scrolling text in the editor window."
+%]
 
 The `translate` method turns the cursor's position into a content position:
 

@@ -1,10 +1,10 @@
 ---
 title: "A Dataframe"
 syllabus:
-- Create abstract base classes to specify interfaces.
-- Store two-dimensional data as rows or as columns.
-- Use reflection to match data to function parameters.
-- Measure performance to evaluate engineering tradeoffs.
+-   Create abstract base classes to specify interfaces.
+-   Store two-dimensional data as rows or as columns.
+-   Use reflection to match data to function parameters.
+-   Measure performance to evaluate engineering tradeoffs.
 ---
 
 One of the drawbacks of publishing a book online is that
@@ -343,7 +343,6 @@ The results are shown in [%t dataframe-timing %].
 For a 1000 by 1000 dataframe
 selection is over 250 times faster with column-wise storage than with row-wise,
 while filtering is 1.8 times slower.
-[% fixme "do the math" %]
 
 <div class="table" id="dataframe-timing" caption="Dataframe timings" markdown="1">
 | nrow  | ncol  | filter col | select col | filter row | select row |
