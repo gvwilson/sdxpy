@@ -151,6 +151,7 @@ and by:
     and 
 -   [Julia Evans][evans_julia]' posts and [zines][evans_zines].
 
+I am grateful for feedback from [Julia Evans][evans_julia].
 I am also grateful to the creators of
 [Black][black],
 [flake8][flake8],
