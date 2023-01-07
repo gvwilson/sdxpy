@@ -28,7 +28,7 @@ def handle(result, token, is_last):
         token["child"] = result.pop()
         result.append(token)
     elif token["kind"] == "Alt":
-        assert len(result) > 0, f'No operand for "*" ({token["loc"]})'
+        assert len(result) > 0, f'No operand for "|" ({token["loc"]})'
         token["left"] = result.pop()
         token["right"] = None
         result.append(token)
