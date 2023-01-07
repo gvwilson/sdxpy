@@ -70,7 +70,7 @@ and `a` indicates an address.
 | Instruction | Code | Format | Action              | Example      | Equivalent                |
 | ----------- | ---- | ------ | ------------------- | ------------ | ------------------------- |
 |  `hlt`      |    1 | `--`   | Halt program        | `hlt`        | `process.exit(0)`         |
-|  `ldc`      |    2 | `rc`   | Load immediate      | `ldc R0 123` | `R0 := 123`               |
+|  `ldc`      |    2 | `rv`   | Load immediate      | `ldc R0 123` | `R0 := 123`               |
 |  `ldr`      |    3 | `rr`   | Load register       | `ldr R0 R1`  | `R0 := RAM[R1]`           |
 |  `cpy`      |    4 | `rr`   | Copy register       | `cpy R0 R1`  | `R0 := R1`                |
 |  `str`      |    5 | `rr`   | Store register      | `str R0 R1`  | `RAM[R1] := R0`           |
