@@ -9,7 +9,7 @@ syllabus:
 
 We constructed objects to create regular expressions in [%x matching %].
 It takes a lot less typing to write them as strings,
-but if we do that we need to a [%i "parser" %][%g parser "parser" %][%/i%]
+but if we do that we need a [%i "parser" %][%g parser "parser" %][%/i%]
 to convert those strings to objects.
 
 <div class="table" id="parser-grammar" caption="Regular expression grammar." markdown="1">
