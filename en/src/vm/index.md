@@ -4,7 +4,7 @@ syllabus:
 -   Every computer has a processor with a particular instruction set, some registers, and memory.
 -   Instructions are just numbers, but may be represented as assembly code.
 -   Instructions may refer to registers, memory, both, or neither.
--   A processor usually executes instructions in order, but may jump to another location based if a conditional is true or false.
+-   A processor usually executes instructions in order, but may jump to another location based on whether a conditional is true or false.
 -   An array is a block of adjacent locations in memory that can be indexed using an offset from its base address.
 ---
 
