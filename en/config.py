@@ -15,6 +15,7 @@ author = "Greg Wilson"
 email = "gvwilson@third-bit.com"
 plausible = "third-bit.com"
 archive = f"{abbrev}-examples.zip"
+draft = True
 
 # Chapters.
 chapters = [
