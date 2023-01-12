@@ -330,7 +330,7 @@ and then create three Boolean variables:
 
 [% inc file="z3_setup.py" %]
 
-Our three variables don't have have values yet—they're not
+Our three variables don't have values yet—they're not
 either true or false.
 Instead,
 each one represent all the possible states a Boolean could be in.
