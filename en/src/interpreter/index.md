@@ -312,7 +312,7 @@ and `reference.part` if it isn't.
 One way to evaluate the design of a piece of software is
 to ask how [%g extensibility "extensible" %] it is,
 i.e.,
-how easily we can add or change things [%b Wilson2022 %].
+how easily we can add or change things [%b Wilson2022a %].
 The answer for our interpreter is now, "Pretty easily,"
 but for our little language is, "Not at all,"
 because there's no way for users to create new operations of their own.

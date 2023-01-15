@@ -6,7 +6,7 @@ title: "Introduction"
 >
 > — Marshall McLuhan
 
-The best way to learn software design is to study examples,
+The best way to learn software design is to study examples [%b Schon1984 Petre2016 %],
 and the best examples can be found in
 the tools programmers use themselves.
 These lessons therefore build small versions of file backup systems,
@@ -135,9 +135,9 @@ Please note that all contributors are required to abide by our Code of Conduct
 
 ## Acknowledgments {: #introduction-acknowledgments}
 
-This book was inspired by
-classics like [%b Kernighan1979 Kernighan1981 Kernighan1983 Kernighan1988 Petre2016 %],
-and by:
+This book is a sequel to [%b Wilson2022b %],
+and like it,
+was inspired by [%b Kernighan1979 Kernighan1981 Kernighan1983 Kernighan1988 Oram2007 %] and by:
 
 -   the entries in the [*Architecture of Open Source Applications*][aosa] series [%b Brown2011 Brown2012 Armstrong2013 Brown2016 %];
 -   [Mary Rose Cook][cook_mary_rose]'s [Gitlet][gitlet];
@@ -151,7 +151,9 @@ and by:
     and 
 -   [Julia Evans][evans_julia]' posts and [zines][evans_zines].
 
-I am grateful for feedback from [Julia Evans][evans_julia].
+I am grateful for feedback from [Juanan Pereira][pereira_juanan],
+[Julia Evans][evans_julia],
+and [Dave Smith][smith_dave].
 I am also grateful to the creators of
 [Black][black],
 [flake8][flake8],
@@ -171,5 +173,5 @@ we all get a lot.
 <div class="center" markdown="1">
   *This one's for Mike and Jon:*
   <br/>
-  *I'm glad you've always found it hard to say no.*
+  *I'm glad you've always found time to chat.*
 </div>
