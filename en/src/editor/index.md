@@ -14,7 +14,7 @@ Most people prefer to use full-screen interactive editors,
 so this chapters builds a simple one to show how they work.
 Our design follows [%i "Lorgat, Wasim" %][Wasim Lorgat][lorgat_wasim][%/i%]'s
 [tutorial][lorgat_editor] closely,
-and borrows a few ideas from [%i "Equivias, Cristian" %][Cristian Esquivias[%/i%]'s
+and borrows a few ideas from [%i "Equivias, Cristian" %][Cristian Esquivias][%/i%]'s
 [`ted` editor][ted_editor] as well.
 
 Our starting point is Python's [curses][py_curses] module.
@@ -130,7 +130,7 @@ Let's define a `Window` class to keep track of the display area:
 [% inc file="show_large.py" keep="window" %]
 
 When the main program starts,
-it askes the curses module how many lines and columns are available,
+it asks the curses module how many lines and columns are available,
 uses those values to initialize a `Window`,
 and then only shows the text that lies inside the window
 ([% f editor-window %]):
