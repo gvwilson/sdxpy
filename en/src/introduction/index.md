@@ -151,9 +151,12 @@ was inspired by [%b Kernighan1979 Kernighan1981 Kernighan1983 Kernighan1988 Oram
     and 
 -   [Julia Evans][evans_julia]' posts and [zines][evans_zines].
 
-I am grateful for feedback from [Juanan Pereira][pereira_juanan],
+I am grateful for feedback from
+[Christian Drumm][drumm_christian],
 [Julia Evans][evans_julia],
-and [Dave Smith][smith_dave].
+[Juanan Pereira][pereira_juanan],
+and
+[Dave Smith][smith_dave].
 I am also grateful to the creators of
 [Black][black],
 [flake8][flake8],
