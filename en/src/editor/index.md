@@ -209,7 +209,7 @@ so that they can be called interchangeably:
 Finally, we modify the `interact` method to look up actions and execute them:
 {: .continue}
 
-[% inc file="editor_interact.py" keep="quit" %]
+[% inc file="editor_interact.py" keep="interact" %]
 
 ## Moving Around {: #editor-move}
 
