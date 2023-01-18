@@ -130,7 +130,7 @@ Let's define a `Window` class to keep track of the display area:
 [% inc file="show_large.py" keep="window" %]
 
 When the main program starts,
-it askes the curses module how many lines and columns are available,
+it asks the curses module how many lines and columns are available,
 uses those values to initialize a `Window`,
 and then only shows the text that lies inside the window
 ([% f editor-window %]):
@@ -209,7 +209,7 @@ so that they can be called interchangeably:
 Finally, we modify the `interact` method to look up actions and execute them:
 {: .continue}
 
-[% inc file="editor_interact.py" keep="quit" %]
+[% inc file="editor_interact.py" keep="interact" %]
 
 ## Moving Around {: #editor-move}
 
