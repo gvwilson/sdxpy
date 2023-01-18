@@ -35,7 +35,7 @@ It won't create and merge branches,
 but that's a relatively straightforward extension:
 if you would like to see how it works,
 please see [%i "Cook, Mary Rose" %][Mary Rose Cook's][cook_mary_rose][%/i%] [Gitlet][gitlet]
-or [%i "Polge, Thibault" %]Thibault Polge[%/i%]'s [Write yourself a Git][write_yourself_a_git].
+or [%i "Polge, Thibault" %]Thibault Polge's[%/i%] [Write yourself a Git][write_yourself_a_git].
 
 ## Identifying Unique Files {: #backup-unique}
 

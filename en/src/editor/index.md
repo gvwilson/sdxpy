@@ -12,9 +12,9 @@ syllabus:
 Early text editors were line-at-a-time applications like the debugger of [%x debugger %].
 Most people prefer to use full-screen interactive editors,
 so this chapters builds a simple one to show how they work.
-Our design follows [%i "Lorgat, Wasim" %][Wasim Lorgat][lorgat_wasim][%/i%]'s
+Our design follows [%i "Lorgat, Wasim" %][Wasim Lorgat's][lorgat_wasim][%/i%]
 [tutorial][lorgat_editor] closely,
-and borrows a few ideas from [%i "Equivias, Cristian" %][Cristian Esquivias[%/i%]'s
+and borrows a few ideas from [%i "Equivias, Cristian" %][Cristian Esquivias's[%/i%]
 [`ted` editor][ted_editor] as well.
 
 Our starting point is Python's [curses][py_curses] module.

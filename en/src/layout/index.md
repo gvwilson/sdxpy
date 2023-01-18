@@ -17,7 +17,7 @@ and decided where to put each character and image.
 To explore how they work,
 we will build a small layout engine
 based on [%i "Brubeck, Matt" %][Matt Brubeck's][brubeck_matt][%/i%] [tutorial][browser_engine_tutorial]
-and on [Pavel Panchekha][panchekha_pavel] and [Chris Harrelson][harrelson_chris]'s
+and on [Pavel Panchekha][panchekha_pavel] and [Chris Harrelson's][harrelson_chris]
 [*Web Browser Engineering*][browser_engineering].
 Since our focus is layout rather than parsing,
 we will create objects in memory that represent [%i "DOM" %]DOM[%/i%] nodes
