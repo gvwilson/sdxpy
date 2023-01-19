@@ -14,7 +14,7 @@ There is no point building software if you can't install it.
 Inspired by the [%i "Comprehensive TeX Archive Network" %]Comprehensive TeX Archive Network[%/i%]
 ([CTAN][ctan]),
 most languages have an online archive from which developers can download packages.
-[Michael Reim][reim_michael]'s [history of Unix packaging][unix_packaging]
+[Michael Reim's][reim_michael] [history of Unix packaging][unix_packaging]
 
 Each package typically has a name and one or more versions;
 each version may have a list of dependencies,
@@ -34,7 +34,7 @@ the results are going to be inconsistent at best.
 This chapter therefore explores how to find a workable installation or prove that there isn't one.
 It is based in part on [this tutorial][package_manager_tutorial]
 by [%i "Nison, Maël" %][Maël Nison][nison_mael][%/i%]
-and on [Andreas Zeller][zeller_andreas]'s
+and on [Andreas Zeller's][zeller_andreas]
 lecture on [academic prototyping][academic_prototyping].
 
 ## Semantic Versioning {: #packman-semver}

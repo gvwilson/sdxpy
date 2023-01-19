@@ -140,16 +140,16 @@ and like it,
 was inspired by [%b Kernighan1979 Kernighan1981 Kernighan1983 Kernighan1988 Oram2007 %] and by:
 
 -   the entries in the [*Architecture of Open Source Applications*][aosa] series [%b Brown2011 Brown2012 Armstrong2013 Brown2016 %];
--   [Mary Rose Cook][cook_mary_rose]'s [Gitlet][gitlet];
--   [Matt Brubeck][brubeck_matt]'s [browser engine tutorial][browser_engine_tutorial];
--   [Pavel Panchekha][panchekha_pavel] and [Chris Harrelson][harrelson_chris]'s [*Web Browser Engineering*][browser_engineering]
--   [Connor Stack][stack_connor]'s [database tutorial][db_tutorial];
--   [Maël Nison][nison_mael]'s [package manager tutorial][package_manager_tutorial];
--   [Paige Ruten][ruten_paige]'s [kilo text editor][kilo_editor]
-    and [Wasim Lorgat][lorgat_wasim]'s [editor tutorial][lorgat_editor];
--   [Bob Nystrom][nystrom_bob]'s [*Crafting Interpreters*][crafting_interpreters] [%b Nystrom2021 %];
+-   [Mary Rose Cook's][cook_mary_rose] [Gitlet][gitlet];
+-   [Matt Brubeck's][brubeck_matt] [browser engine tutorial][browser_engine_tutorial];
+-   [Pavel Panchekha][panchekha_pavel] and [Chris Harrelson's][harrelson_chris] [*Web Browser Engineering*][browser_engineering]
+-   [Connor Stack's][stack_connor] [database tutorial][db_tutorial];
+-   [Maël Nison's][nison_mael] [package manager tutorial][package_manager_tutorial];
+-   [Paige Ruten's][ruten_paige] [kilo text editor][kilo_editor]
+    and [Wasim Lorgat's][lorgat_wasim] [editor tutorial][lorgat_editor];
+-   [Bob Nystrom's][nystrom_bob] [*Crafting Interpreters*][crafting_interpreters] [%b Nystrom2021 %];
     and 
--   [Julia Evans][evans_julia]' posts and [zines][evans_zines].
+-   the posts and [zines][evans_zines] created by [Julia Evans][evans_julia].
 
 I am grateful for feedback from
 [Christian Drumm][drumm_christian],
@@ -176,5 +176,5 @@ we all get a lot.
 <div class="center" markdown="1">
   *This one's for Mike and Jon:*
   <br/>
-  *I'm glad you've always found time to chat.*
+  *I'm glad you always found time to chat.*
 </div>

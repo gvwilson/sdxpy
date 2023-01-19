@@ -87,7 +87,7 @@ class Editor:
             key = self.scr.getkey()
             if key in self.actions:
                 self.actions[key]()
-            elif key in self.INSERTABLE:
+            elif key in INSERTABLE:
                 self.buf.insert(self.cur, key)
                 self.right()
     # [/interact]
