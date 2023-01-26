@@ -1,5 +1,6 @@
 ---
 title: "Parsing Text"
+todo: true
 syllabus:
 -   Use existing file formats rather than creating new ones.
 -   Parsing in two or more passes is often simpler than parsing in a single pass.

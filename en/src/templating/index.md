@@ -1,5 +1,6 @@
 ---
 title: "A Static Site Generator"
+todo: true
 syllabus:
 -   Static site generators create HTML pages from templates, directives, and data.
 -   A static site generator must have the same core features as a programming language.

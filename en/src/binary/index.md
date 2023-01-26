@@ -1,5 +1,6 @@
 ---
 title: "Binary Storage"
+todo: true
 syllabus:
 -   Programs usually store integers using two's complement rather than sign and magnitude.
 -   Floating-point numbers have a sign, a mantissa, and an exponent.

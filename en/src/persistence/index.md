@@ -1,5 +1,6 @@
 ---
 title: "Object Persistence"
+todo: true
 syllabus:
 -   A persistence framework saves and restores objects.
 -   Persistence must handle aliasing and circularity.

@@ -1,5 +1,6 @@
 ---
 title: "A Package Manager"
+todo: true
 syllabus:
 -   Software packages often have multiple versions, which are usually identified by multi-part semantic version numbers.
 -   A package manager must find a mutually-compatible set of dependencies in order to install a package.

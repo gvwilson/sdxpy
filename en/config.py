@@ -53,9 +53,6 @@ appendices = [
     "contents",
 ]
 
-# To do.
-todo = []
-
 # Files to copy verbatim.
 copy = [
     "*.ht",
