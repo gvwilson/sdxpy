@@ -1,5 +1,7 @@
 """Ivy configuration file."""
 
+import os
+
 # Abbreviation for this document.
 abbrev = "sdxpy"
 
@@ -97,7 +99,7 @@ dom = "lib/mccole/dom.yml"
 
 # Input and output directories.
 src_dir = "src"
-out_dir = "docs"
+out_dir = os.getenv("MCCOLE", "docs")
 
 # Use "a/" URLs instead of "a.html".
 extension = "/"

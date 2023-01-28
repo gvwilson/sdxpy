@@ -1,6 +1,5 @@
 ---
 title: "An Editor"
-todo: true
 syllabus:
 -   A terminal UI (TUI) can do most of the things that graphical UIs can do.
 -   TUI libraries provide a screen abstraction to encapsulate the details of different platforms' terminal applications.

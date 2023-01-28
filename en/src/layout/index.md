@@ -1,6 +1,5 @@
 ---
 title: "Page Layout"
-todo: true
 syllabus:
 -   A layout engine determines where to place text and other page elements based on their size and organization.
 -   Page elements are organized as a tree of basic blocks, rows, and columns.

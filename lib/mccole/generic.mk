@@ -185,10 +185,11 @@ publisher:
 ## export: export files for publishing on the web
 .PHONY: export
 export:
-	@zip -q -r docs/${ABBREV}-examples.zip docs \
+	rm -rf ${MCCOLE}
+	MCCOLE=${MCCOLE} ivy build
+	@zip -q -r ${MCCOLE}/${ABBREV}-examples.zip docs \
 	-i '*.ht' '*.json' '*.out' '*.py' '*.sh' '*.txt' '*.yml' \
 	-x '*.html'
-	@zip -q -r ${STEM}-docs.zip docs -x ${EXPORT_EXCLUDE}
 
 ## vars: show variables
 .PHONY: vars

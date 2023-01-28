@@ -1,6 +1,5 @@
 ---
 title: "A Virtual Machine"
-todo: true
 syllabus:
 -   Every computer has a processor with a particular instruction set, some registers, and memory.
 -   Instructions are just numbers, but may be represented as assembly code.

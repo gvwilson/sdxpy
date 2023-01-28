@@ -1,6 +1,5 @@
 ---
 title: "A Web Server"
-todo: true
 syllabus:
 -   Every computer on a network has a unique IP address.
 -   The Domain Name System (DNS) translates human-readable names into IP addresses.

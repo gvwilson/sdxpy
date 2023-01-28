@@ -1,6 +1,5 @@
 ---
 title: "A Dataframe"
-todo: true
 syllabus:
 -   Create abstract base classes to specify interfaces.
 -   Store two-dimensional data as rows or as columns.

@@ -1,6 +1,5 @@
 ---
 title: "A Style Checker"
-todo: true
 syllabus:
 -   An abstract syntax tree (AST) represents the elements of a program as a data structure.
 -   A linter checks that a program conforms to a set of style and usage rules.

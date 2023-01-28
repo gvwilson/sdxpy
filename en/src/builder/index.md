@@ -1,6 +1,5 @@
 ---
 title: "A Build Manager"
-todo: true
 syllabus:
 -   Build managers track dependencies between files and update files that are stale.
 -   Every build rule has a target, some dependencies, and a recipe for updating the target.

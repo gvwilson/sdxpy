@@ -1,6 +1,5 @@
 ---
 title: "A File Cache"
-todo: true
 syllabus:
 -   Software systems often use caches to store a subset of files in order to use less disk space.
 -   Caching systems can replace actual files with placeholders containing metadata.

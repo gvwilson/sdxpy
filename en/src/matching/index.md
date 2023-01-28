@@ -1,6 +1,5 @@
 ---
 title: "Matching Patterns"
-todo: true
 syllabus:
 -   Use regular expressions to match patterns in text and extract data.
 -   Use inheritance to make matchers composable and extensible.

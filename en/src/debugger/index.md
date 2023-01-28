@@ -1,6 +1,5 @@
 ---
 title: "A Debugger"
-todo: true
 syllabus:
 -   Interactive programs can be tested by simulating input and recording output.
 -   Testing interactive programs is easier if their inputs and outputs can easily be replaced with mock objects.
