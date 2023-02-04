@@ -34,7 +34,9 @@ def syllabus(pargs, kwargs, node):
     syllabi = util.get_config("syllabus")
     result = ["<ul>"]
     for (slug, title, syllabus) in syllabi:
-        result.append(f'<li><a href="@root/{slug}" markdown="1">{title}</a>')
+        major = f'<li><a href="@root/{slug}" markdown="1">{title}</a>'
+        major += f' (<a href="@root/{slug}/slides/">slides</a>)'
+        result.append(major)
         if syllabus:
             result.append("<ul>")
             for item in syllabus:

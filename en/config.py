@@ -47,6 +47,7 @@ chapters = [
 appendices = [
     "bibliography",
     "syllabus",
+    "slides",
     "license",
     "conduct",
     "contributing",

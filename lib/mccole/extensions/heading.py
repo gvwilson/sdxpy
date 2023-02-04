@@ -40,6 +40,10 @@ def _collect(node, major, collected):
     if node.slug not in major:
         return
 
+    # Only collecting top-level chapters and appendices.
+    if len(node.path) > 1:
+        return
+
     # Use page metadata to create entry for level-1 heading.
     try:
         title = node.meta["title"]

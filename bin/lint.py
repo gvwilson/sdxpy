@@ -49,7 +49,7 @@ RE_FIGURE = re.compile(r'\[%\s*figure\b.+?img="(.+?)".+?%\]', re.DOTALL)
 RE_LINK = re.compile(r"\[[^]]*?\]\[(\w+?)\]")
 RE_PAT = re.compile(r'\[%\s*inc\b.+?pat="(.+?)"\s+fill="(.+?)".+?%\]')
 RE_SHORTCODE = re.compile(r"\[%.+?%\]")
-SLIDES_FILE = "slides.html"
+SLIDES_FILE = "slides.md"
 SLIDES_TEMPLATE = "slides"
 
 EXPECTED_FILES = {DIRECTIVES_FILE, INDEX_FILE, MAKEFILE, SLIDES_FILE}
