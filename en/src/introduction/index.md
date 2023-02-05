@@ -154,6 +154,7 @@ was inspired by [%b Kernighan1979 Kernighan1981 Kernighan1983 Kernighan1988 Oram
 I am grateful for feedback from
 [Christian Drumm][drumm_christian],
 [Julia Evans][evans_julia],
+[Joe Nash][nash_joe],
 [Juanan Pereira][pereira_juanan],
 and
 [Dave Smith][smith_dave].
@@ -174,7 +175,7 @@ if we all give a little,
 we all get a lot.
 
 <div class="center" markdown="1">
-  *This one's for Mike and Jon:*
+  *This one's for Mike, Jon, and the other Jon:*
   <br/>
   *I'm glad you always found time to chat.*
 </div>
