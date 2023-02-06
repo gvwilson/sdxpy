@@ -137,7 +137,7 @@ Please note that all contributors are required to abide by our Code of Conduct
 
 This book is a sequel to [%b Wilson2022b %],
 and like it,
-was inspired by [%b Kernighan1979 Kernighan1981 Kernighan1983 Kernighan1988 Oram2007 %] and by:
+was inspired by [%b Kamin1990 Kernighan1979 Kernighan1981 Kernighan1983 Kernighan1988 Oram2007 %] and by:
 
 -   the entries in the [*Architecture of Open Source Applications*][aosa] series [%b Brown2011 Brown2012 Armstrong2013 Brown2016 %];
 -   [Mary Rose Cook's][cook_mary_rose] [Gitlet][gitlet];
