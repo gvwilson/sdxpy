@@ -15,7 +15,8 @@ acronym = "SDPy"
 tagline = "a tool-based introduction"
 author = "Greg Wilson"
 email = "gvwilson@third-bit.com"
-plausible = "third-bit.com"
+domain = "third-bit.com"
+plausible = True
 archive = f"{abbrev}-examples.zip"
 draft = True
 
