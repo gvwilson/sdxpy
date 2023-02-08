@@ -1,12 +1,22 @@
 """Generate list of slides."""
 
+import ivy
 import shortcodes
 import util
 
 
+_markdown_links = None
+
+@ivy.filters.register(ivy.filters.Filter.FILE_TEXT)
+def add_markdown_list(text, meta_dict):
+    if meta_dict.get("template", None) == "slides":
+        text += "\n\n" + util.make_links_table()
+    return text
+
+
 @shortcodes.register("slides")
-def bibliography(pargs, kwargs, node):
-    """Convert bibliography to HTML."""
+def slide_list(pargs, kwargs, node):
+    """Convert generate list of slides."""
     util.require(
         (not pargs) and (not kwargs),
         f"Bad 'slides' shortcode {pargs} and {kwargs}",

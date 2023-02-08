@@ -63,6 +63,13 @@ TABLE_DIV = re.compile(
     re.DOTALL,
 )
 
+# Cached values.
+CACHE = {
+    "glossary": None,
+    "links": None,
+    "links_table": None,
+}
+
 
 def fail(msg):
     """Fail unilaterally."""
@@ -122,6 +129,14 @@ def make_label(kind, number):
     return f"{name} {number}"
 
 
+def make_links_table():
+    """Make a table of links for inclusion in Markdown."""
+    if CACHE["links_table"] is None:
+        links = read_links()
+        CACHE["links_table"] = "\n".join([f"[{x['key']}]: {x['url']}" for x in links])
+    return CACHE["links_table"]
+
+
 def make_major():
     """Construct major numbers/letters based on configuration.
 
@@ -164,15 +179,26 @@ def read_directives(dirname, section):
 
 def read_glossary(filename):
     """Load the glossary definitions."""
-    filename = Path(ivy.site.home(), filename)
-    with open(filename, "r") as reader:
-        result = yaml.safe_load(reader) or []
+    if CACHE["glossary"] is None:
+        filename = Path(ivy.site.home(), filename)
+        with open(filename, "r") as reader:
+            glossary = yaml.safe_load(reader) or []
         lang = ivy.site.config.get("lang", None)
         if lang is not None:
-            for entry in result:
+            for entry in glossary:
                 assert lang in entry, f"Bad glossary entry {entry}"
                 assert "def" in entry[lang], f"Bad glossary entry {entry}"
-        return result
+        CACHE["glossary"] = glossary
+    return CACHE["glossary"]
+
+
+def read_links():
+    """Read links file."""
+    if CACHE["links"] is None:
+        filepath = Path(ivy.site.home(), ivy.site.config["links"])
+        with open(filepath, "r") as reader:
+            CACHE["links"] = yaml.safe_load(reader)
+    return CACHE["links"]
 
 
 def require(cond, msg):

@@ -16,8 +16,7 @@ def links_append():
     if "links" not in ivy.site.config:
         return
 
-    links = _read_links()
-    links = "\n".join([f"[{x['key']}]: {x['url']}" for x in links])
+    links = util.make_links_table()
 
     def visitor(node):
         if node.ext == "md":
@@ -34,7 +33,7 @@ def links_table(pargs, kwargs, node):
     lang = ivy.site.config.get("lang", None)
     util.require(lang is not None, "No language specified")
 
-    links = _read_links()
+    links = util.read_links()
     links.sort(key=lambda x: _link_key(x, lang))
     cls = 'class="link-ref"'
     links = "\n".join(
@@ -52,7 +51,7 @@ def check():
         lambda node: util.markdownify(node.text, ext=ext, strip=False)
     )
 
-    defined = {d["url"] for d in _read_links()}
+    defined = {d["url"] for d in util.read_links()}
 
     util.warn("unknown links", used - defined)
     util.warn("unused links", defined - used)
@@ -87,10 +86,3 @@ def _link_key(item, lang):
     elif key.startswith("the "):
         key = key[4:]
     return key.strip()
-
-
-def _read_links():
-    """Read links file."""
-    filepath = Path(ivy.site.home(), ivy.site.config["links"])
-    with open(filepath, "r") as reader:
-        return yaml.safe_load(reader)
