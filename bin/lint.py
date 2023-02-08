@@ -49,7 +49,7 @@ RE_FIGURE = re.compile(r'\[%\s*figure\b.+?img="(.+?)".+?%\]', re.DOTALL)
 RE_LINK = re.compile(r"\[[^]]*?\]\[(\w+?)\]")
 RE_PAT = re.compile(r'\[%\s*inc\b.+?pat="(.+?)"\s+fill="(.+?)".+?%\]')
 RE_SHORTCODE = re.compile(r"\[%.+?%\]")
-SLIDES_FILE = "slides.md"
+SLIDES_FILE = "slides/index.html"
 SLIDES_TEMPLATE = "slides"
 
 EXPECTED_FILES = {DIRECTIVES_FILE, INDEX_FILE, MAKEFILE, SLIDES_FILE}
@@ -65,9 +65,10 @@ def main():
     links_file = getattr(config, "links")
     out_dir = getattr(config, "out_dir")
     src_dir = getattr(config, "src_dir")
+    unreferenced = set(getattr(config, "unreferenced", []))
 
     source_files = get_src(src_dir)
-    check_files(src_dir, source_files)
+    check_files(src_dir, source_files, unreferenced)
     check_glossary(glossary_file, language)
     check_links(links_file, source_files)
     check_slides(source_files)
@@ -101,17 +102,18 @@ def check_dom(dom_spec, html_files):
     seen = {}
     for filename in html_files:
         with open(filename, "r") as reader:
-            dom = BeautifulSoup(reader.read(), "html.parser")
+            text = _read_html(filename)
+            dom = BeautifulSoup(text, "html.parser")
             _collect_dom(seen, dom)
     _diff_dom(seen, allowed)
 
 
-def check_files(source_dir, source_files):
+def check_files(source_dir, source_files, unreferenced):
     """Check for inclusions and figures."""
     for (dirname, filename) in source_files:
         filepath = Path(dirname, filename)
         referenced = get_inclusions(filepath) | get_figures(filepath)
-        existing = get_files(source_dir, dirname)
+        existing = get_files(source_dir, dirname, unreferenced)
         report(f"{dirname}: inclusions", referenced, existing)
 
 
@@ -174,7 +176,7 @@ def get_inclusions(filename):
         return result
 
 
-def get_files(source_dir, dirname):
+def get_files(source_dir, dirname, unreferenced):
     """Return set of files in or below this directory."""
     if dirname == source_dir:
         candidates = set(Path(dirname).glob("*"))
@@ -184,7 +186,7 @@ def get_files(source_dir, dirname):
     prefix_len = len(str(dirname)) + 1
     result = set(str(f)[prefix_len:] for f in candidates if f.is_file())
 
-    ignores = read_directives(dirname, "unreferenced")
+    ignores = set(read_directives(dirname, "unreferenced")) | unreferenced
     result = {f for f in result if not any(fnmatch(f, pat) for pat in ignores)}
 
     return result - EXPECTED_FILES
@@ -278,6 +280,15 @@ def _diff_dom(actual, expected):
             for value in sorted(actual[name][attr]):
                 if value not in expected[name][attr]:
                     print(f"{name}.{attr} == '{value}' seen but not expected")
+
+
+def _read_html(filename):
+    """Read HTML, deleting problematic code blocks if slides."""
+    with open(filename, "r") as reader:
+        text = reader.read()
+    if SLIDES_FILE in str(filename):
+        text = RE_CODE_BLOCK.sub("", text)
+    return text
 
 
 def _skip_dom(node):

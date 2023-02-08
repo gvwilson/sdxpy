@@ -56,7 +56,7 @@ Like these three personas, readers should be able to:
 You can read this book on its own or use it as a classroom resource.
 If you need projects for a software design course,
 adding a tool to those covered here would be fun as well as educational:
-please email [% config email %] if you'd like to chat.
+please [send email][email] if you'd like to chat.
 
 ## Topics {: #introduction-contents}
 
@@ -129,7 +129,7 @@ If you would like to improve what we have,
 add new material,
 or ask questions,
 please file an issue in [our GitHub repository][sdxpy_repo]
-or email [% config email %].
+or [send email][email].
 Please note that all contributors are required to abide by our Code of Conduct
 ([%x conduct %]).
 

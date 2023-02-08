@@ -69,6 +69,11 @@ exclude = [
     "*.tll",
 ]
 
+# Things to ignore when linting.
+unreferenced = [
+    "slides/index.html"
+]
+
 # Debug.
 debug = True
 

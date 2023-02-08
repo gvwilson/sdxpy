@@ -17,7 +17,7 @@ IVY := $(wildcard lib/mccole/*/*.*)
 TEX := info/head.tex info/foot.tex
 TEX_COPY := info/krantz.cls info/dedication.tex
 MARKDOWN := $(wildcard src/*.md) $(wildcard src/*/index.md)
-SRC := ${MARKDOWN} $(wildcard src/*/slides.html)
+SRC := ${MARKDOWN} $(wildcard src/*/slides/index.html)
 
 # Calculated variables.
 DOCS := docs/index.html $(patsubst src/%.md,docs/%.html,$(wildcard src/*/index.md))

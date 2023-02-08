@@ -34,11 +34,425 @@ class: slide-title
 ---
 
 
+## Background
+
+-   Different kinds of programs need different kinds of tests
+    -   One-off data analysis script: check each step by eye
+    -   [SQLite](https://sqlite.org/): 98% of the code is there to test the other 2%
+-   Good tools make good tests easier to write
+-   So this lesson build a unit testing framework like [pytest](https://docs.pytest.org/)
+
+---
+
+## The Big Idea
+
+<p class="shout">A program is just another data structure.</p>
+
+<figure>
+  <img src="../tester_func_obj.svg" alt="Bytes as characters, pixels, or instructions">
+  <figcaption>Bytes can be interpreted as text, images, instructions, and more.</figcaption>
+</figure>
+
+---
+
+## Functions are Objects
+
+-   `def` defines a variable that refers to the function's instructions
+-   We can assign that value to another variable as usual
+
+```python
+def example():
+    print("in example")
+
+alias = example
+alias()
+```
+```
+in example
+```
+
+---
+
+## Functions in Lists
+
+-   We can put functions in lists
+
+```python
+def first():
+    print("First")
+
+def second():
+    print("Second")
+
+def third():
+    print("Third")
+
+everything = [first, second, third]
+for func in everything:
+    func()
+```
+```
+First
+Second
+Third
+```
+
+-   For this to work, we have to know how to call the functions
+
+---
+
+## A Function and Some Tests
+
+```python
+def sign(value):
+    if value < 0:
+        return -1
+    else:
+        return 1
+
+def test_sign_negative():
+    assert sign(-3) == -1
+
+def test_sign_positive():
+    assert sign(19) == 1
+
+def test_sign_zero():
+    assert sign(0) == 0
+
+def test_sign_error():
+    assert sgn(1) == 1
+```
+
+---
+
+## Running Tests
+
+-   Apply the function to a __fixture__
+-   Compare the __actual result__ to the __expected result__
+-   Each outcome is __pass__, __fail__, or __error__
+
+```python
+def run_tests(all_tests):
+    results = {"pass": 0, "fail": 0, "error": 0}
+    for test in all_tests:
+        try:
+            test()
+            results["pass"] += 1
+        except AssertionError:
+            results["fail"] += 1
+        except Exception:
+            results["error"] += 1
+    print(f"pass {results['pass']}")
+    print(f"fail {results['fail']}")
+    print(f"error {results['error']}")
+```
+
+---
+
+## Running Tests
+
+```python
+TESTS = [
+    test_sign_negative,
+    test_sign_positive,
+    test_sign_zero,
+    test_sign_error
+]
+
+run_tests(TESTS)
+```
+```
+pass 2
+fail 1
+error 1
+```
+
+-   Each test is run exactly the same way
+-   Easy to create new tests
+-   …so long as we remember to add the test function to `TESTS`
+
+---
+
+## How Python Stores Variables
+
+-   Python stores variables in (something very much like) a dictionary
+
+```python
+globals()
+```
+```
+{
+    '__name__': '__main__',
+    '__doc__': None,
+    '__package__': None,
+    '__loader__': <class '_frozen_importlib.BuiltinImporter'>,
+    '__spec__': None,
+    '__annotations__': {},
+    '__builtins__': <module 'builtins' (built-in)>
+}
+```
+
+---
+
+## Further Proof
+
+```python
+my_variable = 123
+globals()
+```
+```
+{
+    '__name__': '__main__',
+    '__doc__': None,
+    '__package__': None,
+    '__loader__': <class '_frozen_importlib.BuiltinImporter'>,
+    '__spec__': None,
+    '__annotations__': {},
+    '__builtins__': <module 'builtins' (built-in)>,
+*   'my_variable': 123
+}
+```
+
+--
+
+-   Note: the function `locals` gives local variables
+
+---
+
+## Introspection
+
+-   We know how to loop over a dictionary's keys
+
+```python
+def find_tests(prefix):
+    for (name, func) in globals().items():
+        if name.startswith(prefix):
+            print(name, func)
+
+find_tests("test_")
+```
+```
+test_sign_negative <function test_sign_negative at 0x10cad39d0>
+test_sign_positive <function test_sign_positive at 0x10cad3e50>
+test_sign_zero <function test_sign_zero at 0x10cad3ee0>
+test_sign_error <function test_sign_error at 0x10cad3f70>
+```
+
+--
+
+- Note: when we print a function, Python shows its name and location in memory
+
+---
+
+## Objects Have Attributes
+
+-   The function `dir` returns a list of an object's attributes
+
+```python
+def example():
+    "Docstring for example."
+    print("in example")
+
+print(dir(example))
+```
+```
+['__annotations__', '__call__', '__class__', '__closure__', \
+ '__code__', `__defaults__', '__delattr__', '__dict__', '__dir__', \
+ '__doc__', '__eq__', '__format__', '__ge__', '__get__', …
+]
+```
+
+-   `__name__`: the function's original name
+-   `__doc__`: its __docstring__
+
+---
+
+## Classifying Test Functions
+
+```python
+def test_sign_negative():
+    assert sign(-3) == -1
+*test_sign_negative.skip = True
+
+def test_sign_positive():
+    assert sign(19) == 1
+
+def test_sign_zero():
+    assert sign(0) == 0
+*test_sign_zero.fail = True
+
+def test_sign_error():
+    assert sgn(1) == 1
+
+def classify(func):
+    if hasattr(func, "skip") and func.skip:
+        return "skip"
+    if hasattr(func, "fail") and func.fail:
+        return "fail"
+    return "run"
+```
+
+---
+
+## A Better (?) Test Runner
+
+```python
+def run_tests(prefix):
+    all_names = [n for n in globals() if n.startswith(prefix)]
+    for name in all_names:
+        func = globals()[name]
+        kind = classify(func)
+        try:
+            if kind == "skip":
+                print(f"skip: {name}")
+            else:
+                func()
+                print(f"pass: {name}")
+        except AssertionError as e:
+            if kind == "fail":
+                print(f"pass (expected failure): {name}")
+            else:
+                print(f"fail: {name} {str(e)}")
+        except Exception as e:
+            print(f"error: {name} {str(e)}")
+```
+
+---
+
+## A Better (?) Test Runner
+
+```python
+run_tests("test_")
+```
+```
+skip: test_sign_negative
+pass: test_sign_positive
+pass (expected failure): test_sign_zero
+error: test_sign_error name 'sgn' is not defined
+```
+
+-   Why the question mark?
+
+--
+
+1.  Adding attributes to functions is clumsy and unusual
+    -   Most libraries use __decorators__
+2.  This version prints results instead of returning a data structure
+    -   What if we want to compare with previous results?
+    -   Or convert to HTML, or…?
+
+---
+
+## Mock Objects
+
+-   Suppose the function we're testing uses the time of day
+    -   Result depends on when the function runs, which makes checking hard
+-   Or the function depends on an external resource like a database
+    -   Test may be slow and setup may be difficult
+-   Use a __mock object__
+    1.  Find the thing we want to replace (it's in a dictionary)
+    1.  Save it somewhere
+    1.  Replace it with our own thing
+    1.  Run the test
+    1.  Put back the original
+
+--
+
+-   Have to be careful about __test fidelity__
+
+---
+
+class: summary
+
+## Summary
+
+<figure>
+  <img src="../tester_concept_map.svg" alt="Concept map">
+  <figcaption>Concept map of unit testing tool..</figcaption>
+</figure>
+
+---
+
+class: exercise
+
+## Looping Over `globals`
+
+What happens if you run:
+
+```python
+for name in globals():
+    print(name)
+```
+
+What happens if you run:
+
+```python
+name = None
+for name in globals():
+    print(name)
+```
+
+Why?
+
+---
+
+class: exercise
+
+## Counting Results
+
+1.  Modify the test framework so that it reports which tests passed, failed, or had errors
+    and also reports a summary of how many tests produced each result.
+
+2.  Write unit tests to check that your answer to part 1 works correctly.
+
+3.  Think of another plausible way to interpret part 1
+    that *wouldn't* pass the tests you wrote for part 2.
+
+---
+
+class: exercise
+
+## Failing on Purpose
+
+Putting assertions into code to check that it is behaving correctly
+is called __defensive programming__.
+It's a good practice,
+but we should make sure those assertions are failing when they're supposed to,
+just as we should test our smoke detectors every once in a while.
+
+Modify the tester so that
+if a test function's docstring is `"test:assert"`,
+the test passes if it raises an `AssertionError`
+and fails if it does not.
+Tests whose docstring don't contain `"test:assert"`
+should behave as before.
+
+---
+
+class: exercise
+
+## Setup and Teardown
+
+Testing frameworks often allow programmers to specify a `setup` function
+that is to be run before each test
+and a corresponding `teardown` function
+that is to be run after each test.
+(`setup` usually re-creates complicated test fixtures,
+while `teardown` functions are sometimes needed to clean up after tests,
+e.g., to close database connections or delete temporary files.)
+
+Modify the testing tool in this chapter so that
+if a file of tests contains a function called `setup`
+then the tool calls it exactly once before running each test in the file.
+Add a similar way to register a `teardown` function.
+
 
     </textarea>
     <script src="../../remark-latest.min.js"></script>
     <script>
-      var slideshow = remark.create()
+      var slideshow = remark.create({
+        highlightLines: true
+      })
     </script>
   </body>
 </html>

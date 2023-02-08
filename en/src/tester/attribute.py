@@ -31,8 +31,8 @@ def classify(func):
 
 # [run]
 def run_tests(prefix):
-    prefixed_names = [n for n in globals() if n.startswith(prefix)]
-    for name in prefixed_names:
+    all_names = [n for n in globals() if n.startswith(prefix)]
+    for name in all_names:
         func = globals()[name]
         kind = classify(func)
         try:
