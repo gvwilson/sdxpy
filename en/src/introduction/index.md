@@ -1,5 +1,6 @@
 ---
 title: "Introduction"
+slides: true
 ---
 
 > We shape our tools, and thereafter our tools shape us.
