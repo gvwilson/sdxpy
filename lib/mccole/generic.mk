@@ -1,29 +1,38 @@
-# Standard McCole theme Makefile.
+# ----------------------------------------------------------------------
+# Generic McCole Makefile.
+# ----------------------------------------------------------------------
+
+# By default, show available commands (by finding '##' comments).
 .DEFAULT: commands
 
-# Local configuration.
+# Get local configuration from the Ivy configuration file.
 CONFIG := ./config.py
 ABBREV := $(shell python ${CONFIG} --abbrev)
 BUILD_DATE := $(shell date '+%Y-%m-%d')
-STEM := ${ABBREV}-${BUILD_DATE}
 
 # Direct variables.
 EXAMPLES := $(patsubst %/Makefile,%,$(wildcard src/*/Makefile))
-EXPORT_EXCLUDE := '*.pdf'
 HTML := info/head.html info/foot.html
 INFO := info/bibliography.bib info/credits.yml info/glossary.yml info/links.yml
-FIG_SVG := $(wildcard src/*/*.svg)
 IVY := $(wildcard lib/mccole/*/*.*)
 TEX := info/head.tex info/foot.tex
 TEX_COPY := info/krantz.cls info/dedication.tex
 MARKDOWN := $(wildcard src/*.md) $(wildcard src/*/index.md)
-SRC := ${MARKDOWN} $(wildcard src/*/slides/index.html)
+SLIDES := $(wildcard src/*/slides/index.html)
+SRC_SVG := $(wildcard src/*/*.svg)
 
 # Calculated variables.
-DOCS := docs/index.html $(patsubst src/%.md,docs/%.html,$(wildcard src/*/index.md))
+DOCS := docs/index.html $(patsubst src/%.md,docs/%.html,$(wildcard src/*/index.md)) $(patsubst src/%/slides/index.html,docs/%/slides/index.html,$(SLIDES))
 FIG_PDF := $(patsubst src/%.svg,docs/%.pdf,${FIG_SVG})
+SRC_PDF := $(patsubst src/%.svg,src/%.pdf,${SRC_SVG})
+DOCS_PDF := $(patsubst src/%.pdf,docs/%.pdf,${SRC_PDF})
+STEM := ${ABBREV}-${BUILD_DATE}
+SRC := ${MARKDOWN} ${SLIDES}
 
-# Miscellaneous variables.
+# Keep the PDF versions of diagrams under the 'src' directory.
+.PRECIOUS: ${SRC_PDF}
+
+# Where to run the local preview server.
 PORT := 4000
 
 ## commands: show available commands
@@ -43,7 +52,7 @@ serve:
 	ivy watch --port ${PORT}
 
 ## single: create single-page HTML
-single: docs/all.html
+html: docs/all.html
 docs/all.html: ./docs/index.html ${HTML} bin/single.py
 	python ./bin/single.py \
 	--head info/head.html \
@@ -64,8 +73,8 @@ docs/${STEM}.tex: docs/all.html bin/html2tex.py ${CONFIG} ${TEX} ${TEX_COPY}
 	python ${CONFIG} --latex > docs/config.tex
 	cp ${TEX_COPY} docs
 
-## pdf: create PDF document
-pdf: docs/${STEM}.tex ${FIG_PDF}
+## pdf: create PDF version of material
+pdf: docs/${STEM}.tex ${DOCS_PDF}
 	cp info/bibliography.bib docs
 	cd docs && pdflatex ${STEM}
 	cd docs && biber ${STEM}
@@ -74,13 +83,15 @@ pdf: docs/${STEM}.tex ${FIG_PDF}
 	cd docs && pdflatex ${STEM}
 
 ## pdf-once: create PDF document with a single compilation
-pdf-once: docs/${STEM}.tex ${FIG_PDF}
+pdf-once: docs/${STEM}.tex ${DOCS_PDF}
 	cd docs && pdflatex ${STEM}
 
-## diagrams: convert diagrams from SVG to pdf
-diagrams: ${FIG_PDF}
-docs/%.pdf: src/%.svg
+## diagrams: convert diagrams from SVG to PDF
+diagrams: ${DOCS_PDF}
+src/%.pdf: src/%.svg
 	draw.io --export --crop --output $@ $<
+docs/%.pdf: src/%.pdf
+	cp $< $@
 
 ## clean: clean up stray files
 clean:
@@ -182,9 +193,9 @@ publisher:
 	docs/krantz.cls \
 	docs/*/*.pdf
 
-## export: export files for publishing on the web
-.PHONY: export
-export:
+## web: export files for publishing on the web
+.PHONY: web
+web:
 	rm -rf ${MCCOLE}
 	MCCOLE=${MCCOLE} ivy build
 	@zip -q -r ${MCCOLE}/${ABBREV}-examples.zip docs \
@@ -197,12 +208,13 @@ vars:
 	@echo ABBREV ${ABBREV}
 	@echo BUILD_DATE ${BUILD_DATE}
 	@echo DOCS ${DOCS}
+	@echo DOCS_PDF ${DOCS_PDF}
 	@echo EXPORT_FILES ${EXPORT_FILES}
-	@echo FIG_SVG ${FIG_SVG}
-	@echo FIG_PDF ${FIG_PDF}
 	@echo HTML ${HTML}
 	@echo INFO ${INFO}
 	@echo IVY ${IVY}
 	@echo SRC ${SRC}
+	@echo SRC_PDF ${SRC_PDF}
+	@echo SRC_SVG ${SRC_SVG}
 	@echo STEM ${STEM}
 	@echo TEX ${TEX}
