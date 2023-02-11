@@ -6,8 +6,6 @@ syllabus:
 -   Python stores local and global variables in dictionary-like structures.
 -   A unit test function performs an operation on a fixture and passes, fails, or produces an error.
 -   A program can introspect to find functions and other objects at runtime.
--   Temporarily replacing functions with mock objects can simplify testing.
--   Python defines protocols so that users' code can be triggered by keywords in the language.
 ---
 
 We're going to write a lot of programs in this book.
@@ -303,145 +301,91 @@ our test runner becomes:
 
 [% inc file="attribute.py" keep="run" %]
 
-## Mock Objects {: #tester-mock}
+## Finding Test Files {: #tester-files}
 
-We can do more than look up functions:
-we can change them to make testing easier.
+[pytest][pytest] and tools like it do one more thing that our testing framework doesn't:
+find files that contain tests.
 For example,
-if the function we want to test uses the time of day,
-we can temporarily replace the real `time.time` function
-with one that returns a specific value
-so we know what result to expect:
+if we run `pytest` on the command line,
+it finds all the Python files in or below the current directory whose names start with `test_`
+and runs the tests they contain.
+In order to do this ourselves,
+we need to:
 
-[% inc file="mock_time.py" %]
+1.  find files whose names match a pattern,
+2.  load them into memory,
+3.  find the test functions they contain, and
+4.  run those tests (which we already know how to do).
 
-Temporary replacements like this are called [%g mock_object "mock objects" %]
-because we usually use objects even if the thing we're replacing is a function.
-We can do this because Python lets us create objects
-that can be "called" just like functions.
-If an object `obj` has a `__call__` method,
-then `obj(…)` is automatically turned into `obj.__call__(…)`.
-For example,
-the code below defines a class `Adder` whose instances add a constant to their input:
+Python's [glob][py_glob] module can do the first step.
+If we have this directory structure:
 
-[% inc pat="callable.*" fill="py out" %]
+[% inc pat="show_try_glob.*" fill="sh out" %]
 
-Let's create a reusable mock object class that:
-
-1.  defines a `__call__` method so that instances can be called like functions;
-
-2.  declares the parameters of that method to be `*args*` and `**kwargs`
-    so that it can be called with any number of regular or keyword arguments;
-
-3.  stores those arguments so we can see how the replaced function was called;
-    and
-
-4.  returns either a fixed value or a value produced by a user-defined function.
-
-The class itself is only 11 lines long:
-
-[% inc file="mock_object.py" keep="fake" %]
-
-For convenience,
-let's also define a function that replaces some function we've already defined
-with an instance of our `Fake` class:
-
-[% inc file="mock_object.py" keep="fixit" %]
-
-To show how this works,
-we define a function that adds two numbers
-and write a test for it:
-
-[% inc file="mock_object.py" keep="test_real" %]
-
-We then use `fixit` to replace the real `adder` function
-with a mock object that always returns 99
-([%f tester-mock-timeline %]):
-
-[% inc file="mock_object.py" keep="test_fixed" %]
-
-[% figure
-   slug="tester-mock-timeline"
-   img="tester_mock_timeline.svg"
-   alt="Timeline of mock operation"
-   caption="Timeline of mock operation."
-%]
-
-Another test proves that our `Fake` class records
-all of the calls:
-
-[% inc file="mock_object.py" keep="test_record" %]
-
-And finally,
-the user can provide a function to calculate a return value:
-
-[% inc file="mock_object.py" keep="test_calc" %]
-
-## Protocols {: #tester-protocols}
-
-Mock objects are very useful,
-but the way we're using them is going to cause strange errors.
-The problem is that
-every test except the first one replaces `adder` with a mock object
-that does something different.
-As a result,
-any test that *doesn't* replace `adder` will run with
-whatever mock object was last put in place
-rather than with the original `adder` function.
-
-We could tell users it's their job to put everything back after each test,
-but people are forgetful.
-It would be better if Python did this automatically;
-luckily for us,
-it provides a [%g protocol "protocol" %] for exactly this purpose.
-A protocol is a rule that specifies how programs can tell Python
-to do specific things at specific moments.
-Giving a class a `__call__` method is an example of this:
-when Python sees `thing(…)`,
-it automatically checks if `thing` has that method.
-Defining an `__init__` method for a class is another example:
-if a class has a method with that name,
-Python calls it automatically when constructing a new instance of that class.
-
-What we want for managing mock objects is
-a [%g context_manager "context manager" %]
-that replaces the real function with our mock at the start of a block of code
-and then puts the original back at the end.
-The protocol for this relies on two methods called `__enter__` and `__exit__`.
-If the class is called `C`,
-then when Python executes a `with` block like this:
-
-```python
-with C(…args…) as name:
-    …do things…
-```
-
-it does the following:
+then a single call to `glob.glob` will find all the files whose names end with `.txt`:
 {: .continue}
 
-1.  Call `C`'s constructor to create an object that it associates with the code block.
-2.  Call that object's `__enter__` method
-    and assign the result to the variable `name`.
-3.  Run the code inside the `with` block.
-4.  Call `name.__exit__()` when the block finishes.
+[% inc pat="try_glob.*" fill="py sh out" %]
 
-Here's a mock object that inherits all the capabilities of `Fake`
-and adds the two methods needed by `with`:
-
-[% inc file="mock_context.py" keep="contextfake" %]
-
-Notice that `__enter__` doesn't take any extra parameters:
-anything it needs should be provided to the constructor.
-On the other hand,
-`__exit__` will always be called with three values
-that tell it whether an exception occurred,
-and if so,
-what the exception was.
-
-Here's a test to prove that our context manager works:
+We can use a similar call with a different pattern
+to find all the files whose names match a pattern like `test_*.py`.
 {: .continue}
 
-[% inc file="mock_context.py" keep="test" %]
+Once we have them,
+we can use Python's `importlib` module to load them
+in the same way that an `import` statement would.
+Importing a module can be a complex process—for example,
+the source might be a zip file containing several modules—so doing an import ourselves
+is a three-step process:
+
+1.  Build a specification of what we're going to import.
+2.  Build a Python module in memory from that spec.
+3.  Execute the code in the module,
+    which is what actually creates the module's variables, functions, and so on.
+
+Here's an example program that takes a path to a Python file
+and the name of a variable at the top level of that file,
+loads the file,
+and displays the variable's value:
+
+[% inc file="import_example.py" %]
+
+If the file we want to load is:
+{: .continue}
+
+[% inc file="sample_dir/test_up.py" %]
+
+we can run our example importer like this:
+{: .continue}
+
+[% inc pat="import_example.*" fill="sh out" %]
+
+Notice that we use `getattr` to look up the variable we want.
+A module is just another data structure in memory,
+but it's not a dictionary,
+so we can't use `module[name]` to get the things it contains.
+Instead,
+we use `getattr` (short for "get attribute")
+to do the equivalent of `module.name`.
+
+<div class="callout" markdown="1">
+
+### Any Sufficiently Premature Technology
+
+[Clarke's Third Law][clarkes_laws] is that
+any sufficiently advanced technology is indistinguishable from magic.
+The same is true of technologies that we encounter
+before we have the background knowledge they depend on.
+The three lines that import a Python file as a module
+will seem reasonable (and possibly even a little dull)
+once we know more about how programming languages work.
+Until we do,
+the sensible strategy is to copy, paste, and move on.
+Even the most experienced programmers do this when working in a new domain:
+it's easier to learn things once we have more context,
+so setting a problem aside and returning to it later can save a lot of time.
+
+</div>
 
 ## Summary {: #tester-summary}
 
@@ -505,24 +449,9 @@ should behave as before.
 
 ### Timing tests {: .exercise}
 
-1.  Modify the testing tool so that it records how long it takes to run each test.
-    (The function `time.time` may be useful.)
-
-2.  Use Python's own [pytest][pytest] library to test your implementation.
-    (Hint: you may want to replace `time.time` with a mock object for testing.)
-
-### Timing blocks {: .exercise}
-
-Create a context manager called `Timer` that reports how long it has been
-since a block of code started running:
-
-```python
-# your class goes here
-
-with Timer() as start:
-    # ...do some lengthy operation...
-    print(start.elapsed())  # time since the start of the block
-```
+Modify the testing tool so that it records how long it takes to run each test.
+(The function `time.time` may be useful.)
+Use Python's own [pytest][pytest] library to test your implementation.
 
 ### Approximately equal {: .exercise}
 
@@ -549,16 +478,6 @@ with Timer() as start:
     (The relative error is the absolute value of the difference between the actual and expected value,
     divided by the absolute value.)
 
-### Capturing output {: .exercise}
-
-1.  Read [the documentation][pytest_stdout]
-    that explains how to capture [%g stdout "standard output" %]
-    when using [pytest][pytest].
-
-1.  Modify this chapter's testing tool so that
-    users can check what a function prints to standard output
-    as part of a unit test.
-
 ### Selecting tests {: .exercise}
 
 Modify the testing tool so that if a user provides `-s pattern` or `--select pattern`
@@ -578,3 +497,56 @@ Modify the testing tool in this chapter so that
 if a file of tests contains a function called `setup`
 then the tool calls it exactly once before running each test in the file.
 Add a similar way to register a `teardown` function.
+
+### Parameterized tests {: .exercise}
+
+Modify the testing framework so that
+if a test function has an attribute called `cases`,
+the test function is run once for each case.
+For example,
+if the user writes:
+
+```python
+def test_subtract(fixture, expected):
+    assert fixture[0] - fixture[1] == expected
+test_subtract.cases = [
+    # fixture  expected
+    [[5, 2],   3],
+    [[2, 5],   -3],
+    [[0, 0],   0]
+]
+```
+
+then the test framework effectively runs:
+{: .continue}
+
+```python
+test_subtract([5, 2], 3)
+test_subtract([2, 5], -3)
+test_subtract([0, 0], 0)
+```
+
+Make sure that all the tests run even if some fail or have errors.
+
+### Capturing output {: .exercise}
+
+1.  Read [the documentation][pytest_stdout]
+    that explains how to capture [%g stdout "standard output" %]
+    when using [pytest][pytest].
+
+1.  Modify this chapter's testing tool so that
+    users can check what a function prints to standard output
+    as part of a unit test.
+
+### Discovering test files {: .exercise}
+
+1.  Write a program that finds all the files in or below the current directory
+    whose names match the pattern `test_*.py`.
+
+1.  Extend the program so that it loads each file
+    to create a dictionary with filenames as keys and modules as values.
+
+1.  Use Python's `dir` function and a loop to find
+    all the functions in each module whose names begin with `test_`.
+
+1.  Run these functions and report whether they pass, fail, or have an error.

@@ -1,6 +1,5 @@
 TARGETS=\
   attribute.out \
-  callable.out \
   docstring.out \
   dry_run.out \
   find_list_test_funcs.out \
@@ -9,9 +8,11 @@ TARGETS=\
   func_dir.out \
   func_list.out \
   func_obj.out \
-  mock_object.out \
+  import_example.out \
   replacement.out \
   show_locals.out \
+  show_try_glob.out \
+  try_glob.out \
   with_name.out
 
 include ../examples.mk

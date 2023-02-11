@@ -5,7 +5,7 @@ import pytest
 
 from backup import backup
 
-FILES = {"a.txt": "aaa", "b.txt": "bbb", "subdir/c.txt": "ccc"}
+FILES = {"a.txt": "aaa", "b.txt": "bbb", "sub_dir/c.txt": "ccc"}
 
 @pytest.fixture
 def our_fs(fs):

@@ -196,7 +196,9 @@ def get_figures(filepath):
     """Return all figures."""
     with open(filepath, "r") as reader:
         text = reader.read()
-        return {m.group(1) for m in RE_FIGURE.finditer(text)}
+        figures = {m.group(1) for m in RE_FIGURE.finditer(text)}
+        pdfs = {f.replace(".svg", ".pdf") for f in figures if f.endswith(".svg")}
+        return figures | pdfs
 
 
 def get_html(out_dir):

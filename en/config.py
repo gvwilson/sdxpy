@@ -25,6 +25,7 @@ chapters = [
     "introduction",
     "tester",
     "interpreter",
+    "mock",
     "backup",
     "cache",
     "dataframe",
@@ -156,6 +157,8 @@ if __name__ == "__main__":
     assert len(sys.argv) == 2, "Expect exactly one argument"
     if sys.argv[1] == "--abbrev":
         print(abbrev)
+    elif sys.argv[1] == "--chapters":
+        print("\n".join(chapters))
     elif sys.argv[1] == "--latex":
         print(f"\\title{{{title}}}")
         print(f"\\subtitle{{{tagline}}}")

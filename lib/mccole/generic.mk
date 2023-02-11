@@ -9,6 +9,7 @@
 CONFIG := ./config.py
 ABBREV := $(shell python ${CONFIG} --abbrev)
 BUILD_DATE := $(shell date '+%Y-%m-%d')
+CHAPTERS := $(patsubst %,src/%/index.md,$(shell python ${CONFIG} --chapters))
 
 # Direct variables.
 EXAMPLES := $(patsubst %/Makefile,%,$(wildcard src/*/Makefile))
@@ -144,6 +145,11 @@ wordlist: ./docs/index.html
 .PHONY: count
 count:
 	@(wc -w ${MARKDOWN} && grep -c '\[% figure' ${MARKDOWN}) | python bin/count.py
+
+## exercises: exercises per file
+.PHONY: exercises
+exercises:
+	@fgrep -c '{: .exercise}' $(CHAPTERS) | sed 's/\(.*\):\(.*\)/\2 \1/g'
 
 ## valid: run html5validator on generated files
 .PHONY: valid

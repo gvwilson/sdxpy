@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  
+  <link rel="icon" type="image/x-icon" href="../favicon.ico">
+  <link rel="stylesheet" href="../mccole.css">
+  <link rel="stylesheet" href="../tango.css">
+  <script defer data-domain="third-bit.com" src="https://plausible.io/js/plausible.js"></script>
+  <script>
+    MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']]
+      }
+    };
+  </script>
+  <script
+    type="text/javascript"
+    id="MathJax-script"
+    async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+  </script>
+  <script defer src="../mccole.js"></script>
+  <title>Software Design in Python: Mock Objects</title>
+</head>
+
+  <body>
+    <div class="row">
+      <div class="sidebar">
+        <p>
+  
+  <img src="../logo.svg" alt="site logo" class="logo" />
+  <a href="../">Software Design in Python</a>
+  
+</p>
+<ol class="toc-chapter">
+  
+  <li>
+    <a href="../introduction/">
+      Introduction
+    </a>
+  </li>
+  
+  <li>
+    <a href="../tester/">
+      A Testing Framework
+    </a>
+  </li>
+  
+  <li>
+    <a href="../interpreter/">
+      An Interpreter
+    </a>
+  </li>
+  
+  <li>
+    <a href="../mock/">
+      <strong>Mock Objects</strong>
+    </a>
+  </li>
+  
+  <li>
+    <a href="../backup/">
+      Versioned File Backups
+    </a>
+  </li>
+  
+  <li>
+    <a href="../cache/">
+      A File Cache
+    </a>
+  </li>
+  
+  <li>
+    <a href="../dataframe/">
+      A Dataframe
+    </a>
+  </li>
+  
+  <li>
+    <a href="../persistence/">
+      Object Persistence
+    </a>
+  </li>
+  
+  <li>
+    <a href="../binary/">
+      Binary Storage
+    </a>
+  </li>
+  
+  <li>
+    <a href="../builder/">
+      A Build Manager
+    </a>
+  </li>
+  
+  <li>
+    <a href="../templating/">
+      A Static Site Generator
+    </a>
+  </li>
+  
+  <li>
+    <a href="../layout/">
+      Page Layout
+    </a>
+  </li>
+  
+  <li>
+    <a href="../editor/">
+      An Editor
+    </a>
+  </li>
+  
+  <li>
+    <a href="../server/">
+      A Web Server
+    </a>
+  </li>
+  
+  <li>
+    <a href="../packman/">
+      A Package Manager
+    </a>
+  </li>
+  
+  <li>
+    <a href="../matching/">
+      Matching Patterns
+    </a>
+  </li>
+  
+  <li>
+    <a href="../parser/">
+      Parsing Text
+    </a>
+  </li>
+  
+  <li>
+    <a href="../linter/">
+      A Style Checker
+    </a>
+  </li>
+  
+  <li>
+    <a href="../vm/">
+      A Virtual Machine
+    </a>
+  </li>
+  
+  <li>
+    <a href="../debugger/">
+      A Debugger
+    </a>
+  </li>
+  
+  <li>
+    <a href="../conclusion/">
+      Conclusion
+    </a>
+  </li>
+  
+</ol>
+<ol class="toc-appendix">
+  
+  <li>
+    <a href="../bibliography/">
+      Bibliography
+    </a>
+  </li>
+  
+  <li>
+    <a href="../syllabus/">
+      Syllabus
+    </a>
+  </li>
+  
+  <li>
+    <a href="../slides/">
+      Slides
+    </a>
+  </li>
+  
+  <li>
+    <a href="../license/">
+      License
+    </a>
+  </li>
+  
+  <li>
+    <a href="../conduct/">
+      Code of Conduct
+    </a>
+  </li>
+  
+  <li>
+    <a href="../contributing/">
+      Contributing
+    </a>
+  </li>
+  
+  <li>
+    <a href="../glossary/">
+      Glossary
+    </a>
+  </li>
+  
+  <li>
+    <a href="../credits/">
+      Credits
+    </a>
+  </li>
+  
+  <li>
+    <a href="../contents/">
+      Index
+    </a>
+  </li>
+  
+</ol>
+
+<p><a href="../sdxpy-examples.zip" type="application/zip">download examples</a></p>
+
+
+      </div>
+      <div id="printable" class="contents bordered">
+        <main>
+          
+  <h1>Chapter 4: Mock Objects</h1>
+
+
+          
+            
+<div class="draft">
+  <p>DRAFT</p>
+</div>
+
+
+            
+  
+
+  
+
+  
+  <ul class="syllabus">
+  
+  <li markdown="1">Temporarily replacing functions with mock objects can simplify testing.</li>
+  
+  <li markdown="1">Python defines protocols so that users' code can be triggered by keywords in the language.</li>
+  
+  </ul>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+            
+<p class="definitions">
+  Terms defined: <a class="gl-ref" href="../glossary/#context_manager" markdown="1">context manager</a>, <a class="gl-ref" href="../glossary/#mock_object" markdown="1">mock object</a>, <a class="gl-ref" href="../glossary/#protocol" markdown="1">protocol</a>
+</p>
+
+
+            <div class="page-toc"></div>
+            <p>We can do more than look up functions:
+we can change them to make testing easier.
+For example,
+if the function we want to test uses the time of day,
+we can temporarily replace the real <code>time.time</code> function
+with one that returns a specific value
+so we know what result to expect:</p>
+<div class="code-sample lang-py" title="mock_time.py">
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">time</span>
+
+<span class="k">def</span> <span class="nf">elapsed</span><span class="p">(</span><span class="n">since</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">since</span>
+
+<span class="k">def</span> <span class="nf">mock_time</span><span class="p">():</span>
+    <span class="k">return</span> <span class="mi">200</span>
+
+<span class="k">def</span> <span class="nf">test_elapsed</span><span class="p">():</span>
+    <span class="n">time</span><span class="o">.</span><span class="n">time</span> <span class="o">=</span> <span class="n">mock_time</span>
+    <span class="k">assert</span> <span class="n">elapsed</span><span class="p">(</span><span class="mi">50</span><span class="p">)</span> <span class="o">==</span> <span class="mi">150</span>
+</code></pre></div>
+</div>
+<p>Temporary replacements like this are called <a class="gl-ref" href="../glossary/#mock_object" markdown="1">mock objects</a>
+because we usually use objects even if the thing we&rsquo;re replacing is a function.
+We can do this because Python lets us create objects
+that can be &ldquo;called&rdquo; just like functions.
+If an object <code>obj</code> has a <code>__call__</code> method,
+then <code>obj(…)</code> is automatically turned into <code>obj.__call__(…)</code>.
+For example,
+the code below defines a class <code>Adder</code> whose instances add a constant to their input:</p>
+<div class="code-sample lang-py" title="callable.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Adder</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">arg</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">arg</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span>
+
+<span class="n">add_3</span> <span class="o">=</span> <span class="n">Adder</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">add_3</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;add_3(8): </span><span class="si">{</span><span class="n">result</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<div class="code-sample lang-out" title="callable.out">
+<div class="highlight"><pre><span></span><code>add_3(8): 11
+</code></pre></div>
+</div>
+<p>Let&rsquo;s create a reusable mock object class that:</p>
+<ol>
+<li>
+<p>defines a <code>__call__</code> method so that instances can be called like functions;</p>
+</li>
+<li>
+<p>declares the parameters of that method to be <code>*args*</code> and <code>**kwargs</code>
+    so that it can be called with any number of regular or keyword arguments;</p>
+</li>
+<li>
+<p>stores those arguments so we can see how the replaced function was called;
+    and</p>
+</li>
+<li>
+<p>returns either a fixed value or a value produced by a user-defined function.</p>
+</li>
+</ol>
+<p>The class itself is only 11 lines long:</p>
+<div class="code-sample lang-py" title="mock_object.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Fake</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">calls</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">func</span> <span class="o">=</span> <span class="n">func</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">calls</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">])</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">func</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span>
+</code></pre></div>
+</div>
+<p>For convenience,
+let&rsquo;s also define a function that replaces some function we&rsquo;ve already defined
+with an instance of our <code>Fake</code> class:</p>
+<div class="code-sample lang-py" title="mock_object.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">fixit</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">func</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">assert</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">globals</span><span class="p">()</span>
+    <span class="n">fake</span> <span class="o">=</span> <span class="n">Fake</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+    <span class="nb">globals</span><span class="p">()[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">fake</span>
+    <span class="k">return</span> <span class="n">fake</span>
+</code></pre></div>
+</div>
+<p>To show how this works,
+we define a function that adds two numbers
+and write a test for it:</p>
+<div class="code-sample lang-py" title="mock_object.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">adder</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span>
+
+<span class="k">def</span> <span class="nf">test_with_real_function</span><span class="p">():</span>
+    <span class="k">assert</span> <span class="n">adder</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span> <span class="o">==</span> <span class="mi">5</span>
+</code></pre></div>
+</div>
+<p>We then use <code>fixit</code> to replace the real <code>adder</code> function
+with a mock object that always returns 99
+(<a class="fig-ref" href="../mock/#mock-timeline">Figure 4.1</a>):</p>
+<div class="code-sample lang-py" title="mock_object.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">test_with_fixed_return_value</span><span class="p">():</span>
+    <span class="n">fixit</span><span class="p">(</span><span class="s2">&quot;adder&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mi">99</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">adder</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span> <span class="o">==</span> <span class="mi">99</span>
+</code></pre></div>
+</div>
+<figure id="mock-timeline">
+  <img src="./mock_timeline.svg" alt="Timeline of mock operation"/>
+  <figcaption markdown="1">Figure 4.1: Timeline of mock operation.</figcaption>
+</figure>
+
+<p>Another test proves that our <code>Fake</code> class records
+all of the calls:</p>
+<div class="code-sample lang-py" title="mock_object.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">test_fake_records_calls</span><span class="p">():</span>
+    <span class="n">fake</span> <span class="o">=</span> <span class="n">fixit</span><span class="p">(</span><span class="s2">&quot;adder&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mi">99</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">adder</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span> <span class="o">==</span> <span class="mi">99</span>
+    <span class="k">assert</span> <span class="n">adder</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span> <span class="o">==</span> <span class="mi">99</span>
+    <span class="k">assert</span> <span class="n">adder</span><span class="o">.</span><span class="n">calls</span> <span class="o">==</span> <span class="p">[[(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="p">{}],</span> <span class="p">[(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span> <span class="p">{}]]</span>
+</code></pre></div>
+</div>
+<p>And finally,
+the user can provide a function to calculate a return value:</p>
+<div class="code-sample lang-py" title="mock_object.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">test_fake_calculates_result</span><span class="p">():</span>
+    <span class="n">fixit</span><span class="p">(</span><span class="s2">&quot;adder&quot;</span><span class="p">,</span> <span class="n">func</span><span class="o">=</span><span class="k">lambda</span> <span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="p">:</span> <span class="mi">10</span> <span class="o">*</span> <span class="n">left</span> <span class="o">+</span> <span class="n">right</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">adder</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span> <span class="o">==</span> <span class="mi">23</span>
+</code></pre></div>
+</div>
+<h2 id="mock-protocols">Section 4.1: Protocols</h2>
+<p>Mock objects are very useful,
+but the way we&rsquo;re using them is going to cause strange errors.
+The problem is that
+every test except the first one replaces <code>adder</code> with a mock object
+that does something different.
+As a result,
+any test that <em>doesn&rsquo;t</em> replace <code>adder</code> will run with
+whatever mock object was last put in place
+rather than with the original <code>adder</code> function.</p>
+<p>We could tell users it&rsquo;s their job to put everything back after each test,
+but people are forgetful.
+It would be better if Python did this automatically;
+luckily for us,
+it provides a <a class="gl-ref" href="../glossary/#protocol" markdown="1">protocol</a> for exactly this purpose.
+A protocol is a rule that specifies how programs can tell Python
+to do specific things at specific moments.
+Giving a class a <code>__call__</code> method is an example of this:
+when Python sees <code>thing(…)</code>,
+it automatically checks if <code>thing</code> has that method.
+Defining an <code>__init__</code> method for a class is another example:
+if a class has a method with that name,
+Python calls it automatically when constructing a new instance of that class.</p>
+<p>What we want for managing mock objects is
+a <a class="gl-ref" href="../glossary/#context_manager" markdown="1">context manager</a>
+that replaces the real function with our mock at the start of a block of code
+and then puts the original back at the end.
+The protocol for this relies on two methods called <code>__enter__</code> and <code>__exit__</code>.
+If the class is called <code>C</code>,
+then when Python executes a <code>with</code> block like this:</p>
+<div class="highlight"><pre><span></span><code><span class="k">with</span> <span class="n">C</span><span class="p">(</span><span class="err">…</span><span class="n">args</span><span class="err">…</span><span class="p">)</span> <span class="k">as</span> <span class="n">name</span><span class="p">:</span>
+    <span class="err">…</span><span class="n">do</span> <span class="n">things</span><span class="err">…</span>
+</code></pre></div>
+<p class="continue">it does the following:</p>
+<ol>
+<li>Call <code>C</code>&lsquo;s constructor to create an object that it associates with the code block.</li>
+<li>Call that object&rsquo;s <code>__enter__</code> method
+    and assign the result to the variable <code>name</code>.</li>
+<li>Run the code inside the <code>with</code> block.</li>
+<li>Call <code>name.__exit__()</code> when the block finishes.</li>
+</ol>
+<p>Here&rsquo;s a mock object that inherits all the capabilities of <code>Fake</code>
+and adds the two methods needed by <code>with</code>:</p>
+<div class="code-sample lang-py" title="mock_context.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">ContextFake</span><span class="p">(</span><span class="n">Fake</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">func</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">original</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="fm">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="nb">globals</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">original</span> <span class="o">=</span> <span class="nb">globals</span><span class="p">()[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
+        <span class="nb">globals</span><span class="p">()[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="fm">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_value</span><span class="p">,</span> <span class="n">exc_traceback</span><span class="p">):</span>
+        <span class="nb">globals</span><span class="p">()[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">original</span>
+</code></pre></div>
+</div>
+<p>Notice that <code>__enter__</code> doesn&rsquo;t take any extra parameters:
+anything it needs should be provided to the constructor.
+On the other hand,
+<code>__exit__</code> will always be called with three values
+that tell it whether an exception occurred,
+and if so,
+what the exception was.</p>
+<p class="continue">Here&rsquo;s a test to prove that our context manager works:</p>
+<div class="code-sample lang-py" title="mock_context.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">subber</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">a</span> <span class="o">-</span> <span class="n">b</span>
+
+<span class="k">def</span> <span class="nf">check_no_lasting_effects</span><span class="p">():</span>
+    <span class="k">assert</span> <span class="n">subber</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="k">with</span> <span class="n">ContextFake</span><span class="p">(</span><span class="s2">&quot;subber&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mi">1234</span><span class="p">)</span> <span class="k">as</span> <span class="n">fake</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">subber</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1234</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">fake</span><span class="o">.</span><span class="n">calls</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+    <span class="k">assert</span> <span class="n">subber</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span>
+</code></pre></div>
+</div>
+<h2 id="mock-exercises">Section 4.2: Exercises</h2>
+<h3 class="exercise">Timing blocks</h3>
+<p>Create a context manager called <code>Timer</code> that reports how long it has been
+since a block of code started running:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># your class goes here</span>
+
+<span class="k">with</span> <span class="n">Timer</span><span class="p">()</span> <span class="k">as</span> <span class="n">start</span><span class="p">:</span>
+    <span class="c1"># …do some lengthy operation…</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">start</span><span class="o">.</span><span class="n">elapsed</span><span class="p">())</span>  <span class="c1"># time since the start of the block</span>
+</code></pre></div>
+          
+        </main>
+      </div>
+    </div>
+  </body>
+</html>

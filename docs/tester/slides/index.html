@@ -351,22 +351,84 @@ error: test_sign_error name 'sgn' is not defined
 
 ---
 
-## Mock Objects
+## Finding Test Files
 
--   Suppose the function we're testing uses the time of day
-    -   Result depends on when the function runs, which makes checking hard
--   Or the function depends on an external resource like a database
-    -   Test may be slow and setup may be difficult
--   Use a __mock object__
-    1.  Find the thing we want to replace (it's in a dictionary)
-    1.  Save it somewhere
-    1.  Replace it with our own thing
-    1.  Run the test
-    1.  Put back the original
+-   Test runner should find files containing tests
+    -   Typing names each time is as error-prone as typing names of test functions
+-   Use the `glob` module
+
+```python
+import glob
+
+for name in glob.glob("**/*.txt", root_dir=".", recursive=True):
+    print(name)
+```
 
 --
 
--   Have to be careful about __test fidelity__
+-   Name comes from an old Unix command that did global matching
+    -   Needed so often that it was quickly built into the shell
+
+---
+
+## Loading Files as Modules
+
+```python
+import importlib.util
+import sys
+
+path = sys.argv[1]
+variable = sys.argv[2]
+
+spec = importlib.util.spec_from_file_location("", path)
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+value = getattr(module, variable)
+print(f"After all that, the value is '{value}'")
+```
+
+1.  Build a specification of what we're going to import
+2.  Build a Python module in memory from that spec
+3.  Execute the code in the module
+4.  Use `getattr` because modules aren't dictionaries
+
+---
+
+## Test Case
+
+```python
+# sample_dir/test_up.py
+
+title = "testing example"
+
+def test_succeeds():
+    assert True
+
+def test_fails():
+    assert False
+```
+```shell
+python import_example.py sample_dir/test_up.py title
+```
+```
+After all that, the value is 'testing example'
+```
+
+---
+
+class: aside
+
+## Magic
+
+-   [Clarke's Third Law][clarkes_laws]:
+    any sufficiently advanced technology is indistinguishable from magic
+-   Also true of technologies we encounter
+    before we have the background knowledge they depend on
+-   How we import a module will seem reasonable once we know more
+-   Until then we copy, paste, and move on
+-   Even the most experienced programmers do this in a new domain
+    -   It's easier to learn things once we have more context
+    -  Setting a problem aside and returning to it later can save a lot of time
 
 ---
 
@@ -376,7 +438,7 @@ class: summary
 
 <figure>
   <img src="../tester_concept_map.svg" alt="Concept map">
-  <figcaption>Concept map of unit testing tool..</figcaption>
+  <figcaption>Concept map of unit testing tool.</figcaption>
 </figure>
 
 ---
@@ -467,6 +529,7 @@ Add a similar way to register a `teardown` function.
 [brubeck_matt]: https://limpet.net/mbrubeck/
 [cc_by_nc]: https://creativecommons.org/licenses/by-nc/4.0/
 [cc_by_nc_legal]: https://creativecommons.org/licenses/by-nc/4.0/legalcode
+[clarkes_laws]: https://en.wikipedia.org/wiki/Clarke%27s_three_laws
 [contributor_covenant]: https://www.contributor-covenant.org/
 [cook_mary_rose]: https://maryrosecook.com/
 [crafting_interpreters]: https://craftinginterpreters.com/

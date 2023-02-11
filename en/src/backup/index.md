@@ -145,17 +145,9 @@ we will copy the `.bck` files back to where they were
 
 The first step is to find all the files in or below a given directory
 that we need to save.
-The simple pattern matching in Python's [glob][py_glob] module
+As described in [%x tester %],
+the simple pattern matching in Python's [glob][py_glob] module
 can do this for us.
-If we have this directory structure:
-
-[% inc pat="show_try_glob.*" fill="sh out" %]
-
-then a single call to `glob.glob` will find all the files with two-part names:
-{: .continue}
-
-[% inc pat="try_glob.*" fill="py sh out" %]
-
 Let's combine this with our hashing function
 to create a table of files and hashes:
 

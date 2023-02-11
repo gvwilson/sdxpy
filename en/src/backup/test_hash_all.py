@@ -6,11 +6,11 @@ from hash_all import hash_all
 def our_fs(fs):
     fs.create_file("a.txt", contents="aaa")
     fs.create_file("b.txt", contents="bbb")
-    fs.create_file("subdir/c.txt", contents="ccc")
+    fs.create_file("sub_dir/c.txt", contents="ccc")
 
 def test_hashing(our_fs):
     result = hash_all(".")
-    assert {r[0] for r in result} == {"a.txt", "b.txt", "subdir/c.txt"}
+    assert {r[0] for r in result} == {"a.txt", "b.txt", "sub_dir/c.txt"}
     assert all(len(r[1]) == 64 for r in result)
 
 # [change]
