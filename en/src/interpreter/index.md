@@ -1,5 +1,6 @@
 ---
 title: "An Interpreter"
+slides: true
 syllabus:
 -   Compilers and interpreters are just programs.
 -   Basic arithmetic operations are just functions that have special notation.
@@ -86,7 +87,7 @@ it adds them and returns the result
    slug="interpreter-recursive-evaluation"
    img="interpreter_recursive_evaluation.svg"
    alt="Recursive evaluation of an expression tree"
-   caption="Recursively evaluation an expression tree."
+   caption="Recursively evaluating the expression `abs(1+2)`."
 %]
 
 <div class="callout" markdown="1">

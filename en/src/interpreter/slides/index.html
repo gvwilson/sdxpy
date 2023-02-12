@@ -2,3 +2,258 @@
 title: "An Interpreter"
 template: slides
 ---
+
+## Background
+
+-   Programs are just data
+-   Compilers and interpreters are just programs
+    -   Compiler: generate instructions once in advance
+    -   Interpreter: generate instructions on the fly
+    -   Differences are increasingly blurry in practice
+-   Most have a __parser__ and a __runtime__
+-   Look at the latter in this lesson to see how programs actually run
+
+---
+
+## Representing Expressions
+
+-   Represent simple arithmetic operations as lists
+
+```python
+["add", 1, 2]            # add 1 and 2
+["abs", -3.5]            # get the absolute value of 3.5
+["add", ["abs", -5], 9]  # combine
+```
+
+--
+
+-   We use special __infix__ notation like `1+2` for historical reasons
+-   Always putting the operation first makes processing easier
+
+---
+
+## Evaluating Expressions
+
+```python
+def do_add(args):
+    assert len(args) == 2
+    left = do(args[0])
+    right = do(args[1])
+    return left + right
+```
+
+-   `args` is everything _except_ the name of the operation
+-   Use an as-yet-unwritten function `do` to evaluate the operands
+-   Then add their values
+
+--
+
+```python
+def do_abs(args):
+    assert len(args) == 1
+    val = do(args[0])
+    return abs(val)
+```
+
+-   All the `do_` functions can be called interchangeably
+-   Like the unit test functions of the previous lesson
+
+---
+
+## Dispatching Operations
+
+```python
+def do(expr):
+    # Integers evaluate to themselves.
+    if isinstance(expr, int):
+        return expr
+
+    # Lists trigger function calls.
+    assert isinstance(expr, list)
+    if expr[0] == "abs":
+        return do_abs(expr[1:])
+    if expr[0] == "add":
+        return do_add(expr[1:])
+    assert False, f"Unknown operation {expr[0]}"
+```
+
+-   Integers are themselves
+-   Otherwise, choose and call the function
+
+---
+
+## Dispatching Operations
+
+<figure>
+  <img src="../interpreter_recursive_evaluation.svg" alt="Recursive evaluation of an expression tree">
+  <figcaption>Recursively evaluatiing the expression <code>abs(1 + 2)</code></figcaption>
+</figure>
+
+---
+
+## Environments
+
+-   Store variables in a dictionary that's passed to every `do_` function
+    -   Like the dictionary returned by the `globals` function
+    -   An __environment__
+
+```python
+def do_abs(env, args):
+    assert len(args) == 1
+    val = do(env, args[0])
+    return abs(val)
+```
+
+---
+
+## Getting Variables' Values
+
+-   Choices for getting variables' values:
+    1.  Assume strings are variable names
+    2.  _Define another function that we call explicitly_
+
+```python
+# ["get", "name"]
+def do_get(env, args):
+    assert len(args) == 1
+    assert isinstance(args[0], str)
+    assert args[0] in env, f"Unknown variable {args[0]}"
+    return env[args[0]]
+
+# ["set", "name", …expression…]
+def do_set(env, args):
+    assert len(args) == 2
+    assert isinstance(args[0], str)
+    value = do(env, args[1])
+    env[args[0]] = value
+    return value
+```
+
+---
+
+## Sequencing
+
+-   Need a way to set values before evaluating expressions
+-   `["seq", ["set", "a", 1], ["add", ["get", "a"], 2]]`
+    -   LISP: Lots of Irritating Single Parentheses
+
+```python
+def do_seq(env, args):
+    assert len(args) > 0
+    for item in args:
+        result = do(env, item)
+    return result
+```
+
+---
+
+class: aside
+
+## Everything Is An Expression
+
+-   Python distinguishess __expressions__ (which produce values)
+    from __statements__ (which don't)
+-   But it doesn't have to, and many languages don't
+
+```python
+# not actually legal Python
+result =
+    if a > 0:
+        1
+    elif a == 0:
+        0
+    else:
+        -1
+```
+
+---
+
+## Uh Oh
+
+```python
+def do(env, expr):
+    # Integers evaluate to themselves.
+    if isinstance(expr, int):
+        return expr
+
+    # Lists trigger function calls.
+    assert isinstance(expr, list)
+    if expr[0] == "abs":
+        return do_abs(env, expr[1:])
+    if expr[0] == "add":
+        return do_add(env, expr[1:])
+    if expr[0] == "get":
+        return do_get(env, expr[1:])
+    if expr[0] == "seq":
+        return do_seq(env, expr[1:])
+    if expr[0] == "set":
+        return do_set(env, expr[1:])
+    assert False, f"Unknown operation {expr[0]}"
+```
+
+-   But we know how to solve this
+
+---
+
+## Introspection
+
+```python
+# Python actually provides loop expressions
+OPS = {
+    name.replace("do_", ""): func
+    for (name, func) in globals().items()
+    if name.startswith("do_")
+}
+
+def do(env, expr):
+    # Integers evaluate to themselves.
+    if isinstance(expr, int):
+        return expr
+
+    # Lists trigger function calls.
+    assert isinstance(expr, list)
+    assert expr[0] in OPS, f"Unknown operation {expr[0]}"
+    func = OPS[expr[0]]
+    return func(env, expr[1:])
+```
+
+---
+
+class: summary
+
+## Summary	       
+
+<figure>
+  <img src="../interpreter_concept_map.svg" alt="Concept map">
+  <figcaption>Concept map of interpreter</figcaption>
+</figure>
+
+---
+
+class: exercise
+
+## Eager and Lazy Evaluation
+
+1.  Read the implementation of `if` and `else` in our little language.
+2.  Read the implementation of defining functions in our little language.
+3.  Explain the pros and cons of __eager__ and __lazy__ evaluation.
+
+---
+
+class: exercise
+
+## Arrays
+
+Implement fixed-size one-dimensional arrays:
+
+1.  `["array", "new", 10]` creates an array of 10 elements.
+2.  Other instructions get and set array elements by index.
+
+---
+
+class: exercise
+
+## While Loops
+
+1.  Implement a `while` loop instruction using a Python `while` loop.
+2.  Implement a `while` loop instruction using recursion.
