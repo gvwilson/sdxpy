@@ -167,9 +167,9 @@ we would have to re-create those files and directories after each test.
 
 A better approach is to use a [%i "mock object" %][%g mock_object "mock object" %][%/i%]
 instead of the real filesystem ([%x tester %]).
-The [pyfakefs][pyfakefs] module replaces key functions like `read`
-with functions that act the same
-but act on "files" stores in memory
+The [pyfakefs][pyfakefs] module replaces key functions like `open`
+with functions that behave the same way
+but act on "files" stored in memory
 ([% f backup-mock-fs %]).
 Using it prevents our tests from accidentally disturbing the filesystem;
 it also makes tests much faster

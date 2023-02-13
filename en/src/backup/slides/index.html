@@ -1,0 +1,121 @@
+---
+title: "Versioned File Backups"
+template: slides
+---
+
+## Background
+
+-   Version control systems solve three problems:
+    -   Save work
+    -   See what we've done
+    -   Collaborate with other people
+-   Core of a modern VCS is a way to archive files that:
+    -   Stores any particular version of a file once
+    -   Records which versions of files existed at the same time
+-   Build a tool that does both
+    -   Won't create and merge branches
+
+---
+
+## Hashing
+
+-   A __hash function__ turns arbitrary data into a fixed-length string of bits
+-   Deterministic but unpredictable
+    -   The same input always produces the same output (no randomness)
+    -   But outputs indistinguishable from random numbers
+    -   Need \\(4{\times}10^{38}\\) files to have a 50% chance of __collision__
+
+<figure>
+  <img src="../backup_hash_function.svg" alt="Hash functions">
+  <figcaption>How hash functions work.</figcaption>
+</figure>
+
+---
+
+## A Streaming API
+
+-   Process data a __block__ at a time
+-   Always able to produce the hash of the data seen so far
+
+```python
+import hashlib
+
+BUFFER_SIZE = 4 * 1024  # how much data to read at once
+
+def hash_stream(reader):
+    sha256 = hashlib.sha256()
+    while True:
+        block = reader.read(BUFFER_SIZE)
+        if not block:
+            break
+        sha256.update(block)
+    return sha256.hexdigest()
+```
+
+---
+
+## A Streaming API
+
+-   Open file in __binary mode__
+    -   Hashing the bytes, not the (logical) characters
+
+```python
+import sys
+
+if __name__ == "__main__":
+    reader = open("dracula.txt", "rb")
+    result = hash_stream(reader)
+    print(result)
+```
+```
+0219696507d0db0e8c21c28e1b2de642b94de91be5ad9cfff0c27e5c51456987
+```
+
+---
+
+## Design
+
+1.  Calculate the hash `abcd1234`
+2.  Save that unique sequence of bytes once as `abcd1234.bck`
+3.  Record which hashes were present when a backup was made
+
+<figure>
+  <img src="../backup_storage.svg" alt="Backup file storage">
+  <figcaption>Organization of backup file storage.</figcaption>
+</figure>
+
+---
+
+## Finding and Hashing Files
+
+```python
+def hash_all(root):
+    result = []
+    for filename in glob("**/*.*", root_dir=root, recursive=True):
+        full_name = Path(root_dir, filename)
+        with open(full_name, "rb") as reader:
+            hash_code = hash_stream(reader)
+            result.append((filename, hash_code))
+    return result
+```
+
+--
+
+-   `hash_stream` turns a streaming API into a blocking API
+-   We are returning `(filename, hash)` pairs rather than `(filepath, hash)` pairs
+
+---
+
+## Testing
+
+1.  Create directories and sub-directories full of files
+    -   But then need to create parallel directory trees with a few changes
+    -   We're likely to make mistakes and it's painful to maintain
+2.  Temporarily replace functions like `open`
+    with ones that act the same way but work on "files" in memory
+    -   A __mock filesystem__
+
+<figure>
+  <img src="../backup_mock_fs.svg" alt="Mock filesystem">
+  <figcaption>Using a mock filesystem to simplify testing.</figcaption>
+</figure>

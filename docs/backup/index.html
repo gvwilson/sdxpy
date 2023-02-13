@@ -3,7 +3,7 @@
   <head>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  
+  <meta name="slides" content="true">
   <link rel="icon" type="image/x-icon" href="../favicon.ico">
   <link rel="stylesheet" href="../mccole.css">
   <link rel="stylesheet" href="../tango.css">
@@ -54,14 +54,14 @@
   </li>
   
   <li>
-    <a href="../mock/">
-      Mock Objects
+    <a href="../backup/">
+      <strong>Versioned File Backups</strong>
     </a>
   </li>
   
   <li>
-    <a href="../backup/">
-      <strong>Versioned File Backups</strong>
+    <a href="../mock/">
+      Mock Objects
     </a>
   </li>
   
@@ -183,6 +183,12 @@
   </li>
   
   <li>
+    <a href="../teaching/">
+      Teaching Notes
+    </a>
+  </li>
+  
+  <li>
     <a href="../license/">
       License
     </a>
@@ -227,7 +233,7 @@
       <div id="printable" class="contents bordered">
         <main>
           
-  <h1>Chapter 5: Versioned File Backups</h1>
+  <h1>Chapter 4: Versioned File Backups</h1>
 
 
           
@@ -238,8 +244,6 @@
 
 
             
-  
-
   
 
   
@@ -258,6 +262,8 @@
   <li markdown="1">Using a mock filesystem to test version control is safer and faster than using the real thing.</li>
   
   </ul>
+  
+
   
 
   
@@ -328,17 +334,17 @@ but that&rsquo;s a relatively straightforward extension:
 if you would like to see how it works,
 please see <span class="ix-entry" ix-key="Cook, Mary Rose" markdown="1"><a href="https://maryrosecook.com/">Mary Rose Cook&rsquo;s</a></span> <a href="http://gitlet.maryrosecook.com/">Gitlet</a>
 or <span class="ix-entry" ix-key="Polge, Thibault" markdown="1">Thibault Polge&rsquo;s</span> <a href="https://wyag.thb.lt/">Write yourself a Git</a>.</p>
-<h2 id="backup-unique">Section 5.1: Identifying Unique Files</h2>
+<h2 id="backup-unique">Section 4.1: Identifying Unique Files</h2>
 <p>To avoid storing redundant copies of files,
 we need a way to know when two files contain the same data.
 We can&rsquo;t rely on names because files can be renamed or moved over time;
 we could compare the files byte by byte,
 but a quicker way is to use a <span class="ix-entry" ix-key="hash function" markdown="1"><a class="gl-ref" href="../glossary/#hash_function" markdown="1">hash function</a></span>
 that turns arbitrary data into a fixed-length string of bits
-(<a class="fig-ref" href="../backup/#backup-hash-function">Figure 5.1</a>).</p>
+(<a class="fig-ref" href="../backup/#backup-hash-function">Figure 4.1</a>).</p>
 <figure id="backup-hash-function">
   <img src="./backup_hash_function.svg" alt="Hash functions"/>
-  <figcaption markdown="1">Figure 5.1: How hash functions speed up lookup.</figcaption>
+  <figcaption markdown="1">Figure 4.1: How hash functions speed up lookup.</figcaption>
 </figure>
 
 <p>A hash function always produces the same <span class="ix-entry" ix-key="hash code" markdown="1"><a class="gl-ref" href="../glossary/#hash_code" markdown="1">hash code</a></span> for a given input.
@@ -432,7 +438,7 @@ rather than requiring all of the data to be in memory at once.
 Many applications use streams
 so that programs don&rsquo;t have to read large files into memory.</p>
 </div>
-<h2 id="backup-files">Section 5.2: Saving Files</h2>
+<h2 id="backup-files">Section 4.2: Saving Files</h2>
 <p>Many files only change occasionally after they&rsquo;re created, or not at all.
 It would be wasteful for a version control system to make copies
 each time the user saved a snapshot of a project,
@@ -444,10 +450,10 @@ while the filenames tell us what each file&rsquo;s contents were called when the
 (so that files can be moved or renamed).
 To restore a particular snapshot,
 we will copy the <code>.bck</code> files back to where they were
-(<a class="fig-ref" href="../backup/#backup-storage">Figure 5.2</a>).</p>
+(<a class="fig-ref" href="../backup/#backup-storage">Figure 4.2</a>).</p>
 <figure id="backup-storage">
   <img src="./backup_storage.svg" alt="Backup file storage"/>
-  <figcaption markdown="1">Figure 5.2: Organization of backup file storage.</figcaption>
+  <figcaption markdown="1">Figure 4.2: Organization of backup file storage.</figcaption>
 </figure>
 
 <p>The first step is to find all the files in or below a given directory
@@ -459,24 +465,24 @@ Let&rsquo;s combine this with our hashing function
 to create a table of files and hashes:</p>
 <div class="code-sample lang-py" title="hash_all.py">
 <div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">csv</span>
-<span class="kn">import</span> <span class="nn">glob</span>
+<span class="kn">from</span> <span class="nn">glob</span> <span class="kn">import</span> <span class="n">glob</span>
 <span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
 
 <span class="kn">from</span> <span class="nn">hash_stream</span> <span class="kn">import</span> <span class="n">hash_stream</span>
 
-<span class="k">def</span> <span class="nf">hash_all</span><span class="p">(</span><span class="n">root_dir</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">hash_all</span><span class="p">(</span><span class="n">root</span><span class="p">):</span>
     <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">for</span> <span class="n">filename</span> <span class="ow">in</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">&quot;**/*.*&quot;</span><span class="p">,</span> <span class="n">root_dir</span><span class="o">=</span><span class="n">root_dir</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-        <span class="n">full_name</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">root_dir</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">filename</span> <span class="ow">in</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">&quot;**/*.*&quot;</span><span class="p">,</span> <span class="n">root_dir</span><span class="o">=</span><span class="n">root</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="n">full_name</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
         <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">full_name</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">reader</span><span class="p">:</span>
             <span class="n">hash_code</span> <span class="o">=</span> <span class="n">hash_stream</span><span class="p">(</span><span class="n">reader</span><span class="p">)</span>
             <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">filename</span><span class="p">,</span> <span class="n">hash_code</span><span class="p">))</span>
     <span class="k">return</span> <span class="n">result</span>
 
 <span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
-    <span class="n">root_dir</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-    <span class="n">table</span> <span class="o">=</span> <span class="n">hash_all</span><span class="p">(</span><span class="n">root_dir</span><span class="p">)</span>
+    <span class="n">root</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">table</span> <span class="o">=</span> <span class="n">hash_all</span><span class="p">(</span><span class="n">root</span><span class="p">)</span>
     <span class="n">writer</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">writer</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="p">)</span>
     <span class="n">writer</span><span class="o">.</span><span class="n">writerow</span><span class="p">([</span><span class="s2">&quot;filename&quot;</span><span class="p">,</span> <span class="s2">&quot;hash&quot;</span><span class="p">])</span>
     <span class="n">writer</span><span class="o">.</span><span class="n">writerows</span><span class="p">(</span><span class="n">table</span><span class="p">)</span>
@@ -493,7 +499,7 @@ a.txt,17e682f060b5f8e47ea04c5c4855908b0a5ad612022260fe50e11ecb0cc0ab76
 sub_dir/c.txt,5695d82a086b677962a0b0428ed1a213208285b7b40d7d3604876d36a710302a
 </code></pre></div>
 </div>
-<h2 id="backup-test">Section 5.3: Testing</h2>
+<h2 id="backup-test">Section 4.3: Testing</h2>
 <p>Before we go any further
 we need to figure out how we&rsquo;re going to test our code.
 The obvious approach is to create directories and sub-directories
@@ -505,16 +511,16 @@ To make sure early tests don&rsquo;t contaminate later ones
 we would have to re-create those files and directories after each test.</p>
 <p>A better approach is to use a <span class="ix-entry" ix-key="mock object" markdown="1"><a class="gl-ref" href="../glossary/#mock_object" markdown="1">mock object</a></span>
 instead of the real filesystem (<a class="x-ref" href="../tester/">Chapter 2</a>).
-The <a href="https://pytest-pyfakefs.readthedocs.io/">pyfakefs</a> module replaces key functions like <code>read</code>
-with functions that act the same
-but act on &ldquo;files&rdquo; stores in memory
-(<a class="fig-ref" href="../backup/#backup-mock-fs">Figure 5.3</a>).
+The <a href="https://pytest-pyfakefs.readthedocs.io/">pyfakefs</a> module replaces key functions like <code>open</code>
+with functions that behave the same way
+but act on &ldquo;files&rdquo; stored in memory
+(<a class="fig-ref" href="../backup/#backup-mock-fs">Figure 4.3</a>).
 Using it prevents our tests from accidentally disturbing the filesystem;
 it also makes tests much faster
 since in-memory operations are thousands of times faster than ones that touch the disk.</p>
 <figure id="backup-mock-fs">
   <img src="./backup_mock_fs.svg" alt="Mock filesystem"/>
-  <figcaption markdown="1">Figure 5.3: Using a mock filesystem to simplify testing.</figcaption>
+  <figcaption markdown="1">Figure 4.3: Using a mock filesystem to simplify testing.</figcaption>
 </figure>
 
 <p>If we <code>import pyfakefs</code>,
@@ -586,7 +592,7 @@ with multiple directories and files:</p>
     <span class="k">assert</span> <span class="n">original</span> <span class="o">!=</span> <span class="n">changed</span>
 </code></pre></div>
 </div>
-<h2 id="backup-track">Section 5.4: Tracking Backups</h2>
+<h2 id="backup-track">Section 4.4: Tracking Backups</h2>
 <p>The second part of our backup tool keeps track of which files have and haven&rsquo;t been backed up already.
 It stores backups in a directory that contains files like <code>abcd1234.bck</code>
 (the hash followed by <code>.bck</code>)
@@ -697,13 +703,13 @@ The setup is:</p>
         <span class="k">assert</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;/backup&quot;</span><span class="p">,</span> <span class="s2">&quot;1234.csv&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span>
 </code></pre></div>
 </div>
-<h2 id="backup-summary">Section 5.5: Summary</h2>
+<h2 id="backup-summary">Section 4.5: Summary</h2>
 <figure id="backup-concept-map">
   <img src="./backup_concept_map.svg" alt="Concept map of file backup"/>
-  <figcaption markdown="1">Figure 5.4: Concept map for hashing-based file backup.</figcaption>
+  <figcaption markdown="1">Figure 4.4: Concept map for hashing-based file backup.</figcaption>
 </figure>
 
-<h2 id="backup-exercises">Section 5.6: Exercises</h2>
+<h2 id="backup-exercises">Section 4.6: Exercises</h2>
 <h3 class="exercise">Odds of collision</h3>
 <p>If hashes were only 2 bits long,
 then the chances of collision with each successive file
