@@ -1,6 +1,5 @@
 ---
 title: "An Interpreter"
-slides: true
 syllabus:
 -   Compilers and interpreters are just programs.
 -   Basic arithmetic operations are just functions that have special notation.

@@ -1,6 +1,5 @@
 ---
 title: "A Testing Framework"
-slides: true
 syllabus:
 -   Functions are objects you can save in data structures or pass to other functions.
 -   Python stores local and global variables in dictionary-like structures.
