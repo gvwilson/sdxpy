@@ -50,6 +50,7 @@ appendices = [
     "bibliography",
     "syllabus",
     "slides",
+    "teaching",
     "license",
     "conduct",
     "contributing",
