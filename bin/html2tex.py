@@ -18,6 +18,9 @@ PRINT_INDEX = r"""
 \printindex
 """
 
+LATEX_FIG_SMALL = 0.6
+LATEX_FIG_REGULAR = 0.8
+
 
 def main():
     """Convert HTML to LateX."""
@@ -102,9 +105,9 @@ def figure(node, state, accum, doEscape):
         command = "figpdf"
 
     if node.has_attr("class") and "latex-small" in node["class"]:
-        scale = 0.4
+        scale = LATEX_FIG_SMALL
     else:
-        scale = 0.6
+        scale = LATEX_FIG_REGULAR
 
     path = node.img["src"].replace(".svg", ".pdf")
     caption = "".join(children(node.figcaption, state, [], True))
