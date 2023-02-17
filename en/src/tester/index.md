@@ -536,16 +536,3 @@ Make sure that all the tests run even if some fail or have errors.
 1.  Modify this chapter's testing tool so that
     users can check what a function prints to standard output
     as part of a unit test.
-
-### Discovering test files {: .exercise}
-
-1.  Write a program that finds all the files in or below the current directory
-    whose names match the pattern `test_*.py`.
-
-1.  Extend the program so that it loads each file
-    to create a dictionary with filenames as keys and modules as values.
-
-1.  Use Python's `dir` function and a loop to find
-    all the functions in each module whose names begin with `test_`.
-
-1.  Run these functions and report whether they pass, fail, or have an error.
