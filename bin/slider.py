@@ -1,42 +1,78 @@
+import argparse
+import os
 import sys
-from http.server import BaseHTTPRequestHandler, HTTPServer
-
-SERVER_ADDRESS = ("", 4000)
-SETTINGS = None
+import yaml
+from http.server import SimpleHTTPRequestHandler, HTTPServer
 
 
-def get_settings():
-    settings = {
-        "template": None,
-        "res": None,
-        "content": None,
-    }
+# Known MIME types
+MIME_TYPES = {
+    "css": "text/css",
+    "html": "text/html",
+    "js": "text/javascript",
+    "svg": "image/svg+xml",
+}
 
-    for arg in sys.argv[1:]:
-        key, value = arg.split("=")
-        settings[key] = value
-
-    with open(settings["template"], "r") as reader:
-        template = reader.read()
-        settings["template"] = template.replace("@res", settings["res"])
-
-    return settings
+# Filled in later
+OPTIONS = None
+LINKS = None
+RESOURCES = None
 
 
-class RequestHandler(BaseHTTPRequestHandler):
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--project", required=True, help="Root directory of Git project")
+    parser.add_argument("--chapter", required=True, help="Root directory of chapter")
+    return parser.parse_args()
+
+
+def read_links():
+    path = f"{OPTIONS.project}/info/links.yml"
+    with open(path, "r") as reader:
+        entries = yaml.load(reader, Loader=yaml.FullLoader)
+        return "\n".join(f"[{e['key']}]: {e['url']}" for e in entries)
+
+
+class RequestHandler(SimpleHTTPRequestHandler):
     def do_GET(self):
-        with open(SETTINGS["content"], "r") as reader:
-            content = reader.read()
-        page = SETTINGS["template"].replace("@content", content)
-        page = bytes(page, "utf-8")
+        if self.path == "/":
+            content, mime_type = self.do_slides()
+        else:
+            content, mime_type = self.do_other()
         self.send_response(200)
-        self.send_header("Content-Type", "text/html; charset=utf-8")
-        self.send_header("Content-Length", str(len(page)))
+        self.send_header("Content-Length", str(len(content)))
+        self.send_header("Content-Type", mime_type)
         self.end_headers()
-        self.wfile.write(page)
+        self.wfile.write(content)
+
+    def do_other(self):
+        if self.path.startswith("/@res"):
+            self.path = self.path.replace("/@res", RESOURCES)
+        elif self.path.startswith("/"):
+            self.path = f"{OPTIONS.project}/en/src/{OPTIONS.chapter}{self.path}"
+        with open(self.path, "rb") as reader:
+            content = reader.read()
+        return content, self.guess_mime_type()
+
+    def do_slides(self):
+        with open(f"{OPTIONS.project}/lib/mccole/slides.html", "r") as reader:
+            template = reader.read()
+        with open(f"./slides/index.html", "r") as reader:
+            slides = reader.read()
+            slides = slides.split("---", maxsplit=2)[-1]
+        page = template.replace("@content", slides + "\n\n" + LINKS)
+        page = bytes(page, "utf-8")
+        return page, "text/html"
+
+    def guess_mime_type(self):
+        ext = self.path.split(".")[-1]
+        return MIME_TYPES.get(ext, "unknown")
 
 
 if __name__ == "__main__":
-    SETTINGS = get_settings()
-    server = HTTPServer(SERVER_ADDRESS, RequestHandler)
+    OPTIONS = parse_args()
+    LINKS = read_links()
+    RESOURCES = f"{OPTIONS.project}/lib/mccole/resources"
+    os.chdir(f"{OPTIONS.project}/en/src/{OPTIONS.chapter}")
+    server = HTTPServer(("", 4000), RequestHandler)
     server.serve_forever()
