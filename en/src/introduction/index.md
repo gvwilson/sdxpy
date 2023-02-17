@@ -21,7 +21,7 @@ and better able to use them well.
 
 These [personas][t3_personas] describe who this book is for [%b Wilson2019 %]:
 
--   Aïsha has a master's degree in genomics
+-   Maya has a master's degree in genomics
     and does very complicated science things in a wet lab.
     She has taught herself enough Python to do some sophisticated data analysis,
     but is constantly frustrated by what she *doesn't* know about how software actually works.
