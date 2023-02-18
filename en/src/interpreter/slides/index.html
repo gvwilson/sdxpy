@@ -86,7 +86,7 @@ def do(expr):
 
 <figure>
   <img src="../interpreter_recursive_evaluation.svg" alt="Recursive evaluation of an expression tree">
-  <figcaption>Recursively evaluatiing the expression <code>abs(1 + 2)</code></figcaption>
+  <figcaption>Recursively evaluating <code>["abs", ["add", 1, 2]]</code></figcaption>
 </figure>
 
 ---
@@ -168,7 +168,7 @@ result =
 
 ---
 
-## Uh Oh
+## This Is Tedious
 
 ```python
 def do(env, expr):
@@ -191,14 +191,16 @@ def do(env, expr):
     assert False, f"Unknown operation {expr[0]}"
 ```
 
--   But we know how to solve this
+--
+
+-   But we know what to do
 
 ---
 
 ## Introspection
 
 ```python
-# Python actually provides loop expressions
+# Dictionary comprehensions are actually loop expressions
 OPS = {
     name.replace("do_", ""): func
     for (name, func) in globals().items()
@@ -219,6 +221,123 @@ def do(env, expr):
 
 ---
 
+class: aside
+
+## How Good Is Our Design?
+
+-   One way to evaluate a design is to ask how extensible it is
+    -   I.e., how easy is it to implement reasonable changes
+-   The answer for the interpreter is "pretty easily"
+-   The answer for our little language is "not at all"
+-   We need a way to define and call functions of our own
+
+---
+
+## Design
+
+-   Function definition
+
+```python
+["def", "same", ["num"], ["get", "num"]]
+```
+
+-   Functions are stored in the environment like any other value
+    -   We don't need to record the name: it's stored by the environment
+
+```python
+["func", ["num"], ["get", "num"]]
+```
+
+-   Function call
+
+```python
+["call", "same", 3]
+```
+
+---
+
+## To Call a Function
+
+1.  Evaluate the arguments
+2.  Look up the function
+3.  Create a new environment
+    -   Keys are the parameters' names
+    -   Values are the arguments' values
+4.  Call `do` to run the function and capture the result
+5.  Discard the environment created in step 3
+6.  Return the function's result
+
+---
+
+class: aside
+
+## Lazy Evaluation
+
+-   We don't have to evaluate the arguments before calling the function
+-   Pass the unevaluated expression
+-   Automatically evaluate it the first time its value is needed
+-   *Or* let the function being called examine or modify it
+
+---
+
+## Managing Environments
+
+-   Store environments of active function calls in a stack of dictionaries
+-   Bottom dictionary is the global environment
+-   Only look for variables in top-most and bottom-most
+
+```python
+def env_get(env, name):
+    assert isinstance(name, str)
+    if name in env[-1]:
+        return env[-1][name]
+    if name in env[0]:
+        return env[0][name]
+    assert False, f"Unknown variable {name}"
+```
+
+---
+
+## Defining
+
+```python
+def do_def(env, args):
+    assert len(args) == 3
+    name = args[0]
+    params = args[1]
+    body = args[2]
+    env_set(env, name, ["func", params, body])
+    return None
+```
+
+---
+
+## Calling
+
+```python
+def do_call(env, args):
+    # Set up the call.
+    assert len(args) >= 1
+    name = args[0]
+    values = [do(env, a) for a in args[1:]]
+
+    # Find the function.
+    func = env_get(env, name)
+    assert isinstance(func, list) and (func[0] == "func")
+    params, body = func[1], func[2]
+    assert len(values) == len(params)
+
+    # Run in new environment.
+    env.append(dict(zip(params, values)))
+    result = do(env, body)
+    env.pop()
+
+    # Report.
+    return result
+```
+
+---
+
 class: summary
 
 ## Summary	       
@@ -227,16 +346,6 @@ class: summary
   <img src="../interpreter_concept_map.svg" alt="Concept map">
   <figcaption>Concept map of interpreter</figcaption>
 </figure>
-
----
-
-class: exercise
-
-## Eager and Lazy Evaluation
-
-1.  Read the implementation of `if` and `else` in our little language.
-2.  Read the implementation of defining functions in our little language.
-3.  Explain the pros and cons of __eager__ and __lazy__ evaluation.
 
 ---
 
@@ -257,3 +366,12 @@ class: exercise
 
 1.  Implement a `while` loop instruction using a Python `while` loop.
 2.  Implement a `while` loop instruction using recursion.
+
+---
+
+class: exercise
+
+## Early Return
+
+Add a `"return"` instruction to TLL that ends a function call immediately
+and returns a single value.
