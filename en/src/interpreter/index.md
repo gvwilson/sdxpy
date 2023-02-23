@@ -421,8 +421,9 @@ and executes that operation.
 ### Arrays {: .exercise}
 
 Implement fixed-size one-dimensional arrays:
-`["array", "new", 10]` creates an array of 10 elements,
-while other instructions get and set particular array elements by index.
+`["array", 10]` creates an array of 10 elements,
+while other instructions that you design
+get and set particular array elements by index.
 
 ### While loops {: .exercise}
 
