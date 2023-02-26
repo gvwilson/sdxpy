@@ -88,7 +88,8 @@ If we keep going,
 there's a 50% chance of two people sharing a birthday in a group of just 23 people,
 and a 99.9% chance with 70 people.
 
-The same math can tell us how many files we need to hash before there's a 50% chance of a collision.
+The same math can tell us how many files we need to hash before there's a 50% chance of a collision
+with a 256-bit hash.
 According to [Wikipedia][birthday_problem],
 the answer is approximately \\(4{\times}10^{38}\\) files.
 We're willing to take that risk…
@@ -218,7 +219,7 @@ where `ssssssssss` is the [%g utc "UTC" %] [%g timestamp "timestamp" %] of the b
 
 ### Time of check/time of use
 
-Our naming convention for index files will fail if we try to create more than one backup per second.
+Our naming convention for manifests will fail if we try to create more than one backup per second.
 This might seem very unlikely,
 but many faults and security holes are the result of programmers assuming things weren't going to happen.
 
@@ -314,7 +315,7 @@ instead of reading it into memory and then writing it out again.
 Modify the backup program so that manifests are numbered sequentially
 as `00000001.csv`, `00000002.csv`, and so on
 rather than being timestamped.
-Why doesn't this solve the time of check/time of use race condition mentioned earlier.
+Why doesn't this solve the time of check/time of use race condition mentioned earlier?
 
 ### JSON manifests {: .exercise}
 

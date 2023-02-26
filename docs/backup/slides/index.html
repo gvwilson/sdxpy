@@ -62,7 +62,7 @@ class: slide-title
 -   Deterministic but unpredictable
     -   The same input always produces the same output (no randomness)
     -   But outputs indistinguishable from random numbers
-    -   Need \\(4{\times}10^{38}\\) files to have a 50% chance of __collision__
+    -   Need \\(4{\times}10^{38}\\) files for 50% chance of __collision__ with 256-bit hash
 
 <figure>
   <img src="../backup_hash_function.svg" alt="Hash functions">
@@ -71,9 +71,57 @@ class: slide-title
 
 ---
 
+## How Does It Work?
+
+```python
+def naive_hash(text):
+    result = 0
+    for ch in text:
+        result = ((result * 13) + ord(ch)) % 17
+    return result
+
+sample = "abcdefg"
+for i in range(2, len(sample) + 1):
+    slice = sample[:i]
+    hash = naive_hash(slice)
+    print(f"{hash:2}: slice")
+```
+```
+16: slice
+ 1: slice
+11: slice
+ 6: slice
+10: slice
+12: slice
+```
+
+---
+
+## How Well Does It Work?
+
+```python
+from collections import Counter
+from naive_hash import naive_hash
+
+lines = open("dracula.txt", "r").readlines()
+hashes = [naive_hash(ln) for ln in lines]
+counts = Counter(hashes)
+print("hash,count")
+for (h, c) in sorted(counts.items()):
+    print(f"{h},{c}")
+```
+
+<figure>
+  <img src="../naive_dracula.svg" alt="Hash the text of 'Dracula'" width="50%">
+</figure>
+
+---
+
 ## A Streaming API
 
 -   Process data a __block__ at a time
+    1.  Overlap with I/O
+    2.  Create checkpoints for event streams
 -   Always able to produce the hash of the data seen so far
 
 ```python
@@ -96,7 +144,7 @@ def hash_stream(reader):
 ## A Streaming API
 
 -   Open file in __binary mode__
-    -   Hashing the bytes, not the (logical) characters
+    -   Hash the bytes, not the (logical) characters
 
 ```python
 import sys
@@ -158,6 +206,179 @@ def hash_all(root):
   <img src="../backup_mock_fs.svg" alt="Mock filesystem">
   <figcaption>Using a mock filesystem to simplify testing.</figcaption>
 </figure>
+
+---
+
+## Using `pyfakefs` With `pytest`
+
+```python
+from pathlib import Path
+
+def test_simple_example(fs):
+    sentence = "This file contains one sentence."
+    with open("alpha.txt", "w") as writer:
+        writer.write(sentence)
+    assert Path("alpha.txt").exists()
+    with open("alpha.txt", "r") as reader:
+        assert reader.read() == sentence
+```
+
+-   Don't have to use `Path` instead of strings for paths
+    -   But we should
+-   (Almost) everything else works the same
+
+---
+
+## Creating Fixtures
+
+```python
+from pathlib import Path
+import pytest
+
+@pytest.fixture
+def our_fs(fs):
+    fs.create_file("a.txt", contents="aaa")
+    fs.create_file("b.txt", contents="bbb")
+    fs.create_file("sub_dir/c.txt", contents="ccc")
+
+def test_nested_example(our_fs):
+    assert Path("a.txt").exists()
+    assert Path("b.txt").exists()
+    assert Path("sub_dir/c.txt").exists()
+
+def test_deletion_example(our_fs):
+    assert Path("a.txt").exists()
+    Path("a.txt").unlink()
+    assert not Path("a.txt").exists()
+```
+
+---
+
+## Implementing Our Design
+
+-   Store backups in a directory that contains files like `abcd1234.bck`
+    -   The hash followed by `.bck`
+-   Store CSV __manifests__ that describe the contents of particular snapshots
+    -   Manifest named `ssssssssss.csv`
+        where `ssssssssss` is the UTC timestamp of the backup's creation in seconds
+-   Keep these separate and replaceable
+    -   Might want to store backup files in the cloud
+    -   Or use JSON or a SQL database to store manifests
+
+---
+
+class: aside
+
+## Security and Reliability
+
+-   Our naming convention for manifests fails if we create more than one backup per second
+-   Might seem unlikely,
+    but many security holes are the result of programmers assuming
+    "that could never happen"
+-   Using a two-part naming scheme `ssssssss-a.csv`, `ssssssss-b.csv`, etc. doesn't help
+    -   Time of Check/Time of Use (ToCToU) __race condition__
+
+---
+
+## Writing the Manifest
+
+```python
+def write_manifest(backup_dir, timestamp, manifest):
+    backup_dir = Path(backup_dir)
+    if not backup_dir.exists():
+        backup_dir.mkdir()
+    manifest_file = Path(backup_dir, f"{timestamp}.csv")
+    with open(manifest_file, "w") as raw:
+        writer = csv.writer(raw)
+        writer.writerow(["filename", "hash"])
+        writer.writerows(manifest)
+```
+
+-   ToCToU risk when making directory
+
+---
+
+## Copying Files
+
+```python
+def copy_files(source_dir, backup_dir, manifest):
+    for (filename, hash_code) in manifest:
+        source_path = Path(source_dir, filename)
+        backup_path = Path(backup_dir, f"{hash_code}.bck")
+        if not backup_path.exists():
+            shutil.copy(source_path, backup_path)
+```
+
+-   We only copy files we don't already have
+    -   Which we can tell from the hash
+
+---
+
+## Overall
+
+```python
+def backup(source_path, backup_path):
+    manifest = hash_all(source_path)
+    timestamp = current_time()
+    write_manifest(backup_path, timestamp, manifest)
+    copy_files(source_path, backup_path, manifest)
+    return manifest
+```
+
+--
+
+-   Easy to make it configurable
+
+```python
+def backup(source_path, backup_path,
+           write_manifest=write_manifest_csv,
+           copy_files=copy_files_local):
+    manifest = hash_all(source_path)
+    timestamp = current_time()
+    write_manifest(backup_path, timestamp, manifest)
+    copy_files(source_path, backup_path, manifest)
+    return manifest
+```
+
+---
+
+class: summary
+
+## Summary
+
+<figure>
+  <img src="../backup_concept_map.svg" alt="Concept map">
+  <figcaption>Concept map of hash-based backup</figcaption>
+</figure>
+
+---
+
+class: exercise
+
+## Comparing manifests
+
+Write a program `compare-manifests.py` that reads two manifest files and reports:
+
+-   Which files have the same names but different hashes
+    (i.e., their contents have changed).
+-   Which files have the same hashes but different names
+    (i.e., they have been renamed).
+-   Which files are in the first hash but neither their names nor their hashes are in the second
+    (i.e., they have been deleted).
+-   Which files are in the second hash but neither their names nor their hashes are in the first
+    (i.e., they have been added).
+
+---
+
+class: exercise
+
+## File history
+
+1.  Write a program called `file_history.py`
+    that takes the name of a file as a command-line argument
+    and displays the history of that file
+    by tracing it back in time through the available manifests.
+2.  Write tests for your program using pytest and a mock filesystem.
 
 
 [academic_prototyping]: https://www.fuzzingbook.org/html/AcademicPrototyping.html
