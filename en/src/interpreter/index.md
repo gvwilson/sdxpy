@@ -171,8 +171,8 @@ because it is the setting in which expressions are evaluated;
 the dictionaries returned by the `globals` and `locals` functions
 introduced in [%x tester %] are both environments.
 
-Let's modify `do_add` and `do_abs`
-to take an environment as an extra parameter and pass it on to `do` as needed:
+Let's modify `do_add`, `do_abs`, `do`, and `main`
+to take an environment as an extra parameter and pass it on as needed:
 
 [% inc file="vars.py" keep="do_abs" %]
 
