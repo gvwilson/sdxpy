@@ -21,7 +21,7 @@
     async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
   </script>
   <script defer src="../../mccole.js"></script>
-  <title>Software Design in Python: An Interpreter</title>
+  <title>Software Design in Python: Object Persistence</title>
 </head>
 
   <body>
@@ -34,7 +34,7 @@ class: slide-title
   <br>
   <a href="https://third-bit.com">Greg Wilson</a>
 </p>
-<h1>An Interpreter</h1>
+<h1>Object Persistence</h1>
 <div class="bottom">
   <a href="../">chapter</a>
 </div>
@@ -42,355 +42,308 @@ class: slide-title
 ---
 
 
-## Background
+## How to Save Data?
 
--   Programs are just data
--   Compilers and interpreters are just programs
-    -   Compiler: generate instructions once in advance
-    -   Interpreter: generate instructions on the fly
-    -   Differences are increasingly blurry in practice
--   Most have a __parser__ and a __runtime__
--   Look at the latter in this lesson to see how programs actually run
+-   Prose as plain text
+-   Tables as CSV
+-   What about objects?
+    -   List of dictionaries of lists of dictionaries
 
 ---
 
-## Representing Expressions
+## Existing Options
 
--   Represent simple arithmetic operations as lists
+-   [JSON][py_json] or [YAML][py_yaml]: language-neutral
+    -   But therefore lowest common denominator
+    -   Boolean, number, string, list, dictionary (with string keys)
+-   [pickle][py_pickle] module: Python-specific
+    -   Arbitrary nested objects (good)
+    -   Other languages can't read its files (bad)
+
+---
+
+## And Then There's This Guy
+
+-   What to do with user-defined classes?
+    -   Or things from the standard library, for that matter?
+-   Convert user types to built-in types
+    -   Either the object tells us how…
+    -   …or we do it generically
+    -   Either way, how to convert back?
+-   Save class definitions as well as objects' values
+    -   Most general (code is just data)
+    -   But most difficult to implement
+    -   And a potential security hole
+
+---
+
+## Aliasing
 
 ```python
-["add", 1, 2]            # add 1 and 2
-["abs", -3.5]            # get the absolute value of 3.5
-["add", ["abs", -5], 9]  # combine
+shared = ["shared"]
+fixture = [shared, shared]
 ```
-
---
-
--   We use special __infix__ notation like `1+2` for historical reasons
--   Always putting the operation first makes processing easier
-
----
-
-## Evaluating Expressions
-
-```python
-def do_add(args):
-    assert len(args) == 2
-    left = do(args[0])
-    right = do(args[1])
-    return left + right
-```
-
--   `args` is everything _except_ the name of the operation
--   Use an as-yet-unwritten function `do` to evaluate the operands
--   Then add their values
-
----
-
-## Evaluating Expressions
-
-```python
-def do_abs(args):
-    assert len(args) == 1
-    val = do(args[0])
-    return abs(val)
-```
-
--   All the `do_` functions can be called interchangeably
--   Like the unit test functions of the previous lesson
-
----
-
-## Dispatching Operations
-
-```python
-def do(expr):
-    # Integers evaluate to themselves.
-    if isinstance(expr, int):
-        return expr
-
-    # Lists trigger function calls.
-    assert isinstance(expr, list)
-    if expr[0] == "abs":
-        return do_abs(expr[1:])
-    if expr[0] == "add":
-        return do_add(expr[1:])
-    assert False, f"Unknown operation {expr[0]}"
-```
-
--   Integers are themselves
--   Otherwise, choose and call the function
-
----
-
-## Dispatching Operations
 
 <figure>
-  <img src="../interpreter_recursive_evaluation.svg" alt="Recursive evaluation of an expression tree">
-  <figcaption>Recursively evaluating <code>["abs", ["add", 1, 2]]</code></figcaption>
+  <img src="../persistence_shared.svg" alt="A shared data structure">
+  <figcaption>A shared data structure</figcaption>
 </figure>
 
+-   "Surely nobody would ever do this!"
+-   But every child node in an HTML tree has a reference to its parent
+
 ---
 
-## Environments
+## Getting Started
 
--   Store variables in a dictionary that's passed to every `do_` function
-    -   Like the dictionary returned by the `globals` function
-    -   An __environment__
+-   Store each __atomic value__ on a line of its own
+    -   `type_name:value`
 
-```python
-def do_abs(env, args):
-    assert len(args) == 1
-    val = do(env, args[0])
-    return abs(val)
+```
+bool:True
+int:123
+```
+
+-   Split strings on newlines
+    -   Save the number of lines
+
+```
+# input
+this is
+two lines
+```
+```
+# output
+str:2
+this is
+two lines
 ```
 
 ---
 
-## Getting Variables' Values
-
--   Choices for getting variables' values:
-    1.  Assume strings are variable names
-    2.  _Define another function that we call explicitly_
+## Implementation
 
 ```python
-# ["get", "name"]
-def do_get(env, args):
-    assert len(args) == 1
-    assert isinstance(args[0], str)
-    assert args[0] in env, f"Unknown variable {args[0]}"
-    return env[args[0]]
+def save(writer, thing):
+    if isinstance(thing, bool):
+        print(f"bool:{thing}", file=writer)
 
-# ["set", "name", …expression…]
-def do_set(env, args):
-    assert len(args) == 2
-    assert isinstance(args[0], str)
-    value = do(env, args[1])
-    env[args[0]] = value
-    return value
+    elif isinstance(thing, float):
+        print(f"float:{thing}", file=writer)
+
+    elif isinstance(thing, int):
+        print(f"int:{thing}", file=writer)
+
+    elif isinstance(thing, str):
+        lines = thing.split("\n")
+        print(f"str:{len(lines)}", file=writer)
+        for line in lines:
+            print(line, file=writer)
+
+    …more code to come…
 ```
 
 ---
 
-## Sequencing
+## Collections
 
--   Need a way to set values before evaluating expressions
--   `["seq", ["set", "a", 1], ["add", ["get", "a"], 2]]`
-    -   LISP: Lots of Irritating Single Parentheses
+-   Save type and number of elements
 
 ```python
-def do_seq(env, args):
-    assert len(args) > 0
-    for item in args:
-        result = do(env, item)
-    return result
-```
+def save(writer, thing):
+    …previous code…
 
----
+    elif isinstance(thing, list):
+        print(f"list:{len(thing)}", file=writer)
+        for item in thing:
+            save(writer, item)
 
-class: aside
+    …save a set…
 
-## Everything Is An Expression
+    elif isinstance(thing, dict):
+        print(f"dict:{len(thing)}", file=writer)
+        for (key, value) in thing.items():
+            save(writer, key)
+            save(writer, value)
 
--   Python distinguishes __expressions__ (which produce values)
-    from __statements__ (which don't)
--   But it doesn't have to, and many languages don't
-
-```python
-# not actually legal Python
-result =
-    if a > 0:
-        1
-    elif a == 0:
-        0
     else:
-        -1
+        raise ValueError(f"unknown type of thing {type(thing)}")
 ```
 
 ---
 
-## This Is Tedious
+## What This Looks Like
 
 ```python
-def do(env, expr):
-    # Integers evaluate to themselves.
-    if isinstance(expr, int):
-        return expr
-
-    # Lists trigger function calls.
-    assert isinstance(expr, list)
-    if expr[0] == "abs":
-        return do_abs(env, expr[1:])
-    if expr[0] == "add":
-        return do_add(env, expr[1:])
-    if expr[0] == "get":
-        return do_get(env, expr[1:])
-    if expr[0] == "seq":
-        return do_seq(env, expr[1:])
-    if expr[0] == "set":
-        return do_set(env, expr[1:])
-    assert False, f"Unknown operation {expr[0]}"
+save([False, 3.14, "hello", {"left": 1, "right": [2, 3]}])
+```
+```
+list:4
+bool:False
+float:3.14
+str:1
+hello
+dict:2
+str:1
+left
+int:1
+str:1
+right
+list:2
+int:2
+int:3
 ```
 
 --
 
--   But we know what to do
+-   Computer doesn't need indentation or end markers
+-   But we might add them for readability
 
 ---
 
-## Introspection
+## Reading Data
 
 ```python
-# Dictionary comprehensions are actually loop expressions
-OPS = {
-    name.replace("do_", ""): func
-    for (name, func) in globals().items()
-    if name.startswith("do_")
-}
+def load(reader):
+    line = reader.readline()[:-1]
+    assert line, "Nothing to read"
+    fields = line.split(":", maxsplit=1)
+    assert len(fields) == 2, f"Badly-formed line {line}"
+    key, value = fields
 
-def do(env, expr):
-    # Integers evaluate to themselves.
-    if isinstance(expr, int):
-        return expr
+    if key == "bool":
+        names = {"True": True, "False": False}
+        assert value in names, f"Unknown Boolean {value}"
+        return names[value]
 
-    # Lists trigger function calls.
-    assert isinstance(expr, list)
-    assert expr[0] in OPS, f"Unknown operation {expr[0]}"
-    func = OPS[expr[0]]
-    return func(env, expr[1:])
+    elif key == "float":
+        return float(value)
+
+    …more code to come…
 ```
 
 ---
 
-class: aside
-
-## How Good Is Our Design?
-
--   One way to evaluate a design is to ask how extensible it is
-    -   I.e., how easy is it to implement reasonable changes
--   The answer for the interpreter is "pretty easily"
--   The answer for our little language is "not at all"
--   We need a way to define and call functions of our own
-
----
-
-## Design
-
--   Function definition
+## Reading Multi-line Values
 
 ```python
-["def", "same", ["num"], ["get", "num"]]
-```
-
--   Functions are stored in the environment like any other value
-    -   We don't need to record the name: it's stored by the environment
-
 ```python
-["func", ["num"], ["get", "num"]]
-```
+def load(reader):
+    …previous code…
 
--   Function call
+    elif key == "str":
+        return "\n".join([reader.readline()[:-1]
+                          for _ in range(int(value))])
 
-```python
-["call", "same", 3]
+    elif key == "list":
+        return [load(reader) for _ in range(int(value))]
+
+    …sets and dictionaries…
+
+    else:
+        raise ValueError(f"unknown type of thing {line}")
 ```
 
 ---
 
-## To Call a Function
+## Open-Closed Principle
 
-1.  Evaluate the arguments
-2.  Look up the function
-3.  Create a new environment
-    -   Keys are the parameters' names
-    -   Values are the arguments' values
-4.  Call `do` to run the function and capture the result
-5.  Discard the environment created in step 3
-6.  Return the function's result
-
----
-
-class: aside
-
-## Lazy Evaluation
-
--   We don't have to evaluate the arguments before calling the function
--   Pass the unevaluated expression
--   Automatically evaluate it the first time its value is needed
--   *Or* let the function being called examine or modify it
+-   Software should be open for extension but closed for modification
+    -   I.e., should be able to add new code without rewriting existing code
+-   Create a dispatch function that figures out what reader or writer to call
+-   Find appropriate things to call dynamically
+-   Instead of looking for functions, look for methods
+-   If the type of the thing we're saving is `something`,
+    provide a method `_something`
 
 ---
 
-## Managing Environments
-
--   Store environments of active function calls in a stack of dictionaries
--   Bottom dictionary is the global environment
--   Only look for variables in top-most and bottom-most
+## Saving
 
 ```python
-def env_get(env, name):
-    assert isinstance(name, str)
-    if name in env[-1]:
-        return env[-1][name]
-    if name in env[0]:
-        return env[0][name]
-    assert False, f"Unknown variable {name}"
+class SaveOop:
+    def __init__(self, writer):
+        self.writer = writer
+
+    def save(self, thing):
+        typename = type(thing).__name__
+        method = f"_{typename}"
+        assert hasattr(self, method), \
+            f"Unknown object type {typename}"
+        getattr(self, method)(thing)
+
+    def _bool(self, thing):
+        self._write("bool", thing)
+
+    …other methods…
+
+    def _write(self, *fields):
+        print(":".join(str(f) for f in fields), file=self.writer)
 ```
+
+-   Handle loading the same way
 
 ---
 
-## Managing Environments
+## Handling Aliases
 
 <figure>
-  <img src="../interpreter_call_stack.svg" alt="Call stack during recursive evaluation">
-  <figcaption>Call stack during recursive evaluation</figcaption>
+  <img src="../persistence_shared.svg" alt="A shared data structure">
+  <figcaption>A shared data structure</figcaption>
 </figure>
 
+-   Store a unique ID for every object using Python's `id`
+-   Keep track of the objects seen so far
+-   Write that ID the first time we see the object
+-   Write a special entry when we see the object again
+
 ---
 
-## Defining
+## Saving
 
 ```python
-def do_def(env, args):
-    assert len(args) == 3
-    name = args[0]
-    params = args[1]
-    body = args[2]
-    env_set(env, name, ["func", params, body])
-    return None
+class SaveAlias(SaveOop):
+    def __init__(self, writer):
+*        self.seen = set()
+
+    def save(self, thing):
+*        thing_id = id(thing)
+*        if thing_id in self.seen:
+*            self._write("alias", thing_id, "")
+*            return
+
+        self.seen.add(thing_id)
+        typename = type(thing).__name__
+        method = f"_{typename}"
+        assert hasattr(self, method), \
+            f"Unknown object type {typename}"
+        getattr(self, method)(thing)
+
+    def _bool(self, thing):
+        self._write("bool", id(thing), thing)
 ```
 
---
-
--   Could (should) check that all operations are known
-    when saving the function
--   But that would make mutually-recursive functions
-    impossible to write
-
 ---
 
-## Calling
+## What It Looks Like
 
 ```python
-def do_call(env, args):
-    # Set up the call.
-    assert len(args) >= 1
-    name = args[0]
-    values = [do(env, a) for a in args[1:]]
+word = "word"
+child = [word, word]
+parent = []
+parent.append(parent)
+parent.append(child)
 
-    # Find the function.
-    func = env_get(env, name)
-    assert isinstance(func, list) and (func[0] == "func")
-    params, body = func[1], func[2]
-    assert len(values) == len(params)
-
-    # Run in new environment.
-    env.append(dict(zip(params, values)))
-    result = do(env, body)
-    env.pop()
-
-    # Report.
-    return result
+saver = SaveAlias(sys.stdout)
+saver.save(parent)
+```
+```
+list:4353637888:2
+alias:4353637888:
+list:4353243008:2
+str:4353242416:1
+word
+alias:4353242416:
 ```
 
 ---
@@ -400,42 +353,38 @@ class: summary
 ## Summary
 
 <figure>
-  <img src="../interpreter_concept_map.svg" alt="Concept map">
-  <figcaption>Concept map of interpreter</figcaption>
+  <img src="../persistence_concept_map.svg" alt="Concept map" width="100%">
+  <figcaption>Concept map of persistence</figcaption>
 </figure>
 
 ---
 
 class: exercise
 
-## Defining and Calling Functions
+## Strings
 
-1.  Work through the explanation in the slides (and chapter)
-    of how to define a function in our little language
-    and then how to call one.
-2.  Look at the documentation for Python's `ChainMap` class
-    and modify the implementation from the slides to use that
-    to manage environments.
+Modify the framework so that strings are stored using escape characters like `\n`
+instead of being split across several lines.
 
 ---
 
 class: exercise
 
-## Arrays
+## A Dangling Colon
 
-Implement fixed-size one-dimensional arrays:
-
-1.  `["array", 10]` creates an array of 10 elements.
-2.  Other instructions that you design get and set array elements by index.
+Why is there a colon at the end of the line `alias:12345678:`
+when we create an alias marker?
 
 ---
 
 class: exercise
 
-## While Loops
+## Fallback
 
-Implement a `while` loop instruction.
-Your implemetation can use either a Python `while` loop or recursion.
+1.  Modify `LoadExtend` so that
+    if the user didn't provide the class needed to reconstruct some archived data,
+    the `load` method returns a simple dictionary instead.
+1.  Why is this a bad idea?
 
 
 [academic_prototyping]: https://www.fuzzingbook.org/html/AcademicPrototyping.html

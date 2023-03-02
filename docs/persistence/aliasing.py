@@ -12,7 +12,7 @@ class SaveAlias(SaveOop):
             self._write("alias", thing_id, "")
             return
 
-        self.seen.add(id(thing))
+        self.seen.add(thing_id)
         typename = type(thing).__name__
         method = f"_{typename}"
         assert hasattr(self, method), f"Unknown object type {typename}"
