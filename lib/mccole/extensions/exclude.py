@@ -19,9 +19,9 @@ def keep_dir(value, dirpath):
     return not _ignore(Path(dirpath).parent, dirpath)
 
 
-def _ignore(dirpath, filepath):
+def _ignore(dirpath, path):
     """Check for pattern-based exclusion."""
     directives = read_directives(dirpath, "exclude")
     configured = ivy.site.config.get("exclude", [])
     combined = directives + configured
-    return any(fnmatch(filepath.name, pat) for pat in combined)
+    return any(fnmatch(path.name, pat) for pat in combined)

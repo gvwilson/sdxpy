@@ -1,0 +1,617 @@
+---
+title: "A Testing Framework"
+template: slides
+---
+
+## Background
+
+-   Not all software needs formal testing
+    -   Check one-off data analysis script incrementally
+-   But 98% of the code in [SQLite][sqlite] is there to test the other 2%
+    -   For which I am grateful
+-   Good tools make tests easier to write
+    -   So that programmers have fewer excuses not to write them
+-   This lesson build a unit testing framework like [pytest][pytest]
+    -   Most frameworks in most other languages share its design
+
+---
+
+## The Big Idea
+
+<p class="shout">A program is just another data structure.</p>
+
+<figure>
+  <img src="../func_obj.svg" alt="Bytes as characters, pixels, or instructions">
+  <figcaption>Bytes can be interpreted as characters, pixels, or instructions.</figcaption>
+</figure>
+
+---
+
+## Functions are Objects
+
+-   `def` defines a variable whose value is the function's instructions
+
+```python
+def example():
+    print("in example")
+```
+
+-   We can assign that value to another variable
+
+```python
+alias = example
+alias()
+```
+```
+in example
+```
+
+-   `(…)` means "run the instructions this variable refers to"
+
+---
+
+class: aside
+
+## Checking
+
+-   Use `type` to see if something is a function
+
+```python
+type(3)
+```
+```
+<class 'int'>
+```
+```python
+type(example)
+```
+```
+<class 'function'>
+```
+
+---
+
+class: aside
+
+## Checking
+
+-   But built-in functions have a different type
+
+```python
+type(len)
+```
+```
+<class 'builtin_function_or_method'>
+```
+
+-   So use `callable` to check if something can be called
+
+```python
+callable(example)
+```
+```
+True
+```
+```python
+callable(len)
+```
+```
+True
+```
+
+---
+
+## Functions in Lists
+
+-   We can put functions in lists
+
+```python
+def first():
+    print("First")
+
+def second():
+    print("Second")
+
+def third():
+    print("Third")
+
+everything = [first, second, third]
+for func in everything:
+    func()
+```
+```
+First
+Second
+Third
+```
+
+---
+
+## Signatures
+
+-   We have to know how to call the functions
+    -   They must have the same __signature__
+
+
+```python
+def zero():
+    print("zero")
+
+def one(value):
+    print("one", value)
+
+for func in [zero, one]:
+    func()
+```
+```
+zero
+Traceback (most recent call last):
+  File "a.py", line 8, in <module>
+    func()
+TypeError: one() missing 1 required positional argument: 'value'
+```
+
+---
+
+## Terminology
+
+-   Apply the function we want to test to a __fixture__
+-   Compare the __actual result__ to the __expected result__
+-   Possible outcomes are:
+    -   __pass__: the target function worked
+    -   __fail__: the target function didn't do what we expected
+    -   __error__: something went wrong with the test itself
+-   Typically use `assert` to check results
+    -   If condition is `True`, does nothing
+    -   Otherwise, raises an `AssertionError`
+-   Failed assertions usually cause the program to halt
+    -   But we can catch the exception ourselves if we want
+
+---
+
+## A Function and Some Tests
+
+```python
+# Should return 0 when given 0
+def sign(value):
+    if value < 0:
+        return -1
+    else:
+        return 1
+
+def test_sign_negative():
+    assert sign(-3) == -1
+
+def test_sign_positive():
+    assert sign(19) == 1
+
+def test_sign_zero():
+    assert sign(0) == 0
+
+# Misspelled 'sign'
+def test_sign_error():
+    assert sgn(1) == 1
+```
+
+---
+
+## What We Want
+
+```python
+TESTS = [
+    test_sign_negative,
+    test_sign_positive,
+    test_sign_zero,
+    test_sign_error
+]
+
+run_tests(TESTS)
+```
+```
+pass 2
+fail 1
+error 1
+```
+
+---
+
+## How We Do It
+
+```python
+def run_tests(all_tests):
+    results = {"pass": 0, "fail": 0, "error": 0}
+    for test in all_tests:
+        try:
+            test()
+            results["pass"] += 1
+        except AssertionError:
+            results["fail"] += 1
+        except Exception:
+            results["error"] += 1
+    print(f"pass {results['pass']}")
+    print(f"fail {results['fail']}")
+    print(f"error {results['error']}")
+```
+
+-   Easy to create new tests
+-   But we have to remember to add each function to `TESTS`
+-   We'd like Python to find them for us
+
+---
+
+## How Python Stores Variables
+
+-   Python stores variables in (something very much like) a dictionary
+
+```python
+globals()
+```
+```
+{
+    '__name__': '__main__',
+    '__doc__': None,
+    '__package__': None,
+    '__loader__': <class '_frozen_importlib.BuiltinImporter'>,
+    '__spec__': None,
+    '__annotations__': {},
+    '__builtins__': <module 'builtins' (built-in)>
+}
+```
+
+---
+
+## Further Proof
+
+```python
+my_variable = 123
+globals()
+```
+```
+{
+    '__name__': '__main__',
+    '__doc__': None,
+    '__package__': None,
+    '__loader__': <class '_frozen_importlib.BuiltinImporter'>,
+    '__spec__': None,
+    '__annotations__': {},
+    '__builtins__': <module 'builtins' (built-in)>,
+*   'my_variable': 123
+}
+```
+
+--
+
+-   *The function `locals` gives local variables*
+
+---
+
+## Introspection
+
+-   We know how to loop over a dictionary's keys
+
+```python
+def find_tests():
+    everything = globals()
+    for name in globals():
+        if name.startswith("test_"):
+            print(name, everything[name])
+
+find_tests()
+```
+```
+test_sign_negative <function test_sign_negative at 0x10cad39d0>
+test_sign_positive <function test_sign_positive at 0x10cad3e50>
+test_sign_zero <function test_sign_zero at 0x10cad3ee0>
+test_sign_error <function test_sign_error at 0x10cad3f70>
+```
+
+--
+
+-   *When we print a function, Python shows its name and address*
+
+---
+
+## A Better Test Runner
+
+```python
+def run_tests():
+    results = {"pass": 0, "fail": 0, "error": 0}
+    for (name, test) in globals().items():
+        if not name.startswith("test_"):
+            continue
+        try:
+            test()
+            results["pass"] += 1
+        except AssertionError:
+            results["fail"] += 1
+        except Exception:
+            results["error"] += 1
+    print(f"pass {results['pass']}")
+    print(f"fail {results['fail']}")
+    print(f"error {results['error']}")
+```
+
+--
+
+-   Really should check that `test` is callable
+-   And we'd like a way to skip tests temporarily
+
+---
+
+## Objects Have Attributes
+
+-   The function `dir` returns a list of an object's __attributes__
+
+```python
+dir("hello")
+```
+```
+['__add__', '__class__', '__contains__', '__delattr__', \
+ …many more… \
+ 'swapcase', 'title', 'translate', 'upper', 'zfill']
+```
+
+-   __Dot notation__ is just a fancy dictionary lookup
+
+```python
+"hello".title()
+```
+```
+Hello
+```
+
+---
+
+## Functions Have Attributes
+
+```python
+def example():
+    "Docstring for example."
+    print("in example")
+
+print(dir(example))
+```
+```
+['__annotations__', '__call__', '__class__', '__closure__', \
+ '__code__', `__defaults__', '__delattr__', '__dict__', \
+ '__dir__', '__doc__', '__eq__', '__format__', '__ge__', \
+ …many more…
+]
+```
+
+-   `__name__`: the function's original name
+-   `__doc__`: its __docstring__
+    -   `help(x)` prints the docstring of `x`
+
+---
+
+class: aside
+
+## Pragmatism
+
+-   Some built-in types like `list` don't let you add arbitrary attributes to objects for performance reasons
+-   (Almost) everything defined as a Python class does let you do this
+    -   You can derive a class using `class MyList(list)` if you want to
+-   This is a design choice
+    -   In some languages _everything_ is an extensible object
+    -   In others you must define all attributes up front
+    -   And in Python, some built-in types like functions allow attributes because it's useful
+
+---
+
+## Classifying Test Functions
+
+```python
+def test_sign_negative():
+    assert sign(-3) == -1
+*test_sign_negative.skip = True
+
+def test_sign_positive():
+    assert sign(19) == 1
+
+def test_sign_zero():
+    assert sign(0) == 0
+*test_sign_zero.fail = True
+
+def test_sign_error():
+    assert sgn(1) == 1
+```
+
+---
+
+## A Better (?) Test Runner
+
+```python
+def run_tests():
+    for (name, test) in globals().items():
+        if not name.startswith("test_"):
+            continue
+
+        if hasattr(func, "skip")
+            print(f"skip: {name}")
+            continue
+
+        try:
+            test()
+            print(f"pass: {name}")
+
+        except AssertionError as e:
+            if hasattr(test, "fail"):
+                print(f"pass (expected failure): {name}")
+            else:
+                print(f"fail: {name} {str(e)}")
+
+        except Exception as e:
+            print(f"error: {name} {str(e)}")
+```
+
+---
+
+## A Better (?) Test Runner
+
+```python
+run_tests()
+```
+```
+skip: test_sign_negative
+pass: test_sign_positive
+pass (expected failure): test_sign_zero
+error: test_sign_error name 'sgn' is not defined
+```
+
+-   Why the question mark?
+
+--
+
+1.  Adding attributes to functions is clumsy and unusual
+    -   Most libraries use __decorators__
+2.  This version prints results instead of returning a data structure
+    -   What if we want to compare with previous results?
+    -   Or convert to HTML, or…?
+
+---
+
+## Finding Test Files
+
+-   Test runner should find files containing tests
+    -   Typing names each time is as error-prone as typing names of test functions
+-   Use the `glob` module
+
+```python
+from glob import glob
+
+for name in glob("**/test_*.py", root_dir=".", recursive=True):
+    print(name)
+```
+
+--
+
+-   Name `glob` comes from an old Unix command that did global matching
+
+---
+
+class: aside
+
+## Magic
+
+-   We need to load test files after we find them
+    -   Like doing `import` without knowing the name in advance
+-   [Clarke's Third Law][clarkes_laws]:
+    any sufficiently advanced technology is indistinguishable from magic
+-   Also true of technologies we encounter
+    before we have the background knowledge they depend on
+
+---
+
+class: aside
+
+## Who's Your Audience?
+
+<figure>
+  <img src="../comprehension.svg" alt="Abstract vs. comprehension">
+  <figcaption>Abstraction vs. comprehension for novices and experts.</figcaption>
+</figure>
+
+---
+
+## Loading Dynamically
+
+```python
+from glob import glob
+from importlib.machinery import SourceFileLoader
+
+test_files = glob("**/test_*.py", root_dir=".", recursive=True)
+for (i, name) in enumerate(test_files):
+    m = SourceFileLoader(f"m{i}", name).load_module()
+    for name in dir(m):
+        if not name.startswith("test_"):
+            continue
+        func = getattr(m, name)
+        try:
+            func()
+            print(f"{name} pass")
+        except AssertionError:
+            print(f"{name} fail")
+        except Exception:
+            print(f"{name} error")
+```
+
+--
+
+-   *Exercises will explore why we need to call the modules `m0`, `m1`, etc.*
+
+---
+
+class: summary
+
+## Summary	       
+
+<figure>
+  <img src="../concept_map.svg" alt="Concept map">
+  <figcaption>Concept map of unit testing tool.</figcaption>
+</figure>
+
+---
+
+class: exercise
+
+## Looping Over `globals`
+
+What happens if you run:
+
+```python
+for name in globals():
+    print(name)
+```
+
+What happens if you run:
+
+```python
+name = None
+for name in globals():
+    print(name)
+```
+
+Why?
+
+---
+
+class: exercise
+
+## Counting Results
+
+1.  Modify the test framework so that it reports which tests passed, failed, or had errors
+    and also reports a summary of how many tests produced each result.
+
+2.  Write unit tests to check that your answer to part 1 works correctly.
+
+---
+
+class: exercise
+
+## Setup and Teardown
+
+Testing frameworks often allow programmers to specify a `setup` function
+that is to be run before each test
+and a corresponding `teardown` function
+that is to be run after each test.
+(`setup` usually re-creates complicated test fixtures,
+while `teardown` functions are sometimes needed to clean up after tests,
+e.g., to close database connections or delete temporary files.)
+
+Modify the testing tool in this chapter so that
+if a file of tests contains a function called `setup`
+then the tool calls it exactly once before running each test in the file.
+Add a similar way to register a `teardown` function.
+
+---
+
+class: exercise
+
+## Module Names
+
+Our last test runner generated names `m0`, `m1`, and so on
+so that each module would have a unique name.
+What happens if we don't do this?
+I.e.,
+what happens if we use the same constant string for all modules that we load?

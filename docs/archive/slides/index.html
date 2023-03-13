@@ -1,0 +1,496 @@
+<!DOCTYPE html lang="en">
+<html>
+  <head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  
+  <link rel="icon" type="image/x-icon" href="../../favicon.ico">
+  <link rel="stylesheet" href="../../mccole.css">
+  <link rel="stylesheet" href="../../tango.css">
+  <script defer data-domain="third-bit.com" src="https://plausible.io/js/plausible.js"></script>
+  <script>
+    MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']]
+      }
+    };
+  </script>
+  <script
+    type="text/javascript"
+    id="MathJax-script"
+    async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+  </script>
+  <script defer src="../../mccole.js"></script>
+  <title>Software Design for Data Scientists: Archiving Files</title>
+</head>
+
+  <body>
+    <textarea id="source">
+
+class: slide-title
+
+<p>
+  Software Design for Data Scientists
+  <br>
+  <a href="https://third-bit.com">Greg Wilson</a>
+</p>
+<h1>Archiving Files</h1>
+<div class="bottom">
+  <a href="../">chapter</a>
+</div>
+
+---
+
+
+## Background
+
+-   Version control systems solve three problems:
+    -   Save work
+    -   See what we've done
+    -   Collaborate with other people
+-   Core of a modern VCS is a way to archive files that:
+    -   Stores any particular version of a file once
+    -   Records which versions of files existed at the same time
+-   Build a tool that does both
+    -   Won't create and merge branches
+
+---
+
+## Hashing
+
+-   A __hash function__ turns arbitrary data into a fixed-length string of bits
+-   Deterministic but unpredictable
+    -   The same input always produces the same output (no randomness)
+    -   But outputs indistinguishable from random numbers
+    -   Need \\(4{\times}10^{38}\\) files for 50% chance of __collision__ with 256-bit hash
+
+<figure>
+  <img src="../hash_function.svg" alt="Hash functions">
+  <figcaption>How hash functions work.</figcaption>
+</figure>
+
+---
+
+## How Does It Work?
+
+```python
+def naive_hash(text):
+    result = 0
+    for ch in text:
+        result = ((result * 13) + ord(ch)) % 17
+    return result
+
+sample = "abcdefg"
+for i in range(2, len(sample) + 1):
+    slice = sample[:i]
+    hash = naive_hash(slice)
+    print(f"{hash:2}: {slice}")
+```
+```
+16: ab
+ 1: abc
+11: abcd
+ 6: abcde
+10: abcdef
+12: abcdefg
+```
+
+---
+
+## How Well Does It Work?
+
+```python
+from collections import Counter
+from naive_hash import naive_hash
+
+lines = open("dracula.txt", "r").readlines()
+hashes = [naive_hash(ln) for ln in lines]
+counts = Counter(hashes)
+print("hash,count")
+for (h, c) in sorted(counts.items()):
+    print(f"{h},{c}")
+```
+
+<figure>
+  <img src="../dracula.svg" alt="Hash the text of 'Dracula'" width="50%">
+</figure>
+
+---
+
+## A Streaming API
+
+-   Process data a __block__ at a time
+    1.  Overlap with I/O
+    2.  Create checkpoints for event streams
+-   Always able to produce the hash of the data seen so far
+
+```python
+import hashlib
+
+BUFFER_SIZE = 4 * 1024  # how much data to read at once
+
+def hash_stream(reader):
+    sha256 = hashlib.sha256()
+    while True:
+        block = reader.read(BUFFER_SIZE)
+        if not block:
+            break
+        sha256.update(block)
+    return sha256.hexdigest()
+```
+
+--
+
+-   `hash_stream` turns a streaming API into a batch API
+
+---
+
+## A Streaming API
+
+-   Open file in __binary mode__
+    -   Hash the bytes, not the (logical) characters
+
+```python
+import sys
+
+if __name__ == "__main__":
+    reader = open("dracula.txt", "rb")
+    result = hash_stream(reader)
+    print(result)
+```
+```
+0219696507d0db0e8c21c28e1b2de642b94de91be5ad9cfff0c27e5c51456987
+```
+
+---
+
+## Design
+
+1.  Calculate the hash `abc123`
+2.  Save that unique sequence of bytes once as `abc123.bck`
+3.  Record which hashes were present when a backup was made
+
+<figure>
+  <img src="../storage.svg" alt="Backup file storage">
+  <figcaption>Organization of backup file storage.</figcaption>
+</figure>
+
+---
+
+## Finding and Hashing Files
+
+```python
+def hash_all(root):
+    result = []
+    for filename in glob("**/*.*", root_dir=root, recursive=True):
+        full_name = Path(root_dir, filename)
+        with open(full_name, "rb") as reader:
+            hash_code = hash_stream(reader)
+            result.append((filename, hash_code))
+    return result
+```
+
+--
+
+-   We have to decide what files to save
+-   We are returning `(filename, hash)` pairs rather than `(filepath, hash)` pairs
+
+---
+
+## Testing
+
+1.  Create directories and sub-directories full of files
+    -   But then need to create parallel directory trees with a few changes
+    -   We're likely to make mistakes and it's painful to maintain
+2.  Temporarily replace functions like `open`
+    with ones that act the same way but work on "files" in memory
+    -   A __mock filesystem__
+
+<figure>
+  <img src="../mock_fs.svg" alt="Mock filesystem">
+  <figcaption>Using a mock filesystem to simplify testing.</figcaption>
+</figure>
+
+---
+
+## Using `pyfakefs` With `pytest`
+
+```python
+from pathlib import Path
+
+def test_simple_example(fs):
+    sentence = "This file contains one sentence."
+    with open("alpha.txt", "w") as writer:
+        writer.write(sentence)
+    assert Path("alpha.txt").exists()
+    with open("alpha.txt", "r") as reader:
+        assert reader.read() == sentence
+```
+
+-   Don't have to use `Path` instead of strings for paths
+    -   But we should
+-   (Almost) everything else works the same
+
+---
+
+## Creating Fixtures
+
+```python
+from pathlib import Path
+import pytest
+
+@pytest.fixture
+def our_fs(fs):
+    fs.create_file("a.txt", contents="aaa")
+    fs.create_file("b.txt", contents="bbb")
+    fs.create_file("sub_dir/c.txt", contents="ccc")
+
+def test_nested_example(our_fs):
+    assert Path("a.txt").exists()
+    assert Path("b.txt").exists()
+    assert Path("sub_dir/c.txt").exists()
+
+def test_deletion_example(our_fs):
+    assert Path("a.txt").exists()
+    Path("a.txt").unlink()
+    assert not Path("a.txt").exists()
+```
+
+---
+
+## Implementing Our Design
+
+-   Store backups in a directory that contains files like `abcd1234.bck`
+    -   The hash followed by `.bck`
+-   Store CSV __manifests__ that describe the contents of particular snapshots
+    -   Manifest named `ssssssssss.csv`
+        where `ssssssssss` is the UTC timestamp of the backup's creation in seconds
+-   Keep these separate and replaceable
+    -   Might want to store backup files in the cloud
+    -   Or use JSON or a SQL database to store manifests
+
+---
+
+class: aside
+
+## Security and Reliability
+
+-   Our naming convention for manifests fails if we create more than one backup per second
+-   Might seem unlikely,
+    but many security holes are the result of programmers assuming
+    "that could never happen"
+-   Using a two-part naming scheme `ssssssss-a.csv`, `ssssssss-b.csv`, etc. doesn't help
+    -   Time of Check/Time of Use (ToCToU) __race condition__
+
+---
+
+## Writing the Manifest
+
+```python
+def write_manifest(backup_dir, timestamp, manifest):
+    backup_dir = Path(backup_dir)
+    if not backup_dir.exists():
+        backup_dir.mkdir()
+    manifest_file = Path(backup_dir, f"{timestamp}.csv")
+    with open(manifest_file, "w") as raw:
+        writer = csv.writer(raw)
+        writer.writerow(["filename", "hash"])
+        writer.writerows(manifest)
+```
+
+-   ToCToU risk when making directory
+
+---
+
+## Copying Files
+
+```python
+def copy_files(source_dir, backup_dir, manifest):
+    for (filename, hash_code) in manifest:
+        source_path = Path(source_dir, filename)
+        backup_path = Path(backup_dir, f"{hash_code}.bck")
+        if not backup_path.exists():
+            shutil.copy(source_path, backup_path)
+```
+
+-   We only copy files we don't already have
+    -   Which we can tell from the hash
+
+---
+
+## Overall
+
+```python
+def backup(source_path, backup_path):
+    manifest = hash_all(source_path)
+    timestamp = current_time()
+    write_manifest(backup_path, timestamp, manifest)
+    copy_files(source_path, backup_path, manifest)
+    return manifest
+```
+
+--
+
+-   Easy to make it configurable
+
+```python
+def backup(source_path, backup_path,
+           write_manifest=write_manifest_csv,
+           copy_files=copy_files_local):
+    manifest = hash_all(source_path)
+    timestamp = current_time()
+    write_manifest(backup_path, timestamp, manifest)
+    copy_files(source_path, backup_path, manifest)
+    return manifest
+```
+
+---
+
+class: summary
+
+## Summary
+
+<figure>
+  <img src="../concept_map.svg" alt="Concept map">
+  <figcaption>Concept map of hash-based backup</figcaption>
+</figure>
+
+---
+
+class: exercise
+
+## Comparing manifests
+
+Write a program `compare-manifests.py` that reads two manifest files and reports:
+
+-   Which files have the same names but different hashes
+    (i.e., their contents have changed).
+-   Which files have the same hashes but different names
+    (i.e., they have been renamed).
+-   Which files are in the first hash but neither their names nor their hashes are in the second
+    (i.e., they have been deleted).
+-   Which files are in the second hash but neither their names nor their hashes are in the first
+    (i.e., they have been added).
+
+---
+
+class: exercise
+
+## File history
+
+1.  Write a program called `file_history.py`
+    that takes the name of a file as a command-line argument
+    and displays the history of that file
+    by tracing it back in time through the available manifests.
+2.  Write tests for your program using pytest and a mock filesystem.
+
+
+[academic_prototyping]: https://www.fuzzingbook.org/html/AcademicPrototyping.html
+[aosa]: https://aosabook.org/
+[beautiful_soup]: https://beautiful-soup-4.readthedocs.io/
+[birthday_problem]: https://en.wikipedia.org/wiki/Birthday_problem
+[black]: https://black.readthedocs.io/
+[browser_engine_tutorial]: https://limpet.net/mbrubeck/2014/08/08/toy-layout-engine-1.html
+[browser_engineering]: https://browser.engineering/
+[brubeck_matt]: https://limpet.net/mbrubeck/
+[cc_by_nc]: https://creativecommons.org/licenses/by-nc/4.0/
+[cc_by_nc_legal]: https://creativecommons.org/licenses/by-nc/4.0/legalcode
+[clarkes_laws]: https://en.wikipedia.org/wiki/Clarke%27s_three_laws
+[contributor_covenant]: https://www.contributor-covenant.org/
+[cook_mary_rose]: https://maryrosecook.com/
+[crafting_interpreters]: https://craftinginterpreters.com/
+[ctan]: https://www.ctan.org/
+[db_tutorial]: https://cstack.github.io/db_tutorial/
+[dresser_christopher]: https://en.wikipedia.org/wiki/Christopher_Dresser
+[drumm_christian]: https://www.drumm.sh/
+[dvc]: https://dvc.org/
+[ejs]: https://ejs.co/
+[email]: mailto:gvwilson@third-bit.com
+[ethical_source]: https://ethicalsource.dev
+[evans_julia]: https://jvns.ca/
+[evans_zines]: https://wizardzines.com/
+[flake8]: https://flake8.pycqa.org/
+[git]: https://git-scm.com/
+[git_lfs]: https://git-lfs.github.io/
+[git_man_page_generator]: https://git-man-page-generator.lokaltog.net/
+[gitlet]: http://gitlet.maryrosecook.com/
+[glosario]: https://github.com/carpentries/glosario
+[gnu_make]: https://www.gnu.org/software/make/
+[harrelson_chris]: https://twitter.com/chrishtr
+[hippocratic_license]: https://firstdonoharm.dev/
+[html5_data_attributes]: https://developer.mozilla.org/en-US/docs/Learn/HTML/Howto/Use_data_attributes
+[isort]: https://pycqa.github.io/isort/
+[ivy]: https://www.dmulholl.com/docs/ivy/main/
+[jekyll]: https://jekyllrb.com/
+[kilo_editor]: https://viewsourcecode.org/snaptoken/kilo/index.html
+[latex]: https://www.latex-project.org/
+[loewy_raymond]: https://en.wikipedia.org/wiki/Raymond_Loewy
+[log_structured_storage]: http://blog.notdot.net/2009/12/Damn-Cool-Algorithms-Log-structured-storage
+[lorgat_editor]: https://wasimlorgat.com/posts/editor.html
+[lorgat_wasim]: https://wasimlorgat.com/
+[marthas_rules]: https://journals.sagepub.com/doi/10.1177/088610998600100206
+[nash_joe]: https://hachyderm.io/@joenash
+[networkx]: https://networkx.org/
+[nison_mael]: https://arcanis.github.io/
+[nystrom_bob]: http://journal.stuffwithstuff.com/
+[package_manager_tutorial]: https://classic.yarnpkg.com/blog/2017/07/11/lets-dev-a-package-manager/
+[panchekha_pavel]: https://pavpanchekha.com/
+[pereira_juanan]: https://ikasten.io/
+[php]: https://www.php.net/
+[picosat]: http://fmv.jku.at/picosat/
+[pip]: https://pip.pypa.io/
+[programming_tools]: https://en.wikipedia.org/wiki/Programming_tool
+[py_array]: https://docs.python.org/3/library/array.html
+[py_chainmap]: https://docs.python.org/3/library/collections.html#collections.ChainMap
+[py_cprofile]: https://docs.python.org/3/library/profile.html
+[py_fractions]: https://docs.python.org/3/library/fractions.html
+[py_glob]: https://docs.python.org/3/library/glob.html
+[py_hashlib]: https://docs.python.org/3/library/hashlib.html
+[py_inspect]: https://docs.python.org/3/library/inspect.html
+[py_io]: https://docs.python.org/3/library/io.html
+[py_itertools]: https://docs.python.org/3/library/itertools.html
+[py_json]: https://docs.python.org/3/library/json.html
+[py_mimetypes]: https://docs.python.org/3/library/mimetypes.html
+[py_pickle]: https://docs.python.org/3/library/pickle.html
+[py_semver]: https://pypi.org/project/semantic-version/
+[py_struct]: https://docs.python.org/3/library/struct.html
+[py_textwrap]: https://docs.python.org/3/library/textwrap.html
+[py_urlparse]: https://docs.python.org/3/library/urllib.parse.html
+[py_yaml]: https://pypi.org/project/PyYAML/
+[py_zipfile]: https://docs.python.org/3/library/zipfile.html
+[pyfakefs]: https://pytest-pyfakefs.readthedocs.io/
+[pytest]: https://docs.pytest.org/
+[pytest_approx]: https://docs.pytest.org/en/4.6.x/reference.html#pytest-approx
+[pytest_stdout]: https://docs.pytest.org/en/6.2.x/capture.html
+[python]: https://www.python.org/
+[reim_michael]: https://elderlinux.org/
+[requests]: https://requests.readthedocs.io/
+[ruten_paige]: https://viewsourcecode.org/
+[sdxpy_repo]: https://github.com/gvwilson/sdxpy/
+[sdxpy_site]: https://third-bit.com/sdxpy/
+[semver_spec]: https://semver.org/
+[sinel_joseph]: https://en.wikipedia.org/wiki/Joseph_Claude_Sinel
+[smith_dave]: https://davewsmith.com/
+[sqlite]: https://sqlite.org/
+[stack_connor]: https://connorstack.com/
+[svg_screenshot]: https://chrome.google.com/webstore/detail/svg-screenshot/nfakpcpmhhilkdpphcjgnokknpbpdllg
+[t3_personas]: https://teachtogether.tech/en/index.html#s:process-personas
+[textualize_fraction]: https://www.textualize.io/blog/posts/7-things-about-terminals
+[udhr]: https://www.un.org/en/universal-declaration-human-rights/
+[ungc]: https://www.unglobalcompact.org/what-is-gc/mission/principles
+[unicode]: https://www.unicode.org/
+[unix_packaging]: https://eerielinux.wordpress.com/2017/08/15/the-history-of-nix-package-management/
+[webaim_wave]: https://wave.webaim.org/
+[write_yourself_a_git]: https://wyag.thb.lt/
+[z3]: https://en.wikipedia.org/wiki/Z3_Theorem_Prover
+[zeller_andreas]: https://andreas-zeller.info/
+
+    </textarea>
+    <script src="../../remark-latest.min.js"></script>
+    <script>
+      var slideshow = remark.create({
+        highlightLines: true
+      })
+    </script>
+  </body>
+</html>
