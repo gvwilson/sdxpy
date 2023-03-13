@@ -52,7 +52,7 @@ build: ./docs/index.html
 serve:
 	ivy watch --port ${PORT}
 
-## single: create single-page HTML
+## html: create single-page HTML
 html: docs/all.html
 docs/all.html: ./docs/index.html ${HTML} bin/single.py
 	python ./bin/single.py \
@@ -90,7 +90,7 @@ pdf-once: docs/${STEM}.tex ${DOCS_PDF}
 ## diagrams: convert diagrams from SVG to PDF
 diagrams: ${DOCS_PDF}
 src/%.pdf: src/%.svg
-	draw.io --export --crop --output $@ $<
+	./bin/convert_drawio.sh $< $@
 docs/%.pdf: src/%.pdf
 	cp $< $@
 

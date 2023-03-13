@@ -14,3 +14,4 @@ for (h, c) in sorted(counts.items()):
 
 fig = px.bar({"hash": x, "count": y}, x="hash", y="count")
 fig.write_image("naive_dracula.svg")
+fig.write_image("naive_dracula.pdf")
