@@ -6,12 +6,12 @@ import os
 abbrev = "sdxpy"
 
 # GitHub repository.
-repo = "https://github.com/gvwilson/sdpy"
+repo = "https://github.com/gvwilson/sdxpy"
 
 # Site settings.
 lang = "en"
 title = "Software Design in Python"
-acronym = "SDPy"
+acronym = "SDXPY"
 tagline = "a tool-based introduction"
 author = "Greg Wilson"
 email = "gvwilson@third-bit.com"
