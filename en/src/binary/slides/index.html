@@ -1,0 +1,361 @@
+---
+title: "Binary Data"
+template: slides
+---
+
+---
+
+## Why Binary?
+
+-   Bits take less space
+    -   `"10239472"` is 8 bytes, but `10239472` is just 4
+-   Operations are much faster
+-   Hardware gives us bits
+-   How would we represent images, audio, or video as characters?
+
+```
+                      _. - ~ ~ ~ - .
+   ..       __.    .-~               ~-.
+   ((\     /   `}.~                     `.
+    \\\   {     }               /     \   \
+(\   \\~~^      }              |       }   \
+ \`.-~ -@~      }  ,-.         |       )    \
+ (___     ) _}   (    :        |    / /      `.
+  `----._-~.     _\ \ |_       \   / /- _      `.
+         ~~----~~  \ \| ~~--~~~(  + /     ~-.     ~- _
+                   /  /         \  \          ~- . _ _~_-_.
+                __/  /          _\  )
+              .<___.'         .<___/
+```
+
+## Integers
+
+-   If all we have is 1's and 0's, use base-2
+-   9<sub>10</sub> is (1×8)+(0×4)+(0×2)+(1×1) = 1001<sub>2</sub>
+
+---
+
+## Notation
+
+-   Can write numbers in binary using `0b` prefix
+
+```python
+print(0b101101)
+```
+```
+45
+```
+
+-   Much more common to use **hexadecimal** (base 16)
+    -   Digits are 0123456789ABCDEF
+    -   Each represents 4 bits (a __nybble__)
+
+```python
+print(0x2D)
+```
+```
+45
+```
+
+---
+
+## Negative Numbers
+
+-   Could use __sign and magnitude__
+    -   `0100` is 4
+    -   `1100` is -4
+-   But:
+    -   Gives us two zeroes (one positive, one negative)
+    -   Makes the hardware to do arithmetic more complicated
+---
+
+## Negative Numbers
+
+-   Instead, use __two's complement__
+
+| Base 10 | Base 2 |
+| ------- | ------ |
+| 3       | 011    |
+| 2       | 010    |
+| 1       | 001    |
+| 0       | 000    |
+| -1      | 111    |
+| -2      | 110    |
+| -3      | 101    |
+| -4      | 100    |
+
+--
+
+-   Can still determine sign by looking at the first bit
+-   But two's complement is asymmetric
+    -   Even if `x` is a valid number, `-x` may not be
+
+---
+
+## Bitwise Operations
+
+<table>
+<tr><th> Name        </th><th> Expression </th><th> Bitwise       </th><th> Result          </th></tr>
+<tr><td> and         </td><td> 12 & 6   </td><td> 1100 & 0110 </td><td> 4 (0100)    </td></tr>
+<tr><td> or          </td><td> 12 | 6   </td><td> 1100 | 0110 </td><td> 14 (1110)   </td></tr>
+<tr><td> xor         </td><td> 12 ^ 6   </td><td> 1100 ^ 0110 </td><td> 10 (1010)   </td></tr>
+<tr><td> not         </td><td> ~ 6      </td><td> ~ 0110      </td><td> 9 (1001)    </td></tr>
+<tr><td> left shift  </td><td> 12 << 2  </td><td> 1100 << 2   </td><td> 48 (110000) </td></tr>
+<tr><td> right shift </td><td> 12 >> 2  </td><td> 1100 >> 2   </td><td> 3 (0011)    </td></tr>
+</table>
+
+-   Use `x | 0b0010` to set the second-to-last bit
+-   Use `x & 0b1101` to clear the second-to-last bit
+    -   Which is often written `x & ~0b0010` for clarity
+
+---
+
+class: aside
+
+## Shifting is Not Arithmetic
+
+-   Shifting up and down is *almost* like multiplying or dividing by 2
+-   But what if the top bit changes?
+-   If we only have 4 bits, `0b1111 >> 1` is `0b0111`, so -1/2 is 7
+
+---
+
+## Text
+
+-   ASCII originally defined 128 7-bit characters
+    -   0–31 were **control codes**
+-   Since bytes have 8 bits, programmers used the values 128–255 however they wanted
+-   ANSI standard defined (for example) 231<sub>10</sub> to be "ç"
+-   But what about Turkish? Or Devanagari? Or kanji, or hieroglyphics, or…?
+    -   Two bytes wouldn't be enough
+    -   Four bytes per character would quadruple storage requirements
+    -   And would mostly not be needed (by American businesses)
+
+---
+
+## Unicode
+
+-   Define a **code point** for every character
+    -   U+0065 for an upper-case Latin "A"
+    -   U+2605 for a black star &#9733;
+-   Define several **encodings**
+-   UTF-32 uses 32 bits for every character
+-   Most popular is **UTF-8**
+    -   Code points 0–127 are stored in a single byte with a leading 0
+    -   If the top bit is 1, the number of 1's tells UTF-8 how many bytes there are in the character
+
+---
+
+## Unicode
+
+-   If the first byte is `0b11101101`:
+    -   The leading 1 means "multibyte"
+    -   The next two bytes mean "this is a three-byte character"
+    -   The first 0 separates the header from the start of the character
+    -   The final `1101` is the first four bits of the character
+-   Every **continuation byte** starts with `10`
+    -   So we can tell if a byte is in the middle of a character
+
+---
+
+## How to Store a Number
+
+-   C and Fortran store numbers as numbers
+-   Python used **boxed values**
+    -   Reference count
+    -   Type code
+    -   Value
+
+<figure>
+  <img src="../binary_boxing.svg" alt="Boxed values">
+  <figcaption>Using boxed values to store metadata.</figcaption>
+</figure>
+
+---
+
+## How to Store a Number
+
+-   The differences are even larger for arrays and lists
+
+<figure>
+  <img src="../binary_arrays.svg" alt="Boxed arrays" width="100%">
+  <figcaption>Low-level and high-level array storage.</figcaption>
+</figure>
+
+---
+
+## Packing and Unpacking
+
+-   Operations on unboxed (raw) values are much faster
+    -   Most numerical and image processing libraries written in C or Fortran
+    -   Then wrapped in Python or R
+-   Need a way to:
+    -   Get data from raw bytes into Python structures
+    -   Copy data from Python structures into packed bytes
+-   Also do this for efficient storage of large data
+
+---
+
+## The `struct` Module
+
+```python
+import struct
+
+fmt = "ii"  # two 32-bit integers
+x = 31
+y = 65
+
+binary = struct.pack(fmt, x, y)
+print("binary representation:", repr(binary))
+
+normal = struct.unpack(fmt, binary)
+print("back to normal:", normal)
+```
+```
+binary representation: b'\x1f\x00\x00\x00A\x00\x00\x00'
+back to normal: (31, 65)
+```
+
+---
+
+## Packing With Counts
+
+```python
+from struct import pack
+
+print(pack("3i", 1, 2, 3))
+print(pack("5s", bytes("hello", "utf-8")))
+print(pack("5s", bytes("a longer string", "utf-8")))
+```
+```
+b'\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00\x00'
+b'hello'
+b'a lon'
+```
+
+-   Only packs as much as we tell it to
+-   So construct format dynamically
+
+```python
+text = "hello"
+print(f"{len(text)}s")
+```
+```
+5s
+```
+
+---
+
+## Variable-Length Packing
+
+-   Pack strings of variable length as:
+    -   A count (of known size)
+    -   That many bytes
+
+```python
+from struct import pack
+
+def pack_string(as_string):
+    as_bytes = bytes(as_string, "utf-8")
+    header = pack("i", len(as_bytes))
+    format = f"{len(as_bytes)}s"
+    body = pack(format, as_bytes)
+    return header + body
+
+result = pack_string("hello! こんにちは!")
+print(repr(result))
+```
+```
+b'\x17\x00\x00\x00hello! '
+b'\xe3\x81\x93\xe3\x82\x93\xe3\x81\xab\xe3\x81\xa1\xe3\x81\xaf!'
+```
+
+---
+
+## Unpacking
+
+```python
+from struct import unpack
+
+def unpack_string(buffer):
+   header, body = buffer[:4], buffer[4:]
+   length = unpack("i", header)[0]
+   format = f"{length}s"
+   result = unpack(format, body)[0]
+   return str(result, "utf-8")
+
+buffer = pack_string("hello! こんにちは!")
+result = unpack_string(buffer)
+print(result)
+```
+```
+hello
+```
+
+---
+
+## Cheating
+
+-   Bytes are just bytes
+-   Pack an integer into four 8-bit characters or vice versa
+
+<figure>
+  <img src="../binary_packing_unpacking.svg" alt="Packing and unpacking values" width="100%">
+  <figcaption>Low-level and high-level array storage.</figcaption>
+</figure>
+
+```python
+text = "abcd"
+temp = struct.pack("4s", bytes(text, "utf-8"))
+num = struct.unpack("i", temp)[0]
+print(f"result: {num} (0x{num:x})")
+```
+```
+result: 1684234849 (0x64636261)
+```
+
+---
+
+class: aside
+
+## Binary Mode
+
+-   `open(filename, "r")` converts bytes to characters
+    -   And converts Windows line endings `\r\n` to Unix `\n`
+-   Use `open(filename, "rb")` to read in **binary mode**
+
+---
+
+## Floating Point Numbers
+
+-   Have a sign, a __mantissa__, and an __exponent__
+-   IEEE 754 standard uses 1, 23, and 8 bits respectively
+-   We can illustrate the problems with a 5-bit representation
+
+<figure>
+  <img src="../binary_floating_point.svg" alt="Representing floating point numbers" width="60%">
+  <figcaption>Representing floating point numbers.</figcaption>
+</figure>
+
+- IEEE 754 shifts things around to avoid redundancy
+
+---
+
+## Rounding
+
+-   Our scheme has no way to represent 9
+    -   So 8+1 is either 8 or 10
+    -   Do we calculate 8+1+1 as (8+1)+1 or as 8+(1+1)?
+-   Authors of numerical libraries spend a lot of time worrying about this
+-   We're not going to, but:
+    1.  Never use `==` when comparing floating-point numbers
+    2.  Use __relative error__ rather than __absolute error__ in tests
+
+---
+
+## Summary
+
+<figure>
+  <img src="../binary_concept_map.svg" alt="Concept map" width="100%">
+  <figcaption>Concept map for binary data.</figcaption>
+</figure>

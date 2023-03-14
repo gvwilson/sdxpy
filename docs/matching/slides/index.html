@@ -122,9 +122,16 @@ def match_here(pattern, i_pattern, text, i_text):
 
 ---
 
-## The Hardest Case
+## A Few Cases
 
 ```python
+def no_more_pattern(pat, i_pat, text, i_text):
+    return i_pat == len(pat)
+
+def match_single_character(pat, i_pat, text, i_text):
+    return (pat[i_pat] == ".") \
+        or (pat[i_pat] == text[i_text])
+
 def supposed_to_match_many(pat, i_pat, text, i_text):
     return ((len(pat) - i_pat) > 1) \
         and (pat[i_pat + 1] == "*")
@@ -168,8 +175,8 @@ def test_simple_regexp():
 ## But…
 
 -   Doesn't work
-    -   Think about `a*ab` against the string `aab`
--   Will be very difficult to extend
+    -   Think about matching `a*ab` against the string `aab`
+-   And it will be very difficult to extend
     -   Are you *sure* the clauses in `match_here` are in the right order?
 
 ---
@@ -184,12 +191,20 @@ def test_simple_regexp():
   <figcaption>Chain of Responsibility pattern</figcaption>
 </figure>
 
---
+---
+
+## Looks a Lot Like Lists
 
 -   The expression to match `ab*c` is:
 
 ```python
-Lit("a", Any(Lit("b", None), Lit("c", None)))
+Lit(
+  "a",
+  Any(
+    Lit("b", None),
+    Lit("c", None)
+  )
+)
 ```
 
 ---
@@ -214,6 +229,7 @@ class RegexBase:
 -   `RegexBase.match` is the overall strategy
     -   Start here and keep trying if you need to
 -   The `_match` method has the matcher-specific logic
+    -   Returns the next index or `None`
 
 ---
 
@@ -231,7 +247,7 @@ class Lit(RegexBase):
             return None
         if text[start:next_index] != self.chars:
             return None
-        if not self.rest:
+        if self.rest is None:
             return next_index
         return self.rest._match(text, next_index)
 ```
@@ -288,12 +304,12 @@ class Any(RegexBase):
 
 ---
 
-## Why Is This Better?
+## Is This Better?
 
 -   Solve one matching problem at a time
 -   Which also makes it easy to extend
     -   Not a coincidence that we get both of these together
--   *Decentralized decision-making*
+-   But distributed decision making can be harder to follow
 
 ---
 

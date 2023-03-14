@@ -10,7 +10,7 @@ def unpack_string(buffer):
 if __name__ == "__main__":
     # [omit]
     from pack_str import pack_string
-    buffer = pack_string("hello")
+    buffer = pack_string("hello! こんにちは!")
     # [/omit]
     result = unpack_string(buffer)
     print(result)
