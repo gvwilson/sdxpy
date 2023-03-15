@@ -36,7 +36,7 @@ chapters = [
     "lint",
     "perf",
     "df",
-    "graph",
+    "plot",
     "persist",
     "binary",
     "db",
