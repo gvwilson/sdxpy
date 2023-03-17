@@ -45,6 +45,7 @@ chapters = [
     "pipe",
     "cache",
     "pack",
+    "install",
     "server",
     "ssg",
     "finale",
