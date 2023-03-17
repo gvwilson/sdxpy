@@ -1,5 +1,3 @@
 ---
 title: "Plotting Graphs"
 ---
-
-FIXME

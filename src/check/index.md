@@ -1,5 +1,3 @@
 ---
 title: "Checking HTML"
 ---
-
-FIXME

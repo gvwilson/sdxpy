@@ -62,6 +62,9 @@ appendices = [
     "contents",
 ]
 
+# To-do
+todo = chapters[:]
+
 # Files to copy verbatim.
 copy = [
     "*.ht",
@@ -70,6 +73,7 @@ copy = [
 # Exclusions (don't process).
 exclude = [
     "*.as",
+    "*.dot",
     "*.ht",
     "*.mx",
     "*.tll",
