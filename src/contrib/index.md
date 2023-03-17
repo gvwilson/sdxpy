@@ -51,5 +51,5 @@ This project uses [Martha's Rules][marthas_rules] for consensus decision making:
 
 This material uses [Ivy][ivy] with some custom extensions;
 run `make` in the root directory to get a list of available commands.
-Please see `CONTRIBUTING.md` in the root directory of [our Git repository][sdxpy_repo]
+Please see `CONTRIBUTING.md` in the root directory of [our Git repository][book_repo]
 for more information.

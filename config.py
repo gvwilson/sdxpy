@@ -32,6 +32,7 @@ chapters = [
     "parse",
     "check",
     "interp",
+    "func",
     "template",
     "lint",
     "perf",
@@ -63,7 +64,32 @@ appendices = [
 ]
 
 # To-do
-todo = chapters[:]
+todo = [
+    "dup",
+    "test",
+    "mock",
+    "archive",
+    "meta",
+    "re",
+    "parse",
+    "check",
+    "interp",
+    "template",
+    "lint",
+    "perf",
+    "df",
+    "plot",
+    "persist",
+    "binary",
+    "db",
+    "build",
+    "pipe",
+    "cache",
+    "pack",
+    "server",
+    "ssg",
+    "finale",
+]
 
 # Files to copy verbatim.
 copy = [

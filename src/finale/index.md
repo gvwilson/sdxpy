@@ -33,6 +33,7 @@ We have long accepted that its interface can and should be critiqued
 in the same way as a power drill:
 
 - Does it do what it's supposed to?
+
 - Is it pleasurable to use?
 
 What's missing is the third leg of the industrial design tripod:
