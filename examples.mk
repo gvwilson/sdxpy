@@ -1,7 +1,7 @@
 # Get the path to this file from wherever it is included.
 # See https://stackoverflow.com/questions/18136918/how-to-get-current-relative-directory-of-your-makefile
 RULES_PATH:=$(dir $(abspath $(lastword $(MAKEFILE_LIST))))
-REFORMAT:=${RULES_PATH}../bin/reformat.py --home /sd4ds
+REFORMAT:=${RULES_PATH}bin/reformat.py --home /sd4ds
 
 # The including file must define a variable TARGETS with the names of everything
 # to be created.
