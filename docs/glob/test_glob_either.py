@@ -2,6 +2,7 @@ from glob_lit import Lit
 from glob_any import Any
 from glob_either import Either
 
+# [tests]
 def test_either_two_literals_first():
     # ⌈{a,b}⌋ ≈ "a"
     assert Either(Lit("a"), Lit("b")).match("a")
@@ -21,6 +22,7 @@ def test_either_two_literals_not_both():
 def test_either_after_any():
     # ⌈*{x,y}⌋ ≈ "abcx"
     assert Any(Either(Lit("x"), Lit("y"))).match("abcx")
+# [/tests]
 
 def test_either_leading_or_trailing():
     # ⌈{*x,y*}⌋ ≈ "abx"

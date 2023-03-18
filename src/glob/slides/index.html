@@ -65,7 +65,7 @@ template: slides
 
 ## Testing the Matcher
 
-[% inc file="../test_glob_lit.py" %]
+[% inc file="../test_glob_lit.py" keep="tests" %]
 
 -   Give tests long names instead of using comments
     -   So that failure reports are immediately readable
@@ -74,16 +74,11 @@ template: slides
 
 ## Does Chaining Work?
 
-```python
+[% inc file="../test_glob_lit.py" keep="chain" %]
 
-def test_literal_followed_by_literal():
-    # ⌈a⌋⌈b⌋ ≈ "ab"
-    assert Lit("a", Lit("b")).match("ab")
+--
 
-def test_literal_followed_by_literal():
-    # ⌈a⌋⌈b⌋ ≉ "ac"
-    assert not Lit("a", Lit("b")).match("ac")
-```
+-   Yup
 
 ---
 
@@ -91,113 +86,32 @@ def test_literal_followed_by_literal():
 
 -   `*` can match zero or more characters
 
-```python
-class Any:
-    def __init__(self, rest=None):
-        self.rest = rest
-
-    def match(self, text, start=0):
-        if self.rest is None:
-            return True
-        for i in range(start, len(text)):
-            if self.rest.match(text, i):
-                return True
-        return False
-```
+[% inc file="../glob_any.py" %]
 
 ---
 
 ## And We Test It
 
-```python
-def test_any_matches_empty():
-    # ⌈*⌋ ≈ ""
-    assert Any().match("")
 
-def test_any_matches_entire_string():
-    # ⌈*⌋ ≈ "abc"
-    assert Any().match("abc")
-
-def test_any_matches_as_prefix():
-    # ⌈*def⌋ ≈ "abcdef"
-    assert Any(Lit("def")).match("abcdef")
-
-def test_any_matches_as_suffix():
-    # ⌈abc*⌋ ≈ "abcdef"
-    assert Lit("abc", Any()).match("abcdef")
-
-def test_any_matches_interior():
-    # ⌈a*c⌋ ≈ "abc"
-    assert Lit("a", Any(Lit("c"))).match("abc")
-```
+[% inc file="../test_glob_any.py" keep="tests" %]
 
 ---
 
 ## Matching Alternatives
 
-```python
-class Either:
-    def __init__(self, left, right, rest=None):
-        self.left = left
-        self.right = right
-        self.rest = rest
-
-    def match(self, text, start=0):
-        return self.left.match(text, start) or \
-            self.right.match(text, start)
-```
+[% inc file="../glob_either.py" %]
 
 ---
 
 ## And We Test It
 
-```python
-def test_either_two_literals_first():
-    # ⌈{a,b}⌋ ≈ "a"
-    assert Either(Lit("a"), Lit("b")).match("a")
-
-def test_either_two_literals_second():
-    # ⌈{a,b}⌋ ≈ "b"
-    assert Either(Lit("a"), Lit("b")).match("b")
-
-def test_either_two_literals_neither():
-    # ⌈{a,b}⌋ ≉ "c"
-    assert not Either(Lit("a"), Lit("b")).match("c")
-
-def test_either_two_literals_not_both():
-    # ⌈{a,b}⌋ ≉ "ab"
-    assert not Either(Lit("a"), Lit("b")).match("ab")
-
-def test_either_after_any():
-    # ⌈*{x,y}⌋ ≈ "abcx"
-    assert Any(Either(Lit("x"), Lit("y"))).match("abcx")
-```
+[% inc file="../test_glob_either.py" keep="tests" %]
 
 ---
 
 ## But Wait…
 
-```python
-def test_two_literals_in_a_row():
-    # ⌈abcxyz⌋ ≈ "abcxyz" split across two
-    assert Lit("abc", Lit("xyz")).match("abcxyz")
-
-def test_either_followed_by_literal_match():
-    # ⌈{a,b}c⌋ ≈ "ac"
-    assert Either(Lit("a"), Lit("b"), Lit("c"))
-
-def test_either_followed_by_literal_no_match():
-    # ⌈{a,b}c⌋ ≉ "ax"
-    assert not Either(Lit("a"), Lit("b"), Lit("x"))
-```
-```
-collected 3 items                                                                                                            
-
-test_glob_whoops.py ..F
-
-===================== short test summary info ======================
-FAILED test_glob_either.py::test_either_followed_by_literal_no_match
-```
+[% inc pat="../test_glob_problem.*" fill="py out" %]
 
 -   `Either` doesn't handle `rest`
 
@@ -222,22 +136,8 @@ FAILED test_glob_either.py::test_either_followed_by_literal_no_match
 
 ## Two New Toys
 
-```python
-class Match:
-    def __init__(self, rest):
-        self.rest = rest if rest is not None else Null()
-
-    def match(self, text):
-        result = self._match(text, 0)
-        return result == len(text)
-
-class Null(Match):
-    def __init__(self, rest=None):
-        self.rest = None
-
-    def _match(self, text, start):
-        return start
-```
+[% inc file="../glob_null.py" keep="parent" %]
+[% inc file="../glob_null.py" keep="null" %]
 
 -   Assume every child class has a `_match` method
 -   This method returns the location to continue searching
@@ -247,18 +147,7 @@ class Null(Match):
 
 ## Refactoring Literal Matcher
 
-```python
-class Lit(Match):
-    def __init__(self, chars, rest=None):
-        super().__init__(rest)
-        self.chars = chars
-
-    def _match(self, text, start):
-        end = start + len(self.chars)
-        if text[start:end] != self.chars:
-            return None
-        return self.rest._match(text, end)
-```
+[% inc file="../glob_null.py" keep="lit" %]
 
 -   Parent class initializes data that it defines
     -   Yes, the `Null` class broke this rule…
@@ -270,41 +159,15 @@ class Lit(Match):
 
 ## Refactoring Wildcard
 
-```python
-class Any(Match):
-    def __init__(self, rest=None):
-        super().__init__(rest)
+[% inc file="../glob_null.py" keep="any" %]
 
-    def _match(self, text, start):
-        for i in range(len(text) + 1):
-            end = self.rest._match(text, i)
-            if end == len(text):
-                return end
-        return None
-```
-
--   Why `len(text) + 1` ?
+-   The exercises will ask, "Why `len(text) + 1`?"
 
 ---
 
 ## Refactoring Alternatives
 
-```python
-class Either(Match):
-    def __init__(self, left, right, rest=None):
-        super().__init__(rest)
-        self.left = left
-        self.right = right
-
-    def _match(self, text, start):
-        for pat in [self.left, self.right]:
-            end = pat._match(text, start)
-            if end is not None:
-                end = self.rest._match(text, end)
-                if end == len(text):
-                    return end
-        return None
-```
+[% inc file="../glob_null.py" keep="either" %]
 
 -   Could easily be extended to any number of alternatives
 
@@ -326,9 +189,20 @@ class: summary
 ## Summary	       
 
 <figure>
-  <img src="../matching_concept_map.svg" alt="Concept map">
-  <figcaption>Concept map of pattern matching</figcaption>
+  <img src="../concept_map.svg" alt="Concept map of globbing">
+  <figcaption>Concept map</figcaption>
 </figure>
+
+---
+
+class: exercise
+
+## Length Plus One
+
+Why does the upper bound of the loop in the final version of `Any`
+run to `len(text) + 1`?
+
+[% inc file="../glob_null.py" keep="any" %]
 
 ---
 

@@ -1,3 +1,4 @@
+# [parent]
 class Match:
     def __init__(self, rest):
         self.rest = rest if rest is not None else Null()
@@ -5,14 +6,18 @@ class Match:
     def match(self, text):
         result = self._match(text, 0)
         return result == len(text)
+# [/parent]
 
+# [null]
 class Null(Match):
     def __init__(self, rest=None):
         self.rest = None
 
     def _match(self, text, start):
         return start
+# [/null]
 
+# [any]
 class Any(Match):
     def __init__(self, rest=None):
         super().__init__(rest)
@@ -23,7 +28,9 @@ class Any(Match):
             if end == len(text):
                 return end
         return None
+# [/any]
 
+# [either]
 class Either(Match):
     def __init__(self, left, right, rest=None):
         super().__init__(rest)
@@ -38,7 +45,9 @@ class Either(Match):
                 if end == len(text):
                     return end
         return None
+# [/either]
 
+# [lit]
 class Lit(Match):
     def __init__(self, chars, rest=None):
         super().__init__(rest)
@@ -49,3 +58,4 @@ class Lit(Match):
         if text[start:end] != self.chars:
             return None
         return self.rest._match(text, end)
+# [/lit]

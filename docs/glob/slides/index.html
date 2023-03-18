@@ -117,8 +117,6 @@ class Lit:
 ## Testing the Matcher
 
 ```py
-from glob_lit import Lit
-
 def test_literal_match_entire_string():
     # ⌈abc⌋ ≈ "abc"
     assert Lit("abc").match("abc")
@@ -130,14 +128,6 @@ def test_literal_substring_alone_no_match():
 def test_literal_superstring_no_match():
     # ⌈abc⌋ ≉ "ab"
     assert not Lit("abc").match("ab")
-
-def test_literal_followed_by_literal():
-    # ⌈a⌋⌈b⌋ ≈ "ab"
-    assert Lit("a", Lit("b")).match("ab")
-
-def test_literal_followed_by_literal():
-    # ⌈a⌋⌈b⌋ ≉ "ac"
-    assert not Lit("a", Lit("b")).match("ac")
 ```
 
 
@@ -148,8 +138,7 @@ def test_literal_followed_by_literal():
 
 ## Does Chaining Work?
 
-```python
-
+```py
 def test_literal_followed_by_literal():
     # ⌈a⌋⌈b⌋ ≈ "ab"
     assert Lit("a", Lit("b")).match("ab")
@@ -159,13 +148,18 @@ def test_literal_followed_by_literal():
     assert not Lit("a", Lit("b")).match("ac")
 ```
 
+
+--
+
+-   Yup
+
 ---
 
 ## Wildcards
 
 -   `*` can match zero or more characters
 
-```python
+```py
 class Any:
     def __init__(self, rest=None):
         self.rest = rest
@@ -179,11 +173,13 @@ class Any:
         return False
 ```
 
+
 ---
 
 ## And We Test It
 
-```python
+
+```py
 def test_any_matches_empty():
     # ⌈*⌋ ≈ ""
     assert Any().match("")
@@ -205,11 +201,12 @@ def test_any_matches_interior():
     assert Lit("a", Any(Lit("c"))).match("abc")
 ```
 
+
 ---
 
 ## Matching Alternatives
 
-```python
+```py
 class Either:
     def __init__(self, left, right, rest=None):
         self.left = left
@@ -221,11 +218,12 @@ class Either:
             self.right.match(text, start)
 ```
 
+
 ---
 
 ## And We Test It
 
-```python
+```py
 def test_either_two_literals_first():
     # ⌈{a,b}⌋ ≈ "a"
     assert Either(Lit("a"), Lit("b")).match("a")
@@ -247,14 +245,14 @@ def test_either_after_any():
     assert Any(Either(Lit("x"), Lit("y"))).match("abcx")
 ```
 
+
 ---
 
 ## But Wait…
 
-```python
-def test_two_literals_in_a_row():
-    # ⌈abcxyz⌋ ≈ "abcxyz" split across two
-    assert Lit("abc", Lit("xyz")).match("abcxyz")
+```py
+from glob_lit import Lit
+from glob_either import Either
 
 def test_either_followed_by_literal_match():
     # ⌈{a,b}c⌋ ≈ "ac"
@@ -264,14 +262,22 @@ def test_either_followed_by_literal_no_match():
     # ⌈{a,b}c⌋ ≉ "ax"
     assert not Either(Lit("a"), Lit("b"), Lit("x"))
 ```
-```
-collected 3 items                                                                                                            
 
-test_glob_whoops.py ..F
 
-===================== short test summary info ======================
-FAILED test_glob_either.py::test_either_followed_by_literal_no_match
+```out
+========================= test session starts ==========================
+platform darwin -- Python 3.10.4, pytest-7.1.2, pluggy-1.0.0
+rootdir: /Users/gvwilson/sd4ds/src/glob
+plugins: pyfakefs-4.6.3
+collected 2 items
+
+test_glob_problem.py .F                                          [100%]
+
+======================= short test summary info ========================
+FAILED test_glob_problem.py::test_either_followed_by_literal_no_match
+===================== 1 failed, 1 passed in 0.01s ======================
 ```
+
 
 -   `Either` doesn't handle `rest`
 
@@ -296,7 +302,7 @@ FAILED test_glob_either.py::test_either_followed_by_literal_no_match
 
 ## Two New Toys
 
-```python
+```py
 class Match:
     def __init__(self, rest):
         self.rest = rest if rest is not None else Null()
@@ -304,7 +310,9 @@ class Match:
     def match(self, text):
         result = self._match(text, 0)
         return result == len(text)
+```
 
+```py
 class Null(Match):
     def __init__(self, rest=None):
         self.rest = None
@@ -312,6 +320,7 @@ class Null(Match):
     def _match(self, text, start):
         return start
 ```
+
 
 -   Assume every child class has a `_match` method
 -   This method returns the location to continue searching
@@ -321,7 +330,7 @@ class Null(Match):
 
 ## Refactoring Literal Matcher
 
-```python
+```py
 class Lit(Match):
     def __init__(self, chars, rest=None):
         super().__init__(rest)
@@ -334,6 +343,7 @@ class Lit(Match):
         return self.rest._match(text, end)
 ```
 
+
 -   Parent class initializes data that it defines
     -   Yes, the `Null` class broke this rule…
 -   Return `None` for "no match" or whatever `self.rest` returns
@@ -344,7 +354,7 @@ class Lit(Match):
 
 ## Refactoring Wildcard
 
-```python
+```py
 class Any(Match):
     def __init__(self, rest=None):
         super().__init__(rest)
@@ -357,13 +367,14 @@ class Any(Match):
         return None
 ```
 
--   Why `len(text) + 1` ?
+
+-   The exercises will ask, "Why `len(text) + 1`?"
 
 ---
 
 ## Refactoring Alternatives
 
-```python
+```py
 class Either(Match):
     def __init__(self, left, right, rest=None):
         super().__init__(rest)
@@ -379,6 +390,7 @@ class Either(Match):
                     return end
         return None
 ```
+
 
 -   Could easily be extended to any number of alternatives
 
@@ -400,9 +412,32 @@ class: summary
 ## Summary
 
 <figure>
-  <img src="../matching_concept_map.svg" alt="Concept map">
-  <figcaption>Concept map of pattern matching</figcaption>
+  <img src="../concept_map.svg" alt="Concept map of globbing">
+  <figcaption>Concept map</figcaption>
 </figure>
+
+---
+
+class: exercise
+
+## Length Plus One
+
+Why does the upper bound of the loop in the final version of `Any`
+run to `len(text) + 1`?
+
+```py
+class Any(Match):
+    def __init__(self, rest=None):
+        super().__init__(rest)
+
+    def _match(self, text, start):
+        for i in range(len(text) + 1):
+            end = self.rest._match(text, i)
+            if end == len(text):
+                return end
+        return None
+```
+
 
 ---
 
