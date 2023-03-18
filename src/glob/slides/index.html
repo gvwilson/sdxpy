@@ -1,0 +1,366 @@
+---
+title: "Matching Patterns"
+template: slides
+---
+
+## The Problem
+
+-   `glob.glob` finds files whose names match patterns
+
+-   `2023-*.{pdf,txt}` matches `2023-01.txt` and `2023-final.pdf`
+    but not `draft-2023.docx`
+
+-   How does this work?
+
+---
+
+## Write a Few Tests
+
+| Pattern | Text     | Match? |
+| ------- | -------- | ------ |
+| abc     | "abc"    | True   |
+| ab      | "abc"    | False  |
+| abc     | "ab"     | False  |
+| *       | ""       | True   |
+| *       | "abc"    | True   |
+| *def    | "abcdef" | True   |
+| abc*    | "abcdef" | True   |
+| a*c     | "abc"    | True   |
+| {a,b}   | "a"      | True   |
+| {a,b}   | "b"      | True   |
+| {a,b}   | "c"      | False  |
+| {a,b}   | "ab"     | False  |
+| *{x,y}  | "abcx"   | True   |
+
+---
+
+## Objects vs. Functions
+
+-   Create things to match particular cases instead of One Big Function
+
+-   Some of those things need to carry data around
+
+    -   E.g., matching specific literal characters
+
+-   So create objects
+
+-   Use the __Chain of Responsibility__ pattern
+
+    -   Each object matches if it can…
+
+    -   …then asks something else to try to match the rest of the text
+
+---
+
+## Matching a Literal String
+
+[% inc file="../glob_lit.py" %]
+
+-   `chars` is the characters to be matched
+-   `rest` is responsible for matching the rest of the text
+    -   May be `None`
+-   `start` is needed when this isn't the first matcher
+
+---
+
+## Testing the Matcher
+
+[% inc file="../test_glob_lit.py" %]
+
+-   Give tests long names instead of using comments
+    -   So that failure reports are immediately readable
+
+---
+
+## Does Chaining Work?
+
+```python
+
+def test_literal_followed_by_literal():
+    # ⌈a⌋⌈b⌋ ≈ "ab"
+    assert Lit("a", Lit("b")).match("ab")
+
+def test_literal_followed_by_literal():
+    # ⌈a⌋⌈b⌋ ≉ "ac"
+    assert not Lit("a", Lit("b")).match("ac")
+```
+
+---
+
+## Wildcards
+
+-   `*` can match zero or more characters
+
+```python
+class Any:
+    def __init__(self, rest=None):
+        self.rest = rest
+
+    def match(self, text, start=0):
+        if self.rest is None:
+            return True
+        for i in range(start, len(text)):
+            if self.rest.match(text, i):
+                return True
+        return False
+```
+
+---
+
+## And We Test It
+
+```python
+def test_any_matches_empty():
+    # ⌈*⌋ ≈ ""
+    assert Any().match("")
+
+def test_any_matches_entire_string():
+    # ⌈*⌋ ≈ "abc"
+    assert Any().match("abc")
+
+def test_any_matches_as_prefix():
+    # ⌈*def⌋ ≈ "abcdef"
+    assert Any(Lit("def")).match("abcdef")
+
+def test_any_matches_as_suffix():
+    # ⌈abc*⌋ ≈ "abcdef"
+    assert Lit("abc", Any()).match("abcdef")
+
+def test_any_matches_interior():
+    # ⌈a*c⌋ ≈ "abc"
+    assert Lit("a", Any(Lit("c"))).match("abc")
+```
+
+---
+
+## Matching Alternatives
+
+```python
+class Either:
+    def __init__(self, left, right, rest=None):
+        self.left = left
+        self.right = right
+        self.rest = rest
+
+    def match(self, text, start=0):
+        return self.left.match(text, start) or \
+            self.right.match(text, start)
+```
+
+---
+
+## And We Test It
+
+```python
+def test_either_two_literals_first():
+    # ⌈{a,b}⌋ ≈ "a"
+    assert Either(Lit("a"), Lit("b")).match("a")
+
+def test_either_two_literals_second():
+    # ⌈{a,b}⌋ ≈ "b"
+    assert Either(Lit("a"), Lit("b")).match("b")
+
+def test_either_two_literals_neither():
+    # ⌈{a,b}⌋ ≉ "c"
+    assert not Either(Lit("a"), Lit("b")).match("c")
+
+def test_either_two_literals_not_both():
+    # ⌈{a,b}⌋ ≉ "ab"
+    assert not Either(Lit("a"), Lit("b")).match("ab")
+
+def test_either_after_any():
+    # ⌈*{x,y}⌋ ≈ "abcx"
+    assert Any(Either(Lit("x"), Lit("y"))).match("abcx")
+```
+
+---
+
+## But Wait…
+
+```python
+def test_two_literals_in_a_row():
+    # ⌈abcxyz⌋ ≈ "abcxyz" split across two
+    assert Lit("abc", Lit("xyz")).match("abcxyz")
+
+def test_either_followed_by_literal_match():
+    # ⌈{a,b}c⌋ ≈ "ac"
+    assert Either(Lit("a"), Lit("b"), Lit("c"))
+
+def test_either_followed_by_literal_no_match():
+    # ⌈{a,b}c⌋ ≉ "ax"
+    assert not Either(Lit("a"), Lit("b"), Lit("x"))
+```
+```
+collected 3 items                                                                                                            
+
+test_glob_whoops.py ..F
+
+===================== short test summary info ======================
+FAILED test_glob_either.py::test_either_followed_by_literal_no_match
+```
+
+-   `Either` doesn't handle `rest`
+
+---
+
+## Rethinking
+
+-   We now have three matchers with the same interfaces
+    -   Use __Extract Parent Class__ refactoring
+-   `if self.rest is None` all over the place
+    -   Use the __Null Object__ pattern instead
+
+--
+
+<div class="center">
+<img src="../gamma-design-patterns.webp" alt="Design Patterns book cover" width="25%">
+<img src="../fowler-refactoring.webp" alt="Refactoring book cover" width="25%">
+<img src="../kerievsky-refactoring-to-patterns.webp" alt="Refactoring to Patterns book cover" width="22%">
+</div>
+
+---
+
+## Two New Toys
+
+```python
+class Match:
+    def __init__(self, rest):
+        self.rest = rest if rest is not None else Null()
+
+    def match(self, text):
+        result = self._match(text, 0)
+        return result == len(text)
+
+class Null(Match):
+    def __init__(self, rest=None):
+        self.rest = None
+
+    def _match(self, text, start):
+        return start
+```
+
+-   Assume every child class has a `_match` method
+-   This method returns the location to continue searching
+-   So `Match.match` checks that we've reached the end of the text
+
+---
+
+## Refactoring Literal Matcher
+
+```python
+class Lit(Match):
+    def __init__(self, chars, rest=None):
+        super().__init__(rest)
+        self.chars = chars
+
+    def _match(self, text, start):
+        end = start + len(self.chars)
+        if text[start:end] != self.chars:
+            return None
+        return self.rest._match(text, end)
+```
+
+-   Parent class initializes data that it defines
+    -   Yes, the `Null` class broke this rule…
+-   Return `None` for "no match" or whatever `self.rest` returns
+    -   If this object's `rest` is a `Null`,
+        this will be the index after our match
+
+---
+
+## Refactoring Wildcard
+
+```python
+class Any(Match):
+    def __init__(self, rest=None):
+        super().__init__(rest)
+
+    def _match(self, text, start):
+        for i in range(len(text) + 1):
+            end = self.rest._match(text, i)
+            if end == len(text):
+                return end
+        return None
+```
+
+-   Why `len(text) + 1` ?
+
+---
+
+## Refactoring Alternatives
+
+```python
+class Either(Match):
+    def __init__(self, left, right, rest=None):
+        super().__init__(rest)
+        self.left = left
+        self.right = right
+
+    def _match(self, text, start):
+        for pat in [self.left, self.right]:
+            end = pat._match(text, start)
+            if end is not None:
+                end = self.rest._match(text, end)
+                if end == len(text):
+                    return end
+        return None
+```
+
+-   Could easily be extended to any number of alternatives
+
+---
+
+## Testing
+
+-   None of the existing tests change
+    -   None of the constructors changed
+    -   Neither did the signature of `match`
+-   We should (should) add a couple of tests for `Null`
+-   But basically we're done
+-   And we can easily add matchers for other kinds of patterns
+
+---
+
+class: summary
+
+## Summary	       
+
+<figure>
+  <img src="../matching_concept_map.svg" alt="Concept map">
+  <figcaption>Concept map of pattern matching</figcaption>
+</figure>
+
+---
+
+class: exercise
+
+## Exclusion
+
+1.  Create a matcher that *doesn't* match a specified pattern.
+    For example, `Not(Lit("abc"))` only succeeds if the text isn't "abc".
+
+2.  Write some tests for it.
+
+---
+
+class: exercise
+
+## Ranges
+
+1.  Create a matcher that matches a range of characters.
+    For example, `Range("a", "z")` matches any single lower-case Latin alphabetic character.
+    (This is just a convenience matcher: ranges can always be spelled out in full.)
+
+2.  Write some tests for it.
+
+---
+
+class: exercise
+
+## Multiple Alternatives
+
+1.  Modify `Either` so that it can match any number of sub-patterns, not just two.
+
+2.  Write some tests for it.
+
+3.  What does your implementation do when no sub-patterns are specified?

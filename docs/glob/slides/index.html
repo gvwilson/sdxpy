@@ -1,0 +1,551 @@
+<!DOCTYPE html lang="en">
+<html>
+  <head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  
+  <link rel="icon" type="image/x-icon" href="../../favicon.ico">
+  <link rel="stylesheet" href="../../mccole.css">
+  <link rel="stylesheet" href="../../tango.css">
+  <script defer data-domain="third-bit.com" src="https://plausible.io/js/plausible.js"></script>
+  <script>
+    MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']]
+      }
+    };
+  </script>
+  <script
+    type="text/javascript"
+    id="MathJax-script"
+    async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+  </script>
+  <script defer src="../../mccole.js"></script>
+  <title>Software Design for Data Scientists: Matching Patterns</title>
+</head>
+
+  <body>
+    <textarea id="source">
+
+class: slide-title
+
+<p>
+  <a href="https://third-bit.com/sd4ds/">Software Design for Data Scientists</a>
+</p>
+<h1>Matching Patterns</h1>
+<div class="bottom">
+  <a href="../">chapter</a>
+</div>
+
+---
+
+
+## The Problem
+
+-   `glob.glob` finds files whose names match patterns
+
+-   `2023-*.{pdf,txt}` matches `2023-01.txt` and `2023-final.pdf`
+    but not `draft-2023.docx`
+
+-   How does this work?
+
+---
+
+## Write a Few Tests
+
+| Pattern | Text     | Match? |
+| ------- | -------- | ------ |
+| abc     | "abc"    | True   |
+| ab      | "abc"    | False  |
+| abc     | "ab"     | False  |
+| *       | ""       | True   |
+| *       | "abc"    | True   |
+| *def    | "abcdef" | True   |
+| abc*    | "abcdef" | True   |
+| a*c     | "abc"    | True   |
+| {a,b}   | "a"      | True   |
+| {a,b}   | "b"      | True   |
+| {a,b}   | "c"      | False  |
+| {a,b}   | "ab"     | False  |
+| *{x,y}  | "abcx"   | True   |
+
+---
+
+## Objects vs. Functions
+
+-   Create things to match particular cases instead of One Big Function
+
+-   Some of those things need to carry data around
+
+    -   E.g., matching specific literal characters
+
+-   So create objects
+
+-   Use the __Chain of Responsibility__ pattern
+
+    -   Each object matches if it can…
+
+    -   …then asks something else to try to match the rest of the text
+
+---
+
+## Matching a Literal String
+
+```py
+class Lit:
+    def __init__(self, chars, rest=None):
+        self.chars = chars
+        self.rest = rest
+
+    def match(self, text, start=0):
+        end = start + len(self.chars)
+        if text[start:end] != self.chars:
+            return False
+        if self.rest:
+            return self.rest.match(text, end)
+        return end == len(text)
+```
+
+
+-   `chars` is the characters to be matched
+-   `rest` is responsible for matching the rest of the text
+    -   May be `None`
+-   `start` is needed when this isn't the first matcher
+
+---
+
+## Testing the Matcher
+
+```py
+from glob_lit import Lit
+
+def test_literal_match_entire_string():
+    # ⌈abc⌋ ≈ "abc"
+    assert Lit("abc").match("abc")
+
+def test_literal_substring_alone_no_match():
+    # ⌈ab⌋ ≉ "abc"
+    assert not Lit("ab").match("abc")
+
+def test_literal_superstring_no_match():
+    # ⌈abc⌋ ≉ "ab"
+    assert not Lit("abc").match("ab")
+
+def test_literal_followed_by_literal():
+    # ⌈a⌋⌈b⌋ ≈ "ab"
+    assert Lit("a", Lit("b")).match("ab")
+
+def test_literal_followed_by_literal():
+    # ⌈a⌋⌈b⌋ ≉ "ac"
+    assert not Lit("a", Lit("b")).match("ac")
+```
+
+
+-   Give tests long names instead of using comments
+    -   So that failure reports are immediately readable
+
+---
+
+## Does Chaining Work?
+
+```python
+
+def test_literal_followed_by_literal():
+    # ⌈a⌋⌈b⌋ ≈ "ab"
+    assert Lit("a", Lit("b")).match("ab")
+
+def test_literal_followed_by_literal():
+    # ⌈a⌋⌈b⌋ ≉ "ac"
+    assert not Lit("a", Lit("b")).match("ac")
+```
+
+---
+
+## Wildcards
+
+-   `*` can match zero or more characters
+
+```python
+class Any:
+    def __init__(self, rest=None):
+        self.rest = rest
+
+    def match(self, text, start=0):
+        if self.rest is None:
+            return True
+        for i in range(start, len(text)):
+            if self.rest.match(text, i):
+                return True
+        return False
+```
+
+---
+
+## And We Test It
+
+```python
+def test_any_matches_empty():
+    # ⌈*⌋ ≈ ""
+    assert Any().match("")
+
+def test_any_matches_entire_string():
+    # ⌈*⌋ ≈ "abc"
+    assert Any().match("abc")
+
+def test_any_matches_as_prefix():
+    # ⌈*def⌋ ≈ "abcdef"
+    assert Any(Lit("def")).match("abcdef")
+
+def test_any_matches_as_suffix():
+    # ⌈abc*⌋ ≈ "abcdef"
+    assert Lit("abc", Any()).match("abcdef")
+
+def test_any_matches_interior():
+    # ⌈a*c⌋ ≈ "abc"
+    assert Lit("a", Any(Lit("c"))).match("abc")
+```
+
+---
+
+## Matching Alternatives
+
+```python
+class Either:
+    def __init__(self, left, right, rest=None):
+        self.left = left
+        self.right = right
+        self.rest = rest
+
+    def match(self, text, start=0):
+        return self.left.match(text, start) or \
+            self.right.match(text, start)
+```
+
+---
+
+## And We Test It
+
+```python
+def test_either_two_literals_first():
+    # ⌈{a,b}⌋ ≈ "a"
+    assert Either(Lit("a"), Lit("b")).match("a")
+
+def test_either_two_literals_second():
+    # ⌈{a,b}⌋ ≈ "b"
+    assert Either(Lit("a"), Lit("b")).match("b")
+
+def test_either_two_literals_neither():
+    # ⌈{a,b}⌋ ≉ "c"
+    assert not Either(Lit("a"), Lit("b")).match("c")
+
+def test_either_two_literals_not_both():
+    # ⌈{a,b}⌋ ≉ "ab"
+    assert not Either(Lit("a"), Lit("b")).match("ab")
+
+def test_either_after_any():
+    # ⌈*{x,y}⌋ ≈ "abcx"
+    assert Any(Either(Lit("x"), Lit("y"))).match("abcx")
+```
+
+---
+
+## But Wait…
+
+```python
+def test_two_literals_in_a_row():
+    # ⌈abcxyz⌋ ≈ "abcxyz" split across two
+    assert Lit("abc", Lit("xyz")).match("abcxyz")
+
+def test_either_followed_by_literal_match():
+    # ⌈{a,b}c⌋ ≈ "ac"
+    assert Either(Lit("a"), Lit("b"), Lit("c"))
+
+def test_either_followed_by_literal_no_match():
+    # ⌈{a,b}c⌋ ≉ "ax"
+    assert not Either(Lit("a"), Lit("b"), Lit("x"))
+```
+```
+collected 3 items                                                                                                            
+
+test_glob_whoops.py ..F
+
+===================== short test summary info ======================
+FAILED test_glob_either.py::test_either_followed_by_literal_no_match
+```
+
+-   `Either` doesn't handle `rest`
+
+---
+
+## Rethinking
+
+-   We now have three matchers with the same interfaces
+    -   Use __Extract Parent Class__ refactoring
+-   `if self.rest is None` all over the place
+    -   Use the __Null Object__ pattern instead
+
+--
+
+<div class="center">
+<img src="../gamma-design-patterns.webp" alt="Design Patterns book cover" width="25%">
+<img src="../fowler-refactoring.webp" alt="Refactoring book cover" width="25%">
+<img src="../kerievsky-refactoring-to-patterns.webp" alt="Refactoring to Patterns book cover" width="22%">
+</div>
+
+---
+
+## Two New Toys
+
+```python
+class Match:
+    def __init__(self, rest):
+        self.rest = rest if rest is not None else Null()
+
+    def match(self, text):
+        result = self._match(text, 0)
+        return result == len(text)
+
+class Null(Match):
+    def __init__(self, rest=None):
+        self.rest = None
+
+    def _match(self, text, start):
+        return start
+```
+
+-   Assume every child class has a `_match` method
+-   This method returns the location to continue searching
+-   So `Match.match` checks that we've reached the end of the text
+
+---
+
+## Refactoring Literal Matcher
+
+```python
+class Lit(Match):
+    def __init__(self, chars, rest=None):
+        super().__init__(rest)
+        self.chars = chars
+
+    def _match(self, text, start):
+        end = start + len(self.chars)
+        if text[start:end] != self.chars:
+            return None
+        return self.rest._match(text, end)
+```
+
+-   Parent class initializes data that it defines
+    -   Yes, the `Null` class broke this rule…
+-   Return `None` for "no match" or whatever `self.rest` returns
+    -   If this object's `rest` is a `Null`,
+        this will be the index after our match
+
+---
+
+## Refactoring Wildcard
+
+```python
+class Any(Match):
+    def __init__(self, rest=None):
+        super().__init__(rest)
+
+    def _match(self, text, start):
+        for i in range(len(text) + 1):
+            end = self.rest._match(text, i)
+            if end == len(text):
+                return end
+        return None
+```
+
+-   Why `len(text) + 1` ?
+
+---
+
+## Refactoring Alternatives
+
+```python
+class Either(Match):
+    def __init__(self, left, right, rest=None):
+        super().__init__(rest)
+        self.left = left
+        self.right = right
+
+    def _match(self, text, start):
+        for pat in [self.left, self.right]:
+            end = pat._match(text, start)
+            if end is not None:
+                end = self.rest._match(text, end)
+                if end == len(text):
+                    return end
+        return None
+```
+
+-   Could easily be extended to any number of alternatives
+
+---
+
+## Testing
+
+-   None of the existing tests change
+    -   None of the constructors changed
+    -   Neither did the signature of `match`
+-   We should (should) add a couple of tests for `Null`
+-   But basically we're done
+-   And we can easily add matchers for other kinds of patterns
+
+---
+
+class: summary
+
+## Summary
+
+<figure>
+  <img src="../matching_concept_map.svg" alt="Concept map">
+  <figcaption>Concept map of pattern matching</figcaption>
+</figure>
+
+---
+
+class: exercise
+
+## Exclusion
+
+1.  Create a matcher that *doesn't* match a specified pattern.
+    For example, `Not(Lit("abc"))` only succeeds if the text isn't "abc".
+
+2.  Write some tests for it.
+
+---
+
+class: exercise
+
+## Ranges
+
+1.  Create a matcher that matches a range of characters.
+    For example, `Range("a", "z")` matches any single lower-case Latin alphabetic character.
+    (This is just a convenience matcher: ranges can always be spelled out in full.)
+
+2.  Write some tests for it.
+
+---
+
+class: exercise
+
+## Multiple Alternatives
+
+1.  Modify `Either` so that it can match any number of sub-patterns, not just two.
+
+2.  Write some tests for it.
+
+3.  What does your implementation do when no sub-patterns are specified?
+
+
+[academic_prototyping]: https://www.fuzzingbook.org/html/AcademicPrototyping.html
+[aosa]: https://aosabook.org/
+[beautiful_soup]: https://beautiful-soup-4.readthedocs.io/
+[birthday_problem]: https://en.wikipedia.org/wiki/Birthday_problem
+[black]: https://black.readthedocs.io/
+[browser_engine_tutorial]: https://limpet.net/mbrubeck/2014/08/08/toy-layout-engine-1.html
+[browser_engineering]: https://browser.engineering/
+[brubeck_matt]: https://limpet.net/mbrubeck/
+[cc_by_nc]: https://creativecommons.org/licenses/by-nc/4.0/
+[cc_by_nc_legal]: https://creativecommons.org/licenses/by-nc/4.0/legalcode
+[clarkes_laws]: https://en.wikipedia.org/wiki/Clarke%27s_three_laws
+[contributor_covenant]: https://www.contributor-covenant.org/
+[cook_mary_rose]: https://maryrosecook.com/
+[crafting_interpreters]: https://craftinginterpreters.com/
+[ctan]: https://www.ctan.org/
+[db_tutorial]: https://cstack.github.io/db_tutorial/
+[dresser_christopher]: https://en.wikipedia.org/wiki/Christopher_Dresser
+[drumm_christian]: https://www.drumm.sh/
+[dvc]: https://dvc.org/
+[ejs]: https://ejs.co/
+[email]: mailto:gvwilson@third-bit.com
+[ethical_source]: https://ethicalsource.dev
+[evans_julia]: https://jvns.ca/
+[evans_zines]: https://wizardzines.com/
+[flake8]: https://flake8.pycqa.org/
+[git]: https://git-scm.com/
+[git_lfs]: https://git-lfs.github.io/
+[git_man_page_generator]: https://git-man-page-generator.lokaltog.net/
+[gitlet]: http://gitlet.maryrosecook.com/
+[glosario]: https://github.com/carpentries/glosario
+[gnu_make]: https://www.gnu.org/software/make/
+[harrelson_chris]: https://twitter.com/chrishtr
+[hippocratic_license]: https://firstdonoharm.dev/
+[html5_data_attributes]: https://developer.mozilla.org/en-US/docs/Learn/HTML/Howto/Use_data_attributes
+[isort]: https://pycqa.github.io/isort/
+[ivy]: https://www.dmulholl.com/docs/ivy/main/
+[jekyll]: https://jekyllrb.com/
+[kilo_editor]: https://viewsourcecode.org/snaptoken/kilo/index.html
+[latex]: https://www.latex-project.org/
+[loewy_raymond]: https://en.wikipedia.org/wiki/Raymond_Loewy
+[log_structured_storage]: http://blog.notdot.net/2009/12/Damn-Cool-Algorithms-Log-structured-storage
+[lorgat_editor]: https://wasimlorgat.com/posts/editor.html
+[lorgat_wasim]: https://wasimlorgat.com/
+[marthas_rules]: https://journals.sagepub.com/doi/10.1177/088610998600100206
+[nash_joe]: https://hachyderm.io/@joenash
+[networkx]: https://networkx.org/
+[nison_mael]: https://arcanis.github.io/
+[nystrom_bob]: http://journal.stuffwithstuff.com/
+[package_manager_tutorial]: https://classic.yarnpkg.com/blog/2017/07/11/lets-dev-a-package-manager/
+[panchekha_pavel]: https://pavpanchekha.com/
+[pereira_juanan]: https://ikasten.io/
+[php]: https://www.php.net/
+[picosat]: http://fmv.jku.at/picosat/
+[pip]: https://pip.pypa.io/
+[programming_tools]: https://en.wikipedia.org/wiki/Programming_tool
+[py_array]: https://docs.python.org/3/library/array.html
+[py_chainmap]: https://docs.python.org/3/library/collections.html#collections.ChainMap
+[py_cprofile]: https://docs.python.org/3/library/profile.html
+[py_fractions]: https://docs.python.org/3/library/fractions.html
+[py_glob]: https://docs.python.org/3/library/glob.html
+[py_hashlib]: https://docs.python.org/3/library/hashlib.html
+[py_inspect]: https://docs.python.org/3/library/inspect.html
+[py_io]: https://docs.python.org/3/library/io.html
+[py_itertools]: https://docs.python.org/3/library/itertools.html
+[py_json]: https://docs.python.org/3/library/json.html
+[py_mimetypes]: https://docs.python.org/3/library/mimetypes.html
+[py_pickle]: https://docs.python.org/3/library/pickle.html
+[py_semver]: https://pypi.org/project/semantic-version/
+[py_struct]: https://docs.python.org/3/library/struct.html
+[py_textwrap]: https://docs.python.org/3/library/textwrap.html
+[py_urlparse]: https://docs.python.org/3/library/urllib.parse.html
+[py_yaml]: https://pypi.org/project/PyYAML/
+[py_zipfile]: https://docs.python.org/3/library/zipfile.html
+[pyfakefs]: https://pytest-pyfakefs.readthedocs.io/
+[pytest]: https://docs.pytest.org/
+[pytest_approx]: https://docs.pytest.org/en/4.6.x/reference.html#pytest-approx
+[pytest_stdout]: https://docs.pytest.org/en/6.2.x/capture.html
+[python]: https://www.python.org/
+[reim_michael]: https://elderlinux.org/
+[requests]: https://requests.readthedocs.io/
+[ruten_paige]: https://viewsourcecode.org/
+[book_repo]: https://github.com/gvwilson/sd4ds/
+[book_site]: https://third-bit.com/sd4ds/
+[semver_spec]: https://semver.org/
+[sinel_joseph]: https://en.wikipedia.org/wiki/Joseph_Claude_Sinel
+[smith_dave]: https://davewsmith.com/
+[sqlite]: https://sqlite.org/
+[stack_connor]: https://connorstack.com/
+[svg_screenshot]: https://chrome.google.com/webstore/detail/svg-screenshot/nfakpcpmhhilkdpphcjgnokknpbpdllg
+[t3_personas]: https://teachtogether.tech/en/index.html#s:process-personas
+[textualize_fraction]: https://www.textualize.io/blog/posts/7-things-about-terminals
+[udhr]: https://www.un.org/en/universal-declaration-human-rights/
+[ungc]: https://www.unglobalcompact.org/what-is-gc/mission/principles
+[unicode]: https://www.unicode.org/
+[unix_packaging]: https://eerielinux.wordpress.com/2017/08/15/the-history-of-nix-package-management/
+[webaim_wave]: https://wave.webaim.org/
+[write_yourself_a_git]: https://wyag.thb.lt/
+[z3]: https://en.wikipedia.org/wiki/Z3_Theorem_Prover
+[zeller_andreas]: https://andreas-zeller.info/
+
+    </textarea>
+    <script src="../../remark-latest.min.js"></script>
+    <script>
+      var slideshow = remark.create({
+        highlightLines: true
+      })
+    </script>
+  </body>
+</html>
