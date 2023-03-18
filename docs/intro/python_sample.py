@@ -1,2 +1,2 @@
-for thing in collection:
-    print(thing)
+for ch in "example":
+    print(ch)
