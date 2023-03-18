@@ -1,3 +1,3 @@
 ---
-title: "Binary Storage"
+title: "Binary Data"
 ---

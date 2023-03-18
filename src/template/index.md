@@ -1,3 +1,3 @@
 ---
-title: "A Static Site Generator"
+title: "Template Expansion"
 ---

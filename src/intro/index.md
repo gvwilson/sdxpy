@@ -16,11 +16,12 @@ and better able to use them well.
 
 This [learner persona][t3_personas] [%b Wilson2019 %] describes who this book is for:
 
-> Maya has a master's degree in genomics
-> and does very complicated science things in a wet lab.
-> She has taught herself enough Python to do some sophisticated data analysis,
-> but is constantly frustrated by what she *doesn't* know about how software actually works.
-> This material will take away some of the mystery.
+> Maya has a master's degree in genomics.
+> She has taught herself enough Python to analyze data from her experiments,
+> but is constantly frustrated by the gaps in her programming knowledge.
+> These lessons will teach her how to design, build, and test large programs
+> in less time and with less pain,
+> and show her how the libraries and tools she uses actually work.
 
 Like Maya, you should be able to:
 
