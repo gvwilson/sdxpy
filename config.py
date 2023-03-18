@@ -162,6 +162,7 @@ copy += [
     "*.sh",
     "*.svg",
     "*.txt",
+    "*.webp",
     "*.yml",
 ]
 
@@ -182,6 +183,7 @@ exclude += [
     "*.sh",
     "*.svg",
     "*.txt",
+    "*.webp",
     "*.yml",
     "*~",
     "__pycache__",
