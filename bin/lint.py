@@ -101,10 +101,9 @@ def check_dom(dom_spec, html_files):
     allowed = utils.read_yaml(dom_spec)
     seen = {}
     for filename in html_files:
-        with open(filename, "r") as reader:
-            text = _read_html(filename)
-            dom = BeautifulSoup(text, "html.parser")
-            _collect_dom(seen, dom)
+        text = _read_html(filename)
+        dom = BeautifulSoup(text, "html.parser")
+        _collect_dom(seen, dom)
     _diff_dom(seen, allowed)
 
 
@@ -137,7 +136,11 @@ def check_glossary(glossary_file, language):
 
 def check_links(links_file, source_files):
     """Check that all links are known."""
-    existing = {entry["key"] for entry in utils.read_yaml(links_file) if not entry.get("direct", False)}
+    existing = {
+        entry["key"]
+        for entry in utils.read_yaml(links_file)
+        if not entry.get("direct", False)
+    }
     referenced = set()
     for (dirname, filename) in source_files:
         referenced |= get_links(Path(dirname, filename))

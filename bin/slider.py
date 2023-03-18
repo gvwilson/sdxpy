@@ -1,9 +1,10 @@
+"""Display slides during development."""
+
 import argparse
 import os
-import sys
-import yaml
-from http.server import SimpleHTTPRequestHandler, HTTPServer
+from http.server import HTTPServer, SimpleHTTPRequestHandler
 
+import yaml
 
 # Known MIME types
 MIME_TYPES = {
@@ -21,7 +22,9 @@ RESOURCES = None
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--project", required=True, help="Root directory of Git project")
+    parser.add_argument(
+        "--project", required=True, help="Root directory of Git project"
+    )
     parser.add_argument("--chapter", required=True, help="Root directory of chapter")
     return parser.parse_args()
 
@@ -57,7 +60,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
     def do_slides(self):
         with open(f"{OPTIONS.project}/lib/mccole/slides.html", "r") as reader:
             template = reader.read()
-        with open(f"./slides/index.html", "r") as reader:
+        with open("./slides/index.html", "r") as reader:
             slides = reader.read()
             slides = slides.split("---", maxsplit=2)[-1]
         page = template.replace("@content", slides + "\n\n" + LINKS)

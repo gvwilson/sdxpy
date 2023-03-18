@@ -4,10 +4,8 @@
 
 import argparse
 import os
-import re
 import sys
-
-import utils
+import textwrap
 
 # Strip out file protocol.
 PROTOCOL = "file://"
@@ -20,9 +18,6 @@ REMOVED = "..."
 
 # Output slice size.
 SLICE = 10
-
-# Pattern for leading indentation.
-INDENT = re.compile(r"^(\s+)")
 
 
 def reformat(options):
@@ -46,31 +41,18 @@ def wrap(options, lines):
     result = []
     for line in lines:
         line = line.replace(PROTOCOL, "").replace(HERE, options.home)
-        if len(line) == 0:
-            result.append(line)
-            continue
-        match = INDENT.match(line)
-        indent = match.group(1) if match else ""
-        while len(line) > 0:
-            front, line, terminator = split(line)
-            result.append(f"{front}{terminator}")
-            if len(line) > 0:
-                line = indent + line.lstrip()
+        lines = textwrap.wrap(line, width=options.columns)
+        if lines:
+            result.extend([f"{ln} \\" for ln in lines[:-1]])
+            result.append(lines[-1])
+        else:
+            result.append("")
     return result
-
-
-def split(line):
-    """Split a line."""
-    if len(line) <= utils.WIDTH:
-        return line, "", ""
-    for i in range(utils.WIDTH, 0, -1):
-        if line[i] == " ":
-            return line[:i], line[i:], " \\"
-    return line[: utils.WIDTH], line[utils.WIDTH :], " \\"
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+    parser.add_argument("--columns", type=int, help="Width of columns")
     parser.add_argument("--home", help="Substitute home directory")
     parser.add_argument("--slice", action="store_true", help="Take slice out of input?")
     options = parser.parse_args()

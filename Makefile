@@ -1,4 +1,4 @@
-include lib/mccole/generic.mk
+include lib/mccole/mccole.mk
 
 BIN_PY = $(wildcard bin/*.py)
 SRC_PY = $(wildcard src/*/*.py)
@@ -10,3 +10,11 @@ check:
 	-@flake8 ${BIN_PY}
 	-@isort --check ${BIN_PY}
 	-@black --check ${BIN_PY}
+
+## fix: fix source code
+.PHONY: fix
+fix:
+	@isort ${BIN_PY}
+	@black ${BIN_PY}
+
+## ---: ---

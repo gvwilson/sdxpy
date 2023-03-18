@@ -1,16 +1,9 @@
 """Utilities used across all tools."""
 
-
 import re
 import sys
 
 import yaml
-
-# Width of output lines in included chunks.
-WIDTH = 72
-
-# Length of included chunks.
-LENGTH = 30
 
 # Known languages.
 LANGUAGES = {"html", "js", "make", "out", "py", "sh", "txt", "yml"}

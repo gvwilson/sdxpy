@@ -85,7 +85,7 @@ def escape(text, doEscape):
         .replace(">>>", r">\null>\null>")
         .replace("<<", r"<\null<")
         .replace(">>", r">\null>")
-        .replace("~", r"{\textapprox}") # see https://tex.stackexchange.com/a/377
+        .replace("~", r"{\textapprox}")  # see https://tex.stackexchange.com/a/377
         .replace("©", r"{\textcopyright}")
         .replace("μ", r"{\textmu}")
         .replace("…", "...")
