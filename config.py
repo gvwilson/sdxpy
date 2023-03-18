@@ -6,7 +6,7 @@ import os
 abbrev = "sd4ds"
 
 # GitHub repository.
-repo = "https://github.com/gvwilson/sdpy"
+repo = "https://github.com/gvwilson/sd4ds"
 
 # Site settings.
 lang = "en"
@@ -19,6 +19,9 @@ domain = "third-bit.com"
 plausible = True
 archive = f"{abbrev}-examples.zip"
 draft = True
+
+# Website.
+website = f"https://{domain}/{abbrev}/"
 
 # Chapters.
 chapters = [
