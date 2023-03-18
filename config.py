@@ -27,7 +27,7 @@ website = f"https://{domain}/{abbrev}/"
 chapters = [
     "intro",
     "dup",
-    "re",
+    "glob",
     "parse",
     "test",
     "mock",
