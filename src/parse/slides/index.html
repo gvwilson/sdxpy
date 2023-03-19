@@ -1,0 +1,147 @@
+---
+title: "Parsing Text"
+template: slides
+---
+
+## The Problem
+
+-   `Any(Either(Lit("abc"), Lit("def")))` is harder to write and read
+    than `"*{abc,def}"`
+
+-   How can we translate the latter into the former?
+
+--
+
+1.  Convert text into [%g token "tokens" %]
+
+2.  Use tokens to generate code
+
+    -   Or an [%g abstract_syntax_tree "abstract syntax tree" %]
+
+---
+
+## Cases
+
+-   Characters like `{` and `*` can be interpreted immediately
+
+-   But "regular" characters need to be accumulated
+
+    -   `Lit("abc")` rather than `Lit("a", Lit("b", Lit("c")))`
+
+    -   When we encounter a special character or '}',
+        we close the current literal token
+
+-   The `,` character closes a literal but doesn't produce a token
+
+---
+
+## A Bit More Design
+
+-   `result` is the final (flat) list of tokens
+
+-   `current` is the characters in the current literal (if any)
+
+-   So create a class rather than a function
+
+    -   Easier than carrying state around explicitly
+
+---
+
+## Tokenizer
+
+[% inc file="../tokenizer.py" keep="tok" %]
+
+---
+
+## Tokenizer
+
+-   Call `self._setup()` at the start so that the tokenizer can be re-used
+
+-   *Don't* call `self._add()` for regular characters
+
+    -   Add literals when we see special characters
+
+    -   And after all the input has been parsed
+
+-   `self._add(None)` means "add the literal but nothing else"
+
+---
+
+## Testing
+
+[% inc file="../test_tokenizer.py" keep="tests" %]
+
+---
+
+## Testing
+
+[% inc file="../test_tokenizer.py" keep="complex" %]
+
+--
+
+-   List-of-lists structure is similar to the instructions used in [%x interp %]
+
+    -   First element tells us how to dispatch
+
+    -   Trailing elements are any extra data
+
+---
+
+## Parsing
+
+[% inc file="../parser.py" keep="parse" %]
+
+-   `front[0]` is token name
+-   `front[1:]` is any other data in this token
+-   `back` is the remaining tokens
+
+---
+
+## Fill in the Simple Stuff
+
+[% inc file="../parser.py" keep="simple" %]
+
+---
+
+## `Either` is Messy
+
+[% inc file="../parser.py" keep="either" %]
+
+-   It should pull things from `back` until it hits `EitherEnd`
+
+-   Do this in the exercises
+
+---
+
+## Testing
+
+[% inc file="../test_parser.py" keep="sample" %]
+
+-   But this assumes we can compare `Match` objects
+
+---
+
+## Infrastructure
+
+[% inc file="../match.py" keep="equal" %]
+
+---
+
+## Infrastructure
+
+-   [%g operator_overloading "Operator overloading" %]
+-   `a == b` is "just" `a.__eq__(b)`
+-   Parent `Match` class does shared work
+    (e.g., same [%g concrete_class "concrete class" %])
+-   Child method (if any) does details
+
+---
+
+class: summary
+
+## Summary	       
+
+<figure>
+  <img src="../concept_map.svg" alt="Concept map of parsing">
+  <figcaption>Concept map</figcaption>
+</figure>
