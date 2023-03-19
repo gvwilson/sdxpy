@@ -186,8 +186,17 @@ def _keep_lines(filepath, lines, key):
 
 
 def _make_html(node, name, kind, lines):
-    """Construct HTML inclusion from lines."""
+    """Construct HTML inclusion from lines.
+
+    The Remark slideshow framework uses Highlight.js to style code.
+    Unfortunately it doesn't have a style for '.out', and its style
+    for other suffixes we might use for program output (like '.txt')
+    doesn't render in slides. The simplest thing for now is therefore
+    to strip off the format entirely for `.out` inclusions.
+    """
     body = "\n".join(x.rstrip() for x in lines)
+    if _is_slides(node) and (kind == "out"):
+        kind = ""
     body = f"```{kind}\n{body}\n```\n"
     if _is_slides(node):
         return body
