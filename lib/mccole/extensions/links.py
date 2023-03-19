@@ -1,11 +1,8 @@
 """Create links table."""
 
-from pathlib import Path
-
 import ivy
 import shortcodes
 import util
-import yaml
 from markdown.extensions import Extension
 from markdown.treeprocessors import Treeprocessor
 

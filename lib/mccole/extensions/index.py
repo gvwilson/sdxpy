@@ -30,10 +30,7 @@ def _collect(node, major, collected):
     """Pull data from a single node."""
     parser = shortcodes.Parser(inherit_globals=False, ignore_unknown=True)
     parser.register(_parse, "i", "/i")
-    temp = {
-        "node": node,
-        "index": collected
-    }
+    temp = {"node": node, "index": collected}
     parser.parse(node.text, temp)
 
 
@@ -53,6 +50,7 @@ def _parse(pargs, kwargs, extra, content):
 
 
 # ----------------------------------------------------------------------
+
 
 @shortcodes.register("i", "/i")
 def index_ref(pargs, kwargs, node, content):

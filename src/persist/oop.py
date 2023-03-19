@@ -78,7 +78,9 @@ class LoadOop:
         return int(value)
 
     def _str(self, value):
-        return "\n".join([self.reader.readline()[:-1] for _ in range(int(value))])
+        return "\n".join(
+            [self.reader.readline()[:-1] for _ in range(int(value))]
+        )
 
     # [load_list]
     def _list(self, value):

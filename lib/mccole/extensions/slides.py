@@ -4,8 +4,8 @@ import ivy
 import shortcodes
 import util
 
-
 _markdown_links = None
+
 
 @ivy.filters.register(ivy.filters.Filter.FILE_TEXT)
 def add_markdown_list(text, meta_dict):
@@ -24,6 +24,8 @@ def slide_list(pargs, kwargs, node):
     titles = util.get_config("titles")
     result = ["<ol>"]
     for entry in titles["chapters"]:
-        result.append(f'<li><a href="@root/{entry.slug}/slides/" markdown="1">{entry.title}</a></li>')
+        result.append(
+            f'<li><a href="@root/{entry.slug}/slides/" markdown="1">{entry.title}</a></li>'
+        )
     result.append("</ol>")
     return "\n".join(result)

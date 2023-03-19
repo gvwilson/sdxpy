@@ -11,6 +11,7 @@ INTERNAL_REF = re.compile(r"\]\(#(.+?)\)")
 
 # ----------------------------------------------------------------------
 
+
 @ivy.events.register(ivy.events.Event.INIT)
 def collect():
     """Collect information from pages."""
@@ -54,6 +55,7 @@ def _cleanup(collected):
 
 
 # ----------------------------------------------------------------------
+
 
 @shortcodes.register("g")
 def glossary_ref(pargs, kwargs, node):

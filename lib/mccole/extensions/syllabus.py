@@ -2,6 +2,7 @@ import ivy
 import shortcodes
 import util
 
+
 @ivy.events.register(ivy.events.Event.INIT)
 def collect():
     """Collect information from pages."""
@@ -17,6 +18,7 @@ def _collect(node, major, collected):
         assert "title" in node.meta
         collected[node.slug] = (node.meta["title"], node.meta.get("syllabus", []))
 
+
 def _cleanup(collected):
     """Clean up collected data."""
     syllabi = [
@@ -26,7 +28,9 @@ def _cleanup(collected):
     ]
     util.make_config("syllabus", syllabi)
 
+
 # ----------------------------------------------------------------------
+
 
 @shortcodes.register("syllabus")
 def syllabus(pargs, kwargs, node):

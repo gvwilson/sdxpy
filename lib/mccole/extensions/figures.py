@@ -9,6 +9,7 @@ import util
 
 # ----------------------------------------------------------------------
 
+
 @dataclass
 class Figure:
     """Keep track of information about a figure."""
@@ -39,10 +40,7 @@ def _collect(node, major, collected):
     parser = shortcodes.Parser(inherit_globals=False, ignore_unknown=True)
     parser.register(_parse, "figure")
     collected[node.slug] = []
-    parser.parse(node.text, {
-        "node": node,
-        "values": collected[node.slug]
-    })
+    parser.parse(node.text, {"node": node, "values": collected[node.slug]})
 
 
 def _cleanup(major, collected):
@@ -61,7 +59,9 @@ def _parse(pargs, kwargs, data):
     data["values"].append(Figure(data["node"], **kwargs))
     return ""
 
+
 # ----------------------------------------------------------------------
+
 
 @shortcodes.register("f")
 def figure_ref(pargs, kwargs, node):

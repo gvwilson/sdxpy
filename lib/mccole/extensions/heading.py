@@ -1,7 +1,7 @@
 """Headings and cross-references."""
 
-from dataclasses import dataclass
 import sys
+from dataclasses import dataclass
 
 import ibis
 import ivy
@@ -130,11 +130,13 @@ def _titles():
 
     appendices = [headings[slug] for slug in ivy.site.config["appendices"]]
     for (i, entry) in enumerate(appendices):
-         entry.label = chr(ord("A") + i)
+        entry.label = chr(ord("A") + i)
 
     util.make_config("titles", {"chapters": chapters, "appendices": appendices})
 
+
 # ----------------------------------------------------------------------
+
 
 @shortcodes.register("x")
 def heading_ref(pargs, kwargs, node):

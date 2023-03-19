@@ -50,6 +50,7 @@ import util
 
 # ----------------------------------------------------------------------
 
+
 @dataclass
 class Table:
     """Keep track of information about a single table."""
@@ -101,6 +102,7 @@ def _cleanup(major, collected):
 
 
 # ----------------------------------------------------------------------
+
 
 @shortcodes.register("t")
 def table_ref(pargs, kwargs, node):
