@@ -1,0 +1,593 @@
+<!DOCTYPE html lang="en">
+<html>
+  <head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  
+  <link rel="icon" type="image/x-icon" href="../../favicon.ico">
+  <link rel="stylesheet" href="../../mccole.css">
+  <link rel="stylesheet" href="../../tango.css">
+  <script defer data-domain="third-bit.com" src="https://plausible.io/js/plausible.js"></script>
+  <script>
+    MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']]
+      }
+    };
+  </script>
+  <script
+    type="text/javascript"
+    id="MathJax-script"
+    async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+  </script>
+  <script defer src="../../mccole.js"></script>
+  <title>Software Design for Data Scientists: A Testing Framework</title>
+</head>
+
+  <body>
+    <textarea id="source">
+
+class: slide-title
+
+<p>
+  <a href="https://third-bit.com/sd4ds/">Software Design for Data Scientists</a>
+</p>
+<h1>A Testing Framework</h1>
+<div class="bottom">
+  <a href="../">chapter</a>
+</div>
+
+---
+
+
+## Background
+
+-   Not all software needs formal testing
+    -   Check one-off data analysis script incrementally
+-   But 98% of the code in [SQLite][sqlite] is there to test the other 2%
+    -   For which I am grateful
+-   Good tools make tests easier to write
+    -   So that programmers have fewer excuses not to write them
+-   This lesson build a unit testing framework like [pytest][pytest]
+    -   Most frameworks in most other languages share its design
+
+---
+
+## The Big Idea
+
+<p class="shout">A program is just another data structure.</p>
+
+<figure>
+  <img src="../func_obj.svg" alt="Bytes as characters, pixels, or instructions">
+  <figcaption>Bytes can be interpreted as characters, pixels, or instructions.</figcaption>
+</figure>
+
+---
+
+## Functions are Objects
+
+-   `def` defines a variable whose value is the function's instructions
+
+```py
+def example():
+    print("in example")
+```
+
+
+-   We can assign that value to another variable
+
+```py
+alias = example
+alias()
+```
+
+```out
+in example
+```
+
+
+-   `(…)` means "run the instructions this variable refers to"
+
+---
+
+class: aside
+
+## Checking
+
+-   Use `type` to see if something is a function
+
+```py
+print(type(3))
+```
+
+
+```out
+<class 'int'>
+```
+
+
+```py
+def example():
+    pass
+
+print(type(example))
+```
+
+
+```out
+<class 'function'>
+```
+
+
+---
+
+class: aside
+
+## Checking
+
+-   But built-in functions have a different type
+
+```py
+print(type(len))
+```
+
+
+```out
+<class 'builtin_function_or_method'>
+```
+
+
+-   So use `callable` to check if something can be called
+
+```py
+def example():
+    pass
+
+print(callable(example), callable(len))
+```
+
+
+```out
+True True
+```
+
+
+---
+
+## Functions in Lists
+
+-   We can put functions in lists
+
+```py
+def first():
+    print("First")
+
+def second():
+    print("Second")
+
+def third():
+    print("Third")
+
+everything = [first, second, third]
+for func in everything:
+    func()
+```
+
+
+```out
+First
+Second
+Third
+```
+
+
+---
+
+## Signatures
+
+-   We have to know how to call the functions
+    -   They must have the same <a class="gl-ref" href="../../glossary/#signature" markdown="1">signature</a>
+
+```py
+def zero():
+    print("zero")
+
+def one(value):
+    print("one", value)
+
+for func in [zero, one]:
+    func()
+```
+
+
+```out
+zero
+Traceback (most recent call last):
+  File "/sd4ds/test/signature.py", line 8, in <module>
+    func()
+TypeError: one() missing 1 required positional argument: 'value'
+```
+
+
+---
+
+## Terminology
+
+-   Apply the function we want to test to a <a class="gl-ref" href="../../glossary/#fixture" markdown="1">fixture</a>
+-   Compare the <a class="gl-ref" href="../../glossary/#actual_result" markdown="1">actual result</a> to the <a class="gl-ref" href="../../glossary/#expected_result" markdown="1">expected result</a>
+-   Possible outcomes are:
+    -   <a class="gl-ref" href="../../glossary/#pass_test" markdown="1">pass</a>: the target function worked
+    -   <a class="gl-ref" href="../../glossary/#fail_test" markdown="1">fail</a>: the target function didn't do what we expected
+    -   <a class="gl-ref" href="../../glossary/#error_test" markdown="1">error</a>: something went wrong with the test itself
+-   Typically use `assert` to check results
+    -   If condition is `True`, does nothing
+    -   Otherwise, raises an `AssertionError`
+-   Failed assertions usually cause the program to halt
+    -   But we can catch the exception ourselves if we want
+
+---
+
+## A Function and Some Tests
+
+```py
+def sign(value):
+    if value < 0:
+        return -1
+    else:
+        return 1
+```
+
+```py
+def test_sign_negative():
+    assert sign(-3) == -1
+
+def test_sign_positive():
+    assert sign(19) == 1
+
+def test_sign_zero():
+    assert sign(0) == 0
+
+def test_sign_error():
+    assert sgn(1) == 1
+```
+
+
+---
+
+## What We Want
+
+```py
+TESTS = [
+    test_sign_negative,
+    test_sign_positive,
+    test_sign_zero,
+    test_sign_error
+]
+```
+
+```out
+pass 2
+fail 1
+error 1
+```
+
+
+---
+
+## How We Do It
+
+```py
+def run_tests(all_tests):
+    results = {"pass": 0, "fail": 0, "error": 0}
+    for test in all_tests:
+        try:
+            test()
+            results["pass"] += 1
+        except AssertionError:
+            results["fail"] += 1
+        except Exception:
+            results["error"] += 1
+    print(f"pass {results['pass']}")
+    print(f"fail {results['fail']}")
+    print(f"error {results['error']}")
+
+run_tests(TESTS)
+```
+
+
+-   Easy to create new tests
+-   But we have to remember to add each function to `TESTS`
+-   We'd like Python to find them for us
+
+---
+
+## How Python Stores Variables
+
+-   Python stores variables in (something very much like) a dictionary
+
+```py
+print(globals())
+```
+
+
+```out
+{'__name__': '__main__', '__doc__': None, '__package__': None, \
+'__loader__': <_frozen_importlib_external.SourceFileLoader object at \
+0x7f80b8194df0>, '__spec__': None, '__annotations__': {}, \
+'__builtins__': <module 'builtins' (built-in)>, '__file__': \
+'/sd4ds/test/globals.py', '__cached__': None}
+```
+
+
+---
+
+## Further Proof
+
+```py
+my_variable = 123
+print(globals())
+```
+
+
+```out
+{'__name__': '__main__', '__doc__': None, '__package__': None, \
+'__loader__': <_frozen_importlib_external.SourceFileLoader object at \
+0x7f95f8194df0>, '__spec__': None, '__annotations__': {}, \
+'__builtins__': <module 'builtins' (built-in)>, '__file__': \
+'/sd4ds/test/globals_plus.py', '__cached__': None, 'my_variable': 123}
+```
+
+
+--
+
+-   *The function `locals` gives local variables*
+
+---
+
+## Introspection
+
+-   We know how to loop over a dictionary's keys
+
+```py
+def find_tests(prefix):
+    for (name, func) in globals().items():
+        if name.startswith(prefix):
+            print(name, func)
+
+find_tests("test_")
+```
+
+```out
+test_sign_negative <function test_sign_negative at 0x7fb7101f6e60>
+test_sign_positive <function test_sign_positive at 0x7fb7101f6ef0>
+test_sign_zero <function test_sign_zero at 0x7fb7101f6f80>
+test_sign_error <function test_sign_error at 0x7fb7101f7010>
+```
+
+
+--
+
+-   *When we print a function, Python shows its name and address*
+
+---
+
+## A Better Test Runner
+
+```py
+def run_tests():
+    results = {"pass": 0, "fail": 0, "error": 0}
+    for (name, test) in globals().items():
+        if not name.startswith("test_"):
+            continue
+        try:
+            test()
+            results["pass"] += 1
+        except AssertionError:
+            results["fail"] += 1
+        except Exception:
+            results["error"] += 1
+    print(f"pass {results['pass']}")
+    print(f"fail {results['fail']}")
+    print(f"error {results['error']}")
+```
+
+
+--
+
+-   Really should check that tests are callable
+
+---
+
+## Who's Your Audience?
+
+<figure>
+  <img src="../comprehension.svg" alt="Abstract vs. comprehension">
+  <figcaption>Abstraction vs. comprehension for novices and experts.</figcaption>
+</figure>
+
+---
+
+class: summary
+
+## Summary
+
+<figure>
+  <img src="../concept_map.svg" alt="Concept map of unit testing framework">
+  <figcaption>Concept map</figcaption>
+</figure>
+
+---
+
+class: exercise
+
+## Looping Over `globals`
+
+What happens if you run:
+
+```python
+for name in globals():
+    print(name)
+```
+
+What happens if you run:
+
+```python
+name = None
+for name in globals():
+    print(name)
+```
+
+Why?
+
+---
+
+class: exercise
+
+## Counting Results
+
+1.  Modify the test framework so that it reports which tests passed, failed, or had errors
+    and also reports a summary of how many tests produced each result.
+
+2.  Write unit tests to check that your answer to part 1 works correctly.
+
+---
+
+class: exercise
+
+## Setup and Teardown
+
+Testing frameworks often allow programmers to specify a `setup` function
+that is to be run before each test
+and a corresponding `teardown` function
+that is to be run after each test.
+(`setup` usually re-creates complicated test fixtures,
+while `teardown` functions are sometimes needed to clean up after tests,
+e.g., to close database connections or delete temporary files.)
+
+Modify the testing tool in this chapter so that
+if a file of tests contains a function called `setup`
+then the tool calls it exactly once before running each test in the file.
+Add a similar way to register a `teardown` function.
+
+---
+
+class: exercise
+
+## Module Names
+
+Our last test runner generated names `m0`, `m1`, and so on
+so that each module would have a unique name.
+What happens if we don't do this?
+I.e.,
+what happens if we use the same constant string for all modules that we load?
+
+
+[academic_prototyping]: https://www.fuzzingbook.org/html/AcademicPrototyping.html
+[aosa]: https://aosabook.org/
+[beautiful_soup]: https://beautiful-soup-4.readthedocs.io/
+[birthday_problem]: https://en.wikipedia.org/wiki/Birthday_problem
+[black]: https://black.readthedocs.io/
+[browser_engine_tutorial]: https://limpet.net/mbrubeck/2014/08/08/toy-layout-engine-1.html
+[browser_engineering]: https://browser.engineering/
+[brubeck_matt]: https://limpet.net/mbrubeck/
+[cc_by_nc]: https://creativecommons.org/licenses/by-nc/4.0/
+[cc_by_nc_legal]: https://creativecommons.org/licenses/by-nc/4.0/legalcode
+[clarkes_laws]: https://en.wikipedia.org/wiki/Clarke%27s_three_laws
+[contributor_covenant]: https://www.contributor-covenant.org/
+[cook_mary_rose]: https://maryrosecook.com/
+[crafting_interpreters]: https://craftinginterpreters.com/
+[ctan]: https://www.ctan.org/
+[db_tutorial]: https://cstack.github.io/db_tutorial/
+[dresser_christopher]: https://en.wikipedia.org/wiki/Christopher_Dresser
+[drumm_christian]: https://www.drumm.sh/
+[dvc]: https://dvc.org/
+[ejs]: https://ejs.co/
+[email]: mailto:gvwilson@third-bit.com
+[ethical_source]: https://ethicalsource.dev
+[evans_julia]: https://jvns.ca/
+[evans_zines]: https://wizardzines.com/
+[flake8]: https://flake8.pycqa.org/
+[git]: https://git-scm.com/
+[git_lfs]: https://git-lfs.github.io/
+[git_man_page_generator]: https://git-man-page-generator.lokaltog.net/
+[gitlet]: http://gitlet.maryrosecook.com/
+[glosario]: https://github.com/carpentries/glosario
+[gnu_make]: https://www.gnu.org/software/make/
+[harrelson_chris]: https://twitter.com/chrishtr
+[hippocratic_license]: https://firstdonoharm.dev/
+[html5_data_attributes]: https://developer.mozilla.org/en-US/docs/Learn/HTML/Howto/Use_data_attributes
+[isort]: https://pycqa.github.io/isort/
+[ivy]: https://www.dmulholl.com/docs/ivy/main/
+[jekyll]: https://jekyllrb.com/
+[kilo_editor]: https://viewsourcecode.org/snaptoken/kilo/index.html
+[latex]: https://www.latex-project.org/
+[loewy_raymond]: https://en.wikipedia.org/wiki/Raymond_Loewy
+[log_structured_storage]: http://blog.notdot.net/2009/12/Damn-Cool-Algorithms-Log-structured-storage
+[lorgat_editor]: https://wasimlorgat.com/posts/editor.html
+[lorgat_wasim]: https://wasimlorgat.com/
+[marthas_rules]: https://journals.sagepub.com/doi/10.1177/088610998600100206
+[nash_joe]: https://hachyderm.io/@joenash
+[networkx]: https://networkx.org/
+[nison_mael]: https://arcanis.github.io/
+[nystrom_bob]: http://journal.stuffwithstuff.com/
+[package_manager_tutorial]: https://classic.yarnpkg.com/blog/2017/07/11/lets-dev-a-package-manager/
+[panchekha_pavel]: https://pavpanchekha.com/
+[pereira_juanan]: https://ikasten.io/
+[php]: https://www.php.net/
+[picosat]: http://fmv.jku.at/picosat/
+[pip]: https://pip.pypa.io/
+[programming_tools]: https://en.wikipedia.org/wiki/Programming_tool
+[py_array]: https://docs.python.org/3/library/array.html
+[py_chainmap]: https://docs.python.org/3/library/collections.html#collections.ChainMap
+[py_cprofile]: https://docs.python.org/3/library/profile.html
+[py_fractions]: https://docs.python.org/3/library/fractions.html
+[py_glob]: https://docs.python.org/3/library/glob.html
+[py_hashlib]: https://docs.python.org/3/library/hashlib.html
+[py_inspect]: https://docs.python.org/3/library/inspect.html
+[py_io]: https://docs.python.org/3/library/io.html
+[py_itertools]: https://docs.python.org/3/library/itertools.html
+[py_json]: https://docs.python.org/3/library/json.html
+[py_mimetypes]: https://docs.python.org/3/library/mimetypes.html
+[py_pickle]: https://docs.python.org/3/library/pickle.html
+[py_semver]: https://pypi.org/project/semantic-version/
+[py_struct]: https://docs.python.org/3/library/struct.html
+[py_textwrap]: https://docs.python.org/3/library/textwrap.html
+[py_urlparse]: https://docs.python.org/3/library/urllib.parse.html
+[py_yaml]: https://pypi.org/project/PyYAML/
+[py_zipfile]: https://docs.python.org/3/library/zipfile.html
+[pyfakefs]: https://pytest-pyfakefs.readthedocs.io/
+[pytest]: https://docs.pytest.org/
+[pytest_approx]: https://docs.pytest.org/en/4.6.x/reference.html#pytest-approx
+[pytest_stdout]: https://docs.pytest.org/en/6.2.x/capture.html
+[python]: https://www.python.org/
+[reim_michael]: https://elderlinux.org/
+[requests]: https://requests.readthedocs.io/
+[ruten_paige]: https://viewsourcecode.org/
+[book_repo]: https://github.com/gvwilson/sd4ds/
+[book_site]: https://third-bit.com/sd4ds/
+[semver_spec]: https://semver.org/
+[sinel_joseph]: https://en.wikipedia.org/wiki/Joseph_Claude_Sinel
+[smith_dave]: https://davewsmith.com/
+[sqlite]: https://sqlite.org/
+[stack_connor]: https://connorstack.com/
+[svg_screenshot]: https://chrome.google.com/webstore/detail/svg-screenshot/nfakpcpmhhilkdpphcjgnokknpbpdllg
+[t3_personas]: https://teachtogether.tech/en/index.html#s:process-personas
+[textualize_fraction]: https://www.textualize.io/blog/posts/7-things-about-terminals
+[udhr]: https://www.un.org/en/universal-declaration-human-rights/
+[ungc]: https://www.unglobalcompact.org/what-is-gc/mission/principles
+[unicode]: https://www.unicode.org/
+[unix_packaging]: https://eerielinux.wordpress.com/2017/08/15/the-history-of-nix-package-management/
+[webaim_wave]: https://wave.webaim.org/
+[write_yourself_a_git]: https://wyag.thb.lt/
+[z3]: https://en.wikipedia.org/wiki/Z3_Theorem_Prover
+[zeller_andreas]: https://andreas-zeller.info/
+
+    </textarea>
+    <script src="../../remark-latest.min.js"></script>
+    <script>
+      var slideshow = remark.create({
+        highlightLines: true
+      })
+    </script>
+  </body>
+</html>
