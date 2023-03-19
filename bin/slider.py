@@ -52,7 +52,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
         if self.path.startswith("/@res"):
             self.path = self.path.replace("/@res", RESOURCES)
         elif self.path.startswith("/"):
-            self.path = f"{OPTIONS.project}/en/src/{OPTIONS.chapter}{self.path}"
+            self.path = f"{OPTIONS.project}/src/{OPTIONS.chapter}{self.path}"
         with open(self.path, "rb") as reader:
             content = reader.read()
         return content, self.guess_mime_type()
@@ -76,6 +76,6 @@ if __name__ == "__main__":
     OPTIONS = parse_args()
     LINKS = read_links()
     RESOURCES = f"{OPTIONS.project}/lib/mccole/resources"
-    os.chdir(f"{OPTIONS.project}/en/src/{OPTIONS.chapter}")
+    os.chdir(f"{OPTIONS.project}/src/{OPTIONS.chapter}")
     server = HTTPServer(("", 4000), RequestHandler)
     server.serve_forever()
