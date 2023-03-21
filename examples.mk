@@ -21,8 +21,6 @@ targets:
 	bash $< 2>&1 | ${REFORMAT} > $@
 %.out: %.sh %.py
 	bash $< 2>&1 | ${REFORMAT} > $@
-%.slice.out: %.sh %.py
-	bash $< 2>&1 | ${REFORMAT} --slice > $@
 
 # Create HTML or text when there is only a shell script.
 # Normally used when the output depends on multiple .py files, in which case the
@@ -31,16 +29,12 @@ targets:
 	bash $< 2>&1 | ${REFORMAT} > $@
 %.out: %.sh
 	bash $< 2>&1 | ${REFORMAT} > $@
-%.slice.out: %.sh
-	bash $< 2>&1 | ${REFORMAT} --slice > $@
 
 # Create HTML or text by running Python without parameters.
 %.html: %.py
 	python $< 2>&1 | ${REFORMAT} > $@
 %.out: %.py
 	python $< 2>&1 | ${REFORMAT} > $@
-%.slice.out: %.py
-	python $< 2>&1 | ${REFORMAT} --slice > $@
 
 # Get rid of all generated files.
 erase:
