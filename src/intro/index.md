@@ -145,15 +145,47 @@ was inspired by [%b Kamin1990 Kernighan1979 Kernighan1981 Kernighan1983 Kernigha
     and 
 -   the posts and [zines][evans_zines] created by [Julia Evans][evans_julia].
 
-I am grateful for feedback from
-[Christian Drumm][drumm_christian],
-[Julia Evans][evans_julia],
-[Joe Nash][nash_joe],
-[Juanan Pereira][pereira_juanan],
+I am grateful to 
+Christian Drumm,
+Julia Evans,
+Joe Nash,
+Juanan Pereira,
 and
-[Dave Smith][smith_dave].
-[% fixme "insert names of class participants" %]
-
+Dave Smith
+for feedback,
+and to 
+Miras Adilov,
+Alvee Akand,
+Alexey Alexapolsky,
+Lina Andrén,
+Alberto Bacchelli,
+Yanina Bellini Saibene,
+Adrienne Canino,
+Stephen Childs,
+Hector Correa,
+Socorro Dominguez,
+Thomas Fritz,
+Francisco Gabriel,
+Craig Gross,
+Jonathan Guyer,
+McKenzie Hagen,
+Fraser Hay,
+Bahman Karimi,
+Carolyn Kim,
+Jenna Landy,
+Peter Lin,
+Becca Love,
+Dan McCloy,
+Ramiro Mejia,
+Michael Miller,
+Firas Moosvi,
+Sheena Ng,
+Reiko Okamoto,
+Mahmoodur Rahman,
+Arpan Sarkar,
+Ece Turnator,
+and Yundong Yao
+for test-driving this material with me.
 I am also grateful to the creators of
 [Black][black],
 [flake8][flake8],
