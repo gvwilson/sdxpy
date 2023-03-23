@@ -1,1 +1,2 @@
-print(globals())
+import pprint
+pprint.pprint(globals())
