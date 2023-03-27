@@ -25,6 +25,7 @@ class Tokenizer:
                 raise NotImplementedError(f"what is '{ch}'?")
         self._add(None)
         return self.result
+
     # [/tok]
 
     def _setup(self):

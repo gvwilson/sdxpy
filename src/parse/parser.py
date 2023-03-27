@@ -13,7 +13,8 @@ class Parser:
 
     def _parse_Lit(self, rest, back):
         return Lit(rest[0], self._parse(back))
-# [/simple]
+
+    # [/simple]
 
     # [parse]
     def _parse(self, tokens):
@@ -41,5 +42,6 @@ class Parser:
             raise ValueError("badly-formatted Either")
         left = Lit(back[0][1])
         right = Lit(back[1][1])
-        return Either(left, right, self._parse(back[3:]))
+        return Either([left, right], self._parse(back[3:]))
+
     # [/either]

@@ -25,12 +25,10 @@ def slide_list(pargs, kwargs, node):
     for entry in titles["chapters"]:
         if ivy.nodes.node(f"@root/{entry.slug}/slides/"):
             prefix = f'<a href="@root/{entry.slug}/slides/" markdown="1">'
-            suffix = '</a>'
+            suffix = "</a>"
         else:
-            prefix = ''
-            suffix = ''
-        result.append(
-            f'<li>{prefix}{entry.title}{suffix}</li>'
-        )
+            prefix = ""
+            suffix = ""
+        result.append(f"<li>{prefix}{entry.title}{suffix}</li>")
     result.append("</ol>")
     return "\n".join(result)

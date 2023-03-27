@@ -32,9 +32,15 @@ def test_parse_lit_any_lit():
 
 # [sample]
 def test_parse_either_two_lit():
-    assert Parser().parse("{abc,def}") == Either(Lit("abc"), Lit("def"))
+    assert Parser().parse("{abc,def}") == Either(
+        [Lit("abc"), Lit("def")]
+    )
+
+
 # [/sample]
 
 
 def test_parse_any_either():
-    assert Parser().parse("*{abc,def}") == Any(Either(Lit("abc"), Lit("def")))
+    assert Parser().parse("*{abc,def}") == Any(
+        Either([Lit("abc"), Lit("def")])
+    )

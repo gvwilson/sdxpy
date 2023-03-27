@@ -23,6 +23,8 @@ def test_tok_either_end_only():
 
 def test_tok_any_lit():
     assert Tokenizer().tok("*abc") == [["Any"], ["Lit", "abc"]]
+
+
 # [/tests]
 
 
@@ -31,14 +33,18 @@ def test_tok_lit_any():
 
 
 def test_tok_any_lit_any():
-    assert Tokenizer().tok("*abc*") == [["Any"], ["Lit", "abc"], ["Any"]]
+    assert Tokenizer().tok("*abc*") == [
+        ["Any"],
+        ["Lit", "abc"],
+        ["Any"],
+    ]
 
 
 def test_tok_lit_any_lit():
     assert Tokenizer().tok("abc*xyz") == [
         ["Lit", "abc"],
         ["Any"],
-        ["Lit", "xyz"]
+        ["Lit", "xyz"],
     ]
 
 
@@ -46,7 +52,7 @@ def test_tok_either_single_lit():
     assert Tokenizer().tok("{abc}") == [
         ["EitherStart"],
         ["Lit", "abc"],
-        ["EitherEnd"]
+        ["EitherEnd"],
     ]
 
 
@@ -68,4 +74,6 @@ def test_tok_any_either():
         ["Lit", "def"],
         ["EitherEnd"],
     ]
+
+
 # [/complex]

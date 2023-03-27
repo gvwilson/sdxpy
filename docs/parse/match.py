@@ -4,7 +4,9 @@ class Match:
         self.rest = rest if rest else Null()
 
     def __eq__(self, other):
-        return (other is not None) and (self.__class__ == other.__class__)
+        return (other is not None) and (
+            self.__class__ == other.__class__
+        )
 
 
 class Lit(Match):
@@ -14,6 +16,8 @@ class Lit(Match):
 
     def __eq__(self, other):
         return super().__eq__(other) and (self.chars == other.chars)
+
+
 # [/equal]
 
 
@@ -23,16 +27,13 @@ class Any(Match):
 
 
 class Either(Match):
-    def __init__(self, left, right, rest=None):
+    def __init__(self, children, rest=None):
         super().__init__(rest)
-        self.left = left
-        self.right = right
+        self.children = children
 
     def __eq__(self, other):
-        return (
-            super().__eq__(other)
-            and self.left.__eq__(other.left)
-            and self.right.__eq__(other.right)
+        return super().__eq__(other) and self.children.__eq__(
+            other.children
         )
 
 

@@ -104,6 +104,7 @@ class: slide-title
                 raise NotImplementedError(f"what is '{ch}'?")
         self._add(None)
         return self.result
+
 ```
 
 
@@ -148,6 +149,8 @@ def test_tok_either_end_only():
 
 def test_tok_any_lit():
     assert Tokenizer().tok("*abc") == [["Any"], ["Lit", "abc"]]
+
+
 ```
 
 
@@ -164,6 +167,8 @@ def test_tok_any_either():
         ["Lit", "def"],
         ["EitherEnd"],
     ]
+
+
 ```
 
 
@@ -214,6 +219,7 @@ class Parser:
 
     def _parse_Lit(self, rest, back):
         return Lit(rest[0], self._parse(back))
+
 ```
 
 
@@ -232,13 +238,30 @@ class Parser:
             raise ValueError("badly-formatted Either")
         left = Lit(back[0][1])
         right = Lit(back[1][1])
-        return Either(left, right, self._parse(back[3:]))
+        return Either([left, right], self._parse(back[3:]))
+
 ```
 
 
 -   It should pull things from `back` until it hits `EitherEnd`
 
--   Do this in the exercises
+---
+
+## A Better Parser
+
+```py
+    def _parse_EitherStart(self, rest, back):
+        children = []
+        while back and (back[0][0] == "Lit"):
+            children.append(Lit(back[0][1]))
+            back = back[1:]
+        if not children:
+            raise ValueError("empty Either")
+        if back[0][0] != "EitherEnd":
+            raise ValueError("badly-formatted Either")
+        return Either(children, self._parse(back[1:]))
+```
+
 
 ---
 
@@ -246,7 +269,11 @@ class Parser:
 
 ```py
 def test_parse_either_two_lit():
-    assert Parser().parse("{abc,def}") == Either(Lit("abc"), Lit("def"))
+    assert Parser().parse("{abc,def}") == Either(
+        [Lit("abc"), Lit("def")]
+    )
+
+
 ```
 
 
@@ -262,7 +289,9 @@ class Match:
         self.rest = rest if rest else Null()
 
     def __eq__(self, other):
-        return (other is not None) and (self.__class__ == other.__class__)
+        return (other is not None) and (
+            self.__class__ == other.__class__
+        )
 
 
 class Lit(Match):
@@ -272,6 +301,8 @@ class Lit(Match):
 
     def __eq__(self, other):
         return super().__eq__(other) and (self.chars == other.chars)
+
+
 ```
 
 
