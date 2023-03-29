@@ -43,5 +43,5 @@ for ex in examples:
     p = ex.perimeter()
     a = ex.area()
     c = ex.__class__.__name__
-    print(f"{n} is a {c} {p:.2f} {p:.2f}")
+    print(f"{n} is a {c} {p:.2f} {a:.2f}")
 # [/poly]
