@@ -1,0 +1,558 @@
+<!DOCTYPE html lang="en">
+<html>
+  <head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  
+  <link rel="icon" type="image/x-icon" href="../../favicon.ico">
+  <link rel="stylesheet" href="../../mccole.css">
+  <link rel="stylesheet" href="../../tango.css">
+  <script defer data-domain="third-bit.com" src="https://plausible.io/js/plausible.js"></script>
+  <script>
+    MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']]
+      }
+    };
+  </script>
+  <script
+    type="text/javascript"
+    id="MathJax-script"
+    async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+  </script>
+  <script defer src="../../mccole.js"></script>
+  <title>Software Design in Python: Classes and Objects</title>
+</head>
+
+  <body>
+    <textarea id="source">
+
+class: slide-title
+
+<p>
+  Software Design in Python
+  <br>
+  <a href="https://third-bit.com">Greg Wilson</a>
+</p>
+<h1>Classes and Objects</h1>
+<div class="bottom">
+  <a href="../">chapter</a>
+</div>
+
+---
+
+
+## The Problem(s)
+
+-   What is a natural way to represent real-world "things" in code?
+
+-   How can we organize code to make it easier to understand, test, and extend?
+
+-   Are these the same thing?
+
+---
+
+## Representing Shapes
+
+-   Start with the <a class="gl-ref" href="../../glossary/#design_by_contract" markdown="1">contract</a> for shapes
+
+```py
+class Shape:
+    def __init__(self, name):
+        self.name = name
+
+    def perimeter(self):
+        raise NotImplementedError("perimeter")
+
+    def area(self):
+        raise NotImplementedError("area")
+```
+
+
+---
+
+## Provide Implementations
+
+```py
+class Square(Shape):
+    def __init__(self, name, side):
+        super().__init__(name)
+        self.side = side
+
+    def perimeter(self):
+        return 4 * self.side
+
+    def area(self):
+        return self.side ** 2
+
+class Circle(Shape):
+    def __init__(self, name, radius):
+        super().__init__(name)
+        self.radius = radius
+
+    def perimeter(self):
+        return 2 * math.pi * self.radius
+
+    def area(self):
+        return math.pi * self.radius ** 2
+```
+
+
+---
+
+## Polymorphism
+
+```py
+examples = [Square("sq", 3), Circle("ci", 2)]
+for ex in examples:
+    n = ex.name
+    p = ex.perimeter()
+    a = ex.area()
+    c = ex.__class__.__name__
+    print(f"{n} is a {c} {p:.2f} {p:.2f}")
+```
+
+
+--
+
+-   OK, but how does it work?
+
+---
+
+## Let's Make a Square
+
+```py
+def square_perimeter(thing):
+    return 4 * thing["side"]
+
+def square_area(thing):
+    return thing["side"] ** 2
+
+def square_new(name, side):
+    return {
+        "name": name,
+        "side": side,
+        "perimeter": square_perimeter,
+        "area": square_area
+    }
+```
+
+
+--
+
+-   An object is just a (specialized) dictionary
+
+-   A method is just a function that takes the object as its first parameter
+
+---
+
+## Calling Methods
+
+```py
+def call(thing, method_name):
+    return thing[method_name](thing)
+
+examples = [square_new("sq", 3), circle_new("ci", 2)]
+for ex in examples:
+    n = ex["name"]
+    p = call(ex, "perimeter")
+    a = call(ex, "area")
+    print(f"{n} {p:.2f} {p:.2f}")
+```
+
+
+-   Look up the function in the object
+
+-   Call it with the object as its first argument
+
+-   `obj.meth(arg)` is `obj["meth"](obj, arg)`
+
+---
+
+## A Better Square
+
+```py
+def square_perimeter(thing):
+    return 4 * thing["side"]
+
+def square_area(thing):
+    return thing["side"] ** 2
+
+Square = {
+    "perimeter": square_perimeter,
+    "area": square_area,
+    "_classname": "Square"
+}
+
+def square_new(name, side):
+    return {
+        "name": name,
+        "side": side,
+        "_class": Square
+    }
+```
+
+
+---
+
+## Calling Methods
+
+```py
+def call(thing, method_name):
+    return thing["_class"][method_name](thing)
+
+examples = [square_new("sq", 3), circle_new("ci", 2)]
+for ex in examples:
+    n = ex["name"]
+    p = call(ex, "perimeter")
+    a = call(ex, "area")
+    c = ex["_class"]["_classname"]
+    print(f"{n} is a {c}: {p:.2f} {p:.2f}")
+```
+
+
+-   Look in the class for the method
+
+-   Call it with the object as the first parameter
+
+-   And we can now reliably identify objects' classes
+
+---
+
+class: aside
+
+## Variable Arguments
+
+```py
+def show_args(title, *args, **kwargs):
+    print(f"{title} args '{args}' and kwargs '{kwargs}'")
+
+show_args("nothing")
+show_args("one unnamed argument", 1)
+show_args("one named argument", second="2")
+show_args("one of each", 3, fourth="4")
+
+a_list = [7, 8]
+a_dict = {"nine": 9, "ten": 10}
+show_args("direct", a_list, a_dict)
+show_args("spreading", *a_list, **a_dict)
+```
+
+
+```
+nothing args '()' and kwargs '{}'
+one unnamed argument args '(1,)' and kwargs '{}'
+one named argument args '()' and kwargs '{'second': '2'}'
+one of each args '(3,)' and kwargs '{'fourth': '4'}'
+direct args '([7, 8], {'nine': 9, 'ten': 10})' and kwargs '{}'
+spreading args '(7, 8)' and kwargs '{'nine': 9, 'ten': 10}'
+```
+
+
+---
+
+## Inheritance
+
+-   Add a method to `Shape` that uses methods defined in derived classes
+
+```py
+class Shape:
+    def __init__(self, name):
+        self.name = name
+
+    def perimeter(self):
+        raise NotImplementedError("perimeter")
+
+    def area(self):
+        raise NotImplementedError("area")
+
+    def density(self, weight):
+        return weight / self.area()
+```
+
+
+---
+
+## Yes, This Works
+
+```py
+examples = [Square("sq", 3), Circle("ci", 2)]
+for ex in examples:
+    n = ex.name
+    d = ex.density(5)
+    print(f"{n}: {d:.2f}")
+```
+
+```
+sq: 0.56
+ci: 0.40
+```
+
+
+---
+
+## Implementing Inheritance
+
+```py
+def shape_density(thing, weight):
+    return weight / call(thing, "area")
+
+Shape = {
+    "density": shape_density,
+    "_classname": "Shape",
+    "_parent": None
+}
+
+def shape_new(name):
+    return {
+        "name": name,
+        "_class": Shape
+    }
+```
+
+
+---
+
+## Searching for Methods
+
+```py
+def call(thing, method_name, *args):
+    method = find(thing["_class"], method_name)
+    return method(thing, *args)
+
+def find(cls, method_name):
+    if cls is None:
+        raise NotImplementedError("method_name")
+    if method_name in cls:
+        return cls[method_name]
+    return find(cls["_parent"], method_name)
+```
+
+
+---
+
+## Yes, This Works Too
+
+```py
+examples = [square_new("sq", 3), circle_new("ci", 2)]
+for ex in examples:
+    n = ex["name"]
+    d = call(ex, "density", 5)
+    print(f"{n}: {d:.2f}")
+```
+
+```
+sq: 0.56
+ci: 0.40
+```
+
+
+---
+
+## Constructors
+
+```py
+def make(cls, *args):
+    return cls["_new"](*args)
+
+def shape_new(name):
+    return {
+        "name": name,
+        "_class": Shape
+    }
+
+def shape_density(thing, weight):
+    return weight / call(thing, "area")
+
+Shape = {
+    "density": shape_density,
+    "_classname": "Shape",
+    "_parent": None,
+    "_new": shape_new
+}
+```
+
+
+---
+
+## Parentage
+
+```py
+def square_new(name, side):
+    return make(Shape, name) | {
+        "side": side,
+        "_class": Square
+    }
+
+Square = {
+    "perimeter": square_perimeter,
+    "area": square_area,
+    "_classname": "Square",
+    "_parent": Shape,
+    "_new": square_new
+}
+```
+
+
+---
+
+## Use
+
+```py
+examples = [make(Square, "sq", 3), make(Circle, "ci", 2)]
+for ex in examples:
+    n = ex["name"]
+    d = call(ex, "density", 5)
+    print(f"{n}: {d:.2f}")
+```
+
+```
+sq: 0.56
+ci: 0.40
+```
+
+
+---
+
+## The Other 90%
+
+-   <a class="gl-ref" href="../../glossary/#multiple_inheritance" markdown="1">Multiple inheritance</a>
+
+-   <a class="gl-ref" href="../../glossary/#class_method" markdown="1">Class methods</a>
+
+-   <a class="gl-ref" href="../../glossary/#static_method" markdown="1">Static methods</a>
+
+-   <a class="gl-ref" href="../../glossary/#monkey_patching" markdown="1">Monkey patching</a>
+
+
+[academic_prototyping]: https://www.fuzzingbook.org/html/AcademicPrototyping.html
+[antlr]: https://www.antlr.org/
+[aosa]: https://aosabook.org/
+[asciiflow]: https://asciiflow.com/
+[beautiful_soup]: https://beautiful-soup-4.readthedocs.io/
+[birthday_problem]: https://en.wikipedia.org/wiki/Birthday_problem
+[black]: https://black.readthedocs.io/
+[browser_engine_tutorial]: https://limpet.net/mbrubeck/2014/08/08/toy-layout-engine-1.html
+[browser_engineering]: https://browser.engineering/
+[brubeck_matt]: https://limpet.net/mbrubeck/
+[cc_by_nc]: https://creativecommons.org/licenses/by-nc/4.0/
+[cc_by_nc_legal]: https://creativecommons.org/licenses/by-nc/4.0/legalcode
+[clarkes_laws]: https://en.wikipedia.org/wiki/Clarke%27s_three_laws
+[contributor_covenant]: https://www.contributor-covenant.org/
+[cook_mary_rose]: https://maryrosecook.com/
+[crafting_interpreters]: https://craftinginterpreters.com/
+[ctan]: https://www.ctan.org/
+[cypress]: https://www.cypress.io/
+[db_tutorial]: https://cstack.github.io/db_tutorial/
+[dresser_christopher]: https://en.wikipedia.org/wiki/Christopher_Dresser
+[drumm_christian]: https://www.drumm.sh/
+[dvc]: https://dvc.org/
+[ejs]: https://ejs.co/
+[email]: mailto:gvwilson@third-bit.com
+[eniac_programmers]: http://eniacprogrammers.org/
+[ethical_source]: https://ethicalsource.dev
+[evans_julia]: https://jvns.ca/
+[evans_zines]: https://wizardzines.com/
+[expect]: https://en.wikipedia.org/wiki/Expect
+[flake8]: https://flake8.pycqa.org/
+[git]: https://git-scm.com/
+[git_lfs]: https://git-lfs.github.io/
+[git_man_page_generator]: https://git-man-page-generator.lokaltog.net/
+[gitlet]: http://gitlet.maryrosecook.com/
+[glosario]: https://github.com/carpentries/glosario
+[gnu_make]: https://www.gnu.org/software/make/
+[harrelson_chris]: https://twitter.com/chrishtr
+[hippocratic_license]: https://firstdonoharm.dev/
+[hoye_mike]: http://exple.tive.org/blarg/
+[human_resource_machine]: https://tomorrowcorporation.com/humanresourcemachine
+[html5_data_attributes]: https://developer.mozilla.org/en-US/docs/Learn/HTML/Howto/Use_data_attributes
+[isort]: https://pycqa.github.io/isort/
+[ivy]: https://www.dmulholl.com/docs/ivy/main/
+[jekyll]: https://jekyllrb.com/
+[kilo_editor]: https://viewsourcecode.org/snaptoken/kilo/index.html
+[latex]: https://www.latex-project.org/
+[loewy_raymond]: https://en.wikipedia.org/wiki/Raymond_Loewy
+[lorgat_editor]: https://wasimlorgat.com/posts/editor.html
+[lorgat_wasim]: https://wasimlorgat.com/
+[marthas_rules]: https://journals.sagepub.com/doi/10.1177/088610998600100206
+[mkdocs]: https://www.mkdocs.org/
+[nash_joe]: https://hachyderm.io/@joenash
+[networkx]: https://networkx.org/
+[nison_mael]: https://arcanis.github.io/
+[nystrom_bob]: http://journal.stuffwithstuff.com/
+[package_manager_tutorial]: https://classic.yarnpkg.com/blog/2017/07/11/lets-dev-a-package-manager/
+[panchekha_pavel]: https://pavpanchekha.com/
+[pereira_juanan]: https://ikasten.io/
+[pexpect]: https://pexpect.readthedocs.io/
+[php]: https://www.php.net/
+[picosat]: http://fmv.jku.at/picosat/
+[pip]: https://pip.pypa.io/
+[programming_tools]: https://en.wikipedia.org/wiki/Programming_tool
+[punching_holes]: http://exple.tive.org/blarg/2020/11/26/punching-holes/
+[py_array]: https://docs.python.org/3/library/array.html
+[py_ast]: https://docs.python.org/3/library/ast.html
+[py_chainmap]: https://docs.python.org/3/library/collections.html#collections.ChainMap
+[py_cprofile]: https://docs.python.org/3/library/profile.html
+[py_curses]: https://docs.python.org/3/library/curses.html
+[py_fractions]: https://docs.python.org/3/library/fractions.html
+[py_glob]: https://docs.python.org/3/library/glob.html
+[py_hashlib]: https://docs.python.org/3/library/hashlib.html
+[py_inspect]: https://docs.python.org/3/library/inspect.html
+[py_io]: https://docs.python.org/3/library/io.html
+[py_itertools]: https://docs.python.org/3/library/itertools.html
+[py_json]: https://docs.python.org/3/library/json.html
+[py_metaclass]: https://docs.python.org/3/reference/datamodel.html#metaclasses
+[py_mimetypes]: https://docs.python.org/3/library/mimetypes.html
+[py_pickle]: https://docs.python.org/3/library/pickle.html
+[py_property]: https://docs.python.org/3/library/functions.html#property
+[py_re]: https://docs.python.org/3/library/re.html
+[py_semver]: https://pypi.org/project/semantic-version/
+[py_string]: https://docs.python.org/3/library/string.html
+[py_struct]: https://docs.python.org/3/library/struct.html
+[py_textwrap]: https://docs.python.org/3/library/textwrap.html
+[py_urlparse]: https://docs.python.org/3/library/urllib.parse.html
+[py_yaml]: https://pypi.org/project/PyYAML/
+[py_zipfile]: https://docs.python.org/3/library/zipfile.html
+[pyfakefs]: https://pytest-pyfakefs.readthedocs.io/
+[pyparsing]: https://pyparsing-docs.readthedocs.io/
+[pytest]: https://docs.pytest.org/
+[pytest_approx]: https://docs.pytest.org/en/4.6.x/reference.html#pytest-approx
+[pytest_stdout]: https://docs.pytest.org/en/6.2.x/capture.html
+[python]: https://www.python.org/
+[reim_michael]: https://elderlinux.org/
+[requests]: https://requests.readthedocs.io/
+[ruten_paige]: https://viewsourcecode.org/
+[sdxpy_repo]: https://github.com/gvwilson/sdxpy/
+[sdxpy_site]: https://third-bit.com/sdxpy/
+[selenium]: https://www.selenium.dev/
+[semver_spec]: https://semver.org/
+[shunting_yard_algorithm]: https://en.wikipedia.org/wiki/Shunting-yard_algorithm
+[sinel_joseph]: https://en.wikipedia.org/wiki/Joseph_Claude_Sinel
+[smith_dave]: https://davewsmith.com/
+[sphinx]: https://www.sphinx-doc.org/
+[sqlite]: https://sqlite.org/
+[stack_connor]: https://connorstack.com/
+[stack_overflow_html_regex]: https://stackoverflow.com/questions/1732348/regex-match-open-tags-except-xhtml-self-contained-tags/1732454#1732454
+[svg_screenshot]: https://chrome.google.com/webstore/detail/svg-screenshot/nfakpcpmhhilkdpphcjgnokknpbpdllg
+[t3_personas]: https://teachtogether.tech/en/index.html#s:process-personas
+[ted_editor]: https://github.com/cesquivias/ted
+[textualize]: https://www.textualize.io/
+[textualize_fraction]: https://www.textualize.io/blog/posts/7-things-about-terminals
+[udhr]: https://www.un.org/en/universal-declaration-human-rights/
+[ungc]: https://www.unglobalcompact.org/what-is-gc/mission/principles
+[unicode]: https://www.unicode.org/
+[unix_packaging]: https://eerielinux.wordpress.com/2017/08/15/the-history-of-nix-package-management/
+[webaim_wave]: https://wave.webaim.org/
+[write_yourself_a_git]: https://wyag.thb.lt/
+[z3]: https://en.wikipedia.org/wiki/Z3_Theorem_Prover
+[zeller_andreas]: https://andreas-zeller.info/
+
+    </textarea>
+    <script src="../../remark-latest.min.js"></script>
+    <script>
+      var slideshow = remark.create({
+        highlightLines: true
+      })
+    </script>
+  </body>
+</html>

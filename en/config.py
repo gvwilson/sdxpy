@@ -23,6 +23,7 @@ draft = True
 # Chapters.
 chapters = [
     "introduction",
+    "oop",
     "tester",
     "interpreter",
     "backup",
