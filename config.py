@@ -98,16 +98,13 @@ todo = [
 
 # Files to copy verbatim.
 copy = [
-    "*.ht",
+    "*.xml",
 ]
 
 # Exclusions (don't process).
 exclude = [
-    "*.as",
     "*.dot",
-    "*.ht",
-    "*.mx",
-    "*.tll",
+    "*.xml",
 ]
 
 # Things to ignore when linting.
