@@ -5,21 +5,15 @@ from bs4 import BeautifulSoup
 from expander import Expander
 
 
-def read_json(filename):
-    with open(filename, "r") as reader:
-        return json.load(reader)
-
-
-def read_template(filename):
-    with open(filename, "r") as reader:
-        doc = BeautifulSoup(reader.read(), "html.parser")
-        return doc.find("html")
-
-
 def main():
-    variables = read_json(sys.argv[1])
-    doc = read_template(sys.argv[2])
-    expander = Expander(doc, variables)
+    with open(sys.argv[1], "r") as reader:
+        variables = json.load(reader)
+
+    with open(sys.argv[2], "r") as reader:
+        doc = BeautifulSoup(reader.read(), "html.parser")
+        template = doc.find("html")
+
+    expander = Expander(template, variables)
     expander.walk()
     print(expander.getResult())
 

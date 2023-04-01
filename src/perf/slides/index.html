@@ -1,0 +1,215 @@
+---
+title: "Performance Profiling"
+template: slides
+---
+
+## The Problem
+
+-   We can build dataframes several different ways
+
+-   Which will be most efficient?
+
+-   Find out by doing experiments
+
+---
+
+## What Can Dataframes Do?
+
+[% inc file="../df_base.py" %]
+
+---
+
+## Row-wise Storage
+
+-   A list of dictionaries
+
+<figure>
+  <img src="../row_storage.svg" alt="Row-wise storage">
+  <figcaption>Row-wise storage of a dataframe</figcaption>
+</figure>
+
+---
+
+## Column-wise Storage
+
+-   A dictionary of lists
+
+<figure>
+  <img src="../col_storage.svg" alt="Column-wise storage">
+  <figcaption>Column-wise storage of a dataframe</figcaption>
+</figure>
+
+---
+
+## Row-wise: Starting
+
+[% inc file="../df_row.py" keep="top" %]
+
+---
+
+## Row-wise Operations
+
+[% inc file="../df_row.py" keep="simple" %]
+
+[% inc file="../df_row.py" keep="get" %]
+
+---
+
+## Row-wise Equality
+
+[% inc file="../df_row.py" keep="equal" %]
+
+-   Don't rely on implementation details of the other dataframe
+-   We might want to compare this dataframe with one that's stored a different way
+
+---
+
+## Row-wise Selection
+
+[% inc file="../df_row.py" keep="select" %]
+
+-   That's pretty easy
+
+---
+
+## How to Filter?
+
+-   User provides `func(red, green)` returning `True` or `False`
+
+-   But how to match column names with parameters?
+
+-   The `inspect` module lets us look inside functions (and many other things)
+
+---
+
+## How to Filter?
+
+[% inc pat="../inspect_func.*" fill="py out" %]
+
+---
+
+## Row-wise Filter
+
+[% inc file="../df_row.py" keep="filter" %]
+
+-   Ask the function what its parameters are called
+
+-   Use `**` to [%g spread "spread" %] the row
+
+-   Convert the result to a row-wise dataframe
+
+---
+
+## Row-wise Tests
+
+[% inc file="../test_df_row.py" keep="fixture" %]
+[% inc file="../test_df_row.py" keep="filter" %]
+
+-   …and lots of others
+
+---
+
+## Column-Wise: Starting
+
+[% inc file="../df_col.py" keep="top" %]
+
+---
+
+## Column-wise Operations
+
+[% inc file="../df_col.py" keep="simple" %]
+
+-   Doesn't allow for empty dataframes
+
+--
+
+[% inc file="../df_col.py" keep="select" %]
+
+-   Much simpler (and hopefully more efficient)
+
+---
+
+## Column-wise Filter
+
+[% inc file="../df_col.py" keep="filter" %]
+
+-   Build a temporary "row" to give the filter function
+
+-   Build a dictionary of columns as a result
+
+-   Convert that to a dataframe
+
+---
+
+## How to Compare?
+
+-   Select is (probably) fast for column-wise but slow for row-wise
+
+-   Filter is (probably) slower for column-wise than for row-wise
+
+-   Overall performance will depend on the ratio of selects to filters
+
+-   So we do experiments
+
+---
+
+## Creating Dataframes
+
+[% inc file="../timing.py" keep="create" %]
+
+---
+
+## Timing Filter
+
+[% inc file="../timing.py" keep="filter" %]
+
+-   Should vary the filtering criteria, the proportion of rows kept, etc.
+
+---
+
+## Timing Select
+
+[% inc file="../timing.py" keep="select" %]
+
+-   Should vary column selection criteria as well
+
+---
+
+## So Which Is Better?
+
+<figure>
+  <img src="../analysis.png" alt="Comparing performance">
+  <figcaption>Comparing performance empirically</figcaption>
+</figure>
+
+---
+
+## How Can We Improve Performance?
+
+-   A [%g profiler "profiler" %] measures where a program spends its time
+
+-   More accurate than our `time.time()` calls
+
+-   Doesn't require us to modify our code
+
+-   But _does_ change the execution profile slightly
+
+---
+
+## Using `cProfile`
+
+[% inc file="../profile.sh" %]
+[% inc file="../profile.out" head="10" %]
+
+--
+
+-   Uh, what?
+
+---
+
+## The Offending Line
+
+[% inc file="../util.py" %]
+
+> A quarter of our total runtime is checking that all the rows in a row-wise dataframe
+> have the same types for the same keys.

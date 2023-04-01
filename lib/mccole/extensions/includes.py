@@ -21,6 +21,8 @@ other files:
     `path.one` and `path.two` (i.e., replaces `*` in `pat` with each
     of the tokens in `fill`, then includes all of that file).
 
+-   `[% inc file="path" head="N" %]` keeps the first N lines.
+
 To make this work:
 
 -   `filter_files` tells Ivy to only process files ending in `.html`
@@ -84,6 +86,8 @@ def include(pargs, kwargs, node):
         return _keep(inclusions, node, **kwargs)
     elif "omit" in kwargs:
         return _omit(inclusions, node, **kwargs)
+    elif "head" in kwargs:
+        return _head(inclusions, node, **kwargs)
     else:
         return _file(inclusions, node, **kwargs)
 
@@ -92,6 +96,13 @@ def _file(inclusions, node, file):
     """Handle a simple file inclusion."""
     filepath = _inclusion_filepath(inclusions, node, file)
     return _include_file(node, filepath)
+
+
+def _head(inclusions, node, file, head):
+    """Keep the first `head` lines."""
+    num = int(head)
+    filepath = _inclusion_filepath(inclusions, node, file)
+    return _include_file(node, filepath, lambda lns: _keep_head(filepath, lns, num))
 
 
 def _html(inclusions, node, html):
@@ -168,6 +179,11 @@ def _include_file(node, filepath, *filters):
 def _is_slides(node):
     """Is this a slides file?"""
     return node.meta.get("template", None) == "slides"
+
+
+def _keep_head(filepath, lines, num):
+    """Keep first N lines."""
+    return lines[:num]
 
 
 def _keep_lines(filepath, lines, key):
