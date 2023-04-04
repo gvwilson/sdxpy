@@ -2,6 +2,7 @@ SRC=df_col.py df_row.py df_base.py util.py
 TARGETS=\
   analysis.png \
   inspect_func.out \
+  make.out \
   profile.out \
   timing.csv
 
