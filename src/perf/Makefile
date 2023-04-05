@@ -4,6 +4,7 @@ TARGETS=\
   inspect_func.out \
   make.out \
   profile.out \
+  spread.out \
   timing.csv
 
 include ../../examples.mk
