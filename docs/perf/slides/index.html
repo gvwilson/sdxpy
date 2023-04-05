@@ -128,7 +128,7 @@ def dict_match(d, prototype):
 
 ```py
     def ncol(self):
-        return len(self._data[0].keys())
+        return len(self._data[0])
 
     def nrow(self):
         return len(self._data)
@@ -178,7 +178,10 @@ def dict_match(d, prototype):
 ```
 
 
--   That's pretty easy
+<figure>
+  <img src="../row_select.svg" alt="Row-wise selection">
+  <figcaption>Row-wise selection</figcaption>
+</figure>
 
 ---
 
@@ -186,9 +189,24 @@ def dict_match(d, prototype):
 
 -   User provides `func(red, green)` returning `True` or `False`
 
--   But how to match column names with parameters?
+-   Need to match column names with parameters
 
--   The `inspect` module lets us look inside functions (and many other things)
+-   The `inspect` module lets us inspect functions (and other things)
+
+```py
+def odd_even():
+    return DfRow([{"a": 1, "b": 3}, {"a": 2, "b": 4}])
+```
+
+```py
+def test_filter():
+    def odd(a, b):
+        return (a % 2) == 1
+
+    df = odd_even()
+    assert df.filter(odd).eq(DfRow([{"a": 1, "b": 3}]))
+```
+
 
 ---
 
@@ -219,6 +237,26 @@ parameters: ['first', 'second']
 
 ---
 
+## How to Call?
+
+-   Use `**` to <a class="gl-ref" href="../../glossary/#spread" markdown="1">spread</a> the row
+
+```py
+def example(left, right):
+    print(left, right)
+
+args = {"right": 3, "left": 5}
+example(**args)
+```
+
+
+```
+5 3
+```
+
+
+---
+
 ## Row-wise Filter
 
 ```py
@@ -231,30 +269,18 @@ parameters: ['first', 'second']
 
 -   Ask the function what its parameters are called
 
--   Use `**` to <a class="gl-ref" href="../../glossary/#spread" markdown="1">spread</a> the row
+-   Spread the rows out to match
 
 -   Convert the result to a row-wise dataframe
 
 ---
 
-## Row-wise Tests
+## Row-wise Filter
 
-```py
-def odd_even():
-    return DfRow([{"a": 1, "b": 3}, {"a": 2, "b": 4}])
-```
-
-```py
-def test_filter():
-    def odd(a, b):
-        return (a % 2) == 1
-
-    df = odd_even()
-    assert df.filter(odd).eq(DfRow([{"a": 1, "b": 3}]))
-```
-
-
--   …and lots of others
+<figure>
+  <img src="../row_filter.svg" alt="Row-wise filtering">
+  <figcaption>Row-wise filtering</figcaption>
+</figure>
 
 ---
 
@@ -298,7 +324,9 @@ def all_eq(*values):
 
 -   Doesn't allow for empty dataframes
 
---
+---
+
+## Column-wise Selection
 
 ```py
     def select(self, *names):
@@ -307,7 +335,10 @@ def all_eq(*values):
 ```
 
 
--   Much simpler (and hopefully more efficient)
+<figure>
+  <img src="../col_select.svg" alt="Column-wise selection">
+  <figcaption>Column-wise selection</figcaption>
+</figure>
 
 ---
 
@@ -331,6 +362,15 @@ def all_eq(*values):
 -   Build a dictionary of columns as a result
 
 -   Convert that to a dataframe
+
+---
+
+## Column-wise Filter
+
+<figure>
+  <img src="../col_filter.svg" alt="Column-wise filter">
+  <figcaption>Column-wise selection</figcaption>
+</figure>
 
 ---
 
@@ -404,24 +444,6 @@ def time_filter(df):
 
 ---
 
-## Timing Select
-
-```py
-SELECT = 3
-
-def time_select(df):
-    indices = [i for i in range(df.ncol()) if ((i % SELECT) == 0)]
-    labels = [f"label_{i}" for i in indices]
-    start = time.time()
-    df.select(*labels)
-    return time.time() - start
-```
-
-
--   Should vary column selection criteria as well
-
----
-
 ## So Which Is Better?
 
 | nrow | ncol | filter_col | select_col | filter_row | select_row |
@@ -480,7 +502,7 @@ python -m cProfile --sort=tottime \
 
 --
 
--   Uh, what?
+-   Uh, what is line 7 of `util.py` doing?
 
 ---
 
@@ -494,8 +516,21 @@ def dict_match(d, prototype):
 ```
 
 
-> A quarter of our total runtime is checking that all the rows in a row-wise dataframe
-> have the same types for the same keys.
+-   A quarter of our total runtime is checking that all the rows in a row-wise dataframe
+    have the same types for the same keys
+
+-   Surely we can do better…
+
+---
+
+## Evidence First
+
+<figure>
+  <img src="../hennessy-patterson.jpg" alt="Cover of Hennessy & Patterson">
+  <figcaption>Computer Architecture: A Quantitative Approach</figcaption>
+</figure>
+
+-   Whoever controls the benchmarks controls the future
 
 
 [academic_prototyping]: https://www.fuzzingbook.org/html/AcademicPrototyping.html

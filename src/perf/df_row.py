@@ -13,7 +13,7 @@ class DfRow(DataFrame):
 
     # [simple]
     def ncol(self):
-        return len(self._data[0].keys())
+        return len(self._data[0])
 
     def nrow(self):
         return len(self._data)
