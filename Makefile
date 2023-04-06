@@ -21,4 +21,8 @@ fix:
 	@isort ${BIN_PY} ${LIB_PY}
 	@black ${BIN_PY} ${LIB_PY}
 
+## status: status of chapters
+.PHONY: status
+status:
+	@python bin/status.py --config config.py
 ## ---: ---

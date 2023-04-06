@@ -1,5 +1,6 @@
 """Utilities used across all tools."""
 
+import importlib.util
 import re
 import sys
 
@@ -117,6 +118,13 @@ def get_matches(pattern, filename, group=1, scrub=True, duplicates=None, split="
                 duplicates.append(word)
             result.add(word.strip())
     return result
+
+
+def load_config(filename):
+    spec = importlib.util.spec_from_file_location("config", filename)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 def read_file(filename, scrub=True):

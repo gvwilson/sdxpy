@@ -4,7 +4,6 @@
 
 
 import argparse
-import importlib.util
 import re
 from fnmatch import fnmatch
 from pathlib import Path
@@ -86,10 +85,7 @@ def check_config(config_path):
         elif not isinstance(getattr(m, field), kind):
             print(f"Configuration value for {field} is not {str(kind)}")
 
-    spec = importlib.util.spec_from_file_location("config", config_path)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-
+    module = utils.load_config(config_path)
     for (field, kind) in CONFIGURATION:
         _require(module, field, kind)
 
