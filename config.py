@@ -40,16 +40,13 @@ chapters = [
     "template",
     "lint",
     "perf",
-    "plot",
     "persist",
     "binary",
     "db",
     "build",
     "pipe",
     "pack",
-    "install",
     "server",
-    "ssg",
     "finale",
 ]
 
