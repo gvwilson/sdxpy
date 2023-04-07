@@ -1,0 +1,43 @@
+---
+title: "An Editor"
+---
+
+-   MVC with simple line drawing
+    -   `model_original.py` stores lines and current cursor Y position (we'll add X later)
+    -   `view_original.py` displays lines in a window
+        -   caller's job to make sure number of lines isn't larger than window
+        -   if fewer lines, fill bottom with blanks
+    -   `controller_original.y` handles interactions
+        -   constrain cursor movement
+        - select which lines from model to display and ask view to display them
+          -   all lines fit in window, so always show them all
+          -   cursor near bottom of file, so show last N lines
+          -   show slice from cursor down
+        - means the slice starts scrolling down as soon as the cursor moves,
+          which isn't how most editors work,
+          but it's a start
+-   `curses_wrapper.py` shows how to initialize curses using wrapper
+-   then show lines using `curses`
+    -   model and controller stay the same for now
+    -   `view_show_lines.py` shows lines
+    -   `main_show_lines.py`creates and connects objects and does initialization and finalization
+-   now motion
+    -   `main_up_down.py`, `controller_up_down.py`, and `view_up_down.py`
+    -   event loop
+    -   But it leaves characters on screen
+    -   So `main_up_down_fixed.py` and `view_up_down_fixed.py`
+-   slice: `main_slice.py` (to get parameters) and `view_slice.py`
+    -   Benefit of MVC: change parts independently
+-   cursor: `main_cursor.py` with `controller_cursor.py` and `view_cursor.py`
+    -   show the position of the cursor
+    -   but now our scrolling and cursor positioning are biting us
+-   viewport wraps the model
+    -   `viewport_viewport.py`
+    -   `test_viewport.py` to test that the viewport works
+    -   then `controller_viewport.py` (much simpler)
+    -   and `main_viewport.py` to bind it all together
+-   finally the editing
+    -   insert digit at the start of the current line
+    -   don't move the cursor right
+    -   design decision: have the controller modify the model directly or go through viewport?
+    -   decide to do the latter, but the former is common

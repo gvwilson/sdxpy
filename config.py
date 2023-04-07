@@ -47,6 +47,7 @@ chapters = [
     "pipe",
     "pack",
     "server",
+    "editor",
     "finale",
 ]
 
