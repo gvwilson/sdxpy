@@ -48,6 +48,7 @@ chapters = [
     "pack",
     "server",
     "editor",
+    "undo",
     "finale",
 ]
 
