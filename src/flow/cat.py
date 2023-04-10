@@ -5,5 +5,3 @@ class Cat(Stage):
 
     def _run(self):
         return self._available["first"] + self._available["second"]
-
-export = Cat

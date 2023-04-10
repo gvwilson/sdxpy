@@ -4,17 +4,18 @@ import sys
 from cat import Cat
 from head import Head
 from tail import Tail
+from read import Read
+from write import Write
 
 class Flow:
     def __init__(self):
         pass
 
-    def run(self, filename, source, data, sink):
+    def run(self, filename):
         nodes, edges = self._make_graph(filename)
         self._construct(nodes)
         self._connect(nodes, edges)
-        self._run(nodes, source, data)
-        return nodes[sink]["obj"].result()
+        self._start(nodes)
 
     def _make_graph(self, filename):
         graph = pydot.graph_from_dot_file(filename)[0]
@@ -46,15 +47,14 @@ class Flow:
             dst = nodes[edge["dst"]]["obj"]
             src.tell(dst, label)
 
-    def _run(self, nodes, start, data):
-        nodes[start]["obj"].notify("input", data)
+    def _start(self, nodes):
+        for props in nodes.values():
+            if props["obj"].kind() == "source":
+                props["obj"].run()
 
     def _clean_label(self, label):
         return None if (label is None) else label.strip('"')
 
 if __name__ == "__main__":
-    filename, source, sink = sys.argv[1:]
-    data = ["a", "b", "c", "d", "e"]
     flow = Flow()
-    result = flow.run(filename, source, data, sink)
-    print(result)
+    flow.run(sys.argv[1])

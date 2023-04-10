@@ -4,17 +4,17 @@ from pathlib import Path
 
 EXPORT = "export"
 
-def load(dirs, name):
-    result = None
+def load(dirs):
+    result = {}
     for d in dirs:
-        assert Path(d).is_dir()
-        filename = Path(d, f"{name}.py")
-        if filename.exists():
-            sys.path.insert(0, d)
+        sys.path.insert(0, d)
+        for filename in Path(d).iterdir():
+            if filename.suffix != ".py":
+                continue
+            name = filename.stem
             module = importlib.import_module(name)
-            sys.path.pop(0)
             if hasattr(module, EXPORT):
-                result = getattr(module, EXPORT)
-                break
-    assert result is not None
+                cls = getattr(module, EXPORT)
+                result[cls.__name__] = cls
+        sys.path.pop(0)
     return result

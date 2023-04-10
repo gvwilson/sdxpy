@@ -10,5 +10,3 @@ class Tail(Stage):
     def _run(self):
         data = self._available["input"]
         return data[-self._num:]
-
-export = Tail

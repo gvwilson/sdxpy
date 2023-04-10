@@ -1,16 +1,15 @@
-from loader import load
+from head import Head
+from tail import Tail
+from cat import Cat
 
 def test_head():
-    Head = load(["."], "head")
     head = Head(3)
     assert not head.ready()
     head.notify("input", ["a", "b", "c", "d", "e"])
     assert head.result() == ["a", "b", "c"]
 
 def test_head_tail():
-    Head = load(["."], "head")
     head = Head(3)
-    Tail = load(["."], "tail")
     tail = Tail(2)
     head.tell(tail, "input")
 
@@ -22,16 +21,13 @@ def test_head_tail():
     assert tail.result() == ["b", "c"]
 
 def test_head_tail_tail_join():
-    Head = load(["."], "head")
     head = Head(3)
 
-    Tail = load(["."], "tail")
     left = Tail(2)
     right = Tail(1)
     head.tell(left, "input")
     head.tell(right, "input")
     
-    Cat = load(["."], "cat")
     cat = Cat()
     left.tell(cat, "second")
     right.tell(cat, "first")

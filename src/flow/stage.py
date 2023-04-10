@@ -1,9 +1,13 @@
 class Stage:
-    def __init__(self):
+    def __init__(self, kind="filter"):
+        self._kind = kind
         self._required = self.INPUTS.copy()
         self._available = {}
         self._result = None
         self._tell = []
+
+    def kind(self):
+        return self._kind
 
     def tell(self, other, key):
         self._tell.append((other, key))
