@@ -44,7 +44,7 @@ chapters = [
     "binary",
     "db",
     "build",
-    "pipe",
+    "flow",
     "pack",
     "server",
     "editor",

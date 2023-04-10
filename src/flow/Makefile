@@ -1,6 +1,6 @@
 TARGETS=\
   split_join.svg \
-  workflow_first.out
+  flow_first.out
 
 include ../../examples.mk
 
