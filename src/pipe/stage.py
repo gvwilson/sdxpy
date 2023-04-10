@@ -12,7 +12,6 @@ class Stage:
         return len(self._required) == 0
 
     def notify(self, name, value):
-        print(f"{self.__class__.__name__} notify({name}, {value})")
         assert name in self._required
         self._available[name] = value
         self._required.remove(name)
@@ -25,5 +24,4 @@ class Stage:
                 other.notify(key, self._result)
 
     def result(self):
-        assert self.ready()
         return self._result
