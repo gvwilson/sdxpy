@@ -23,6 +23,7 @@ draft = True
 # Chapters.
 chapters = [
     "introduction",
+    "oop",
     "tester",
     "interpreter",
     "backup",
@@ -124,6 +125,7 @@ copy += [
     "*.sh",
     "*.svg",
     "*.txt",
+    "*.webp",
     "*.yml",
 ]
 
@@ -144,6 +146,7 @@ exclude += [
     "*.sh",
     "*.svg",
     "*.txt",
+    "*.webp",
     "*.yml",
     "*~",
     "__pycache__",

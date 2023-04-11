@@ -5,272 +5,182 @@ template: slides
 
 ## The Problem
 
--   Match text with patterns
--   Initially handle just five cases
+-   `glob.glob` finds files whose names match patterns
 
-| Meaning                   | Character |
-| ------------------------- | --------- |
-| Any literal character *c* | *c*       |
-| Any single character      | .         |
-| Beginning of input        | ^         |
-| End of input              | $         |
-| Zero or more of something | *         |
+-   `2023-*.{pdf,txt}` matches `2023-01.txt` and `2023-final.pdf`
+    but not `draft-2023.docx`
+
+-   How does this work?
 
 ---
 
-## Start With Something Simple
+## Write a Few Tests
 
--   If the first element of the pattern matches where we are,
-    see if the rest of the pattern matches what's left
--   Otherwise,
-    see if the the pattern will match further along
-
----
-
-## Overall Matcher
-
-```python
-def match(pattern, text):
-    # Empty pattern matches any string.
-    if not pattern:
-        return True
-
-    # Start of string.
-    if pattern[0] == "^":
-        return match_here(pattern, 1, text, 0)
-
-    # Need 'do-while' to handle zero characters matching.
-    i_text = 0
-    while True:
-        if match_here(pattern, 0, text, i_text):
-            return True
-        i_text += 1
-        if i_text == len(text):
-            break
-
-    # Nothing worked.
-    return False
-```
+| Pattern | Text     | Match? |
+| ------- | -------- | ------ |
+| abc     | "abc"    | True   |
+| ab      | "abc"    | False  |
+| abc     | "ab"     | False  |
+| *       | ""       | True   |
+| *       | "abc"    | True   |
+| *def    | "abcdef" | True   |
+| abc*    | "abcdef" | True   |
+| a*c     | "abc"    | True   |
+| {a,b}   | "a"      | True   |
+| {a,b}   | "b"      | True   |
+| {a,b}   | "c"      | False  |
+| {a,b}   | "ab"     | False  |
+| *{x,y}  | "abcx"   | True   |
 
 ---
 
-## Match at Location
+## Objects vs. Functions
 
-```python
-def match_here(pattern, i_pattern, text, i_text):
-    if no_more_pattern(pattern, i_pattern, text, i_text):
-        return True
+-   Create things to match particular cases instead of One Big Function
 
-    if dollar_at_end_of_text(pattern, i_pattern, text, i_text):
-        return True
+-   Some of those things need to carry data around
 
-    if supposed_to_match_many(pattern, i_pattern, text, i_text):
-        next_i_text = match_many(pattern, i_pattern, text, i_text)
-        return match_here(pattern, i_pattern+2, text, next_i_text)
+    -   E.g., matching specific literal characters
 
-    if no_more_text_to_match(pattern, i_pattern, text, i_text):
-        return False
+-   So create objects
 
-    if match_single_character(pattern, i_pattern, text, i_text):
-        return match_here(pattern, i_pattern+1, text, i_text+1)
+-   Use the __Chain of Responsibility__ pattern
 
-    return False  # nothing worked
-```
+    -   Each object matches if it can…
+
+    -   …then asks something else to try to match the rest of the text
+
+---
+
+## Matching a Literal String
+
+[% inc file="../glob_lit.py" %]
+
+-   `chars` is the characters to be matched
+-   `rest` is responsible for matching the rest of the text
+    -   May be `None`
+-   `start` is needed when this isn't the first matcher
+
+---
+
+## Testing the Matcher
+
+[% inc file="../test_glob_lit.py" keep="tests" %]
+
+-   Give tests long names instead of using comments
+    -   So that failure reports are immediately readable
+
+---
+
+## Does Chaining Work?
+
+[% inc file="../test_glob_lit.py" keep="chain" %]
 
 --
 
--   Meaningful function names help a bit
+-   Yup
 
 ---
 
-## A Few Cases
+## Wildcards
 
-```python
-def no_more_pattern(pat, i_pat, text, i_text):
-    return i_pat == len(pat)
+-   `*` can match zero or more characters
 
-def match_single_character(pat, i_pat, text, i_text):
-    return (pat[i_pat] == ".") \
-        or (pat[i_pat] == text[i_text])
+[% inc file="../glob_any.py" %]
 
-def supposed_to_match_many(pat, i_pat, text, i_text):
-    return ((len(pat) - i_pat) > 1) \
-        and (pat[i_pat + 1] == "*")
+---
 
-def match_many(pat, i_pat, text, i_text):
-    while (i_text < len(text)) and (text[i_text] == pat[i_pat]):
-        i_text += 1
-    return i_text
-```
+## And We Test It
+
+
+[% inc file="../test_glob_any.py" keep="tests" %]
+
+---
+
+## Matching Alternatives
+
+[% inc file="../glob_either.py" %]
+
+---
+
+## And We Test It
+
+[% inc file="../test_glob_either.py" keep="tests" %]
+
+---
+
+## But Wait…
+
+[% inc pat="../test_glob_problem.*" fill="py out" %]
+
+-   `Either` doesn't handle `rest`
+
+---
+
+## Rethinking
+
+-   We now have three matchers with the same interfaces
+    -   Use __Extract Parent Class__ refactoring
+-   `if self.rest is None` all over the place
+    -   Use the __Null Object__ pattern instead
+
+--
+
+<div class="center">
+<img src="../gamma-design-patterns.webp" alt="Design Patterns book cover" width="25%">
+<img src="../fowler-refactoring.webp" alt="Refactoring book cover" width="25%">
+<img src="../kerievsky-refactoring-to-patterns.webp" alt="Refactoring to Patterns book cover" width="22%">
+</div>
+
+---
+
+## Two New Toys
+
+[% inc file="../glob_null.py" keep="parent" %]
+[% inc file="../glob_null.py" keep="null" %]
+
+-   Assume every child class has a `_match` method
+-   This method returns the location to continue searching
+-   So `Match.match` checks that we've reached the end of the text
+
+---
+
+## Refactoring Literal Matcher
+
+[% inc file="../glob_null.py" keep="lit" %]
+
+-   Parent class initializes data that it defines
+    -   Yes, the `Null` class broke this rule…
+-   Return `None` for "no match" or whatever `self.rest` returns
+    -   If this object's `rest` is a `Null`,
+        this will be the index after our match
+
+---
+
+## Refactoring Wildcard
+
+[% inc file="../glob_null.py" keep="any" %]
+
+-   The exercises will ask, "Why `len(text) + 1`?"
+
+---
+
+## Refactoring Alternatives
+
+[% inc file="../glob_null.py" keep="either" %]
+
+-   Could easily be extended to any number of alternatives
 
 ---
 
 ## Testing
 
-```python
-def test_simple_regexp():
-    tests = [
-        ["", "", True],
-        ["a", "a", True],
-        ["b", "a", False],
-        ["a", "ab", True],
-        ["b", "ab", True],
-        ["ab", "ba", False],
-        ["^a", "ab", True],
-        ["^b", "ab", False],
-        ["a$", "ab", False],
-        ["a$", "ba", True],
-        ["a*", "", True],
-        ["a*", "baac", True],
-        ["ab*c", "ac", True],
-        ["ab*c", "abc", True],
-        ["ab*c", "abbbc", True],
-        ["ab*c", "abxc", False],
-    ]
-    for (regexp, text, expected) in tests:
-        assert match(regexp, text) == expected
-```
-
----
-
-## But…
-
--   Doesn't work
-    -   Think about matching `a*ab` against the string `aab`
--   And it will be very difficult to extend
-    -   Are you *sure* the clauses in `match_here` are in the right order?
-
----
-
-## A Different Approach
-
--   Use the __Chain of Responsibility__ design pattern
--   Each object matches what it can and passes the rest down the chain
-
-<figure>
-  <img src="../matching_rest.svg" alt="Chain of Responsibility" width="80%">
-  <figcaption>Chain of Responsibility pattern</figcaption>
-</figure>
-
----
-
-## Looks a Lot Like Lists
-
--   The expression to match `ab*c` is:
-
-```python
-Lit(
-  "a",
-  Any(
-    Lit("b", None),
-    Lit("c", None)
-  )
-)
-```
-
----
-
-## Base Class
-
-```python
-class RegexBase:
-    def __init__(self, rest=None):
-        self.rest = rest
-
-    def match(self, text):
-        for i in range(len(text) + 1):
-            if self._match(text, i) is not None:
-                return True
-        return False
-
-    def _match(self, text, start):
-        raise NotImplementedError("must override '_match'")
-```
-
--   `RegexBase.match` is the overall strategy
-    -   Start here and keep trying if you need to
--   The `_match` method has the matcher-specific logic
-    -   Returns the next index or `None`
-
----
-
-## Matching Literal Characters
-
-```python
-class Lit(RegexBase):
-    def __init__(self, chars, rest=None):
-        super().__init__(rest)
-        self.chars = chars
-
-    def _match(self, text, start):
-        next_index = start + len(self.chars)
-        if next_index > len(text):
-            return None
-        if text[start:next_index] != self.chars:
-            return None
-        if self.rest is None:
-            return next_index
-        return self.rest._match(text, next_index)
-```
-
----
-
-## Match the Start of Text
-
-```python
-class Start(RegexBase):
-    def _match(self, text, start):
-        if start != 0:
-            return None
-        if not self.rest:
-            return 0
-        return self.rest._match(text, start)
-```
-
---
-
--   Isn't that simpler?
-
---
-
--   But yes, it could use some comments
-
----
-
-## Match Zero or More
-
-```python
-class Any(RegexBase):
-    def __init__(self, child, rest=None):
-        super().__init__(rest)
-        self.child = child
-
-    def _match(self, text, start):
-        max_possible = len(text) - start
-        for num in range(max_possible, -1, -1):
-            after_many = self._match_many(text, start, num)
-            if after_many is not None:
-                return after_many
-        return None
-
-    def _match_many(self, text, start, num):
-        for i in range(num):
-            start = self.child._match(text, start)
-            if start is None:
-                return None
-        if self.rest:
-            return self.rest._match(text, start)
-        return start
-```
-
----
-
-## Is This Better?
-
--   Solve one matching problem at a time
--   Which also makes it easy to extend
-    -   Not a coincidence that we get both of these together
--   But distributed decision making can be harder to follow
+-   None of the existing tests change
+    -   None of the constructors changed
+    -   Neither did the signature of `match`
+-   We should (should) add a couple of tests for `Null`
+-   But basically we're done
+-   And we can easily add matchers for other kinds of patterns
 
 ---
 
@@ -279,45 +189,52 @@ class: summary
 ## Summary	       
 
 <figure>
-  <img src="../matching_concept_map.svg" alt="Concept map" width="80%">
-  <figcaption>Concept map of regular expression matching</figcaption>
+  <img src="../concept_map.svg" alt="Concept map of globbing">
+  <figcaption>Concept map</figcaption>
 </figure>
 
 ---
 
 class: exercise
 
-## Find and Fix the Error
+## Length Plus One
 
-The first regular expression matcher contains an error:
-the pattern `'a*ab'` should match the string `'aab'` but doesn't.
-Fix it.
+Why does the upper bound of the loop in the final version of `Any`
+run to `len(text) + 1`?
 
----
-
-class: exercise
-
-## Find All
-
-Modify the regular expression matcher to return *all* matches
-rather than just the first one.
+[% inc file="../glob_null.py" keep="any" %]
 
 ---
 
 class: exercise
 
-## Lazy Matching
+## Exclusion
 
-The regular expressions we have seen so far are __eager__:
-they match as much as they can, as early as they can.
-An alternative is __lazy matching__,
-in which expressions match as little as they need to.
-For example,
-given the string `"ab"`,
-an eager match with the expression `ab*` will match both letters
-(because `b*` matches a 'b' if one is available)
-but a lazy match will only match the first letter
-(because `b*` can match no letters at all).
-Implement lazy matching for the `*` operator.
+1.  Create a matcher that *doesn't* match a specified pattern.
+    For example, `Not(Lit("abc"))` only succeeds if the text isn't "abc".
 
-Note: this exercise is more complicated than the others.
+2.  Write some tests for it.
+
+---
+
+class: exercise
+
+## Ranges
+
+1.  Create a matcher that matches a range of characters.
+    For example, `Range("a", "z")` matches any single lower-case Latin alphabetic character.
+    (This is just a convenience matcher: ranges can always be spelled out in full.)
+
+2.  Write some tests for it.
+
+---
+
+class: exercise
+
+## Multiple Alternatives
+
+1.  Modify `Either` so that it can match any number of sub-patterns, not just two.
+
+2.  Write some tests for it.
+
+3.  What does your implementation do when no sub-patterns are specified?
