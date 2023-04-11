@@ -24,7 +24,9 @@ class BuildBase:
                 n: self._check(n, d, known)
                 for n, d in config.items()
             }
+    # [/config]
 
+    # [check]
     def _check(self, name, details, known):
         assert "rule" in details, f"Missing rule for {name}"
         assert "depends" in details, f"Missing depends for {name}"
@@ -32,7 +34,7 @@ class BuildBase:
         assert depends.issubset(known), \
             f"Unknown depends for {name}"
         return {"rule": details["rule"], "depends": depends}
-    # [/config]
+    # [/check]
 
     # [sort]
     def _topo_sort(self, config):

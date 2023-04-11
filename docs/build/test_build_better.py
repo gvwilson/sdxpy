@@ -11,7 +11,7 @@ def test_single():
     assert Builder().build(config) == [action_A]
 
 
-# [tests]
+# [test_circular]
 def test_circular():
     action_A = "build A"
     action_B = "build B"
@@ -24,8 +24,9 @@ def test_circular():
         assert False, "should have had exception"
     except ValueError:
         pass
+# [/test_circular]
 
-
+# [test_no_dep]
 def test_no_dep():
     action_A = "build A"
     action_B = "build B"
@@ -34,7 +35,7 @@ def test_no_dep():
         "B": {"depends": [], "rule": action_B},
     }
     assert Builder().build(config) == [action_A, action_B]
-# [/tests]
+# [/test_no_dep]
 
 
 def test_linear_dep():
