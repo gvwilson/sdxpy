@@ -17,7 +17,7 @@ const constructTableOfContents = () => {
     }
 
     if (! document.querySelector("meta[name='slides']")) {
-	return
+        return
     }
     const slides = document.createElement("li")
     slides.classList.add("no-number")
@@ -26,40 +26,46 @@ const constructTableOfContents = () => {
 }
 
 const insertCodeSampleTitles = () => {
-  for (const node of [...document.querySelectorAll("div.code-sample")]) {
-    if (node.hasAttribute("title")) {
-      const filename = node.getAttribute('title')
-      const newChild = document.createElement("p")
-      newChild.innerHTML = `<a href="${filename}">${filename}</a>`
-      newChild.classList.add("code-sample-title")
-      node.after(newChild)
+    for (const node of [...document.querySelectorAll("div.code-sample")]) {
+        if (node.hasAttribute("title")) {
+            const filename = node.getAttribute('title')
+            const newChild = document.createElement("p")
+            newChild.innerHTML = `<a href="${filename}">${filename}</a>`
+            newChild.classList.add("code-sample-title")
+            node.after(newChild)
+        }
     }
-  }
 }
 
 const addFeedbackMarkers = () => {
-  const repo_meta = document.querySelector("meta[name='repo']")
-  if (!repo_meta) {
-    return
-  }
-  const repo = repo_meta.getAttribute("content")
-  const issues_url = `${repo}/issues/new`
+    const repo_meta = document.querySelector("meta[name='repo']")
+    if (!repo_meta) {
+        return
+    }
+    const repo = repo_meta.getAttribute("content")
+    const issues_url = `${repo}/issues/new`
 
-  for (const heading of [...document.querySelectorAll("h2")]) {
-	const marker = document.createElement("span")
-	marker.setAttribute("title", "report issue")
-	marker.addEventListener("click", (event) => {
-	  window.open(issues_url)
-	})
-	marker.innerHTML = " ⊕"
-	heading.appendChild(marker)
-  }
+    const build_date = document.querySelector("meta[name='build_date']")
+    const timestamp = build_date ? ` (${build_date.getAttribute('content')})` : ""
+
+    for (const heading of [...document.querySelectorAll("h2")]) {
+        const title_text = `${heading.textContent}${timestamp}`
+        const title = encodeURI(title_text)
+        const marker = document.createElement("span")
+        marker.setAttribute("title", "report issue")
+        marker.addEventListener("click", (event) => {
+            url = `${issues_url}?title=${title}`
+            window.open(url)
+        })
+        marker.innerHTML = " ⇒"
+        heading.appendChild(marker)
+    }
 }
 
 const mccole = () => {
-  constructTableOfContents()
-  insertCodeSampleTitles()
-  addFeedbackMarkers()
+    constructTableOfContents()
+    insertCodeSampleTitles()
+    addFeedbackMarkers()
 }
 
 mccole()
