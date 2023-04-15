@@ -2,14 +2,39 @@
 title: "Introduction"
 ---
 
-The best way to learn software design is to study examples [%b Schon1984 Petre2016 %],
-and the most approachable examples are the tools programmers use themselves.
-These lessons therefore build small versions of file backup systems,
-testing frameworks,
-and regular expression matchers
-in order to show you how experienced programmers think.
-And if you know how these tools work,
-you will be more likely to use them
+Most data scientists have taught themselves most of what they know about programming.
+As a result,
+many have gaps in their knowledge:
+they may be experts in some areas,
+but don't even know what they don't know about others.
+
+One of those other areas is software design.
+A large program is not just a dozen short programs stacked on top of each other;
+since *N* things can interact with each other in *N(N-1)/2* ways,
+doubling the size of a program more than doubles its complexity
+unless we reorganize its parts
+([%f intro-complexity %]).
+Since our brains can only hold a small number of things at once [%b Hermans2021 %],
+making large programs comprehensible, testable, shareable, and maintainable
+requires more than using functions and sensible variable names:
+it requires design.
+
+[% figure
+   slug="intro-complexity"
+   img="complexity.svg"
+   alt="Complexity and size"
+   caption="How complexity grows with size."
+%]
+
+The best way to learn design in any field is to study examples [%b Schon1984 Petre2016 %].
+These lessons therefore build small versions of tools that programmers use every day
+to show how experienced software designers think.
+Along the way,
+they introduce some fundamental ideas in computer science
+that most data scientists haven't encountered.
+Finally,
+we hope that if you know how programming tools work,
+you'll be more likely to use them
 and better able to use them well.
 
 ## Who is this book for? {: #intro-audience}
@@ -17,11 +42,10 @@ and better able to use them well.
 This [learner persona][t3_personas] [%b Wilson2019 %] describes who this book is for:
 
 > Maya has a master's degree in genomics.
-> She has taught herself enough Python to analyze data from her experiments,
-> but is constantly frustrated by the gaps in her programming knowledge.
+> She knows enough Python to analyze data from her experiments,
+> but is struggling to write code that other people (including her future self) can use.
 > These lessons will teach her how to design, build, and test large programs
-> in less time and with less pain,
-> and show her how the libraries and tools she uses actually work.
+> in less time and with less pain.
 
 Like Maya, you should be able to:
 
@@ -29,43 +53,38 @@ Like Maya, you should be able to:
 
 -   Puzzle your way through Python programs that use classes and exceptions.
 
--   Write a little bit of HTML.
+-   Run basic Unix shell commands like `ls` and `mkdir`.
+
+-   Reand and write a little bit of HTML.
 
 -   Use [Git][git] to save and share files.
     (It's OK not to know [the more obscure commands][git_man_page_generator].)
 
-This book is also designed to help another kind of reader:
+This book is also designed to help another persona:
 
 > Yim teaches two college courses on web programming.
-> They are frustrated that so many books talk about algorithms but not about design
+> They are frustrated that so many books talk about details but not about design
 > and use examples that their students can't relate to.
 > This material will give them material they can use in class
 > and starting points for course projects.
-
-You can read this book on its own or use it as a classroom resource.
-If you need projects for a software design course,
-adding a tool to those covered here would be fun as well as educational:
-please [send email][email] if you'd like to chat.
 
 ## What does this book cover? {: #intro-contents}
 
 Programmers have invented [a lot of tools][programming_tools] over the years.
 This book focuses on those that people use while building code,
-but includes a few things (like databases and web servers)
-that are primarily used in applications for other people.
+but includes a few like databases and web servers
+that are primarily used in building general-purpose applications.
 
 [%x glossary %] defines the terms these lessons introduce,
 which in turn define this book's big ideas [%f intro-syllabus %]:
 
--   How to process a program like any other piece of text.
+-   Source code is just text.
 
--   How to turn a program into a data structure that can be analyzed and modified.
+-   A program in memory is just a data structure.
 
--   What design patterns are and which ones are used most often.
+-   We can control and inspect programs while they are running.
 
--   How programs are executed and how we can control and inspect their execution.
-
--   How we can analyze programs' performance in order to make sensible design tradeoffs.
+-   A week of hard work can sometimes save us an hour of thought.
 
 [% figure
    slug="intro-syllabus"
@@ -88,17 +107,14 @@ and Unix shell commands like this:
 Data files and program output are shown like this:
 {: .continue}
 
-[% inc file="output_sample.out" %]
-
 [% inc file="data_sample.yml" %]
 
-We use `...` to show where lines have been omitted,
-and occasionally wrap lines in unnatural ways to make them fit on the page.
-Where we need to break lines for the same reason,
-we end all but the last line with a single backslash `\`.
-The full listings are all available in [our Git repository][book_repo]
-and [on our website][book_site].
+[% inc file="output_sample.out" %]
 
+We use `...` to show where lines have been omitted,
+and occasionally break lines in unnatural ways to make them fit on the page.
+Where we do this,
+we end all but the last line with a single backslash `\`.
 Finally,
 we write functions as `function_name` rather than `function_name()`.
 The latter is more common,
@@ -108,14 +124,18 @@ whether we're talking about "the function itself" or "a call to the function wit
 
 ## How can this material be used? {: #intro-use}
 
+The source for this book is available in [our Git repository][book_repo]
+and all of it can be read on [our website][book_site].
 All of the written material in this book
-is available under the [Creative Commons - Attribution - NonCommercial 4.0 International license][cc_by_nc]
+is licensed under the [Creative Commons - Attribution - NonCommercial 4.0 International license][cc_by_nc]
 (CC-BY-NC-4.0),
-while the software is available under the [Hippocratic License][hippocratic_license].
-The first allows you to use and remix this material for non-commercial purposes,
+while the software is covered by the [Hippocratic License][hippocratic_license].
+The first license allows you to use and remix this material for non-commercial purposes,
 as-is or in adapted form,
-provided you cite its original source.
-The second allows you to use and remix the software on this site
+provided you cite its original source;
+if you want to sell copies or make money from this material in any other way,
+you must [contact us][email] and obtain permission first.
+The second license allows you to use and remix the software on this site
 provided you do not violate international agreements governing human rights;
 please see [%x license %] for details.
 
@@ -124,7 +144,7 @@ add new material,
 or ask questions,
 please file an issue in [our GitHub repository][book_repo]
 or [send email][email].
-Please note that all contributors are required to abide by our Code of Conduct
+All contributors are required to abide by our Code of Conduct
 ([%x conduct %]).
 
 ## Who helped create this material? {: #intro-acknowledgments}
@@ -145,47 +165,7 @@ was inspired by [%b Kamin1990 Kernighan1979 Kernighan1981 Kernighan1983 Kernigha
     and 
 -   the posts and [zines][evans_zines] created by [Julia Evans][evans_julia].
 
-I am grateful to 
-Christian Drumm,
-Julia Evans,
-Joe Nash,
-Juanan Pereira,
-and
-Dave Smith
-for feedback,
-and to 
-Miras Adilov,
-Alvee Akand,
-Alexey Alexapolsky,
-Lina Andrén,
-Alberto Bacchelli,
-Yanina Bellini Saibene,
-Adrienne Canino,
-Stephen Childs,
-Hector Correa,
-Socorro Dominguez,
-Thomas Fritz,
-Francisco Gabriel,
-Craig Gross,
-Jonathan Guyer,
-McKenzie Hagen,
-Fraser Hay,
-Bahman Karimi,
-Carolyn Kim,
-Jenna Landy,
-Peter Lin,
-Becca Love,
-Dan McCloy,
-Ramiro Mejia,
-Michael Miller,
-Firas Moosvi,
-Sheena Ng,
-Reiko Okamoto,
-Mahmoodur Rahman,
-Arpan Sarkar,
-Ece Turnator,
-and Yundong Yao
-for test-driving this material with me.
+I am grateful to [% thanks %] for feedback on early drafts of this material.
 I am also grateful to the creators of
 [Black][black],
 [flake8][flake8],

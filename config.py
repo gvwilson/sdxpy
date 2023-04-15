@@ -134,9 +134,10 @@ acknowledgments = "info/acknowledgments.yml"
 bibliography = "info/bibliography.bib"
 bibliography_style = "unsrt"
 credits = "info/credits.yml"
+dom = "lib/mccole/dom.yml"
 glossary = "info/glossary.yml"
 links = "info/links.yml"
-dom = "lib/mccole/dom.yml"
+thanks = "info/thanks.yml"
 
 # Input and output directories.
 src_dir = "src"

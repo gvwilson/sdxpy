@@ -201,6 +201,13 @@ def read_links():
     return CACHE["links"]
 
 
+def read_thanks():
+    """Load the thanks definitions."""
+    filename = Path(ivy.site.home(), ivy.site.config["thanks"])
+    with open(filename, "r") as reader:
+        return yaml.safe_load(reader) or []
+
+
 def require(cond, msg):
     """Fail if condition untrue."""
     if not cond:
