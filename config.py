@@ -67,7 +67,6 @@ appendices = [
 
 # To-do
 todo = [
-    "dup",
     "test",
     "mock",
     "archive",
@@ -110,10 +109,10 @@ unreferenced = [
 ]
 
 # Debug.
-debug = True
+debug = False
 
 # Warn about missing or unused entries.
-warnings = True
+warnings = False
 
 # ----------------------------------------------------------------------
 

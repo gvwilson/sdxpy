@@ -16,7 +16,7 @@ const constructTableOfContents = () => {
         list.appendChild(link)
     }
 
-    if (! document.querySelector("meta[name='slides']")) {
+    if (! document.querySelector("meta[name='has_slides']")) {
         return
     }
     const slides = document.createElement("li")
@@ -37,36 +37,36 @@ const insertCodeSampleTitles = () => {
     }
 }
 
-const addFeedbackMarkers = () => {
+const enableFeedback = () => {
     const repo_meta = document.querySelector("meta[name='repo']")
-    if (!repo_meta) {
+    const major_meta = document.querySelector("meta[name='major']")
+    const template_meta = document.querySelector("meta[name='template']")
+    const build_date_meta = document.querySelector("meta[name='build_date']")
+    if (!(repo_meta && major_meta && template_meta && build_date_meta)) {
         return
     }
+
     const repo = repo_meta.getAttribute("content")
+    const major = major_meta.getAttribute("content")
+    const slides = (template_meta && template_meta.getAttribute("content") == "slides") ? " slides" : ""
+    const build_date = build_date_meta.getAttribute('content')
+
     const issues_url = `${repo}/issues/new`
 
-    const build_date = document.querySelector("meta[name='build_date']")
-    const timestamp = build_date ? ` (${build_date.getAttribute('content')})` : ""
-
     for (const heading of [...document.querySelectorAll("h2")]) {
-        const title_text = `${heading.textContent}${timestamp}`
-        const title = encodeURI(title_text)
-        const marker = document.createElement("span")
-	marker.classList.add("feedback")
-        marker.setAttribute("title", "report issue")
-        marker.addEventListener("click", (event) => {
-            url = `${issues_url}?title=${title}`
-            window.open(url)
-        })
-        marker.innerHTML = "⁉"
-        heading.appendChild(marker)
+        const title_text = `${major}${slides}/${heading.textContent} (${build_date})`
+        const url = `${issues_url}?title=${encodeURI(title_text)}`
+	link = document.createElement("a")
+	link.setAttribute("href", url)
+	heading.parentElement.replaceChild(link, heading)
+	link.appendChild(heading)
     }
 }
 
 const mccole = () => {
     constructTableOfContents()
     insertCodeSampleTitles()
-    addFeedbackMarkers()
+    enableFeedback()
 }
 
 mccole()

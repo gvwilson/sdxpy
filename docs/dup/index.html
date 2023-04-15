@@ -4,8 +4,10 @@
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="repo" content="https://github.com/gvwilson/sd4ds">
-  <meta name="build_date" content="2023-04-15T13:39:02">
-  
+  <meta name="build_date" content="2023-04-15T23:55">
+  <meta name="template" content="default">
+  <meta name="major" content="Chapter 2">
+  <meta name="has_slides" content="true">
   <link rel="icon" type="image/x-icon" href="../favicon.ico">
   <link rel="stylesheet" href="../mccole.css">
   <link rel="stylesheet" href="../tango.css">
@@ -257,9 +259,183 @@
 
 
           
-          <div class="todo">
-            <p>TO DO</p>
-          </div>
+            
+<div class="draft">
+  <p>DRAFT</p>
+</div>
+<div class="center">
+  <p>
+    <em>Please use section heading links to submit feedback.</em>
+  </p>
+</div>
+
+
+            
+  
+  <ul class="syllabus">
+  
+  <li markdown="1">A hash function creates a fixed-size value from an arbitrary sequence of bytes.</li>
+  
+  <li markdown="1">The output of a hash function is deterministic but not predictable.</li>
+  
+  <li markdown="1">A cryptographic hash function's output is evenly distributed.</li>
+  
+  </ul>
+  
+
+
+            
+<p class="definitions">
+  Terms defined: <a class="gl-ref" href="../glossary/#collision" markdown="1">collision (in hashing)</a>, <a class="gl-ref" href="../glossary/#cryptographic_hash_function" markdown="1">cryptographic hash function</a>, <a class="gl-ref" href="../glossary/#hash_code" markdown="1">hash code</a>, <a class="gl-ref" href="../glossary/#hash_function" markdown="1">hash function</a>, <a class="gl-ref" href="../glossary/#sha256" markdown="1">SHA-256 hash code</a>
+</p>
+
+
+            <div class="page-toc"></div>
+            <p>Suppose we want to find duplicates in a large collection of files.
+We can&rsquo;t rely on their names because files can be copied and renamed.
+We could compare files byte by byte,
+but this slows down dramatically as the number of files increases,
+since the number of pairs is proportional to the square of the number of files.</p>
+<p>A more efficient strategy is to calculate an identifier for each file
+that depends on the bytes in the file.
+If two files have different hash codes they are guaranteed to be different,
+so we only have to compare files whose hash codes match (<a class="fig-ref" href="../dup/#dup-match">Figure 2.1</a>).</p>
+<figure id="dup-match">
+  <img src="./match.svg" alt="Hashing to match files"/>
+  <figcaption markdown="1">Figure 2.1: Using hash codes to find files that might be identical.</figcaption>
+</figure>
+
+<h2>How do hash functions work?</h2>
+<p>A <span class="ix-entry" ix-key="hash function" markdown="1"><a class="gl-ref" href="../glossary/#hash_function" markdown="1">hash function</a></span>
+takes an arbitrary block of data as input
+and produces a single number as an output
+(<a class="fig-ref" href="../dup/#dup-hash">Figure 2.2</a>).
+A hash function always produces the same <span class="ix-entry" ix-key="hash code" markdown="1"><a class="gl-ref" href="../glossary/#hash_code" markdown="1">hash code</a></span> for any input;
+while the output looks random,
+it is deterministic.</p>
+<figure id="dup-hash">
+  <img src="./hash.svg" alt="Hash functions"/>
+  <figcaption markdown="1">Figure 2.2: How hash functions work.</figcaption>
+</figure>
+
+<p>A simple hash function is just a few lines long.
+This one converts each letter in a string to an integer using the <code>ord</code> function,
+multiplies that by 7,
+adds it to the value produced so far,
+and then takes the remainder modulo 13:</p>
+<div class="code-sample lang-py" title="naive_hash.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">naive_hash</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+    <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">%</span> <span class="mi">13</span>
+</code></pre></div>
+</div>
+<p>Let&rsquo;s test this function on successive substrings of the string <code>"example"</code>:</p>
+<div class="code-sample lang-py" title="naive_hash.py">
+<div class="highlight"><pre><span></span><code>    <span class="n">example</span> <span class="o">=</span> <span class="nb">bytes</span><span class="p">(</span><span class="s2">&quot;hashing&quot;</span><span class="p">,</span> <span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">example</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="n">substring</span> <span class="o">=</span> <span class="n">example</span><span class="p">[:</span><span class="n">i</span><span class="p">]</span>
+        <span class="nb">hash</span> <span class="o">=</span> <span class="n">naive_hash</span><span class="p">(</span><span class="n">substring</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">hash</span><span class="si">:</span><span class="s2">2</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">substring</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<div class="code-sample lang-out" title="naive_hash.out">
+<div class="highlight"><pre><span></span><code> 0 b&#39;h&#39;
+ 6 b&#39;ha&#39;
+ 4 b&#39;has&#39;
+ 4 b&#39;hash&#39;
+ 5 b&#39;hashi&#39;
+11 b&#39;hashin&#39;
+10 b&#39;hashing&#39;
+</code></pre></div>
+</div>
+<p>The output of <code>naive_hash</code> seems random, but how random is it?
+To find out,
+we can use it to hash each unique line in the novel <em>Dracula</em>.
+The result seems to be unevently distributed,
+which means that if we used our hash function to group files together,
+some groups would probably be larger than others
+(<a class="fig-ref" href="../dup/#dup-naive">Figure 2.3</a>).</p>
+<figure id="dup-naive">
+  <img src="./naive_dracula.svg" alt="Hashing <em>Dracula</em>"/>
+  <figcaption markdown="1">Figure 2.3: Distribution of hash codes for the novel <em>Dracula</em>.</figcaption>
+</figure>
+
+<p>A <span class="ix-entry" ix-key="cryptographic hash function;hash function!cryptographic" markdown="1"><a class="gl-ref" href="../glossary/#cryptographic_hash_function" markdown="1">cryptographic hash function</a></span>
+produces outputs that look like uniformly distributed random numbers,
+i.e.,
+each possible hash code is equally likely.
+It&rsquo;s hard to write a hash function that meets this condition,
+so we will therefore use Python&rsquo;s <a href="https://docs.python.org/3/library/hashlib.html">hashlib</a> module
+to calculate <span class="ix-entry" ix-key="hash code!SHA256;SHA256 hash code" markdown="1"><a class="gl-ref" href="../glossary/#sha256" markdown="1">SHA256</a></span> hashes of our files.
+These are random enough to make
+<span class="ix-entry" ix-key="hash function!collision;collision (in hashing)" markdown="1"><a class="gl-ref" href="../glossary/#collision" markdown="1">collision</a></span>
+extremely unlikely.</p>
+<div class="callout">
+<h3>The Birthday Problem</h3>
+<p>The odds that two people share a birthday are 1/365 (ignoring February 29).
+The odds that they <em>don&rsquo;t</em> are therefore 364/365.
+When we add a third person,
+the odds that they don&rsquo;t share a birthday with either of the preceding two people are 363/365,
+so the overall odds that nobody shares a birthday are (364/365)×(363/365).
+If we keep going,
+there&rsquo;s a 50% chance of two people sharing a birthday in a group of just 23 people,
+and a 99.9% chance with 70 people.</p>
+<p>The same math can tell us how many files we need to hash before there&rsquo;s a 50% chance of a collision
+with a 256-bit hash.
+According to <a href="https://en.wikipedia.org/wiki/Birthday_problem">Wikipedia</a>,
+the answer is approximately \(4{\times}10^{38}\) files.
+We&rsquo;re willing to take that risk…</p>
+</div>
+<h2 id="dup-match">Section 2.2: How can we match identical files?</h2>
+<p>EXAMPLE</p>
+<p>FIXME: hash a file</p>
+<h2 id="backup-summary">Section 2.3: Summary</h2>
+<figure id="dup-concept-map">
+  <img src="./concept_map.svg" alt="Concept map of finding duplicate files"/>
+  <figcaption markdown="1">Figure 2.4: Concepts in this lesson.</figcaption>
+</figure>
+
+<h2 id="dup-exercises">Section 2.4: Exercises</h2>
+<h3 class="exercise">Odds of collision</h3>
+<p>If hashes were only 2 bits long,
+then the chances of collision with each successive file
+assuming no previous collision are:</p>
+<table>
+<thead>
+<tr>
+<th>Number of Files</th>
+<th>Odds of Collision</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>0%</td>
+</tr>
+<tr>
+<td>2</td>
+<td>25%</td>
+</tr>
+<tr>
+<td>3</td>
+<td>50%</td>
+</tr>
+<tr>
+<td>4</td>
+<td>75%</td>
+</tr>
+<tr>
+<td>5</td>
+<td>100%</td>
+</tr>
+</tbody>
+</table>
+<p>A colleague of yours says this means that if we hash four files,
+there&rsquo;s only a 75% chance of any collision occurring.
+What are the actual odds?</p>
+<h3 class="exercise">Streaming I/O</h3>
+<p>FIXME</p>
+<h3 class="exercise">Big Oh</h3>
+<p>FIXME</p>
           
         </main>
       </div>

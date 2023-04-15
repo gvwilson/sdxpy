@@ -99,10 +99,14 @@ def _flatten(collected):
 
 def _modify(node):
     """Post-processing changes."""
+    # Don't process root index file.
+    if len(node.path) == 0:
+        return
     node.text = util.HEADING.sub(_patch, node.text)
     headings = util.get_config("headings")
-    if node.slug in headings:
-        node.meta["major"] = util.make_label("part", headings[node.slug].number)
+    slug = util.get_chapter_slug(node)
+    if slug in headings:
+        node.meta["major"] = util.make_label("part", headings[slug].number)
 
 
 def _patch(match):

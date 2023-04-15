@@ -68,6 +68,7 @@ CACHE = {
     "glossary": None,
     "links": None,
     "links_table": None,
+    "major": None
 }
 
 
@@ -86,6 +87,14 @@ def get_config(part):
     require(part in CONFIGURATIONS, f"Unknown configuration section '{part}'")
     mccole = ivy.site.config.setdefault("mccole", {})
     return mccole.get(part, None)
+
+
+def get_chapter_slug(node):
+    """Get chapter-level slug of index files or slides file, or None."""
+    if "slides" in node.get_template_list():
+        require(len(node.path) > 1, f"Bad path {node.path} for slides")
+        return node.path[-2]
+    return node.path[-1]
 
 
 def make_config(part, filler=None):
@@ -143,12 +152,14 @@ def make_major():
     This function relies on the configuration containing `"chapters"`
     and `"appendices"`, which must be lists of slugs.
     """
-    chapters = {slug: i + 1 for (i, slug) in enumerate(ivy.site.config["chapters"])}
-    appendices = {
-        slug: chr(ord("A") + i)
-        for (i, slug) in enumerate(ivy.site.config["appendices"])
-    }
-    return chapters | appendices
+    if CACHE["major"] is None:
+        chapters = {slug: i + 1 for (i, slug) in enumerate(ivy.site.config["chapters"])}
+        appendices = {
+            slug: chr(ord("A") + i)
+            for (i, slug) in enumerate(ivy.site.config["appendices"])
+        }
+        CACHE["major"] = chapters | appendices
+    return CACHE["major"]
 
 
 def markdownify(text, ext=None, strip=True):
