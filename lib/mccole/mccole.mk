@@ -202,6 +202,7 @@ publisher:
 ## web: export files for publishing on the web
 .PHONY: web
 web:
+	@if [ -z ${MCCOLE} ]; then echo "Must set MCCOLE" 1>&2; exit 1; fi
 	rm -rf ${MCCOLE}
 	MCCOLE=${MCCOLE} ivy build
 	@zip -q -r ${MCCOLE}/${ABBREV}-examples.zip docs \
