@@ -15,6 +15,7 @@ class Figure:
     """Keep track of information about a figure."""
 
     node: ivy.nodes.Node = None
+    slide: bool = False
     fileslug: str = ""
     cls: str = ""
     slug: str = ""
@@ -85,7 +86,7 @@ def figure_ref(pargs, kwargs, node):
 @shortcodes.register("figure")
 def figure_def(pargs, kwargs, node):
     """Handle figure definition."""
-    allowed = {"cls", "slug", "img", "alt", "caption"}
+    allowed = {"slide", "cls", "slug", "img", "alt", "caption"}
     util.require(
         (not pargs) and allowed.issuperset(kwargs.keys()),
         f"Bad 'figure' shortcode {pargs} and {kwargs}",
@@ -96,15 +97,25 @@ def figure_def(pargs, kwargs, node):
     img = kwargs["img"]
     alt = util.markdownify(kwargs["alt"])
     caption = util.markdownify(kwargs["caption"])
+    is_slide = kwargs.get("slide", False)
+
+    if is_slide:
+        return dedent(
+            f"""\
+            <figure>
+            <img src="{img}" alt="{alt}"/>
+            </figure>
+            """
+        )
 
     figure = util.get_config("figures")[slug]
     label = util.make_label("figure", figure.number)
 
     return dedent(
         f"""\
-    <figure id="{slug}"{cls}>
-      <img src="./{img}" alt="{alt}"/>
-      <figcaption markdown="1">{label}: {caption}</figcaption>
-    </figure>
-    """
+        <figure id="{slug}"{cls}>
+        <img src="./{img}" alt="{alt}"/>
+        <figcaption markdown="1">{label}: {caption}</figcaption>
+        </figure>
+        """
     )

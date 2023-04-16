@@ -1,12 +1,15 @@
 import sys
 
 
+# [bytes]
 def same_bytes(left_name, right_name):
     left_bytes = open(left_name, "rb").read()
     right_bytes = open(right_name, "rb").read()
     return left_bytes == right_bytes
+# [/bytes]
 
 
+# [main]
 def find_duplicates(filenames):
     matches = []
     for left in filenames:
@@ -20,3 +23,4 @@ if __name__ == "__main__":
     duplicates = find_duplicates(sys.argv[1:])
     for (left, right) in duplicates:
         print(left, right)
+# [/main]
