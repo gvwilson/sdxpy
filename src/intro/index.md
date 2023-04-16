@@ -55,7 +55,7 @@ Like Maya, you should be able to:
 
 -   Run basic Unix shell commands like `ls` and `mkdir`.
 
--   Reand and write a little bit of HTML.
+-   Read and write a little bit of HTML.
 
 -   Use [Git][git] to save and share files.
     (It's OK not to know [the more obscure commands][git_man_page_generator].)
