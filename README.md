@@ -61,7 +61,7 @@ This book is also designed for:
 | archive   | revise | revise | revise   | revise    | -      |
 | oop	    | done   | done   | done     | done      | -      |
 | meta	    | -      | -      | -        | -         | -      |
-| check	    | -      | -      | -        | -         | -      |
+| check	    | done   | done   | done     | -         | -      |
 | interp    | done   | done   | done     | done      | -      |
 | func	    | revise | -      | -        | -         | -      |
 | template  | revise | revise | done     | -         | -      |
