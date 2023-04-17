@@ -47,3 +47,37 @@ This book is also designed for:
 > design and use examples that their students can't relate to.  This
 > material will give them material they can use in class and starting
 > points for course projects.
+
+## Status
+
+| Chapter   | Code   | Slides | Diagrams | Exercises | Prose  |
+| --------- | ------ | ------ | -------- | --------- | ------ |
+| intro	    | N/A    | done   | done     | -         | done   |
+| dup	    | done   | done   | done     | -         | -      |
+| glob	    | done   | done   | -        | -         | -      |
+| parse	    | done   | done   | -        | -         | -      |
+| test	    | revise | revise | done     | -         | -      |
+| mock	    | -      | -      | -        | -         | -      |
+| archive   | revise | revise | revise   | revise    | -      |
+| oop	    | done   | done   | done     | done      | -      |
+| meta	    | -      | -      | -        | -         | -      |
+| check	    | -      | -      | -        | -         | -      |
+| interp    | done   | done   | done     | done      | -      |
+| func	    | revise | -      | -        | -         | -      |
+| template  | revise | revise | done     | -         | -      |
+| layout    | revise | revise | done     | -         | -      |
+| lint	    | revise | revise | done     | -         | -      |
+| perf	    | done   | done   | done     | done      | -      |
+| persist   | done   | done   | done     | done      | -      |
+| binary    | revise | revise | done     | -         | -      |
+| db	    | done   | -      | -        | -         | -      |
+| build	    | done   | done   | done     | done      | -      |
+| flow	    | done   | -      | -        | -         | -      |
+| pack	    | done   | -      | -        | -         | -      |
+| server    | done   | -      | -        | -         | -      |
+| editor    | revise | -      | -        | -         | -      |
+| undo	    | -      | -      | -        | -         | -      |
+| vm	    | done   | -      | -        | -         | -      |
+| compiler  | done   | -      | -        | -         | -      |
+| debug	    | done   | -      | -        | -         | -      |
+| finale    | N/A    | -      | -        | -         | revise |
