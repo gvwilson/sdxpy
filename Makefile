@@ -24,5 +24,5 @@ fix:
 ## status: status of chapters
 .PHONY: status
 status:
-	@python bin/status.py --config config.py
+	@python bin/status.py --config config.py --readme README.md
 ## ---: ---

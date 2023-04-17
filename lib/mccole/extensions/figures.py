@@ -102,7 +102,7 @@ def figure_def(pargs, kwargs, node):
     if is_slide:
         return dedent(
             f"""\
-            <figure>
+            <figure{cls}>
             <img src="{img}" alt="{alt}"/>
             </figure>
             """

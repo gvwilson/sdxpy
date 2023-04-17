@@ -90,7 +90,7 @@ which in turn define this book's big ideas [%f intro-syllabus %]:
    slug="intro-syllabus"
    img="syllabus.svg"
    alt="Syllabus"
-   caption="Syllabus topics and dependencies."
+   caption="Lesson topics and dependencies."
 %]
 
 ## How is this book formatted? {: #intro-layout}

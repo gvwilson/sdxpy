@@ -50,34 +50,35 @@ This book is also designed for:
 
 ## Status
 
-| Chapter   | Code   | Slides | Diagrams | Exercises | Prose  |
-| --------- | ------ | ------ | -------- | --------- | ------ |
-| intro	    | N/A    | done   | done     | -         | done   |
-| dup	    | done   | done   | done     | -         | -      |
-| glob	    | done   | done   | -        | -         | -      |
-| parse	    | done   | done   | -        | -         | -      |
-| test	    | revise | revise | done     | -         | -      |
-| mock	    | -      | -      | -        | -         | -      |
-| archive   | revise | revise | revise   | revise    | -      |
-| oop	    | done   | done   | done     | done      | -      |
-| meta	    | -      | -      | -        | -         | -      |
-| check	    | done   | done   | done     | -         | -      |
-| interp    | done   | done   | done     | done      | -      |
-| func	    | revise | -      | -        | -         | -      |
-| template  | revise | revise | done     | -         | -      |
-| layout    | revise | revise | done     | -         | -      |
-| lint	    | revise | revise | done     | -         | -      |
-| perf	    | done   | done   | done     | done      | -      |
-| persist   | done   | done   | done     | done      | -      |
-| binary    | revise | revise | done     | -         | -      |
-| db	    | done   | -      | -        | -         | -      |
-| build	    | done   | done   | done     | done      | -      |
-| flow	    | done   | -      | -        | -         | -      |
-| pack	    | done   | -      | -        | -         | -      |
-| server    | done   | -      | -        | -         | -      |
-| editor    | revise | -      | -        | -         | -      |
-| undo	    | -      | -      | -        | -         | -      |
-| vm	    | done   | -      | -        | -         | -      |
-| compiler  | done   | -      | -        | -         | -      |
-| debug	    | done   | -      | -        | -         | -      |
-| finale    | N/A    | -      | -        | -         | revise |
+| Chapter   | Code   | Slides | Diagrams | Exercises | Prose  | Overall |
+| --------- | ------ | ------ | -------- | --------- | ------ | ------: |
+| intro	    | N/A    | done   | done     | N/A       | done   | 100%    |
+| dup	    | done   | done   | done     | -         | -      |  50%    |
+| glob	    | done   | done   | -        | -         | -      |  25%    |
+| parse	    | done   | done   | -        | -         | -      |  25%    |
+| test	    | revise | revise | done     | -         | -      |  50%    |
+| mock	    | -      | -      | -        | -         | -      |   0%    |
+| archive   | revise | revise | revise   | revise    | -      |  25%    |
+| oop	    | done   | done   | done     | done      | -      |  50%    |
+| meta	    | -      | -      | -        | -         | -      |   0%    |
+| check	    | done   | done   | done     | -         | -      |  50%    |
+| interp    | done   | done   | done     | done      | -      |  50%    |
+| func	    | revise | -      | -        | -         | -      |   0%    |
+| template  | revise | revise | done     | -         | -      |  25%    |
+| layout    | revise | revise | done     | -         | -      |  25%    |
+| lint	    | revise | revise | done     | -         | -      |  25%    |
+| perf	    | done   | done   | done     | done      | -      |  50%    |
+| persist   | done   | done   | done     | done      | -      |  50%    |
+| binary    | revise | revise | done     | -         | -      |  25%    |
+| db	    | done   | -      | -        | -         | -      |  10%    |
+| build	    | done   | done   | done     | done      | -      |  50%    |
+| flow	    | done   | -      | -        | -         | -      |  10%    |
+| pack	    | done   | -      | -        | -         | -      |   0%    |
+| server    | done   | -      | -        | -         | -      |  25%    |
+| editor    | revise | -      | -        | -         | -      |  10%    |
+| undo	    | -      | -      | -        | -         | -      |   0%    |
+| vm	    | done   | -      | -        | -         | -      |  10%    |
+| compiler  | done   | -      | -        | -         | -      |  10%    |
+| debug	    | done   | -      | -        | -         | -      |   0%    |
+| finale    | N/A    | -      | -        | -         | revise |  25%    |
+|           |        |        |          |           |        | *26%*   |
