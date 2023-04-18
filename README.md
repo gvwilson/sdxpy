@@ -80,5 +80,5 @@ This book is also designed for:
 | vm	    | done   | -      | -        | -         | -      |  10%    |
 | compiler  | done   | -      | -        | -         | -      |  10%    |
 | debug	    | done   | -      | -        | -         | -      |   0%    |
-| finale    | N/A    | -      | -        | -         | revise |  25%    |
-|           |        |        |          |           |        | *27%*   |
+| finale    | N/A    | done   | N/A      | N/A       | done   | 100%    |
+|           |        |        |          |           |        | *30%*   |
