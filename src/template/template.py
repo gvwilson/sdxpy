@@ -1,9 +1,7 @@
 import json
 import sys
-
 from bs4 import BeautifulSoup
 from expander import Expander
-
 
 def main():
     with open(sys.argv[1], "r") as reader:
@@ -16,7 +14,6 @@ def main():
     expander = Expander(template, variables)
     expander.walk()
     print(expander.getResult())
-
 
 if __name__ == "__main__":
     main()

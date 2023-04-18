@@ -1,3 +1,4 @@
+# [body]
 class Env:
     def __init__(self, initial):
         self.stack = [initial.copy()]
@@ -13,6 +14,7 @@ class Env:
             if name in frame:
                 return frame[name]
         return None
+# [/body]
 
     def __str__(self):
         return str(self.stack)

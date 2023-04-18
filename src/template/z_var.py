@@ -1,9 +1,8 @@
-class z_var:
-    @staticmethod
-    def open(expander, node):
-        expander.showTag(node, False)
-        expander.output(expander.env.find(node.attrs["z-var"]))
+"""Insert value of variable."""
 
-    @staticmethod
-    def close(expander, node):
-        expander.showTag(node, True)
+def open(expander, node):
+    expander.showTag(node, False)
+    expander.output(expander.env.find(node.attrs["z-var"]))
+
+def close(expander, node):
+    expander.showTag(node, True)

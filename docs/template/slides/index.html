@@ -78,7 +78,6 @@ class: slide-title
 ```ht
 <html>
   <body>
-    <p>Expect three items</p>
     <ul z-loop="item:names">
       <li><span z-var="item"/></li>
     </ul>
@@ -102,7 +101,6 @@ class: slide-title
 ```
 <html>
 <body>
-<p>Expect three items</p>
 <ul>
 <li><span>Johnson</span></li>
 
@@ -113,6 +111,439 @@ class: slide-title
 </body>
 </html>
 ```
+
+
+-   HTML doesn't care about extra blank lines, so we won't either
+
+---
+
+## How Do We Call This?
+
+-   Design the <a class="gl-ref" href="../../glossary/#api" markdown="1">API</a> of our library first
+
+```py
+data = {"names": ["Johnson", "Vaughan", "Jackson"]}
+
+dom = read_html("template.html")
+expander = Expander(dom, data)
+expander.walk()
+print(expander.result)
+```
+
+
+-   In real life, `data` would come from a configuration file or database
+
+---
+
+## Managing Variables
+
+-   Could use a `ChainMap`, but we'll write our own
+
+```py
+class Env:
+    def __init__(self, initial):
+        self.stack = [initial.copy()]
+
+    def push(self, frame):
+        self.stack.append(frame)
+
+    def pop(self):
+        self.stack.pop()
+
+    def find(self, name):
+        for frame in reversed(self.stack):
+            if name in frame:
+                return frame[name]
+        return None
+```
+
+
+---
+
+## Visiting Nodes
+
+-   Use the <a class="gl-ref" href="../../glossary/#visitor_pattern" markdown="1">Visitor</a> design pattern
+
+```py
+class Visitor:
+    def __init__(self, root):
+        self.root = root
+
+    def walk(self, node=None):
+        if node is None:
+            node = self.root
+        if self.open(node):
+            for child in node.children:
+                self.walk(child)
+        self.close(node)
+
+    def open(self, node):
+        raise NotImplementedError("open")
+
+    def close(self, node):
+        raise NotImplementedError("close")
+```
+
+
+---
+
+## Expanding a Template
+
+```py
+class Expander(Visitor):
+    def __init__(self, root, variables):
+        super().__init__(root)
+        self.env = Env(variables)
+        self.handlers = HANDLERS
+        self.result = []
+```
+
+
+-   The environment
+
+-   Handlers for our special node types
+
+-   The result (strings we'll concatenate at the end)
+
+---
+
+## Open…
+
+```py
+    def open(self, node):
+        if isinstance(node, NavigableString):
+            self.output(node.string)
+            return False
+        elif self.hasHandler(node):
+            return self.getHandler(node).open(self, node)
+        else:
+            self.showTag(node, False)
+            return True
+```
+
+
+-   If this is text, "display" it
+
+-   If this is a special node, run a function
+
+-   Otherwise, show the opening tag
+
+-   Return value is "do we proceed"?
+
+---
+
+## …and Close
+
+```py
+    def close(self, node):
+        if isinstance(node, NavigableString):
+            return
+        elif self.hasHandler(node):
+            self.getHandler(node).close(self, node)
+        else:
+            self.showTag(node, True)
+```
+
+
+-   Handlers come in open/close pairs
+
+    -   Because some might need to do cleanup
+
+---
+
+## Managing Handlers
+
+```py
+    def hasHandler(self, node):
+        return any(
+            name in self.handlers
+            for name in node.attrs
+        )
+
+    def getHandler(self, node):
+        possible = [
+            name for name in node.attrs
+            if name in self.handlers
+        ]
+        assert len(possible) == 1, f"Should be exactly one handler"
+        return self.handlers[possible[0]]
+```
+
+
+-   `hasHandler` looks for attributes with special names
+
+-   `getHandler` gets the one we need
+
+---
+
+## But What's a Handler?
+
+```py
+"""Insert a constant."""
+
+def open(expander, node):
+    expander.showTag(node, False)
+    expander.output(node.attrs["z-num"])
+
+def close(expander, node):
+    expander.showTag(node, True)
+```
+
+
+-   A module with `open` and `close` functions
+
+-   None of our handlers need state, so we don't need objects
+
+---
+
+## Variables Are Similar
+
+```py
+"""Insert value of variable."""
+
+def open(expander, node):
+    expander.showTag(node, False)
+    expander.output(expander.env.find(node.attrs["z-var"]))
+
+def close(expander, node):
+    expander.showTag(node, True)
+```
+
+
+-   We should think about error handling…
+
+---
+
+## Testing
+
+```py
+import json
+import sys
+from bs4 import BeautifulSoup
+from expander import Expander
+
+def main():
+    with open(sys.argv[1], "r") as reader:
+        variables = json.load(reader)
+
+    with open(sys.argv[2], "r") as reader:
+        doc = BeautifulSoup(reader.read(), "html.parser")
+        template = doc.find("html")
+
+    expander = Expander(template, variables)
+    expander.walk()
+    print(expander.getResult())
+
+if __name__ == "__main__":
+    main()
+```
+
+
+---
+
+## Static Text
+
+-   If this doesn't work, nothing else will
+
+```ht
+<html>
+  <body>
+    <h1>Static Text</h1>
+    <p>test</p>
+  </body>
+</html>
+```
+
+
+```
+<html>
+<body>
+<h1>Static Text</h1>
+<p>test</p>
+</body>
+</html>
+```
+
+
+---
+
+## Constants
+
+```ht
+<html>
+  <body>
+    <p><span z-num="123"/></p>
+  </body>
+</html>
+```
+
+
+```
+<html>
+<body>
+<p><span>123</span></p>
+</body>
+</html>
+```
+
+
+---
+
+## Variables
+
+```ht
+<html>
+  <body>
+    <p><span z-var="varName"/></p>
+  </body>
+</html>
+```
+
+
+```
+<html>
+<body>
+<p><span>varValue</span></p>
+</body>
+</html>
+```
+
+
+-   Input is a JSON file containing `{"varName": "varValue"}`
+
+---
+
+## Conditionals
+
+```py
+"""Conditionalize part of a template."""
+
+def open(expander, node):
+    check = expander.env.find(node.attrs["z-if"])
+    if check:
+        expander.showTag(node, False)
+    return check
+
+def close(expander, node):
+    if expander.env.find(node.attrs["z-if"]):
+        expander.showTag(node, True)
+```
+
+
+-   The handler determines whether to show this tag and go deeper
+
+-   What if the variable's value changes between opening and closing?
+
+---
+
+## Testing
+
+```ht
+<html>
+  <body>
+    <p z-if="yes">This should be shown.</p>
+    <p z-if="no">This should <em>not</em> be shown.</p>
+  </body>
+</html>
+```
+
+
+```
+<html>
+<body>
+<p>This should be shown.</p>
+
+</body>
+</html>
+```
+
+
+-   With JSON `{"yes": True, "no": False}`
+
+---
+
+## Loops
+
+1.  Create a new stack frame holding the current value of the loop variable
+
+1.  Expand all of the node's children with that stack frame in place
+
+1.  Pop the stack frame to get rid of the temporary variable
+
+---
+
+## Loops
+
+```py
+"""Repeat operations."""
+
+def open(expander, node):
+    index_name, target_name = node.attrs["z-loop"].split(":")
+    expander.showTag(node, False)
+    target = expander.env.find(target_name)
+    for value in target:
+        expander.env.push({index_name: value})
+        for child in node.children:
+            expander.walk(child)
+        expander.env.pop()
+    return False
+
+def close(expander, node):
+    expander.showTag(node, True)
+```
+
+
+-   The most complicated handler yet
+
+---
+
+## Testing
+
+```ht
+<html>
+  <body>
+    <ul z-loop="item:names">
+      <li><span z-var="item"/></li>
+    </ul>
+  </body>
+</html>
+```
+
+
+```
+<html>
+<body>
+<ul>
+<li><span>Johnson</span></li>
+
+<li><span>Vaughan</span></li>
+
+<li><span>Jackson</span></li>
+</ul>
+</body>
+</html>
+```
+
+
+---
+
+## Next Steps
+
+-   The `z-if` issue might mean we need state after all
+
+-   Tackle that before going any further
+
+-   And figure out how to do unit testing
+
+---
+
+class: summary
+
+## Summary
+
+<figure>
+<img src="../concept_map.svg" alt="Concept map for page templates"/>
+</figure>
 
 
 

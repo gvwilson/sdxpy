@@ -10,6 +10,12 @@ include ../../examples.mk
 
 EXTRAS = template.py vars.json
 
+template.py: expander.py
+	@touch $@
+
+expander.py: env.py visitor.py
+	@touch $@
+
 conditional.out: ${EXTRAS} conditional.ht
 loop.out: ${EXTRAS} loop.ht
 multiple_variables.out: ${EXTRAS} multiple_variables.ht

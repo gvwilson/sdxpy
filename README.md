@@ -64,7 +64,7 @@ This book is also designed for:
 | check	    | done   | done   | done     | -         | -      |  50%    |
 | interp    | done   | done   | done     | done      | -      |  50%    |
 | func	    | revise | -      | -        | -         | -      |   0%    |
-| template  | revise | revise | done     | -         | -      |  25%    |
+| template  | done   | done   | done     | -         | -      |  50%    |
 | layout    | revise | revise | done     | -         | -      |  25%    |
 | lint	    | revise | revise | done     | -         | -      |  25%    |
 | perf	    | done   | done   | done     | done      | -      |  50%    |
@@ -81,4 +81,4 @@ This book is also designed for:
 | compiler  | done   | -      | -        | -         | -      |  10%    |
 | debug	    | done   | -      | -        | -         | -      |   0%    |
 | finale    | N/A    | -      | -        | -         | revise |  25%    |
-|           |        |        |          |           |        | *26%*   |
+|           |        |        |          |           |        | *27%*   |
