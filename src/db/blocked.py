@@ -2,6 +2,7 @@ from pathlib import Path
 
 from interface import Database
 
+# [class]
 class Blocked(Database):
     RECORDS_PER_BLOCK = 2
 
@@ -15,6 +16,14 @@ class Blocked(Database):
         self._index = {}
         self._blocks = []
 
+    def num_blocks(self):
+        return len(self._blocks)
+
+    def num_records(self):
+        return len(self._index)
+# [/class]
+
+    # [add]
     def add(self, record):
         key = self._record_cls.key(record)
         seq_id = self._next_seq_id()
@@ -22,7 +31,9 @@ class Blocked(Database):
         block_id = self._get_block_id(seq_id)
         block = self._get_block(block_id)
         block[seq_id] = record
+    # [/add]
 
+    # [get]
     def get(self, key):
         if key not in self._index:
             return None
@@ -30,13 +41,9 @@ class Blocked(Database):
         block_id = self._get_block_id(seq_id)
         block = self._get_block(block_id)
         return block[seq_id]
+    # [/get]
 
-    def num_blocks(self):
-        return len(self._blocks)
-
-    def num_records(self):
-        return len(self._index)
-
+    # [helper]
     def _next_seq_id(self):
         seq_id = self._next
         self._next += 1
@@ -49,3 +56,4 @@ class Blocked(Database):
         while block_id >= len(self._blocks):
             self._blocks.append({})
         return self._blocks[block_id]
+    # [/helper]

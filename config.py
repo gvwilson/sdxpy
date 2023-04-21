@@ -77,7 +77,6 @@ todo = [
     "cache",
     "check",
     "compiler",
-    "db",
     "debug",
     "finale",
     "interp",

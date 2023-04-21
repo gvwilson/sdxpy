@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="repo" content="https://github.com/gvwilson/sd4ds">
+  <meta name="build_date" content="2023-04-21">
+  <meta name="template" content="slides">
+  <meta name="major" content="Chapter 19">
+  
+  <link rel="icon" type="image/x-icon" href="../../favicon.ico">
+  <link rel="stylesheet" href="../../mccole.css">
+  <link rel="stylesheet" href="../../tango.css">
+  <script defer data-domain="third-bit.com" src="https://plausible.io/js/plausible.js"></script>
+  <script>
+    MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']]
+      }
+    };
+  </script>
+  <script
+    type="text/javascript"
+    id="MathJax-script"
+    async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+  </script>
+  <script defer src="../../mccole.js"></script>
+  <title>Software Design for Data Scientists: A Database </title>
+</head>
+
+  <body>
+    <textarea id="source">
+
+class: slide-title
+
+<p>
+  <a href="https://third-bit.com/sd4ds/">Software Design for Data Scientists</a>
+</p>
+<h1>A Database </h1>
+<div class="bottom">
+  <a href="../">chapter</a>
+</div>
+
+---
+
+
+## The Problem
+
+-   Persisting objects (<a class="x-ref" href="../../persist/">Chapter 17</a>) lets us save and restore program state
+
+-   But we often want fast lookup *without* reloading all the data
+
+-   And interoperability across languages
+
+-   Create a simple <a class="gl-ref" href="../../glossary/#log_structured_database" markdown="1">log-structured database</a>
+
+---
+
+## Starting Point
+
+-   A simple <a class="gl-ref" href="../../glossary/#key_value_store" markdown="1">key-value store</a> that lets us look things up
+
+-   User must provide a function that gets key from record
+
+```py
+class Database:
+    def __init__(self, key_func):
+        """Initialize with function to get key."""
+        self._key_func = key_func
+
+    def add(self, record):
+        """Store the given record."""
+        raise NotImplementedError("add")
+
+    def get(self, key):
+        """Return record associated with key or None."""
+        raise NotImplementedError("get")
+```
+
+
+---
+
+## Just a Dictionary
+
+-   Store in memory using a dictionary
+
+```py
+from interface_original import Database
+
+class JustDict(Database):
+    def __init__(self, key_func):
+        super().__init__(key_func)
+        self._data = {}
+
+    def add(self, record):
+        key = self._key_func(record)
+        self._data[key] = record
+
+    def get(self, key):
+        return self._data.get(key, None)
+```
+
+
+-   Lets us start writing tests
+
+---
+
+## Experimental Records
+
+```py
+class BasicExperiment:
+    MAX_NAME_LEN = 6
+    TIMESTAMP_LEN = 10
+    MAX_READING = 10
+    MAX_READING_LEN = 2
+    MAX_READINGS_NUM = 2
+
+    @staticmethod
+    def key(record):
+        assert isinstance(record, BasicExperiment)
+        return record._name
+
+    def __init__(self, name, timestamp, readings):
+        assert 0 < len(name) <= self.MAX_NAME_LEN
+        assert 0 <= len(readings) <= self.MAX_READINGS_NUM
+        assert all((0 <= r <= self.MAX_READING) for r in readings)
+        self._name = name
+        self._timestamp = timestamp
+        self._readings = readings
+```
+
+
+---
+
+## Test Fixtures
+
+-   Use the `pytest.fixture` decorator from <a class="x-ref" href="../../meta/">Chapter 9</a>
+
+```py
+@pytest.fixture
+def db():
+    return JustDict(BasicExperiment.key)
+
+@pytest.fixture
+def ex01():
+    return BasicExperiment("ex01", 12345, [1, 2])
+
+@pytest.fixture
+def ex02():
+    return BasicExperiment("ex02", 67890, [3, 4])
+```
+
+
+---
+
+## Tests
+
+```py
+def test_construct(db):
+    assert db
+
+def test_get_nothing_from_empty_db(db):
+    assert db.get("something") is None
+
+def test_add_then_get(db, ex01):
+    db.add(ex01)
+    assert db.get("ex01") == ex01
+
+def test_add_two_then_get_both(db, ex01, ex02):
+    db.add(ex01)
+    db.add(ex02)
+    assert db.get("ex01") == ex01
+    assert db.get("ex02") == ex02
+
+def test_add_then_overwrite(db, ex01):
+    db.add(ex01)
+    ex01._timestamp = 67890
+    db.add(ex01)
+    assert db.get("ex01") == ex01
+```
+
+
+---
+
+## Refactor Interface
+
+-   We're going to need other record manipulation functions
+
+-   So save the record class instead of the key function
+
+```py
+class Database:
+    def __init__(self, record_cls):
+        """Initialize with data manipulation functions."""
+        self._record_cls = record_cls
+
+    def add(self, record):
+        """Store the given record."""
+        raise NotImplementedError("add")
+
+    def get(self, key):
+        """Return record associated with key or None."""
+        raise NotImplementedError("get")
+```
+
+
+---
+
+## Refactor Database
+
+-   Corresponding change to use a <a class="gl-ref" href="../../glossary/#static_method" markdown="1">static method</a>
+    of the record class
+
+```py
+from interface import Database
+
+class JustDictRefactored(Database):
+    def __init__(self, record_cls):
+        super().__init__(record_cls)
+        self._data = {}
+
+    def add(self, record):
+        key = self._record_cls.key(record)
+        self._data[key] = record
+
+    def get(self, key):
+        return self._data.get(key, None)
+```
+
+
+---
+
+## Saving Records
+
+-   Whole point of database is to save data in files
+
+-   Records must know how to pack and unpack themselves
+
+-   Start by calculating the size of each
+
+```py
+class Experiment(BasicExperiment):
+    RECORD_LEN = MAX_NAME_LEN + 1 \
+        + TIMESTAMP_LEN + 1 \
+        + (MAX_READING_LEN * 3 * MAX_READINGS_NUM)
+
+    @staticmethod
+    def size():
+        return Experiment.RECORD_LEN
+```
+
+
+---
+
+## Packing
+
+```py
+    @staticmethod
+    def pack(record):
+        assert isinstance(record, Experiment)
+        readings = "\0".join(str(r) for r in record._readings)
+        result = f"{record._name}\0{record._timestamp}\0{readings}"
+        if len(result) < Experiment.RECORD_LEN:
+            result += "\0" * (Experiment.RECORD_LEN - len(result))
+        return result
+```
+
+
+-   Save as strings with <a class="gl-ref" href="../../glossary/#null_byte" markdown="1">null byte</a> `\0` between them
+
+-   A real implementation would pack as binary (<a class="x-ref" href="../../binary/">Chapter 18</a>)
+
+---
+
+## Unpacking
+
+```py
+    @staticmethod
+    def unpack(raw):
+        assert isinstance(raw, str)
+        parts = raw.split("\0")
+        name = parts[0]
+        timestamp = int(parts[1])
+        readings = [int(r) for r in parts[2:] if len(r)]
+        return Experiment(name, timestamp, readings)
+```
+
+
+-   Note: this doesn't handle strings with null bytes
+
+-   A real implementation etc.
+
+---
+
+## Multiple Records
+
+```py
+    @staticmethod
+    def pack_multi(records):
+        return ''.join([Experiment.pack(r) for r in records])
+
+    @staticmethod
+    def unpack_multi(raw):
+        size = Experiment.size()
+        split = [raw[i:i+size] for i in range(0, len(raw), size)]
+        return [Experiment.unpack(s) for s in split]
+```
+
+
+---
+
+## A File-Backed Database
+
+```py
+class FileBacked(Database):
+    def __init__(self, record_cls, filename):
+        super().__init__(record_cls)
+        self._filename = Path(filename)
+        if not self._filename.exists():
+            self._filename.touch()
+        self._load()
+
+    def add(self, record):
+        key = self._record_cls.key(record)
+        self._data[key] = record
+        self._save()
+
+    def get(self, key):
+        return self._data.get(key, None)
+```
+
+
+-   Needs two <a class="gl-ref" href="../../glossary/#helper_method" markdown="1">helper methods</a>
+
+---
+
+## A File-Backed Database
+
+```py
+    def _save(self):
+        packed = self._record_cls.pack_multi(self._data.values())
+        with open(self._filename, "w") as writer:
+            writer.write(packed)
+
+    def _load(self):
+        assert self._filename.exists()
+        with open(self._filename, "r") as reader:
+            raw = reader.read()
+        records = self._record_cls.unpack_multi(raw)
+        self._data = {self._record_cls.key(r):r for r in records}
+```
+
+
+-   Still saving and loading entire database
+
+-   But look at all the infrastructure we've built
+
+---
+
+## Saving Blocks
+
+-   Save *N* records per <a class="gl-ref" href="../../glossary/#block" markdown="1">block</a>
+
+-   Keep the <a class="gl-ref" href="../../glossary/#index_database" markdown="1">index</a> in memory
+
+-   When writing, only modify one block (smaller and faster)
+
+-   When reading, only load one block (ditto)
+
+FIXME: diagram
+
+---
+
+## FIXME
+
+FIXME: explain block allocation
+
+---
+
+## Adding a Record
+
+```py
+    def add(self, record):
+        key = self._record_cls.key(record)
+        seq_id = self._next_seq_id()
+        self._index[key] = seq_id
+        block_id = self._get_block_id(seq_id)
+        block = self._get_block(block_id)
+        block[seq_id] = record
+```
+
+
+-   Get the sequence ID for this record
+
+-   Store the key-to-sequence mapping in the index
+
+-   Find or create the right block
+
+-   Add the record
+
+---
+
+## Getting a Record
+
+```py
+    def get(self, key):
+        if key not in self._index:
+            return None
+        seq_id = self._index[key]
+        block_id = self._get_block_id(seq_id)
+        block = self._get_block(block_id)
+        return block[seq_id]
+```
+
+
+-   Do we even know about this record?
+
+-   Find its current sequence ID
+
+-   Find the corresponding block
+
+-   Get the record
+
+---
+
+## Store Blocks in Memory
+
+```py
+class Blocked(Database):
+    RECORDS_PER_BLOCK = 2
+
+    @staticmethod
+    def size():
+        return Blocked.RECORDS_PER_BLOCK
+
+    def __init__(self, record_cls):
+        super().__init__(record_cls)
+        self._next = 0
+        self._index = {}
+        self._blocks = []
+
+    def num_blocks(self):
+        return len(self._blocks)
+
+    def num_records(self):
+        return len(self._index)
+```
+
+
+---
+
+## Helper Methods
+
+```py
+    def _next_seq_id(self):
+        seq_id = self._next
+        self._next += 1
+        return seq_id
+
+    def _get_block_id(self, seq_id):
+        return seq_id // Blocked.RECORDS_PER_BLOCK
+
+    def _get_block(self, block_id):
+        while block_id >= len(self._blocks):
+            self._blocks.append({})
+        return self._blocks[block_id]
+```
+
+
+---
+
+## Persisting Blocks
+
+-   Use inheritance to do everything described above while saving and loading blocks
+
+```py
+class BlockedFile(Blocked):
+    def __init__(self, record_cls, db_dir):
+        super().__init__(record_cls)
+        self._db_dir = Path(db_dir)
+        self._build_index()
+
+    def add(self, record):
+        super().add(record)
+        self._save(record)
+
+    def get(self, key):
+        if key not in self._index:
+            return None
+        self._load(key)
+        return super().get(key)
+```
+
+
+---
+
+## Saving
+
+```py
+    def _save(self, record):
+        key = self._record_cls.key(record)
+        seq_id = self._index[key]
+        block_id = self._get_block_id(seq_id)
+
+        block = self._get_block(block_id)
+        packed = self._record_cls.pack_multi(block.values())
+
+        filename = self._get_filename(block_id)
+        with open(filename, "w") as writer:
+            writer.write(''.join(packed))
+```
+
+
+-  Have to pack and save all the records in the block
+
+---
+
+## Loading
+
+```py
+    def _load(self, key):
+        seq_id = self._index[key]
+        block_id = self._get_block_id(seq_id)
+        filename = self._get_filename(block_id)
+        self._load_block(block_id, filename)
+
+    def _load_block(self, block_id, filename):
+        with open(filename, "r") as reader:
+            raw = reader.read()
+
+        records = self._record_cls.unpack_multi(raw)
+        base = self.size() * block_id
+        block = self._get_block(block_id)
+        for i, r in enumerate(records):
+            block[base + i] = r
+```
+
+
+-   Unpack all the records in the block
+
+---
+
+## Why Split Loading?
+
+-   Need to initialize the in-memory index when restarting the database
+
+```py
+    def _build_index(self):
+        seq_id = 0
+        for (block_id, filename) in enumerate(
+                sorted(self._db_dir.iterdir())
+        ):
+            self._load_block(block_id, filename)
+            for record in self._get_block(block_id).values():
+                key = self._record_cls.key(record)
+                self._index[key] = seq_id
+                seq_id += 1
+```
+
+
+-   Obvious extension: save the index in another file
+
+-   Would have to profile (<a class="x-ref" href="../../perf/">Chapter 16</a>) to see if this was worthwhile
+
+---
+
+## Next Steps
+
+-   Clean up unused blocks
+
+-   <a class="gl-ref" href="../../glossary/#compact" markdown="1">Compact</a> storage periodically
+
+-   Use other data structures for indexing
+
+
+[academic_prototyping]: https://www.fuzzingbook.org/html/AcademicPrototyping.html
+[aosa]: https://aosabook.org/
+[beautiful_soup]: https://beautiful-soup-4.readthedocs.io/
+[birthday_problem]: https://en.wikipedia.org/wiki/Birthday_problem
+[black]: https://black.readthedocs.io/
+[browser_engine_tutorial]: https://limpet.net/mbrubeck/2014/08/08/toy-layout-engine-1.html
+[browser_engineering]: https://browser.engineering/
+[brubeck_matt]: https://limpet.net/mbrubeck/
+[cc_by_nc]: https://creativecommons.org/licenses/by-nc/4.0/
+[cc_by_nc_legal]: https://creativecommons.org/licenses/by-nc/4.0/legalcode
+[clarkes_laws]: https://en.wikipedia.org/wiki/Clarke%27s_three_laws
+[contributor_covenant]: https://www.contributor-covenant.org/
+[cook_mary_rose]: https://maryrosecook.com/
+[crafting_interpreters]: https://craftinginterpreters.com/
+[ctan]: https://www.ctan.org/
+[db_tutorial]: https://cstack.github.io/db_tutorial/
+[dresser_christopher]: https://en.wikipedia.org/wiki/Christopher_Dresser
+[drumm_christian]: https://www.drumm.sh/
+[dvc]: https://dvc.org/
+[ejs]: https://ejs.co/
+[email]: mailto:gvwilson@third-bit.com
+[ethical_source]: https://ethicalsource.dev
+[evans_julia]: https://jvns.ca/
+[evans_zines]: https://wizardzines.com/
+[flake8]: https://flake8.pycqa.org/
+[git]: https://git-scm.com/
+[git_lfs]: https://git-lfs.github.io/
+[git_man_page_generator]: https://git-man-page-generator.lokaltog.net/
+[gitlet]: http://gitlet.maryrosecook.com/
+[glosario]: https://github.com/carpentries/glosario
+[gnu_make]: https://www.gnu.org/software/make/
+[graphviz]: https://www.graphviz.org/
+[graphviz_gui]: https://www.graphviz.org/resources/#graphical-interfaces
+[harrelson_chris]: https://twitter.com/chrishtr
+[hippocratic_license]: https://firstdonoharm.dev/
+[html5_data_attributes]: https://developer.mozilla.org/en-US/docs/Learn/HTML/Howto/Use_data_attributes
+[isort]: https://pycqa.github.io/isort/
+[ivy]: https://www.dmulholl.com/docs/ivy/main/
+[jekyll]: https://jekyllrb.com/
+[kilo_editor]: https://viewsourcecode.org/snaptoken/kilo/index.html
+[latex]: https://www.latex-project.org/
+[loewy_raymond]: https://en.wikipedia.org/wiki/Raymond_Loewy
+[log_structured_storage]: http://blog.notdot.net/2009/12/Damn-Cool-Algorithms-Log-structured-storage
+[lorgat_editor]: https://github.com/seem/editor
+[lorgat_tutorial]: https://wasimlorgat.com/posts/editor.html
+[lorgat_wasim]: https://wasimlorgat.com/
+[marthas_rules]: https://journals.sagepub.com/doi/10.1177/088610998600100206
+[nash_joe]: https://hachyderm.io/@joenash
+[networkx]: https://networkx.org/
+[nison_mael]: https://arcanis.github.io/
+[nystrom_bob]: http://journal.stuffwithstuff.com/
+[package_manager_tutorial]: https://classic.yarnpkg.com/blog/2017/07/11/lets-dev-a-package-manager/
+[panchekha_pavel]: https://pavpanchekha.com/
+[pereira_juanan]: https://ikasten.io/
+[php]: https://www.php.net/
+[picosat]: http://fmv.jku.at/picosat/
+[pip]: https://pip.pypa.io/
+[programming_tools]: https://en.wikipedia.org/wiki/Programming_tool
+[py_array]: https://docs.python.org/3/library/array.html
+[py_chainmap]: https://docs.python.org/3/library/collections.html#collections.ChainMap
+[py_cprofile]: https://docs.python.org/3/library/profile.html
+[py_fractions]: https://docs.python.org/3/library/fractions.html
+[py_glob]: https://docs.python.org/3/library/glob.html
+[py_hashlib]: https://docs.python.org/3/library/hashlib.html
+[py_inspect]: https://docs.python.org/3/library/inspect.html
+[py_io]: https://docs.python.org/3/library/io.html
+[py_itertools]: https://docs.python.org/3/library/itertools.html
+[py_json]: https://docs.python.org/3/library/json.html
+[py_mimetypes]: https://docs.python.org/3/library/mimetypes.html
+[py_pickle]: https://docs.python.org/3/library/pickle.html
+[py_semver]: https://pypi.org/project/semantic-version/
+[py_struct]: https://docs.python.org/3/library/struct.html
+[py_textwrap]: https://docs.python.org/3/library/textwrap.html
+[py_urlparse]: https://docs.python.org/3/library/urllib.parse.html
+[py_yaml]: https://pypi.org/project/PyYAML/
+[py_zipfile]: https://docs.python.org/3/library/zipfile.html
+[pyfakefs]: https://pytest-pyfakefs.readthedocs.io/
+[pytest]: https://docs.pytest.org/
+[pytest_approx]: https://docs.pytest.org/en/4.6.x/reference.html#pytest-approx
+[pytest_stdout]: https://docs.pytest.org/en/6.2.x/capture.html
+[python]: https://www.python.org/
+[reim_michael]: https://elderlinux.org/
+[requests]: https://requests.readthedocs.io/
+[ruten_paige]: https://viewsourcecode.org/
+[book_repo]: https://github.com/gvwilson/sd4ds/
+[book_site]: https://third-bit.com/sd4ds/
+[semver_spec]: https://semver.org/
+[sinel_joseph]: https://en.wikipedia.org/wiki/Joseph_Claude_Sinel
+[smith_dave]: https://davewsmith.com/
+[snakemake]: https://snakemake.readthedocs.io/
+[sqlite]: https://sqlite.org/
+[stack_connor]: https://connorstack.com/
+[svg_screenshot]: https://chrome.google.com/webstore/detail/svg-screenshot/nfakpcpmhhilkdpphcjgnokknpbpdllg
+[t3_personas]: https://teachtogether.tech/en/index.html#s:process-personas
+[textualize_fraction]: https://www.textualize.io/blog/posts/7-things-about-terminals
+[udhr]: https://www.un.org/en/universal-declaration-human-rights/
+[ungc]: https://www.unglobalcompact.org/what-is-gc/mission/principles
+[unicode]: https://www.unicode.org/
+[unix_packaging]: https://eerielinux.wordpress.com/2017/08/15/the-history-of-nix-package-management/
+[webaim_wave]: https://wave.webaim.org/
+[write_yourself_a_git]: https://wyag.thb.lt/
+[z3]: https://en.wikipedia.org/wiki/Z3_Theorem_Prover
+[zeller_andreas]: https://andreas-zeller.info/
+
+    </textarea>
+    <script src="../../remark-latest.min.js"></script>
+    <script>
+      var slideshow = remark.create({
+        highlightLines: true
+      })
+    </script>
+  </body>
+</html>

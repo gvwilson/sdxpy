@@ -1,9 +1,7 @@
-class Experiment:
-    MAX_NAME_LEN = 6
-    TIMESTAMP_LEN = 10
-    MAX_READING = 10
-    MAX_READING_LEN = 2
-    MAX_READINGS_NUM = 2
+from record_original import BasicExperiment
+
+# [base]
+class Experiment(BasicExperiment):
     RECORD_LEN = MAX_NAME_LEN + 1 \
         + TIMESTAMP_LEN + 1 \
         + (MAX_READING_LEN * 3 * MAX_READINGS_NUM)
@@ -11,12 +9,14 @@ class Experiment:
     @staticmethod
     def size():
         return Experiment.RECORD_LEN
+# [/base]
 
     @staticmethod
     def key(record):
         assert isinstance(record, Experiment)
         return record._name
 
+    # [pack]
     @staticmethod
     def pack(record):
         assert isinstance(record, Experiment)
@@ -25,7 +25,9 @@ class Experiment:
         if len(result) < Experiment.RECORD_LEN:
             result += "\0" * (Experiment.RECORD_LEN - len(result))
         return result
+    # [/pack]
 
+    # [unpack]
     @staticmethod
     def unpack(raw):
         assert isinstance(raw, str)
@@ -34,7 +36,9 @@ class Experiment:
         timestamp = int(parts[1])
         readings = [int(r) for r in parts[2:] if len(r)]
         return Experiment(name, timestamp, readings)
+    # [/unpack]
 
+    # [multi]
     @staticmethod
     def pack_multi(records):
         return ''.join([Experiment.pack(r) for r in records])
@@ -44,21 +48,4 @@ class Experiment:
         size = Experiment.size()
         split = [raw[i:i+size] for i in range(0, len(raw), size)]
         return [Experiment.unpack(s) for s in split]
-
-    def __init__(self, name, timestamp, readings):
-        assert 0 < len(name) <= self.MAX_NAME_LEN
-        assert 0 <= len(readings) <= self.MAX_READINGS_NUM
-        assert all((0 <= r <= self.MAX_READING) for r in readings)
-        self._name = name
-        self._timestamp = timestamp
-        self._readings = readings
-
-    def __str__(self):
-        joined = ', '.join(str(r) for r in self._readings)
-        return f"{self._name}({self._timestamp})[{joined}]"
-
-    def __eq__(self, other):
-        return isinstance(other, Experiment) and \
-            (self._name == other._name) and \
-            (self._timestamp == other._timestamp) and \
-            (self._readings == other._readings)
+    # [/multi]

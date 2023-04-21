@@ -70,7 +70,7 @@ This book is also designed for:
 | perf	    | done   | done   | done     | done      | -      |  50%    |
 | persist   | done   | done   | done     | done      | -      |  50%    |
 | binary    | revise | revise | done     | -         | -      |  25%    |
-| db	    | done   | -      | -        | -         | -      |  10%    |
+| db	    | done   | done   | -        | -         | -      |  20%    |
 | build	    | done   | done   | done     | done      | -      |  50%    |
 | flow	    | done   | -      | -        | -         | -      |  10%    |
 | pack	    | done   | -      | -        | -         | -      |   0%    |
