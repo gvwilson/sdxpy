@@ -51,7 +51,6 @@ chapters = [
     "editor",
     "undo",
     "vm",
-    "compiler",
     "debug",
     "finale",
 ]
