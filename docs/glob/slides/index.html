@@ -4,7 +4,7 @@
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="repo" content="https://github.com/gvwilson/sd4ds">
-  <meta name="build_date" content="2023-04-22">
+  <meta name="build_date" content="2023-04-25">
   <meta name="template" content="slides">
   <meta name="major" content="Chapter 3">
   
@@ -51,27 +51,24 @@ class: slide-title
 -   `2023-*.{pdf,txt}` matches `2023-01.txt` and `2023-final.pdf`
     but not `draft-2023.docx`
 
+<figure>
+<img src="../examples.svg" alt="Matching examples"/>
+</figure>
+
+
 -   How does this work?
 
 ---
 
 ## Write a Few Tests
 
-| Pattern | Text     | Match? |
-| ------- | -------- | ------ |
-| abc     | "abc"    | True   |
-| ab      | "abc"    | False  |
-| abc     | "ab"     | False  |
-| *       | ""       | True   |
-| *       | "abc"    | True   |
-| *def    | "abcdef" | True   |
-| abc*    | "abcdef" | True   |
-| a*c     | "abc"    | True   |
-| {a,b}   | "a"      | True   |
-| {a,b}   | "b"      | True   |
-| {a,b}   | "c"      | False  |
-| {a,b}   | "ab"     | False  |
-| *{x,y}  | "abcx"   | True   |
+| Pattern | Text     | Match? || Pattern | Text     | Match? |
+| ------- | -------- | ------ || ------- | -------- | ------ |
+| abc     | "abc"    | True   || a*c     | "abc"    | True   |
+| ab      | "abc"    | False  || {a,b}   | "a"      | True   |
+| abc     | "ab"     | False  || {a,b}   | "c"      | False  |
+| *       | ""       | True   || {a,b}   | "ab"     | False  |
+| *       | "abc"    | True   || *{x,y}  | "abcx"   | True   |
 
 ---
 
@@ -85,11 +82,20 @@ class: slide-title
 
 -   So create objects
 
--   Use the __Chain of Responsibility__ pattern
+---
+
+## Design Patterns
+
+-   Use the <a class="gl-ref" href="../../glossary/#chain_of_responsibility_pattern" markdown="1">Chain of Responsibility</a> pattern
 
     -   Each object matches if it can…
 
     -   …then asks something else to try to match the rest of the text
+
+<figure>
+<img src="../chain.svg" alt="Chain of Responsibility"/>
+</figure>
+
 
 ---
 
@@ -255,9 +261,6 @@ def test_either_after_any():
 ## But Wait…
 
 ```py
-from glob_lit import Lit
-from glob_either import Either
-
 def test_either_followed_by_literal_match():
     # ⌈{a,b}c⌋ ≈ "ac"
     assert Either(Lit("a"), Lit("b"), Lit("c"))
@@ -267,19 +270,15 @@ def test_either_followed_by_literal_no_match():
     assert not Either(Lit("a"), Lit("b"), Lit("x"))
 ```
 
-
 ```
 ========================= test session starts ==========================
-platform darwin -- Python 3.10.4, pytest-7.1.2, pluggy-1.0.0
-rootdir: /Users/gvwilson/sd4ds/src/glob
-plugins: pyfakefs-4.6.3
 collected 2 items
 
 test_glob_problem.py .F                                          [100%]
 
 ======================= short test summary info ========================
 FAILED test_glob_problem.py::test_either_followed_by_literal_no_match
-===================== 1 failed, 1 passed in 0.01s ======================
+===================== 1 failed, 1 passed in 0.03s ======================
 ```
 
 
@@ -290,11 +289,18 @@ FAILED test_glob_problem.py::test_either_followed_by_literal_no_match
 ## Rethinking
 
 -   We now have three matchers with the same interfaces
-    -   Use __Extract Parent Class__ refactoring
+    -   Use the <a class="gl-ref" href="../../glossary/#extract_parent_class_refactoring" markdown="1">Extract Parent Class</a> <a class="gl-ref" href="../../glossary/#refactor" markdown="1">refactoring</a>
 -   `if self.rest is None` all over the place
-    -   Use the __Null Object__ pattern instead
+    -   Use the <a class="gl-ref" href="../../glossary/#null_object_pattern" markdown="1">Null Object</a> pattern instead
 
---
+<figure>
+<img src="../refactoring.svg" alt="Refactoring matchers"/>
+</figure>
+
+
+---
+
+## We Didn't Invent This
 
 <div class="center">
 <img src="../gamma-design-patterns.webp" alt="Design Patterns book cover" width="25%">
@@ -304,7 +310,7 @@ FAILED test_glob_problem.py::test_either_followed_by_literal_no_match
 
 ---
 
-## Two New Toys
+## The Parent Class
 
 ```py
 class Match:
@@ -316,6 +322,17 @@ class Match:
         return result == len(text)
 ```
 
+
+-   Assume every child class has a `_match` method
+
+-   This method returns the location to continue searching
+
+-   So `Match.match` checks that we've reached the end of the text
+
+---
+
+## The Null Object Class
+
 ```py
 class Null(Match):
     def __init__(self, rest=None):
@@ -326,9 +343,9 @@ class Null(Match):
 ```
 
 
--   Assume every child class has a `_match` method
--   This method returns the location to continue searching
--   So `Match.match` checks that we've reached the end of the text
+-   Must be the last one in the chain
+
+-   Doesn't advance the match (i.e., does nothing)
 
 ---
 
@@ -351,7 +368,7 @@ class Lit(Match):
 -   Parent class initializes data that it defines
     -   Yes, the `Null` class broke this rule…
 -   Return `None` for "no match" or whatever `self.rest` returns
-    -   If this object's `rest` is a `Null`,
+    -   If this object's `rest` is `Null`,
         this will be the index after our match
 
 ---

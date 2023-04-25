@@ -5,21 +5,23 @@ COLUMNS = 4
 DIGITS = 8
 
 
+# [class]
 class VirtualMachine:
     def __init__(self):
         self.initialize([])
         self.prompt = ">>"
+# [/class]
 
+    # [init]
     def initialize(self, program):
         assert len(program) <= RAM_LEN, "Program is too long for memory"
         self.ram = [program[i] if (i < len(program)) else 0 for i in range(RAM_LEN)]
         self.ip = 0
         self.reg = [0] * NUM_REG
+    # [/init]
 
+    # [fetch]
     def fetch(self):
-        assert (
-            0 <= self.ip < len(self.ram)
-        ), f"Program counter {self.ip:06x} out of range 0..{len(self.ram):06x}"
         instruction = self.ram[self.ip]
         self.ip += 1
         op = instruction & OP_MASK
@@ -28,6 +30,7 @@ class VirtualMachine:
         instruction >>= OP_SHIFT
         arg1 = instruction & OP_MASK
         return [op, arg0, arg1]
+    # [/fetch]
 
     def show(self, writer):
         # Show registers
@@ -46,6 +49,7 @@ class VirtualMachine:
             print(output, file=writer)
             base += COLUMNS
 
+    # [run]
     def run(self):
         running = True
         while running:
@@ -62,18 +66,25 @@ class VirtualMachine:
             elif op == OPS["cpy"]["code"]:
                 self.reg[arg0] = self.reg[arg1]
 
+            # [skip]
+            # [store]
             elif op == OPS["str"]["code"]:
                 self.ram[self.reg[arg1]] = self.reg[arg0]
+            # [/store]
 
+            # [add]
             elif op == OPS["add"]["code"]:
                 self.reg[arg0] += self.reg[arg1]
+            # [/add]
 
             elif op == OPS["sub"]["code"]:
                 self.reg[arg0] -= self.reg[arg1]
 
+            # [beq]
             elif op == OPS["beq"]["code"]:
                 if self.reg[arg0] == 0:
                     self.ip = arg1
+            # [/beq]
 
             elif op == OPS["bne"]["code"]:
                 if self.reg[arg0] != 0:
@@ -84,9 +95,11 @@ class VirtualMachine:
 
             elif op == OPS["prm"]["code"]:
                 print(self.prompt, self.ram[self.reg[arg0]])
+            # [/skip]
 
             else:
                 assert False, f"Unknown op {op:06x}"
+    # [/run]
 
 
 def main(vm_cls):

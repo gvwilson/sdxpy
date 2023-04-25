@@ -54,7 +54,7 @@ This book is also designed for:
 | --------- | ------ | ------ | -------- | --------- | ------ | ------: |
 | intro	    | N/A    | done   | done     | N/A       | done   | 100%    |
 | dup	    | done   | done   | done     | -         | -      |  50%    |
-| glob	    | done   | done   | -        | -         | -      |  25%    |
+| glob	    | done   | done   | done     | done      | -      |  75%    |
 | parse	    | done   | done   | -        | -         | -      |  25%    |
 | test	    | revise | revise | done     | -         | -      |  50%    |
 | mock	    | -      | -      | -        | -         | -      |   0%    |
@@ -80,4 +80,4 @@ This book is also designed for:
 | vm	    | done   | -      | done     | done      | done   |  75%    |
 | debug	    | done   | -      | -        | -         | -      |   0%    |
 | finale    | N/A    | done   | N/A      | N/A       | done   | 100%    |
-|           |        |        |          |           |        | *33%*   |
+|           |        |        |          |           |        | *35%*   |

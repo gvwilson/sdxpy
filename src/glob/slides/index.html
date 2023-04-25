@@ -10,27 +10,27 @@ template: slides
 -   `2023-*.{pdf,txt}` matches `2023-01.txt` and `2023-final.pdf`
     but not `draft-2023.docx`
 
+[% figure
+   slide=True
+   slug="glob-examples"
+   img="../examples.svg"
+   alt="Matching examples"
+   caption="Examples of glob matching."
+%]
+
 -   How does this work?
 
 ---
 
 ## Write a Few Tests
 
-| Pattern | Text     | Match? |
-| ------- | -------- | ------ |
-| abc     | "abc"    | True   |
-| ab      | "abc"    | False  |
-| abc     | "ab"     | False  |
-| *       | ""       | True   |
-| *       | "abc"    | True   |
-| *def    | "abcdef" | True   |
-| abc*    | "abcdef" | True   |
-| a*c     | "abc"    | True   |
-| {a,b}   | "a"      | True   |
-| {a,b}   | "b"      | True   |
-| {a,b}   | "c"      | False  |
-| {a,b}   | "ab"     | False  |
-| *{x,y}  | "abcx"   | True   |
+| Pattern | Text     | Match? || Pattern | Text     | Match? |
+| ------- | -------- | ------ || ------- | -------- | ------ |
+| abc     | "abc"    | True   || a*c     | "abc"    | True   |
+| ab      | "abc"    | False  || {a,b}   | "a"      | True   |
+| abc     | "ab"     | False  || {a,b}   | "c"      | False  |
+| *       | ""       | True   || {a,b}   | "ab"     | False  |
+| *       | "abc"    | True   || *{x,y}  | "abcx"   | True   |
 
 ---
 
@@ -44,11 +44,23 @@ template: slides
 
 -   So create objects
 
--   Use the __Chain of Responsibility__ pattern
+---
+
+## Design Patterns
+
+-   Use the [%g chain_of_responsibility_pattern "Chain of Responsibility" %] pattern
 
     -   Each object matches if it can…
 
     -   …then asks something else to try to match the rest of the text
+
+[% figure
+   slide=True
+   slug="glob-chain"
+   img="../chain.svg"
+   alt="Chain of Responsibility"
+   caption="Matching with Chain of Responsibility."
+%]
 
 ---
 
@@ -111,7 +123,8 @@ template: slides
 
 ## But Wait…
 
-[% inc pat="../test_glob_problem.*" fill="py out" %]
+[% inc file="../test_glob_problem.py" keep="keep" %]
+[% inc file="../test_glob_problem.out" %]
 
 -   `Either` doesn't handle `rest`
 
@@ -120,11 +133,21 @@ template: slides
 ## Rethinking
 
 -   We now have three matchers with the same interfaces
-    -   Use __Extract Parent Class__ refactoring
+    -   Use the [%g extract_parent_class_refactoring "Extract Parent Class" %] [%g refactor "refactoring" %]
 -   `if self.rest is None` all over the place
-    -   Use the __Null Object__ pattern instead
+    -   Use the [%g null_object_pattern "Null Object" %] pattern instead
 
---
+[% figure
+   slide=True
+   slug="glob-refatoring"
+   img="../refactoring.svg"
+   alt="Refactoring matchers"
+   caption="Using the Extract Parent Class refactoring."
+%]
+
+---
+
+## We Didn't Invent This
 
 <div class="center">
 <img src="../gamma-design-patterns.webp" alt="Design Patterns book cover" width="25%">
@@ -134,14 +157,25 @@ template: slides
 
 ---
 
-## Two New Toys
+## The Parent Class
 
 [% inc file="../glob_null.py" keep="parent" %]
-[% inc file="../glob_null.py" keep="null" %]
 
 -   Assume every child class has a `_match` method
+
 -   This method returns the location to continue searching
+
 -   So `Match.match` checks that we've reached the end of the text
+
+---
+
+## The Null Object Class
+
+[% inc file="../glob_null.py" keep="null" %]
+
+-   Must be the last one in the chain
+
+-   Doesn't advance the match (i.e., does nothing)
 
 ---
 
@@ -152,7 +186,7 @@ template: slides
 -   Parent class initializes data that it defines
     -   Yes, the `Null` class broke this rule…
 -   Return `None` for "no match" or whatever `self.rest` returns
-    -   If this object's `rest` is a `Null`,
+    -   If this object's `rest` is `Null`,
         this will be the index after our match
 
 ---

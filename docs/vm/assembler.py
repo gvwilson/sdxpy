@@ -1,6 +1,7 @@
 import sys
 from architecture import NUM_REG, OP_SHIFT, OPS
 
+# [class]
 class Assembler:
     def assemble(self, lines):
         lines = self._get_lines(lines)
@@ -9,19 +10,9 @@ class Assembler:
         compiled = [self._compile(instr, labels) for instr in instructions]
         program = self._to_text(compiled)
         return program
+# [/class]
 
-    def _to_text(self, program):
-        return [f"{op:06x}" for op in program]
-
-    def _get_lines(self, lines):
-        lines = [ln.strip() for ln in lines]
-        lines = [ln for ln in lines if len(ln) > 0]
-        lines = [ln for ln in lines if not self._is_comment(ln)]
-        return lines
-
-    def _is_comment(self, line):
-        return line.startswith("#")
-
+    # [labels]
     def _find_labels(self, lines):
         result = {}
         loc = 0
@@ -36,7 +27,9 @@ class Assembler:
 
     def _is_label(self, line):
         return line.endswith(":")
+    # [/labels]
 
+    # [compile]
     def _compile(self, instruction, labels):
         tokens = instruction.split()
         op, args = tokens[0], tokens[1:]
@@ -58,9 +51,18 @@ class Assembler:
             return self._combine(
                 self._value(args[1], labels), self._reg(args[0]), OPS[op]["code"]
             )
+    # [/compile]
 
-        assert False, f"Unknown format {OPS[op]['fmt']}"
+    # [value]
+    def _value(self, token, labels):
+        if token[0] != "@":
+            return int(token)
+        lbl = token[1:]
+        assert lbl in labels, f"Unknown label '{token}'"
+        return labels[lbl]
+    # [/value]
 
+    # [combine]
     def _combine(self, *args):
         assert len(args) > 0, "Cannot combine no arguments"
         result = 0
@@ -68,20 +70,25 @@ class Assembler:
             result <<= OP_SHIFT
             result |= a
         return result
+    # [/combine]
+
+    def _to_text(self, program):
+        return [f"{op:06x}" for op in program]
+
+    def _get_lines(self, lines):
+        lines = [ln.strip() for ln in lines]
+        lines = [ln for ln in lines if len(ln) > 0]
+        lines = [ln for ln in lines if not self._is_comment(ln)]
+        return lines
+
+    def _is_comment(self, line):
+        return line.startswith("#")
 
     def _reg(self, token):
         assert token[0] == "R", f"Register '{token}' does not start with 'R'"
         r = int(token[1:])
         assert 0 <= r < NUM_REG, f"Illegal register {token}"
         return r
-
-    def _value(self, token, labels):
-        if token[0] != "@":
-            return int(token)
-
-        lbl = token[1:]
-        assert lbl in labels, f"Unknown label '{token}'"
-        return labels[lbl]
 
 def main(assembler_cls):
     assert len(sys.argv) == 3, f"Usage: {sys.argv[0]} input|- output|-"

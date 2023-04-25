@@ -103,7 +103,9 @@ copy = [
 
 # Exclusions (don't process).
 exclude = [
+    "*.as",
     "*.dot",
+    "*.mx",
     "*.xml",
 ]
 
