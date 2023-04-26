@@ -5,6 +5,7 @@ COLUMNS=72
 BIN_PY = $(wildcard bin/*.py)
 LIB_PY = $(wildcard lib/mccole/extensions/*.py)
 SRC_PY = $(wildcard src/*/*.py)
+SRC_SVG = $(wildcard src/*/*.svg)
 
 ## check: check source code style
 .PHONY: check
@@ -20,6 +21,11 @@ check:
 fix:
 	@isort ${BIN_PY} ${LIB_PY}
 	@black ${BIN_PY} ${LIB_PY}
+
+## fonts: check fonts in diagrams
+.PHONY: fonts
+fonts:
+	@python bin/check_svg_fonts.py $(SRC_SVG)
 
 ## status: status of chapters
 .PHONY: status
