@@ -13,7 +13,6 @@ class Parser:
 
     def _parse_Lit(self, rest, back):
         return Lit(rest[0], self._parse(back))
-
     # [/simple]
 
     # [parse]
@@ -28,7 +27,6 @@ class Parser:
 
         handler = getattr(self, handler_name)
         return handler(front[1:], back)
-
     # [/parse]
 
     # [either]
@@ -43,5 +41,4 @@ class Parser:
         left = Lit(back[0][1])
         right = Lit(back[1][1])
         return Either([left, right], self._parse(back[3:]))
-
     # [/either]

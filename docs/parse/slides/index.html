@@ -4,7 +4,7 @@
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="repo" content="https://github.com/gvwilson/sd4ds">
-  <meta name="build_date" content="2023-04-25">
+  <meta name="build_date" content="2023-04-26">
   <meta name="template" content="slides">
   <meta name="major" content="Chapter 4">
   
@@ -46,8 +46,8 @@ class: slide-title
 
 ## The Problem
 
--   `Any(Either(Lit("abc"), Lit("def")))` is harder to write and read
-    than `"*{abc,def}"`
+-   `Lit("2023-", Any(Either("pdf", "txt")))` is harder to write and read
+    than `"2023-*{pdf,txt}"`
 
 -   How can we translate the latter into the former?
 
@@ -55,9 +55,12 @@ class: slide-title
 
 1.  Convert text into <a class="gl-ref" href="../../glossary/#token" markdown="1">tokens</a>
 
-2.  Use tokens to generate code
+2.  Use tokens to generate an <a class="gl-ref" href="../../glossary/#abstract_syntax_tree" markdown="1">abstract syntax tree</a>
 
-    -   Or an <a class="gl-ref" href="../../glossary/#abstract_syntax_tree" markdown="1">abstract syntax tree</a>
+<figure>
+<img src="../pipeline.svg" alt="Parsing pipeline"/>
+</figure>
+
 
 ---
 
@@ -78,9 +81,12 @@ class: slide-title
 
 ## A Bit More Design
 
--   `result` is the final (flat) list of tokens
+-   The result is the final (flat) list of tokens
 
--   `current` is the characters in the current literal (if any)
+-   We could pass around a list and append to it
+
+-   But we also need to know the characters in each `Literal`
+    and the options in each `Either`
 
 -   So create a class rather than a function
 
@@ -124,7 +130,26 @@ class: slide-title
 
     -   And after all the input has been parsed
 
+---
+
+## Adding Tokens
+
+```py
+    def _add(self, thing):
+        if len(self.current) > 0:
+            self.result.append(["Lit", self.current])
+            self.current = ""
+        if thing is not None:
+            self.result.append([thing])
+```
+
+
 -   `self._add(None)` means "add the literal but nothing else"
+
+<figure>
+<img src="../tokenize.svg" alt="Tokenizing"/>
+</figure>
+
 
 ---
 
@@ -135,34 +160,6 @@ def test_tok_empty_string():
     assert Tokenizer().tok("") == []
 
 
-def test_tok_lit_only():
-    assert Tokenizer().tok("abc") == [["Lit", "abc"]]
-
-
-def test_tok_any_only():
-    assert Tokenizer().tok("*") == [["Any"]]
-
-
-def test_tok_either_start_only():
-    assert Tokenizer().tok("{") == [["EitherStart"]]
-
-
-def test_tok_either_end_only():
-    assert Tokenizer().tok("}") == [["EitherEnd"]]
-
-
-def test_tok_any_lit():
-    assert Tokenizer().tok("*abc") == [["Any"], ["Lit", "abc"]]
-
-
-```
-
-
----
-
-## Testing
-
-```py
 def test_tok_any_either():
     assert Tokenizer().tok("*{abc,def}") == [
         ["Any"],
@@ -171,18 +168,10 @@ def test_tok_any_either():
         ["Lit", "def"],
         ["EitherEnd"],
     ]
-
-
 ```
 
 
---
-
 -   List-of-lists structure is similar to the instructions used in <a class="x-ref" href="../../interp/">Chapter 11</a>
-
-    -   First element tells us how to dispatch
-
-    -   Trailing elements are any extra data
 
 ---
 
@@ -200,13 +189,14 @@ def test_tok_any_either():
 
         handler = getattr(self, handler_name)
         return handler(front[1:], back)
-
 ```
 
 
--   `front[0]` is token name
--   `front[1:]` is any other data in this token
+-   `front[0]` is token name, `front[1:]` is any other data
+
 -   `back` is the remaining tokens
+
+-   Look for <code>\_parse\_<em>thing</em></code> method
 
 ---
 
@@ -223,7 +213,6 @@ class Parser:
 
     def _parse_Lit(self, rest, back):
         return Lit(rest[0], self._parse(back))
-
 ```
 
 
@@ -243,11 +232,14 @@ class Parser:
         left = Lit(back[0][1])
         right = Lit(back[1][1])
         return Either([left, right], self._parse(back[3:]))
-
 ```
 
 
--   It should pull things from `back` until it hits `EitherEnd`
+-   Remember, we didn't save the commas
+
+--
+
+-   It really should pull things from `back` until it hits `EitherEnd`
 
 ---
 
@@ -259,10 +251,13 @@ class Parser:
         while back and (back[0][0] == "Lit"):
             children.append(Lit(back[0][1]))
             back = back[1:]
+
         if not children:
             raise ValueError("empty Either")
+
         if back[0][0] != "EitherEnd":
             raise ValueError("badly-formatted Either")
+
         return Either(children, self._parse(back[1:]))
 ```
 
@@ -304,13 +299,11 @@ class Lit(Match):
         self.chars = chars
 
     def __eq__(self, other):
-        return super().__eq__(other) and (self.chars == other.chars)
-
-
+        return super().__eq__(other) and (
+            self.chars == other.chars
+        )
 ```
 
-
--   Remember, we didn't save the commas
 
 ---
 
@@ -329,9 +322,9 @@ class: summary
 ## Summary
 
 <figure>
-  <img src="../concept_map.svg" alt="Concept map of parsing">
-  <figcaption>Concept map</figcaption>
+<img src="../concept_map.svg" alt="Concept map of parsing"/>
 </figure>
+
 
 
 [academic_prototyping]: https://www.fuzzingbook.org/html/AcademicPrototyping.html

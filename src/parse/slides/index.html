@@ -5,8 +5,8 @@ template: slides
 
 ## The Problem
 
--   `Any(Either(Lit("abc"), Lit("def")))` is harder to write and read
-    than `"*{abc,def}"`
+-   `Lit("2023-", Any(Either("pdf", "txt")))` is harder to write and read
+    than `"2023-*{pdf,txt}"`
 
 -   How can we translate the latter into the former?
 
@@ -14,9 +14,15 @@ template: slides
 
 1.  Convert text into [%g token "tokens" %]
 
-2.  Use tokens to generate code
+2.  Use tokens to generate an [%g abstract_syntax_tree "abstract syntax tree" %]
 
-    -   Or an [%g abstract_syntax_tree "abstract syntax tree" %]
+[% figure
+   slide=True
+   slug="parse-pipeline"
+   img="../pipeline.svg"
+   alt="Parsing pipeline"
+   caption="Stages in parsing pipeline."
+%]
 
 ---
 
@@ -37,9 +43,12 @@ template: slides
 
 ## A Bit More Design
 
--   `result` is the final (flat) list of tokens
+-   The result is the final (flat) list of tokens
 
--   `current` is the characters in the current literal (if any)
+-   We could pass around a list and append to it
+
+-   But we also need to know the characters in each `Literal`
+    and the options in each `Either`
 
 -   So create a class rather than a function
 
@@ -63,7 +72,21 @@ template: slides
 
     -   And after all the input has been parsed
 
+---
+
+## Adding Tokens
+
+[% inc file="../tokenizer.py" keep="add" %]
+
 -   `self._add(None)` means "add the literal but nothing else"
+
+[% figure
+   slide=True
+   slug="parse-tokenize"
+   img="../tokenize.svg"
+   alt="Tokenizing"
+   caption="Steps in tokenizing a string."
+%]
 
 ---
 
@@ -71,19 +94,7 @@ template: slides
 
 [% inc file="../test_tokenizer.py" keep="tests" %]
 
----
-
-## Testing
-
-[% inc file="../test_tokenizer.py" keep="complex" %]
-
---
-
 -   List-of-lists structure is similar to the instructions used in [%x interp %]
-
-    -   First element tells us how to dispatch
-
-    -   Trailing elements are any extra data
 
 ---
 
@@ -91,9 +102,11 @@ template: slides
 
 [% inc file="../parser.py" keep="parse" %]
 
--   `front[0]` is token name
--   `front[1:]` is any other data in this token
+-   `front[0]` is token name, `front[1:]` is any other data
+
 -   `back` is the remaining tokens
+
+-   Look for <code>\_parse\_<em>thing</em></code> method
 
 ---
 
@@ -107,7 +120,11 @@ template: slides
 
 [% inc file="../parser.py" keep="either" %]
 
--   It should pull things from `back` until it hits `EitherEnd`
+-   Remember, we didn't save the commas
+
+--
+
+-   It really should pull things from `back` until it hits `EitherEnd`
 
 ---
 
@@ -129,8 +146,6 @@ template: slides
 
 [% inc file="../match.py" keep="equal" %]
 
--   Remember, we didn't save the commas
-
 ---
 
 ## Infrastructure
@@ -147,7 +162,10 @@ class: summary
 
 ## Summary	       
 
-<figure>
-  <img src="../concept_map.svg" alt="Concept map of parsing">
-  <figcaption>Concept map</figcaption>
-</figure>
+[% figure
+   slide=True
+   slug="parse-concept-map"
+   img="../concept_map.svg"
+   alt="Concept map of parsing"
+   caption="Concept map"
+%]

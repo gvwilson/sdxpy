@@ -15,9 +15,9 @@ class Lit(Match):
         self.chars = chars
 
     def __eq__(self, other):
-        return super().__eq__(other) and (self.chars == other.chars)
-
-
+        return super().__eq__(other) and (
+            self.chars == other.chars
+        )
 # [/equal]
 
 

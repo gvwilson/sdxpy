@@ -32,9 +32,11 @@ class Tokenizer:
         self.result = []
         self.current = ""
 
+    # [add]
     def _add(self, thing):
         if len(self.current) > 0:
             self.result.append(["Lit", self.current])
             self.current = ""
         if thing is not None:
             self.result.append([thing])
+    # [/add]

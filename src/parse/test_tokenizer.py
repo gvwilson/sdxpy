@@ -5,6 +5,16 @@ def test_tok_empty_string():
     assert Tokenizer().tok("") == []
 
 
+def test_tok_any_either():
+    assert Tokenizer().tok("*{abc,def}") == [
+        ["Any"],
+        ["EitherStart"],
+        ["Lit", "abc"],
+        ["Lit", "def"],
+        ["EitherEnd"],
+    ]
+# [/tests]
+
 def test_tok_lit_only():
     assert Tokenizer().tok("abc") == [["Lit", "abc"]]
 
@@ -23,9 +33,6 @@ def test_tok_either_end_only():
 
 def test_tok_any_lit():
     assert Tokenizer().tok("*abc") == [["Any"], ["Lit", "abc"]]
-
-
-# [/tests]
 
 
 def test_tok_lit_any():
@@ -63,17 +70,3 @@ def test_tok_either_two_lit():
         ["Lit", "def"],
         ["EitherEnd"],
     ]
-
-
-# [complex]
-def test_tok_any_either():
-    assert Tokenizer().tok("*{abc,def}") == [
-        ["Any"],
-        ["EitherStart"],
-        ["Lit", "abc"],
-        ["Lit", "def"],
-        ["EitherEnd"],
-    ]
-
-
-# [/complex]
