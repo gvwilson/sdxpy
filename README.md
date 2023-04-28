@@ -62,7 +62,7 @@ This book is also designed for:
 | oop	    | done   | done   | done     | done      | -      |  50%    |
 | meta	    | -      | -      | -        | -         | -      |   0%    |
 | check	    | done   | done   | done     | -         | -      |  50%    |
-| interp    | done   | done   | done     | done      | -      |  50%    |
+| interp    | done   | done   | done     | done      | -      |  75%    |
 | func	    | revise | -      | -        | -         | -      |   0%    |
 | template  | done   | done   | done     | -         | -      |  50%    |
 | layout    | revise | revise | done     | -         | -      |  25%    |
@@ -80,4 +80,4 @@ This book is also designed for:
 | vm	    | done   | -      | done     | done      | done   |  75%    |
 | debug	    | done   | -      | -        | -         | -      |   0%    |
 | finale    | N/A    | done   | N/A      | N/A       | done   | 100%    |
-|           |        |        |          |           |        | *36%*   |
+|           |        |        |          |           |        | *37%*   |

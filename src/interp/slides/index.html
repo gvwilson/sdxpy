@@ -19,11 +19,7 @@ template: slides
 
 -   Represent simple arithmetic operations as lists
 
-```python
-["add", 1, 2]            # add 1 and 2
-["abs", -3.5]            # get the absolute value of 3.5
-["add", ["abs", -5], 9]  # combine
-```
+[% inc file="../add_example.py" %]
 
 --
 
@@ -34,13 +30,7 @@ template: slides
 
 ## Evaluating Expressions
 
-```python
-def do_add(args):
-    assert len(args) == 2
-    left = do(args[0])
-    right = do(args[1])
-    return left + right
-```
+[% inc file="../expr.py" keep="do_add" %]
 
 -   `args` is everything _except_ the name of the operation
 -   Use an as-yet-unwritten function `do` to evaluate the operands
@@ -50,37 +40,18 @@ def do_add(args):
 
 ## Evaluating Expressions
 
-```python
-def do_abs(args):
-    assert len(args) == 1
-    val = do(args[0])
-    return abs(val)
-```
+[% inc file="../expr.py" keep="do_add" %]
 
 -   All the `do_` functions can be called interchangeably
--   Like the unit test functions of the previous lesson
+-   Like the unit test functions of [%x test %]
 
 ---
 
 ## Dispatching Operations
 
-```python
-def do(expr):
-    # Integers evaluate to themselves.
-    if isinstance(expr, int):
-        return expr
+-   Write a function that [%g dispatch "dispatches" %] to actual operations
 
-    # Lists trigger function calls.
-    assert isinstance(expr, list)
-    if expr[0] == "abs":
-        return do_abs(expr[1:])
-    if expr[0] == "add":
-        return do_add(expr[1:])
-    assert False, f"Unknown operation {expr[0]}"
-```
-
--   Integers are themselves
--   Otherwise, choose and call the function
+[% inc file="../expr.py" keep="do" %]
 
 ---
 
@@ -102,12 +73,7 @@ def do(expr):
     -   Like the dictionary returned by the `globals` function
     -   An [%g environment "environment" %]
 
-```python
-def do_abs(env, args):
-    assert len(args) == 1
-    val = do(env, args[0])
-    return abs(val)
-```
+[% inc file="../vars.py" keep="do_abs" %]
 
 ---
 
@@ -115,24 +81,11 @@ def do_abs(env, args):
 
 -   Choices for getting variables' values:
     1.  Assume strings are variable names
-    2.  _Define another function that we call explicitly_
+    2.  Define another function that we call explicitly
 
-```python
-# ["get", "name"]
-def do_get(env, args):
-    assert len(args) == 1
-    assert isinstance(args[0], str)
-    assert args[0] in env, f"Unknown variable {args[0]}"
-    return env[args[0]]
+[% inc file="../vars.py" keep="do_get" %]
 
-# ["set", "name", …expression…]
-def do_set(env, args):
-    assert len(args) == 2
-    assert isinstance(args[0], str)
-    value = do(env, args[1])
-    env[args[0]] = value
-    return value
-```
+[% inc file="../vars.py" keep="do_set" %]
 
 ---
 
@@ -142,13 +95,7 @@ def do_set(env, args):
 -   `["seq", ["set", "a", 1], ["add", ["get", "a"], 2]]`
     -   LISP: Lots of Irritating Single Parentheses
 
-```python
-def do_seq(env, args):
-    assert len(args) > 0
-    for item in args:
-        result = do(env, item)
-    return result
-```
+[% inc file="../vars.py" keep="do_seq" %]
 
 ---
 
@@ -156,8 +103,8 @@ class: aside
 
 ## Everything Is An Expression
 
--   Python distinguishes __expressions__ (which produce values)
-    from __statements__ (which don't)
+-   Python distinguishes [%g expression "expressions" %] (which produce values)
+    from [%g statement "statements" %] (which don't)
 -   But it doesn't have to, and many languages don't
 
 ```python
@@ -175,26 +122,7 @@ result =
 
 ## This Is Tedious
 
-```python
-def do(env, expr):
-    # Integers evaluate to themselves.
-    if isinstance(expr, int):
-        return expr
-
-    # Lists trigger function calls.
-    assert isinstance(expr, list)
-    if expr[0] == "abs":
-        return do_abs(env, expr[1:])
-    if expr[0] == "add":
-        return do_add(env, expr[1:])
-    if expr[0] == "get":
-        return do_get(env, expr[1:])
-    if expr[0] == "seq":
-        return do_seq(env, expr[1:])
-    if expr[0] == "set":
-        return do_set(env, expr[1:])
-    assert False, f"Unknown operation {expr[0]}"
-```
+[% inc file="../vars.py" keep="do" %]
 
 --
 
@@ -204,25 +132,7 @@ def do(env, expr):
 
 ## Introspection
 
-```python
-# Dictionary comprehensions are actually loop expressions
-OPS = {
-    name.replace("do_", ""): func
-    for (name, func) in globals().items()
-    if name.startswith("do_")
-}
-
-def do(env, expr):
-    # Integers evaluate to themselves.
-    if isinstance(expr, int):
-        return expr
-
-    # Lists trigger function calls.
-    assert isinstance(expr, list)
-    assert expr[0] in OPS, f"Unknown operation {expr[0]}"
-    func = OPS[expr[0]]
-    return func(env, expr[1:])
-```
+[% inc file="../vars_reflect.py" keep="lookup" %]
 
 ---
 
@@ -230,8 +140,7 @@ class: aside
 
 ## How Good Is Our Design?
 
--   One way to evaluate a design is to ask how extensible it is
-    -   I.e., how easy is it to implement reasonable changes
+-   One way to evaluate a design is to ask how [%g extensible "extensible" %] it is
 -   The answer for the interpreter is "pretty easily"
 -   The answer for our little language is "not at all"
 -   We need a way to define and call functions of our own
