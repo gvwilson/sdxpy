@@ -30,12 +30,12 @@ chapters = [
     "glob",
     "parse",
     "test",
+    "interp",
+    "func",
     "mock",
     "archive",
     "oop",
     "check",
-    "interp",
-    "func",
     "template",
     "layout",
     "lint",
@@ -104,6 +104,7 @@ exclude = [
     "*.as",
     "*.dot",
     "*.mx",
+    "*.tll",
     "*.xml",
 ]
 

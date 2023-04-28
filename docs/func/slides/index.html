@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="repo" content="https://github.com/gvwilson/sd4ds">
+  <meta name="build_date" content="2023-04-28">
+  <meta name="template" content="slides">
+  <meta name="major" content="Chapter 7">
+  
+  <link rel="icon" type="image/x-icon" href="../../favicon.ico">
+  <link rel="stylesheet" href="../../mccole.css">
+  <link rel="stylesheet" href="../../tango.css">
+  <script defer data-domain="third-bit.com" src="https://plausible.io/js/plausible.js"></script>
+  <script>
+    MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']]
+      }
+    };
+  </script>
+  <script
+    type="text/javascript"
+    id="MathJax-script"
+    async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+  </script>
+  <script defer src="../../mccole.js"></script>
+  <title>Software Design for Data Scientists: Functions and Closures</title>
+</head>
+
+  <body>
+    <textarea id="source">
+
+class: slide-title
+
+<p>
+  <a href="https://third-bit.com/sd4ds/">Software Design for Data Scientists</a>
+</p>
+<h1>Functions and Closures</h1>
+<div class="bottom">
+  <a href="../">chapter</a>
+</div>
+
+---
+
+
+## Background
+
+-   The little programming language of <a class="x-ref" href="../../interp/">Chapter 6</a> isn't extensible
+
+-   So add a way to define and call functions
+
+-   And then look at design tactics this opens up
+
+---
+
+## Definition and Call
+
+```py
+["def", "same", ["num"], ["get", "num"]]
+```
+
+
+-   Name
+
+-   (Possibly empty) list of parameter names
+
+-   Body (usually a `seq`)
+
+--
+
+```py
+["call", "same", 3]
+```
+
+
+-   Values can be expressions (not in a sub-list)
+
+---
+
+## Storing a Function
+
+-   Like any other value
+
+```py
+["func", ["num"], ["get", "num"]]
+```
+
+
+--
+
+-   Could just use this for defining
+
+```py
+["set", "same", ["func", ["num"], ["get", "num"]]]
+```
+
+
+---
+
+## Implementing Call
+
+1.  Evaluate all of these expressions.
+
+2.  Look up the function.
+
+3.  Create a new environment whose keys are the parameters' names
+    and whose values are the expressions' values.
+
+4.  Call `do` to run the function's action and captures the result.
+
+5.  Discard environment created two steps previously.
+
+6.  Return the function's result.
+
+---
+
+## The Environment
+
+-   A variable `x` in a function shouldn't clobber
+    a variable with the same name in its caller
+
+-   Use a list of dictionaries to implement a
+    <a class="gl-ref" href="../../glossary/#call_stack" markdown="1">call stack</a>
+
+-   Each dictionary called a <a class="gl-ref" href="../../glossary/#stack_frame" markdown="1">stack frame</a>
+
+-   Look down the stack to find the name
+
+-   If not found, add to the current (top-most) frame
+
+---
+
+## Implementing Definition
+
+```py
+def do_def(env, args):
+    assert len(args) == 3
+    name = args[0]
+    params = args[1]
+    body = args[2]
+    env_set(env, name, ["func", params, body])
+    return None
+```
+
+
+---
+
+## Implementing Call
+
+```py
+def do_call(env, args):
+    # Set up the call.
+    assert len(args) >= 1
+    name = args[0]
+    values = [do(env, a) for a in args[1:]]
+
+    # Find the function.
+    func = env_get(env, name)
+    assert isinstance(func, list) and (func[0] == "func")
+    params, body = func[1], func[2]
+    assert len(values) == len(params)
+
+    # Run in new environment.
+    env.append(dict(zip(params, values)))
+    result = do(env, body)
+    env.pop()
+
+    # Report.
+    return result
+```
+
+
+---
+
+## A Test
+
+```tll
+["seq",
+  ["def", "double", ["num"],
+    ["add", ["get", "num"], ["get", "num"]]
+  ],
+  ["set", "a", 1],
+  ["repeat", 4, ["seq",
+    ["set", "a", ["call", "double", ["get", "a"]]],
+    ["print", ["get", "a"]]
+  ]]
+]
+```
+
+
+```
+2
+4
+8
+16
+=> None
+```
+
+
+---
+
+## Dynamic Scoping
+
+-   Searching active stack for a variable is called <a class="gl-ref" href="../../glossary/#dynamic_scoping" markdown="1">dynamic scoping</a>
+
+```tll
+["seq",
+  ["def", "lower", [], ["get", "x"]],
+  ["def", "one", [], ["seq", ["set", "x", 1], ["call", "lower"]]],
+  ["def", "two", [], ["seq", ["set", "x", 2], ["call", "lower"]]],
+  ["print", ["call", "one"]],
+  ["print", ["call", "two"]]
+]
+```
+
+
+```
+1
+2
+=> None
+```
+
+
+-   Have to trace execution to figure out what a variable might refer to
+
+---
+
+## Lexical Scoping
+
+-   Almost all languages used <a class="gl-ref" href="../../glossary/#lexical_scoping" markdown="1">lexical scoping</a>
+
+-   Decide what a name refers to based on the structure of the program
+
+-   More efficient for the computer: doesn't have to search each time
+
+-   More efficient for the person: limits scope of reasoning
+
+-   And enables a very powerful programming technique
+
+---
+
+## Closures
+
+-   Define a function inside a function and return the inner function
+
+```py
+def make_hidden(value):
+    def _inner():
+        return value
+    return _inner
+
+
+m = make_hidden("example")
+print("hidden value is", m())
+```
+
+
+```
+hidden value is example
+```
+
+
+-   The inner function <a class="gl-ref" href="../../glossary/#variable_capture" markdown="1">captures</a> the variables in the enclosing function
+
+FIXME: diagram
+
+---
+
+## A More Useful Example
+
+```py
+def make_adder(to_add):
+    def _inner(value):
+        return value + to_add
+    return _inner
+
+a = make_adder(100)
+print(a(1))
+```
+
+
+```
+101
+```
+
+
+-   A way to manage private data
+
+---
+
+## Objects
+
+```py
+def make_object(**kwarg):
+    private = kwarg.copy()
+
+    def getter(name):
+        return private[name]
+
+    def setter(name, value):
+        private[name] = value
+
+    return {"get": getter, "set": setter}
+
+obj = make_object(thing=0)
+print("initial value", obj["get"]("thing"))
+obj["set"]("thing", 99)
+print("obj['thing'] is now", obj["get"]("thing"))
+```
+
+
+```
+initial value 0
+obj['thing'] is now 99
+```
+
+
+---
+
+## Wrapping Functions
+
+```py
+def original(value):
+    print(f"original: {value}")
+
+def logging(value):
+    print("before call")
+    original(value)
+    print("after call")
+
+original = logging
+original("example")
+```
+
+
+```
+before call
+before call
+before call
+```
+
+
+-   Well, that didn't work
+
+---
+
+## Capture the Original
+
+```py
+def original(value):
+    print(f"original: {value}")
+
+def logging(func):
+    def _inner(value):
+        print("before call")
+        func(value)
+        print("after call")
+    return _inner
+
+original = logging(original)
+original("example")
+```
+
+
+```
+before call
+original: example
+after call
+```
+
+
+---
+
+## Parameters
+
+```py
+def original(value):
+    print(f"original: {value}")
+
+def logging(func, label):
+    def _inner(value):
+        print(f"++ {label}")
+        func(value)
+        print(f"-- {label}")
+    return _inner
+
+original = logging(original, "call")
+original("example")
+```
+
+
+```
+++ call
+original: example
+-- call
+```
+
+
+---
+
+## Decorators
+
+```py
+def wrap(func):
+    def _inner(*args):
+        print("before call")
+        func(*args)
+        print("after call")
+    return _inner
+
+@wrap
+def original(message):
+    print(f"original: {message}")
+
+original("example")
+```
+
+
+```
+before call
+original: example
+after call
+```
+
+
+---
+
+## Design Flaw
+
+-   A decorator takes exactly one argument (the function to decorate)
+
+-   So how do we pass other parameters to the decorator itself?
+
+-   Simple answer would have been to model decorator behavior
+    on method definition and call
+
+    -   First argument `self` is handled specially,
+        so why not a special first argument `func` for decorators?
+
+-   Instead, use a closure to capture the parameters to a decorator
+    and return a function that wraps the user's function
+
+---
+
+## Decorator Parameters
+
+```py
+def wrap(label):
+    def _decorate(func):
+        def _inner(*args):
+            print(f"++ {label}")
+            func(*args)
+            print(f"-- {label}")
+        return _inner
+    return _decorate
+
+@wrap("wrapping")
+def original(message):
+    print(f"original: {message}")
+
+original("example")
+```
+
+
+```
+++ wrapping
+original: example
+-- wrapping
+```
+
+
+
+[academic_prototyping]: https://www.fuzzingbook.org/html/AcademicPrototyping.html
+[aosa]: https://aosabook.org/
+[beautiful_soup]: https://beautiful-soup-4.readthedocs.io/
+[birthday_problem]: https://en.wikipedia.org/wiki/Birthday_problem
+[black]: https://black.readthedocs.io/
+[browser_engine_tutorial]: https://limpet.net/mbrubeck/2014/08/08/toy-layout-engine-1.html
+[browser_engineering]: https://browser.engineering/
+[brubeck_matt]: https://limpet.net/mbrubeck/
+[cc_by_nc]: https://creativecommons.org/licenses/by-nc/4.0/
+[cc_by_nc_legal]: https://creativecommons.org/licenses/by-nc/4.0/legalcode
+[clarkes_laws]: https://en.wikipedia.org/wiki/Clarke%27s_three_laws
+[contributor_covenant]: https://www.contributor-covenant.org/
+[cook_mary_rose]: https://maryrosecook.com/
+[crafting_interpreters]: https://craftinginterpreters.com/
+[ctan]: https://www.ctan.org/
+[db_tutorial]: https://cstack.github.io/db_tutorial/
+[dresser_christopher]: https://en.wikipedia.org/wiki/Christopher_Dresser
+[drumm_christian]: https://www.drumm.sh/
+[dvc]: https://dvc.org/
+[ejs]: https://ejs.co/
+[email]: mailto:gvwilson@third-bit.com
+[ethical_source]: https://ethicalsource.dev
+[evans_julia]: https://jvns.ca/
+[evans_zines]: https://wizardzines.com/
+[flake8]: https://flake8.pycqa.org/
+[git]: https://git-scm.com/
+[git_lfs]: https://git-lfs.github.io/
+[git_man_page_generator]: https://git-man-page-generator.lokaltog.net/
+[gitlet]: http://gitlet.maryrosecook.com/
+[glosario]: https://github.com/carpentries/glosario
+[gnu_make]: https://www.gnu.org/software/make/
+[graphviz]: https://www.graphviz.org/
+[graphviz_gui]: https://www.graphviz.org/resources/#graphical-interfaces
+[harrelson_chris]: https://twitter.com/chrishtr
+[hippocratic_license]: https://firstdonoharm.dev/
+[html5_data_attributes]: https://developer.mozilla.org/en-US/docs/Learn/HTML/Howto/Use_data_attributes
+[isort]: https://pycqa.github.io/isort/
+[ivy]: https://www.dmulholl.com/docs/ivy/main/
+[jekyll]: https://jekyllrb.com/
+[kilo_editor]: https://viewsourcecode.org/snaptoken/kilo/index.html
+[latex]: https://www.latex-project.org/
+[loewy_raymond]: https://en.wikipedia.org/wiki/Raymond_Loewy
+[log_structured_storage]: http://blog.notdot.net/2009/12/Damn-Cool-Algorithms-Log-structured-storage
+[lorgat_editor]: https://github.com/seem/editor
+[lorgat_tutorial]: https://wasimlorgat.com/posts/editor.html
+[lorgat_wasim]: https://wasimlorgat.com/
+[marthas_rules]: https://journals.sagepub.com/doi/10.1177/088610998600100206
+[nash_joe]: https://hachyderm.io/@joenash
+[networkx]: https://networkx.org/
+[nison_mael]: https://arcanis.github.io/
+[nystrom_bob]: http://journal.stuffwithstuff.com/
+[package_manager_tutorial]: https://classic.yarnpkg.com/blog/2017/07/11/lets-dev-a-package-manager/
+[panchekha_pavel]: https://pavpanchekha.com/
+[pereira_juanan]: https://ikasten.io/
+[php]: https://www.php.net/
+[picosat]: http://fmv.jku.at/picosat/
+[pip]: https://pip.pypa.io/
+[programming_tools]: https://en.wikipedia.org/wiki/Programming_tool
+[py_array]: https://docs.python.org/3/library/array.html
+[py_chainmap]: https://docs.python.org/3/library/collections.html#collections.ChainMap
+[py_cprofile]: https://docs.python.org/3/library/profile.html
+[py_fractions]: https://docs.python.org/3/library/fractions.html
+[py_glob]: https://docs.python.org/3/library/glob.html
+[py_hashlib]: https://docs.python.org/3/library/hashlib.html
+[py_inspect]: https://docs.python.org/3/library/inspect.html
+[py_io]: https://docs.python.org/3/library/io.html
+[py_itertools]: https://docs.python.org/3/library/itertools.html
+[py_json]: https://docs.python.org/3/library/json.html
+[py_mimetypes]: https://docs.python.org/3/library/mimetypes.html
+[py_pickle]: https://docs.python.org/3/library/pickle.html
+[py_semver]: https://pypi.org/project/semantic-version/
+[py_struct]: https://docs.python.org/3/library/struct.html
+[py_textwrap]: https://docs.python.org/3/library/textwrap.html
+[py_urlparse]: https://docs.python.org/3/library/urllib.parse.html
+[py_yaml]: https://pypi.org/project/PyYAML/
+[py_zipfile]: https://docs.python.org/3/library/zipfile.html
+[pyfakefs]: https://pytest-pyfakefs.readthedocs.io/
+[pytest]: https://docs.pytest.org/
+[pytest_approx]: https://docs.pytest.org/en/4.6.x/reference.html#pytest-approx
+[pytest_stdout]: https://docs.pytest.org/en/6.2.x/capture.html
+[python]: https://www.python.org/
+[reim_michael]: https://elderlinux.org/
+[requests]: https://requests.readthedocs.io/
+[ruten_paige]: https://viewsourcecode.org/
+[book_repo]: https://github.com/gvwilson/sd4ds/
+[book_site]: https://third-bit.com/sd4ds/
+[semver_spec]: https://semver.org/
+[sinel_joseph]: https://en.wikipedia.org/wiki/Joseph_Claude_Sinel
+[smith_dave]: https://davewsmith.com/
+[snakemake]: https://snakemake.readthedocs.io/
+[sqlite]: https://sqlite.org/
+[stack_connor]: https://connorstack.com/
+[svg_screenshot]: https://chrome.google.com/webstore/detail/svg-screenshot/nfakpcpmhhilkdpphcjgnokknpbpdllg
+[t3_personas]: https://teachtogether.tech/en/index.html#s:process-personas
+[textualize_fraction]: https://www.textualize.io/blog/posts/7-things-about-terminals
+[udhr]: https://www.un.org/en/universal-declaration-human-rights/
+[ungc]: https://www.unglobalcompact.org/what-is-gc/mission/principles
+[unicode]: https://www.unicode.org/
+[unix_packaging]: https://eerielinux.wordpress.com/2017/08/15/the-history-of-nix-package-management/
+[webaim_wave]: https://wave.webaim.org/
+[write_yourself_a_git]: https://wyag.thb.lt/
+[z3]: https://en.wikipedia.org/wiki/Z3_Theorem_Prover
+[zeller_andreas]: https://andreas-zeller.info/
+
+    </textarea>
+    <script src="../../remark-latest.min.js"></script>
+    <script>
+      var slideshow = remark.create({
+        highlightLines: true
+      })
+    </script>
+  </body>
+</html>

@@ -57,13 +57,12 @@ This book is also designed for:
 | glob	    | done   | done   | done     | done      | -      |  75%    |
 | parse	    | done   | done   | done     | -         | -      |  50%    |
 | test	    | revise | revise | done     | -         | -      |  50%    |
+| interp    | done   | done   | done     | done      | -      |  75%    |
+| func	    | done   | done   | -        | -         | -      |  25%    |
 | mock	    | -      | -      | -        | -         | -      |   0%    |
 | archive   | revise | revise | revise   | revise    | -      |  25%    |
 | oop	    | done   | done   | done     | done      | -      |  50%    |
-| meta	    | -      | -      | -        | -         | -      |   0%    |
 | check	    | done   | done   | done     | -         | -      |  50%    |
-| interp    | done   | done   | done     | done      | -      |  75%    |
-| func	    | revise | -      | -        | -         | -      |   0%    |
 | template  | done   | done   | done     | -         | -      |  50%    |
 | layout    | revise | revise | done     | -         | -      |  25%    |
 | lint	    | revise | revise | done     | -         | -      |  25%    |
@@ -80,4 +79,4 @@ This book is also designed for:
 | vm	    | done   | -      | done     | done      | done   |  75%    |
 | debug	    | done   | -      | -        | -         | -      |   0%    |
 | finale    | N/A    | done   | N/A      | N/A       | done   | 100%    |
-|           |        |        |          |           |        | *37%*   |
+|           |        |        |          |           |        | *39%*   |
