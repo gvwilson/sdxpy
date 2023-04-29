@@ -58,7 +58,7 @@ This book is also designed for:
 | parse	    | done   | done   | done     | -         | -      |  50%    |
 | test	    | revise | revise | done     | -         | -      |  50%    |
 | interp    | done   | done   | done     | done      | -      |  75%    |
-| func	    | done   | done   | -        | -         | -      |  25%    |
+| func	    | done   | done   | done     | -         | -      |  25%    |
 | mock	    | -      | -      | -        | -         | -      |   0%    |
 | archive   | revise | revise | revise   | revise    | -      |  25%    |
 | oop	    | done   | done   | done     | done      | -      |  50%    |

@@ -3,5 +3,5 @@ def make_adder(to_add):
         return value + to_add
     return _inner
 
-a = make_adder(100)
-print(a(1))
+adder_func = make_adder(100)
+print(adder_func(1))

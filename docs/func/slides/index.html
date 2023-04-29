@@ -4,7 +4,7 @@
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="repo" content="https://github.com/gvwilson/sd4ds">
-  <meta name="build_date" content="2023-04-28">
+  <meta name="build_date" content="2023-04-29">
   <meta name="template" content="slides">
   <meta name="major" content="Chapter 7">
   
@@ -78,6 +78,27 @@ class: slide-title
 
 ---
 
+class: aside
+
+## Eager and Lazy
+
+-   <a class="gl-ref" href="../../glossary/#eager_evaluation" markdown="1">Eager evaluation</a>:
+    arguments are evaluated *before* call
+
+-   <a class="gl-ref" href="../../glossary/#lazy_evaluation" markdown="1">Lazy evaluation</a>:
+    pass expression sub-lists into the function to be evaluated on demand
+
+    -   Gives the called function a chance to inspect or modify expressions
+        before using them
+
+-   Python and most other languages (including ours) are eager
+
+-   R is lazy
+
+-   A design choice
+
+---
+
 ## Storing a Function
 
 -   Like any other value
@@ -89,10 +110,23 @@ class: slide-title
 
 --
 
--   Could just use this for defining
+-   We could define functions like this
 
 ```py
 ["set", "same", ["func", ["num"], ["get", "num"]]]
+```
+
+
+--
+
+-   JavaScript makes heavy use of
+    <a class="gl-ref" href="../../glossary/#anonymous_function" markdown="1">anonymous functions</a>
+
+-   Python supports limited <a class="gl-ref" href="../../glossary/#lambda_expression" markdown="1">lambda expressions</a>
+
+```py
+double = lambda x: 2 * x
+double(3)
 ```
 
 
@@ -109,7 +143,7 @@ class: slide-title
 
 4.  Call `do` to run the function's action and captures the result.
 
-5.  Discard environment created two steps previously.
+5.  Discard environment created in step 3.
 
 6.  Return the function's result.
 
@@ -204,6 +238,8 @@ def do_call(env, args):
 
 -   Searching active stack for a variable is called <a class="gl-ref" href="../../glossary/#dynamic_scoping" markdown="1">dynamic scoping</a>
 
+-   Have to trace execution to figure out what a variable might refer to
+
 ```tll
 ["seq",
   ["def", "lower", [], ["get", "x"]],
@@ -221,8 +257,6 @@ def do_call(env, args):
 => None
 ```
 
-
--   Have to trace execution to figure out what a variable might refer to
 
 ---
 
@@ -263,7 +297,7 @@ hidden value is example
 
 -   The inner function <a class="gl-ref" href="../../glossary/#variable_capture" markdown="1">captures</a> the variables in the enclosing function
 
-FIXME: diagram
+-   A way to make data private
 
 ---
 
@@ -275,8 +309,8 @@ def make_adder(to_add):
         return value + to_add
     return _inner
 
-a = make_adder(100)
-print(a(1))
+adder_func = make_adder(100)
+print(adder_func(1))
 ```
 
 
@@ -285,7 +319,12 @@ print(a(1))
 ```
 
 
--   A way to manage private data
+--
+
+<figure>
+<img src="../closure.svg" alt="Closures"/>
+</figure>
+
 
 ---
 
@@ -314,6 +353,15 @@ print("obj['thing'] is now", obj["get"]("thing"))
 initial value 0
 obj['thing'] is now 99
 ```
+
+
+---
+
+## Objects
+
+<figure>
+<img src="../objects.svg" alt="Objects as closures"/>
+</figure>
 
 
 ---
@@ -428,35 +476,43 @@ after call
 
 ## Design Flaw
 
--   A decorator takes exactly one argument (the function to decorate)
+-   A decorator must take exactly one argument,
+    so how do we pass other parameters to the decorator itself?
 
--   So how do we pass other parameters to the decorator itself?
+-   Simple-to-learn answer would have been to treat function being decorated
+    like `self` in method definition and call
 
--   Simple answer would have been to model decorator behavior
-    on method definition and call
+```py
+def decorator(func, label):
+    def _inner(arg):
+        print(f"entering {label}")
+        func(arg)
+    return _inner
 
-    -   First argument `self` is handled specially,
-        so why not a special first argument `func` for decorators?
+@decorator("message")
+def double(x):           # equivalent to
+    return 2 * x         # double = decorator(double, "message")
+```
 
--   Instead, use a closure to capture the parameters to a decorator
-    and return a function that wraps the user's function
+
+-   Instead, we have to create a closure
 
 ---
 
 ## Decorator Parameters
 
 ```py
-def wrap(label):
-    def _decorate(func):
-        def _inner(*args):
-            print(f"++ {label}")
-            func(*args)
-            print(f"-- {label}")
+def wrap(label):                  # function returning a decorator
+    def _decorate(func):          # the actual decorator
+        def _inner(*args):        # the wrapped function
+            print(f"++ {label}")  # 'label' is visible because
+            func(*args)           # it's captured in the closure
+            print(f"-- {label}")  # of '_decorate'
         return _inner
     return _decorate
 
-@wrap("wrapping")
-def original(message):
+@wrap("wrapping")                 # call 'wrap' to get a decorator
+def original(message):            # decorator applied here
     print(f"original: {message}")
 
 original("example")
@@ -468,6 +524,17 @@ original("example")
 original: example
 -- wrapping
 ```
+
+
+---
+
+class: summary
+
+## Summary
+
+<figure>
+<img src="../concept_map.svg" alt="Concept map of functions and closures"/>
+</figure>
 
 
 

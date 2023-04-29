@@ -13,3 +13,8 @@
 # [call]
 ["call", "same", 3]
 # [/call]
+
+# [lambda]
+double = lambda x: 2 * x
+double(3)
+# [/lambda]
