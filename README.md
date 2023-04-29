@@ -72,7 +72,7 @@ This book is also designed for:
 | db	    | done   | done   | -        | -         | -      |  20%    |
 | build	    | done   | done   | done     | done      | -      |  50%    |
 | flow	    | done   | -      | -        | -         | -      |  10%    |
-| pack	    | done   | -      | -        | -         | -      |   0%    |
+| pack	    | done   | -      | -        | -         | -      |  10%    |
 | server    | done   | -      | -        | -         | -      |  25%    |
 | editor    | revise | -      | -        | -         | -      |  10%    |
 | undo	    | -      | -      | -        | -         | -      |   0%    |
