@@ -31,4 +31,5 @@ fonts:
 .PHONY: status
 status:
 	@python bin/status.py --config config.py --readme README.md
+	@python bin/check_prose_slides.py --config config.py
 ## ---: ---
