@@ -3,7 +3,7 @@
 RULES_PATH:=$(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 
 # How to reformat output.
-COLUMNS=72
+COLUMNS=68
 REFORMAT:=${RULES_PATH}bin/reformat.py --home /sd4ds --columns ${COLUMNS}
 
 # The including file must define a variable TARGETS with the names of everything

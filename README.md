@@ -56,7 +56,7 @@ This book is also designed for:
 | dup	    | done   | done   | done     | -         | -      |  50%    |
 | glob	    | done   | done   | done     | done      | -      |  75%    |
 | parse	    | done   | done   | done     | -         | -      |  50%    |
-| test	    | revise | revise | done     | -         | -      |  50%    |
+| test	    | done   | done   | done     | done      | -      |  75%    |
 | interp    | done   | done   | done     | done      | -      |  75%    |
 | func	    | done   | done   | done     | -         | -      |  25%    |
 | mock	    | -      | -      | -        | -         | -      |   0%    |
@@ -79,4 +79,4 @@ This book is also designed for:
 | vm	    | done   | -      | done     | done      | done   |  75%    |
 | debug	    | done   | -      | -        | -         | -      |   0%    |
 | finale    | N/A    | done   | N/A      | N/A       | done   | 100%    |
-|           |        |        |          |           |        | *39%*   |
+|           |        |        |          |           |        | *49%*   |
