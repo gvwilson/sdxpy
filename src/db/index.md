@@ -1,7 +1,3 @@
----
-title: "A Database"
----
-
 - interface_original.py: outline of key/value store
 - just_dict_original.py: store records in a dictionary in memory (for developing tests)
 - test_db_original.py: test save and load

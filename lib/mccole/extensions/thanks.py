@@ -1,6 +1,5 @@
 """Generate list of thanks."""
 
-import ivy
 import shortcodes
 import util
 
@@ -10,7 +9,7 @@ def thanks(pargs, kwargs, node):
     """Handle [% thanks %] shortcode."""
     util.require(
         (not pargs) and (not kwargs),
-        f"Bad 'thanks' shortcode with {pargs} and {kwargs}"
+        f"Bad 'thanks' shortcode with {pargs} and {kwargs}",
     )
     details = util.read_thanks()
     if not details:

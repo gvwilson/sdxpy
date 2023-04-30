@@ -51,7 +51,7 @@ class BlockedFile(Blocked):
         for i, r in enumerate(records):
             block[base + i] = r
     # [/load]
-        
+
     def _get_filename(self, block_id):
         return self._db_dir.joinpath(f"{block_id:04}.db")
 

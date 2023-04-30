@@ -15,7 +15,7 @@ text = """<html lang="en">
 # [/text]
 
 # [main]
-from bs4 import BeautifulSoup, NavigableString, Tag
+from bs4 import BeautifulSoup, Tag
 
 doc = BeautifulSoup(text, "html.parser")
 recurse(doc)

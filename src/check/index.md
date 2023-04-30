@@ -1,3 +1,0 @@
----
-title: "An HTML Validator"
----

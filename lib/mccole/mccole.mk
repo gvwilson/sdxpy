@@ -19,11 +19,11 @@ IVY := $(wildcard lib/mccole/*/*.*)
 TEX := info/head.tex info/foot.tex
 TEX_COPY := info/krantz.cls info/dedication.tex
 MARKDOWN := $(wildcard src/*.md) $(wildcard src/*/index.md)
-SLIDES := $(wildcard src/*/slides/index.html)
+SLIDES := $(wildcard src/*/slides.html)
 SRC_SVG := $(wildcard src/*/*.svg)
 
 # Calculated variables.
-DOCS := docs/index.html $(patsubst src/%.md,docs/%.html,$(wildcard src/*/index.md)) $(patsubst src/%/slides/index.html,docs/%/slides/index.html,$(SLIDES))
+DOCS := docs/index.html $(patsubst src/%.md,docs/%.html,$(wildcard src/*/index.md)) $(patsubst src/%/slides.html,docs/%/slides/index.html,$(SLIDES))
 FIG_PDF := $(patsubst src/%.svg,docs/%.pdf,${FIG_SVG})
 SRC_PDF := $(patsubst src/%.svg,src/%.pdf,${SRC_SVG})
 DOCS_PDF := $(patsubst src/%.pdf,docs/%.pdf,${SRC_PDF})

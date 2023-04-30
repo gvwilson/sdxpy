@@ -1,7 +1,3 @@
----
-title: "Contributing"
----
-
 Contributions are very welcome;
 please contact us by email or by filing an issue on this site.
 All contributors must abide by our Code of Conduct.

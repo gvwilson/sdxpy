@@ -1,5 +1,1 @@
----
-title: "Syllabus"
----
-
 [% syllabus %]

@@ -18,10 +18,10 @@ def ratio(pct):
     return c / r
 
 percentages = list(range(0, 101, 10))
-ratios = [ratio(p/100) for p in percentages]
+ratios = [ratio(p / 100) for p in percentages]
 temp = pd.DataFrame({"percentage": percentages, "ratio": ratios})
 fig = px.line(temp, x="percentage", y="ratio",
-              labels = {
+              labels={
                   "percentage": "percentage of filter operations (vs. select)",
                   "ratio": "ratio of column-wise time to row-wise time"
               })

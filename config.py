@@ -29,7 +29,7 @@ chapters = {
     "dup": "Finding Duplicate Files",
     "glob": "Matching Patterns",
     "parse": "Parsing Text",
-    "test": "A Testing Framework",
+    "test": "A Test Runner",
     "interp": "An Interpreter",
     "func": "Functions and Closures",
     "mock": "Mock Objects",

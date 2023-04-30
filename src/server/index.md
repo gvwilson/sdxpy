@@ -1,3 +1,0 @@
----
-title: "A Web Server"
----

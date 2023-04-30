@@ -1,9 +1,10 @@
 """Check prose and slides against each other."""
 
 import argparse
+import re
 from difflib import Differ
 from pathlib import Path
-import re
+
 import utils
 
 PAT_CODE = re.compile(r"\[%\s*inc\b([^%]+)%\]")
@@ -25,7 +26,7 @@ def compare(slug):
     except FileNotFoundError:
         return ""
     prose_code = list(m.group(1).strip() for m in PAT_CODE.finditer(prose))
-    slides_code = list(m.group(1).strip().replace("../", "") for m in PAT_CODE.finditer(slides))
+    slides_code = list(m.group(1).strip() for m in PAT_CODE.finditer(slides))
     return list(Differ().compare(prose_code, slides_code))
 
 

@@ -1,7 +1,3 @@
----
-title: "A Text Editor"
----
-
 -   MVC with simple line drawing
     -   `model_original.py` stores lines and current cursor Y position (we'll add X later)
     -   `view_original.py` displays lines in a window

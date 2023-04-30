@@ -27,7 +27,7 @@ def test_head_tail_tail_join():
     right = Tail(1)
     head.tell(left, "input")
     head.tell(right, "input")
-    
+
     cat = Cat()
     left.tell(cat, "second")
     right.tell(cat, "first")

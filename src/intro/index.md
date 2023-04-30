@@ -1,7 +1,3 @@
----
-title: "Introduction"
----
-
 Most data scientists have taught themselves most of what they know about programming.
 As a result,
 many have gaps in their knowledge:

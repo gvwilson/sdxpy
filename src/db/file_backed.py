@@ -31,5 +31,5 @@ class FileBacked(Database):
         with open(self._filename, "r") as reader:
             raw = reader.read()
         records = self._record_cls.unpack_multi(raw)
-        self._data = {self._record_cls.key(r):r for r in records}
+        self._data = {self._record_cls.key(r): r for r in records}
     # [/helper]

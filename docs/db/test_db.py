@@ -77,7 +77,7 @@ def test_add_then_overwrite(filesys, db_core, ex01):
 def test_blocked_creates_blocks_multiple_records(filesys, db_block):
     num_recs = 7
     for i in range(num_recs):
-        db_block.add(Experiment(f"ex{i}", 1000+i, []))
+        db_block.add(Experiment(f"ex{i}", 1000 + i, []))
     size = Blocked.size()
     assert db_block.num_records() == num_recs
     assert db_block.num_blocks() == (num_recs + (size - 1)) // size
@@ -85,15 +85,14 @@ def test_blocked_creates_blocks_multiple_records(filesys, db_block):
 def test_blocked_creates_blocks_duplicate_records(filesys, db_block):
     num_reps = 7
     for i in range(num_reps):
-        db_block.add(Experiment(f"ex", 1000+i, []))
-    size = Blocked.size()
+        db_block.add(Experiment("ex", 1000 + i, []))
     assert db_block.num_records() == 1
 
 def test_blocked_restart(filesys):
     first = BlockedFile(Experiment, TEST_DIR)
     num_recs = 3
     for i in range(num_recs):
-        ex = Experiment(f"ex{i}", 1000+i, [1, 2])
+        ex = Experiment(f"ex{i}", 1000 + i, [1, 2])
         first.add(ex)
 
     second = BlockedFile(Experiment, TEST_DIR)

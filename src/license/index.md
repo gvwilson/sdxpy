@@ -1,7 +1,3 @@
----
-title: "License"
----
-
 All of the written material is made available under the Creative
 Commons - Attribution - NonCommercial 4.0 International license (CC-BY-NC-4.0),
 while the software is made available under the Hippocratic License.

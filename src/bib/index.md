@@ -1,5 +1,1 @@
----
-title: "Bibliography"
----
-
 [% bibliography %]

@@ -103,7 +103,7 @@ def figure_def(pargs, kwargs, node):
         return dedent(
             f"""\
             <figure{cls}>
-            <img src="{img}" alt="{alt}"/>
+            <img src="../{img}" alt="{alt}"/>
             </figure>
             """
         )

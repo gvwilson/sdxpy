@@ -52,7 +52,6 @@ class DfCol(DataFrame):
 
     # [filter]
     def filter(self, func):
-        params = list(inspect.signature(func).parameters.keys())
         result = {n: [] for n in self._data}
         for i in range(self.nrow()):
             args = {n: self._data[n][i] for n in self._data}

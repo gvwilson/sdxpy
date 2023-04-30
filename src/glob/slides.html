@@ -1,0 +1,273 @@
+---
+template: slides
+---
+
+## The Problem
+
+-   `glob.glob` finds files whose names match patterns
+
+-   `2023-*.{pdf,txt}` matches `2023-01.txt` and `2023-final.pdf`
+    but not `draft-2023.docx`
+
+[% figure
+   slide=True
+   slug="glob-examples"
+   img="examples.svg"
+   alt="Matching examples"
+   caption="Examples of glob matching."
+%]
+
+-   How does this work?
+
+---
+
+## Write a Few Tests
+
+| Pattern | Text     | Match? || Pattern | Text     | Match? |
+| ------- | -------- | ------ || ------- | -------- | ------ |
+| abc     | "abc"    | True   || a*c     | "abc"    | True   |
+| ab      | "abc"    | False  || {a,b}   | "a"      | True   |
+| abc     | "ab"     | False  || {a,b}   | "c"      | False  |
+| *       | ""       | True   || {a,b}   | "ab"     | False  |
+| *       | "abc"    | True   || *{x,y}  | "abcx"   | True   |
+
+---
+
+## Objects vs. Functions
+
+-   Create things to match particular cases instead of One Big Function
+
+-   Some of those things need to carry data around
+
+    -   E.g., matching specific literal characters
+
+-   So create objects
+
+---
+
+## Design Patterns
+
+-   Use the [%g chain_of_responsibility_pattern "Chain of Responsibility" %] pattern
+
+    -   Each object matches if it can…
+
+    -   …then asks something else to try to match the rest of the text
+
+[% figure
+   slide=True
+   slug="glob-chain"
+   img="chain.svg"
+   alt="Chain of Responsibility"
+   caption="Matching with Chain of Responsibility."
+%]
+
+---
+
+## Matching a Literal String
+
+[% inc file="glob_lit.py" %]
+
+-   `chars` is the characters to be matched
+-   `rest` is responsible for matching the rest of the text
+    -   May be `None`
+-   `start` is needed when this isn't the first matcher
+
+---
+
+## Testing the Matcher
+
+[% inc file="test_glob_lit.py" keep="tests" %]
+
+-   Give tests long names instead of using comments
+    -   So that failure reports are immediately readable
+
+---
+
+## Does Chaining Work?
+
+[% inc file="test_glob_lit.py" keep="chain" %]
+
+--
+
+-   Yup
+
+---
+
+## Wildcards
+
+-   `*` can match zero or more characters
+
+[% inc file="glob_any.py" %]
+
+---
+
+## And We Test It
+
+
+[% inc file="test_glob_any.py" keep="tests" %]
+
+---
+
+## Matching Alternatives
+
+[% inc file="glob_either.py" %]
+
+---
+
+## And We Test It
+
+[% inc file="test_glob_either.py" keep="tests" %]
+
+---
+
+## But Wait…
+
+[% inc file="test_glob_problem.py" keep="keep" %]
+[% inc file="test_glob_problem.out" %]
+
+-   `Either` doesn't handle `rest`
+
+---
+
+## Rethinking
+
+-   We now have three matchers with the same interfaces
+    -   Use the [%g extract_parent_class_refactoring "Extract Parent Class" %] [%g refactor "refactoring" %]
+-   `if self.rest is None` all over the place
+    -   Use the [%g null_object_pattern "Null Object" %] pattern instead
+
+[% figure
+   slide=True
+   slug="glob-refatoring"
+   img="refactoring.svg"
+   alt="Refactoring matchers"
+   caption="Using the Extract Parent Class refactoring."
+%]
+
+---
+
+## We Didn't Invent This
+
+<div class="center">
+<img src="gamma-design-patterns.webp" alt="Design Patterns book cover" width="25%">
+<img src="fowler-refactoring.webp" alt="Refactoring book cover" width="25%">
+<img src="kerievsky-refactoring-to-patterns.webp" alt="Refactoring to Patterns book cover" width="22%">
+</div>
+
+---
+
+## The Parent Class
+
+[% inc file="glob_null.py" keep="parent" %]
+
+-   Assume every child class has a `_match` method
+
+-   This method returns the location to continue searching
+
+-   So `Match.match` checks that we've reached the end of the text
+
+---
+
+## The Null Object Class
+
+[% inc file="glob_null.py" keep="null" %]
+
+-   Must be the last one in the chain
+
+-   Doesn't advance the match (i.e., does nothing)
+
+---
+
+## Refactoring Literal Matcher
+
+[% inc file="glob_null.py" keep="lit" %]
+
+-   Parent class initializes data that it defines
+    -   Yes, the `Null` class broke this rule…
+-   Return `None` for "no match" or whatever `self.rest` returns
+    -   If this object's `rest` is `Null`,
+        this will be the index after our match
+
+---
+
+## Refactoring Wildcard
+
+[% inc file="glob_null.py" keep="any" %]
+
+-   The exercises will ask, "Why `len(text) + 1`?"
+
+---
+
+## Refactoring Alternatives
+
+[% inc file="glob_null.py" keep="either" %]
+
+-   Could easily be extended to any number of alternatives
+
+---
+
+## Testing
+
+-   None of the existing tests change
+    -   None of the constructors changed
+    -   Neither did the signature of `match`
+-   We should (should) add a couple of tests for `Null`
+-   But basically we're done
+-   And we can easily add matchers for other kinds of patterns
+
+---
+
+class: summary
+
+## Summary	       
+
+<figure>
+  <img src="concept_map.svg" alt="Concept map of globbing">
+  <figcaption>Concept map</figcaption>
+</figure>
+
+---
+
+class: exercise
+
+## Length Plus One
+
+Why does the upper bound of the loop in the final version of `Any`
+run to `len(text) + 1`?
+
+[% inc file="glob_null.py" keep="any" %]
+
+---
+
+class: exercise
+
+## Exclusion
+
+1.  Create a matcher that *doesn't* match a specified pattern.
+    For example, `Not(Lit("abc"))` only succeeds if the text isn't "abc".
+
+2.  Write some tests for it.
+
+---
+
+class: exercise
+
+## Ranges
+
+1.  Create a matcher that matches a range of characters.
+    For example, `Range("a", "z")` matches any single lower-case Latin alphabetic character.
+    (This is just a convenience matcher: ranges can always be spelled out in full.)
+
+2.  Write some tests for it.
+
+---
+
+class: exercise
+
+## Multiple Alternatives
+
+1.  Modify `Either` so that it can match any number of sub-patterns, not just two.
+
+2.  Write some tests for it.
+
+3.  What does your implementation do when no sub-patterns are specified?

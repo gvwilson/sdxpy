@@ -15,8 +15,8 @@ def collect():
 def _collect(node, major, collected):
     """Pull data from a single node."""
     if "syllabus" in node.meta:
-        assert "title" in node.meta
-        collected[node.slug] = (node.meta["title"], node.meta.get("syllabus", []))
+        title = util.get_title(node)
+        collected[node.slug] = (title, node.meta.get("syllabus", []))
 
 
 def _cleanup(collected):

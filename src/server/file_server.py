@@ -1,5 +1,3 @@
-import os
-import sys
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path

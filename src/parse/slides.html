@@ -1,0 +1,170 @@
+---
+template: slides
+---
+
+## The Problem
+
+-   `Lit("2023-", Any(Either("pdf", "txt")))` is harder to write and read
+    than `"2023-*{pdf,txt}"`
+
+-   How can we translate the latter into the former?
+
+--
+
+1.  Convert text into [%g token "tokens" %]
+
+2.  Use tokens to generate an [%g abstract_syntax_tree "abstract syntax tree" %]
+
+[% figure
+   slide=True
+   slug="parse-pipeline"
+   img="pipeline.svg"
+   alt="Parsing pipeline"
+   caption="Stages in parsing pipeline."
+%]
+
+---
+
+## Cases
+
+-   Characters like `{` and `*` can be interpreted immediately
+
+-   But "regular" characters need to be accumulated
+
+    -   `Lit("abc")` rather than `Lit("a", Lit("b", Lit("c")))`
+
+    -   When we encounter a special character or '}',
+        we close the current literal token
+
+-   The `,` character closes a literal but doesn't produce a token
+
+---
+
+## A Bit More Design
+
+-   The result is the final (flat) list of tokens
+
+-   We could pass around a list and append to it
+
+-   But we also need to know the characters in each `Literal`
+    and the options in each `Either`
+
+-   So create a class rather than a function
+
+    -   Easier than carrying state around explicitly
+
+---
+
+## Tokenizer
+
+[% inc file="tokenizer.py" keep="tok" %]
+
+---
+
+## Tokenizer
+
+-   Call `self._setup()` at the start so that the tokenizer can be re-used
+
+-   *Don't* call `self._add()` for regular characters
+
+    -   Add literals when we see special characters
+
+    -   And after all the input has been parsed
+
+---
+
+## Adding Tokens
+
+[% inc file="tokenizer.py" keep="add" %]
+
+-   `self._add(None)` means "add the literal but nothing else"
+
+[% figure
+   slide=True
+   slug="parse-tokenize"
+   img="tokenize.svg"
+   alt="Tokenizing"
+   caption="Steps in tokenizing a string."
+%]
+
+---
+
+## Testing
+
+[% inc file="test_tokenizer.py" keep="tests" %]
+
+-   List-of-lists structure is similar to the instructions used in [%x interp %]
+
+---
+
+## Parsing
+
+[% inc file="parser.py" keep="parse" %]
+
+-   `front[0]` is token name, `front[1:]` is any other data
+
+-   `back` is the remaining tokens
+
+-   Look for <code>\_parse\_<em>thing</em></code> method
+
+---
+
+## Fill in the Simple Stuff
+
+[% inc file="parser.py" keep="simple" %]
+
+---
+
+## `Either` is Messy
+
+[% inc file="parser.py" keep="either" %]
+
+-   Remember, we didn't save the commas
+
+--
+
+-   It really should pull things from `back` until it hits `EitherEnd`
+
+---
+
+## A Better Parser
+
+[% inc file="better_parser.py" keep="either" %]
+
+---
+
+## Testing
+
+[% inc file="test_parser.py" keep="sample" %]
+
+-   But this assumes we can compare `Match` objects
+
+---
+
+## Infrastructure
+
+[% inc file="match.py" keep="equal" %]
+
+---
+
+## Infrastructure
+
+-   [%g operator_overloading "Operator overloading" %]
+-   `a == b` is "just" `a.__eq__(b)`
+-   Parent `Match` class does shared work
+    (e.g., same [%g concrete_class "concrete class" %])
+-   Child method (if any) does details
+
+---
+
+class: summary
+
+## Summary	       
+
+[% figure
+   slide=True
+   slug="parse-concept-map"
+   img="concept_map.svg"
+   alt="Concept map of parsing"
+   caption="Concept map"
+%]

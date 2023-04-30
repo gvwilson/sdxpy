@@ -1,7 +1,3 @@
----
-title: "Functions and Closures"
----
-
 ## Functions {: #interpreter-functions}
 
 One way to evaluate the design of a piece of software is

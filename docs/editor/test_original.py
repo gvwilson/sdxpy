@@ -14,7 +14,7 @@ def build(lines, height):
 
 def expected(lines):
     return list(enumerate(lines))
-    
+
 
 def test_3_lines_3_screen():
     lines = ["a", "b", "c"]

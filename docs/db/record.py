@@ -46,6 +46,6 @@ class Experiment(BasicExperiment):
     @staticmethod
     def unpack_multi(raw):
         size = Experiment.size()
-        split = [raw[i:i+size] for i in range(0, len(raw), size)]
+        split = [raw[i:i + size] for i in range(0, len(raw), size)]
         return [Experiment.unpack(s) for s in split]
     # [/multi]

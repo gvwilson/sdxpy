@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 
 import argparse
-import frontmatter
-from pathlib import Path
 import re
+from pathlib import Path
 
+import frontmatter
 import utils
+
 
 def main():
     """Main driver."""
@@ -32,7 +33,8 @@ def report_sections(config):
     appendices = set(config.appendices)
     needs_slides = list(sorted(chapters - appendices))
     missing_slides = [
-        slug for slug in needs_slides
+        slug
+        for slug in needs_slides
         if not Path("src", slug, "slides", "index.html").exists()
     ]
     longest = max(len(s) for s in missing_slides)

@@ -1,5 +1,4 @@
 ---
-title: "Finding Duplicate Files"
 syllabus:
 -   A hash function creates a fixed-size value from an arbitrary sequence of bytes.
 -   The output of a hash function is deterministic but not predictable.

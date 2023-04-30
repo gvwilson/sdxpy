@@ -1,4 +1,4 @@
-from bs4 import NavigableString, Tag
+from bs4 import NavigableString
 from env import Env
 from visitor import Visitor
 import z_if
@@ -52,7 +52,7 @@ class Expander(Visitor):
             name for name in node.attrs
             if name in self.handlers
         ]
-        assert len(possible) == 1, f"Should be exactly one handler"
+        assert len(possible) == 1, "Should be exactly one handler"
         return self.handlers[possible[0]]
     # [/handlers]
 

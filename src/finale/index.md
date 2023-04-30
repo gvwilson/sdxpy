@@ -1,7 +1,3 @@
----
-title: "Conclusion"
----
-
 [% figure
    slug="finale-bicycle"
    img="derosa.jpg"

@@ -14,7 +14,7 @@ def test_2_lines_2_screen_init():
     assert viewport.current() == (0, 2)
     assert viewport.lines() == lines
     assert viewport.cursor() == (0, 0)
-    
+
 
 def test_2_lines_3_screen_init():
     lines = ["a", "b"]
@@ -22,7 +22,7 @@ def test_2_lines_3_screen_init():
     assert viewport.current() == (0, 2)
     assert viewport.lines() == lines
     assert viewport.cursor() == (0, 0)
-    
+
 
 def test_3_lines_2_screen_init():
     lines = ["a", "b", "c"]
@@ -30,7 +30,7 @@ def test_3_lines_2_screen_init():
     assert viewport.current() == (0, 2)
     assert viewport.lines() == lines[:2]
     assert viewport.cursor() == (0, 0)
-    
+
 
 def test_3_lines_2_screen_move_down():
     lines = ["a", "b", "c"]
@@ -47,7 +47,7 @@ def test_3_lines_2_screen_move_down():
     assert viewport.current() == (1, 3)
     assert viewport.lines() == ["b", "c"]
     assert viewport.cursor() == (1, 0)
-    
+
 
 def test_3_lines_2_screen_move_down_then_up():
     lines = ["a", "b", "c"]

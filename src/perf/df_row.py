@@ -50,7 +50,6 @@ class DfRow(DataFrame):
 
     # [filter]
     def filter(self, func):
-        params = list(inspect.signature(func).parameters.keys())
         result = [r for r in self._data if func(**r)]
         return DfRow(result)
     # [/filter]

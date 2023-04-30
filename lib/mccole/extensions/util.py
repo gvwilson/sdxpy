@@ -68,7 +68,8 @@ CACHE = {
     "glossary": None,
     "links": None,
     "links_table": None,
-    "major": None
+    "major": None,
+    "titles": None,
 }
 
 
@@ -95,6 +96,18 @@ def get_chapter_slug(node):
         require(len(node.path) > 1, f"Bad path {node.path} for slides")
         return node.path[-2]
     return node.path[-1]
+
+
+def get_title(node):
+    """Get chapter/appendix title from configuration."""
+    if CACHE["titles"] is None:
+        CACHE["titles"] = {
+            **ivy.site.config["chapters"],
+            **ivy.site.config["appendices"],
+        }
+    slug = get_chapter_slug(node)
+    require(slug in CACHE["titles"], f"Unknown slug {slug} for titles")
+    return CACHE["titles"][slug]
 
 
 def make_config(part, filler=None):
