@@ -1,3 +1,3 @@
 ---
-title: "Classes and Objects"
+title: "Objects and Classes"
 ---

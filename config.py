@@ -24,48 +24,48 @@ draft = True
 website = f"https://{domain}/{abbrev}/"
 
 # Chapters.
-chapters = [
-    "intro",
-    "dup",
-    "glob",
-    "parse",
-    "test",
-    "interp",
-    "func",
-    "mock",
-    "archive",
-    "oop",
-    "check",
-    "lint",
-    "template",
-    "layout",
-    "perf",
-    "persist",
-    "binary",
-    "db",
-    "build",
-    "flow",
-    "pack",
-    "server",
-    "editor",
-    "undo",
-    "vm",
-    "debugger",
-    "finale",
-]
+chapters = {
+    "intro": "Introduction",
+    "dup": "Finding Duplicate Files",
+    "glob": "Matching Patterns",
+    "parse": "Parsing Text",
+    "test": "A Testing Framework",
+    "interp": "An Interpreter",
+    "func": "Functions and Closures",
+    "mock": "Mock Objects",
+    "archive": "A File Archiver",
+    "oop": "Objects and Classes",
+    "check": "An HTML Validator",
+    "lint": "A Code Linter",
+    "template": "A Template Expander",
+    "layout": "Page Layout",
+    "perf": "Performance Profiling",
+    "persist": "Object Persistence",
+    "binary": "Binary Data",
+    "db": "A Database",
+    "build": "A Build Manager",
+    "flow": "A Pipeline Runner",
+    "pack": "A Package Manager",
+    "server": "A Web Server",
+    "editor": "A Text Editor",
+    "undo": "Undo and Redo",
+    "vm": "A Virtual Machine",
+    "debugger": "A Debugger",
+    "finale": "Conclusion",
+}
 
 # Appendices (slugs in order).
-appendices = [
-    "bib",
-    "syllabus",
-    "slides",
-    "license",
-    "conduct",
-    "contrib",
-    "glossary",
-    "credits",
-    "contents",
-]
+appendices = {
+    "bib": "Bibliography",
+    "syllabus": "Syllabus",
+    "slides": "Slides",
+    "license": "License",
+    "conduct": "Code of Conduct",
+    "contrib": "Contributing",
+    "glossary": "Glossary",
+    "credits": "Credits",
+    "contents": "Index",
+}
 
 # Files to copy verbatim.
 copy = [

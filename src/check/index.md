@@ -1,3 +1,3 @@
 ---
-title: "Checking HTML"
+title: "An HTML Validator"
 ---

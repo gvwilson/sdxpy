@@ -1,3 +1,3 @@
 ---
-title: "Template Expansion"
+title: "A Template Expander"
 ---

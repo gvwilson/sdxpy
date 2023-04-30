@@ -1,3 +1,3 @@
 ---
-title: "A Style Checker"
+title: "A Code Linter"
 ---
