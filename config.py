@@ -36,9 +36,9 @@ chapters = [
     "archive",
     "oop",
     "check",
+    "lint",
     "template",
     "layout",
-    "lint",
     "perf",
     "persist",
     "binary",
@@ -50,7 +50,7 @@ chapters = [
     "editor",
     "undo",
     "vm",
-    "debug",
+    "debugger",
     "finale",
 ]
 
@@ -65,33 +65,6 @@ appendices = [
     "glossary",
     "credits",
     "contents",
-]
-
-# To-do
-todo = [
-    "archive",
-    "binary",
-    "build",
-    "cache",
-    "check",
-    "compiler",
-    "debug",
-    "finale",
-    "interp",
-    "layout",
-    "lint",
-    "mock",
-    "pack",
-    "parse",
-    "perf",
-    "persist",
-    "pipe",
-    "re",
-    "server",
-    "ssg",
-    "template",
-    "test",
-    "vm",
 ]
 
 # Files to copy verbatim.

@@ -15,7 +15,7 @@ have a look at the game [%i "Human Resource Machine" %][Human Resource Machine][
 ## Architecture {: #vm-arch}
 
 Our [%i "virtual machine" %][%g virtual_machine "virtual machine" %][%/i%]
-simulates a computer with three parts ([%f architecture %]):
+simulates a computer with three parts ([%f vm-architecture %]):
 
 1.  The [%i "instruction pointer" %][%g instruction_pointer "instruction pointer" %][%/i%] (IP)
     holds the memory address of the next instruction to execute.

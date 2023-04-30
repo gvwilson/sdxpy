@@ -1,5 +1,5 @@
 ---
-title: "An Editor"
+title: "A Text Editor"
 ---
 
 -   MVC with simple line drawing
