@@ -4,7 +4,6 @@ import argparse
 import re
 from pathlib import Path
 
-import frontmatter
 import utils
 
 
@@ -41,7 +40,7 @@ def report_sections(config):
     fmt = f"{{:{longest+1}}}"
     for slug in missing_slides:
         s = fmt.format(f"{slug}:")
-        title = frontmatter.load(Path("src", slug, "index.md"))["title"]
+        title = config.chapters[slug]
         num_files = len(list(Path("src", slug).iterdir()))
         print(f"{s} {title} ({num_files})")
 
