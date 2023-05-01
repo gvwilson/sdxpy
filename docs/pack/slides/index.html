@@ -4,7 +4,7 @@
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="repo" content="https://github.com/gvwilson/sd4ds">
-  <meta name="build_date" content="2023-04-30">
+  <meta name="build_date" content="2023-05-01">
   <meta name="template" content="slides">
   <meta name="major" content="Chapter 21">
   
@@ -43,6 +43,609 @@ class: slide-title
 
 ---
 
+
+## The Problem
+
+-   Packages and their dependencies change over time
+
+-   If A and B require different versions of C
+    it might not be possible to use A and B together
+
+-   Need a systematic way to find globally-consistent sets of packages
+
+---
+
+## Identifying Versions
+
+-   <a class="gl-ref" href="../../glossary/#semantic_versioning" markdown="1">Semantic versioning</a> uses three integers `X.Y.Z`
+
+    -   `X` is the major version (breaking changes)
+
+    -   `Y` is the minor version (new features)
+
+    -   `Z` is the <a class="gl-ref" href="../../glossary/#patch" markdown="1">patch</a> (bug fixes)
+
+-   Notation
+
+    -   `>=1.2.3` means "any version from 1.2.3 onward"
+
+    -   `<4` means "any version before 4.anything"
+
+    -   `1.0-3.1` means "any version in the specified range"
+
+---
+
+## A Simplified Version
+
+```json
+{
+  "A": {
+    "3": {"B": ["3", "2"], "C": ["2"]},
+    "2": {"B": ["2"],      "C": ["2", "1"]},
+    "1": {"B": ["1"]}
+  },
+  "B": {
+    "3": {"C": ["2"]},
+    "2": {"C": ["1"]},
+    "1": {"C": ["1"]}
+  },
+  "C": {
+    "2": [],
+    "1": []
+  }
+}
+```
+
+
+---
+
+## Multiple Dimensions
+
+-   Imagine a multi-dimensional grid with one axis per package
+
+-   Possible combinations are points in this grid
+
+<figure>
+<img src="../allowable.svg" alt="Allowable versions"/>
+</figure>
+
+
+-   But how do we find the legal ones?
+
+---
+
+## Estimate Work
+
+-   Our example has 3×3×2=18 combinations
+
+-   Adding one more package with two versions doubles
+    the <a class="gl-ref" href="../../glossary/#search_space" markdown="1">search space</a>
+
+-   A <a class="gl-ref" href="../../glossary/#combinatorial_explosion" markdown="1">combinatorial explosion</a>
+
+-   Brute force solutions are impractical even for small problems
+
+-   But worth implementing as a starting point and for testing
+
+---
+
+## Brute Force
+
+-   Generate all possible combinations of package versions
+
+-   Then eliminate ones that aren't compatible with the manifest
+
+```py
+def main():
+    manifest = json.load(sys.stdin)
+    possible = make_possibilities(manifest)
+    print(f"{len(possible)} possibilities")
+    allowed = [p for p in possible if compatible(manifest, p)]
+    print(f"{len(allowed)} allowed")
+    for a in allowed:
+        print(a)
+```
+
+
+---
+
+## Generating Possibilities
+
+-   Create a list of the available versions of each package
+
+-   Generate their <a class="gl-ref" href="../../glossary/#cross_product" markdown="1">cross product</a>
+
+```py
+def make_possibilities(manifest):
+    available = []
+    for package, versions in manifest.items():
+        available.append([(package, v) for v in versions])
+    return list(itertools.product(*available))
+```
+
+
+<figure>
+<img src="../product.svg" alt="Generating a cross-product"/>
+</figure>
+
+
+---
+
+## Checking Validity
+
+-   Compare every entry X against every other entry Y
+
+-   If they are the same package, keep looking
+
+-   If package X's requirements say nothing about package Y,
+    keep searching
+
+-   If X *does* depend on Y
+    but this particular version of X doesn't list this particular version of Y
+    as a dependency,
+    rule out this combination
+
+-   If combination is still a candidate, add to list
+
+---
+
+## Checking Validity
+
+```py
+def compatible(manifest, combination):
+    for package_i, version_i in combination:
+        lookup_i = manifest[package_i][version_i]
+        for package_j, version_j in combination:
+            if package_i == package_j:
+                continue
+            if package_j not in lookup_i:
+                continue
+            if version_j not in lookup_i[package_j]:
+                return False
+    return True
+```
+
+
+-   Finds 3 valid combinations among our 18 possibilities
+
+```
+18 possibilities
+3 allowed
+(('A', '3'), ('B', '3'), ('C', '2'))
+(('A', '2'), ('B', '2'), ('C', '1'))
+(('A', '1'), ('B', '1'), ('C', '1'))
+```
+
+
+---
+
+## Manual Generation
+
+-   Create our own cross-product function
+    in preparation for doing something more efficient
+
+```py
+def make_possibilities(manifest):
+    available = []
+    for package, versions in manifest.items():
+        available.append([(package, v) for v in versions])
+
+    accum = []
+    _make_possible(available, [], accum)
+    return accum
+```
+
+
+-   Create a list of lists of available versions
+
+-   Create an empty accumulator
+
+-   Do some magic
+
+---
+
+## Manual Generation
+
+-   Each call to `_make_possible` handles one package's worth of work
+
+-   Loop over available versions of current package
+
+-   Add that package to the combination in progress
+
+-   If more packages, recurse
+
+-   Otherwise, append to accumulator
+
+```py
+def _make_possible(remaining, current, accum):
+    if not remaining:
+        accum.append(current)
+    else:
+        head, tail = remaining[0], remaining[1:]
+        for h in head:
+            _make_possible(tail, current + [h], accum)
+```
+
+
+---
+
+## <figure>
+<img src="../recursive.svg" alt="Generating a cross-product recursively"/>
+</figure>
+
+
+-   Use recursion instead of nested loops
+    because we don't know how many loops to write
+
+-   The <a class="gl-ref" href="../../glossary/#recursive_enumeration_pattern" markdown="1">Recursive Enumeration</a> design pattern
+
+---
+
+## Incremental Search
+
+-   Generate-and-discard is inefficient
+
+-   Stop immediately if a partial combination of packages is illegal
+
+```py
+def main():
+    manifest = json.load(sys.stdin)
+    packages = list(manifest.keys())
+    if len(sys.argv) > 1:
+        packages.reverse()
+
+    accum = []
+    count = find(manifest, packages, accum, [], 0)
+
+    print(f"count {count}")
+    for a in accum:
+        print(a)
+```
+
+
+--
+
+-   `reverse` to allow experimentation
+
+---
+
+## Finding Possibilities
+
+```py
+def find(manifest, remaining, accum, current, count):
+    count += 1
+    if not remaining:
+        accum.append(current)
+    else:
+        head, tail = remaining[0], remaining[1:]
+        for version in manifest[head]:
+            candidate = current + [(head, version)]
+            if compatible(manifest, candidate):
+                count = find(
+                    manifest, tail, accum, candidate, count
+                )
+    return count
+```
+
+
+---
+
+## Finding Possibilities
+
+1.  The manifest that tells us what's compatible with what.
+
+2.  The names of the packages we've haven't considered yet.
+
+3.  An accumulator to hold all the valid combinations we've found so far.
+
+4.  The partially-completed combination we're going to extend next.
+
+5.  A count of the number of combinations we've considered so far,
+    which we will use as a measure of efficiency.
+
+---
+
+## Savings
+
+-   We only create 11 candidates instead of 18
+
+```sh
+python incremental.py < triple.json
+```
+
+
+```
+count 11
+[('A', '3'), ('B', '3'), ('C', '2')]
+[('A', '2'), ('B', '2'), ('C', '1')]
+[('A', '1'), ('B', '1'), ('C', '1')]
+```
+
+
+-   Reversing the order cuts it to 9
+
+```sh
+python incremental.py reversed < triple.json
+```
+
+
+```
+count 9
+[('C', '2'), ('B', '3'), ('A', '3')]
+[('C', '1'), ('B', '2'), ('A', '2')]
+[('C', '1'), ('B', '1'), ('A', '1')]
+```
+
+
+---
+
+## Using a Theorem Prover
+
+-   An <a class="gl-ref" href="../../glossary/#theorem_prover" markdown="1">automated theorem prover</a> can do much better 
+
+    -   But the algorithms quickly become very complex
+
+-   Prove that a set of logical propositions (e.g., dependencies) are satisfiable
+
+-   We will use the [Z3 theorem prover][z3]
+
+    -   Whose documentation is unfortunately a barrier to entry
+
+---
+
+## Using Z3
+
+```py
+from z3 import Bool, Solver
+
+A = Bool("A")
+B = Bool("B")
+C = Bool("C")
+```
+
+
+-   `A`, `B`, and `C` don't have values
+
+-   Instead, each represents the set of possible Boolean values
+
+---
+
+## Using Z3
+
+-   Specify constraints such as `A == B`
+
+```py
+solver = Solver()
+solver.add(A == B)
+solver.add(B == C)
+report("A == B & B == C", solver.check())
+```
+
+
+-   Then ask Z3 to find a <a class="gl-ref" href="../../glossary/#model" markdown="1">model</a> that satisfies those constraints
+
+```
+A == B & B == C: sat
+A False
+B False
+C False
+```
+
+
+---
+
+## Unsatisfiable
+
+-   Require `A` to equal `B` and `B` to equal `C`
+    but `A` and `C` to be unequal
+
+```py
+solver = Solver()
+solver.add(A == B)
+solver.add(B == C)
+solver.add(A != C)
+report("A == B & B == C & B != C", solver.check())
+```
+
+```
+A == B & B == C & B != C: unsat
+```
+
+
+---
+
+## Packaging
+
+-   Represent our package versions
+
+```py
+A1 = Bool("A.1")
+A2 = Bool("A.2")
+A3 = Bool("A.3")
+
+B1 = Bool("B.1")
+B2 = Bool("B.2")
+B3 = Bool("B.3")
+
+C1 = Bool("C.1")
+C2 = Bool("C.2")
+```
+
+
+---
+
+## Packaging
+
+-   We want one version of `A`
+
+```py
+solver = Solver()
+solver.add(Or(A1, A2, A3))
+```
+
+
+-   But the versions of `A` are mutually exclusive
+
+```py
+solver.add(Implies(A1, Not(Or(A2, A3))))
+solver.add(Implies(A2, Not(Or(A1, A3))))
+solver.add(Implies(A3, Not(Or(A1, A2))))
+```
+
+
+-   Do the same for `B` and `C`
+
+---
+
+## Dependencies
+
+-   Add inter-package dependencies and solve
+
+```py
+solver.add(Implies(A3, And(Or(B3, B2), C2)))
+solver.add(Implies(A2, And(B2, Or(C2, C1))))
+solver.add(Implies(A1, B1))
+solver.add(Implies(B3, C2))
+solver.add(Implies(B2, C1))
+solver.add(Implies(B1, C1))
+
+print("result", solver.check(), solver.model())
+```
+
+```
+result sat [B.3 = True,
+ A.1 = False,
+ C.2 = True,
+ C.1 = False,
+ B.2 = False,
+ A.3 = True,
+ A.2 = False,
+ B.1 = False]
+```
+
+
+---
+
+## Summary
+
+<figure>
+<img src="../concept_map.svg" alt="Concept map for package manager."/>
+</figure>
+
+
+---
+
+class: exercise
+
+## Comparing Semantic Versions
+
+Write a function that takes an array of semantic version specifiers
+and sorts them in ascending order.
+Remember that `2.1` is greater than `1.99`.
+
+---
+
+class: exercise
+
+## Parsing Semantic Versions
+
+Write a parser for a subset of the [semantic versioning specification][semver_spec].
+
+---
+
+class: exercise
+
+## Using Scoring Functions
+
+Many different combinations of package versions can be mutually compatible.
+One way to decide which actual combination to install
+is to create a <a class="gl-ref" href="../../glossary/#scoring_function" markdown="1">scoring function</a>
+that measures how good or bad a particular combination is.
+For example,
+a function could measure the "distance" between two versions as:
+
+-   100 times the difference in major version numbers;
+
+-   10 times the difference in minor version numbers
+    if the major numbers agree;
+    and
+
+-   the difference in the patch numbers
+    if both major and minor numbers agree.
+
+1.  Implement this function
+    and use it to measure the total distance between
+    the set of packages found by the solver
+    and the set containing the most recent version of each package.
+
+2.  Explain why this doesn't actually solve the original problem.
+
+---
+
+class: exercise
+
+## Regular Releases
+
+Some packages release new versions on a regular cycle,
+e.g.,
+Version 2021.1 is released on March 1 of 2021,
+Version 2021.2 is released on September 1 of that year,
+version 2022.1 is released on March 1 of the following year,
+and so on.
+
+1.  How does this make package management easier?
+
+2.  How does it make it more difficult?
+
+---
+
+class: exercise
+
+## Searching Least first
+
+Rewrite the constraint solver so that it searches packages
+by looking at those with the fewest available versions first.
+Does this reduce the amount of work done for the small examples in this chapter?
+Does it reduce the amount of work done for larger examples?
+
+---
+
+class: exercise
+
+## Using Exclusions
+
+1.  Modify the constraint solver so that
+    it uses a list of package exclusions instead of a list of package requirements,
+    i.e.,
+    its input tells it that version 1.2 of package Red
+    can *not* work with versions 3.1 and 3.2 of package Green
+    (which implies that Red 1.2 can work with any other versions of Green).
+
+2.  Explain why package managers aren't built this way.
+
+---
+
+class: exercise
+
+## Generating Constraints
+
+Write a function that reads a JSON manifest describing package compatibilities
+and generates the constraints needed by the Z3 theorem prover.
+
+---
+
+class: exercise
+
+## Buildability
+
+1.  Convert the build dependencies from one of the examples in <a class="x-ref" href="../../build/">Chapter 19</a>
+    to a set of constraints for Z3
+    and use the solution to find a legal build order.
+
+2.  Modify the constraints to introduce
+    a <a class="gl-ref" href="../../glossary/#circular_dependency" markdown="1">circular dependency</a>
+    and check that the solver correctly determines
+    that there is no legal build order.
 
 
 [academic_prototyping]: https://www.fuzzingbook.org/html/AcademicPrototyping.html
