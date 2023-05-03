@@ -1,3 +1,361 @@
 ---
 template: slides
 ---
+
+## The Problem
+
+-   Text is a sequence of characters, but a page is two-dimensional
+
+-   How can we put the right things in the right places?
+
+-   Create a simple version of a [%g layout_engine "layout engine" %] for a browser
+
+-   But the same ideas apply to print
+
+---
+
+## Coordinate Systems
+
+-   Teletypes started printing in the upper left corner of the page
+
+-   So the coordinate systems for screens put (0, 0) in the upper left
+    instead of the lower left
+
+-   Y increases going *down*
+
+-   At least X increases to the right as usual
+
+[% figure
+   slide="true"
+   slug="layout-coordinate-system"
+   img="coordinate_system.svg"
+   alt="Coordinate system"
+   caption="Coordinate system with (0, 0) in the upper left corner."
+%]
+
+---
+
+## Block Model
+
+-   Every cell is a rectangular block
+
+-   Row arranges sub-blocks horizontally
+
+-   Column arranges sub-blocks vertically
+
+[% figure
+   slide=True
+   slug="layout-sizing"
+   img="sizing.svg"
+   alt="Calculating sizes of fixed blocks"
+   caption="Calculating sizes of blocks with fixed width and height."
+%]
+
+---
+
+## Generic Block
+
+[% inc file="easy_mode.py" keep="block" %]
+
+-   Would calculate size based on contents (image, text, etc.)
+
+---
+
+## Rows
+
+-   Width: sum of widths of children
+
+-   Height: height of tallest child
+
+[% inc file="easy_mode.py" keep="row" %]
+
+---
+
+## Columns
+
+-   Width: width of widest child
+
+-   Height: sum of heights of children
+
+[% inc file="easy_mode.py" keep="col" %]
+
+---
+
+## Nesting
+
+-   Rows can contain blocks and columns
+    but must be contained in a single column (unless it's the root)
+
+-   Columns can contain blocks or rows
+    but must be contained in a single row (unless it's the root)
+
+-   Can therefore represent document as a tree
+
+[% inc file="test_easy_mode.py" keep="example" %]
+
+---
+
+## Positioning
+
+-   Once we know sizes we can calculate positions
+
+-   E.g., if cell is a row at `(x0, y0)`:
+
+    -   Its lower edge is `y1 = y0 + height`
+
+    -   Its first child's upper-left corner is `(x0, y1)`
+
+    -   Second child's upper-left corner is `(x0 + width0, y1)`
+
+[% figure
+   slide=True
+   slug="layout-layout"
+   img="layout.svg"
+   alt="Laying out rows and columns"
+   caption="Laying out rows and columns of fixed-size blocks."
+%]
+
+---
+
+## Positioning
+
+[% inc file="placed.py" keep="place_row" %]
+
+---
+
+## Rendering
+
+-   Draw parents before children so that children over-draw
+
+-   A simple form of [%g z_buffering "z-buffering" %]
+
+[% figure
+   slide=True
+   slug="layout-draw-over"
+   img="draw_over.svg"
+   alt="Children drawing over their parents"
+   caption="Render blocks by drawing child nodes on top of parent nodes."
+%]
+
+---
+
+## Rendering
+
+-   Create a character "screen"
+
+[% inc file="render.py" keep="make_screen" %]
+
+-   Add a method for blocks to draw
+
+[% inc file="rendered.py" keep="render" %]
+
+---
+
+## Mixin Class
+
+[% figure
+   slide=True
+   slug="layout-mixin"
+   img="mixin.svg"
+   alt="Adding methods with a mixin class"
+   caption="Using multiple inheritance and a mixin class to add methods."
+%]
+
+---
+
+## Wrapping
+
+-   Fix width of row (for example)
+
+-   If total width of children is greater than this,
+    need to wrap the children to a new row
+
+    -   Assuming no single child is too wide
+
+-   Handle this by modifying the tree
+
+[% inc file="wrapped.py" keep="blockcol" %]
+
+---
+
+## Wrapping Rows
+
+[% figure
+   slide=True
+   slug="layout-wrap"
+   img="wrap.svg"
+   alt="Wrapping rows"
+   caption="Wrapping rows by introducing a new row and column."
+%]
+
+---
+
+## Wrapping Rows
+
+-   New row class takes a fixed width and some children
+
+-   Returns that fixed width when asked for its size
+
+[% inc file="wrapped.py" keep="row" omit="wrap" %]
+
+---
+
+## Wrapping Rows
+
+-   Wrapping puts the row's children into buckets
+
+-   Converts each bucket to a row with a column of rows
+
+[% inc file="wrapped.py" keep="wrap" %]
+
+---
+
+## Bucketing
+
+[% inc file="wrapped.py" keep="bucket" %]
+
+---
+
+class: summary
+
+## Summary	       
+
+[% figure
+   slide=True
+   slug="layout-concept-map"
+   img="concept_map.svg"
+   alt="Concept map for page layout"
+   caption="Page layout concept map."
+%]
+
+---
+
+class: exercise
+
+## Refactoring
+
+Refactor the classes used to represent blocks, rows, and columns so that:
+
+1.  They all derive from a common parent.
+
+2.  All common behavior is defined in that parent (if only with placeholder methods).
+
+---
+
+class: exercise
+
+## Recycling Nodes
+
+Modify the wrapping code so that new rows and columns are only created if needed.
+For example,
+if a row of width 10 contains a text node that is only 4 characters wide,
+a new row and column are *not* inserted.
+
+---
+
+class: exercise
+
+## Clear Background
+
+Modify the rendering code so that only the text in block nodes is shown,
+i.e.,
+so that the empty space in rows and columns is rendered as spaces.
+
+---
+
+class: exercise
+
+## Clipping Text
+
+1.  Modify the wrapping and rendering so that
+    if a block of text is too wide for the available space
+    the extra characters are clipped.
+    For example,
+    if a column of width 5 contains a line "unfittable",
+    only "unfit" appears.
+
+2.  Extend your solution to break lines on spaces as needed
+    in order to avoid clipping.
+
+---
+
+class: exercise
+
+## Bidirectional Rendering
+
+Modify the existing software to do either left-to-right or right-to-left rendering
+upon request.
+
+---
+
+class: exercise
+
+## Equal Sizing
+
+Modify the existing code to support elastic columns,
+i.e.,
+so that all of the columns in a row are automatically sized to have the same width.
+If the number of columns does not divide evenly into the width of the row,
+allocate the extra space as equally as possible from left to right.
+
+---
+
+class: exercise
+
+## Drawing Borders
+
+Modify the existing code so that elements are drawn with borders like this:
+
+```
++----+
+|text|
++----+
+```
+
+---
+
+class: exercise
+
+## Padding Elements
+
+Modify the existing code so that:
+
+1.  Authors can define a `padding` attribute for row and column elements.
+
+2.  When the node is rendered, that many blank spaces are added on all four sides of the contents.
+
+For example, string `"text"` with a padding of 1 would render as:
+
+```
++------+
+|      |
+| text |
+|      |
++------+
+```
+
+where the lines show the outer border of the rendering.
+
+---
+
+class: exercise
+
+## Properties
+
+Look at the documentation for Python's `@property` decorator
+and modify the block classes to replace the `get_width` and `get_height` methods
+with properties called `width` and `height`.
+
+---
+
+class: exercise
+
+## Tables
+
+Add another node type `Table` such that:
+
+1.  All the children of a table must be rows.
+
+2.  Every row must contain exactly the same number of columns.
+
+3.  When the table is rendered, every column has the same width in every row.
