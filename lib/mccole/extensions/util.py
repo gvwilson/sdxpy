@@ -92,7 +92,7 @@ def get_config(part):
 
 def get_chapter_slug(node):
     """Get chapter-level slug of index files or slides file, or None."""
-    if "slides" in node.get_template_list():
+    if is_slides(node):
         require(len(node.path) > 1, f"Bad path {node.path} for slides")
         return node.path[-2]
     return node.path[-1]
@@ -108,6 +108,11 @@ def get_title(node):
     slug = get_chapter_slug(node)
     require(slug in CACHE["titles"], f"Unknown slug {slug} for titles")
     return CACHE["titles"][slug]
+
+
+def is_slides(node):
+    """Is this a slides file?"""
+    return "slides" in node.get_template_list()
 
 
 def make_config(part, filler=None):
