@@ -44,6 +44,402 @@ class: slide-title
 ---
 
 
+## The Problem
+
+-   Want to check that our code follows style rules
+
+-   And doesn't do things that are likely to be bugs
+
+-   Build a <a class="gl-ref" href="../../glossary/#linter" markdown="1">linters</a>
+
+    -   Checks for "fluff" in code
+
+---
+
+## Programs as Trees
+
+-   <a class="x-ref" href="../../check/">Chapter 11</a> represented HTML as a <a class="gl-ref" href="../../glossary/#dom" markdown="1">DOM tree</a>
+
+-   We can represent code as an <a class="gl-ref" href="../../glossary/#abstract_syntax_tree" markdown="1">abstract syntax tree</a> (AST)
+
+-   Each node represents a syntactic element in the program
+
+---
+
+## Programs as Trees
+
+```py
+def double(x):
+    return 2 * x
+
+result = double(3)
+print(result)
+```
+
+
+<figure>
+<img src="../ast_simple.svg" alt="Simple AST"/>
+</figure>
+
+
+---
+
+## Building Trees
+
+```py
+import ast
+import sys
+
+with open(sys.argv[1], "r") as reader:
+    source = reader.read()
+
+tree = ast.parse(source)
+print(ast.dump(tree, indent=4))
+```
+
+```
+Module(
+    body=[
+        FunctionDef(
+            name='double',
+            args=arguments(
+                posonlyargs=[],
+                args=[
+                    arg(arg='x')],
+                kwonlyargs=[],
+                kw_defaults=[],
+```
+
+
+---
+
+## Finding Things
+
+-   Could walk the tree to find `FunctionDef` nodes and record their `name` properties
+
+-   But each node has a different structure,
+    so we would have to write a recursive function for each type of node
+
+-   [`ast`][py_ast] module's `ast.NodeVisitor` implements
+    the <a class="gl-ref" href="../../glossary/#visitor_pattern" markdown="1">Visitor</a> pattern
+
+-   Each time it reaches a node of type `Thing`, it looks for a method `visit_Thing`
+
+---
+
+## Collecting Names
+
+```py
+class CollectNames(ast.NodeVisitor):
+    def __init__(self):
+        super().__init__()
+        self.names = {}
+
+    def visit_Assign(self, node):
+        for var in node.targets:
+            self.add(var, var.id)
+        self.generic_visit(node)
+
+    def visit_FunctionDef(self, node):
+        self.add(node, node.name)
+        self.generic_visit(node)
+
+    def add(self, node, name):
+        loc = (node.lineno, node.col_offset)
+        self.names[name] = self.names.get(name, set())
+        self.names[name].add(loc)
+
+    def position(self, node):
+        return ({node.lineno}, {node.col_offset})
+```
+
+
+---
+
+## Collecting Names
+
+1.  `CollectNames` constructors invokes `NodeVisitor` constructor
+    before doing anything else
+
+1.  `visit_Assign` and `visit_FunctionDef` must call `self.generic_visit(node)` explicitly to recurse
+
+1.  `position` methods uses the fact that every AST node remembers where it came from
+
+---
+
+## Collecting Names
+
+```py
+with open(sys.argv[1], "r") as reader:
+    source = reader.read()
+tree = ast.parse(source)
+collector = CollectNames()
+collector.visit(tree)
+print(collector.names)
+```
+
+```sh
+python walk_ast.py simple.py
+```
+
+
+```
+{'double': {(1, 0)}, 'result': {(4, 0)}}
+```
+
+
+---
+
+## What Does This Do?
+
+```py
+has_duplicates = {
+    "third": 3,
+    "fourth": 4,
+    "fourth": 5,
+    "third": 6
+}
+print(has_duplicates)
+```
+
+
+1.  An error
+2.  Keeps the first
+3.  Keeps the last
+4.  Concatenates
+
+--
+
+```
+{'third': 6, 'fourth': 5}
+```
+
+
+---
+
+## Finding Duplicate Keys
+
+```py
+class FindDuplicateKeys(ast.NodeVisitor):
+    def visit_Dict(self, node):
+        seen = Counter()
+        for key in node.keys:
+            if isinstance(key, ast.Constant):
+                seen[key.value] += 1
+        problems = {k for (k, v) in seen.items() if v > 1}
+        self.report(node, problems)
+        self.generic_visit(node)
+
+    def report(self, node, problems):
+        if problems:
+            msg = ", ".join(p for p in problems)
+            print(f"duplicate key(s) {{{msg}}} at {node.lineno}")
+```
+
+```
+duplicate key(s) {fourth, third} at 1
+```
+
+
+---
+
+## False Negatives
+
+-   Our duplicate finder only detects constants
+
+```py
+def label():
+    return "label"
+
+actually_has_duplicate_keys = {
+    "label": 1,
+    "la" + "bel": 2,
+    label(): 3,
+    "".join(["l", "a", "b", "e", "l"]): 4,
+}
+```
+
+
+-   Fundamental theoretical result in computer science is that
+    it's impossible to build a general-purpose algorithm
+    that predicts the output of a program
+
+---
+
+## Finding Unused Variables
+
+-   Not wrong, but clutter makes code harder to read
+
+-   Have to take <a class="gl-ref" href="../../glossary/#scope" markdown="1">scope</a> into account
+
+-   So keep a stack of scopes
+
+```py
+class FindUnusedVariables(ast.NodeVisitor):
+    def __init__(self):
+        super().__init__()
+        self.stack = []
+
+    def visit_Module(self, node):
+        self.search("global", node)
+
+    def visit_FunctionDef(self, node):
+        self.search(node.name, node)
+
+```
+
+
+---
+
+## Bucketing
+
+-   If the variable's value is being read,
+    `node.ctx` (short for "context") is an instance of `Load`
+
+-   If the variable is being written to,
+    `node.ctx` is an instance of `Store`
+
+```py
+    def visit_Name(self, node):
+        if isinstance(node.ctx, ast.Load):
+            self.stack[-1].load.add(node.id)
+        elif isinstance(node.ctx, ast.Store):
+            self.stack[-1].store.add(node.id)
+        else:
+            assert False, f"Unknown context"
+        self.generic_visit(node)
+
+```
+
+
+---
+
+## And Finally…
+
+```py
+    def search(self, name, node):
+        self.stack.append(Scope(name, set(), set()))
+        self.generic_visit(node)
+        scope = self.stack.pop()
+        self.check(scope)
+
+    def check(self, scope):
+        unused = scope.store - scope.load
+        if unused:
+            names = ", ".join(sorted(unused))
+            print(f"unused in {scope.name}: {names}")
+
+```
+
+
+---
+
+## Extension
+
+-   Tedious to write a new visitor for each rule
+
+    -   And inefficient
+
+-   Multiple inheritance is the wrong tool for this
+
+    -   What if several people write `visit_FuncDef`?
+
+-   Use <a class="gl-ref" href="../../glossary/#method_injection" markdown="1">method injectection</a>
+    to add methods to classes after they have been defined
+
+---
+
+## Filling In
+
+```py
+class BlankNodeVisitor(ast.NodeVisitor):
+    pass
+
+def print_name(self, node):
+    print(node.id)
+
+setattr(BlankNodeVisitor, "visit_Name", print_name)
+```
+
+
+-   A class is just a specialized dictionary (kind of)
+
+---
+
+## Filling In
+
+```py
+with open(sys.argv[1], "r") as reader:
+    source = reader.read()
+tree = ast.parse(source)
+finder = BlankNodeVisitor()
+finder.visit(tree)
+```
+
+
+-   But still have the problem of <a class="gl-ref" href="../../glossary/#name_collision" markdown="1">name collision</a>
+
+---
+
+## Registration
+
+-   Add handlers to a set of lists
+
+```py
+Handler = namedtuple("Handler", ["func", "data"])
+
+class RegisterNodeVisitor(ast.NodeVisitor):
+    def __init__(self):
+        super().__init__()
+        self.handlers = {}
+
+    def add_handler(self, nodeType, func, data=None):
+        handler = Handler(func, data)
+        if nodeType not in self.handlers:
+            self.handlers[nodeType] = []
+        self.handlers[nodeType].append(handler)
+
+    def visit_Name(self, node):
+        for handler in self.handlers.get(ast.Name, []):
+            handler.func(node, handler.data)
+```
+
+
+---
+
+## Here's How It Works
+
+```py
+def count_names(node, counter):
+    counter[node.id] += 1
+```
+
+
+```py
+with open(sys.argv[1], "r") as reader:
+    source = reader.read()
+tree = ast.parse(source)
+
+finder = RegisterNodeVisitor()
+counter = Counter()
+finder.add_handler(ast.Name, count_names, counter)
+
+finder.visit(tree)
+print(counter)
+```
+
+
+---
+
+class: summary
+
+## Summary
+
+<figure>
+<img src="../concept_map.svg" alt="Concept map for code manipulation"/>
+</figure>
+
+
 
 [academic_prototyping]: https://www.fuzzingbook.org/html/AcademicPrototyping.html
 [aosa]: https://aosabook.org/

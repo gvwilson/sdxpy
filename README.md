@@ -65,7 +65,7 @@ This book is also designed for:
 | check	    | done   | done   | done     | -         | -      |  50%    |
 | template  | done   | done   | done     | -         | -      |  50%    |
 | layout    | done   | done   | done     | done      | -      |  75%    |
-| lint	    | revise | revise | done     | -         | -      |  25%    |
+| lint	    | done   | done   | done     | -         | done   |  50%    |
 | perf	    | done   | done   | done     | done      | -      |  50%    |
 | persist   | done   | done   | done     | done      | -      |  50%    |
 | binary    | revise | revise | done     | -         | -      |  25%    |
@@ -79,4 +79,4 @@ This book is also designed for:
 | vm	    | done   | -      | done     | done      | done   |  75%    |
 | debug	    | done   | -      | -        | -         | -      |   0%    |
 | finale    | N/A    | done   | N/A      | N/A       | done   | 100%    |
-|           |        |        |          |           |        | *44%*   |
+|           |        |        |          |           |        | *45%*   |
