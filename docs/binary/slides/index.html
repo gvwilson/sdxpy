@@ -4,7 +4,7 @@
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="repo" content="https://github.com/gvwilson/sd4ds">
-  <meta name="build_date" content="2023-05-04">
+  <meta name="build_date" content="2023-05-05">
   <meta name="template" content="slides">
   <meta name="major" content="Chapter 17">
   
@@ -42,6 +42,408 @@ class: slide-title
 </div>
 
 ---
+
+
+## Why Binary?
+
+-   Bits take less space
+    -   `"10239472"` is 8 bytes, but `10239472` is just 4
+-   Operations are much faster
+-   How would we represent images, audio, or video as characters?
+
+```txt
+                      _. - ~ ~ ~ - .
+   ..       __.    .-~               ~-.
+   ((\     /   `}.~                     `.
+    \\\   {     }               /     \   \
+(\   \\~~^      }              |       }   \
+ \`.-~ -@~      }  ,-.         |       )    \
+ (___     ) _}   (    :        |    / /      `.
+  `----._-~.     _\ \ |_       \   / /- _      `.
+         ~~----~~  \ \| ~~--~~~(  + /     ~-.     ~- _
+                   /  /         \  \          ~- . _ _~_-_.
+                __/  /          _\  )
+              .<___.'         .<___/
+```
+
+
+---
+
+## Integers
+
+-   If all we have is 1's and 0's, use base-2
+-   9<sub>10</sub> is (1×8)+(0×4)+(0×2)+(1×1) = 1001<sub>2</sub>
+-   Can write numbers in binary using `0b` prefix
+
+```py
+print(0b101101)
+```
+
+
+```
+45
+```
+
+
+---
+
+## Hexadecimal
+
+-   More common to use <a class="gl-ref" href="../../glossary/#hexadecimal" markdown="1">hexadecimal</a> (base 16)
+-   Digits are 0123456789ABCDEF
+-   Each digit represents 4 bits (a <a class="gl-ref" href="../../glossary/#nybble" markdown="1">nybble</a>)
+
+```py
+print(0x2D)  # (2 * 16) + 13
+```
+
+
+```
+45
+```
+
+
+---
+
+## Negative Numbers
+
+-   Could use <a class="gl-ref" href="../../glossary/#sign_and_magnitude" markdown="1">sign and magnitude</a>
+    -   `0100` is 4
+    -   `1100` is -4
+-   But:
+    -   Gives us two zeroes (one positive, one negative)
+    -   Makes the hardware to do arithmetic more complicated
+
+---
+
+## Two's Complement
+
+-   <a class="gl-ref" href="../../glossary/#twos_complement" markdown="1">Two's complement</a> wraps around like an odometer
+
+| Base 10 | Base 2 |
+| ------- | ------ |
+| 3       | 011    |
+| 2       | 010    |
+| 1       | 001    |
+| 0       | 000    |
+| -1      | 111    |
+| -2      | 110    |
+| -3      | 101    |
+| -4      | 100    |
+
+---
+
+## Two's Complement
+
+-   Can still determine sign by looking at the first bit
+
+-   But two's complement is asymmetric
+
+-   No positive number to match the largest negative number
+
+---
+
+## Bitwise Operations
+
+<table>
+<tr><th> Name        </th><th> Expression </th><th> Bitwise       </th><th> Result          </th></tr>
+<tr><td> and         </td><td> 12 & 6   </td><td> 1100 & 0110 </td><td> 4 (0100)    </td></tr>
+<tr><td> or          </td><td> 12 | 6   </td><td> 1100 | 0110 </td><td> 14 (1110)   </td></tr>
+<tr><td> xor         </td><td> 12 ^ 6   </td><td> 1100 ^ 0110 </td><td> 10 (1010)   </td></tr>
+<tr><td> not         </td><td> ~ 6      </td><td> ~ 0110      </td><td> -7(1001)    </td></tr>
+<tr><td> left shift  </td><td> 12 << 2  </td><td> 1100 << 2   </td><td> 48 (110000) </td></tr>
+<tr><td> right shift </td><td> 12 >> 2  </td><td> 1100 >> 2   </td><td> 3 (0011)    </td></tr>
+</table>
+
+---
+
+class: aside
+
+## This Is Not Arithmetic
+
+-   Take a closer look at `~6`
+
+    -   We are using two's complement, so 6 is `0b000…00110`
+
+    -   Its bitwise negation is `0b111…11001`, which is -7
+
+-   Shifting up and down is *almost* like multiplying or dividing by 2
+
+-   But what if the top bit changes?
+
+    -   If we only have 4 bits, `0b1111 >> 1` is `0b0111`, so -1/2 is 7
+
+---
+
+## Storing Numbers
+
+-   C and Fortran store numbers as numbers
+-   Python used **boxed values**
+    -   Reference count
+    -   Type code
+    -   Value
+
+<figure>
+<img src="../boxing.svg" alt="Boxed values"/>
+</figure>
+
+
+---
+
+## Storing Arrays
+
+-   The differences are even larger for arrays and lists
+
+<figure>
+<img src="../arrays.svg" alt="Boxed arrays"/>
+</figure>
+
+
+---
+
+## Packing and Unpacking
+
+-   Operations on unboxed (raw) values are much faster
+    -   Most numerical libraries written in C or Fortran
+    -   Then wrapped in Python or R
+-   Need to:
+    -   Get data from raw bytes into Python structures
+    -   Copy data from Python structures into packed bytes
+-   Also do this for efficient storage of large data
+
+---
+
+## The `struct` Module
+
+```py
+import struct
+
+fmt = "ii"  # two 32-bit integers
+x = 31
+y = 65
+
+binary = struct.pack(fmt, x, y)
+print("binary representation:", repr(binary))
+
+normal = struct.unpack(fmt, binary)
+print("back to normal:", normal)
+```
+
+
+```
+binary representation: b'\x1f\x00\x00\x00A\x00\x00\x00'
+back to normal: (31, 65)
+```
+
+
+---
+
+class: aside
+
+## Hexadecimal Again
+
+-   Not all bytes correspond to common characters
+
+-   So Python uses two-digit hex representation `\xPQ`
+
+-   Easy to miss the actual `A` between one `\x00` and the next
+
+---
+
+## Packing With Counts
+
+```py
+from struct import pack
+
+print(pack("3i", 1, 2, 3))
+print(pack("5s", bytes("hello", "utf-8")))
+print(pack("5s", bytes("a longer string", "utf-8")))
+```
+
+
+```
+b'\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00\x00'
+b'hello'
+b'a lon'
+```
+
+
+-   Only packs as much as we tell it to
+
+---
+
+## Dynamic Formats
+
+-   Construct format dynamically
+
+```py
+text = "hello"
+print(f"{len(text)}s")
+```
+
+
+```
+5s
+```
+
+
+---
+
+## Variable-Length Packing
+
+-   Pack variable-length strings as a count (of known size) and that many bytes
+
+```py
+def pack_string(as_string):
+    as_bytes = bytes(as_string, "utf-8")
+    header = pack("i", len(as_bytes))
+    format = f"{len(as_bytes)}s"
+    body = pack(format, as_bytes)
+    return header + body
+```
+
+
+-   We'll explain the call to `bytes` later
+
+---
+
+## Variable-Length Packing
+
+```py
+if __name__ == "__main__":
+    result = pack_string("hello!")
+    print(repr(result))
+```
+
+```
+b'\x06\x00\x00\x00hello!'
+```
+
+
+-   First four bytes are the 32-bit integer representation of 6
+-   Next six bytes are our characters
+-   <a class="gl-ref" href="../../glossary/#big_endian" markdown="1">Big-endian</a> vs. <a class="gl-ref" href="../../glossary/#little_endian" markdown="1">little-endian</a> ordering
+
+---
+
+## Unpacking
+
+```py
+def unpack_string(buffer):
+   header, body = buffer[:4], buffer[4:]
+   length = unpack("i", header)[0]
+   format = f"{length}s"
+   result = unpack(format, body)[0]
+   return str(result, "utf-8")
+
+buffer = pack_string("hello!")
+result = unpack_string(buffer)
+print(result)
+```
+
+```
+hello!
+```
+
+
+---
+
+## Bytes and Text
+
+-   ASCII originally defined 128 7-bit characters
+    -   0–31 were <a class="gl-ref" href="../../glossary/#control_code" markdown="1">control codes</a>
+-   Since bytes have 8 bits, programmers used the values 128–255 however they wanted
+-   ANSI standard defined (for example) 231<sub>10</sub> to be "ç"
+-   But what about Turkish? Or Devanagari? Or kanji, or hieroglyphics, or…?
+    -   Two bytes wouldn't be enough
+    -   Four bytes per character would quadruple storage requirements
+    -   And would mostly not be needed (by American businesses)
+
+---
+
+## Unicode
+
+-   Define a <a class="gl-ref" href="../../glossary/#code_point" markdown="1">code point</a> for every character
+    -   U+0065 for an upper-case Latin "A"
+    -   U+2605 for a black star &#9733;
+-   Define several <a class="gl-ref" href="../../glossary/#character_encoding" markdown="1">character encodings</a>
+-   UTF-32 uses 32 bits for every character
+-   Most popular is <a class="gl-ref" href="../../glossary/#utf_8" markdown="1">UTF-8</a>
+    -   Code points 0–127 are stored in a single byte with a leading 0
+    -   If the top bit is 1, the number of 1's tells UTF-8 how many bytes there are in the character
+
+---
+
+## Unicode
+
+-   If the first byte is `0b11101101`:
+    -   The leading 1 means "multibyte"
+    -   The next two bits mean "this is a three-byte character"
+    -   The first 0 separates the header from the start of the character
+    -   The final `1101` is the first four bits of the character
+-   Every <a class="gl-ref" href="../../glossary/#continuation_byte" markdown="1">continuation byte</a> starts with `10`
+    -   So we can tell if a byte is in the middle of a character
+
+---
+
+## Characters as Bytes
+
+```py
+result = pack_string("こんにちは!")
+print(repr(result))
+```
+
+```
+b'\x10\x00\x00\x00\xe3\x81\x93\xe3\x82\x93\xe3\x81\xab\xe3\x81\xa1\x \
+e3\x81\xaf!'
+```
+
+
+---
+
+class: aside
+
+## Binary Mode
+
+-   `open(filename, "r")` converts bytes to characters
+    -   And converts Windows line endings `\r\n` to Unix `\n`
+-   Use `open(filename, "rb")` to read in <a class="gl-ref" href="../../glossary/#binary_mode" markdown="1">binary mode</a>
+
+---
+
+class: summary
+
+## Summary
+
+<figure>
+<img src="../concept_map.svg" alt="Concept map for binary data"/>
+</figure>
+
+
+---
+
+class: exercise
+
+## File Types
+
+The first eight bytes of a PNG image file always contain the following (base-10) values:
+
+```
+137 80 78 71 13 10 26 10
+```
+
+Write a program that determines whether a file is a PNG image or not.
+
+---
+
+class: exercise
+
+## Converting Integers to Bits
+
+Using Python's bitwise operators,
+write a function that returns the binary representation of a non-negative integer.
+Write another function that converts a string of 1's and 0's into an integer
+(treating it as unsigned).
 
 
 
