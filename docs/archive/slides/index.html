@@ -4,7 +4,7 @@
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="repo" content="https://github.com/gvwilson/sd4ds">
-  <meta name="build_date" content="2023-05-05">
+  <meta name="build_date" content="2023-05-08">
   <meta name="template" content="slides">
   <meta name="major" content="Chapter 9">
   
@@ -42,6 +42,350 @@ class: slide-title
 </div>
 
 ---
+
+
+## The Problem
+
+-   Want to save snapshots of work in progress
+
+-   Create a simple <a class="gl-ref" href="../../glossary/#version_control_system" markdown="1">version control system</a>
+
+-   And show how to test it using mock objects (<a class="x-ref" href="../../mock/">Chapter 8</a>)
+
+---
+
+## Design
+
+-   Wasteful to store the same file repeatedly
+
+-   So if the file's hash is `abcd1234`, save it as `abcd1234.bck`
+
+    -   Handles renaming
+
+-   Then create a <a class="gl-ref" href="../../glossary/#manifest" markdown="1">manifests</a> to show
+    what unique blocks of bytes had what names when
+
+---
+
+## Storage
+
+<figure>
+<img src="../storage.svg" alt="Backup file storage"/>
+</figure>
+
+
+---
+
+## Finding and Hashing
+
+-   Use globbing (<a class="x-ref" href="../../glob/">Chapter 3</a>) and hashing (<a class="x-ref" href="../../dup/">Chapter 2</a>)
+
+```py
+HASH_LEN = 16
+
+def hash_all(root):
+    result = []
+    for name in glob("**/*.*", root_dir=root, recursive=True):
+        full_name = Path(root, name)
+        with open(full_name, "rb") as reader:
+            data = reader.read()
+            hash_code = sha256(data).hexdigest()[:HASH_LEN]
+            result.append((name, hash_code))
+    return result
+```
+
+
+---
+
+## Finding and Hashing
+
+```
+sample_dir
+|-- a.txt
+|-- b.txt
+`-- sub_dir
+    `-- c.txt
+
+1 directory, 3 files
+```
+
+```sh
+python hash_all.py sample_dir
+```
+
+
+```
+filename,hash
+b.txt,3cf9a1a81f6bdeaf
+a.txt,17e682f060b5f8e4
+sub_dir/c.txt,5695d82a086b6779
+```
+
+
+---
+
+## Testing
+
+-   Obvious approach is to create lots of files and directories
+
+-   But we want to test what happens when they change,
+    which makes things complicated to maintain
+
+-   Use a <a class="gl-ref" href="../../glossary/#mock_object" markdown="1">mock object</a> (<a class="x-ref" href="../../mock/">Chapter 8</a>)
+    instead of the real filesystem
+
+---
+
+## Faking the Filesystem
+
+-   [pyfakefs][pyfakefs] replaces functions like `open`
+    with ones that behave the same way
+    but act on "files" stored in memory
+
+<figure>
+<img src="../mock_fs.svg" alt="Mock filesystem"/>
+</figure>
+
+
+-   `import pyfakefs` automatically creates a fixture called `fs`
+
+---
+
+## Direct Use
+
+```py
+from pathlib import Path
+
+def test_simple_example(fs):
+    sentence = "This file contains one sentence."
+    with open("alpha.txt", "w") as writer:
+        writer.write(sentence)
+    assert Path("alpha.txt").exists()
+    with open("alpha.txt", "r") as reader:
+        assert reader.read() == sentence
+```
+
+
+---
+
+## Build Our Own Tree
+
+```py
+from pathlib import Path
+import pytest
+
+@pytest.fixture
+def our_fs(fs):
+    fs.create_file("a.txt", contents="aaa")
+    fs.create_file("b.txt", contents="bbb")
+    fs.create_file("sub_dir/c.txt", contents="ccc")
+
+def test_nested_example(our_fs):
+    assert Path("a.txt").exists()
+    assert Path("b.txt").exists()
+    assert Path("sub_dir/c.txt").exists()
+
+def test_deletion_example(our_fs):
+    assert Path("a.txt").exists()
+    Path("a.txt").unlink()
+    assert not Path("a.txt").exists()
+```
+
+
+---
+
+## Running Tests
+
+```py
+import pytest
+
+from hash_all import hash_all, HASH_LEN
+
+@pytest.fixture
+def our_fs(fs):
+    fs.create_file("a.txt", contents="aaa")
+    fs.create_file("b.txt", contents="bbb")
+    fs.create_file("sub_dir/c.txt", contents="ccc")
+
+def test_hashing(our_fs):
+    result = hash_all(".")
+    expected = {"a.txt", "b.txt", "sub_dir/c.txt"}
+    assert {r[0] for r in result} == expected
+    assert all(len(r[1]) == HASH_LEN for r in result)
+
+```
+
+
+---
+
+## Tracking Backups
+
+-   Store backups and manifests in a directory selected by the user
+
+    -   Real system would support remote storage as well
+
+    -   Which suggests we need to design with multiple back ends in mind
+
+-   Backed-up files are `abcd1234.bck`
+
+-   Manifests are `ssssssssss.csv`,
+    where `ssssssssss` is the <a class="gl-ref" href="../../glossary/#utc" markdown="1">UTC</a> <a class="gl-ref" href="../../glossary/#timestamp" markdown="1">timestamp</a>
+
+---
+
+class: aside
+
+## Race Condition
+
+-   Manifest naming scheme fails if we try to create two backups in less than one second
+
+-   A <a class="gl-ref" href="../../glossary/#race_condition" markdown="1">race condition</a>
+
+-   May seem unlikely, but many bugs and security holes seemed unlikely to their creators
+
+---
+
+## Creating a Backup
+
+```py
+def backup(source_dir, backup_dir):
+    manifest = hash_all(source_dir)
+    timestamp = current_time()
+    write_manifest(backup_dir, timestamp, manifest)
+    copy_files(source_dir, backup_dir, manifest)
+    return manifest
+```
+
+
+-   An example of <a class="gl-ref" href="../../glossary/#successive_refinement" markdown="1">successive refinement</a>
+
+---
+
+## Writing the Manifest
+
+-   Create the backup directory if it doesn't already exist
+
+    -   Another race condition
+
+-   Then save CSV
+
+```py
+def write_manifest(backup_dir, timestamp, manifest):
+    backup_dir = Path(backup_dir)
+    if not backup_dir.exists():
+        backup_dir.mkdir()
+    manifest_file = Path(backup_dir, f"{timestamp}.csv")
+    with open(manifest_file, "w") as raw:
+        writer = csv.writer(raw)
+        writer.writerow(["filename", "hash"])
+        writer.writerows(manifest)
+```
+
+
+---
+
+## Saving Files
+
+```py
+def copy_files(source_dir, backup_dir, manifest):
+    for (filename, hash_code) in manifest:
+        source_path = Path(source_dir, filename)
+        backup_path = Path(backup_dir, f"{hash_code}.bck")
+        if not backup_path.exists():
+            shutil.copy(source_path, backup_path)
+```
+
+
+-   Yet another race condition
+
+---
+
+## Setting Up for Testing
+
+```py
+from pathlib import Path
+from unittest.mock import patch
+import pytest
+
+from backup import backup
+
+FILES = {"a.txt": "aaa", "b.txt": "bbb", "sub_dir/c.txt": "ccc"}
+
+@pytest.fixture
+def our_fs(fs):
+    for name, contents in FILES.items():
+        fs.create_file(name, contents=contents)
+```
+
+
+---
+
+## A Sample Test
+
+```py
+def test_nested_example(our_fs):
+    with patch("backup.current_time", return_value=1234):
+        manifest = backup(".", "/backup")
+    for filename, hash_code in manifest:
+        assert Path("/backup", f"{hash_code}.bck").exists()
+        assert Path("/backup", "1234.csv").exists()
+```
+
+
+-   Trust that the hash is correct
+
+-   Should look inside the manifest and check that it lists files correctly
+
+---
+
+## Refactoring
+
+-   Create a <a class="gl-ref" href="../../glossary/#base_class" markdown="1">base class</a> with the general steps
+
+```py
+class Archive:
+    def __init__(self, source_dir):
+        self._source_dir = source_dir
+
+    def backup(self):
+        manifest = hash_all(self._source_dir)
+        self._write_manifest(manifest)
+        self._copy_files(manifest)
+        return manifest
+```
+
+
+-   Derive a <a class="gl-ref" href="../../glossary/#child_class" markdown="1">child class</a> to do local archiving
+
+-   Convert functions we have built so far into methods
+
+---
+
+## Refactoring
+
+-   Can then create the specific archiver we want
+
+```py
+    archiver = ArchiveLocal(source_dir, backup_dir)
+```
+
+
+-   Other code can then use it *without knowing exactly what it's doing*
+
+```py
+    archiver.backup()
+```
+
+
+---
+
+class: summary
+
+## Summary
+
+<figure>
+<img src="../concept_map.svg" alt="Concept map of build manager"/>
+</figure>
 
 
 
