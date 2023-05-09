@@ -10,8 +10,11 @@ from pathlib import Path
 
 import utils
 from bs4 import BeautifulSoup, Tag
-from mccole.util import DIRECTIVES_FILE, read_directives
+import yaml
 from yaml_header_tools import NoValidHeader, get_header_from_file
+
+
+DIRECTIVES_FILE = ".mccole"
 
 CONFIGURATION = [
     ("abbrev", str),
@@ -228,6 +231,16 @@ def parse_args():
     parser.add_argument("--config", required=True, help="Configuration file")
     parser.add_argument("--dom", required=True, help="DOM specification file")
     return parser.parse_args()
+
+
+def read_directives(dirname, section):
+    """Get a section from the directives file if it exists"""
+    filepath = Path(dirname).joinpath(DIRECTIVES_FILE)
+    if not filepath.exists():
+        return []
+    with open(filepath, "r") as reader:
+        content = yaml.safe_load(reader) or {}
+        return content.get(section, [])
 
 
 def report(title, expected, actual):
