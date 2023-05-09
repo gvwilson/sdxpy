@@ -4,7 +4,7 @@
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="repo" content="https://github.com/gvwilson/sd4ds">
-  <meta name="build_date" content="2023-05-08">
+  <meta name="build_date" content="2023-05-09">
   <meta name="template" content="default">
   <meta name="major" content="Chapter 25">
   <meta name="has_slides" content="true">
@@ -317,7 +317,7 @@
           <p>There was still a lot of magic in our interpreter in <a class="x-ref" href="../interp/">Chapter 6</a>,
 so this chapter builds something that mimics real hardware more closely.
 If you want to dive deeper,
-have a look at the game <span class="ix-entry" ix-key="Human Resource Machine" markdown="1">[Human Resource Machine][human_resource_machine]</span>.</p>
+have a look at the game <span class="ix-entry" ix-key="Human Resource Machine" markdown="1"><a href="https://tomorrowcorporation.com/humanresourcemachine">Human Resource Machine</a></span>.</p>
 <h2 id="vm-arch">Section 25.1: Architecture</h2>
 <p>Our <span class="ix-entry" ix-key="virtual machine" markdown="1"><a class="gl-ref" href="../glossary/#virtual_machine" markdown="1">virtual machine</a></span>
 simulates a computer with three parts (<a class="fig-ref" href="../vm/#vm-architecture">Figure 25.1</a>):</p>
@@ -388,8 +388,8 @@ and <code>a</code> indicates an address.</p>
 <tr>
 <td><code>ldc</code></td>
 <td>2</td>
-<td><code>rv</code></td>
-<td>Load immediate</td>
+<td><code>rc</code></td>
+<td>Load constant</td>
 <td><code>ldc R0 123</code></td>
 <td><code>R0 := 123</code></td>
 </tr>
@@ -477,7 +477,7 @@ that can be loaded by other modules:</p>
 
 <span class="n">OPS</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s2">&quot;hlt&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;code&quot;</span><span class="p">:</span> <span class="mh">0x1</span><span class="p">,</span> <span class="s2">&quot;fmt&quot;</span><span class="p">:</span> <span class="s2">&quot;--&quot;</span><span class="p">},</span>  <span class="c1"># Halt program</span>
-    <span class="s2">&quot;ldc&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;code&quot;</span><span class="p">:</span> <span class="mh">0x2</span><span class="p">,</span> <span class="s2">&quot;fmt&quot;</span><span class="p">:</span> <span class="s2">&quot;rv&quot;</span><span class="p">},</span>  <span class="c1"># Load immediate</span>
+    <span class="s2">&quot;ldc&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;code&quot;</span><span class="p">:</span> <span class="mh">0x2</span><span class="p">,</span> <span class="s2">&quot;fmt&quot;</span><span class="p">:</span> <span class="s2">&quot;rv&quot;</span><span class="p">},</span>  <span class="c1"># Load value</span>
     <span class="s2">&quot;ldr&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;code&quot;</span><span class="p">:</span> <span class="mh">0x3</span><span class="p">,</span> <span class="s2">&quot;fmt&quot;</span><span class="p">:</span> <span class="s2">&quot;rr&quot;</span><span class="p">},</span>  <span class="c1"># Load register</span>
     <span class="s2">&quot;cpy&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;code&quot;</span><span class="p">:</span> <span class="mh">0x4</span><span class="p">,</span> <span class="s2">&quot;fmt&quot;</span><span class="p">:</span> <span class="s2">&quot;rr&quot;</span><span class="p">},</span>  <span class="c1"># Copy register</span>
     <span class="s2">&quot;str&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;code&quot;</span><span class="p">:</span> <span class="mh">0x5</span><span class="p">,</span> <span class="s2">&quot;fmt&quot;</span><span class="p">:</span> <span class="s2">&quot;rr&quot;</span><span class="p">},</span>  <span class="c1"># Store register</span>
@@ -513,8 +513,11 @@ To load one,
 we copy those numbers into memory and reset the instruction pointer and registers:</p>
 <div class="code-sample lang-py" title="vm.py">
 <div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">program</span><span class="p">):</span>
-        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">program</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">RAM_LEN</span><span class="p">,</span> <span class="s2">&quot;Program is too long for memory&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ram</span> <span class="o">=</span> <span class="p">[</span><span class="n">program</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">if</span> <span class="p">(</span><span class="n">i</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">program</span><span class="p">))</span> <span class="k">else</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">RAM_LEN</span><span class="p">)]</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">program</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">RAM_LEN</span><span class="p">,</span> <span class="s2">&quot;Program too long&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ram</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">program</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">if</span> <span class="p">(</span><span class="n">i</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">program</span><span class="p">))</span> <span class="k">else</span> <span class="mi">0</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">RAM_LEN</span><span class="p">)</span>
+        <span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ip</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">reg</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">NUM_REG</span>
 </code></pre></div>
@@ -563,7 +566,6 @@ that fetches instructions and executes them until told to stop:</p>
 
             <span class="k">elif</span> <span class="n">op</span> <span class="o">==</span> <span class="n">OPS</span><span class="p">[</span><span class="s2">&quot;cpy&quot;</span><span class="p">][</span><span class="s2">&quot;code&quot;</span><span class="p">]:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">reg</span><span class="p">[</span><span class="n">arg0</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reg</span><span class="p">[</span><span class="n">arg1</span><span class="p">]</span>
-
 
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">assert</span> <span class="kc">False</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Unknown op </span><span class="si">{</span><span class="n">op</span><span class="si">:</span><span class="s2">06x</span><span class="si">}</span><span class="s2">&quot;</span>
@@ -678,8 +680,12 @@ and turns each remaining line into an instruction:</p>
     <span class="k">def</span> <span class="nf">assemble</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lines</span><span class="p">):</span>
         <span class="n">lines</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_lines</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span>
         <span class="n">labels</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_find_labels</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span>
-        <span class="n">instructions</span> <span class="o">=</span> <span class="p">[</span><span class="n">ln</span> <span class="k">for</span> <span class="n">ln</span> <span class="ow">in</span> <span class="n">lines</span> <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_label</span><span class="p">(</span><span class="n">ln</span><span class="p">)]</span>
-        <span class="n">compiled</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_compile</span><span class="p">(</span><span class="n">instr</span><span class="p">,</span> <span class="n">labels</span><span class="p">)</span> <span class="k">for</span> <span class="n">instr</span> <span class="ow">in</span> <span class="n">instructions</span><span class="p">]</span>
+        <span class="n">instructions</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">ln</span> <span class="k">for</span> <span class="n">ln</span> <span class="ow">in</span> <span class="n">lines</span> <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_label</span><span class="p">(</span><span class="n">ln</span><span class="p">)</span>
+        <span class="p">]</span>
+        <span class="n">compiled</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_compile</span><span class="p">(</span><span class="n">instr</span><span class="p">,</span> <span class="n">labels</span><span class="p">)</span> <span class="k">for</span> <span class="n">instr</span> <span class="ow">in</span> <span class="n">instructions</span>
+        <span class="p">]</span>
         <span class="n">program</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_to_text</span><span class="p">(</span><span class="n">compiled</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">program</span>
 </code></pre></div>
@@ -695,7 +701,7 @@ and either save the label <em>or</em> increment the current address
         <span class="k">for</span> <span class="n">ln</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">:</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_label</span><span class="p">(</span><span class="n">ln</span><span class="p">):</span>
                 <span class="n">label</span> <span class="o">=</span> <span class="n">ln</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
-                <span class="k">assert</span> <span class="n">label</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">result</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Duplicate label </span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="k">assert</span> <span class="n">label</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">result</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Duplicated </span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">&quot;</span>
                 <span class="n">result</span><span class="p">[</span><span class="n">label</span><span class="p">]</span> <span class="o">=</span> <span class="n">loc</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">loc</span> <span class="o">+=</span> <span class="mi">1</span>
@@ -712,23 +718,23 @@ and pack the values:</p>
 <div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">_compile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instruction</span><span class="p">,</span> <span class="n">labels</span><span class="p">):</span>
         <span class="n">tokens</span> <span class="o">=</span> <span class="n">instruction</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
         <span class="n">op</span><span class="p">,</span> <span class="n">args</span> <span class="o">=</span> <span class="n">tokens</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">tokens</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
-        <span class="k">assert</span> <span class="n">op</span> <span class="ow">in</span> <span class="n">OPS</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Unknown operation </span><span class="si">{</span><span class="n">op</span><span class="si">}</span><span class="s2">&quot;</span>
-        <span class="n">fmt</span> <span class="o">=</span> <span class="n">OPS</span><span class="p">[</span><span class="n">op</span><span class="p">][</span><span class="s2">&quot;fmt&quot;</span><span class="p">]</span>
+        <span class="n">fmt</span><span class="p">,</span> <span class="n">code</span> <span class="o">=</span> <span class="n">OPS</span><span class="p">[</span><span class="n">op</span><span class="p">][</span><span class="s2">&quot;fmt&quot;</span><span class="p">],</span> <span class="n">OPS</span><span class="p">[</span><span class="n">op</span><span class="p">][</span><span class="s2">&quot;code&quot;</span><span class="p">]</span>
 
         <span class="k">if</span> <span class="n">fmt</span> <span class="o">==</span> <span class="s2">&quot;--&quot;</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_combine</span><span class="p">(</span><span class="n">OPS</span><span class="p">[</span><span class="n">op</span><span class="p">][</span><span class="s2">&quot;code&quot;</span><span class="p">])</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_combine</span><span class="p">(</span><span class="n">code</span><span class="p">)</span>
 
         <span class="k">elif</span> <span class="n">fmt</span> <span class="o">==</span> <span class="s2">&quot;r-&quot;</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_combine</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_reg</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">OPS</span><span class="p">[</span><span class="n">op</span><span class="p">][</span><span class="s2">&quot;code&quot;</span><span class="p">])</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_combine</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_reg</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">code</span><span class="p">)</span>
 
         <span class="k">elif</span> <span class="n">fmt</span> <span class="o">==</span> <span class="s2">&quot;rr&quot;</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_combine</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_reg</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="bp">self</span><span class="o">.</span><span class="n">_reg</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">OPS</span><span class="p">[</span><span class="n">op</span><span class="p">][</span><span class="s2">&quot;code&quot;</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_reg</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="bp">self</span><span class="o">.</span><span class="n">_reg</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">code</span>
             <span class="p">)</span>
 
         <span class="k">elif</span> <span class="n">fmt</span> <span class="o">==</span> <span class="s2">&quot;rv&quot;</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_combine</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_value</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">labels</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">_reg</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">OPS</span><span class="p">[</span><span class="n">op</span><span class="p">][</span><span class="s2">&quot;code&quot;</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_val</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">labels</span><span class="p">),</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_reg</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">code</span>
             <span class="p">)</span>
 </code></pre></div>
 </div>
@@ -736,7 +742,7 @@ and pack the values:</p>
 we either look up the label&rsquo;s address (if the value starts with <code>@</code>)
 or convert the value to a number:</p>
 <div class="code-sample lang-py" title="assembler.py">
-<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">token</span><span class="p">,</span> <span class="n">labels</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">_val</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">token</span><span class="p">,</span> <span class="n">labels</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">token</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">&quot;@&quot;</span><span class="p">:</span>
             <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
         <span class="n">lbl</span> <span class="o">=</span> <span class="n">token</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>

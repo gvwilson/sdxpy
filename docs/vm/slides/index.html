@@ -4,7 +4,7 @@
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="repo" content="https://github.com/gvwilson/sd4ds">
-  <meta name="build_date" content="2023-05-08">
+  <meta name="build_date" content="2023-05-09">
   <meta name="template" content="slides">
   <meta name="major" content="Chapter 25">
   
@@ -44,6 +44,424 @@ class: slide-title
 ---
 
 
+## The Problem
+
+-   Still a lot of magic in the interpreter of <a class="x-ref" href="../../interp/">Chapter 6</a>
+
+-   Build something that mimics hardware more closely
+
+-   See <span class="bib-ref">[<a class="bib-ref" href="../../bibliography/#Nisan2021">Nisan2021</a>]</span> for a fuller description
+
+-   Or play [Human Resource Machine][human_resource_machine]
+
+---
+
+## Architecture
+
+-  Our <a class="gl-ref" href="../../glossary/#virtual_machine" markdown="1">virtual machine</a> (VM)
+
+<figure>
+<img src="../architecture.svg" alt="Virtual machine architecture"/>
+</figure>
+
+
+---
+
+## Architecture
+
+1.  <a class="gl-ref" href="../../glossary/#instruction_pointer" markdown="1">Instruction pointer</a> (IP)
+    holds the address of the next instruction
+
+    -   Automatically initialized to 0,
+        so every program must start there
+
+1.  Instructions can access <a class="gl-ref" href="../../glossary/#register" markdown="1">registers</a> R0 to R3 directly
+
+    -   No memory-to-memory operations
+
+1.  256 <a class="gl-ref" href="../../glossary/#word_memory" markdown="1">words</a> of memory
+
+    -   Addresses fit in a single byte
+
+---
+
+## What It Can Do
+
+-   <a class="gl-ref" href="../../glossary/#instruction_set" markdown="1">Instruction set</a> defines what the processor can do
+
+-   Each instruction is 3 bytes
+
+-   <a class="gl-ref" href="../../glossary/#op_code" markdown="1">op code</a> fits in one byte
+
+-   May have zero, one, or two single-byte operands
+
+    -   Could use variable-length instructions,
+        but that would complicate the VM
+
+-   Each operand is a register identifier, a constant, or an address
+
+---
+
+## Writing Instructions
+
+-   Instructions are numbers,
+
+-   Write them in <a class="gl-ref" href="../../glossary/#assembly_code" markdown="1">assembly code</a> for readability
+
+<div class="small">
+<table>
+<tr><th>Name</th><th>Code</th><th>Format</th><th>Action</th><th>Example</th></tr>
+<tr><td><code>hlt</code></td><td> 1</td><td><code>--</code></td><td>Halt program       </td><td><code>hlt</code>    </td></tr>
+<tr><td><code>ldc</code></td><td> 2</td><td><code>rv</code></td><td>Load constant      </td><td><code>ldc R0 123</code></td></tr>
+<tr><td><code>ldr</code></td><td> 3</td><td><code>rr</code></td><td>Load register      </td><td><code>ldr R0 R1</code></td></tr>
+<tr><td><code>add</code></td><td> 6</td><td><code>rr</code></td><td>Add                </td><td><code>add R0 R1</code></td></tr>
+<tr><td><code>bne</code></td><td> 9</td><td><code>rv</code></td><td>Branch if not equal</td><td><code>bne R0 123</code></td></tr>
+<tr><td><code>prr</code></td><td>10</td><td><code>r-</code></td><td>Print register     </td><td><code>prr R0</code> </td></tr>
+</table>
+</div>
+
+---
+
+## Details
+
+```py
+NUM_REG = 4  # number of registers
+RAM_LEN = 256  # number of words in RAM
+
+OPS = {
+    "hlt": {"code": 0x1, "fmt": "--"},  # Halt program
+    "ldc": {"code": 0x2, "fmt": "rv"},  # Load value
+    "ldr": {"code": 0x3, "fmt": "rr"},  # Load register
+    "cpy": {"code": 0x4, "fmt": "rr"},  # Copy register
+    "str": {"code": 0x5, "fmt": "rr"},  # Store register
+    "add": {"code": 0x6, "fmt": "rr"},  # Add
+    "sub": {"code": 0x7, "fmt": "rr"},  # Subtract
+    "beq": {"code": 0x8, "fmt": "rv"},  # Branch if equal
+    "bne": {"code": 0x9, "fmt": "rv"},  # Branch if not equal
+    "prr": {"code": 0xA, "fmt": "r-"},  # Print register
+    "prm": {"code": 0xB, "fmt": "r-"},  # Print memory
+}
+
+OP_MASK = 0xFF  # select a single byte
+OP_SHIFT = 8  # shift up by one byte
+OP_WIDTH = 6  # op width in characters when printing
+```
+
+
+---
+
+## VM Class
+
+```py
+class VirtualMachine:
+    def __init__(self):
+        self.initialize([])
+        self.prompt = ">>"
+```
+
+
+--
+
+-   Initialize by copying program and resetting IP and registers
+
+```py
+    def initialize(self, program):
+        assert len(program) <= RAM_LEN, "Program too long"
+        self.ram = [
+            program[i] if (i < len(program)) else 0
+            for i in range(RAM_LEN)
+        ]
+        self.ip = 0
+        self.reg = [0] * NUM_REG
+```
+
+
+---
+
+## Fetching and Unpacking
+
+```py
+    def fetch(self):
+        instruction = self.ram[self.ip]
+        self.ip += 1
+        op = instruction & OP_MASK
+        instruction >>= OP_SHIFT
+        arg0 = instruction & OP_MASK
+        instruction >>= OP_SHIFT
+        arg1 = instruction & OP_MASK
+        return [op, arg0, arg1]
+```
+
+
+-  Use <a class="gl-ref" href="../../glossary/#bitwise_operation" markdown="1">bitwise operations</a> to get bytes out of integer
+
+<figure>
+<img src="../unpacking.svg" alt="Unpacking instructions"/>
+</figure>
+
+
+---
+
+## Running a Program
+
+```py
+    def run(self):
+        running = True
+        while running:
+            op, arg0, arg1 = self.fetch()
+            if op == OPS["hlt"]["code"]:
+                running = False
+
+            elif op == OPS["ldc"]["code"]:
+                self.reg[arg0] = arg1
+
+            elif op == OPS["ldr"]["code"]:
+                self.reg[arg0] = self.ram[self.reg[arg1]]
+
+            elif op == OPS["cpy"]["code"]:
+                self.reg[arg0] = self.reg[arg1]
+
+            else:
+                assert False, f"Unknown op {op:06x}"
+```
+
+
+---
+
+## Sample Instructions
+
+-   Store a value
+
+```py
+            elif op == OPS["str"]["code"]:
+                self.ram[self.reg[arg1]] = self.reg[arg0]
+```
+
+
+-   Addition
+
+```py
+            elif op == OPS["add"]["code"]:
+                self.reg[arg0] += self.reg[arg1]
+```
+
+
+-   <a class="gl-ref" href="../../glossary/#conditional_jump" markdown="1">Conditional jump</a>
+
+```py
+            elif op == OPS["beq"]["code"]:
+                if self.reg[arg0] == 0:
+                    self.ip = arg1
+```
+
+
+---
+
+## Writing Programs
+
+-   Hexadecimal
+
+```mx
+00010a
+000001
+```
+
+
+-   Assembly code
+
+```as
+# Print initial contents of R1.
+prr R1
+hlt
+```
+
+
+-   Write an <a class="gl-ref" href="../../glossary/#assembler" markdown="1">assembler</a> to the latter into the former
+
+---
+
+## Labels
+
+-   Instruction set doesn't have names for addresses
+
+-   But we want <a class="gl-ref" href="../../glossary/#label_address" markdown="1">labels</a> for readability
+
+```as
+# Count up to 3.
+# - R0: loop index.
+# - R1: loop limit.
+ldc R0 0
+ldc R1 3
+loop:
+prr R0
+ldc R2 1
+add R0 R2
+cpy R2 R1
+sub R2 R0
+bne R2 @loop
+hlt
+```
+
+
+---
+
+## Count to 2
+
+<figure>
+<img src="../count_up.svg" alt="Counting from 0 to 2"/>
+</figure>
+
+
+---
+
+## Count to Two
+
+<figure>
+<img src="../count_trace.svg" alt="Trace counting program"/>
+</figure>
+
+
+---
+
+## Assembler Class
+
+```py
+class Assembler:
+    def assemble(self, lines):
+        lines = self._get_lines(lines)
+        labels = self._find_labels(lines)
+        instructions = [
+            ln for ln in lines if not self._is_label(ln)
+        ]
+        compiled = [
+            self._compile(instr, labels) for instr in instructions
+        ]
+        program = self._to_text(compiled)
+        return program
+```
+
+
+---
+
+## Resolving Labels
+
+```py
+    def _find_labels(self, lines):
+        result = {}
+        loc = 0
+        for ln in lines:
+            if self._is_label(ln):
+                label = ln[:-1].strip()
+                assert label not in result, f"Duplicated {label}"
+                result[label] = loc
+            else:
+                loc += 1
+        return result
+
+    def _is_label(self, line):
+        return line.endswith(":")
+```
+
+
+-   Either save label *or* increment current address
+
+---
+
+## Compiling an Instruction
+
+```py
+    def _compile(self, instruction, labels):
+        tokens = instruction.split()
+        op, args = tokens[0], tokens[1:]
+        fmt, code = OPS[op]["fmt"], OPS[op]["code"]
+
+        if fmt == "--":
+            return self._combine(code)
+
+        elif fmt == "r-":
+            return self._combine(self._reg(args[0]), code)
+
+        elif fmt == "rr":
+            return self._combine(
+                self._reg(args[1]), self._reg(args[0]), code
+            )
+
+        elif fmt == "rv":
+            return self._combine(
+                self._val(args[1], labels),
+                self._reg(args[0]), code
+            )
+```
+
+
+---
+
+## Converting a Value
+
+-   Look up label's address if value starts with `@`
+
+-   Convert value to number if it doesn't
+
+```py
+    def _val(self, token, labels):
+        if token[0] != "@":
+            return int(token)
+        lbl = token[1:]
+        assert lbl in labels, f"Unknown label '{token}'"
+        return labels[lbl]
+```
+
+
+---
+
+## Count to Three
+
+```as
+# Count up to 3.
+# - R0: loop index.
+# - R1: loop limit.
+ldc R0 0
+ldc R1 3
+loop:
+prr R0
+ldc R2 1
+add R0 R2
+cpy R2 R1
+sub R2 R0
+bne R2 @loop
+hlt
+```
+
+
+---
+
+## Count to Three
+
+```
+>> 0
+>> 1
+>> 2
+R000000 = 000003
+R000001 = 000003
+R000002 = 000000
+R000003 = 000000
+000000:   000002  030102  00000a  010202
+000004:   020006  010204  000207  020209
+000008:   000001  000000  000000  000000
+```
+
+
+---
+
+class: summary
+
+## Summary
+
+<figure>
+<img src="../concept_map.svg" alt="Concept map for virtual machine and assembler"/>
+</figure>
+
+
 
 [academic_prototyping]: https://www.fuzzingbook.org/html/AcademicPrototyping.html
 [aosa]: https://aosabook.org/
@@ -81,6 +499,7 @@ class: slide-title
 [harrelson_chris]: https://twitter.com/chrishtr
 [hippocratic_license]: https://firstdonoharm.dev/
 [html5_data_attributes]: https://developer.mozilla.org/en-US/docs/Learn/HTML/Howto/Use_data_attributes
+[human_resource_machine]: https://tomorrowcorporation.com/humanresourcemachine
 [isort]: https://pycqa.github.io/isort/
 [ivy]: https://www.dmulholl.com/docs/ivy/main/
 [jekyll]: https://jekyllrb.com/

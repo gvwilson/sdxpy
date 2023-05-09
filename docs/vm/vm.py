@@ -14,8 +14,11 @@ class VirtualMachine:
 
     # [init]
     def initialize(self, program):
-        assert len(program) <= RAM_LEN, "Program is too long for memory"
-        self.ram = [program[i] if (i < len(program)) else 0 for i in range(RAM_LEN)]
+        assert len(program) <= RAM_LEN, "Program too long"
+        self.ram = [
+            program[i] if (i < len(program)) else 0
+            for i in range(RAM_LEN)
+        ]
         self.ip = 0
         self.reg = [0] * NUM_REG
     # [/init]
@@ -65,7 +68,6 @@ class VirtualMachine:
 
             elif op == OPS["cpy"]["code"]:
                 self.reg[arg0] = self.reg[arg1]
-
             # [skip]
             # [store]
             elif op == OPS["str"]["code"]:

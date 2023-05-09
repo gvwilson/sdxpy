@@ -3,7 +3,7 @@ RAM_LEN = 256  # number of words in RAM
 
 OPS = {
     "hlt": {"code": 0x1, "fmt": "--"},  # Halt program
-    "ldc": {"code": 0x2, "fmt": "rv"},  # Load immediate
+    "ldc": {"code": 0x2, "fmt": "rv"},  # Load value
     "ldr": {"code": 0x3, "fmt": "rr"},  # Load register
     "cpy": {"code": 0x4, "fmt": "rr"},  # Copy register
     "str": {"code": 0x5, "fmt": "rr"},  # Store register

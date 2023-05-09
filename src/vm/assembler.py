@@ -6,8 +6,12 @@ class Assembler:
     def assemble(self, lines):
         lines = self._get_lines(lines)
         labels = self._find_labels(lines)
-        instructions = [ln for ln in lines if not self._is_label(ln)]
-        compiled = [self._compile(instr, labels) for instr in instructions]
+        instructions = [
+            ln for ln in lines if not self._is_label(ln)
+        ]
+        compiled = [
+            self._compile(instr, labels) for instr in instructions
+        ]
         program = self._to_text(compiled)
         return program
 # [/class]
@@ -19,7 +23,7 @@ class Assembler:
         for ln in lines:
             if self._is_label(ln):
                 label = ln[:-1].strip()
-                assert label not in result, f"Duplicate label {label}"
+                assert label not in result, f"Duplicated {label}"
                 result[label] = loc
             else:
                 loc += 1
@@ -33,28 +37,28 @@ class Assembler:
     def _compile(self, instruction, labels):
         tokens = instruction.split()
         op, args = tokens[0], tokens[1:]
-        assert op in OPS, f"Unknown operation {op}"
-        fmt = OPS[op]["fmt"]
+        fmt, code = OPS[op]["fmt"], OPS[op]["code"]
 
         if fmt == "--":
-            return self._combine(OPS[op]["code"])
+            return self._combine(code)
 
         elif fmt == "r-":
-            return self._combine(self._reg(args[0]), OPS[op]["code"])
+            return self._combine(self._reg(args[0]), code)
 
         elif fmt == "rr":
             return self._combine(
-                self._reg(args[1]), self._reg(args[0]), OPS[op]["code"]
+                self._reg(args[1]), self._reg(args[0]), code
             )
 
         elif fmt == "rv":
             return self._combine(
-                self._value(args[1], labels), self._reg(args[0]), OPS[op]["code"]
+                self._val(args[1], labels),
+                self._reg(args[0]), code
             )
     # [/compile]
 
     # [value]
-    def _value(self, token, labels):
+    def _val(self, token, labels):
         if token[0] != "@":
             return int(token)
         lbl = token[1:]
