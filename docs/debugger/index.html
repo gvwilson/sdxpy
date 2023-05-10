@@ -4,7 +4,7 @@
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="repo" content="https://github.com/gvwilson/sd4ds">
-  <meta name="build_date" content="2023-05-09">
+  <meta name="build_date" content="2023-05-10">
   <meta name="template" content="default">
   <meta name="major" content="Chapter 26">
   <meta name="has_slides" content="true">
@@ -294,11 +294,641 @@
 
   
 
+  
+  <ul class="syllabus">
+  
+  <li markdown="1">Interactive programs can be tested by simulating input and recording output.</li>
+  
+  <li markdown="1">Testing interactive programs is easier if their inputs and outputs can easily be replaced with mock objects.</li>
+  
+  <li markdown="1">Debuggers usually implement breakpoints by temporarily replacing actual instructions with special ones.</li>
+  
+  <li markdown="1">Using lookup tables for function or method dispatch makes programs easier to extend.</li>
+  
+  </ul>
+  
+
 
           
 
           <div class="page-toc"></div>
-          
+          <p>We have finally come to another of the questions that sparked this book:
+how does a <span class="ix-entry" ix-key="debugger" markdown="1">debugger</span> work?
+Debuggers are as much a part of good programmers&rsquo; lives as version control
+but are taught far less often
+(in part, we believe, because it&rsquo;s harder to create homework questions for them).
+This chapter builds a simple single-stepping debugger
+for the virtual machine in <a class="x-ref" href="../vm/">Chapter 25</a>
+and shows how we can test interactive applications.</p>
+<p>Before we start work,
+let&rsquo;s consolidate and reorganize the code in our virtual machine.
+The methods all work as they did before,
+but we&rsquo;ve made a few changes to allow for future growth.
+The first is to pass an output stream to the constructor,
+which by default will be <code>sys.stdout</code>:</p>
+<div class="code-sample lang-py" title="vm_base.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">writer</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set up memory.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">writer</span> <span class="o">=</span> <span class="n">writer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">initialize</span><span class="p">([])</span>
+</code></pre></div>
+</div>
+<p>We then replace every <code>print</code> statement with
+a call to new method called <code>write</code>.
+For example,
+the &ldquo;print register&rdquo; instruction calls <code>self.write</code>:</p>
+<div class="code-sample lang-py" title="vm_base.py">
+<div class="highlight"><pre><span></span><code>        <span class="k">elif</span> <span class="n">op</span> <span class="o">==</span> <span class="n">OPS</span><span class="p">[</span><span class="s2">&quot;prr&quot;</span><span class="p">][</span><span class="s2">&quot;code&quot;</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">assert_is_register</span><span class="p">(</span><span class="n">arg0</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">reg</span><span class="p">[</span><span class="n">arg0</span><span class="p">]</span><span class="si">:</span><span class="s2">06x</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<p>For now,
+<code>write</code> just prints things to whatever output stream the VM was given:</p>
+<div class="code-sample lang-py" title="vm_base.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">writer</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<h2 id="debugger-step">Section 26.1: One Step at a Time</h2>
+<p>The virtual machine we&rsquo;re starting from loads a program and runs it to completion,
+so it&rsquo;s either running or finished.
+We want to add a third state for single-step execution,
+so let&rsquo;s start by adding an <a class="gl-ref" href="../glossary/#enumeration" markdown="1">enumeration</a> to <code>architecture.py</code>:</p>
+<div class="code-sample lang-py" title="architecture.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">VMState</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Virtual machine states.&quot;&quot;&quot;</span>
+    <span class="n">FINISHED</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">STEPPING</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">RUNNING</span> <span class="o">=</span> <span class="mi">2</span>
+</code></pre></div>
+</div>
+<p class="continue">We could use strings to keep track of states,
+but as soon as there are more than two there are likely to be many,
+and having them spelled out makes it easier for the next person
+to find out what they can be.</p>
+<p>The old <code>run</code> method kept going until the program finished.
+The new <code>run</code> method is necessarily more complicated.
+The VM is initially in the <code>STEPPING</code> state
+(because if we start it in the <code>RUNNING</code> state
+we would never have an opportunity to interact with it
+to change its state).
+As long as the program isn&rsquo;t finished
+we fetch, decode, and execute the next instruction as usual,
+but stop after each one if we&rsquo;re single-stepping:</p>
+<div class="code-sample lang-py" title="vm_step.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">VMState</span><span class="o">.</span><span class="n">STEPPING</span>
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="n">VMState</span><span class="o">.</span><span class="n">STEPPING</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">interact</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ip</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="n">VMState</span><span class="o">.</span><span class="n">FINISHED</span><span class="p">:</span>
+                <span class="k">break</span>
+            <span class="n">instruction</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ram</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">ip</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ip</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">op</span><span class="p">,</span> <span class="n">arg0</span><span class="p">,</span> <span class="n">arg1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">instruction</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">op</span><span class="p">,</span> <span class="n">arg0</span><span class="p">,</span> <span class="n">arg1</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<p>The interaction method needs to handle several cases:</p>
+<ol>
+<li>
+<p>The user enters an empty line (i.e., presses return),
+    in which case it loops around and waits for something else.</p>
+</li>
+<li>
+<p>The user asks to <a class="gl-ref" href="../glossary/#disassemble" markdown="1">disassemble</a> the current instruction
+    or show the contents of memory,
+    in which case it does that and loops around.</p>
+</li>
+<li>
+<p>The user wants to quit,
+    so <code>interact</code> changes the VM&rsquo;s state to <code>FINISHED</code>.</p>
+</li>
+<li>
+<p>The user wants to run the rest of the program without stopping,
+    so <code>interact</code> changes VM&rsquo;s state to <code>RUNNING</code>.</p>
+</li>
+<li>
+<p>The user wants to execute a single step,
+    in which case the method breaks out of the loop
+    without changing the VM&rsquo;s state.
+    <code>run</code> will then see that the VM is still in single-stepping mode
+    and execute a single instruction.</p>
+</li>
+</ol>
+<p>The method that disassembles an instruction to show us what we&rsquo;re about to do
+checks a <a class="gl-ref" href="../glossary/#reverse_lookup" markdown="1">reverse lookup table</a>
+to create a printable representation of an instruction and its operands:</p>
+<div class="code-sample lang-py" title="vm_step.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">disassemble</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">addr</span><span class="p">,</span> <span class="n">instruction</span><span class="p">):</span>
+        <span class="n">op</span><span class="p">,</span> <span class="n">arg0</span><span class="p">,</span> <span class="n">arg1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">instruction</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="n">op</span> <span class="ow">in</span> <span class="n">OPS_LOOKUP</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Unknown op code </span><span class="si">{</span><span class="n">op</span><span class="si">}</span><span class="s2"> at </span><span class="si">{</span><span class="n">addr</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">OPS_LOOKUP</span><span class="p">[</span><span class="n">op</span><span class="p">]</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">arg0</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">arg1</span><span class="si">}</span><span class="s2">&quot;</span>
+</code></pre></div>
+</div>
+<p class="continue">We build the reverse lookup table from the <code>OPS</code> table in <code>architecture.py</code>
+so that it&rsquo;s always in sync with the table we&rsquo;re using to construct operations
+(<a class="fig-ref" href="../debugger/#debugger-table">Figure 26.1</a>).
+If we wrote the reverse lookup table ourselves,
+sooner or later we&rsquo;d forget to update it when updating the forward lookup table:</p>
+<div class="code-sample lang-py" title="vm_step.py">
+<div class="highlight"><pre><span></span><code><span class="n">OPS_LOOKUP</span> <span class="o">=</span> <span class="p">{</span><span class="n">value</span><span class="p">[</span><span class="s2">&quot;code&quot;</span><span class="p">]:</span> <span class="n">key</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">OPS</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+</code></pre></div>
+</div>
+<figure id="debugger-table">
+<img src="./table.svg" alt="Building a consistent lookup table"/>
+<figcaption markdown="1">Figure 26.1: Building a consistent lookup table.</figcaption>
+</figure>
+
+<p>But there&rsquo;s a more important change in this new virtual machine.
+It doesn&rsquo;t use Python&rsquo;s built-in <code>input</code> function to get input from the user—or rather,
+it does,
+but only by default.
+The constructor for our single-stepping VM is:</p>
+<div class="code-sample lang-py" title="vm_step.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reader</span><span class="o">=</span><span class="nb">input</span><span class="p">,</span> <span class="n">writer</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">writer</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reader</span> <span class="o">=</span> <span class="n">reader</span>
+</code></pre></div>
+</div>
+<p class="continue">and its <code>read</code> method is:</p>
+<div class="code-sample lang-py" title="vm_step.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">read</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prompt</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">reader</span><span class="p">(</span><span class="n">prompt</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+</code></pre></div>
+</div>
+<p>As with the <code>write</code> method introduced in the previous section,
+adding this wrapper method will help us with testing,
+which is our next topic.</p>
+<h2 id="debugger-test">Section 26.2: Testing</h2>
+<p>Our debugger is an interactive application
+that waits for input from the user,
+does something that may or may not print output,
+then waits again.
+The waiting is a problem for tools like <a href="https://docs.pytest.org/">pytest</a>,
+which expect the function being tested to run to completion after being launched.</p>
+<p>To make our single-stepping VM testable,
+we have to give it input when it wants some
+and capture its output for later inspection.
+We had a similar problem when testing the web server of <a class="x-ref" href="../server/">Chapter 22</a>,
+and our solution is the similar:
+we will replace <code>input</code> and <code>print</code> with <span class="ix-entry" ix-key="mock object" markdown="1">mock objects</span>.</p>
+<p>As shown earlier,
+our VM uses an object with a <code>write</code> method to produce output:</p>
+<div class="code-sample lang-py" title="vm_base.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">writer</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<p>We can define a class that provides this method,
+but which saves messages in a list for later inspection
+instead of printing them:</p>
+<div class="code-sample lang-py" title="test_vm.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Writer</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">seen</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">def</span> <span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">seen</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<p>Similarly,
+our VM gets input from a function that takes a prompt as an argument
+and returns whatever the user typed.
+We can define a class with a <code>__call__</code> method that acts like such a function,
+but which returns strings from a list instead of waiting for the user:</p>
+<div class="code-sample lang-py" title="test_vm.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Reader</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">commands</span> <span class="o">=</span> <span class="n">args</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prompt</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">index</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">commands</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">index</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">commands</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">index</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+</code></pre></div>
+</div>
+<p>With these in hand,
+we can write a helper function that compiles a program,
+creates a virtual machine,
+and runs it with a mock reader and a mock writer:</p>
+<div class="code-sample lang-py" title="test_vm.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">reader</span><span class="p">,</span> <span class="n">writer</span><span class="p">):</span>
+    <span class="n">program</span> <span class="o">=</span> <span class="n">Assembler</span><span class="p">()</span><span class="o">.</span><span class="n">assemble</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">),</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="n">vm</span> <span class="o">=</span> <span class="n">VM</span><span class="p">(</span><span class="n">reader</span><span class="p">,</span> <span class="n">writer</span><span class="p">)</span>
+    <span class="n">vm</span><span class="o">.</span><span class="n">initialize</span><span class="p">(</span><span class="n">program</span><span class="p">)</span>
+    <span class="n">vm</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</code></pre></div>
+</div>
+<p>We are now ready to start writing tests.
+Here&rsquo;s one that checks the debugger&rsquo;s &ldquo;disassemble&rdquo; command:</p>
+<div class="code-sample lang-py" title="test_vm.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">test_disassemble</span><span class="p">():</span>
+    <span class="n">source</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    hlt</span>
+<span class="s2">    &quot;&quot;&quot;</span>
+    <span class="n">reader</span> <span class="o">=</span> <span class="n">Reader</span><span class="p">(</span><span class="s2">&quot;d&quot;</span><span class="p">,</span> <span class="s2">&quot;q&quot;</span><span class="p">)</span>
+    <span class="n">writer</span> <span class="o">=</span> <span class="n">Writer</span><span class="p">()</span>
+    <span class="n">execute</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">reader</span><span class="p">,</span> <span class="n">writer</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">writer</span><span class="o">.</span><span class="n">seen</span> <span class="o">==</span> <span class="p">[</span><span class="s2">&quot;hlt | 0 | 0</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">]</span>
+</code></pre></div>
+</div>
+<p class="continue">Line by line, it:</p>
+<ol>
+<li>
+<p>Creates the program to test
+    (which in this case consists of a single <code>htl</code> instruction).</p>
+</li>
+<li>
+<p>Creates a <code>Reader</code> that will supply the commands <code>"d"</code> (for &ldquo;disassemble&rdquo;)
+    and <code>"q"</code> (for &ldquo;quit&rdquo;) in that order.</p>
+</li>
+<li>
+<p>Creates a <code>Writer</code> to capture the program&rsquo;s output.</p>
+</li>
+<li>
+<p>Runs the program in a fresh VM with that reader and writer.</p>
+</li>
+<li>
+<p>Checks that the output captured in the writer is correct.</p>
+</li>
+</ol>
+<p>Defining two classes and a helper function to test a one-line program
+may seem like a lot of work,
+but we&rsquo;re not testing the one-line program or the VM:
+we&rsquo;re testing the debugger.
+For example,
+the reader in the test below
+issues three <code>"s"</code> (single-step) commands and then a <code>"q"</code> command:</p>
+<div class="code-sample lang-py" title="test_vm.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">test_print_two_values</span><span class="p">():</span>
+    <span class="n">source</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    ldc R0 55</span>
+<span class="s2">    prr R0</span>
+<span class="s2">    ldc R0 65</span>
+<span class="s2">    prr R0</span>
+<span class="s2">    hlt</span>
+<span class="s2">    &quot;&quot;&quot;</span>
+    <span class="n">reader</span> <span class="o">=</span> <span class="n">Reader</span><span class="p">(</span><span class="s2">&quot;s&quot;</span><span class="p">,</span> <span class="s2">&quot;s&quot;</span><span class="p">,</span> <span class="s2">&quot;s&quot;</span><span class="p">,</span> <span class="s2">&quot;q&quot;</span><span class="p">)</span>
+    <span class="n">writer</span> <span class="o">=</span> <span class="n">Writer</span><span class="p">()</span>
+    <span class="n">execute</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">reader</span><span class="p">,</span> <span class="n">writer</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">writer</span><span class="o">.</span><span class="n">seen</span> <span class="o">==</span> <span class="p">[</span>
+        <span class="s2">&quot;000037</span><span class="se">\n</span><span class="s2">&quot;</span>
+    <span class="p">]</span>
+</code></pre></div>
+</div>
+<p>In response,
+the debugger steps through the first three instructions
+and then stops the VM before it can execute the second print instruction.
+This test actually uncovered a bug in an earlier version of the debugger
+in which it would always execute one more instruction when told to quit.
+Interactive testing might have spotted that,
+but it could easily reappear;
+this test will warn us if it does.</p>
+<p>Our <code>Reader</code> and <code>Writer</code> aren&rsquo;t good for much beyond testing our VM,
+but there are other tools that can simulate input and output
+for a wider range of applications.
+[Expect][expect] (which can be used through Python&rsquo;s [pexpect][pexpect] module)
+is often used to script command-line applications
+as well as to test them.
+[Selenium][selenium] and [Cypress][cypress] do the same for browser-based applications:
+programmers can use them to simulate mouse clicks,
+window resizing,
+and other events,
+then check the contents of the page that the application produces in response.
+They are all more difficult to set up and use than a simple test that 1+1 is 2,
+but that&rsquo;s because the things they do are genuinely complex.
+Designing applications with testing in mind—for example,
+routing all input and output through a single method each—helps
+reduce that complexity.</p>
+<h2 id="debugger-extensibility">Section 26.3: Extensibility</h2>
+<p>We are going to add one more big feature to our debugger,
+but before we do,
+let&rsquo;s do some <span class="ix-entry" ix-key="refactor" markdown="1">refactoring</span>.
+First,
+we move every interactive operation into a method of its own
+that does something
+and then returns <code>True</code> if the debugger is supposed to stay
+in interactive mode
+and <code>False</code> if interaction is over.
+The method for showing the contents of memory is:</p>
+<div class="code-sample lang-py" title="vm_extend.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">_do_memory</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">addr</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+        <span class="k">return</span> <span class="kc">True</span>
+</code></pre></div>
+</div>
+<p class="continue">while the one for advancing one step is:</p>
+<div class="code-sample lang-py" title="vm_extend.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">_do_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">addr</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">VMState</span><span class="o">.</span><span class="n">STEPPING</span>
+        <span class="k">return</span> <span class="kc">False</span>
+</code></pre></div>
+</div>
+<p>and so on.
+Once that&rsquo;s done,
+we modify <code>interact</code> to choose operations from a lookup table
+called <code>self.handlers</code>.
+Its keys are the commands typed by the user
+and its values are the operation methods we just created:</p>
+<div class="code-sample lang-py" title="vm_extend.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">interact</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">addr</span><span class="p">):</span>
+        <span class="n">prompt</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">sorted</span><span class="p">({</span><span class="n">key</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">handlers</span><span class="p">}))</span>
+        <span class="n">interacting</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">while</span> <span class="n">interacting</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">command</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">addr</span><span class="si">:</span><span class="s2">06x</span><span class="si">}</span><span class="s2"> [</span><span class="si">{</span><span class="n">prompt</span><span class="si">}</span><span class="s2">]&gt; &quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">command</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="k">elif</span> <span class="n">command</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">handlers</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown command </span><span class="si">{</span><span class="n">command</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">interacting</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">handlers</span><span class="p">[</span><span class="n">command</span><span class="p">](</span><span class="bp">self</span><span class="o">.</span><span class="n">ip</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">EOFError</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">VMState</span><span class="o">.</span><span class="n">FINISHED</span>
+                <span class="n">interacting</span> <span class="o">=</span> <span class="kc">False</span>
+</code></pre></div>
+</div>
+<p>Finally,
+we extend the virtual machine&rsquo;s constructor
+to build the required lookup table.
+For convenience,
+we register the methods under both single-letter keys
+and longer command names:</p>
+<div class="code-sample lang-py" title="vm_extend.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reader</span><span class="o">=</span><span class="nb">input</span><span class="p">,</span> <span class="n">writer</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">reader</span><span class="p">,</span> <span class="n">writer</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">handlers</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;d&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_do_disassemble</span><span class="p">,</span>
+            <span class="s2">&quot;dis&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_do_disassemble</span><span class="p">,</span>
+            <span class="s2">&quot;i&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_do_ip</span><span class="p">,</span>
+            <span class="s2">&quot;ip&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_do_ip</span><span class="p">,</span>
+            <span class="s2">&quot;m&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_do_memory</span><span class="p">,</span>
+            <span class="s2">&quot;memory&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_do_memory</span><span class="p">,</span>
+            <span class="s2">&quot;q&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_do_quit</span><span class="p">,</span>
+            <span class="s2">&quot;quit&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_do_quit</span><span class="p">,</span>
+            <span class="s2">&quot;r&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_do_run</span><span class="p">,</span>
+            <span class="s2">&quot;run&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_do_run</span><span class="p">,</span>
+            <span class="s2">&quot;s&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_do_step</span><span class="p">,</span>
+            <span class="s2">&quot;step&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_do_step</span><span class="p">,</span>
+        <span class="p">}</span>
+</code></pre></div>
+</div>
+<p>As in previous chapters,
+creating a lookup table like this makes the class easier to extend.
+If we want to add another command
+(which we will do in the next section)
+we just add a method to perform the operation
+and register it in the lookup table.
+So long as new commands don&rsquo;t need anything more than
+the address of the current instruction,
+we never need to modify <code>interact</code> again.</p>
+<h2 id="debugger-breakpoints">Section 26.4: Breakpoints</h2>
+<p>Suppose we suspect there&rsquo;s a bug in our program
+that only occurs after several thousand lines of code have been executed.
+We would have to be pretty desperate to single-step through all of that even once,
+much less dozens of times as we&rsquo;re exploring new ideas or trying new fixes.
+Instead,
+we want to set a <span class="ix-entry" ix-key="breakpoint" markdown="1"><a class="gl-ref" href="../glossary/#breakpoint" markdown="1">breakpoint</a></span>
+to tell the computer to stop at a particular location
+and drop us into the debugger.
+(We might even use
+a <span class="ix-entry" ix-key="conditional breakpoint" markdown="1"><a class="gl-ref" href="../glossary/#conditional_breakpoint" markdown="1">conditional breakpoint</a></span>
+that would only stop if (for example)
+the variable <code>x</code> was zero at that point,
+but we&rsquo;ll leave that for the exercises.)</p>
+<p>The easiest way to implement breakpoints would be
+to have the VM store their addresses in a set.
+We would then modify <code>run</code> to check that set
+each time it was supposed to fetch a new instruction,
+and stop if it was at one of those addresses
+(<a class="fig-ref" href="../debugger/#debugger-beside">Figure 26.2</a>).</p>
+<figure id="debugger-beside">
+<img src="./beside.svg" alt="Storing breakpoint addresses beside the program"/>
+<figcaption markdown="1">Figure 26.2: Storing breakpoints beside the program.</figcaption>
+</figure>
+
+<p>Instead of doing this,
+we will add a new instruction to our architecture called <code>brk</code>.
+When the user sets a breakpoint at some address,
+we replace the instruction at that address with a breakpoint instruction
+and store the original instruction in a lookup table.
+If the user later
+<span class="ix-entry" ix-key="clear (a breakpoint); breakpoint!clear" markdown="1"><a class="gl-ref" href="../glossary/#clear_breakpoint" markdown="1">clears</a></span>
+the breakpoint,
+we copy the original instruction back into place,
+and if the VM encounters a breakpoint instruction while its running,
+it drops into interactive mode
+(<a class="fig-ref" href="../debugger/#debugger-break">Figure 26.3</a>).</p>
+<figure id="debugger-break">
+<img src="./break.svg" alt="Inserting breakpoint instructions"/>
+<figcaption markdown="1">Figure 26.3: Inserting breakpoints into a program.</figcaption>
+</figure>
+
+<p>Putting breakpoints inline is more complicated than storing them beside the program,
+but it is how debuggers for low-level languages like C actually work.
+It also makes the virtual machine more efficient:
+instead of spending a few (actual) instructions checking a breakpoint table
+every time we execute an instruction,
+we only pay a price when we actually encounter a breakpoint.
+The difference isn&rsquo;t important in our little toy,
+but little savings like this add up quickly
+in a real interpreter for a language like Python or JavaScript.</p>
+<p>The first step in implementing breakpoints is
+to add two more commands to the lookup table
+we created in the previous section:</p>
+<div class="code-sample lang-py" title="vm_break.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">breaks</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">handlers</span> <span class="o">|=</span> <span class="p">{</span>
+            <span class="s2">&quot;b&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_do_add_breakpoint</span><span class="p">,</span>
+            <span class="s2">&quot;break&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_do_add_breakpoint</span><span class="p">,</span>
+            <span class="s2">&quot;c&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_do_clear_breakpoint</span><span class="p">,</span>
+            <span class="s2">&quot;clear&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_do_clear_breakpoint</span><span class="p">,</span>
+        <span class="p">}</span>
+</code></pre></div>
+</div>
+<p>To add a breakpoint,
+we copy the instruction at the given address
+into the dictionary <code>self.breaks</code>
+and replace it with a breakpoint instruction:</p>
+<div class="code-sample lang-py" title="vm_break.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">_do_add_breakpoint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">addr</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ram</span><span class="p">[</span><span class="n">addr</span><span class="p">]</span> <span class="o">==</span> <span class="n">OPS</span><span class="p">[</span><span class="s2">&quot;brk&quot;</span><span class="p">][</span><span class="s2">&quot;code&quot;</span><span class="p">]:</span>
+            <span class="k">return</span>
+        <span class="k">assert</span> <span class="n">addr</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">breaks</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Inconsistent breakpoint state for </span><span class="si">{</span><span class="n">addr</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">breaks</span><span class="p">[</span><span class="n">addr</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ram</span><span class="p">[</span><span class="n">addr</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ram</span><span class="p">[</span><span class="n">addr</span><span class="p">]</span> <span class="o">=</span> <span class="n">OPS</span><span class="p">[</span><span class="s2">&quot;brk&quot;</span><span class="p">][</span><span class="s2">&quot;code&quot;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="kc">True</span>
+</code></pre></div>
+</div>
+<p class="continue">Notice that if there&rsquo;s already a breakpoint in place,
+we don&rsquo;t do anything.
+We also return <code>True</code> to tell <code>interact</code>
+to wait for another command from the user.</p>
+<p>Clearing a breakpoint is just as easy:</p>
+<div class="code-sample lang-py" title="vm_break.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">_do_clear_breakpoint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">addr</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ram</span><span class="p">[</span><span class="n">addr</span><span class="p">]</span> <span class="o">!=</span> <span class="n">OPS</span><span class="p">[</span><span class="s2">&quot;brk&quot;</span><span class="p">][</span><span class="s2">&quot;code&quot;</span><span class="p">]:</span>
+            <span class="k">return</span>
+        <span class="k">assert</span> <span class="n">addr</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">breaks</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Inconsistent breakpoint state for </span><span class="si">{</span><span class="n">addr</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ram</span><span class="p">[</span><span class="n">addr</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">breaks</span><span class="p">[</span><span class="n">addr</span><span class="p">]</span>
+        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">breaks</span><span class="p">[</span><span class="n">addr</span><span class="p">]</span>
+        <span class="k">return</span> <span class="kc">True</span>
+</code></pre></div>
+</div>
+<p>We also update <code>show</code> to display any breakpoints that have been set:</p>
+<div class="code-sample lang-py" title="vm_break.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">show</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">breaks</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;-&quot;</span> <span class="o">*</span> <span class="mi">6</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">instruction</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">breaks</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key</span><span class="si">:</span><span class="s2">06x</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">disassemble</span><span class="p">(</span><span class="n">key</span><span class="p">,</span><span class="w"> </span><span class="n">instruction</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<p>Notice how the implementation first calls the parent&rsquo;s <code>show</code> method
+to display everything we&rsquo;ve been displaying so far,
+then adds a few lines to display extra information.
+Extending methods by <span class="ix-entry" ix-key="upcall" markdown="1"><a class="gl-ref" href="../glossary/#upcall" markdown="1">upcalling</a></span> this way
+saves us typing,
+and ensures that changes in the parent class
+will automatically show up in the child class.</p>
+<p>The final step is to change the <code>run</code> method
+so that the VM actually stops at a breakpoint.
+The whole method is:</p>
+<div class="code-sample lang-py" title="vm_break.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">VMState</span><span class="o">.</span><span class="n">STEPPING</span>
+        <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">!=</span> <span class="n">VMState</span><span class="o">.</span><span class="n">FINISHED</span><span class="p">:</span>
+            <span class="n">instruction</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ram</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">ip</span><span class="p">]</span>
+            <span class="n">op</span><span class="p">,</span> <span class="n">arg0</span><span class="p">,</span> <span class="n">arg1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">instruction</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">op</span> <span class="o">==</span> <span class="n">OPS</span><span class="p">[</span><span class="s2">&quot;brk&quot;</span><span class="p">][</span><span class="s2">&quot;code&quot;</span><span class="p">]:</span>
+                <span class="n">original</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">breaks</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">ip</span><span class="p">]</span>
+                <span class="n">op</span><span class="p">,</span> <span class="n">arg0</span><span class="p">,</span> <span class="n">arg1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">original</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">interact</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ip</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ip</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">op</span><span class="p">,</span> <span class="n">arg0</span><span class="p">,</span> <span class="n">arg1</span><span class="p">)</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="n">VMState</span><span class="o">.</span><span class="n">STEPPING</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">interact</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ip</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ip</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">op</span><span class="p">,</span> <span class="n">arg0</span><span class="p">,</span> <span class="n">arg1</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<p>Given everything we&rsquo;ve done so far,
+the logic is relatively straightforward.
+If the instruction is a breakpoint,
+the VM fetches and decodes the original from the breakpoint lookup table.
+It then gives the user a chance to interact
+before executing that original instruction.
+If the instruction <em>isn&rsquo;t</em> a breakpoint,
+on the other hand,
+the VM interacts with the user if it is in single-stepping mode,
+and then carries on as before.</p>
+<p>We can test our new-and-improved VM
+using the tools developed earlier in this chapter,
+but even before we do that,
+the changes to <code>run</code> tell us that we should re-think some of our design.
+Using a lookup table for interactive commands
+allowed us to add commands without modifying <code>interact</code>;
+another lookup table would enable us to add new instructions
+without having to modify <code>run</code>.
+We will explore this in the exercises.</p>
+<h2 id="debugger-summary">Section 26.5: Summary</h2>
+<figure id="debugger-concept-map">
+<img src="./concept_map.svg" alt="Concept map for debugger"/>
+<figcaption markdown="1">Figure 26.4: Concepts for debugger.</figcaption>
+</figure>
+
+<h2 id="debugger-exercises">Section 26.6: Exercises</h2>
+<h3 class="exercise">Show memory range</h3>
+<p>Modify the debugger so that if the user provides a single address to the <code>"memory"</code> command,
+the debugger shows the value at that address,
+while if the user provides two addresses,
+the debugger shows all the memory between those addresses.</p>
+<ol>
+<li>
+<p>How did this change the way command lookup and execution work?</p>
+</li>
+<li>
+<p>Is your solution general enough to handle likely future changes without rewriting?</p>
+</li>
+</ol>
+<h3 class="exercise">Breakpoint addresses</h3>
+<p>Modify the debugger so that if the user provides a single address to the <code>"break"</code> or <code>"clear"</code> command,
+it sets or clears the breakpoint at that address.
+Did this feature require any changes beyond those made for the previous exercise?</p>
+<h3 class="exercise">Command completion</h3>
+<p>Modify the debugger to recognize commands based on any number of distinct leading characters.
+For example,
+any of <code>"m"</code>, <code>"me"</code>, <code>"mem"</code>, and so on should trigger the <code>_do_memory</code> method.
+Programmers should <em>not</em> have to specify all these options themselves;
+instead,
+they should be able to specify the full command name and the method it corresponds to,
+and the VM&rsquo;s constructor should take care of the rest.</p>
+<h3 class="exercise">Conditional breakpoints</h3>
+<p>Modify the debugger so that users can specify conditions for breakpoints,
+i.e.,
+can specify that the VM should only stop at a location
+if R0 contains zero
+or if the value at a particular location in memory is greater than 3.
+(This exercise is potentially very large;
+you may restrict the kinds of conditions the user can set to make it more manageable,
+or explore ways of using <code>eval</code> to support the general case.)</p>
+<h3 class="exercise">Watchpoints</h3>
+<p>Modify the debugger and VM so that the user can create
+<span class="ix-entry" ix-key="watchpoints" markdown="1"><a class="gl-ref" href="../glossary/#watchpoint" markdown="1">watchpoints</a></span>,
+i.e.,
+can specify that the debugger should halt the VM
+when the value at a particular address changes.
+For example,
+if the user specifies a watchpoint for address 0x0010,
+then the VM automatically halts whenever a new value is stored at that location.</p>
+<h3 class="exercise">Instruction lookup</h3>
+<p>Modify the virtual machine so that <code>execute</code> looks up instructions in a table
+in the same way as debugger commands.</p>
+<h3 class="exercise">Changing memory</h3>
+<p>Modify the debugger so that users can change the values in registers
+or at particular addresses in memory while the program is running.</p>
+<h3 class="exercise">Displaying source</h3>
+<ol>
+<li>
+<p>Modify the debugger so that when the debugger is displaying memory,
+    it shows the assembly code instructions corresponding to particular addresses
+    as well as the numeric codes.</p>
+</li>
+<li>
+<p>How can the debugger distinguish between locations that contain instructions
+    and locations that contain data?</p>
+</li>
+</ol>
+<h3 class="exercise">Interleaving testing</h3>
+<p>Modify the testing tools developed in this chapter
+so that users can specify input and output as they would naturally occur,
+i.e.,
+can specify one or more commands,
+then the output expected from those commands,
+then some more input and the corresponding output,
+and so on.</p>
+<h3 class="exercise">Pattern matching in tests</h3>
+<ol>
+<li>
+<p>Tools like [Expect][expect] allow programmers to match output with regular expressions.
+    Modify the testing tools developed in this chapter to do that as well.</p>
+</li>
+<li>
+<p>When is this useful?
+    When is it potentially dangerous?</p>
+</li>
+</ol>
         </main>
       </div>
     </div>
