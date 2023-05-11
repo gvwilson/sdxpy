@@ -77,6 +77,6 @@ This book is also designed for:
 | editor    | revise | -      | -        | -         | -      |  10%    |
 | undo      | -      | -      | -        | -         | -      |   0%    |
 | vm        | done   | done   | done     | done      | done   |  75%    |
-| debugger  | done   | -      | done     | done      | prose  |  75%    |
+| debugger  | done   | done   | done     | done      | prose  | 100%    |
 | finale    | N/A    | done   | N/A      | N/A       | done   | 100%    |
-|           |        |        |          |           |        | *51%*   |
+|           |        |        |          |           |        | *52%*   |

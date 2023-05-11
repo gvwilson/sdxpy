@@ -78,7 +78,7 @@ The interaction method needs to handle several cases:
 4.  The user wants to run the rest of the program without stopping,
     so `interact` changes VM's state to `RUNNING`.
 
-3.  The user wants to execute a single step,
+5.  The user wants to execute a single step,
     in which case the method breaks out of the loop
     without changing the VM's state.
     `run` will then see that the VM is still in single-stepping mode
@@ -174,7 +174,7 @@ Line by line, it:
 {: .continue}
 
 1.  Creates the program to test
-    (which in this case consists of a single `htl` instruction).
+    (which in this case consists of a single `hlt` instruction).
 
 2.  Creates a `Reader` that will supply the commands `"d"` (for "disassemble")
     and `"q"` (for "quit") in that order.

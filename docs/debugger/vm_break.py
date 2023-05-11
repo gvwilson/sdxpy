@@ -51,7 +51,6 @@ class VirtualMachineBreak(VirtualMachineExtend):
     def _do_add_breakpoint(self, addr):
         if self.ram[addr] == OPS["brk"]["code"]:
             return
-        assert addr not in self.breaks, f"Inconsistent breakpoint state for {addr}"
         self.breaks[addr] = self.ram[addr]
         self.ram[addr] = OPS["brk"]["code"]
         return True
@@ -61,7 +60,6 @@ class VirtualMachineBreak(VirtualMachineExtend):
     def _do_clear_breakpoint(self, addr):
         if self.ram[addr] != OPS["brk"]["code"]:
             return
-        assert addr in self.breaks, f"Inconsistent breakpoint state for {addr}"
         self.ram[addr] = self.breaks[addr]
         del self.breaks[addr]
         return True
