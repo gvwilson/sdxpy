@@ -28,21 +28,18 @@ def report_readme(filename):
 
 def report_sections(config):
     """Status of sections."""
-    chapters = set(config.chapters)
-    appendices = set(config.appendices)
-    needs_slides = list(sorted(chapters - appendices))
-    missing_slides = [
-        slug
-        for slug in needs_slides
-        if not Path("src", slug, "slides", "index.html").exists()
-    ]
-    longest = max(len(s) for s in missing_slides)
+    longest = max(len(s) for s in config.chapters.keys())
     fmt = f"{{:{longest+1}}}"
-    for slug in missing_slides:
+    for slug in config.chapters.keys():
+        num = count_slides(Path("src", slug, "slides.html"))
         s = fmt.format(f"{slug}:")
-        title = config.chapters[slug]
-        num_files = len(list(Path("src", slug).iterdir()))
-        print(f"{s} {title} ({num_files})")
+        print(f"{s} {num:2}")
+
+
+def count_slides(filename):
+    with open(filename, "r") as reader:
+        lines = [s.strip() for s in reader.readlines()]
+        return lines.count("---") - 2
 
 
 def parse_args():

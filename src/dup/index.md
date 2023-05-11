@@ -7,7 +7,7 @@ syllabus:
 
 ## Exercises {: #dup-exercises}
 
-### Odds of collision {: .exercise}
+### Odds of Collision {: .exercise}
 
 If hashes were only 2 bits long,
 then the chances of collision with each successive file
@@ -32,3 +32,21 @@ FIXME
 ### Big Oh {: .exercise}
 
 FIXME
+
+###  The `hash` Function {: .exercise}
+
+-   Read the documentation for Python's built-in `hash` function
+
+-   Why do `hash(123)` and `hash("123")` work but `hash([123])` raise an exception?
+
+### How Good Is SHA256? {: .exercise}
+
+-   Write a function that calculate the SHA256 hash code
+    of each unique line of a text file.
+
+-   Convert the hex digests of those hash codes to integers.
+
+-   Plot a histogram of those integer values with 20 bins.
+
+-   How evenly distributed are the hash codes?
+    How does the distribution change as you process larger files?
