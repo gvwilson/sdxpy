@@ -18,17 +18,17 @@ INFO := info/bibliography.bib info/credits.yml info/glossary.yml info/links.yml
 IVY :=  $(wildcard lib/mccole/extensions/*.*) $(wildcard lib/mccole/resources/*.*) $(wildcard lib/mccole/templates/*.*)
 TEX := info/head.tex info/foot.tex
 TEX_COPY := info/krantz.cls info/dedication.tex
-MARKDOWN := $(wildcard src/*.md) $(wildcard src/*/index.md)
+PAGES := $(wildcard src/*.md) $(wildcard src/*/index.md)
 SLIDES := $(wildcard src/*/slides.html)
 SRC_SVG := $(wildcard src/*/*.svg)
 
 # Calculated variables.
-DOCS := docs/index.html $(patsubst src/%.md,docs/%.html,$(wildcard src/*/index.md)) $(patsubst src/%/slides.html,docs/%/slides/index.html,$(SLIDES))
+DOCS := $(patsubst src/%.md,docs/%.html,$(PAGES)) $(patsubst src/%/slides.html,docs/%/slides/index.html,$(SLIDES))
 FIG_PDF := $(patsubst src/%.svg,docs/%.pdf,${FIG_SVG})
 SRC_PDF := $(patsubst src/%.svg,src/%.pdf,${SRC_SVG})
 DOCS_PDF := $(patsubst src/%.pdf,docs/%.pdf,${SRC_PDF})
 STEM := ${ABBREV}-${BUILD_DATE}
-SRC := ${MARKDOWN} ${SLIDES}
+SRC := ${PAGES} ${SLIDES}
 
 # Keep the PDF versions of diagrams under the 'src' directory.
 .PRECIOUS: ${SRC_PDF}
@@ -135,8 +135,7 @@ spelling:
 ## wordlist: make a list of unknown and unused words
 .PHONY: wordlist
 wordlist: ./docs/index.html
-	@cat ${DOCS} \
-	| python ./bin/pre_spellcheck.py \
+	@python ./bin/pre_spellcheck.py --pages ${PAGES} --slides ${SLIDES} \
 	| aspell -H list \
 	| sort \
 	| uniq
@@ -144,7 +143,7 @@ wordlist: ./docs/index.html
 ## count: words per file
 .PHONY: count
 count:
-	@(wc -w ${MARKDOWN} && grep -c '\[% figure' ${MARKDOWN}) | python bin/count.py
+	@(wc -w ${PAGES} && grep -c '\[% figure' ${PAGES}) | python bin/count.py
 
 ## valid: run html5validator on generated files
 .PHONY: valid
