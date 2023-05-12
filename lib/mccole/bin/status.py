@@ -16,7 +16,7 @@ def main():
     options = parse_args()
     config = utils.load_config(options.config)
     report_readme(options.readme)
-    report_sections(config)
+    report_chapters(config.chapters)
 
 
 def report_readme(filename):
@@ -29,25 +29,33 @@ def report_readme(filename):
         print(f"Completed: {percentage}%")
 
 
-def report_sections(config):
+def report_chapters(chapters):
     """Status of sections."""
-    longest = max(len(s) for s in config.chapters.keys())
+    longest = max(len(s) for s in chapters.keys())
     longest = max(longest, len("Chapter"))
     fmt = f"{{:{longest}}}"
     s = fmt.format("Chapter")
-    print(f"{s} | Slides | Exercises")
+    print(f"{s} | Slides | Exercises | Lines")
     s = fmt.format("-" * longest)
-    print(f"{s} | ------ | ---------")
-    for slug in config.chapters.keys():
-        num_slides = count_slides(Path("src", slug, "slides.html"))
-        num_exercises = count_exercises(Path("src", slug, "index.md"))
+    print(f"{s} | ------ | --------- | -----")
+    for slug in chapters.keys():
+        page = Path("src", slug, "index.md")
+        slides = Path("src", slug, "slides.html")
+        num_exercises = count_exercises(page)
+        num_lines = count_lines(page)
+        num_slides = count_slides(slides)
         s = fmt.format(f'{slug}')
-        print(f"{s} | {num_slides:6} | {num_exercises:9}")
+        print(f"{s} | {num_slides:6} | {num_exercises:9} | {num_lines:5}")
 
 
 def count_exercises(filename):
     with open(filename, "r") as reader:
         return len(list(RE_EXERCISE.finditer(reader.read())))
+
+
+def count_lines(filename):
+    with open(filename, "r") as reader:
+        return len(list(reader.readlines()))
 
 
 def count_slides(filename):
