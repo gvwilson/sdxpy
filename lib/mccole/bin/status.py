@@ -7,6 +7,10 @@ from pathlib import Path
 import utils
 
 
+RE_EXERCISE = re.compile(r"\{:\s+\.exercise\}")
+RE_STATUS = re.compile(r"\|\s*(\d+)%\s*\|")
+
+
 def main():
     """Main driver."""
     options = parse_args()
@@ -17,10 +21,9 @@ def main():
 
 def report_readme(filename):
     """Status from README file."""
-    pat = re.compile(r"\|\s*(\d+)%\s*\|")
     with open(filename, "r") as reader:
         lines = reader.readlines()
-        matches = [pat.search(ln) for ln in lines]
+        matches = [RE_STATUS.search(ln) for ln in lines]
         matches = [int(m.group(1)) for m in matches if m is not None]
         percentage = int(sum(matches) / len(matches))
         print(f"Completed: {percentage}%")
@@ -29,11 +32,22 @@ def report_readme(filename):
 def report_sections(config):
     """Status of sections."""
     longest = max(len(s) for s in config.chapters.keys())
-    fmt = f"{{:{longest+1}}}"
+    longest = max(longest, len("Chapter"))
+    fmt = f"{{:{longest}}}"
+    s = fmt.format("Chapter")
+    print(f"{s} | Slides | Exercises")
+    s = fmt.format("-" * longest)
+    print(f"{s} | ------ | ---------")
     for slug in config.chapters.keys():
-        num = count_slides(Path("src", slug, "slides.html"))
-        s = fmt.format(f"{slug}:")
-        print(f"{s} {num:2}")
+        num_slides = count_slides(Path("src", slug, "slides.html"))
+        num_exercises = count_exercises(Path("src", slug, "index.md"))
+        s = fmt.format(f'{slug}')
+        print(f"{s} | {num_slides:6} | {num_exercises:9}")
+
+
+def count_exercises(filename):
+    with open(filename, "r") as reader:
+        return len(list(RE_EXERCISE.finditer(reader.read())))
 
 
 def count_slides(filename):

@@ -146,11 +146,6 @@ wordlist: ./docs/index.html
 count:
 	@(wc -w ${MARKDOWN} && grep -c '\[% figure' ${MARKDOWN}) | python bin/count.py
 
-## exercises: exercises per file
-.PHONY: exercises
-exercises:
-	@fgrep -c '{: .exercise}' $(CHAPTERS) | sed 's/\(.*\):\(.*\)/\2 \1/g'
-
 ## valid: run html5validator on generated files
 .PHONY: valid
 valid: docs/all.html
