@@ -73,10 +73,10 @@ This book is also designed for:
 | build     | done   | done   | done     | done      | -      |  50%    |
 | flow      | done   | -      | -        | -         | -      |  10%    |
 | pack      | done   | done   | done     | done      | done   | 100%    |
-| server    | done   | -      | -        | -         | -      |  25%    |
+| server    | done   | -      | done     | done      | done   |  75%    |
 | editor    | revise | -      | -        | -         | -      |  10%    |
 | undo      | -      | -      | -        | -         | -      |   0%    |
 | vm        | done   | done   | done     | done      | done   |  75%    |
 | debugger  | done   | done   | done     | done      | prose  | 100%    |
 | finale    | N/A    | done   | N/A      | N/A       | done   | 100%    |
-|           |        |        |          |           |        | *57%*   |
+|           |        |        |          |           |        | *59%*   |
