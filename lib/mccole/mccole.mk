@@ -9,7 +9,7 @@
 CONFIG := ./config.py
 ABBREV := $(shell python ${CONFIG} --abbrev)
 BUILD_DATE := $(shell date '+%Y-%m-%d')
-CHAPTERS := $(patsubst %,src/%/index.md,$(shell python ${CONFIG} --chapters))
+CHAPTERS := $(shell python ${CONFIG} --chapters)
 
 # Direct variables.
 EXAMPLES := $(patsubst %/Makefile,%,$(wildcard src/*/Makefile))
@@ -120,6 +120,11 @@ lint: clean build
 	@python ./bin/lint.py \
 	--config config.py \
 	--dom ./lib/mccole/dom.yml
+
+## inclusions: compare inclusions in prose and slides
+.PHONY: inclusions
+inclusions:
+	@python ./bin/inclusions.py --pages ${CHAPTERS}
 
 ## examples: re-run examples
 .PHONY: examples
