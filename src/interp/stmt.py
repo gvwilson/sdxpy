@@ -83,6 +83,7 @@ def do_print(env, args):
     print(*args)
     return None
 
+# [repeat]
 def do_repeat(env, args):
     """Repeat instructions some number of times.
     ["repeat" N expr] => expr # last one of N
@@ -92,6 +93,7 @@ def do_repeat(env, args):
     for i in range(count):
         result = do(env, args[1])
     return result
+# [/repeat]
 
 def do_seq(env, args):
     """Do a sequence of operations.
