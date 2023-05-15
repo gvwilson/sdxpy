@@ -44,7 +44,7 @@ chapters = {
     "binary": "Binary Data",
     "db": "A Database",
     "build": "A Build Manager",
-    "flow": "A Pipeline Runner",
+    "observe": "Observers",
     "pack": "A Package Manager",
     "server": "A Web Server",
     "editor": "A Text Editor",

@@ -71,7 +71,7 @@ This book is also designed for:
 | binary    | done   | done   | done     | -         | -      |  50%    |
 | db        | done   | done   | -        | -         | -      |  20%    |
 | build     | done   | done   | done     | done      | -      |  50%    |
-| flow      | done   | -      | -        | -         | -      |  10%    |
+| observe   | done   | -      | -        | -         | -      |  25%    |
 | pack      | done   | done   | done     | done      | done   | 100%    |
 | server    | done   | -      | done     | done      | done   |  75%    |
 | editor    | revise | -      | -        | -         | -      |  10%    |
@@ -79,4 +79,4 @@ This book is also designed for:
 | vm        | done   | done   | done     | done      | done   |  75%    |
 | debugger  | done   | done   | done     | done      | prose  | 100%    |
 | finale    | N/A    | done   | N/A      | N/A       | done   | 100%    |
-|           |        |        |          |           |        | *61%*   |
+|           |        |        |          |           |        | *62%*   |
