@@ -44,7 +44,7 @@ commands:
 
 ## build: rebuild site without running server
 build: ./docs/index.html
-./docs/index.html: ${SRC} ${INFO} ${IVY} config.py
+./docs/index.html: ${SRC} ${SRC_SVG} ${INFO} ${IVY} config.py
 	ivy build && touch $@
 
 ## serve: build site and run server

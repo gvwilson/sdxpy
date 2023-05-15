@@ -25,4 +25,4 @@ fig = px.line(temp, x="percentage", y="ratio",
                   "percentage": "percentage of filter operations (vs. select)",
                   "ratio": "ratio of column-wise time to row-wise time"
               })
-fig.write_image("analysis.png", width="800", height="400")
+fig.write_image("analysis.svg", width="800", height="400")
