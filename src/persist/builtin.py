@@ -64,14 +64,14 @@ def load(reader):
         return int(value)
 
     # [extras]
-    # [multiline]
     elif key == "str":
         lines = [reader.readline()[:-1] for _ in range(int(value))]
         return "\n".join(lines)
 
+    # [load_list]
     elif key == "list":
         return [load(reader) for _ in range(int(value))]
-    # [/multiline]
+    # [/load_list]
 
     elif key == "set":
         return {load(reader) for _ in range(int(value))}
