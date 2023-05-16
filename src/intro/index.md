@@ -33,7 +33,7 @@ we hope that if you know how programming tools work,
 you'll be more likely to use them
 and better able to use them well.
 
-## Who is this book for? {: #intro-audience}
+## Audience {: #intro-audience}
 
 This [learner persona][t3_personas] [%b Wilson2019 %] describes who this book is for:
 
@@ -64,7 +64,7 @@ This book is also designed to help another persona:
 > This material will give them material they can use in class
 > and starting points for course projects.
 
-## What does this book cover? {: #intro-contents}
+## Topics {: #intro-contents}
 
 Programmers have invented [a lot of tools][programming_tools] over the years.
 This book focuses on those that people use while building code,
@@ -89,7 +89,7 @@ which in turn define this book's big ideas [%f intro-syllabus %]:
    caption="Lesson topics and dependencies."
 %]
 
-## How is this book formatted? {: #intro-layout}
+## Formatting {: #intro-layout}
 
 We display Python source code like this:
 
@@ -118,7 +118,7 @@ but people don't use `array_name[]` for arrays,
 and the empty parentheses makes it hard to tell
 whether we're talking about "the function itself" or "a call to the function with no parameters".
 
-## How can this material be used? {: #intro-use}
+## Usage {: #intro-use}
 
 The source for this book is available in [our Git repository][book_repo]
 and all of it can be read on [our website][book_site].
@@ -143,7 +143,7 @@ or [send email][email].
 All contributors are required to abide by our Code of Conduct
 ([%x conduct %]).
 
-## Who helped create this material? {: #intro-acknowledgments}
+## Acknowledgments {: #intro-acknowledgments}
 
 This book is a sequel to [%b Wilson2022b %],
 and like it,

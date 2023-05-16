@@ -191,7 +191,7 @@ def _keep_lines(filepath, lines, key):
     start, stop = _find_markers(lines, key)
     util.require(
         (start is not None) and (stop is not None),
-        f"Failed to match inclusion 'keep' key {key} in {filepath}",
+        f"Failed to match inclusion 'keep' key '{key}' in {filepath}",
     )
     result = []
     while start is not None:
@@ -227,7 +227,7 @@ def _omit_lines(filepath, lines, key):
     start, stop = _find_markers(lines, key)
     util.require(
         (start is not None) and (stop is not None),
-        f"Failed to match inclusion 'omit' key {key} in {filepath}",
+        f"Failed to match inclusion 'omit' key '{key}' in {filepath}",
     )
     while start is not None:
         lines = lines[:start] + lines[stop + 1 :]

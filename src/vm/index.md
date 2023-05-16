@@ -234,7 +234,7 @@ this program counts up to three:
 
 [% inc pat="count_up.*" fill="as out" %]
 
-## Arrays
+## Arrays {: #vm-arrays}
 
 It's tedious to write programs when each value needs a unique name.
 We can do a lot more once we have [%i "array!implementation of" %]arrays[%/i%],

@@ -20,7 +20,7 @@ Thousands of these have been written in the last thirty years
 in every popular programming language,
 and a language called [%i "PHP" %][PHP][php][%/i%] was created primarily for this purpose.
 Most of these systems use one of three designs
-([%f templating-options %]):
+([%f template-options %]):
 
 1.  Mix commands in an existing language such as JavaScript with the HTML or Markdown
     using some kind of marker to indicate which parts are commands
@@ -39,7 +39,7 @@ Most of these systems use one of three designs
     it eliminates the need for a special parser.
 
 [% figure
-   slug="templating-options"
+   slug="template-options"
    img="options.svg"
    alt="Three options for page templates"
    caption="Three different ways to implement page templating."
@@ -52,7 +52,7 @@ Our program will execute the instructions in those nodes
 to implement loops and if/else statements;
 other nodes will be copied as-is to create text.
 
-## Syntax {: #templating-syntax}
+## Syntax {: #template-syntax}
 
 Let's start by deciding what "done" looks like.
 Suppose we want to turn an array of strings into an HTML list.
@@ -110,7 +110,7 @@ we will just pass them into the expansion function as an object:
 
 [% inc file="example_call.py" %]
 
-## Managing Variables {: #templating-values}
+## Managing Variables {: #template-values}
 
 As soon as we have variables we need a way to track their values.
 We also need to maintain multiple sets of variables
@@ -124,18 +124,18 @@ Our stack-handling class `Env` has methods  to push and pop new stack frames
 and find a variable given its name.
 If the variable can't be found,
 `Env.find` returns `None` instead of throwing an exception
-([%f templating-stack %]).
+([%f template-stack %]).
 
 [% inc file="env.py" %]
 
 [% figure
-   slug="templating-stack"
+   slug="template-stack"
    img="stack.svg"
    alt="Variable stack"
    caption="Using a stack to manage variables."
 %]
 
-## Visiting Nodes {: #templating-nodes}
+## Visiting Nodes {: #template-nodes}
 
 HTML pages have a nested structure,
 so we will process them using
@@ -150,12 +150,12 @@ it uses that instead.
 
 `Visitor` defines two [%g abstract_method "abstract methods" %] `open` and `close`
 that are called when we first arrive at a node and when we are finished with it
-([%f templating-visitor %]).
+([%f template-visitor %]).
 Any class derived from `Visitor` must define these two methods.
 {: .continue}
 
 [% figure
-   slug="templating-visitor"
+   slug="template-visitor"
    img="visitor.svg"
    alt="The Visitor pattern"
    caption="Using the Visitor pattern to evaluate a page template."
@@ -192,7 +192,7 @@ it also helps with debugging,
 since each string in the array corresponds to a single method call.
 {: .continue}
 
-## Implementing Handlers {: #templating-handlers}
+## Implementing Handlers {: #template-handlers}
 
 At this point
 we have built a lot of infrastructure but haven't actually processed any special nodes.
@@ -263,7 +263,7 @@ software isn't done until it has been tested.
 
 [% inc pat="multiple_variables.*" fill="ht out" %]
 
-## Control Flow {: #templating-flow}
+## Control Flow {: #template-flow}
 
 Our tool supports conditional expressions and loops.
 Since it doesn't handle Boolean expressions like `and` and `or`,
@@ -311,7 +311,7 @@ it's not done until we test it:
 
 [% inc pat="loop.*" fill="ht out" %]
 
-## How We Got Here {: #templating-learning}
+## How We Got Here {: #template-learning}
 
 We have just implemented another simple programming language.
 It can't do arithmetic,
@@ -345,7 +345,7 @@ into actual operations on actual data.
 
 More experienced programmers are more capable at both ends of the curve,
 but that's not the only thing that changes.
-If a novice's comprehension curve looks like the lower one in [%f templating-comprehension %],
+If a novice's comprehension curve looks like the lower one in [%f template-comprehension %],
 then an expert's looks like the upper one.
 Experts don't just understand more at all levels of abstraction;
 their *preferred* level has also shifted
@@ -355,7 +355,7 @@ than the medieval expression
 whose sides are given by the first part and the second part".
 
 [% figure
-   slug="templating-comprehension"
+   slug="template-comprehension"
    img="comprehension.svg"
    alt="Comprehension curves"
    caption="Novice and expert comprehension curves."
@@ -371,16 +371,16 @@ But today's tools don't do that,
 and any IDE smart enough to translate between comprehension levels automatically
 would also be smart enough to write the code without our help.
 
-## Summary {: #templating-summary}
+## Summary {: #template-summary}
 
 [% figure
-   slug="templating-concept-map"
+   slug="template-concept-map"
    img="concept_map.svg"
    alt="Concept map for HTML templating"
    caption="HTML templating concept map."
 %]
 
-## Exercises {: #templating-exercises}
+## Exercises {: #template-exercises}
 
 ### Tracing execution {: .exercise}
 

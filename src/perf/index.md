@@ -191,7 +191,7 @@ while this one checks that `filter` works correctly:
 
 [% inc file="test_df_col.py" keep="test_filter" %]
 
-## Storing Rows
+## Storing Rows {: #perf-rows}
 
 Column-wise storage makes selecting columns easy but filtering rows hard.
 If we expect to do more filtering than selecting
