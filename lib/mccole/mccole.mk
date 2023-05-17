@@ -98,6 +98,7 @@ docs/%.pdf: src/%.pdf
 clean:
 	@find . -name '*~' -exec rm {} \;
 	@find . -name '*.bkp' -exec rm {} \;
+	@find . -name '.*.dtmp' -exec rm {} \;
 	@find . -type d -name __pycache__ | xargs rm -r
 	@rm -f \
 	docs/*.aux \

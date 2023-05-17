@@ -40,7 +40,7 @@ the past is all around us.
 
 [% figure
    slug="layout-coordinate-system"
-   img="layout_coordinate_system.svg"
+   img="coordinate_system.svg"
    alt="Coordinate system"
    caption="Coordinate system with (0, 0) in the upper left corner."
 %]
