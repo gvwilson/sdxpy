@@ -20,11 +20,11 @@ CONFIGURATION = [
     ("abbrev", str),
     ("acknowledgments", str),
     ("acronym", str),
-    ("appendices", list),
+    ("appendices", dict),
     ("author", str),
     ("bibliography", str),
     ("bibliography_style", str),
-    ("chapters", list),
+    ("chapters", dict),
     ("copy", list),
     ("credits", str),
     ("debug", bool),
@@ -51,7 +51,7 @@ RE_FIGURE = re.compile(r'\[%\s*figure\b.+?img="(.+?)".+?%\]', re.DOTALL)
 RE_LINK = re.compile(r"\[[^]]*?\]\[(\w+?)\]")
 RE_PAT = re.compile(r'\[%\s*inc\b.+?pat="(.+?)"\s+fill="(.+?)".+?%\]')
 RE_SHORTCODE = re.compile(r"\[%.+?%\]")
-SLIDES_FILE = "slides/index.html"
+SLIDES_FILE = "slides.html"
 SLIDES_TEMPLATE = "slides"
 
 EXPECTED_FILES = {DIRECTIVES_FILE, INDEX_FILE, MAKEFILE, SLIDES_FILE}
@@ -160,11 +160,6 @@ def check_slides(source_files):
         slides_template = slides_header["template"][0]
         if slides_template != SLIDES_TEMPLATE:
             print(f"wrong template {slides_template} in {slides_path}")
-
-        index_path = Path(dir_path, index_file)
-        index_header = get_header_from_file(index_path)
-        if slides_header["title"] != index_header["title"]:
-            print(f"title mismatch: {slides_path} vs. {index_path}")
 
 
 def get_inclusions(filename):

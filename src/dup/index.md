@@ -185,7 +185,7 @@ other than generating random strings of bytes and hashing them.
 Cryptographic hash functions are hard to write—or rather,
 it's very hard to prove that a particular algorithm has the properties we require.
 We will therefore use a function from Python's [hashing library][py_hashlib]
-that implements the [SHA256][sha256] algorithm.
+that implements the [%g sha256 "SHA256" %] algorithm.
 Given some bytes as input,
 this function produces a 256-bit hash,
 which is normally written as a 64-character [%g hexadecimal "hexadecimal" %] string:
