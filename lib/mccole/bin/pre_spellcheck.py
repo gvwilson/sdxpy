@@ -11,8 +11,8 @@ from markdown import markdown
 
 def main():
     options = parse_args()
-    handle(options.pages)
-    handle(options.slides, markdown)
+    handle(options.pages, expand)
+    handle(options.slides, expand)
 
 
 def cleanup(soup):
@@ -23,6 +23,10 @@ def cleanup(soup):
         for node in soup.find_all(tag, class_=cls):
             node.decompose()
     return soup
+
+
+def expand(text):
+    return markdown(text, extensions=["md_in_html"])
 
 
 def handle(filenames, pre_processor=None):

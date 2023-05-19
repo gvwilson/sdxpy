@@ -202,7 +202,7 @@ The matcher for the `*` wildcard becomes this:
 [% inc file="glob_null.py" keep="any" %]
 
 and the matcher for alternatives (which initially prompted this refactoring)
-becomnes this:
+becomes this:
 {: .continue}
 
 [% inc file="glob_null.py" keep="either" %]

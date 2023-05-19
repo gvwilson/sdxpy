@@ -353,7 +353,7 @@ When enabled, it makes TLL print a messages showing each function call and its r
 ### While Loops {: .exercise}
 
 Implement a `while` loop instruction.
-Your implemetation can use either a Python `while` loop or recursion.
+Your implementation can use either a Python `while` loop or recursion.
 
 ### For Loops {: .exercise}
 

@@ -267,11 +267,11 @@ What are the actual odds?
 
 ### Streaming I/O {: .exercise}
 
-FIXME
+[% fixme "streaming I/O exercise" %]
 
 ### Big Oh {: .exercise}
 
-FIXME
+[% fixme "big oh exercise" %]
 
 ###  The `hash` Function {: .exercise}
 
