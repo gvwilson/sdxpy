@@ -1,13 +1,14 @@
 from tokenizer import Tokenizer
 from match import Any, Either, Lit, Null
 
-
-# [simple]
+# [class]
 class Parser:
     def parse(self, text):
         tokens = Tokenizer().tok(text)
         return self._parse(tokens)
+# [/class]
 
+    # [simple]
     def _parse_Any(self, rest, back):
         return Any(self._parse(back))
 

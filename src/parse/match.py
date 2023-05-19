@@ -8,7 +8,6 @@ class Match:
             self.__class__ == other.__class__
         )
 
-
 class Lit(Match):
     def __init__(self, chars, rest=None):
         super().__init__(rest)

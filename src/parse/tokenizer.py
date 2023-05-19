@@ -1,11 +1,16 @@
 import string
 
+# [class]
 CHARS = set(string.ascii_letters + string.digits)
-
 
 class Tokenizer:
     def __init__(self):
         self._setup()
+
+    def _setup(self):
+        self.result = []
+        self.current = ""
+# [/class]
 
     # [tok]
     def tok(self, text):
@@ -25,12 +30,7 @@ class Tokenizer:
                 raise NotImplementedError(f"what is '{ch}'?")
         self._add(None)
         return self.result
-
     # [/tok]
-
-    def _setup(self):
-        self.result = []
-        self.current = ""
 
     # [add]
     def _add(self, thing):
