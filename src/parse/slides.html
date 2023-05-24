@@ -4,16 +4,16 @@ template: slides
 
 ## The Problem
 
--   `Lit("2023-", Any(Either("pdf", "txt")))` is harder to write and read
-    than `"2023-*{pdf,txt}"`
+-   `"2023-*{pdf,txt}"` is easier to read and write
+    than `Lit("2023-", Any(Either("pdf", "txt")))`
 
--   How can we translate the latter into the former?
+-   How can we translate the former into the latter?
 
 --
 
-1.  Convert text into [%g token "tokens" %]
+1.  Group characters into [%g token "tokens" %]
 
-2.  Use tokens to generate an [%g abstract_syntax_tree "abstract syntax tree" %]
+2.  Use tokens to create an [%g abstract_syntax_tree "abstract syntax tree" %]
 
 [% figure
    slug="parse-pipeline"
@@ -26,7 +26,7 @@ template: slides
 
 ## Cases
 
--   Characters like `{` and `*` can be interpreted immediately
+-   Characters like `{` and `*` can be processed immediately
 
 -   But "regular" characters need to be accumulated
 
@@ -91,7 +91,7 @@ template: slides
 
 [% inc file="test_tokenizer.py" keep="tests" %]
 
--   List-of-lists structure is similar to the instructions used in [%x interp %]
+-   Each sub-list represents one token
 
 ---
 
@@ -99,17 +99,36 @@ template: slides
 
 [% inc file="parser.py" keep="parse" %]
 
--   `front[0]` is token name, `front[1:]` is any other data
+-   `front[0]` is the token's name, `front[1:]` is any other data
 
 -   `back` is the remaining tokens
 
--   Look for <code>\_parse\_<em>thing</em></code> method
+-   Look for a <code>\_parse\_<em>thing</em></code> method to handle each token
+
+---
+
+class: aside
+
+## Introspection and Dispatch
+
+-   [%g introspection "Introspection" %]:
+    having a program look up a function or method inside itself
+    while it is running
+
+-   [%g dynamic_dispatch "Dynamic dispatch" %]:
+    using introspection to decide what to do next
+    rather than a long chain of `if` statements
+
+-   These are powerful techniques and we use them frequently
 
 ---
 
 ## Fill in the Simple Stuff
 
 [% inc file="parser.py" keep="simple" %]
+
+-   Hardest part is making sure to name them properly
+    so that `_parse` can find them
 
 ---
 
@@ -125,7 +144,7 @@ template: slides
 
 ---
 
-## A Better Parser
+## A Better Implementation
 
 [% inc file="better_parser.py" keep="either" %]
 
@@ -139,19 +158,25 @@ template: slides
 
 ---
 
-## Infrastructure
+class: aside
 
-[% inc file="match.py" keep="equal" %]
+## They're Just Methods
+
+-   `a == b` is "just" `a.__eq__(b)`
+-   [%g operator_overloading "Operator overloading" %]:
+    if our class has methods with the right names,
+    Python calls them to perform "built-in" operations
+-   Parent `Match` class does shared work
+    -   E.g., make sure objects have
+        the same [%g concrete_class "concrete class" %]
+-   Child method (if any) does details
+    -   E.g., make sure two `Lit` objects are checking for the same text
 
 ---
 
 ## Infrastructure
 
--   [%g operator_overloading "Operator overloading" %]
--   `a == b` is "just" `a.__eq__(b)`
--   Parent `Match` class does shared work
-    (e.g., same [%g concrete_class "concrete class" %])
--   Child method (if any) does details
+[% inc file="match.py" keep="equal" %]
 
 ---
 

@@ -253,7 +253,7 @@ Crucially,
 none of the existing tests change
 because none of the matching classes' constructors changed
 and the [%g signature "signature" %] of the `match` method
-(which they now inherit from the generic `Match` class)
+(which they now [%g inheritance "inherit" %] from the generic `Match` class)
 stayed the same as well.
 We should (should) add a couple of tests for `Null`,
 but basically we have now met our original goal,

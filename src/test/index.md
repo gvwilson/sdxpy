@@ -210,7 +210,8 @@ Python shows us its name and its address in memory.
 {: .continue}
 
 Having a program find things in itself like this at runtime
-is called [%g introspection "introspection" %].
+is another example of [%g introspection "introspection" %]
+([%x parse %]).
 Combining introspection with the pass-fail-error pattern of the previous section
 gives us something that finds test functions,
 runs them,
