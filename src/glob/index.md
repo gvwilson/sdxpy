@@ -3,7 +3,7 @@ title: "Matching Patterns"
 syllabus:
 -   Use globs and regular expressions to match patterns in text.
 -   Use inheritance to make matchers composable and extensible.
--   Objects can delegate work to other objects using the Chain of Responsibility pattern.
+-   Simplify code by having objects delegate work to other objects.
 ---
 
 We had to tell the duplicate file finder of [%x dup %] which files to compare.
@@ -13,7 +13,8 @@ files whose names matched patterns like `*.png`.
 
 Early versions of Unix had a tool called [`glob`][unix_glob] to do this.
 The name was short for "global",
-and older programmers (like this author) still use the word [%g globbing "globbing" %]
+and older programmers (like this author)
+still use the word [%g globbing "globbing" %]
 to mean "matching filenames against a pattern".
 The Python standard library includes a module called [`glob`][py_glob]
 to match filenames in the same way.
@@ -34,8 +35,9 @@ to show how pattern matching works in general.
 ## Simple Patterns {: #glob-simple}
 
 Globbing patterns are simpler than
-the [%g regular_expression "regular expressions" %] used to scrape data from text files.
-Our matcher will initially handle just the five cases shown in
+the [%g regular_expression "regular expressions" %]
+used to scrape data from text files.
+Our matcher will handle only the cases shown in
 [%t pattern-glob-cases %].
 
 <div class="table" id="pattern-glob-cases" caption="Pattern matching cases" markdown="1">
@@ -49,12 +51,16 @@ Our matcher will initially handle just the five cases shown in
 </div>
 
 Matching is conceptually simple.
-If the first element of the pattern matches the target string at the current location,
-we see if the rest of the pattern matches what's left;
-otherwise,
-we see if the the pattern will match further along.
+If the first element of the pattern
+matches the target string at the current location,
+we check if the rest of the pattern matches what's left of the string.
+If it doesn't,
+or if we don't get to the end of the string,
+matching fails.
+(This behavior makes globbing different from regular expressions,
+which can match parts of strings.)
 
-In some cases we don't need any information beyond the type of match:
+In some cases all we need is the type of match:
 for example, the `*` pattern matches any characters.
 In other cases, though,
 we need some extra information,
@@ -63,9 +69,9 @@ We will therefore create objects to do matching
 rather than using bare functions.
 
 Our design uses
-the [%g chain_of_responsibility_pattern "Chain of Responsibility" %] design pattern.
+the [%g chain_of_responsibility_pattern "Chain of Responsibility" %] pattern.
 Each object matches if it can,
-then asks something else to try to match the rest of the text
+then delegates the rest of the match to the next object in the chain
 ([%f glob-chain %]).
 
 [% figure
@@ -81,37 +87,53 @@ matches a string:
 [% inc file="glob_lit.py" %]
 
 `chars` is the characters to be matched,
-while `rest` is responsible for matching the rest of the text.
-`rest` may be `None`,
-which signals that there is no downstream matcher,
-i.e.,
+while `rest` is the chain responsible for matching the rest of the text.
+If `rest` is `None`,
 this matcher is the last one in the chain,
 so it must match to the end of the target string.
 Finally,
-`start` is needed when this isn't the first matcher in the chain.
+`start` is needed when this matcher isn't the first one in the chain.
 
 Before building our second matcher,
-we write and run a few tests for this one:
+let's write and run a few tests for this one:
 
 [% inc file="test_glob_lit.py" keep="tests" %]
 
-Notice that we give tests long names instead of commenting them;
-doing this helps make the test runner's output more readable.
+Notice that we give tests long names
+so that failure reports from the test runner are easier to read.
 {: .continue}
 
-As [%b Petre 2016 %] explains,
-good programmers build and check the parts of their code that they are *least* sure of
-as early as possible.
-The other thing we should therefore do before writing our second matcher
-is check that chaining works:
+We could go ahead and build some more matchers right away,
+but as [%b Petre 2016 %] explains,
+good programmers build and check
+the parts of their code that they are *least* sure of
+as early as possible
+to find out if their entire design is going to work or not.
+We therefore write a test to make sure that chaining works
+when one literal matcher is followed by another:
 
 [% inc file="test_glob_lit.py" keep="chain" %]
 
+<div class="callout" markdown="1">
+
+## Test-Driven Development
+
+Some programmers write the tests for a piece of code before writing the code itself.
+This practice is called [%g tdd "test-driven development" %],
+and its advocates claim that it produces better code in less time
+because (a) writing tests helps people think about what the code should do
+before they're committed to a particular implementation
+and (b) if people write tests first,
+they'll actually write tests.
+Research shows that the order doesn't actually make a difference [%b Fucci2016 %];
+what does is alternating in short bursts between testing and coding.
+
+</div>
+
 These tests pass,
 so we're ready to move on to wildcards.
-A `*` character in our pattern matches zero or more characters.
-Its implementation is a bit tricky:
-if there are no more matchers in the chain,
+A `*` character in our pattern matches zero or more characters,
+so if there are no more matchers in the chain,
 then this `*` matches to the end of the target string
 and `match` returns `True` right away.
 If there *are* other matchers,
@@ -126,8 +148,8 @@ the match fails:
 [% inc file="test_glob_any.py" keep="tests" %]
 
 Either/or matching works much the same way.
-If the first alternative matches we try the rest of the chain;
-if not,
+If the first alternative matches we try the rest of the chain.
+If not,
 we try the second alternative,
 and if neither gives us a match,
 we fail:
@@ -149,8 +171,8 @@ that we should clear up.
 
 We now have three matchers with the same interfaces.
 Before we do any further work,
-we will use the [%g extract_parent_class_refactoring "Extract Parent Class" %]
-[%g refactor "refactoring" %]
+we will [%g refactor "refactor" %]
+using [%g extract_parent_class_refactoring "Extract Parent Class" %]
 to eliminate duplicated code ([%f glob-refactoring %]).
 Similarly,
 the test `if self.rest is None` appears several times.
@@ -164,6 +186,16 @@ which is known as the [%g null_object_pattern "Null Object" %] pattern.
    caption="Using the Extract Parent Class refactoring."
 %]
 
+<div class="callout" markdown="1">
+## We Didn't Invent This
+
+We didn't invent any of the patterns or refactorings used in this chapter.
+Instead, we learned them from books like [%b Gamma1994,Fowler2018,Kerievsky2004 %].
+And as [%b Tichy2010 %] showed,
+learning these patterns makes people better programmers.
+
+</div>
+
 Our new parent class `Match` looks like this:
 
 [% inc file="glob_null.py" keep="parent" %]
@@ -173,11 +205,11 @@ that returns the location from which searching is to continue
 rather than just `True` or `False`.
 `Match.match` therefore checks that we've reached the end of the text.
 
-The null object class is:
+The Null Object class is:
 
 [% inc file="glob_null.py" keep="null" %]
 
-It must be the last one in the chain,
+The null object must be the last one in the chain,
 and as advertised,
 it doesn't advance the match (i.e., it does nothing).
 Every other matcher can now pass responsibility down the chain
@@ -197,15 +229,25 @@ If this object's `rest` is an instance of `Null`,
 this result will be the index after our match.
 {: .continue}
 
-The matcher for the `*` wildcard becomes this:
+As before,
+the matcher for `*` checks what happens
+if it matches an ever-larger part of the target string:
 
 [% inc file="glob_null.py" keep="any" %]
 
-and the matcher for alternatives (which initially prompted this refactoring)
-becomes this:
+(The exercises will ask why loop has to run to `len(text) + 1`.)
+Finally,
+the matcher for either/or alternatives that initially prompted this refactoring
+becomes:
 {: .continue}
 
 [% inc file="glob_null.py" keep="either" %]
+
+Looping over the left and right alternative
+saves us from repeating code or introducing a [%g helper_method "helper method" %].
+It also simplifies the handling of more than two options,
+which we explore in the exercises.
+{: .continue}
 
 Crucially,
 none of the existing tests change
@@ -219,11 +261,6 @@ and as the exercises will show,
 we can easily add matchers for other kinds of patterns.
 
 ## Summary {: #glob-summary}
-
-We didn't invent any of the patterns or refactorings used in this chapter.
-Instead, we learned them from books like [%b Gamma1994,Fowler2018,Kerievsky2004 %].
-And as [%b Tichy2010 %] showed,
-learning these patterns makes people better programmers.
 
 [% figure
    slug="glob-concept-map"
@@ -243,7 +280,8 @@ run to `len(text) + 1`?
 
 ### Find One or More {: .exercise}
 
-Extend the regular expression matcher to support `+`, meaning "match one or more characters".
+Extend the regular expression matcher to support `+`,
+meaning "match one or more characters".
 
 ### Match Sets of Characters {: .exercise}
 
@@ -251,7 +289,8 @@ Extend the regular expression matcher to support `+`, meaning "match one or more
     so that `Charset('aeiou')` matches any lower-case vowel.
 
 2.  Create a matcher that matches a range of characters.
-    For example, `Range("a", "z")` matches any single lower-case Latin alphabetic character.
+    For example,
+    `Range("a", "z")` matches any single lower-case Latin alphabetic character.
     (This is just a convenience matcher: ranges can always be spelled out in full.)
 
 3.  Write some tests for your matchers.

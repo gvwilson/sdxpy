@@ -291,7 +291,7 @@
   
   <li markdown="1">Use inheritance to make matchers composable and extensible.</li>
   
-  <li markdown="1">Objects can delegate work to other objects using the Chain of Responsibility pattern.</li>
+  <li markdown="1">Simplify code by having objects delegate work to other objects.</li>
   
   </ul>
   
@@ -325,7 +325,7 @@
 
           
 <p class="definitions">
-  Terms defined: <a class="gl-ref" href="../glossary/#chain_of_responsibility_pattern" markdown="1">Chain of Responsibility pattern</a>, <a class="gl-ref" href="../glossary/#extract_parent_class_refactoring" markdown="1">Extract Parent Class refactoring</a>, <a class="gl-ref" href="../glossary/#globbing" markdown="1">globbing</a>, <a class="gl-ref" href="../glossary/#refactor" markdown="1">refactor</a>, <a class="gl-ref" href="../glossary/#regular_expression" markdown="1">regular expression</a>, <a class="gl-ref" href="../glossary/#signature" markdown="1">signature</a>, <a class="gl-ref" href="../glossary/#technical_debt" markdown="1">technical debt</a>
+  Terms defined: <a class="gl-ref" href="../glossary/#chain_of_responsibility_pattern" markdown="1">Chain of Responsibility pattern</a>, <a class="gl-ref" href="../glossary/#extract_parent_class_refactoring" markdown="1">Extract Parent Class refactoring</a>, <a class="gl-ref" href="../glossary/#globbing" markdown="1">globbing</a>, <a class="gl-ref" href="../glossary/#helper_method" markdown="1">helper method</a>, <a class="gl-ref" href="../glossary/#refactor" markdown="1">refactor</a>, <a class="gl-ref" href="../glossary/#regular_expression" markdown="1">regular expression</a>, <a class="gl-ref" href="../glossary/#signature" markdown="1">signature</a>, <a class="gl-ref" href="../glossary/#technical_debt" markdown="1">technical debt</a>, <a class="gl-ref" href="../glossary/#tdd" markdown="1">test-driven development</a>
 </p>
 
 
@@ -336,7 +336,8 @@ and more useful still if we could tell it to check
 files whose names matched patterns like <code>*.png</code>.</p>
 <p>Early versions of Unix had a tool called <a href="https://en.wikipedia.org/wiki/Glob_(programming)"><code>glob</code></a> to do this.
 The name was short for &ldquo;global&rdquo;,
-and older programmers (like this author) still use the word <a class="gl-ref" href="../glossary/#globbing" markdown="1">globbing</a>
+and older programmers (like this author)
+still use the word <a class="gl-ref" href="../glossary/#globbing" markdown="1">globbing</a>
 to mean &ldquo;matching filenames against a pattern&rdquo;.
 The Python standard library includes a module called <a href="https://docs.python.org/3/library/glob.html"><code>glob</code></a>
 to match filenames in the same way.
@@ -353,8 +354,9 @@ to show how pattern matching works in general.</p>
 
 <h2 id="glob-simple">Section 3.1: Simple Patterns</h2>
 <p>Globbing patterns are simpler than
-the <a class="gl-ref" href="../glossary/#regular_expression" markdown="1">regular expressions</a> used to scrape data from text files.
-Our matcher will initially handle just the five cases shown in
+the <a class="gl-ref" href="../glossary/#regular_expression" markdown="1">regular expressions</a>
+used to scrape data from text files.
+Our matcher will handle only the cases shown in
 <a class="tbl-ref" href="../glob/#pattern-glob-cases">Table 3.1</a>.</p>
 <div class="table"><table id="pattern-glob-cases"><caption>Table 3.1: Pattern matching cases</caption>
 <thead>
@@ -418,11 +420,15 @@ Our matcher will initially handle just the five cases shown in
 </table>
 </div>
 <p>Matching is conceptually simple.
-If the first element of the pattern matches the target string at the current location,
-we see if the rest of the pattern matches what&rsquo;s left;
-otherwise,
-we see if the the pattern will match further along.</p>
-<p>In some cases we don&rsquo;t need any information beyond the type of match:
+If the first element of the pattern
+matches the target string at the current location,
+we check if the rest of the pattern matches what&rsquo;s left of the string.
+If it doesn&rsquo;t,
+or if we don&rsquo;t get to the end of the string,
+matching fails.
+(This behavior makes globbing different from regular expressions,
+which can match parts of strings.)</p>
+<p>In some cases all we need is the type of match:
 for example, the <code>*</code> pattern matches any characters.
 In other cases, though,
 we need some extra information,
@@ -430,9 +436,9 @@ such as the literal text <code>"abc"</code> or the two alternatives <code>"x"</c
 We will therefore create objects to do matching
 rather than using bare functions.</p>
 <p>Our design uses
-the <a class="gl-ref" href="../glossary/#chain_of_responsibility_pattern" markdown="1">Chain of Responsibility</a> design pattern.
+the <a class="gl-ref" href="../glossary/#chain_of_responsibility_pattern" markdown="1">Chain of Responsibility</a> pattern.
 Each object matches if it can,
-then asks something else to try to match the rest of the text
+then delegates the rest of the match to the next object in the chain
 (<a class="fig-ref" href="../glob/#glob-chain">Figure 3.2</a>).</p>
 <figure id="glob-chain">
 <img src="./chain.svg" alt="Chain of Responsibility"/>
@@ -457,16 +463,14 @@ matches a string:</p>
 </code></pre></div>
 </div>
 <p><code>chars</code> is the characters to be matched,
-while <code>rest</code> is responsible for matching the rest of the text.
-<code>rest</code> may be <code>None</code>,
-which signals that there is no downstream matcher,
-i.e.,
+while <code>rest</code> is the chain responsible for matching the rest of the text.
+If <code>rest</code> is <code>None</code>,
 this matcher is the last one in the chain,
 so it must match to the end of the target string.
 Finally,
-<code>start</code> is needed when this isn&rsquo;t the first matcher in the chain.</p>
+<code>start</code> is needed when this matcher isn&rsquo;t the first one in the chain.</p>
 <p>Before building our second matcher,
-we write and run a few tests for this one:</p>
+let&rsquo;s write and run a few tests for this one:</p>
 <div class="code-sample lang-py" title="test_glob_lit.py">
 <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">test_literal_match_entire_string</span><span class="p">():</span>
     <span class="c1"># ⌈abc⌋ ≈ &quot;abc&quot;</span>
@@ -481,13 +485,16 @@ we write and run a few tests for this one:</p>
     <span class="k">assert</span> <span class="ow">not</span> <span class="n">Lit</span><span class="p">(</span><span class="s2">&quot;abc&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s2">&quot;ab&quot;</span><span class="p">)</span>
 </code></pre></div>
 </div>
-<p class="continue">Notice that we give tests long names instead of commenting them;
-doing this helps make the test runner&rsquo;s output more readable.</p>
-<p>As <span class="bib-ref">[<a class="bib-ref" href="../bibliography/#Petre">Petre</a>, <a class="bib-ref" href="../bibliography/#2016">2016</a>]</span> explains,
-good programmers build and check the parts of their code that they are <em>least</em> sure of
-as early as possible.
-The other thing we should therefore do before writing our second matcher
-is check that chaining works:</p>
+<p class="continue">Notice that we give tests long names
+so that failure reports from the test runner are easier to read.</p>
+<p>We could go ahead and build some more matchers right away,
+but as <span class="bib-ref">[<a class="bib-ref" href="../bibliography/#Petre">Petre</a>, <a class="bib-ref" href="../bibliography/#2016">2016</a>]</span> explains,
+good programmers build and check
+the parts of their code that they are <em>least</em> sure of
+as early as possible
+to find out if their entire design is going to work or not.
+We therefore write a test to make sure that chaining works
+when one literal matcher is followed by another:</p>
 <div class="code-sample lang-py" title="test_glob_lit.py">
 <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">test_literal_followed_by_literal_match</span><span class="p">():</span>
     <span class="c1"># ⌈a⌋⌈b⌋ ≈ &quot;ab&quot;</span>
@@ -498,11 +505,22 @@ is check that chaining works:</p>
     <span class="k">assert</span> <span class="ow">not</span> <span class="n">Lit</span><span class="p">(</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="n">Lit</span><span class="p">(</span><span class="s2">&quot;b&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s2">&quot;ac&quot;</span><span class="p">)</span>
 </code></pre></div>
 </div>
+<div class="callout">
+<h2>Test-Driven Development</h2>
+<p>Some programmers write the tests for a piece of code before writing the code itself.
+This practice is called <a class="gl-ref" href="../glossary/#tdd" markdown="1">test-driven development</a>,
+and its advocates claim that it produces better code in less time
+because (a) writing tests helps people think about what the code should do
+before they&rsquo;re committed to a particular implementation
+and (b) if people write tests first,
+they&rsquo;ll actually write tests.
+Research shows that the order doesn&rsquo;t actually make a difference <span class="bib-ref">[<a class="bib-ref" href="../bibliography/#Fucci2016">Fucci2016</a>]</span>;
+what does is alternating in short bursts between testing and coding.</p>
+</div>
 <p>These tests pass,
 so we&rsquo;re ready to move on to wildcards.
-A <code>*</code> character in our pattern matches zero or more characters.
-Its implementation is a bit tricky:
-if there are no more matchers in the chain,
+A <code>*</code> character in our pattern matches zero or more characters,
+so if there are no more matchers in the chain,
 then this <code>*</code> matches to the end of the target string
 and <code>match</code> returns <code>True</code> right away.
 If there <em>are</em> other matchers,
@@ -548,8 +566,8 @@ the match fails:</p>
 </code></pre></div>
 </div>
 <p>Either/or matching works much the same way.
-If the first alternative matches we try the rest of the chain;
-if not,
+If the first alternative matches we try the rest of the chain.
+If not,
 we try the second alternative,
 and if neither gives us a match,
 we fail:</p>
@@ -613,11 +631,11 @@ FAILED test_glob_problem.py::test_either_followed_by_literal_no_match
 We can try to patch it using our current design,
 but we&rsquo;ve accumulated a bit of <a class="gl-ref" href="../glossary/#technical_debt" markdown="1">technical debt</a>
 that we should clear up.</p>
-<h2 id="glob-rethink">Section 3.2: Rethinking</h2>
+<h2 id="glob-rethink">Section 3.3: Rethinking</h2>
 <p>We now have three matchers with the same interfaces.
 Before we do any further work,
-we will use the <a class="gl-ref" href="../glossary/#extract_parent_class_refactoring" markdown="1">Extract Parent Class</a>
-<a class="gl-ref" href="../glossary/#refactor" markdown="1">refactoring</a>
+we will <a class="gl-ref" href="../glossary/#refactor" markdown="1">refactor</a>
+using <a class="gl-ref" href="../glossary/#extract_parent_class_refactoring" markdown="1">Extract Parent Class</a>
 to eliminate duplicated code (<a class="fig-ref" href="../glob/#glob-refactoring">Figure 3.3</a>).
 Similarly,
 the test <code>if self.rest is None</code> appears several times.
@@ -628,6 +646,13 @@ which is known as the <a class="gl-ref" href="../glossary/#null_object_pattern" 
 <figcaption markdown="1">Figure 3.3: Using the Extract Parent Class refactoring.</figcaption>
 </figure>
 
+<div class="callout">
+<h2>We Didn&rsquo;t Invent This</h2>
+<p>We didn&rsquo;t invent any of the patterns or refactorings used in this chapter.
+Instead, we learned them from books like <span class="bib-ref">[<a class="bib-ref" href="../bibliography/#Gamma1994,Fowler2018,Kerievsky2004">Gamma1994,Fowler2018,Kerievsky2004</a>]</span>.
+And as <span class="bib-ref">[<a class="bib-ref" href="../bibliography/#Tichy2010">Tichy2010</a>]</span> showed,
+learning these patterns makes people better programmers.</p>
+</div>
 <p>Our new parent class <code>Match</code> looks like this:</p>
 <div class="code-sample lang-py" title="glob_null.py">
 <div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Match</span><span class="p">:</span>
@@ -643,7 +668,7 @@ which is known as the <a class="gl-ref" href="../glossary/#null_object_pattern" 
 that returns the location from which searching is to continue
 rather than just <code>True</code> or <code>False</code>.
 <code>Match.match</code> therefore checks that we&rsquo;ve reached the end of the text.</p>
-<p>The null object class is:</p>
+<p>The Null Object class is:</p>
 <div class="code-sample lang-py" title="glob_null.py">
 <div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Null</span><span class="p">(</span><span class="n">Match</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rest</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -653,7 +678,7 @@ rather than just <code>True</code> or <code>False</code>.
         <span class="k">return</span> <span class="n">start</span>
 </code></pre></div>
 </div>
-<p class="continue">It must be the last one in the chain,
+<p class="continue">The null object must be the last one in the chain,
 and as advertised,
 it doesn&rsquo;t advance the match (i.e., it does nothing).
 Every other matcher can now pass responsibility down the chain
@@ -679,7 +704,9 @@ then adds the data specific to this class.
 It returns <code>None</code> for &ldquo;no match&rdquo; or whatever <code>self.rest</code> returns
 If this object&rsquo;s <code>rest</code> is an instance of <code>Null</code>,
 this result will be the index after our match.</p>
-<p>The matcher for the <code>*</code> wildcard becomes this:</p>
+<p>As before,
+the matcher for <code>*</code> checks what happens
+if it matches an ever-larger part of the target string:</p>
 <div class="code-sample lang-py" title="glob_null.py">
 <div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Any</span><span class="p">(</span><span class="n">Match</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rest</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -693,8 +720,10 @@ this result will be the index after our match.</p>
         <span class="k">return</span> <span class="kc">None</span>
 </code></pre></div>
 </div>
-<p class="continue">and the matcher for alternatives (which initially prompted this refactoring)
-becomes this:</p>
+<p class="continue">(The exercises will ask why loop has to run to <code>len(text) + 1</code>.)
+Finally,
+the matcher for either/or alternatives that initially prompted this refactoring
+becomes:</p>
 <div class="code-sample lang-py" title="glob_null.py">
 <div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Either</span><span class="p">(</span><span class="n">Match</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="p">,</span> <span class="n">rest</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -712,6 +741,10 @@ becomes this:</p>
         <span class="k">return</span> <span class="kc">None</span>
 </code></pre></div>
 </div>
+<p class="continue">Looping over the left and right alternative
+saves us from repeating code or introducing a <a class="gl-ref" href="../glossary/#helper_method" markdown="1">helper method</a>.
+It also simplifies the handling of more than two options,
+which we explore in the exercises.</p>
 <p>Crucially,
 none of the existing tests change
 because none of the matching classes&rsquo; constructors changed
@@ -722,17 +755,13 @@ We should (should) add a couple of tests for <code>Null</code>,
 but basically we have now met our original goal,
 and as the exercises will show,
 we can easily add matchers for other kinds of patterns.</p>
-<h2 id="glob-summary">Section 3.3: Summary</h2>
-<p>We didn&rsquo;t invent any of the patterns or refactorings used in this chapter.
-Instead, we learned them from books like <span class="bib-ref">[<a class="bib-ref" href="../bibliography/#Gamma1994,Fowler2018,Kerievsky2004">Gamma1994,Fowler2018,Kerievsky2004</a>]</span>.
-And as <span class="bib-ref">[<a class="bib-ref" href="../bibliography/#Tichy2010">Tichy2010</a>]</span> showed,
-learning these patterns makes people better programmers.</p>
+<h2 id="glob-summary">Section 3.5: Summary</h2>
 <figure id="glob-concept-map">
 <img src="./concept_map.svg" alt="Concept map for regular expression matching"/>
 <figcaption markdown="1">Figure 3.4: Regular expression matching concept map.</figcaption>
 </figure>
 
-<h2 id="glob-exercises">Section 3.4: Exercises</h2>
+<h2 id="glob-exercises">Section 3.6: Exercises</h2>
 <h3 class="exercise">Length Plus One</h3>
 <p>Why does the upper bound of the loop in the final version of <code>Any</code>
 run to <code>len(text) + 1</code>?</p>
@@ -750,7 +779,8 @@ run to <code>len(text) + 1</code>?</p>
 </code></pre></div>
 </div>
 <h3 class="exercise">Find One or More</h3>
-<p>Extend the regular expression matcher to support <code>+</code>, meaning &ldquo;match one or more characters&rdquo;.</p>
+<p>Extend the regular expression matcher to support <code>+</code>,
+meaning &ldquo;match one or more characters&rdquo;.</p>
 <h3 class="exercise">Match Sets of Characters</h3>
 <ol>
 <li>
@@ -759,7 +789,8 @@ run to <code>len(text) + 1</code>?</p>
 </li>
 <li>
 <p>Create a matcher that matches a range of characters.
-    For example, <code>Range("a", "z")</code> matches any single lower-case Latin alphabetic character.
+    For example,
+    <code>Range("a", "z")</code> matches any single lower-case Latin alphabetic character.
     (This is just a convenience matcher: ranges can always be spelled out in full.)</p>
 </li>
 <li>
