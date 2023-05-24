@@ -4,7 +4,7 @@
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="repo" content="https://github.com/gvwilson/sd4ds">
-  <meta name="build_date" content="2023-05-20">
+  <meta name="build_date" content="2023-05-24">
   <meta name="template" content="default">
   <meta name="major" content="Chapter 2">
   <meta name="has_slides" content="true">
@@ -287,9 +287,13 @@
   
   <li markdown="1">A hash function creates a fixed-size value from an arbitrary sequence of bytes.</li>
   
+  <li markdown="1">Use big-oh notation to estimate the running time of algorithms.</li>
+  
   <li markdown="1">The output of a hash function is deterministic but not predictable.</li>
   
-  <li markdown="1">A cryptographic hash function's output is evenly distributed.</li>
+  <li markdown="1">A good hash function's output is evenly distributed.</li>
+  
+  <li markdown="1">A cryptographic hash function generates a unique identifier for a file's contents.</li>
   
   </ul>
   
@@ -325,7 +329,7 @@
 
           
 <p class="definitions">
-  Terms defined: <a class="gl-ref" href="../glossary/#binary_mode" markdown="1">binary mode</a>, <a class="gl-ref" href="../glossary/#cryptographic_hash_function" markdown="1">cryptographic hash function</a>, <a class="gl-ref" href="../glossary/#hash_code" markdown="1">hash code</a>, <a class="gl-ref" href="../glossary/#hash_function" markdown="1">hash function</a>, <a class="gl-ref" href="../glossary/#hexadecimal" markdown="1">hexadecimal</a>, <a class="gl-ref" href="../glossary/#sha256" markdown="1">SHA-256 hash code</a>, <a class="gl-ref" href="../glossary/#time_complexity" markdown="1">time complexity</a>
+  Terms defined: <a class="gl-ref" href="../glossary/#big_oh" markdown="1">big-oh notation</a>, <a class="gl-ref" href="../glossary/#binary_mode" markdown="1">binary mode</a>, <a class="gl-ref" href="../glossary/#cryptographic_hash_function" markdown="1">cryptographic hash function</a>, <a class="gl-ref" href="../glossary/#hash_code" markdown="1">hash code</a>, <a class="gl-ref" href="../glossary/#hash_function" markdown="1">hash function</a>, <a class="gl-ref" href="../glossary/#hexadecimal" markdown="1">hexadecimal</a>, <a class="gl-ref" href="../glossary/#sha256" markdown="1">SHA-256 hash code</a>, <a class="gl-ref" href="../glossary/#time_complexity" markdown="1">time complexity</a>
 </p>
 
 
@@ -344,8 +348,8 @@ and as we&rsquo;ll see,
 we can generate identifiers so that if two files have the same one,
 they&rsquo;re (almost) guaranteed to have the same content.</p>
 <h2 id="dup-start">Section 2.1: Getting Started</h2>
-<p>We&rsquo;ll start by implementing the brute force byte-by-byte approach
-so that we have something to compare more sophisticated designs to.
+<p>We&rsquo;ll start by implementing the brute force approach
+so that we can compare sophisticated designs to it.
 The short program below takes a list of filenames from the command line,
 finds duplicates,
 and prints the matches:</p>
@@ -378,7 +382,7 @@ using <code>"rb"</code> instead of the usual <code>"r"</code>.
 As we&rsquo;ll see in <a class="x-ref" href="../binary/">Chapter 17</a>,
 this tells Python to read the bytes as they are
 rather than trying to convert them to characters.</p>
-<p>To test this program (and the others we&rsquo;re about to write)
+<p>To test this program and the others we&rsquo;re about to write,
 we create a <code>tests</code> directory with six files:</p>
 <table>
 <thead>
@@ -426,9 +430,8 @@ tests/b2.txt tests/b2.txt
 tests/c1.txt tests/c1.txt
 </code></pre></div>
 </div>
-<p>The output is correct,
-but only in the sense that the program is doing what we asked it to do.
-Every file is reported as being identical to itself,
+<p>The output is correct but not useful:
+every file is reported as being identical to itself,
 and every match of different files is reported twice.
 Let&rsquo;s fix the nested loop in <code>find_duplicates</code>
 so that we only check potentially differing pairs once
@@ -455,7 +458,7 @@ so that we only check potentially differing pairs once
 so for large \( N \) the work is proportional to \( N^2 \).
 A computer scientist would say that
 the <a class="gl-ref" href="../glossary/#time_complexity" markdown="1">time complexity</a> of our algorithm is \( O(N^2) \),
-which is pronounced &ldquo;big-oh of N squared&rdquo;.
+which is pronounced &ldquo;<a class="gl-ref" href="../glossary/#big_oh" markdown="1">big-oh</a> of N squared&rdquo;.
 If the number of files doubles,
 the running time roughly quadruples,
 which means means that the time per file increases as the number of files increases.
@@ -521,7 +524,8 @@ and plot the distribution (<a class="fig-ref" href="../dup/#dup-naive-dracula">F
 
 <p>Is the histogram&rsquo;s peak at zero a flaw of some kind in our hash function?
 After a bit of digging,
-we realize that the text file we&rsquo;re processing uses a blank line to separate paragraphs,
+we realize that
+the text file we&rsquo;re processing uses a blank line to separate paragraphs,
 so the peak reflects a bias in our data.
 If we plot the distribution of hash codes of <em>unique</em> lines,
 the result is more even (<a class="fig-ref" href="../dup/#dup-naive-dracula-unique">Figure 2.4</a>).</p>
@@ -532,7 +536,12 @@ the result is more even (<a class="fig-ref" href="../dup/#dup-naive-dracula-uniq
 
 <p>Now that we can hash files,
 we can build a dictionary with hash codes as keys
-and sets of files as values:</p>
+and sets of files as values.
+We do this using a common pattern
+where if we haven&rsquo;t seen a particular key before,
+we add it with an empty value,
+then unilaterally add this file to that value
+(in this case, a set):</p>
 <div class="code-sample lang-py" title="grouped.py">
 <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">find_groups</span><span class="p">(</span><span class="n">filenames</span><span class="p">):</span>
     <span class="n">groups</span> <span class="o">=</span> <span class="p">{}</span>
@@ -545,7 +554,7 @@ and sets of files as values:</p>
     <span class="k">return</span> <span class="n">groups</span>
 </code></pre></div>
 </div>
-<p>We can then re-use most of the code we wrote earlier
+<p>We can now re-use most of the code we wrote earlier
 to find duplicates within each group:</p>
 <div class="code-sample lang-py" title="grouped.py">
 <div class="highlight"><pre><span></span><code>    <span class="n">groups</span> <span class="o">=</span> <span class="n">find_groups</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>

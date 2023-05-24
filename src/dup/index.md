@@ -1,8 +1,10 @@
 ---
 syllabus:
 -   A hash function creates a fixed-size value from an arbitrary sequence of bytes.
+-   Use big-oh notation to estimate the running time of algorithms.
 -   The output of a hash function is deterministic but not predictable.
--   A cryptographic hash function's output is evenly distributed.
+-   A good hash function's output is evenly distributed.
+-   A cryptographic hash function generates a unique identifier for a file's contents.
 ---
 
 Suppose we want to find duplicated files,
@@ -22,8 +24,8 @@ they're (almost) guaranteed to have the same content.
 
 ## Getting Started {: #dup-start}
 
-We'll start by implementing the brute force byte-by-byte approach
-so that we have something to compare more sophisticated designs to.
+We'll start by implementing the brute force approach
+so that we can compare sophisticated designs to it.
 The short program below takes a list of filenames from the command line,
 finds duplicates,
 and prints the matches:
@@ -41,7 +43,7 @@ this tells Python to read the bytes as they are
 rather than trying to convert them to characters.
 {: .continue}
 
-To test this program (and the others we're about to write)
+To test this program and the others we're about to write,
 we create a `tests` directory with six files:
 
 | `a1.txt` | `a2.txt` | `a3.txt` | `b1.txt` | `b2.txt` | `c1.txt` |
@@ -54,9 +56,8 @@ We run our program like this:
 
 [% inc pat="brute_force_1.*" fill="sh out" %]
 
-The output is correct,
-but only in the sense that the program is doing what we asked it to do.
-Every file is reported as being identical to itself,
+The output is correct but not useful:
+every file is reported as being identical to itself,
 and every match of different files is reported twice.
 Let's fix the nested loop in `find_duplicates`
 so that we only check potentially differing pairs once
@@ -76,7 +77,7 @@ How much work does our revised program do?
 so for large \\( N \\) the work is proportional to \\( N^2 \\).
 A computer scientist would say that
 the [%g time_complexity "time complexity" %] of our algorithm is \\( O(N^2) \\),
-which is pronounced "big-oh of N squared".
+which is pronounced "[%g big_oh "big-oh" %] of N squared".
 If the number of files doubles,
 the running time roughly quadruples,
 which means means that the time per file increases as the number of files increases.
@@ -134,7 +135,8 @@ and plot the distribution ([%f dup-naive-dracula %]).
 
 Is the histogram's peak at zero a flaw of some kind in our hash function?
 After a bit of digging,
-we realize that the text file we're processing uses a blank line to separate paragraphs,
+we realize that
+the text file we're processing uses a blank line to separate paragraphs,
 so the peak reflects a bias in our data.
 If we plot the distribution of hash codes of *unique* lines,
 the result is more even ([%f dup-naive-dracula-unique %]).
@@ -148,11 +150,16 @@ the result is more even ([%f dup-naive-dracula-unique %]).
 
 Now that we can hash files,
 we can build a dictionary with hash codes as keys
-and sets of files as values:
+and sets of files as values.
+We do this using a common pattern
+where if we haven't seen a particular key before,
+we add it with an empty value,
+then unilaterally add this file to that value
+(in this case, a set):
 
 [% inc file="grouped.py" keep="group" %]
 
-We can then re-use most of the code we wrote earlier
+We can now re-use most of the code we wrote earlier
 to find duplicates within each group:
 
 [% inc file="grouped.py" keep="main" %]

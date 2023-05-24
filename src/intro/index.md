@@ -1,4 +1,5 @@
-Most data scientists have taught themselves most of what they know about programming.
+Most data scientists have taught themselves
+most of what they know about programming.
 As a result,
 many have gaps in their knowledge:
 they may be experts in some areas,
@@ -22,8 +23,10 @@ it requires design.
    caption="How complexity grows with size."
 %]
 
-The best way to learn design in any field is to study examples [%b Schon1984 Petre2016 %].
-These lessons therefore build small versions of tools that programmers use every day
+The best way to learn design in any field
+is to study examples [%b Schon1984 Petre2016 %].
+These lessons therefore build small versions
+of tools that programmers use every day
 to show how experienced software designers think.
 Along the way,
 they introduce some fundamental ideas in computer science
@@ -64,7 +67,7 @@ This book is also designed to help another persona:
 > This material will give them material they can use in class
 > and starting points for course projects.
 
-## Topics {: #intro-contents}
+## The Big Ideas {: #intro-ideas}
 
 Programmers have invented [a lot of tools][programming_tools] over the years.
 This book focuses on those that people use while building code,

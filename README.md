@@ -52,8 +52,8 @@ This book is also designed for:
 
 | Chapter   | Code   | Slides | Diagrams | Exercises | Prose  | Overall |
 | --------- | ------ | ------ | -------- | --------- | ------ | ------: |
-| intro     | N/A    | done   | done     | N/A       | done   | 100%    |
-| dup       | done   | done   | done     | done      | done   | 100%    |
+| intro     | N/A    | done   | done     | N/A       | done   | *100%*  |
+| dup       | done   | done   | done     | done      | done   | *100%*  |
 | glob      | done   | done   | done     | done      | done   | 100%    |
 | parse     | done   | done   | done     | done      | done   | 100%    |
 | test      | done   | done   | done     | done      | done   | 100%    |
