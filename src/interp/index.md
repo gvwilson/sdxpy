@@ -3,14 +3,16 @@ syllabus:
 -   Compilers and interpreters are just programs.
 -   Basic arithmetic operations are just functions that have special notation.
 -   Programs can be represented as trees, which can be stored as nested lists.
--   Interpreters recursively dispatch operations to functions that implement low-level details.
+-   Interpreters recursively dispatch operations
+    to functions that implement low-level details.
 -   Programs store variables in stacked dictionaries called environments.
 -   One way to evaluate a program's design is to ask how extensible it is.
 ---
 
 [%x test %] introduced the idea that programs are just another kind of data.
 Similarly,
-the compilers and interpreters that make programs run are just programs themselves.
+the [%g compiler "compilers" %] and [%g interpreter "interpreters" %]
+that make programs run are just programs themselves.
 Instead of changing the characters in a block of memory like text editors,
 or calculating sums and averages like spreadsheets,
 compilers turn text into instructions for interpreters or hardware to run.
@@ -18,35 +20,49 @@ compilers turn text into instructions for interpreters or hardware to run.
 Most real programming languages have two parts:
 a [%g parser "parser" %] that translates the source code into a data structure in memory,
 and a [%g runtime "runtime" %] that executes the instructions in that data structure.
-This chapter focuses on the runtime;
-[%x parse %] will explore parsing,
-while [%x vm %] will look at more efficient ways to execute instructions.
+[%x parse %] explored parsing;
+this chapter will build a runtime for a very simple interpreter,
+while [%x vm %] will look at compiling code for more efficient execution.
 
-## Expressions {: #interpreter-expressions}
+<div class="callout" markdown="1">
+
+### Two Ways to Run Code
+
+A compiler translates a program into runnable instructions
+before the program runs,
+while an interpreter generates instructions on the fly
+as the program is running.
+In practice,
+the difference between the two are blurry:
+when Python runs a program,
+for example,
+it translates the source code into instructions as it loads files,
+but saves those instructions in `.pyc` files to save time in future.
+
+</div>
+
+## Expressions {: #interp-expressions}
 
 Let's start by building something that can evaluate simple expressions
 like `1+2` or `abs(-3.5)`.
 We represent each expression as a list
 with the name of the operation as the first item
 and the values to be operated on as the other items.
-To add 1 and 2 we use:
+If we have multiple operations,
+we use nested lists:
 
-```python
-["add", 1, 2]
-```
-
-and to calculate the absolute value of -3.5 we use:
-{: .continue}
-
-```python
-["abs", -3.5]
-```
+[% inc file="add_example.py" %]
 
 <div class="callout" markdown="1">
 
-### Nothing Special
+### Notation
 
-We have special symbols for addition, subtraction, and so on for historical reasons,
+We use [%g infix_notation "infix notation" %] like `1+2` for historical reasons
+in everyday life,
+but our programs use [%g prefix_notation "prefix notation" %]—i.e.,
+they always put the operations' names first—to make the operations easier to find.
+Similarly,
+we have special symbols for addition, subtraction, and so on for historical reasons,
 but our list representation doesn't distinguish between things like `+` and `abs`
 because it doesn't need to.
 If our program is being compiled into low-level instructions for a particular CPU,
@@ -59,13 +75,6 @@ on multiple values at once.
 
 </div>
 
-We can represent more complicated expressions using nested lists.
-For example, `abs(1+2)` is:
-
-```python
-["abs", ["add", 1, 2]]
-```
-
 The function to add two expressions looks like this:
 
 [% inc file="expr.py" keep="do_add" %]
@@ -73,16 +82,17 @@ The function to add two expressions looks like this:
 Its single parameter is a list containing
 the two sub-expressions to be evaluated and added.
 After checking that it has the right number of parameters,
-it calls the function `do` [%g recursion "recursively" %] to evaluate those sub-expressions.
+it calls an as-yet-unwritten function `do`
+to evaluate those sub-expressions.
 (We've called the function `do` instead of `eval`
 because Python already has a function called `eval`.)
 Once `do_add` has two actual values,
 it adds them and returns the result
-([%f interpreter-recursive-evaluation %])
+([%f interp-recursive-evaluation %])
 {: .continue}
 
 [% figure
-   slug="interpreter-recursive-evaluation"
+   slug="interp-recursive-evaluation"
    img="recursive_evaluation.svg"
    alt="Recursive evaluation of an expression tree"
    caption="Recursively evaluating the expression `abs(1+2)`."
@@ -110,17 +120,21 @@ and calculates a different return value:
 
 [% inc file="expr.py" keep="do_abs" %]
 
+Notice that `do_abs` and `do_add` have the same [%g signature "signature" %].
+As with the unit testing functions in [%x test %],
+this allows us to call them interchangeably.
+
 So how does `do` work?
 It starts by checking if its input is an integer.
 If so,
 it returns that value right away
-because integers "evaluate" to themselves:
-no more calculation is needed.
+because integers "evaluate" to themselves.
 Otherwise,
 `do` checks that its parameter is a list
 and then uses the first value in the list
 to decide what other function to call.
-This process is often called [%g dispatch "dispatch" %].
+This lookup-and-call process is the same [%g dynamic_dispatch "dynamic_dispatch" %]
+that we saw in [%x parse %].
 
 [% inc file="expr.py" keep="do" %]
 
@@ -133,7 +147,8 @@ and prints the result:
 [% inc file="expr.py" keep="main" %]
 
 Our program is a list of lists (of lists…)
-so we can read it as [%g "json" JSON %] using `json.load`.
+so we can read it as [%g "json" JSON %] using `json.load`
+rather than writing our own parser.
 If our program file contains:
 
 [% inc file="expr.tll" %]
@@ -145,7 +160,7 @@ then our little interpreter prints:
 
 This is a lot of code to do something that Python already does,
 but it shows what Python (and other languages) do themselves.
-When we run our little interpreter with:
+Suppose we run our little interpreter with:
 
 [% inc file="expr.sh" %]
 
@@ -154,11 +169,11 @@ turns it into a data structure with operation identifiers and constants,
 then uses those operation identifiers to decide what functions to call.
 Those functions are written in C
 and have been compiled to machine instructions,
-but the cycle of lookup, call, and recurse is exactly the same.
+but the cycle of lookup and call is exactly the same.
 
-## Variables {: #interpreter-variables}
+## Variables {: #interp-variables}
 
-Adding up constants is a start,
+Doing arithmetic on constants is a start,
 but our programs will be easier to read with variables
 that let us give names to values.
 We can add them to our interpreter
@@ -203,17 +218,49 @@ Our test program is:
 
 [% inc pat="vars.*" fill="tll out" %]
 
-## Introspection Again {: #interpreter-introspection}
+<div class="callout" markdown="1">
 
-Before we add more operations,
-let's have a look at the current state of `do`:
+### Everything Is An Expression
+
+Python distinguishes [%g expression "expressions" %] that produce values
+from [%g statement "statements" %] that don't.
+But it doesn't have to, and many languages don't.
+For example,
+Python could have been designed to allow this:
+
+```python
+# not actually legal Python
+result =
+    if a > 0:
+        1
+    elif a == 0:
+        0
+    else:
+        -1
+```
+
+</div>
+
+## Introspection Again {: #interp-introspection}
+
+Now that we have evaluation, function lookup, and environments,
+we can write programs like this one,
+which starts with the number 1 and doubles it four times:
+
+[% inc pat="doubling.*" fill="tll out" %]
+
+However,
+our `do` function now looks like this:
 
 [% inc file="vars.py" keep="do" %]
 
 The sequence of `if` statements that decide what function to call
-is going to become unreadably long.
-Let's use [%g introspection "introspection" %] to create a lookup table instead
-by finding and storing every function whose name starts with `do_`:
+is becoming unwieldy.
+(Quick:
+can you see if any of the instruction names are accidentally duplicated?)
+We can replace this by using [%g introspection "introspection" %]
+to create a lookup table
+that stores every function whose name starts with `do_`:
 
 [% inc file="vars_reflect.py" keep="lookup" %]
 
@@ -252,17 +299,13 @@ we have to search through the source file (or possibly several files)
 to find all the available operations.
 {: .continue}
 
-## Statements {: #interpreter-statements}
+## Statements {: #interp-statements .bonus}
 
-Now that we have recursive evaluation, function lookup, and environments,
-it's easy to add more features to our little language.
-Our goal is to execute this program,
-which starts with the number 1 and doubles it four times:
-
-[% inc file="doubling.tll" %]
-
-The simplest of the new operations is `comment`,
-which does nothing and returns `None`:
+One way to evaluate a design is to ask how [%g extensible "extensible" %] it is.
+The answer for our interpreter is now, "Pretty easily."
+For example,
+we can add a `comment` "operation" that does nothing and returns `None`
+simply by writing `do_comment` function:
 
 [% inc file="stmt.py" keep="comment" %]
 
@@ -292,25 +335,29 @@ so that expressions like:
 {: .continue}
 
 ```python
-reference and reference.part
+thing and thing.part
 ```
 
-will produce `None` if `reference` is `None`
+will produce `None` if `thing` is `None`
 and `reference.part` if it isn't.
 {: .continue}
 
-[% fixme "explain repeat loops" %]
+While our interpreter is extensible,
+our little language is not:
+there is no way for a user to define and call functions of their own
+within the little language itself.
+We will tackle this in [%x func %].
 
-## Summary {: #interpreter-summary}
+## Summary {: #interp-summary}
 
 [% figure
-   slug="interpreter-concept-map"
+   slug="interp-concept-map"
    img="concept_map.svg"
    alt="Concept map of interpreter"
    caption="Interpreter concept map."
 %]
 
-## Exercises {: #interpreter-exercises}
+## Exercises {: #interp-exercises}
 
 ### Arrays {: .exercise}
 

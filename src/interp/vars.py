@@ -41,11 +41,8 @@ def do_set(env, args):
 
 # [do]
 def do(env, expr):
-    # Integers evaluate to themselves.
     if isinstance(expr, int):
         return expr
-
-    # Lists trigger function calls.
     assert isinstance(expr, list)
     if expr[0] == "abs":
         return do_abs(env, expr[1:])

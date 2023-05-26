@@ -331,38 +331,59 @@
 
           
 <p class="definitions">
-  Terms defined: <a class="gl-ref" href="../glossary/#argument" markdown="1">argument</a>, <a class="gl-ref" href="../glossary/#control_flow" markdown="1">control flow</a>, <a class="gl-ref" href="../glossary/#dictionary_comprehension" markdown="1">dictionary comprehension</a>, <a class="gl-ref" href="../glossary/#eager_evaluation" markdown="1">eager evaluation</a>, <a class="gl-ref" href="../glossary/#environment" markdown="1">environment</a>, <a class="gl-ref" href="../glossary/#introspection" markdown="1">introspection</a>, <a class="gl-ref" href="../glossary/#json" markdown="1">JavaScript Object Notation</a>, <a class="gl-ref" href="../glossary/#lazy_evaluation" markdown="1">lazy evaluation</a>, <a class="gl-ref" href="../glossary/#parameter" markdown="1">parameter</a>, <a class="gl-ref" href="../glossary/#parser" markdown="1">parser</a>, <a class="gl-ref" href="../glossary/#recursion" markdown="1">recursion</a>, <a class="gl-ref" href="../glossary/#runtime" markdown="1">runtime</a>, <a class="gl-ref" href="../glossary/#signature" markdown="1">signature</a>
+  Terms defined: <a class="gl-ref" href="../glossary/#argument" markdown="1">argument</a>, <a class="gl-ref" href="../glossary/#compiler" markdown="1">compiler</a>, <a class="gl-ref" href="../glossary/#control_flow" markdown="1">control flow</a>, <a class="gl-ref" href="../glossary/#dictionary_comprehension" markdown="1">dictionary comprehension</a>, <a class="gl-ref" href="../glossary/#dynamic_dispatch" markdown="1">dynamic dispatch</a>, <a class="gl-ref" href="../glossary/#eager_evaluation" markdown="1">eager evaluation</a>, <a class="gl-ref" href="../glossary/#environment" markdown="1">environment</a>, <a class="gl-ref" href="../glossary/#expression" markdown="1">expression</a>, <a class="gl-ref" href="../glossary/#infix_notation" markdown="1">infix notation</a>, <a class="gl-ref" href="../glossary/#interpreter" markdown="1">interpreter</a>, <a class="gl-ref" href="../glossary/#introspection" markdown="1">introspection</a>, <a class="gl-ref" href="../glossary/#json" markdown="1">JavaScript Object Notation</a>, <a class="gl-ref" href="../glossary/#lazy_evaluation" markdown="1">lazy evaluation</a>, <a class="gl-ref" href="../glossary/#parameter" markdown="1">parameter</a>, <a class="gl-ref" href="../glossary/#parser" markdown="1">parser</a>, <a class="gl-ref" href="../glossary/#prefix_notation" markdown="1">prefix notation</a>, <a class="gl-ref" href="../glossary/#runtime" markdown="1">runtime</a>, <a class="gl-ref" href="../glossary/#signature" markdown="1">signature</a>, <a class="gl-ref" href="../glossary/#statement" markdown="1">statement</a>
 </p>
 
 
           <div class="page-toc"></div>
           <p><a class="x-ref" href="../test/">Chapter 5</a> introduced the idea that programs are just another kind of data.
 Similarly,
-the compilers and interpreters that make programs run are just programs themselves.
+the <a class="gl-ref" href="../glossary/#compiler" markdown="1">compilers</a> and <a class="gl-ref" href="../glossary/#interpreter" markdown="1">interpreters</a>
+that make programs run are just programs themselves.
 Instead of changing the characters in a block of memory like text editors,
 or calculating sums and averages like spreadsheets,
 compilers turn text into instructions for interpreters or hardware to run.</p>
 <p>Most real programming languages have two parts:
 a <a class="gl-ref" href="../glossary/#parser" markdown="1">parser</a> that translates the source code into a data structure in memory,
 and a <a class="gl-ref" href="../glossary/#runtime" markdown="1">runtime</a> that executes the instructions in that data structure.
-This chapter focuses on the runtime;
-<a class="x-ref" href="../parse/">Chapter 4</a> will explore parsing,
-while <a class="x-ref" href="../vm/">Chapter 25</a> will look at more efficient ways to execute instructions.</p>
-<h2 id="interpreter-expressions">Section 6.1: Expressions</h2>
+<a class="x-ref" href="../parse/">Chapter 4</a> explored parsing;
+this chapter will build a runtime for a very simple interpreter,
+while <a class="x-ref" href="../vm/">Chapter 25</a> will look at compiling code for more efficient execution.</p>
+<div class="callout">
+<h3>Two Ways to Run Code</h3>
+<p>A compiler translates a program into runnable instructions
+before the program runs,
+while an interpreter generates instructions on the fly
+as the program is running.
+In practice,
+the difference between the two are blurry:
+when Python runs a program,
+for example,
+it translates the source code into instructions as it loads files,
+but saves those instructions in <code>.pyc</code> files to save time in future.</p>
+</div>
+<h2 id="interp-expressions">Section 6.2: Expressions</h2>
 <p>Let&rsquo;s start by building something that can evaluate simple expressions
 like <code>1+2</code> or <code>abs(-3.5)</code>.
 We represent each expression as a list
 with the name of the operation as the first item
 and the values to be operated on as the other items.
-To add 1 and 2 we use:</p>
-<div class="highlight"><pre><span></span><code><span class="p">[</span><span class="s2">&quot;add&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
+If we have multiple operations,
+we use nested lists:</p>
+<div class="code-sample lang-py" title="add_example.py">
+<div class="highlight"><pre><span></span><code><span class="p">[</span><span class="s2">&quot;add&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>            <span class="c1"># add 1 and 2</span>
+<span class="p">[</span><span class="s2">&quot;abs&quot;</span><span class="p">,</span> <span class="o">-</span><span class="mf">3.5</span><span class="p">]</span>            <span class="c1"># get the absolute value of 3.5</span>
+<span class="p">[</span><span class="s2">&quot;add&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;abs&quot;</span><span class="p">,</span> <span class="o">-</span><span class="mi">5</span><span class="p">],</span> <span class="mi">9</span><span class="p">]</span>  <span class="c1"># combine</span>
 </code></pre></div>
-<p class="continue">and to calculate the absolute value of -3.5 we use:</p>
-<div class="highlight"><pre><span></span><code><span class="p">[</span><span class="s2">&quot;abs&quot;</span><span class="p">,</span> <span class="o">-</span><span class="mf">3.5</span><span class="p">]</span>
-</code></pre></div>
+</div>
 <div class="callout">
-<h3>Nothing Special</h3>
-<p>We have special symbols for addition, subtraction, and so on for historical reasons,
+<h3>Notation</h3>
+<p>We use <a class="gl-ref" href="../glossary/#infix_notation" markdown="1">infix notation</a> like <code>1+2</code> for historical reasons
+in everyday life,
+but our programs use <a class="gl-ref" href="../glossary/#prefix_notation" markdown="1">prefix notation</a>—i.e.,
+they always put the operations&rsquo; names first—to make the operations easier to find.
+Similarly,
+we have special symbols for addition, subtraction, and so on for historical reasons,
 but our list representation doesn&rsquo;t distinguish between things like <code>+</code> and <code>abs</code>
 because it doesn&rsquo;t need to.
 If our program is being compiled into low-level instructions for a particular CPU,
@@ -373,10 +394,6 @@ early CPUs didn&rsquo;t have instructions to do division,
 while modern CPUs may have instructions to do addition or multiplication
 on multiple values at once.</p>
 </div>
-<p>We can represent more complicated expressions using nested lists.
-For example, <code>abs(1+2)</code> is:</p>
-<div class="highlight"><pre><span></span><code><span class="p">[</span><span class="s2">&quot;abs&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;add&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]]</span>
-</code></pre></div>
 <p>The function to add two expressions looks like this:</p>
 <div class="code-sample lang-py" title="expr.py">
 <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">do_add</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
@@ -389,13 +406,14 @@ For example, <code>abs(1+2)</code> is:</p>
 <p class="continue">Its single parameter is a list containing
 the two sub-expressions to be evaluated and added.
 After checking that it has the right number of parameters,
-it calls the function <code>do</code> <a class="gl-ref" href="../glossary/#recursion" markdown="1">recursively</a> to evaluate those sub-expressions.
+it calls an as-yet-unwritten function <code>do</code>
+to evaluate those sub-expressions.
 (We&rsquo;ve called the function <code>do</code> instead of <code>eval</code>
 because Python already has a function called <code>eval</code>.)
 Once <code>do_add</code> has two actual values,
 it adds them and returns the result
-(<a class="fig-ref" href="../interp/#interpreter-recursive-evaluation">Figure 6.1</a>)</p>
-<figure id="interpreter-recursive-evaluation">
+(<a class="fig-ref" href="../interp/#interp-recursive-evaluation">Figure 6.1</a>)</p>
+<figure id="interp-recursive-evaluation">
 <img src="./recursive_evaluation.svg" alt="Recursive evaluation of an expression tree"/>
 <figcaption markdown="1">Figure 6.1: Recursively evaluating the expression <code>abs(1+2)</code>.</figcaption>
 </figure>
@@ -422,17 +440,20 @@ and calculates a different return value:</p>
     <span class="k">return</span> <span class="nb">abs</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
 </code></pre></div>
 </div>
+<p>Notice that <code>do_abs</code> and <code>do_add</code> have the same <a class="gl-ref" href="../glossary/#signature" markdown="1">signature</a>.
+As with the unit testing functions in <a class="x-ref" href="../test/">Chapter 5</a>,
+this allows us to call them interchangeably.</p>
 <p>So how does <code>do</code> work?
 It starts by checking if its input is an integer.
 If so,
 it returns that value right away
-because integers &ldquo;evaluate&rdquo; to themselves:
-no more calculation is needed.
+because integers &ldquo;evaluate&rdquo; to themselves.
 Otherwise,
 <code>do</code> checks that its parameter is a list
 and then uses the first value in the list
 to decide what other function to call.
-This process is often called <a class="gl-ref" href="../glossary/#dispatch" markdown="1">dispatch</a>.</p>
+This lookup-and-call process is the same <a class="gl-ref" href="../glossary/#dynamic_dispatch" markdown="1">dynamic_dispatch</a>
+that we saw in <a class="x-ref" href="../parse/">Chapter 4</a>.</p>
 <div class="code-sample lang-py" title="expr.py">
 <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">do</span><span class="p">(</span><span class="n">expr</span><span class="p">):</span>
     <span class="c1"># Integers evaluate to themselves.</span>
@@ -466,7 +487,8 @@ and prints the result:</p>
 </code></pre></div>
 </div>
 <p>Our program is a list of lists (of lists…)
-so we can read it as <a class="gl-ref" href="../glossary/#json" markdown="1">JSON</a> using <code>json.load</code>.
+so we can read it as <a class="gl-ref" href="../glossary/#json" markdown="1">JSON</a> using <code>json.load</code>
+rather than writing our own parser.
 If our program file contains:</p>
 <div class="code-sample lang-tll" title="expr.tll">
 <div class="highlight"><pre><span></span><code>[&quot;add&quot;, [&quot;abs&quot;, -3], 2]
@@ -479,7 +501,7 @@ If our program file contains:</p>
 </div>
 <p>This is a lot of code to do something that Python already does,
 but it shows what Python (and other languages) do themselves.
-When we run our little interpreter with:</p>
+Suppose we run our little interpreter with:</p>
 <div class="code-sample lang-sh" title="expr.sh">
 <div class="highlight"><pre><span></span><code>python<span class="w"> </span>expr.py<span class="w"> </span>expr.tll
 </code></pre></div>
@@ -489,9 +511,9 @@ turns it into a data structure with operation identifiers and constants,
 then uses those operation identifiers to decide what functions to call.
 Those functions are written in C
 and have been compiled to machine instructions,
-but the cycle of lookup, call, and recurse is exactly the same.</p>
-<h2 id="interpreter-variables">Section 6.2: Variables</h2>
-<p>Adding up constants is a start,
+but the cycle of lookup and call is exactly the same.</p>
+<h2 id="interp-variables">Section 6.3: Variables</h2>
+<p>Doing arithmetic on constants is a start,
 but our programs will be easier to read with variables
 that let us give names to values.
 We can add them to our interpreter
@@ -565,16 +587,62 @@ Our test program is:</p>
 <div class="highlight"><pre><span></span><code>=&gt; 3
 </code></pre></div>
 </div>
-<h2 id="interpreter-introspection">Section 6.3: Introspection Again</h2>
-<p>Before we add more operations,
-let&rsquo;s have a look at the current state of <code>do</code>:</p>
+<div class="callout">
+<h3>Everything Is An Expression</h3>
+<p>Python distinguishes <a class="gl-ref" href="../glossary/#expression" markdown="1">expressions</a> that produce values
+from <a class="gl-ref" href="../glossary/#statement" markdown="1">statements</a> that don&rsquo;t.
+But it doesn&rsquo;t have to, and many languages don&rsquo;t.
+For example,
+Python could have been designed to allow this:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># not actually legal Python</span>
+<span class="n">result</span> <span class="o">=</span>
+    <span class="k">if</span> <span class="n">a</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="mi">1</span>
+    <span class="k">elif</span> <span class="n">a</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="mi">0</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="o">-</span><span class="mi">1</span>
+</code></pre></div>
+</div>
+<h2 id="interp-introspection">Section 6.4: Introspection Again</h2>
+<p>Now that we have evaluation, function lookup, and environments,
+we can write programs like this one,
+which starts with the number 1 and doubles it four times:</p>
+<div class="code-sample lang-tll" title="doubling.tll">
+<div class="highlight"><pre><span></span><code>[
+    &quot;seq&quot;,
+    [&quot;set&quot;, &quot;a&quot;, 1],
+    [&quot;print&quot;, &quot;initial&quot;, [&quot;get&quot;, &quot;a&quot;]],
+    [
+        &quot;repeat&quot;, 4,
+        [
+            &quot;seq&quot;,
+            [&quot;set&quot;, &quot;a&quot;, [&quot;add&quot;, [&quot;get&quot;, &quot;a&quot;], [&quot;get&quot;, &quot;a&quot;]]],
+        [&quot;if&quot;,
+        [&quot;leq&quot;, [&quot;get&quot;, &quot;a&quot;], 10],
+        [&quot;print&quot;, &quot;small&quot;, [&quot;get&quot;, &quot;a&quot;]],
+        [&quot;print&quot;, &quot;large&quot;, [&quot;get&quot;, &quot;a&quot;]]
+        ]
+        ]
+    ]
+]
+</code></pre></div>
+</div>
+<div class="code-sample lang-out" title="doubling.out">
+<div class="highlight"><pre><span></span><code>initial 1
+small 2
+small 4
+small 8
+large 16
+=&gt; None
+</code></pre></div>
+</div>
+<p>However,
+our <code>do</code> function now looks like this:</p>
 <div class="code-sample lang-py" title="vars.py">
 <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">do</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">expr</span><span class="p">):</span>
-    <span class="c1"># Integers evaluate to themselves.</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">expr</span>
-
-    <span class="c1"># Lists trigger function calls.</span>
     <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">expr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;abs&quot;</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">do_abs</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">expr</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
@@ -590,9 +658,12 @@ let&rsquo;s have a look at the current state of <code>do</code>:</p>
 </code></pre></div>
 </div>
 <p>The sequence of <code>if</code> statements that decide what function to call
-is going to become unreadably long.
-Let&rsquo;s use <a class="gl-ref" href="../glossary/#introspection" markdown="1">introspection</a> to create a lookup table instead
-by finding and storing every function whose name starts with <code>do_</code>:</p>
+is becoming unwieldy.
+(Quick:
+can you see if any of the instruction names are accidentally duplicated?)
+We can replace this by using <a class="gl-ref" href="../glossary/#introspection" markdown="1">introspection</a>
+to create a lookup table
+that stores every function whose name starts with <code>do_</code>:</p>
 <div class="code-sample lang-py" title="vars_reflect.py">
 <div class="highlight"><pre><span></span><code><span class="n">OPS</span> <span class="o">=</span> <span class="p">{</span>
     <span class="n">name</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;do_&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">):</span> <span class="n">func</span>
@@ -654,34 +725,12 @@ and what their names are.
 If we use introspection,
 we have to search through the source file (or possibly several files)
 to find all the available operations.</p>
-<h2 id="interpreter-statements">Section 6.4: Statements</h2>
-<p>Now that we have recursive evaluation, function lookup, and environments,
-it&rsquo;s easy to add more features to our little language.
-Our goal is to execute this program,
-which starts with the number 1 and doubles it four times:</p>
-<div class="code-sample lang-tll" title="doubling.tll">
-<div class="highlight"><pre><span></span><code>[
-    &quot;seq&quot;,
-    [&quot;set&quot;, &quot;a&quot;, 1],
-    [&quot;print&quot;, &quot;initial&quot;, [&quot;get&quot;, &quot;a&quot;]],
-    [
-        &quot;repeat&quot;,
-        4,
-        [
-            &quot;seq&quot;,
-            [&quot;set&quot;, &quot;a&quot;, [&quot;add&quot;, [&quot;get&quot;, &quot;a&quot;], [&quot;get&quot;, &quot;a&quot;]]],
-        [&quot;if&quot;,
-        [&quot;leq&quot;, [&quot;get&quot;, &quot;a&quot;], 10],
-        [&quot;print&quot;, &quot;small&quot;, [&quot;get&quot;, &quot;a&quot;]],
-        [&quot;print&quot;, &quot;large&quot;, [&quot;get&quot;, &quot;a&quot;]]
-        ]
-        ]
-    ]
-]
-</code></pre></div>
-</div>
-<p>The simplest of the new operations is <code>comment</code>,
-which does nothing and returns <code>None</code>:</p>
+<h2 class="bonus" id="interp-statements">Section 6.5: Statements</h2>
+<p>One way to evaluate a design is to ask how <a class="gl-ref" href="../glossary/#extensible" markdown="1">extensible</a> it is.
+The answer for our interpreter is now, &ldquo;Pretty easily.&rdquo;
+For example,
+we can add a <code>comment</code> &ldquo;operation&rdquo; that does nothing and returns <code>None</code>
+simply by writing <code>do_comment</code> function:</p>
 <div class="code-sample lang-py" title="stmt.py">
 <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">do_comment</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Ignore instructions.</span>
@@ -724,18 +773,22 @@ even though it&rsquo;s supposed to handle that case.
 In this case it might seem obvious what the language should do,
 but most languages use lazy evaluation for <code>and</code> and <code>or</code> as well
 so that expressions like:</p>
-<div class="highlight"><pre><span></span><code><span class="n">reference</span> <span class="ow">and</span> <span class="n">reference</span><span class="o">.</span><span class="n">part</span>
+<div class="highlight"><pre><span></span><code><span class="n">thing</span> <span class="ow">and</span> <span class="n">thing</span><span class="o">.</span><span class="n">part</span>
 </code></pre></div>
-<p class="continue">will produce <code>None</code> if <code>reference</code> is <code>None</code>
+<p class="continue">will produce <code>None</code> if <code>thing</code> is <code>None</code>
 and <code>reference.part</code> if it isn&rsquo;t.</p>
-<p><span class="fixme">FIXME explain repeat loops</span></p>
-<h2 id="interpreter-summary">Section 6.5: Summary</h2>
-<figure id="interpreter-concept-map">
+<p>While our interpreter is extensible,
+our little language is not:
+there is no way for a user to define and call functions of their own
+within the little language itself.
+We will tackle this in <a class="x-ref" href="../func/">Chapter 7</a>.</p>
+<h2 id="interp-summary">Section 6.6: Summary</h2>
+<figure id="interp-concept-map">
 <img src="./concept_map.svg" alt="Concept map of interpreter"/>
 <figcaption markdown="1">Figure 6.2: Interpreter concept map.</figcaption>
 </figure>
 
-<h2 id="interpreter-exercises">Section 6.6: Exercises</h2>
+<h2 id="interp-exercises">Section 6.7: Exercises</h2>
 <h3 class="exercise">Arrays</h3>
 <p>Implement fixed-size one-dimensional arrays:
 <code>["array", 10]</code> creates an array of 10 elements,
