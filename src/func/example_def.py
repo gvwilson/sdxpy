@@ -1,3 +1,8 @@
+# [python]
+def same(num):
+    return num
+# [/python]
+
 # [def]
 ["def", "same", ["num"], ["get", "num"]]
 # [/def]

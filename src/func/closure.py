@@ -1,8 +1,7 @@
-def make_hidden(value):
+def make_hidden(thing):
     def _inner():
-        return value
+        return thing
     return _inner
 
-
 m = make_hidden("example")
-print("hidden value is", m())
+print("hidden thing is", m())

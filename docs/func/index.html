@@ -293,6 +293,14 @@
   
 
   
+  <ul class="syllabus">
+  
+  <li markdown="1">FIXME</li>
+  
+  </ul>
+  
+
+  
 
   
 
@@ -315,81 +323,143 @@
 
           
 <p class="definitions">
-  Terms defined: <a class="gl-ref" href="../glossary/#call_stack" markdown="1">call stack</a>, <a class="gl-ref" href="../glossary/#dynamic_scoping" markdown="1">dynamic scoping</a>, <a class="gl-ref" href="../glossary/#extensibility" markdown="1">extensibility</a>, <a class="gl-ref" href="../glossary/#lexical_scoping" markdown="1">lexical scoping</a>, <a class="gl-ref" href="../glossary/#stack_frame" markdown="1">stack frame</a>
+  Terms defined: <a class="gl-ref" href="../glossary/#anonymous_function" markdown="1">anonymous function</a>, <a class="gl-ref" href="../glossary/#call_stack" markdown="1">call stack</a>, <a class="gl-ref" href="../glossary/#closure" markdown="1">closure</a>, <a class="gl-ref" href="../glossary/#decorator" markdown="1">decorator</a>, <a class="gl-ref" href="../glossary/#dynamic_scoping" markdown="1">dynamic scoping</a>, <a class="gl-ref" href="../glossary/#eager_evaluation" markdown="1">eager evaluation</a>, <a class="gl-ref" href="../glossary/#extensibility" markdown="1">extensibility</a>, <a class="gl-ref" href="../glossary/#lambda_expression" markdown="1">lambda expression</a>, <a class="gl-ref" href="../glossary/#lazy_evaluation" markdown="1">lazy evaluation</a>, <a class="gl-ref" href="../glossary/#lexical_scoping" markdown="1">lexical scoping</a>, <a class="gl-ref" href="../glossary/#scope" markdown="1">scope</a>, <a class="gl-ref" href="../glossary/#stack_frame" markdown="1">stack frame</a>, <a class="gl-ref" href="../glossary/#variable_capture" markdown="1">variable capture</a>
 </p>
 
 
           <div class="page-toc"></div>
-          <h2 id="interpreter-functions">Section 7.1: Functions</h2>
-<p>One way to evaluate the design of a piece of software is
+          <p>One way to evaluate the design of a piece of software is
 to ask how <a class="gl-ref" href="../glossary/#extensibility" markdown="1">extensible</a> it is,
 i.e.,
 how easily we can add or change things <span class="bib-ref">[<a class="bib-ref" href="../bibliography/#Wilson2022a">Wilson2022a</a>]</span>.
-The answer for our interpreter is now, &ldquo;Pretty easily,&rdquo;
-but for our little language is, &ldquo;Not at all,&rdquo;
-because there&rsquo;s no way for users to create new operations of their own.
-We need to give users a way to define and call functions.</p>
-<p>Doing this takes less than 60 lines:</p>
-<ol>
-<li>
-<p>A function definition looks like:</p>
+The answer for the interpreter of <a class="x-ref" href="../interp/">Chapter 6</a> is, &ldquo;Pretty easily,&rdquo;
+but the answer for the little language it interprets is, &ldquo;Not at all,&rdquo;
+because there is currently no way for users to create new operations of their own.
+We need to give users a way to define and call functions.
+Doing this will take less than 60 lines of code,
+and once we understand how definition works,
+we will be able to understand
+how some more advanced features of modern programming languages work as well.</p>
+<h2 id="func-defstore">Section 7.1: Definition and Storage</h2>
+<p>Let&rsquo;s start by defining a function that takes a single parameter
+and immediately returns it.
+In Python,
+this is:</p>
+<div class="code-sample lang-py" title="example_def.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">same</span><span class="p">(</span><span class="n">num</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">num</span>
+</code></pre></div>
+</div>
+<p class="continue">It has a name,
+a (possibly empty) list of parameter names,
+and a body,
+which in this case is a single statement.
+Its equivalent in our little language is:</p>
+<div class="code-sample lang-py" title="example_def.py">
 <div class="highlight"><pre><span></span><code><span class="p">[</span><span class="s2">&quot;def&quot;</span><span class="p">,</span> <span class="s2">&quot;same&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;num&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;get&quot;</span><span class="p">,</span> <span class="s2">&quot;num&quot;</span><span class="p">]]</span>
 </code></pre></div>
-<p>It has a name, a (possibly empty) list of parameter names,
-and a single instruction as a body
-(which will usually be a <code>"seq"</code> instruction).</p>
-</li>
-<li>
-<p>Functions are stored in the environment like any other value.
-    The value stored for the function defined above would be:</p>
-<div class="highlight"><pre><span></span><code><span class="p">[</span><span class="s2">&quot;func&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;num&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;get&quot;</span><span class="p">,</span> <span class="s2">&quot;num&quot;</span><span class="p">]]</span>
-</code></pre></div>
-<p>We don&rsquo;t need to store the name: that&rsquo;s recorded by the environment,
-just like it is for any other variable.</p>
-</li>
-<li>
-<p>A function call looks like:</p>
+</div>
+<p>In Python,
+we would call this function as <code>same(3)</code>.
+Our little language requires us to specify an operator explicitly,
+so we write the call as:</p>
+<div class="code-sample lang-py" title="example_def.py">
 <div class="highlight"><pre><span></span><code><span class="p">[</span><span class="s2">&quot;call&quot;</span><span class="p">,</span> <span class="s2">&quot;same&quot;</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>
 </code></pre></div>
-<p>The values passed to the functions are normally expressions rather than constants,
-and are <em>not</em> put in a sub-list.
-The implementation:
-1.  Evaluates all of these expressions.
-2.  Looks up the function.
-3.  Creates a new environment whose keys are the parameters&rsquo; names
-    and whose values are the expressions&rsquo; values.
-4.  Calls <code>do</code> to run the function&rsquo;s action and captures the result.
-5.  Discards environment created two steps previously.
-6.  Returns the function&rsquo;s result.</p>
+</div>
+<p>The arguments passed to the functions can be expressions rather than constants,
+so we have to evaluate them when we make the call.
+We have decided not to put them in a sub-list
+in order to save ourselves one more layer of parentheses.</p>
+<div class="callout">
+<h3>Eager and Lazy</h3>
+<p>We said above that we have to evaluate a function&rsquo;s arguments when we call it,
+which is called <a class="gl-ref" href="../glossary/#eager_evaluation" markdown="1">eager evaluation</a>.
+We could instead use <a class="gl-ref" href="../glossary/#lazy_evaluation" markdown="1">lazy evaluation</a>,
+in which case we would pass the argument sub-lists into the function
+and let the function evaluate them when it needed their values.
+Python and most other languages use the former strategy,
+but a handful of languages, such as R, use the latter.
+It&rsquo;s a bit more work,
+but it allows the function to inspect the expressions it has been called with
+and decide how to handle them.</p>
+</div>
+<p>Between defining and calling a function,
+we must store it somewhere.
+Since we are using lists for everything else,
+we will use them for stored functions as well:</p>
+<div class="code-sample lang-py" title="example_def.py">
+<div class="highlight"><pre><span></span><code><span class="p">[</span><span class="s2">&quot;func&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;num&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;get&quot;</span><span class="p">,</span> <span class="s2">&quot;num&quot;</span><span class="p">]]</span>
+</code></pre></div>
+</div>
+<p>Notice that we don&rsquo;t store the function&rsquo;s name with it.
+Instead,
+we are going to store functions in the environment
+in exactly the same way that we store other values.</p>
+<div class="callout">
+<h3>Anonymity</h3>
+<p>We could skip the special syntax for definition a function
+and define them by creating the list that we&rsquo;re going to store (as shown above)
+and then assigning it to a name in the environment:</p>
+<div class="code-sample lang-py" title="example_def.py">
+<div class="highlight"><pre><span></span><code><span class="p">[</span><span class="s2">&quot;set&quot;</span><span class="p">,</span> <span class="s2">&quot;same&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;func&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;num&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;get&quot;</span><span class="p">,</span> <span class="s2">&quot;num&quot;</span><span class="p">]]]</span>
+</code></pre></div>
+</div>
+<p class="continue">In this case,
+the function itself is <a class="gl-ref" href="../glossary/#anonymous_function" markdown="1">anonymous</a>.
+JavaScript makes heavy use of anonymous functions;
+Python supports a very limited version of them
+using <a class="gl-ref" href="../glossary/#lambda_expression" markdown="1">lambda expressions</a>:</p>
+<div class="code-sample lang-py" title="example_def.py">
+<div class="highlight"><pre><span></span><code><span class="n">double</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">x</span>
+<span class="n">double</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+<h2 id="func-call">Section 7.2: Calling Functions</h2>
+<p>The last step in our implementation is to make sure that
+local variables defined inside a function
+don&rsquo;t overwrite variables defined outside the function.
+In other words,
+we need to implement <a class="gl-ref" href="../glossary/#scope" markdown="1">scope</a>.
+When a function is called with one or more expressions as arguments,
+we will:</p>
+<ol>
+<li>
+<p>Evaluate all of these expressions.</p>
 </li>
 <li>
-<p>Instead of using a single dictionary to store an environment
-    we use a list of dictionaries.
-    The first dictionary is the global environment;
-    the others store the variables belonging to active function calls.</p>
+<p>Look up the function.</p>
 </li>
 <li>
-<p>When we get or set a variable,
-    we check the most recent environment first
-    (i.e., the one that&rsquo;s last in the list);
-    if the variable isn&rsquo;t there we look in the global environment.
-    We don&rsquo;t look at the environments in between;
-    the exercises explore why not.</p>
+<p>Create a new environment whose keys are the parameters&rsquo; names
+    and whose values are the expressions&rsquo; values.</p>
+</li>
+<li>
+<p>Call <code>do</code> to run the function&rsquo;s action and captures the result.</p>
+</li>
+<li>
+<p>Discard the environment created in step 3.</p>
+</li>
+<li>
+<p>Return the function&rsquo;s result.</p>
 </li>
 </ol>
+<p>To make this work,
+the environment must be a list of dictionaries instead of a single dictionary.
+This list is the <a class="gl-ref" href="../glossary/#call_stack" markdown="1">call stack</a> of our program,
+and each dictionary in it is usually called a <a class="gl-ref" href="../glossary/#stack_frame" markdown="1">stack frame</a>.
+When a function wants the value associated with a name,
+we look through the list from the most recent dictionary to the oldest.</p>
 <div class="callout">
-<h3>Scoping rules</h3>
-<p>The set of active environments makes up the program&rsquo;s
-<span class="ix-entry" ix-key="call stack" markdown="1"><a class="gl-ref" href="../glossary/#call_stack" markdown="1">call stack</a></span>.
-For historical reasons,
-each environment is sometimes called a <span class="ix-entry" ix-key="call stack!stack frame;stack frame" markdown="1"><a class="gl-ref" href="../glossary/#stack_frame" markdown="1">stack frame</a></span>.
-Searching through all active stack frames for a variable
+<h3>Scoping Rules</h3>
+<p>Searching through all active stack frames for a variable
 is called is <span class="ix-entry" ix-key="dynamic scoping;scoping!dynamic" markdown="1"><a class="gl-ref" href="../glossary/#dynamic_scoping" markdown="1">dynamic scoping</a></span>.
 In contrast,
 most programming languages used <span class="ix-entry" ix-key="lexical scoping;scoping!lexical" markdown="1"><a class="gl-ref" href="../glossary/#lexical_scoping" markdown="1">lexical scoping</a></span>,
 which figures out what a variable name refers to based on the structure of the program text.</p>
 </div>
-<p>Here&rsquo;s the implementation of <code>do_def</code>:</p>
+<p>The completed implementation of function definition is:</p>
 <div class="code-sample lang-py" title="func.py">
 <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">do_def</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
     <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span>
@@ -400,7 +470,7 @@ which figures out what a variable name refers to based on the structure of the p
     <span class="k">return</span> <span class="kc">None</span>
 </code></pre></div>
 </div>
-<p class="continue">And here&rsquo;s the implementation of <code>do_call</code>:</p>
+<p class="continue">The completed implementation of function call is:</p>
 <div class="code-sample lang-py" title="func.py">
 <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">do_call</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
     <span class="c1"># Set up the call.</span>
@@ -452,6 +522,252 @@ The interpreter
 reads an instruction,
 figures out what operation it corresponds to,
 and executes that operation.</p>
+<h2 id="func-closure">Section 7.3: Closures</h2>
+<p>We normally define functions at the top level of our program,
+but Python and most other modern languages
+allow us to define functions within functions.
+And since functions are just another kind of data,
+we can return that inner function:</p>
+<div class="code-sample lang-py" title="closure.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">make_hidden</span><span class="p">(</span><span class="n">thing</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_inner</span><span class="p">():</span>
+        <span class="k">return</span> <span class="n">thing</span>
+    <span class="k">return</span> <span class="n">_inner</span>
+
+<span class="n">m</span> <span class="o">=</span> <span class="n">make_hidden</span><span class="p">(</span><span class="s2">&quot;example&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;hidden thing is&quot;</span><span class="p">,</span> <span class="n">m</span><span class="p">())</span>
+</code></pre></div>
+</div>
+<div class="code-sample lang-out" title="closure.out">
+<div class="highlight"><pre><span></span><code>hidden value is example
+</code></pre></div>
+</div>
+<p>The inner function <a class="gl-ref" href="../glossary/#variable_capture" markdown="1">captures</a>
+the variables in the enclosing function
+to create a <a class="gl-ref" href="../glossary/#closure" markdown="1">closure</a>.
+Doing this is a way to make data private:
+once <code>make_hidden</code> returns <code>_inner</code> and we assign it to <code>m</code> in the example above,
+nothing else in our program can access
+the value that was passed to <code>make_hidden</code> as <code>thing</code>.</p>
+<p>Here&rsquo;s a more useful example of this technique:</p>
+<div class="code-sample lang-py" title="adder.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">make_adder</span><span class="p">(</span><span class="n">to_add</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_inner</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">value</span> <span class="o">+</span> <span class="n">to_add</span>
+    <span class="k">return</span> <span class="n">_inner</span>
+
+<span class="n">adder_func</span> <span class="o">=</span> <span class="n">make_adder</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">adder_func</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+</code></pre></div>
+</div>
+<div class="code-sample lang-out" title="adder.out">
+<div class="highlight"><pre><span></span><code>101
+</code></pre></div>
+</div>
+<p class="continue">As <a class="fig-ref" href="../func/#func-closure">Figure 7.1</a> shows,
+we have essentially created a way to build functions <em>now</em>
+that remember the values they&rsquo;re supposed to add <em>later</em>.</p>
+<figure id="func-closure">
+<img src="./closure.svg" alt="Closures"/>
+<figcaption markdown="1">Figure 7.1: Closures</figcaption>
+</figure>
+
+<p>We can use closures to implement objects with truly private data.
+In the code below,
+for example,
+the function <code>make_object</code> creates a dictionary
+that exposes two functions:</p>
+<div class="code-sample lang-py" title="oop.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">make_object</span><span class="p">(</span><span class="o">**</span><span class="n">kwarg</span><span class="p">):</span>
+    <span class="n">private</span> <span class="o">=</span> <span class="n">kwarg</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">getter</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">private</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">setter</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="n">private</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;get&quot;</span><span class="p">:</span> <span class="n">getter</span><span class="p">,</span> <span class="s2">&quot;set&quot;</span><span class="p">:</span> <span class="n">setter</span><span class="p">}</span>
+
+<span class="n">obj</span> <span class="o">=</span> <span class="n">make_object</span><span class="p">(</span><span class="n">thing</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;initial value&quot;</span><span class="p">,</span> <span class="n">obj</span><span class="p">[</span><span class="s2">&quot;get&quot;</span><span class="p">](</span><span class="s2">&quot;thing&quot;</span><span class="p">))</span>
+<span class="n">obj</span><span class="p">[</span><span class="s2">&quot;set&quot;</span><span class="p">](</span><span class="s2">&quot;thing&quot;</span><span class="p">,</span> <span class="mi">99</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;obj[&#39;thing&#39;] is now&quot;</span><span class="p">,</span> <span class="n">obj</span><span class="p">[</span><span class="s2">&quot;get&quot;</span><span class="p">](</span><span class="s2">&quot;thing&quot;</span><span class="p">))</span>
+</code></pre></div>
+</div>
+<div class="code-sample lang-out" title="oop.out">
+<div class="highlight"><pre><span></span><code>initial value 0
+obj[&#39;thing&#39;] is now 99
+</code></pre></div>
+</div>
+<p class="continue">These functions both refer to a dictionary called <code>private</code>,
+through which they can share data,
+but nothing else in the program has access to that dictionary
+(<a class="fig-ref" href="../func/#func-objects">Figure 7.2</a>).</p>
+<figure id="func-objects">
+<img src="./objects.svg" alt="Objects as closures"/>
+<figcaption markdown="1">Figure 7.2: Implementing objects using closures</figcaption>
+</figure>
+
+<p>It&rsquo;s easy to become confused when working with closures.
+For example,
+suppose we want to create a function called <code>logging</code>
+that prints a message before and after
+each call to some other arbitrary function.
+We could try to do it like this:</p>
+<div class="code-sample lang-py" title="wrap_infinite.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">original</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;original: </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">logging</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;before call&quot;</span><span class="p">)</span>
+    <span class="n">original</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;after call&quot;</span><span class="p">)</span>
+
+<span class="n">original</span> <span class="o">=</span> <span class="n">logging</span>
+<span class="n">original</span><span class="p">(</span><span class="s2">&quot;example&quot;</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<p>but when we try to call <code>original</code> we wind up in an infinite loop.
+The wrapped version of our function refers to <code>original</code>,
+but Python looks that up at the time of call,
+which means it calls the wrapped function instead.
+We can solve this problem by creating a closure:</p>
+<div class="code-sample lang-py" title="wrap_capture.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">original</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;original: </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">logging</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_inner</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;before call&quot;</span><span class="p">)</span>
+        <span class="n">func</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;after call&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_inner</span>
+
+<span class="n">original</span> <span class="o">=</span> <span class="n">logging</span><span class="p">(</span><span class="n">original</span><span class="p">)</span>
+<span class="n">original</span><span class="p">(</span><span class="s2">&quot;example&quot;</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<div class="code-sample lang-out" title="wrap_capture.out">
+<div class="highlight"><pre><span></span><code>before call
+original: example
+after call
+</code></pre></div>
+</div>
+<p>Doing this also gives us a way to pass extra arguments
+when we create the wrapped function:</p>
+<div class="code-sample lang-py" title="wrap_param.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">original</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;original: </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">logging</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">label</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_inner</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;++ </span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">func</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;-- </span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_inner</span>
+
+<span class="n">original</span> <span class="o">=</span> <span class="n">logging</span><span class="p">(</span><span class="n">original</span><span class="p">,</span> <span class="s2">&quot;call&quot;</span><span class="p">)</span>
+<span class="n">original</span><span class="p">(</span><span class="s2">&quot;example&quot;</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<div class="code-sample lang-out" title="wrap_param.out">
+<div class="highlight"><pre><span></span><code>++ call
+original: example
+-- call
+</code></pre></div>
+</div>
+<p>Wrapping functions like this is so useful
+that Python provides a special syntax for doing it
+called a <a class="gl-ref" href="../glossary/#decorator" markdown="1">decorator</a>.
+We define the function that does the wrapping as before,
+but then use <code>@wrap</code> to apply it
+rather than <code>name = wrap(name)</code>:</p>
+<div class="code-sample lang-py" title="decorator_simple.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">wrap</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_inner</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;before call&quot;</span><span class="p">)</span>
+        <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;after call&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_inner</span>
+
+<span class="nd">@wrap</span>
+<span class="k">def</span> <span class="nf">original</span><span class="p">(</span><span class="n">message</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;original: </span><span class="si">{</span><span class="n">message</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="n">original</span><span class="p">(</span><span class="s2">&quot;example&quot;</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<div class="code-sample lang-out" title="decorator_simple.out">
+<div class="highlight"><pre><span></span><code>before call
+original: example
+after call
+</code></pre></div>
+</div>
+<p>If we want to pass parameters at the time we apply the decorator,
+though,
+it seems like we&rsquo;re stuck,
+because a Python decorator must take exactly one argument,
+which must be the function we want to decorate.
+If we want to pass extra parameters,
+we need to call a function that returns a function of one parameter
+that we can then use as a decorator.
+This means that we need to define a function inside a function <em>inside another function</em>
+to create a closure that captures the parameters:</p>
+<div class="code-sample lang-py" title="decorator_param.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">wrap</span><span class="p">(</span><span class="n">label</span><span class="p">):</span>                  <span class="c1"># function returning a decorator</span>
+    <span class="k">def</span> <span class="nf">_decorate</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>          <span class="c1"># the actual decorator</span>
+        <span class="k">def</span> <span class="nf">_inner</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>        <span class="c1"># the wrapped function</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;++ </span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>  <span class="c1"># &#39;label&#39; is visible because</span>
+            <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>           <span class="c1"># it&#39;s captured in the closure</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;-- </span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>  <span class="c1"># of &#39;_decorate&#39;</span>
+        <span class="k">return</span> <span class="n">_inner</span>
+    <span class="k">return</span> <span class="n">_decorate</span>
+
+<span class="nd">@wrap</span><span class="p">(</span><span class="s2">&quot;wrapping&quot;</span><span class="p">)</span>                 <span class="c1"># call &#39;wrap&#39; to get a decorator</span>
+<span class="k">def</span> <span class="nf">original</span><span class="p">(</span><span class="n">message</span><span class="p">):</span>            <span class="c1"># decorator applied here</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;original: </span><span class="si">{</span><span class="n">message</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="n">original</span><span class="p">(</span><span class="s2">&quot;example&quot;</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<div class="code-sample lang-out" title="decorator_param.out">
+<div class="highlight"><pre><span></span><code>++ wrapping
+original: example
+-- wrapping
+</code></pre></div>
+</div>
+<div class="callout">
+<h3>Design Flaw</h3>
+<p>Decorators didn&rsquo;t need to be this complicated.
+In order to define a method that takes \( N \) parameters in Python,
+we have to write a function of \( N+1 \) parameters,
+the first of which represents the object for which the method is being called.
+Python could have done the same thing with decorators,
+i.e.,
+allowed people to define a function of \( N+1 \) parameters
+and have <code>@</code> fill in the first automatically:</p>
+<div class="code-sample lang-py" title="decorators_simple.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">decorator</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">label</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_inner</span><span class="p">(</span><span class="n">arg</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;entering </span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">func</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_inner</span>
+
+<span class="nd">@decorator</span><span class="p">(</span><span class="s2">&quot;message&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">double</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>           <span class="c1"># equivalent to</span>
+    <span class="k">return</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">x</span>         <span class="c1"># double = decorator(double, &quot;message&quot;)</span>
+</code></pre></div>
+</div>
+<p>But this isn&rsquo;t the path Python took,
+and as a result,
+decorators are much harder to learn and use than they could have been.</p>
+</div>
+<h2>Summary</h2>
+<figure id="func-concept-map">
+<img src="./concept_map.svg" alt="Concept map of functions and closures"/>
+<figcaption markdown="1">Figure 7.3: Concept map</figcaption>
+</figure>
         </main>
       </div>
     </div>
