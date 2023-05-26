@@ -6,16 +6,23 @@ syllabus:
 -   A program can introspect to find functions and other objects at runtime.
 ---
 
+Not all software needs rigorous testing:
+the best way to check a one-off data analysis script,
+for example,
+is to build it incrementally,
+looking at the output of each new stage as it's added.
+But we should all be grateful that
+98% of the code in the [SQLite][sqlite] database
+is there to make the other 2% always does the right thing.
 
 We're going to write a lot of programs in this book.
 To make sure they work correctly,
-we're also going to write a lot of [%g unit_test "unit tests" %] [%b Aniche2022 %].
-Most developers don't enjoy doing this,
-so good unit testing tools minimize the effort required.
-One way they do this is to find and run tests automatically [%b Meszaros2007 %].
-To show how,
-this chapter builds a simple unit testing framework.
-It also introduces the single most important idea in this book:
+we're also going to write a lot of [%g unit_test "unit tests" %]
+[%b  Meszaros2007,Aniche2022 %].
+To make those tests easier to write (so that we actually write them)
+we use a unit testing framework that finds and run tests automatically.
+Our tool is inspired by [pytest][pytest],
+and introduces the single most important idea in this book:
 
 <div class="center" markdown="1">
   *Programs are just another kind of data.*
@@ -42,18 +49,33 @@ and assigns that object to the variable `example`:
    caption="Bytes can be interpreted as text, images, instructions, and more."
 %]
 
-We can assign the function to another variable:
-
-[% inc file="func_obj.py" keep="alias" %]
-
-or replace the function by assigning a new value
-to the original variable:
+We can assign the function to another variable
+and then call the function by referencing that variable:
 {: .continue}
 
 [% inc file="func_obj.py" keep="alias" %]
 [% inc file="func_obj.out" %]
 
-We can also store functions in a list just like numbers or strings
+<div class="callout" markdown="1">
+
+### Checking Types
+
+Python is a [%g dynamic_typing "dynamically typed" %] language,
+which means that it checks the types of values as the program is running.
+We can do this ourselves using its built-in `type` function,
+which will tell us that `3` is an integer:
+
+[% inc pat="type_int.*" fill="py out" %]
+
+or that a function is a function:
+{: .continue}
+
+[% inc pat="type_func.*" fill="py out" %]
+
+</div>
+
+Since functions are objects,
+we can store them in a list just like numbers or strings
 ([%f tester-func-list %]):
 
 [% inc pat="func_list.*" fill="py out" %]
@@ -69,7 +91,13 @@ When we loop over the list `everything`,
 Python assigns each function to the variable `func` in turn.
 We can then call the function as `func()`
 just as we called `example` using `alias()`.
-{: .continue}
+In order for this to work,
+though,
+all of the functions in the list must have the same [%g signature "signature" %],
+i.e.,
+they must all take the same number of parameters
+in the same order
+so that we can call them interchangeably.
 
 Now suppose we have a function we want to test:
 
@@ -138,25 +166,15 @@ doesn't affect other tests' behavior.
 ## Finding Functions {: #tester-reflection}
 
 Making lists of functions is clumsy and error-prone:
-sooner or later we'll add a test twice or forget to add it at all.
+sooner or later we'll add a function to `TESTS` twice
+or forget to add it at all.
 We'd therefore like our test runner to find tests for itself,
 which it can do by exploiting the fact that
 Python stores variables in a structure similar to a dictionary.
 
 Run the Python interpreter and call the `globals` function:
 
-```
->>> globals()
-{
-    '__name__': '__main__',
-    '__doc__': None,
-    '__package__': None,
-    '__loader__': <class '_frozen_importlib.BuiltinImporter'>,
-    '__spec__': None,
-    '__annotations__': {},
-    '__builtins__': <module 'builtins' (built-in)>
-}
-```
+[% inc pat="globals.*" fill="py out" %]
 
 As the output shows,
 `globals` is a dictionary containing
@@ -169,20 +187,7 @@ Python uses double underscores for names that mean something special to it.)
 
 What happens when we define a variable of our own?
 
-```
->>> my_variable = 123
->>> globals()
-{
-    '__name__': '__main__',
-    '__doc__': None,
-    '__package__': None,
-    '__loader__': <class '_frozen_importlib.BuiltinImporter'>,
-    '__spec__': None,
-    '__annotations__': {},
-    '__builtins__': <module 'builtins' (built-in)>,
-    'my_variable': 123
-}
-```
+[% inc pat="globals_plus.*" fill="py out" %]
 
 Sure enough,
 `my_variable` is now in the dictionary.
@@ -220,44 +225,9 @@ and summarizes their results:
 [% inc file="runner.py" keep="run" %]
 [% inc file="runner.out" %]
 
-<div class="callout" markdown="1">
+<div class="bonus" markdown="1">
 
-### Calling Conventions
-
-We actually can't call a function we've found by introspection unless:
-
-1.  we know its [%g signature "signature" %]
-    (i.e, how many parameters of what type it needs in what order)
-    or
-
-2.  the function uses `*args*` or `**kwargs` to capture "extra" arguments.
-
-To keep things simple,
-most unit testing frameworks require test functions to take no parameters
-so that they can be called as `test()`.
-
-</div>
-
-<div class="callout" markdown="1">
-
-### Any Sufficiently Premature Technology
-
-[Clarke's Third Law][clarkes_laws] is that
-any sufficiently advanced technology is indistinguishable from magic.
-The same is true of technologies that we encounter
-before we have the background knowledge they depend on.
-The three lines that import a Python file as a module
-will seem reasonable (and possibly even a little dull)
-once we know more about how programming languages work.
-Until we do,
-the sensible strategy is to copy, paste, and move on.
-Even the most experienced programmers do this when working in a new domain:
-it's easier to learn things once we have more context,
-so setting a problem aside and returning to it later can save a lot of time.
-
-</div>
-
-## Going Further {: #tester-further}
+## Going Further {: #tester-further .bonus}
 
 Since functions are objects,
 they can have attributes.
@@ -317,7 +287,31 @@ our test runner becomes:
 
 [% inc file="attribute.py" keep="run" %]
 
+</div>
+
 ## Summary {: #tester-summary}
+
+[Clarke's Third Law][clarkes_laws] is that
+any sufficiently advanced technology is indistinguishable from magic.
+The same is true of technologies that we encounter
+before we have the background knowledge they depend on.
+The code that finds tests dynamically seems reasonable
+(and possibly even a little dull)
+to an expert who understands how programming languages work,
+but is incomprehensible magic to a novice.
+
+[% figure
+   slug="test-comprehension"
+   img="comprehension.svg"
+   alt="Abstract vs. comprehension"
+   caption="Abstraction vs. comprehension for novices and experts."
+%]
+
+In general,
+experts understand lower and higher abstraction levels than novices,
+and a person's preferred level of abstraction shifts with experience
+([%f test-comprehension %]).
+Code that is optimal for one reader may therefore not be optimal for another.
 
 [% figure
    slug="tester-concept-map"
