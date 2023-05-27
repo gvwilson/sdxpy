@@ -79,4 +79,4 @@ This book is also designed for:
 | vm        | done   | done   | done     | done      | done   | 100%    |
 | debugger  | done   | done   | done     | done      | done   | 100%    |
 | finale    | N/A    | done   | N/A      | N/A       | done   | 100%    |
-|           |        |        |          |           |        | *71%*   |
+|           |        |        |          |           |        | *72%*   |

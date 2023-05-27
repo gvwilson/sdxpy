@@ -8,7 +8,7 @@ import utils
 
 
 RE_EXERCISE = re.compile(r"\{:\s+\.exercise\}")
-RE_STATUS = re.compile(r"\|\s*(\d+)%\s*\|")
+RE_STATUS = re.compile(r"\|\s*\*?(\d+)%\*?\s*\|")
 
 
 def main():
