@@ -76,7 +76,7 @@ This book is also designed for:
 | server    | done   | -      | done     | done      | done   |  75%    |
 | editor    | revise | -      | -        | -         | -      |  10%    |
 | undo      | -      | -      | -        | -         | -      |   0%    |
-| vm        | done   | done   | done     | done      | done   | 100%    |
-| debugger  | done   | done   | done     | done      | done   | 100%    |
-| finale    | N/A    | done   | N/A      | N/A       | done   | 100%    |
+| vm        | done   | done   | done     | done      | done   | *100%*  |
+| debugger  | done   | done   | done     | done      | done   | *100%*  |
+| finale    | N/A    | done   | N/A      | N/A       | done   | *100%*  |
 |           |        |        |          |           |        | *74%*   |
