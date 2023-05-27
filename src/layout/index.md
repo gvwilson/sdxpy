@@ -317,7 +317,7 @@ Thinking in these terms leads to a methodology called
 
 ## Exercises {: #layout-exercises}
 
-### Refactoring the node classes {: .exercise}
+### Refactoring {: .exercise}
 
 Refactor the classes used to represent blocks, rows, and columns so that:
 
@@ -325,20 +325,20 @@ Refactor the classes used to represent blocks, rows, and columns so that:
 
 2.  All common behavior is defined in that parent (if only with placeholder methods).
 
-### Recycling nodes {: .exercise}
+### Recycling {: .exercise}
 
 Modify the wrapping code so that new rows and columns are only created if needed.
 For example,
 if a row of width 10 contains a text node that is only 4 characters wide,
 a new row and column are *not* inserted.
 
-### Rendering a clear background {: .exercise}
+### Rendering a Clear Background {: .exercise}
 
 Modify the rendering code so that only the text in block nodes is shown,
 i.e.,
 so that the empty space in rows and columns is rendered as spaces.
 
-### Clipping text {: .exercise}
+### Clipping Text {: .exercise}
 
 1.  Modify the wrapping and rendering so that
     if a block of text is too wide for the available space
@@ -350,12 +350,12 @@ so that the empty space in rows and columns is rendered as spaces.
 2.  Extend your solution to break lines on spaces as needed
     in order to avoid clipping.
 
-### Bidirectional rendering {: .exercise}
+### Bidirectional Rendering {: .exercise}
 
 Modify the existing software to do either left-to-right or right-to-left rendering
 upon request.
 
-### Equal sizing {: .exercise}
+### Equal Sizing {: .exercise}
 
 Modify the existing code to support elastic columns,
 i.e.,
@@ -363,7 +363,7 @@ so that all of the columns in a row are automatically sized to have the same wid
 If the number of columns does not divide evenly into the width of the row,
 allocate the extra space as equally as possible from left to right.
 
-### Drawing borders {: .exercise}
+### Drawing Borders {: .exercise}
 
 1.  Modify the existing code so that elements are drawn with borders like this:
 
@@ -373,7 +373,7 @@ allocate the extra space as equally as possible from left to right.
     +----+
     ```
 
-### Padding elements {: .exercise}
+### Padding Elements {: .exercise}
 
 Modify the existing code so that:
 

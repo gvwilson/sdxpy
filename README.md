@@ -64,7 +64,7 @@ This book is also designed for:
 | oop       | done   | done   | done     | done      | done   | *100%*  |
 | check     | done   | done   | done     | -         | -      |  50%    |
 | template  | done   | done   | done     | done      | done   | *100%*  |
-| layout    | done   | done   | done     | done      | -      |  75%    |
+| layout    | done   | done   | done     | done      | done   | *100%*  |
 | lint      | done   | done   | done     | -         | done   |  50%    |
 | perf      | done   | done   | done     | done      | done   | 100%    |
 | persist   | done   | done   | done     | done      | done   | 100%    |
@@ -79,4 +79,4 @@ This book is also designed for:
 | vm        | done   | done   | done     | done      | done   | 100%    |
 | debugger  | done   | done   | done     | done      | done   | 100%    |
 | finale    | N/A    | done   | N/A      | N/A       | done   | 100%    |
-|           |        |        |          |           |        | *73%*   |
+|           |        |        |          |           |        | *74%*   |
