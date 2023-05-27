@@ -1,3 +1,15 @@
+---
+syllabus:
+-   Objects are useful without classes, but classes make them easier to understand.
+-   A well-designed class defines a contract that code using its instances can rely on.
+-   Objects that respect the same contract are polymorphic, i.e.,
+    they can be used interchangeably even if they do different specific things.
+-   Objects and classes can be thought of as dictionaries with stereotyped behavior.
+-   Most programming languages allow functions and methods to take a variable number of arguments.
+-   Inheritance can be implemented in several ways
+    that differ in the order in which objects and classes are searched for methods.
+---
+
 We have created a lot of objects and classes in previous lessons.
 Historically,
 they were invented to solve two problems:
