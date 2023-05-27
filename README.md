@@ -63,7 +63,7 @@ This book is also designed for:
 | archive   | done   | done   | done     | done      | -      | *100%*  |
 | oop       | done   | done   | done     | done      | done   | *100%*  |
 | check     | done   | done   | done     | -         | -      |  50%    |
-| template  | done   | done   | done     | done      | done   | 100%    |
+| template  | done   | done   | done     | done      | done   | *100%*  |
 | layout    | done   | done   | done     | done      | -      |  75%    |
 | lint      | done   | done   | done     | -         | done   |  50%    |
 | perf      | done   | done   | done     | done      | done   | 100%    |

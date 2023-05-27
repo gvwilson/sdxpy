@@ -382,12 +382,12 @@ would also be smart enough to write the code without our help.
 
 ## Exercises {: #template-exercises}
 
-### Tracing execution {: .exercise}
+### Tracing Execution {: .exercise}
 
 Add a directive `<span z-trace="variable"/>`
 that prints the current value of a variable for debugging.
 
-### Unit tests {: .exercise}
+### Unit Tests {: .exercise}
 
 Write unit tests for template expansion using [pytest][pytest].
 
@@ -397,13 +397,13 @@ Modify the template expander so that a variable name like `person.name`
 looks up the `"name"` value in a dictionary called `"person"`
 in the current environment.
 
-### Literal text {: .exercise}
+### Literal Text {: .exercise}
 
 Add a directive `<div z-literal="true">…</div>` that copies the enclosed text as-is
 without interpreting or expanding any contained directives.
 (A directive like this would be needed when writing documentation for the template expander.)
 
-### Including other files {: .exercise}
+### Including Other Files {: .exercise}
 
 1.  Add a directive `<div z-include="filename.html"/>` that includes another file
     in the file being processed.
@@ -412,7 +412,7 @@ without interpreting or expanding any contained directives.
     or should the text be copied in and then processed?
     What difference does it make to the way variables are evaluated?
 
-### HTML snippets {: .exercise}
+### HTML Snippets {: .exercise}
 
 Add a directive `<div z-snippet="variable">…</div>` that saves some text in a variable
 so that it can be displayed later.
@@ -435,7 +435,7 @@ For example:
 would printed the word "Important:" in bold before each item in the list.
 {: .continue}
 
-### YAML headers {: .exercise}
+### YAML Headers {: .exercise}
 
 Modify the template expander to handle variables defined in a YAML header in the page being processed.
 For example, if the page is:
@@ -454,18 +454,18 @@ name: "Dorothy Johnson Vaughan"
 will create a paragraph containing the given name.
 {: .continue}
 
-### Expanding all files {: .exercise}
+### Expanding All Files {: .exercise}
 
 Write a program `expand_all.py` that takes two directory names as command-line arguments
 and builds a website in the second directory by expanding all of the HTML files found in the first
 or in sub-directories of the first.
 
-### Counting loops {: .exercise}
+### Counting Loops {: .exercise}
 
 Add a directive `<div z-index="indexName" z-limit="limitName">…</div>`
 that loops from zero to the value in the variable `limitName`,
 putting the current iteration index in `indexName`.
 
-### Boolean expression {: .exercise}
+### Boolean Expression {: .exercise}
 
 Design and implement a way to express the Boolean operators `and` and `or`.
