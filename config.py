@@ -83,7 +83,7 @@ exclude = [
 
 # Things to ignore when linting.
 unreferenced = [
-    "slides/index.html"
+    ".pytest_cache/*"
 ]
 
 # Debug.
