@@ -45,6 +45,14 @@ class ArchiveLocal(Archive)
     def _timestamp(self):
         return f"{time.time()}".split(".")[0]
 
+# [use]
+def analyze_and_save(options, archiver):
+    data = read_data(options)
+    results = analyze_data(data)
+    save_everything(result)
+    archiver.backup()
+# [/use]
+
 if __name__ == "__main__":
     assert len(sys.argv) == 3, "Usage: backup.py source_dir backup_dir"
     source_dir = sys.argv[1]
@@ -52,6 +60,4 @@ if __name__ == "__main__":
     # [create]
     archiver = ArchiveLocal(source_dir, backup_dir)
     # [/create]
-    # [use]
-    archiver.backup()
-    # [/use]
+    analyze_and_save({}, archiver)

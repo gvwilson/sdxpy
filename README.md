@@ -60,7 +60,7 @@ This book is also designed for:
 | interp    | done   | done   | done     | done      | done   | *100%*  |
 | func      | done   | done   | done     | -         | done   |  75%    |
 | mock      | -      | -      | -        | -         | -      |   0%    |
-| archive   | done   | done   | done     | done      | -      |  75%    |
+| archive   | done   | done   | done     | done      | -      | *100%*  |
 | oop       | done   | done   | done     | done      | done   | 100%    |
 | check     | done   | done   | done     | -         | -      |  50%    |
 | template  | done   | done   | done     | done      | done   | 100%    |
@@ -79,4 +79,4 @@ This book is also designed for:
 | vm        | done   | done   | done     | done      | done   | 100%    |
 | debugger  | done   | done   | done     | done      | done   | 100%    |
 | finale    | N/A    | done   | N/A      | N/A       | done   | 100%    |
-|           |        |        |          |           |        | *72%*   |
+|           |        |        |          |           |        | *73%*   |

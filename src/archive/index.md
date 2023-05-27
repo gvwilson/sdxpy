@@ -7,9 +7,10 @@ syllabus:
 
 We've written almost a thousand lines of Python so far.
 We could recreate it if we had to,
-but we'd rather not find ourselves in that situation.
-We'd also like to be able to see what we've changed,
+but we'd rather not have to.
+We'd also like to be able to see what we've changed
 and to collaborate with other people.
+
 A [%i "version control system" %][%g version_control_system "version control system" %][%/i%]
 like [%i "Git" "version control system!Git" %][Git][git][%/i%]
 solves all of these problems at once.
@@ -21,16 +22,16 @@ and merge our changes with those made by other people.
 The core of a modern version control tool
 is a way to archive files that:
 
-1.  records which versions of which files existed at the same time
-    (so that we can go back to a consistent previous state), and
+1.  records which versions of which files existed at the same time,
+    so that we can go back to a consistent previous state,
+    and
 
 1.  stores any particular version of a file only once,
     so that we don't waste disk space.
 
 This chapter builds a tool that does both tasks.
-It won't create and merge branches,
-but that's a relatively straightforward extension:
-if you would like to see how it works,
+It won't create and merge branches;
+if you would like to see how that works,
 please see [%i "Cook, Mary Rose" %][Mary Rose Cook's][cook_mary_rose][%/i%] [Gitlet][gitlet]
 or [%i "Polge, Thibault" %]Thibault Polge's[%/i%] [Write yourself a Git][write_yourself_a_git].
 
@@ -39,14 +40,13 @@ or [%i "Polge, Thibault" %]Thibault Polge's[%/i%] [Write yourself a Git][write_y
 Many files only change occasionally after they're created, or not at all.
 It would be wasteful for a version control system to make copies
 each time the user saved a snapshot of a project,
-so instead our tool will copy each unique file to something like `abcd1234.bck`,
-where `abcd1234` is the hash of the file's contents.
-It will then keep a record of the filenames and hash keys in each snapshot.
-The hash keys tell it which unique files are part of the snapshot,
-while the filenames tell us what each file's contents were called when the snapshot was made
-(so that files can be moved or renamed).
+so instead we will copy each unique file to something like `abcd1234.bck`,
+where `abcd1234` is the hash of the file's contents ([%x dup %]).
+We will then record the filenames and hash keys in each snapshot:
+The hash keys tell us which unique files existed at the time of the snapshot,
+while the filenames tell us what each file was called when the snapshot was made.
 To restore a particular snapshot,
-we will copy the `.bck` files back to where they were
+we will copy the `.bck` files back to their original locations
 ([%f backup-storage %]).
 
 [% figure
@@ -59,12 +59,23 @@ we will copy the `.bck` files back to where they were
 The first step is to find all the files in or below a given directory
 that we need to save.
 As described in [%x glob %],
-the simple pattern matching in Python's [glob][py_glob] module
-can do this for us.
-Let's combine this with our hashing function
-to create a table of files and hashes:
+Python's [glob][py_glob] module can do this for us.
+Let's use this to create a table of files and hashes:
 
 [% inc file="hash_all.py" keep="func" %]
+
+Notice that we're truncating the hash code of each file to just 16 hexadecimal digits.
+This greatly increases the odds of [%g collision "collision" %],
+so real version control systems don't do this,
+but it makes our program's output easier to show on screen.
+For example,
+if our test directory looks like this:
+
+[% inc file="sample_dir.out" %]
+
+then our program's output is:
+{: .continue}
+
 [% inc pat="hash_all.*" fill="sh out" %]
 
 ## Testing {: #backup-test}
@@ -72,7 +83,7 @@ to create a table of files and hashes:
 Before we go any further
 we need to figure out how we're going to test our code.
 The obvious approach is to create directories and sub-directories
-containing some files we can use as [%i "fixture" %]fixtures[%/i%].
+containing some files we can use as [%i "fixture" %][%g fixture "fixtures" %][%/i%].
 However,
 we are going to change or delete those files
 as we back things up and restore them.
@@ -122,20 +133,30 @@ and that hashes change when files change:
 
 ## Tracking Backups {: #backup-track}
 
-The second part of our backup tool keeps track of which files have and haven't been backed up already.
+The second part of our backup tool
+keeps track of which files have and haven't been backed up already.
 It stores backups in a directory that contains files like `abcd1234.bck`
 (the hash followed by `.bck`)
-and CSV [%g manifest "manifests" %] that describe the contents of particular snapshots.
-The latter are named `ssssssssss.csv`,
-where `ssssssssss` is the [%g utc "UTC" %] [%g timestamp "timestamp" %] of the backup's creation.
+and creates a [%g manifest "manifests" %]
+that describe the content of each snapshot.
+A real system would support remote storage as well
+so that losing one hard drive wouldn't mean losing all our work,
+so we need to design our system with multiple back ends in mind.
+
+For now,
+we will store manifests in [%g csv "CSV" %] files named `ssssssssss.csv`,
+where `ssssssssss` is the [%g utc "UTC" %] [%g timestamp "timestamp" %]
+of the backup's creation.
 
 <div class="callout" markdown="1">
 
 ### Time of check/time of use
 
-Our naming convention for manifests will fail if we try to create more than one backup per second.
-This might seem very unlikely,
-but many faults and security holes are the result of programmers assuming things weren't going to happen.
+Our naming convention for manifests will fail
+if we try to create two or more backups in the same second.
+This might seem unlikely,
+but many faults and security holes
+are the result of programmers assuming things weren't going to happen.
 
 We could try to avoid this problem by using a two-part naming scheme `ssssssss-a.csv`,
 `ssssssss-b.csv`, and so on,
@@ -148,9 +169,22 @@ We will look at better schemes in the exercises.
 
 </div>
 
-This function creates a backup:
+This function creates a backup—or rather,
+it will once we fill in all the functions it depends on:
 
 [% inc file="backup.py" keep="backup" %]
+
+Writing a high-level function first
+and then filling in the things it needs
+is called [%g successive_refinement "successive refinement" %].
+In practice,
+nobody designs and implements code in a strictly top-down fashion
+unless they have solved closely-related problems before [%b Petre 2016 %].
+Instead,
+good programmers jump back and forth between higher and lower levels of design,
+adjusting their overall strategy as work on low-level details
+reveals problems or opportunities they hadn't foreseen.
+{: .continue}
 
 When writing the manifest,
 we check that the backup directory exists,
@@ -165,13 +199,30 @@ We then copy those files that *haven't* already been saved:
 
 [% inc file="backup.py" keep="copy" %]
 
-Finally,
-we could call `time.time()` directly to get the current time,
-but we will wrap it up to give ourselves something
-that we can easily replace with a mock for testing:
-{: .continue}
+We have introduced several more race conditions here:
+for example,
+if two people are creating backups at the same time,
+they could both discover that the backup directory doesn't exist
+and then both try to create it.
+Whoever does so first will succeed,
+but whoever comes second will fail.
+We will look at ways to fix this in the exercises as well.
+
+<div class="callout" markdown="1">
+
+### What Time Is It?
+
+Our `backup` function relies on a [%g helper_function "helper function" %]
+called `current_time`
+that does nothing but call `time.time` from Python's standard library:
 
 [% inc file="backup.py" keep="time" %]
+
+We could call `time.time` directly,
+but wrapping it up like this makes it easier to replace with a mock for testing.
+{: .continue}
+
+</div>
 
 Let's do one test with real files:
 
@@ -189,6 +240,53 @@ and an example of a single test is:
 
 [% inc file="test_backup.py" keep="test" %]
 
+## Refactoring {: #backup-refactor}
+
+Now that we have a better idea of what we're doing,
+we can go back and create a [%g base_class "base class" %]
+that prescribes the general steps in creating a backup:
+
+[% inc file="backup_oop.py" keep="base" %]
+
+We can then derive a [%g child_class "child class" %]
+to archive things locally
+and fill in its methods by re-using code from the functions
+we have just written.
+Once we've done this,
+we can create the specific archiver we want with a single line:
+
+[% inc file="backup_oop.py" keep="create" %]
+
+Why go to this trouble?
+First,
+it makes life easier when we want to write archivers
+that behave the same way but work differently.
+For example,
+we could create an archiver that [%g file_compression "compresses" %]
+files as it archives them
+by deriving a new class from `ArchiveLocal`
+and changing only its `_copy_files` method.
+
+Second,
+other code can use an archiver *without knowing exactly what it's doing*.
+For example,
+the function `analyze_and_save` reads some data,
+analyzes it,
+saves the results,
+and then create an archive of those results.
+It doesn't know,
+and doesn't need to know,
+whether the archive is compressing files,
+whether those files are being saved locally or remotely,
+or anything else:
+
+[% inc file="backup_oop.py" keep="use" %]
+
+This example highlights one of the great strengths of object-oriented programming.
+It's easy to write programs in which new code uses old code;
+provided classes and objects are carefully designed,
+they allow old code to use new code without being changed.
+
 ## Summary {: #backup-summary}
 
 [% figure
@@ -200,14 +298,14 @@ and an example of a single test is:
 
 ## Exercises {: #backup-exercises}
 
-### Sequencing backups {: .exercise}
+### Sequencing Backups {: .exercise}
 
 Modify the backup program so that manifests are numbered sequentially
 as `00000001.csv`, `00000002.csv`, and so on
 rather than being timestamped.
 Why doesn't this solve the time of check/time of use race condition mentioned earlier?
 
-### JSON manifests {: .exercise}
+### JSON Manifests {: .exercise}
 
 1.  Modify `backup.py` so that it can save JSON manifests as well as CSV manifests
     based on a command-line flag.
@@ -220,17 +318,20 @@ Why doesn't this solve the time of check/time of use race condition mentioned ea
     along with file hashes,
     and then modify `migrate.py` to transform old files into the new format.
 
-### Mock hashes {: .exercise}
+### Mock Hashes {: .exercise}
 
-1.  Modify the file backup program so that it uses a function called `ourHash` to hash files.
+1.  Modify the file backup program
+    so that it uses a function called `ourHash` to hash files.
 
-2.  Create a replacement that returns some predictable value, such as the first few characters of the data.
+2.  Create a replacement that returns some predictable value,
+    such as the first few characters of the data.
 
 3.  Rewrite the tests to use this function.
 
-How did you modify the main program so that the tests could control which hashing function is used?
+How did you modify the main program
+so that the tests could control which hashing function is used?
 
-### Comparing manifests {: .exercise}
+### Comparing Manifests {: .exercise}
 
 Write a program `compare-manifests.py` that reads two manifest files and reports:
 
@@ -240,13 +341,15 @@ Write a program `compare-manifests.py` that reads two manifest files and reports
 -   Which files have the same hashes but different names
     (i.e., they have been renamed).
 
--   Which files are in the first hash but neither their names nor their hashes are in the second
+-   Which files are in the first hash
+    but neither their names nor their hashes are in the second
     (i.e., they have been deleted).
 
--   Which files are in the second hash but neither their names nor their hashes are in the first
+-   Which files are in the second hash
+    but neither their names nor their hashes are in the first
     (i.e., they have been added).
 
-### From one state to another {: .exercise}
+### From One State to Another {: .exercise}
 
 1.  Write a program called `from_to.py` that takes the name of a directory
     and the name of a manifest file
@@ -259,7 +362,7 @@ Write a program `compare-manifests.py` that reads two manifest files and reports
 
 2.  Write some tests for `from_to.py` using pytest and a mock filesystem.
 
-### File history {: .exercise}
+### File History {: .exercise}
 
 1.  Write a program called `file_history.py`
     that takes the name of a file as a command-line argument
@@ -268,7 +371,7 @@ Write a program `compare-manifests.py` that reads two manifest files and reports
 
 2.  Write tests for your program using pytest and a mock filesystem.
 
-### Pre-commit hooks {: .exercise}
+### Pre-commit Hooks {: .exercise}
 
 Modify `backup.py` to load and run a function called `pre_commit` from a file called `pre_commit.py`
 stored in the root directory of the files being backed up.

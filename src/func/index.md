@@ -1,6 +1,20 @@
 ---
 syllabus:
--   FIXME
+-   When we define a function,
+    our programming system saves instructions for later use.
+-   Since functions are just data,
+    we can separate creation from naming.
+-   Most programming languages use eager evaluation,
+    in which arguments are evaluated before a function is called.
+-   Programming languages can also use lazy evaluation,
+    in which expressions are passed to functions for just-in-time evaluation.
+-   Every call to a function creates a new stack frame on the call stack.
+-   When a function needs to look up variables,
+    it looks in its own stack frame and the global frame.
+-   A closure stores the variables referenced in a particular scope.
+-   We can use decorators to wrap functions after defining them.
+-   Defining a decorator that has parameters is much more complicated
+    than defining one that doesn't.
 ---
 
 One way to evaluate the design of a piece of software is
