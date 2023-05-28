@@ -67,7 +67,7 @@ This book is also designed for:
 | layout    | done   | done   | done     | done      | done   | **100%** |
 | lint      | done   | done   | done     | -         | done   |  50%     |
 | perf      | done   | done   | done     | done      | done   | 100%     |
-| persist   | done   | done   | done     | done      | done   | 100%     |
+| persist   | done   | done   | done     | done      | done   | **100%** |
 | binary    | done   | done   | done     | -         | -      |  50%     |
 | db        | done   | done   | -        | -         | -      |  20%     |
 | build     | done   | done   | done     | done      | -      |  50%     |

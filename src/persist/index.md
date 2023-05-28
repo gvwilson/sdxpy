@@ -541,7 +541,7 @@ don't re-set the tables of objects seen so far between runs.
     that fix the problems you have identified.
     How much of the existing code did you have to change?
 
-### A dangling colon {: .exercise}
+### A Dangling Colon {: .exercise}
 
 Why is there a colon at the end of the line `alias:12345678:`
 when we create an alias marker?
@@ -564,7 +564,7 @@ Modify the code we have written so far to do this.
 Modify the framework so that strings are stored using escape characters like `\n`
 instead of being split across several lines.
 
-### Who calculates? {: .exercise}
+### Who Calculates? {: .exercise}
 
 Why doesn't `LoadAlias.load` calculate object IDs?
 Why does it use the IDs saved in the archive instead?
@@ -584,14 +584,14 @@ when `_aliased`, `_builtin`, and `extension` decide
 they aren't the right method to handle a particular case.
 Is the result simpler or more complex than the exception-based approach?
 
-### Helper classes {: .exercise}
+### Helper Classes {: .exercise}
 
 Modify the framework so that
 if a user wants to save and load instances of a class `X`,
 they must register a class `Persist_X` with the framework
 that does the saving and loading for `X`.
 
-### Self-referential objects {: .exercise}
+### Self-Referential Objects {: .exercise}
 
 Suppose an object contains a reference to itself:
 
