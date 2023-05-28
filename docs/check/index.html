@@ -4,7 +4,7 @@
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="repo" content="https://github.com/gvwilson/sd4ds">
-  <meta name="build_date" content="2023-05-27">
+  <meta name="build_date" content="2023-05-28">
   <meta name="template" content="default">
   <meta name="major" content="Chapter 11">
   <meta name="has_slides" content="true">
@@ -106,14 +106,14 @@
   </li>
   
   <li>
-    <a href="../lint/">
-      A Code Linter
+    <a href="../template/">
+      A Template Expander
     </a>
   </li>
   
   <li>
-    <a href="../template/">
-      A Template Expander
+    <a href="../lint/">
+      A Code Linter
     </a>
   </li>
   
@@ -299,6 +299,14 @@
   
 
   
+  <ul class="syllabus">
+  
+  <li markdown="1">FIXME</li>
+  
+  </ul>
+  
+
+  
 
   
 
@@ -318,9 +326,386 @@
 
 
           
+<p class="definitions">
+  Terms defined: <a class="gl-ref" href="../glossary/#attribute" markdown="1">attribute</a>, <a class="gl-ref" href="../glossary/#dom" markdown="1">Document Object Model</a>, <a class="gl-ref" href="../glossary/#element" markdown="1">element</a>, <a class="gl-ref" href="../glossary/#json" markdown="1">JavaScript Object Notation</a>, <a class="gl-ref" href="../glossary/#manifest" markdown="1">manifest</a>, <a class="gl-ref" href="../glossary/#node" markdown="1">node</a>, <a class="gl-ref" href="../glossary/#tree" markdown="1">tree</a>, <a class="gl-ref" href="../glossary/#visitor_pattern" markdown="1">Visitor pattern</a>, <a class="gl-ref" href="../glossary/#yaml" markdown="1">Yet Another Markup Language</a>
+</p>
+
 
           <div class="page-toc"></div>
-          
+          <p>Suppose we want to generate HTML summaries of experiments.
+We want to be sure the generated pages have the right structure
+so that people can get information out of them reliably.
+We also want to make sure that they meet accessibility standards
+so that <em>everyone</em> can get information out of them.
+In short,
+we want the equivalent of unit tests for our output.</p>
+<p>This chapter builds a small tool to check the structure of HTML.
+Doing this prepares us for building a tool to generate pages (<a class="x-ref" href="../template/">Chapter 12</a>)
+and another to check the structure and style of our code (<a class="x-ref" href="../lint/">Chapter 13</a>).</p>
+<h2 id="check-htmldom">Section 11.1: HTML and the DOM</h2>
+<p>An HTML document is made up of <a class="gl-ref" href="../glossary/#element" markdown="1">elements</a> and text.
+(It can actually contain other things, but we&rsquo;ll ignore those for now.)
+Elements are represented using <a class="gl-ref" href="../glossary/#tag" markdown="1">tags</a> enclosed in <code>&lt;</code> and <code>&gt;</code>.
+An <a class="gl-ref" href="../glossary/#tag_opening" markdown="1">opening tag</a> like <code>&lt;p&gt;</code> starts an element,
+while a <a class="gl-ref" href="../glossary/#tag_closing" markdown="1">closing tag</a> like <code>&lt;/p&gt;</code> ends it.
+If the element is empty,
+we can use a <a class="gl-ref" href="../glossary/#tag_self_closing" markdown="1">self-closing tag</a> like <code>&lt;br/&gt;</code>
+to save some typing.
+Opening and self-closing tags can have <a class="gl-ref" href="../glossary/#attribute" markdown="1">attributes</a>,
+which are written as <code>key="value"</code>.</p>
+<p>Tags must be properly nested,
+which has two consequences:</p>
+<ol>
+<li>
+<p>Something like <code>&lt;a&gt;&lt;b&gt;&lt;/a&gt;&lt;/b&gt;</code> is illegal.</p>
+</li>
+<li>
+<p>A document&rsquo;s elements form a <a class="gl-ref" href="../glossary/#tree" markdown="1">tree</a> of <a class="gl-ref" href="../glossary/#node" markdown="1">nodes</a> and text
+    like the one shown in <a class="fig-ref" href="../check/#check-dom-tree">Figure 11.1</a>.</p>
+</li>
+</ol>
+<figure id="check-dom-tree">
+<img src="./dom_tree.svg" alt="DOM tree"/>
+<figcaption markdown="1">Figure 11.1: Representing HTML elements as a DOM tree.</figcaption>
+</figure>
+
+<p>The objects that represent the nodes and text in an HTML tree
+are called the <a class="gl-ref" href="../glossary/#dom" markdown="1">Document Object Model</a>, or DOM.
+Hundreds of tools have been written to convert HTML text to DOM;
+our favorite is a Python library called <a href="https://beautiful-soup-4.readthedocs.io/">Beautiful Soup</a>,
+which can handle messy real-world documents
+as well as those that conform to every rule of the standard.</p>
+<p>Beautiful Soup&rsquo;s DOM has two main classes:
+<code>NavigableString</code> for text and <code>Tag</code> for elements.
+To parse a document,
+we import what we need and call <code>BeautifulSoup</code> with
+the text to be parsed
+and a string specifying exactly what kind of parsing we want to do.
+(In practice, this is almost always <code>"html.parser"</code>.)</p>
+<div class="code-sample lang-py" title="parse.py">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">bs4</span> <span class="kn">import</span> <span class="n">BeautifulSoup</span><span class="p">,</span> <span class="n">NavigableString</span><span class="p">,</span> <span class="n">Tag</span>
+
+<span class="n">doc</span> <span class="o">=</span> <span class="n">BeautifulSoup</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="s2">&quot;html.parser&quot;</span><span class="p">)</span>
+<span class="n">display</span><span class="p">(</span><span class="n">doc</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<p><code>Tag</code> nodes have two properties <code>name</code> and <code>children</code>
+to tell us what element the tag represents
+and to give us access to the node&rsquo;s children.
+We can therefore write a short recursive function
+to show us everything in the DOM:</p>
+<div class="code-sample lang-py" title="parse.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">display</span><span class="p">(</span><span class="n">node</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">NavigableString</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;string: </span><span class="si">{</span><span class="nb">repr</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">string</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;node: </span><span class="si">{</span><span class="n">node</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">node</span><span class="p">:</span>
+        <span class="n">display</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<p>We can test this with a short example:</p>
+<div class="code-sample lang-py" title="parse.py">
+<div class="highlight"><pre><span></span><code><span class="n">text</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;&lt;html&gt;</span>
+<span class="s2">&lt;body&gt;</span>
+<span class="s2">&lt;h1&gt;Title&lt;/h1&gt;</span>
+<span class="s2">&lt;p&gt;paragraph&lt;/p&gt;</span>
+<span class="s2">&lt;/body&gt;</span>
+<span class="s2">&lt;/html&gt;&quot;&quot;&quot;</span>
+</code></pre></div>
+</div>
+<div class="code-sample lang-out" title="parse.out">
+<div class="highlight"><pre><span></span><code>node: [document]
+node: html
+string: &#39;\n&#39;
+node: body
+string: &#39;\n&#39;
+node: h1
+string: &#39;Title&#39;
+string: &#39;\n&#39;
+node: p
+string: &#39;paragraph&#39;
+string: &#39;\n&#39;
+string: &#39;\n&#39;
+</code></pre></div>
+</div>
+<p class="continue">Notice that all of the newlines in our document
+have been preserved as text nodes.</p>
+<p>Finally,
+each <code>Tag</code> node has a dictionary called <code>attrs</code>
+that stores the attributes of that node.
+The values in this dictionary are either strings or lists of strings
+depending on whether the attribute has a single value or multiple values:</p>
+<div class="code-sample lang-py" title="attrs.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">display</span><span class="p">(</span><span class="n">node</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">Tag</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;node: </span><span class="si">{</span><span class="n">node</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">node</span><span class="o">.</span><span class="n">attrs</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">node</span><span class="p">:</span>
+            <span class="n">display</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<div class="code-sample lang-py" title="attrs.py">
+<div class="highlight"><pre><span></span><code><span class="n">text</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;&lt;html lang=&quot;en&quot;&gt;</span>
+<span class="s2">&lt;body class=&quot;outline narrow&quot;&gt;</span>
+<span class="s2">&lt;p align=&quot;left&quot; align=&quot;right&quot;&gt;paragraph&lt;/p&gt;</span>
+<span class="s2">&lt;/body&gt;</span>
+<span class="s2">&lt;/html&gt;&quot;&quot;&quot;</span>
+</code></pre></div>
+</div>
+<div class="code-sample lang-out" title="attrs.out">
+<div class="highlight"><pre><span></span><code>node: [document] {}
+node: html {&#39;lang&#39;: &#39;en&#39;}
+node: body {&#39;class&#39;: [&#39;outline&#39;, &#39;narrow&#39;]}
+node: p {&#39;align&#39;: &#39;right&#39;}
+</code></pre></div>
+</div>
+<h2 id="check-visitor">Section 11.2: Visitors</h2>
+<p>Before building an HTML validator,
+let&rsquo;s build something to tell us
+which elements appear inside which others in a document.
+Our recursive function takes two arguments:
+the current node and a dictionary
+whose keys are node names and whose values are sets
+containing the names of those nodes&rsquo; children.
+Each time it encounters a node,
+the function adds its children&rsquo;s names to the appropriate set
+and then calls itself:</p>
+<div class="code-sample lang-py" title="contains.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">recurse</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">catalog</span><span class="p">):</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">Tag</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">node</span><span class="o">.</span><span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">catalog</span><span class="p">:</span>
+        <span class="n">catalog</span><span class="p">[</span><span class="n">node</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">node</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="n">Tag</span><span class="p">):</span>
+            <span class="n">catalog</span><span class="p">[</span><span class="n">node</span><span class="o">.</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">child</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+            <span class="n">recurse</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="n">catalog</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">catalog</span>
+</code></pre></div>
+</div>
+<p>When we run our function on this page:</p>
+<div class="code-sample lang-html" title="page.html">
+<div class="highlight"><pre><span></span><code><span class="p">&lt;</span><span class="nt">html</span><span class="p">&gt;</span>
+  <span class="p">&lt;</span><span class="nt">head</span><span class="p">&gt;</span>
+    <span class="p">&lt;</span><span class="nt">title</span><span class="p">&gt;</span>Software Design for Data Scientists<span class="p">&lt;/</span><span class="nt">title</span><span class="p">&gt;</span>
+  <span class="p">&lt;/</span><span class="nt">head</span><span class="p">&gt;</span>
+  <span class="p">&lt;</span><span class="nt">body</span><span class="p">&gt;</span>
+    <span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;</span>Main Title<span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+    <span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span>introductory paragraph<span class="p">&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+    <span class="p">&lt;</span><span class="nt">ul</span><span class="p">&gt;</span>
+      <span class="p">&lt;</span><span class="nt">li</span><span class="p">&gt;</span>first item<span class="p">&lt;/</span><span class="nt">li</span><span class="p">&gt;</span>
+      <span class="p">&lt;</span><span class="nt">li</span><span class="p">&gt;</span>second item is <span class="p">&lt;</span><span class="nt">em</span><span class="p">&gt;</span>emphasized<span class="p">&lt;/</span><span class="nt">em</span><span class="p">&gt;&lt;/</span><span class="nt">li</span><span class="p">&gt;</span>
+    <span class="p">&lt;/</span><span class="nt">ul</span><span class="p">&gt;</span>
+  <span class="p">&lt;/</span><span class="nt">body</span><span class="p">&gt;</span>
+<span class="p">&lt;/</span><span class="nt">html</span><span class="p">&gt;</span>
+</code></pre></div>
+</div>
+<p class="continue">it produces this output
+(which we print in sorted order to make things easier to find):</p>
+<div class="code-sample lang-out" title="contains.out">
+<div class="highlight"><pre><span></span><code>body: h1, p, ul
+em:
+h1:
+head: title
+html: body, head
+li: em
+p:
+title:
+ul: li
+</code></pre></div>
+</div>
+<p>We have written several recursive functions already,
+all of which have more or less the same control flow.
+A good rule of software design is that if we have written something three times,
+we should turn what we&rsquo;ve learned into something reusable
+so that we never have to write it again.
+In this case,
+we can use the <span class="ix-entry" ix-key="Visitor pattern;design pattern!Visitor" markdown="1"><a class="gl-ref" href="../glossary/#visitor_pattern" markdown="1">Visitor</a></span> design pattern.
+A visitor is a class that knows how to get to each element of a data structure
+and call a user-defined method when it gets there.
+Our visitor will have three methods:
+one that it calls when it first encounters a node,
+one that it calls when it is finished with that node,
+and one that it calls for text (<a class="fig-ref" href="../check/#check-visitor">Figure 11.2</a>):</p>
+<div class="code-sample lang-py" title="visitor.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Visitor</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">visit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">NavigableString</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_text</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">Tag</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_tag_enter</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">node</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_tag_exit</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_tag_enter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span> <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="nf">_tag_exit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span> <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="nf">_text</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span> <span class="k">pass</span>
+</code></pre></div>
+</div>
+<p class="continue">Notice that we provide do-nothing implementations of these three methods
+rather than having them raise a <code>NotImplementedError</code>.
+A particular use of our <code>Visitor</code> class may not need some of these methods—for example,
+our catalog builder didn&rsquo;t need to do anything when leaving a node or for text nodes—and
+we shouldn&rsquo;t require people to implement things they don&rsquo;t need.</p>
+<figure id="check-visitor">
+<img src="./visitor.svg" alt="Visitor pattern order of operations"/>
+<figcaption markdown="1">Figure 11.2: Visitor checking each node in depth-first order.</figcaption>
+</figure>
+
+<p>Here&rsquo;s what our catalog builder looks like
+when reimplemented on top of our <code>Visitor</code> class:</p>
+<div class="code-sample lang-py" title="catalog.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Catalog</span><span class="p">(</span><span class="n">Visitor</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">catalog</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">def</span> <span class="nf">_tag_enter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">node</span><span class="o">.</span><span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">catalog</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">catalog</span><span class="p">[</span><span class="n">node</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">node</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="n">Tag</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">catalog</span><span class="p">[</span><span class="n">node</span><span class="o">.</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">child</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<div class="code-sample lang-py" title="catalog.py">
+<div class="highlight"><pre><span></span><code><span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">reader</span><span class="p">:</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+<span class="n">doc</span> <span class="o">=</span> <span class="n">BeautifulSoup</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="s2">&quot;html.parser&quot;</span><span class="p">)</span>
+
+<span class="n">cataloger</span> <span class="o">=</span> <span class="n">Catalog</span><span class="p">()</span>
+<span class="n">cataloger</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">doc</span><span class="o">.</span><span class="n">html</span><span class="p">)</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">cataloger</span><span class="o">.</span><span class="n">catalog</span>
+
+<span class="k">for</span> <span class="n">tag</span><span class="p">,</span> <span class="n">contents</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">tag</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">contents</span><span class="p">))</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<p>It is only a few lines shorter than the original,
+but the more complicated the data structure is,
+the more helpful the Visitor pattern becomes.</p>
+<h2 id="check-style">Section 11.3: Checking Style</h2>
+<p>To wrap up our style checker,
+let&rsquo;s create a <a class="gl-ref" href="../glossary/#manifest" markdown="1">manifest</a> that specifies
+which types of nodes can be children of which others:</p>
+<div class="code-sample lang-yml" title="manifest.yml">
+<div class="highlight"><pre><span></span><code>body:
+- section
+head:
+- title
+html:
+- body
+- head
+section:
+- h1
+- p
+- ul
+ul:
+- li
+</code></pre></div>
+</div>
+<p class="continue">We&rsquo;ve chosen to use <a class="gl-ref" href="../glossary/#yaml" markdown="1">YAML</a> for the manifest
+because it&rsquo;s a relatively simple way to write nested rules.
+We could have used <a class="gl-ref" href="../glossary/#json" markdown="1">JSON</a>,
+but as we said in <a class="x-ref" href="../parse/">Chapter 4</a>,
+we shouldn&rsquo;t invent a syntax of our own:
+there are already too many in the world.</p>
+<p>Our <code>Check</code> class only needs a constructor to set everything up
+and a <code>_tag_enter</code> method to handle nodes:</p>
+<div class="code-sample lang-py" title="check.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Check</span><span class="p">(</span><span class="n">Visitor</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">manifest</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">manifest</span> <span class="o">=</span> <span class="n">manifest</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">problems</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">def</span> <span class="nf">_tag_enter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="n">actual</span> <span class="o">=</span> <span class="p">{</span><span class="n">child</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">node</span>
+                  <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="n">Tag</span><span class="p">)}</span>
+        <span class="n">errors</span> <span class="o">=</span> <span class="n">actual</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">manifest</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="nb">set</span><span class="p">())</span>
+        <span class="k">if</span> <span class="n">errors</span><span class="p">:</span>
+            <span class="n">errors</span> <span class="o">|=</span> <span class="bp">self</span><span class="o">.</span><span class="n">problems</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="nb">set</span><span class="p">())</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">problems</span><span class="p">[</span><span class="n">node</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">errors</span>
+</code></pre></div>
+</div>
+<p>To run this,
+we load a manifest and an HTML document,
+create a checker,
+ask the checker to visit each node,
+then print out every problematic parent-child combination it found:</p>
+<div class="code-sample lang-py" title="check.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">read_manifest</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">reader</span><span class="p">:</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">reader</span><span class="p">,</span> <span class="n">Loader</span><span class="o">=</span><span class="n">yaml</span><span class="o">.</span><span class="n">FullLoader</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">result</span><span class="p">:</span>
+            <span class="n">result</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">result</span>
+
+<span class="n">manifest</span> <span class="o">=</span> <span class="n">read_manifest</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">reader</span><span class="p">:</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+<span class="n">doc</span> <span class="o">=</span> <span class="n">BeautifulSoup</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="s2">&quot;html.parser&quot;</span><span class="p">)</span>
+
+<span class="n">checker</span> <span class="o">=</span> <span class="n">Check</span><span class="p">(</span><span class="n">manifest</span><span class="p">)</span>
+<span class="n">checker</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">doc</span><span class="o">.</span><span class="n">html</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">checker</span><span class="o">.</span><span class="n">problems</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">value</span><span class="p">))</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<div class="code-sample lang-out" title="check.out">
+<div class="highlight"><pre><span></span><code>body: h1, p, ul
+li: em
+</code></pre></div>
+</div>
+<p>The output tells us that content is supposed to be inside a <code>section</code> element,
+not directly inside the <code>body</code>,
+and that we&rsquo;re not supposed to <em>emphasize</em> words in lists.
+Other users&rsquo; rules may be different,
+but we now have the tool we need
+to check that any HTML we generate conforms to our intended rules.</p>
+<h2 id="check-summary">Section 11.4: Summary</h2>
+<figure id="check-concept-map">
+<img src="./concept_map.svg" alt="Concept map for checking HTML"/>
+<figcaption markdown="1">Figure 11.3: Concept map for checking HTML using the Visitor pattern.</figcaption>
+</figure>
+
+<h2 id="check-exercises">Section 11.5: Exercises</h2>
+<h3>Simplify the Logic</h3>
+<ol>
+<li>
+<p>Trace the operation of <code>Check._tag_enter</code>
+    and convince yourself that it does the right thing.</p>
+</li>
+<li>
+<p>Rewrite it to make it easier to understand.</p>
+</li>
+</ol>
+<h3>Detecting Empty Elements</h3>
+<p>Write a visitor that builds a list of nodes
+that could be written as self-closing tags but aren&rsquo;t,
+i.e.,
+node that are written as <code>&lt;a&gt;&lt;/a&gt;</code>.
+The <code>Tag.sourceline</code> attribute may help you
+make your report more readable.</p>
+<h3>Eliminating Newlines</h3>
+<p>Write a visitor that deletes any text nodes from a document
+that only contain newline characters.
+Do you need to make any changes to <code>Visitor</code>,
+or can you implement this using the class as it is?</p>
+<h3>Linearize the Tree</h3>
+<p>Write a visitor that returns a flat list containing
+all the nodes in a DOM tree
+in the order in which they would be traversed.
+When you are done,
+you should be able to write code like this:</p>
+<div class="highlight"><pre><span></span><code><span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">Flatten</span><span class="p">(</span><span class="n">doc</span><span class="o">.</span><span class="n">html</span><span class="p">)</span><span class="o">.</span><span class="n">result</span><span class="p">():</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+</code></pre></div>
         </main>
       </div>
     </div>

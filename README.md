@@ -50,33 +50,33 @@ This book is also designed for:
 
 ## Status
 
-| Chapter   | Code   | Slides | Diagrams | Exercises | Prose  | Overall |
-| --------- | ------ | ------ | -------- | --------- | ------ | ------: |
-| intro     | N/A    | done   | done     | N/A       | done   | *100%*  |
-| dup       | done   | done   | done     | done      | done   | *100%*  |
-| glob      | done   | done   | done     | done      | done   | *100%*  |
-| parse     | done   | done   | done     | done      | done   | *100%*  |
-| test      | done   | done   | done     | done      | done   | *100%*  |
-| interp    | done   | done   | done     | done      | done   | *100%*  |
-| func      | done   | done   | done     | -         | done   |  75%    |
-| mock      | -      | -      | -        | -         | -      |   0%    |
-| archive   | done   | done   | done     | done      | -      | *100%*  |
-| oop       | done   | done   | done     | done      | done   | *100%*  |
-| check     | done   | done   | done     | -         | -      |  50%    |
-| template  | done   | done   | done     | done      | done   | *100%*  |
-| layout    | done   | done   | done     | done      | done   | *100%*  |
-| lint      | done   | done   | done     | -         | done   |  50%    |
-| perf      | done   | done   | done     | done      | done   | 100%    |
-| persist   | done   | done   | done     | done      | done   | 100%    |
-| binary    | done   | done   | done     | -         | -      |  50%    |
-| db        | done   | done   | -        | -         | -      |  20%    |
-| build     | done   | done   | done     | done      | -      |  50%    |
-| observe   | done   | -      | -        | -         | -      |  25%    |
-| pack      | done   | done   | done     | done      | done   | 100%    |
-| server    | done   | -      | done     | done      | done   |  75%    |
-| editor    | revise | -      | -        | -         | -      |  10%    |
-| undo      | -      | -      | -        | -         | -      |   0%    |
-| vm        | done   | done   | done     | done      | done   | *100%*  |
-| debugger  | done   | done   | done     | done      | done   | *100%*  |
-| finale    | N/A    | done   | N/A      | N/A       | done   | *100%*  |
-|           |        |        |          |           |        | *74%*   |
+| Chapter   | Code   | Slides | Diagrams | Exercises | Prose  | Overall  |
+| --------- | ------ | ------ | -------- | --------- | ------ | -------: |
+| intro     | N/A    | done   | done     | N/A       | done   | **100%** |
+| dup       | done   | done   | done     | done      | done   | **100%** |
+| glob      | done   | done   | done     | done      | done   | **100%** |
+| parse     | done   | done   | done     | done      | done   | **100%** |
+| test      | done   | done   | done     | done      | done   | **100%** |
+| interp    | done   | done   | done     | done      | done   | **100%** |
+| func      | done   | done   | done     | -         | done   |  75%     |
+| mock      | -      | -      | -        | -         | -      |   0%     |
+| archive   | done   | done   | done     | done      | -      | **100%** |
+| oop       | done   | done   | done     | done      | done   | **100%** |
+| check     | done   | done   | done     | done      | done   | **100%** |
+| template  | done   | done   | done     | done      | done   | **100%** |
+| layout    | done   | done   | done     | done      | done   | **100%** |
+| lint      | done   | done   | done     | -         | done   |  50%     |
+| perf      | done   | done   | done     | done      | done   | 100%     |
+| persist   | done   | done   | done     | done      | done   | 100%     |
+| binary    | done   | done   | done     | -         | -      |  50%     |
+| db        | done   | done   | -        | -         | -      |  20%     |
+| build     | done   | done   | done     | done      | -      |  50%     |
+| observe   | done   | -      | -        | -         | -      |  25%     |
+| pack      | done   | done   | done     | done      | done   | 100%     |
+| server    | done   | -      | done     | done      | done   |  75%     |
+| editor    | revise | -      | -        | -         | -      |  10%     |
+| undo      | -      | -      | -        | -         | -      |   0%     |
+| vm        | done   | done   | done     | done      | done   | **100%** |
+| debugger  | done   | done   | done     | done      | done   | **100%** |
+| finale    | N/A    | done   | N/A      | N/A       | done   | **100%** |
+|           |        |        |          |           |        | **76%**  |

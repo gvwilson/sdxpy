@@ -1,10 +1,10 @@
-# [recurse]
-def recurse(node):
+# [display]
+def display(node):
     if isinstance(node, Tag):
         print(f"node: {node.name} {node.attrs}")
         for child in node:
-            recurse(child)
-# [/recurse]
+            display(child)
+# [/display]
 
 # [text]
 text = """<html lang="en">
@@ -18,5 +18,5 @@ text = """<html lang="en">
 from bs4 import BeautifulSoup, Tag
 
 doc = BeautifulSoup(text, "html.parser")
-recurse(doc)
+display(doc)
 # [/main]

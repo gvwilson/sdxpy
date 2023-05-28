@@ -1,16 +1,13 @@
-# [recurse]
-def recurse(node):
+# [display]
+def display(node):
     if isinstance(node, NavigableString):
         print(f"string: {repr(node.string)}")
+        return
 
-    elif not isinstance(node, Tag):
-        pass
-
-    else:
-        print(f"node: {node.name}")
-        for child in node:
-            recurse(child)
-# [/recurse]
+    print(f"node: {node.name}")
+    for child in node:
+        display(child)
+# [/display]
 
 # [text]
 text = """<html>
@@ -25,5 +22,5 @@ text = """<html>
 from bs4 import BeautifulSoup, NavigableString, Tag
 
 doc = BeautifulSoup(text, "html.parser")
-recurse(doc)
+display(doc)
 # [/main]

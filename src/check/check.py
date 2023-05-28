@@ -8,13 +8,12 @@ from visitor import Visitor
 class Check(Visitor):
     def __init__(self, manifest):
         self.manifest = manifest
-        self.empty = set()
         self.problems = {}
 
     def _tag_enter(self, node):
         actual = {child.name for child in node
                   if isinstance(child, Tag)}
-        errors = actual - self.manifest.get(node.name, self.empty)
+        errors = actual - self.manifest.get(node.name, set())
         if errors:
             errors |= self.problems.get(node.name, set())
             self.problems[node.name] = errors
