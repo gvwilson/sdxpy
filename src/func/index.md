@@ -174,7 +174,7 @@ reads an instruction,
 figures out what operation it corresponds to,
 and executes that operation.
 
-## Closures {: #func-closure}
+## Closures {: #func-closures}
 
 We normally define functions at the top level of our program,
 but Python and most other modern languages

@@ -40,7 +40,7 @@ Most of these systems use one of three designs
 
 [% figure
    slug="template-options"
-   img="options.svg"
+   img="design_options.svg"
    alt="Three options for page templates"
    caption="Three different ways to implement page templating."
 %]
@@ -123,17 +123,9 @@ each of which is a dictionary.
 Our stack-handling class `Env` has methods  to push and pop new stack frames
 and find a variable given its name.
 If the variable can't be found,
-`Env.find` returns `None` instead of throwing an exception
-([%f template-stack %]).
+`Env.find` returns `None` instead of throwing an exception:
 
 [% inc file="env.py" %]
-
-[% figure
-   slug="template-stack"
-   img="stack.svg"
-   alt="Variable stack"
-   caption="Using a stack to manage variables."
-%]
 
 ## Visiting Nodes {: #template-nodes}
 

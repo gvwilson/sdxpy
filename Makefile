@@ -2,8 +2,8 @@ include lib/mccole/mccole.mk
 
 COLUMNS=72
 
-BIN_PY = $(wildcard bin/*.py)
-LIB_PY = $(wildcard lib/mccole/extensions/*.py)
+BIN_PY = $(wildcard ${MCCOLE_BIN}/*.py)
+LIB_PY = $(wildcard ${MCCOLE}/extensions/*.py)
 SRC_PY = $(wildcard src/*/*.py)
 SRC_SVG = $(wildcard src/*/*.svg)
 
@@ -21,15 +21,4 @@ check:
 fix:
 	@isort ${BIN_PY} ${LIB_PY}
 	@black ${BIN_PY} ${LIB_PY}
-
-## fonts: check fonts in diagrams
-.PHONY: fonts
-fonts:
-	@python bin/check_svg_fonts.py $(SRC_SVG)
-
-## status: status of chapters
-.PHONY: status
-status:
-	@python bin/status.py --config config.py --readme README.md
-	@python bin/check_prose_slides.py --config config.py
 ## ---: ---

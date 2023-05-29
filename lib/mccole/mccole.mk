@@ -5,6 +5,10 @@
 # By default, show available commands (by finding '##' comments).
 .DEFAULT: commands
 
+# Where to find things relative to project root.
+MCCOLE=./lib/mccole
+MCCOLE_BIN=${MCCOLE}/bin
+
 # Get local configuration from the Ivy configuration file.
 CONFIG := ./config.py
 ABBREV := $(shell python ${CONFIG} --abbrev)
@@ -15,7 +19,7 @@ CHAPTERS := $(shell python ${CONFIG} --chapters)
 EXAMPLES := $(patsubst %/Makefile,%,$(wildcard src/*/Makefile))
 HTML := info/head.html info/foot.html
 INFO := info/bibliography.bib info/credits.yml info/glossary.yml info/links.yml
-IVY :=  $(wildcard lib/mccole/extensions/*.*) $(wildcard lib/mccole/resources/*.*) $(wildcard lib/mccole/templates/*.*)
+IVY :=  $(wildcard ${MCCOLE}/extensions/*.*) $(wildcard ${MCCOLE}/resources/*.*) $(wildcard ${MCCOLE}/templates/*.*)
 TEX := info/head.tex info/foot.tex
 TEX_COPY := info/krantz.cls info/dedication.tex
 PAGES := $(wildcard src/*.md) $(wildcard src/*/index.md)
@@ -54,8 +58,8 @@ serve:
 
 ## html: create single-page HTML
 html: docs/all.html
-docs/all.html: ./docs/index.html ${HTML} bin/single.py
-	python ./bin/single.py \
+docs/all.html: ./docs/index.html ${HTML} ${MCCOLE_BIN}/single.py
+	python ${MCCOLE_BIN}/single.py \
 	--head info/head.html \
 	--foot info/foot.html \
 	--root docs \
@@ -65,8 +69,8 @@ docs/all.html: ./docs/index.html ${HTML} bin/single.py
 
 ## latex: create LaTeX document
 latex: docs/${STEM}.tex
-docs/${STEM}.tex: docs/all.html bin/html2tex.py ${CONFIG} ${TEX} ${TEX_COPY}
-	python ./bin/html2tex.py \
+docs/${STEM}.tex: docs/all.html ${MCCOLE_BIN}/html2tex.py ${CONFIG} ${TEX} ${TEX_COPY}
+	python ${MCCOLE_BIN}/html2tex.py \
 	--head info/head.tex \
 	--foot info/foot.tex \
 	< docs/all.html \
@@ -90,7 +94,7 @@ pdf-once: docs/${STEM}.tex ${DOCS_PDF}
 ## diagrams: convert diagrams from SVG to PDF
 diagrams: ${DOCS_PDF}
 src/%.pdf: src/%.svg
-	./bin/convert_drawio.sh $< $@
+	${MCCOLE_BIN}/convert_drawio.sh $< $@
 docs/%.pdf: src/%.pdf
 	cp $< $@
 
@@ -118,38 +122,49 @@ clean:
 ## lint: check project structure
 .PHONY: lint
 lint: clean build
-	@python ./bin/lint.py \
+	@python ${MCCOLE_BIN}/lint.py \
 	--config config.py \
-	--dom ./lib/mccole/dom.yml
+	--dom ${MCCOLE}/dom.yml
 
 ## inclusions: compare inclusions in prose and slides
 .PHONY: inclusions
 inclusions:
-	@python ./bin/inclusions.py --pages ${CHAPTERS}
+	@python ${MCCOLE_BIN}/inclusions.py --pages ${CHAPTERS}
 
 ## examples: re-run examples
 .PHONY: examples
 examples:
 	@for d in ${EXAMPLES}; do echo ""; echo $$d; make -C $$d; done
 
+## fonts: check fonts in diagrams
+.PHONY: fonts
+fonts:
+	@python ${MCCOLE_BIN}/check_svg_fonts.py $(SRC_SVG)
+
 ## spelling: check spelling against known words
 .PHONY: spelling
 spelling:
 	@make wordlist \
-	| python ./bin/post_spellcheck.py info/wordlist.txt
+	| python ${MCCOLE_BIN}/post_spellcheck.py info/wordlist.txt
 
 ## wordlist: make a list of unknown and unused words
 .PHONY: wordlist
 wordlist: ./docs/index.html
-	@python ./bin/pre_spellcheck.py --pages ${PAGES} --slides ${SLIDES} \
+	@python ${MCCOLE_BIN}/pre_spellcheck.py --pages ${PAGES} --slides ${SLIDES} \
 	| aspell -H list \
 	| sort \
 	| uniq
 
+## status: status of chapters
+.PHONY: status
+status:
+	@python ${MCCOLE_BIN}/status.py --config config.py --readme README.md
+	@python ${MCCOLE_BIN}/check_prose_slides.py --config config.py
+
 ## count: words per file
 .PHONY: count
 count:
-	@(wc -w ${PAGES} && grep -c '\[% figure' ${PAGES}) | python bin/count.py
+	@(wc -w ${PAGES} && grep -c '\[% figure' ${PAGES}) | python ${MCCOLE_BIN}/count.py
 
 ## valid: run html5validator on generated files
 .PHONY: valid
@@ -163,7 +178,7 @@ valid: docs/all.html
 ## profile: profile compilation
 .PHONY: profile
 profile:
-	python bin/run_profile.py
+	python ${MCCOLE_BIN}/run_profile.py
 
 ## release: create archive of standard files
 .PHONY: release

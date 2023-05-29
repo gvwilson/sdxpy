@@ -87,7 +87,7 @@ depending on whether the attribute has a single value or multiple values:
 [% inc file="attrs.py" keep="text" %]
 [% inc file="attrs.out" %]
 
-## Visitors {: #check-visitor}
+## The Visitor Pattern {: #check-visitor-pattern}
 
 Before building an HTML validator,
 let's build something to tell us

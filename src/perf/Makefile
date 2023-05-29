@@ -9,7 +9,7 @@ TARGETS=\
 
 include ../../examples.mk
 
-analysis.svg: timing.csv analysis.py
+analysis.pdf analysis.svg: timing.csv analysis.py
 	python analysis.py
 
 profile.out: profile.sh timing.py ${SRC}
