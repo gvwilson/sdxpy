@@ -127,10 +127,13 @@ def check_glossary(glossary_file, language):
     for (key, entry) in sorted(glossary.items()):
         if language not in entry:
             print(f"glossary entry {key} missing {language}")
-        elif "ref" in entry and any(r not in glossary for r in entry["ref"]):
-            print(f"missing ref(s) in glossary entry {key}")
-        elif "def" not in entry[language]:
+            break
+        if "def" not in entry[language]:
             print(f"glossary entry {key}/{language} missing 'def'")
+        if "ref" in entry:
+            missing = [ref for ref in entry["ref"] if ref not in glossary]
+            if any(missing):
+                print(f"missing ref(s) in glossary entry {key}: {missing}")
 
 
 def check_links(links_file, source_files):
