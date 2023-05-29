@@ -141,17 +141,11 @@ it uses that instead.
 [% inc file="visitor.py" %]
 
 `Visitor` defines two [%g abstract_method "abstract methods" %] `open` and `close`
-that are called when we first arrive at a node and when we are finished with it
-([%f template-visitor %]).
+that are called when we first arrive at a node and when we are finished with it.
 Any class derived from `Visitor` must define these two methods.
-{: .continue}
-
-[% figure
-   slug="template-visitor"
-   img="visitor.svg"
-   alt="The Visitor pattern"
-   caption="Using the Visitor pattern to evaluate a page template."
-%]
+This approach is different from that of the visitor in [%x check %],
+where we defined do-nothing methods so that derived classes could override
+only the ones they needed.
 
 The `Expander` class is specialization of `Visitor`
 that uses an `Env` to keep track of variables.
@@ -303,8 +297,6 @@ it's not done until we test it:
 
 [% inc pat="loop.*" fill="ht out" %]
 
-## How We Got Here {: #template-learning}
-
 We have just implemented another simple programming language.
 It can't do arithmetic,
 but if we wanted to add tags like:
@@ -318,50 +310,6 @@ It's unlikely anyone would use the result—typing all of that
 is so much clumsier than typing `width+1` that people wouldn't use it
 unless they had no other choice—but the basic design is there.
 {: .continue}
-
-We didn't invent any of this from scratch,
-any more than we invented the simple interpreter in [%x interp %].
-Instead,
-we did what you are doing now:
-we read what other programmers had written
-and tried to make sense of the key ideas.
-
-The problem is that "making sense" depends on who we are.
-When we use a low-level language,
-we incur the [%i "cognitive load" %][%g cognitive_load "cognitive load" %][%/i%]
-of assembling micro-steps into something more meaningful.
-When we use a high-level language,
-on the other hand,
-we incur a similar load translating functions of functions of functions
-into actual operations on actual data.
-
-More experienced programmers are more capable at both ends of the curve,
-but that's not the only thing that changes.
-If a novice's comprehension curve looks like the lower one in [%f template-comprehension %],
-then an expert's looks like the upper one.
-Experts don't just understand more at all levels of abstraction;
-their *preferred* level has also shifted
-so they find \\(\sqrt{x^2 + y^2}\\) easier to read
-than the medieval expression
-"the side of the square whose area is the sum of the areas of the two squares
-whose sides are given by the first part and the second part".
-
-[% figure
-   slug="template-comprehension"
-   img="comprehension.svg"
-   alt="Comprehension curves"
-   caption="Novice and expert comprehension curves."
-%]
-
-This curve means that for any given task,
-the code that is quickest for a novice to comprehend
-will almost certainly be different from the code that
-an expert can understand most quickly.
-In an ideal world our tools would automatically re-represent programs at different levels
-just as we could change the colors used for syntax highlighting.
-But today's tools don't do that,
-and any IDE smart enough to translate between comprehension levels automatically
-would also be smart enough to write the code without our help.
 
 ## Summary {: #template-summary}
 

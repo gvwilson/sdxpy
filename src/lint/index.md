@@ -47,7 +47,7 @@ and each node's children are the element nested within it.
 
 [% figure
    slug="linter-ast-simple"
-   img="linter_ast_simple.svg"
+   img="ast_simple.svg"
    alt="Simple AST"
    caption="The abstract syntax tree for a simple Python program."
 %]
@@ -510,7 +510,7 @@ please use those rather than the magic shown above.
 
 [% figure
    slug="linter-concept-map"
-   img="linter_concept_map.svg"
+   img="concept_map.svg"
    alt="Concept map for code manipulation"
    caption="Concepts for code manipulation."
 %]

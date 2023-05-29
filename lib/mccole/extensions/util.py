@@ -242,6 +242,13 @@ def require(cond, msg):
     if not cond:
         fail(msg)
 
+def require_file(node, filename, kind):
+    """Require that a file exists."""
+    directory = Path(node.filepath).parent
+    filepath = Path(directory, filename)
+    msg = f"Missing {kind} file {filename} from {node.filepath}"
+    require(filepath.exists(), msg)
+
 
 def warn(title, items):
     """Warn about missing or unused items."""

@@ -97,6 +97,8 @@ def figure_def(pargs, kwargs, node):
     alt = util.markdownify(kwargs["alt"])
     caption = util.markdownify(kwargs["caption"])
 
+    util.require_file(node, img, "figure")
+
     if util.is_slides(node):
         return dedent(
             f"""\
