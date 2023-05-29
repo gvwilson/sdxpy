@@ -1,5 +1,3 @@
-import inspect
-
 # [top]
 from df_base import DataFrame
 from util import dict_match
@@ -20,6 +18,11 @@ class DfRow(DataFrame):
 
     def cols(self):
         return set(self._data[0].keys())
+
+    def get(self, col, row):
+        assert col in self._data[0]
+        assert 0 <= row < len(self._data)
+        return self._data[row][col]
     # [/simple]
 
     # [equal]
@@ -33,13 +36,6 @@ class DfRow(DataFrame):
                     return False
         return True
     # [/equal]
-
-    # [get]
-    def get(self, col, row):
-        assert col in self._data[0]
-        assert 0 <= row < len(self._data)
-        return self._data[row][col]
-    # [/get]
 
     # [select]
     def select(self, *names):

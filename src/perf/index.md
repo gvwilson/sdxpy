@@ -6,23 +6,18 @@ syllabus:
 -   Measure performance to evaluate engineering tradeoffs.
 ---
 
-One of the drawbacks of publishing a book online is that
-it gives you an excuse to obsess over analytics.
+One of the drawbacks of publishing a book online is obsessing over analytics.
 How many people visited the site today?
 Which pages did they look at, and for how long?
-
-Whether your analysis tool of choice is Python, R, SQL, or Excel,
-you're almost certainly working with tables
-with named columns that have the same type of value in every row.
+Whether we use Excel, SQL, R, or Python,
+we will almost certainly be using tables
+that have named columns and multiple rows.
 Tables of this kind are called [%i "dataframe" %][%g dataframe "dataframes" %][%/i%],
-and to explore how they work,
-this chapter builds two implementations of them in Python:
-one that stores values in columns,
-the other that stores them in rows.
-To help us decide which is better,
-we'll compare their performance in a reproducible way.
+and to explore how we should implement them,
+this chapter builds them two different ways
+and then compares their performance.
 
-## Storing Columns {: #perf-cols}
+## Options {: #perf-options}
 
 To start,
 let's create an [%g abstract_class "abstract class" %]
@@ -54,15 +49,32 @@ there's no need to write `pass`.
 
 </div>
 
-We then derive a class `DfCol` that uses [%i "column-wise storage; storage!column-wise" %][%g column_wise "column-wise" %][%/i%] storage
+For our first usable implementation,
+we will derive a class `DfRow` that uses
+[%i "row-wise storage; storage!row-wise" %][%g row_wise "row-wise" %][%/i%] storage
+([%f perf-row-storage %]).
+The dataframe is stored as a list of dictionaries,
+each of which represents a row.
+All of the dictionaries must have the same keys
+(so that it's meaningful to talk about columns),
+and the values associated with a particular key must all have the same type.
+
+[% figure
+   slug="perf-row-storage"
+   img="row_storage.svg"
+   alt="Row-wise storage"
+   caption="Storing a dataframe's data in rows."
+%]
+
+Our second implementation,
+`DfCol`,
+will use [%i "column-wise storage; storage!column-wise" %][%g column_wise "column-wise" %][%/i%] storage
 ([%f perf-col-storage %]).
 Each column is stored as a list of values,
 all of which are of the same type.
 The dataframe itself is a dictionary of such lists,
 all of which have the same length
 so that there are no holes in any of the rows:
-
-[% inc file="df_col.py" keep="top" %]
 
 [% figure
    slug="perf-col-storage"
@@ -71,70 +83,181 @@ so that there are no holes in any of the rows:
    caption="Storing a dataframe's data in columns."
 %]
 
-Some methods are almost trivial to implement on top of this storage mechanism;
-others are more difficult.
-Three of the easy ones return the number of rows and columns
-and the set of column names.
-To get the number of rows
-we check the length of an arbitrary column:
+As we shall see,
+how we store the data determines which of our required methods
+are easy to implement
+and which are hard.
 
-[% inc file="df_col.py" keep="simple" %]
+## Row-Wise Storage {: #perf-row}
+
+We start by deriving `DfRow` from `DataFrame` and writing its constructor,
+which takes a list of dictionaries as an argument,
+checks that they're consistent with each other,
+and saves them:
+
+[% inc file="df_row.py" keep="top" %]
+
+The helper function to check that a bunch of dictionaries
+all have the same keys and the same types of values associated with those keys is:
+
+[% inc file="util.py" keep="match" %]
+
+Notice that `DfRow.__init__` compares all of the rows against the first row.
+Doing this means that we can't create an empty dataframe,
+i.e.,
+one that has no rows.
+We'll look at ways around this in the exercises,
+but the important point for now is that
+this restriction wasn't part of our original design:
+it's an accident of implementation that might surprise our users.
+{: .continue}
+
+Four of the methods required by `DataFrame` are easy to implement
+on top of row-wise storage,
+though once again our implementation assumes that
+there is at least one row:
+
+[% inc file="df_row.py" keep="simple" %]
 
 Checking equality is also relatively simple.
 Two dataframes are the same if they have exactly the same columns
 and the same values in every column:
 
-[% inc file="df_col.py" keep="eq" %]
+[% inc file="df_row.py" keep="equal" %]
 
 Notice that we use `other.cols()` and `other.get()`
 rather than reaching into the other dataframe.
 We defined the abstract base class because
 we expect to implement dataframes in several different ways.
-Those other ways will probably not use the same data structures,
+Those other ways might not use the same data structures,
 so we can only rely on the interface defined in the base class.
 {: .continue}
 
-Getting individual values is straightforward:
+Our final operations are selection,
+which returns a subset of the original dataframe's columns,
+and filtering,
+which returns a subset of its rows.
+Since we don't know how many columns the user might want,
+we give the `select` method a single parameter `*names`
+that will capture zero or more positional arguments.
+We then build a new list of dictionaries
+that only contain the fields with those names ([%f perf-row-select %]:
 
-[% inc file="df_col.py" keep="get" %]
+[% inc file="df_row.py" keep="select" %]
 
-and so is selecting a subset of columns ([%f perf-col-select %]:
+[% figure
+   slug="perf-row-select"
+   img="row_select.svg"
+   alt="Row-wise select"
+   caption="Selecting columns from data stored as rows."
+%]
+
+We now need to decide how to filter rows.
+Typical filtering conditions include,
+"Keep rows where `red` is non-zero,"
+"Keep rows where `red` is greater than `green`,"
+and, "Keep rows where `red+green` is within 10% of `blue`."
+Rather than trying to anticipate every possible rule,
+we will let users define functions
+whose parameters match the names of the table's columns.
+For example,
+if we have this test fixture:
+
+[% inc file="test_df_row.py" keep="fixture" %]
+
+then we should be able to write this test:
 {: .continue}
+
+[% inc file="test_df_row.py" keep="filter" %]
+
+We can implement this  by using `**` to [%g spread "spread" %] the row
+across the function's parameters.
+When `**` is used in the definition of a function,
+it means, "Capture all the named arguments that aren't otherwise accounted for."
+When it is used in a call,
+it means,
+"Match the elements of this dictionary with the function's parameters."
+
+[% inc pat="spread.*" fill="py out" %]
+
+The implementation of `DfRow.filter` is then just:
+
+[% inc file="df_row.py" keep="filter" %]
+
+Notice that the dataframe created by `filter`
+re-uses the rows of the original dataframe ([%f perf-row-filter %]).
+This is safe and efficient so long as columns are [%g immutable "immutable" %],
+i.e.,
+so long as their contents are never changed in place.
+
+[% figure
+   slug="perf-row-filter"
+   img="row_filter.svg"
+   alt="Row-wise filtering"
+   caption="Filtering data stored as rows."
+%]
+
+## Column-Wise Storage {: #perf-col}
+
+Having done all of this thinking,
+our column-wise dataframe class is somewhat easier to write.
+We start as before with the class definition and constructor:
+
+[% inc file="df_col.py" keep="top" %]
+
+and use a helper function `all_eq` to check that
+all of the values in any column have the same types:
+
+[% inc file="util.py" keep="eq" %]
+
+<div class="callout" markdown="1">
+
+### One Allowable Difference
+
+Notice that `DfCol.__init__` does *not* have the same signature as
+the constructor for `DfRow`.
+At some point in our code we have to decide which of the two classes to construct.
+If we design our code well that decision will be made in exactly one place
+and everything else will rely solely on the common interface defined by `DataFrame`.
+But since we have to type a different class name at the point of construction,
+it's OK for the constructors to be different.
+
+</div>
+
+The four methods that were simple to write for `DfRow`
+are equally simple to write for `DfCol`,
+though once again our implementation has accidentally disallowed empty dataframes:
+
+[% inc file="df_col.py" keep="simple" %]
+
+Checking for equality is also straightforward—as with `DfRow`,
+the method relies on implementation details of its own class
+but uses the interface defined by `DataFrame` to access the other object:
+
+[% inc file="df_col.py" keep="equal" %]
+
+To select columns,
+we can just pick the ones named by the caller
+and use them to create a new dataframe.
+Again,
+this recycles the existing storage,
+which is safe to do as long as we never modify a dataframe in place:
 
 [% inc file="df_col.py" keep="select" %]
 
 [% figure
    slug="perf-col-select"
    img="col_select.svg"
-   alt="Selecting columns"
-   caption="Selecting columns with column-wise storage."
+   alt="Column-wise selection"
+   caption="Column-wise selection"
 %]
 
-<div class="callout" markdown="1">
-
-### Recycling
-
-Notice that the dataframe created by `select`
-re-uses the columns of the original dataframe.
-This is safe and efficient so long as columns are [%g immutable "immutable" %],
-i.e.,
-so long as their contents are never changed in place.
-
-</div>
-
-Selecting columns was easy,
-but filtering—i.e., selecting rows that pass some test—is not.
-This is partly because the operation is intrinsically more complex:
-we need to apply a user-defined function to each row
-to see if we're supposed to keep it,
-which is much more complicated than selecting a few columns by name
-out of a dictionary.
-
-However,
-our storage mechanism makes the task more complex still.
-Since values are stored in columns,
+Finally,
+we need to filter the rows of a column-wise dataframe.
+Doing this is complex:
+since values are stored in columns,
 we have to extract the ones belonging to each row
-to pass them into the user-defined function
+to pass them into the user-defined filter function
 ([%f perf-col-filter %]).
 And if that wasn't enough,
 we want to do this solely for the columns that the user's function needs.
@@ -146,38 +269,35 @@ we want to do this solely for the columns that the user's function needs.
    caption="Extracting values from columns to create temporary rows."
 %]
 
-Our solution makes use of the fact that
+For now,
+we will solve this problem
+by requiring the user-defined filter function to define parameters
+to match all of the dataframe's columns
+regardless of whether they are used for filtering or not.
+We will then build a temporary dictionary with all the values in a "row"
+(i.e.,
+the corresponding values across all columns)
+and use `**` to spread it across the filter function:
+
+[% inc file="df_col.py" keep="filter" %]
+
+<div class="callout" markdown="1">
+
+### Inspection
+
+A better implementation of filtering would make use of the fact that
 Python's [inspect][py_inspect] module lets us examine objects in memory.
-In particular, `inspect.signature` can tell us what parameters a function takes.
+In particular, `inspect.signature` can tell us what parameters a function takes:
+
+[% inc pat="inspect_func.*" fill="py out" %]
+
 If, for example,
 the user wants to compare the `red` and `blue` columns of a dataframe,
 they can give us a function that has two parameters called `red` and `blue`.
 We can then use those parameter names to figure out
 which columns we need from the dataframe.
-
-[% inc file="df_col.py" keep="filter" %]
-
-Once we have build a temporary dictionary with the values in a row,
-we pass that dictionary to the user's filter function using `**args`
-to [%i "spreading (arguments)" %][%g spread "spread" %][%/i%] them,
-i.e.,
-to match them by name to the function's parameters.
-
-<div class="callout" markdown="1">
-
-### Would simpler be better?
-
-Packing values and matching them to the parameters of the user's function
-makes the code complex,
-and probably slows filtering down.
-We could instead just pass in the columns and the row index,
-and require the user to refer to (for example) `red[i]` in their function
-instead of just `red`.
-However,
-this would make those filtering functions a little harder to write,
-and we'd have to trust the user to stick to our conventions
-and only use element `i` of each row when filtering.
-We will explore these tradeoffs in the exercises.
+We will explore this in the exercises.
+{: .continue}
 
 </div>
 
@@ -190,90 +310,6 @@ while this one checks that `filter` works correctly:
 {: .continue}
 
 [% inc file="test_df_col.py" keep="test_filter" %]
-
-## Storing Rows {: #perf-rows}
-
-Column-wise storage makes selecting columns easy but filtering rows hard.
-If we expect to do more filtering than selecting
-it might be more efficient to use [%i "row-wise storage; storage!row-wise" %][%g row_wise "row-wise" %][%/i%] storage
-([%f perf-row-storage %]).
-
-[% figure
-   slug="perf-row-storage"
-   img="row_storage.svg"
-   alt="Row-wise storage"
-   caption="Storing a dataframe's data in rows."
-%]
-
-The class `DfRow` is derived from the same abstract base class as `DfCol`
-so that it has the same interface.
-However,
-it stores data as a single list of dictionaries,
-each with the same keys and the same types of values:
-
-[% inc file="df_row.py" keep="top" %]
-
-Notice that `DfRow`'s constructor *doesn't* have the same signature as `DfCol`.
-At some point in our code we have to decide which of the two classes to construct.
-If we design our code well that decision will be made in exactly one place
-and everything else will rely solely on the common interface defined by `DF`.
-But since we have to type something different at the point of construction,
-it's OK for the constructors to be different.
-{: .continue}
-
-The basic operations `ncol`, `nrow`, and `cols` are straightforward:
-
-[% inc file="df_row.py" keep="simple" %]
-
-Whenever we need information about columns,
-we look at the first row.
-The assumption that there *is* a first row means we can't represent
-an empty dataframe;
-we'll explore this in the exercises.
-{: .continue}
-
-Getting values and checking for equality are also straightforward.
-Filtering is much easier than it was with column-wise storage—we
-simply pass each row to the user-supplied filter function
-and keep the ones that pass ([%f perf-row-filter %]):
-{: .continue}
-
-[% inc file="df_row.py" keep="select" %]
-
-[% figure
-   slug="perf-row-filter"
-   img="row_filter.svg"
-   alt="Row-wise filtering"
-   caption="Filtering data stored as rows."
-%]
-
-To select columns we must build a new list of dictionaries,
-each of which has only some of the keys of the original ([%f perf-row-select %]).
-These operations are the inverses of their `DfCol` counterparts:
-we have to rearrange data to select
-but can use the existing data as-is to filter.
-
-[% inc file="df_row.py" keep="select" %]
-
-[% figure
-   slug="perf-row-select"
-   img="row_select.svg"
-   alt="Row-wise select"
-   caption="Selecting columns from data stored as rows."
-%]
-
-Since `DfCol` and `DfRow` have the same interface,
-we can recycle the tests we wrote for the former.
-We obviously need to change the objects we construct,
-so let's use this opportunity to write helper functions
-to create the dataframes we use in multiple tests:
-
-[% inc file="test_df_row.py" keep="fixture" %]
-
-With these functions in hand our tests look like:
-{: .continue}
-
-[% inc file="test_df_row.py" keep="test_two_pairs" %]
 
 ## Performance {: #perf-performance}
 
@@ -579,3 +615,9 @@ and construct all of the matches.
 Write a function that joins two tables this way.
 Is it faster or slower than using a double loop?
 How does the answer depend on the number of keys and the fraction that match?
+
+### Inspection {: .exercise}
+
+Rewrite `DfCol.filter` using Python's `inspect` module
+so that users' filtering functions
+only need to define parameters for the columns of interest.

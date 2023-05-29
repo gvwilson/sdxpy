@@ -1,5 +1,3 @@
-import inspect
-
 # [top]
 from df_base import DataFrame
 from util import all_eq
@@ -23,9 +21,14 @@ class DfCol(DataFrame):
 
     def cols(self):
         return set(self._data.keys())
+
+    def get(self, col, row):
+        assert col in self._data
+        assert 0 <= row < len(self._data[col])
+        return self._data[col][row]
     # [/simple]
 
-    # [eq]
+    # [equal]
     def eq(self, other):
         assert isinstance(other, DataFrame)
         for n in self._data:
@@ -35,14 +38,7 @@ class DfCol(DataFrame):
                 if self.get(n, i) != other.get(n, i):
                     return False
         return True
-    # [/eq]
-
-    # [get]
-    def get(self, col, row):
-        assert col in self._data
-        assert 0 <= row < len(self._data[col])
-        return self._data[col][row]
-    # [/get]
+    # [/equal]
 
     # [select]
     def select(self, *names):
