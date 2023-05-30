@@ -494,7 +494,7 @@ and here's a test to make sure everything works:
 
 <div class="callout" markdown="1">
 
-### What's in a name?
+### What's In a Name?
 
 The first version of these classes used the word `"extension"`
 rather than `"@extension"`.

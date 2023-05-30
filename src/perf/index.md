@@ -38,7 +38,7 @@ requires [%g concrete_class "concrete classes" %] to implement eight methods:
 
 <div class="callout" markdown="1">
 
-### Docstrings are enough
+### Docstrings Are Enough
 
 Every method in Python needs a body,
 so many programmers will write `pass` (Python's "do nothing" statement).
@@ -320,7 +320,7 @@ particularly if we're expecting to work with large datasets.
 
 <div class="callout" markdown="1">
 
-### Transactions versus analysis
+### Transactions vs. Analysis
 
 Regardless of data volumes,
 different storage schemes are better (or worse) for different kinds of work.

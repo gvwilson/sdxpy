@@ -100,7 +100,7 @@ it adds them and returns the result
 
 <div class="callout" markdown="1">
 
-### Arguments versus Parameters
+### Arguments vs. Parameters
 
 Many programmers use the words [%g argument "argument" %]
 and [%g parameter "parameter" %] interchangeably,

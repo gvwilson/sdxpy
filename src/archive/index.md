@@ -150,7 +150,7 @@ of the backup's creation.
 
 <div class="callout" markdown="1">
 
-### Time of check/time of use
+### Time of Check/Time of Use
 
 Our naming convention for manifests will fail
 if we try to create two or more backups in the same second.

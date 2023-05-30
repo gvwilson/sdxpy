@@ -284,12 +284,12 @@ let's fill an array with the numbers from 0 to 3:
 
 ## Exercises {: #vm-exercises}
 
-### Swapping values {: .exercise}
+### Swapping Values {: .exercise}
 
 Write an assembly language program that swaps the values in R1 and R2
 without affecting the values in other registers.
 
-### Reversing an array {: .exercise}
+### Reversing an Array {: .exercise}
 
 Write an assembly language program that starts with:
 
@@ -300,7 +300,7 @@ Write an assembly language program that starts with:
 and reverses the array in place.
 {: .continue}
 
-### Increment and decrement {: .exercise}
+### Increment and Decrement {: .exercise}
 
 1.  Add instructions `inc` and `dec` that add one to the value of a register
     and subtract one from the value of a register respectively.
@@ -309,7 +309,7 @@ and reverses the array in place.
     How much shorter do they make the programs?
     How much easier to read?
 
-### Using long addresses {: .exercise}
+### Using Long Addresses {: .exercise}
 
 1.  Modify the virtual machine so that the `ldr` and `str` instructions
     contain 16-bit addresses rather than 8-bit addresses
@@ -317,7 +317,7 @@ and reverses the array in place.
 
 2.  How does this complicate instruction interpretation?
 
-### Operating on strings {: .exercise}
+### Operating on Strings {: .exercise}
 
 The C programming language stored character strings as non-zero bytes terminated by a byte containing zero.
 
@@ -330,7 +330,7 @@ The C programming language stored character strings as non-zero bytes terminated
 
 3.  What happens in each case if the terminator is missing?
 
-### Call and return {: .exercise}
+### Call and Return {: .exercise}
 
 1.  Add another register to the virtual machine called SP (for "stack pointer")
     that is automatically initialized to the *last* address in memory.
@@ -344,14 +344,14 @@ The C programming language stored character strings as non-zero bytes terminated
 4.  Using these instructions,
     write a subroutine that evaluates `2x+1` for every value in an array.
 
-### Disassembling instructions {: .exercise}
+### Disassembling Instructions {: .exercise}
 
 A [%g disassembler "disassembler %] turns machine instructions into assembly code.
 Write a disassembler for the instruction set used by our virtual machine.
 (Since the labels for addresses are not stored in machine instructions,
 disassemblers typically generate labels like `@L001` and `@L002`.)
 
-### Linking multiple files {: .exercise}
+### Linking Multiple Files {: .exercise}
 
 1.  Modify the assembler to handle `.include filename` directives.
 
@@ -359,7 +359,7 @@ disassemblers typically generate labels like `@L001` and `@L002`.)
     How does it prevent infinite includes
     (i.e., `A.as` includes `B.as` which includes `A.as` again)?
 
-### Providing system calls {: .exercise}
+### Providing System Calls {: .exercise}
 
 Modify the virtual machine so that developers can add "system calls" to it.
 
@@ -370,7 +370,7 @@ Modify the virtual machine so that developers can add "system calls" to it.
     It looks up the corresponding function and calls it with the values of R0-R3 as parameters
     and places the result in R0.
 
-### Unit testing {: .exercise}
+### Unit Testing {: .exercise}
 
 1.  Write unit tests for the assembler.
 

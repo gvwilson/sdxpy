@@ -24,7 +24,7 @@ to test our ideas.
 
 <div class="callout" markdown="1">
 
-### Upside down
+### Upside Down
 
 The [%i "coordinate system" %]coordinate systems[%/i%] for screens
 puts (0, 0) in the upper left corner instead of the lower left.

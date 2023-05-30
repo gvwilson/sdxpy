@@ -43,7 +43,7 @@ and then either a literal `pdf` or a literal `txt`.
 
 <div class="callout" markdown="1">
 
-### Please don't write parsers
+### Please Don't Write Parsers
 
 Languages that are comfortable for people to read and write
 are usually difficult for computers to understand

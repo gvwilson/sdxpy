@@ -71,7 +71,7 @@ the output will be standard HTML without any traces of how it was created:
 
 <div class="callout" markdown="1">
 
-### Human-readable vs. machine-readable
+### Human-Readable vs. Machine-Readable
 
 Mini-languages for page templating can quickly become unreadable.
 We have already started down that road

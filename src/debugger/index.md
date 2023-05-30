@@ -402,7 +402,7 @@ We will explore this in the exercises.
 
 ## Exercises {: #debugger-exercises}
 
-### Show memory range {: .exercise}
+### Show Memory Range {: .exercise}
 
 Modify the debugger so that if the user provides a single address to the `"memory"` command,
 the debugger shows the value at that address,
@@ -413,13 +413,13 @@ the debugger shows all the memory between those addresses.
 
 2.  Is your solution general enough to handle likely future changes without rewriting?
 
-### Breakpoint addresses {: .exercise}
+### Breakpoint Addresses {: .exercise}
 
 Modify the debugger so that if the user provides a single address to the `"break"` or `"clear"` command,
 it sets or clears the breakpoint at that address.
 Did this feature require any changes beyond those made for the previous exercise?
 
-### Command completion {: .exercise}
+### Command Completion {: .exercise}
 
 Modify the debugger to recognize commands based on any number of distinct leading characters.
 For example,
@@ -429,7 +429,7 @@ instead,
 they should be able to specify the full command name and the method it corresponds to,
 and the VM's constructor should take care of the rest.
 
-### Conditional breakpoints {: .exercise}
+### Conditional Breakpoints {: .exercise}
 
 Modify the debugger so that users can specify conditions for breakpoints,
 i.e.,
@@ -451,17 +451,17 @@ For example,
 if the user specifies a watchpoint for address 0x0010,
 then the VM automatically halts whenever a new value is stored at that location.
 
-### Instruction lookup {: .exercise}
+### Instruction Lookup {: .exercise}
 
 Modify the virtual machine so that `execute` looks up instructions in a table
 in the same way as debugger commands.
 
-### Changing memory {: .exercise}
+### Changing Memory {: .exercise}
 
 Modify the debugger so that users can change the values in registers
 or at particular addresses in memory while the program is running.
 
-### Displaying source {: .exercise}
+### Displaying Source {: .exercise}
 
 1.  Modify the debugger so that when the debugger is displaying memory,
     it shows the assembly code instructions corresponding to particular addresses
@@ -470,7 +470,7 @@ or at particular addresses in memory while the program is running.
 2.  How can the debugger distinguish between locations that contain instructions
     and locations that contain data?
 
-### Interleaving testing {: .exercise}
+### Interleaving Testing {: .exercise}
 
 Modify the testing tools developed in this chapter
 so that users can specify input and output as they would naturally occur,
@@ -480,7 +480,7 @@ then the output expected from those commands,
 then some more input and the corresponding output,
 and so on.
 
-### Pattern matching in tests {: .exercise}
+### Pattern Matching in Tests {: .exercise}
 
 1.  Tools like [Expect][expect] allow programmers to match output with regular expressions.
     Modify the testing tools developed in this chapter to do that as well.

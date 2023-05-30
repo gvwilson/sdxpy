@@ -187,6 +187,7 @@ which is known as the [%g null_object_pattern "Null Object" %] pattern.
 %]
 
 <div class="callout" markdown="1">
+
 ## We Didn't Invent This
 
 We didn't invent any of the patterns or refactorings used in this chapter.
