@@ -17,8 +17,9 @@ that classes and functions have consistent names,
 that modules are imported in a consistent order,
 and dozens of other things.
 
-Checking tools are often called [%g linter "linters" %]
-because an early tool like this for the C programming language was called `lint`.
+Checking tools are often called [%g linter "linters" %],
+because an early tool like this that found fluff in C programs was called `lint`,
+and the name stuck.
 Many projects insist that code pass checks like these
 before being committed to version control.
 To show how they work,
@@ -32,8 +33,10 @@ and to create code as well as check it.
 
 ## Machinery {: #linter-machinery}
 
-Our starting point is Python's [ast][py_ast] module,
-which parses Python code and produces an [%g abstract_syntax_tree "abstract syntax tree" %]
+[%x check %] represented HTML as a [%g dom "DOM tree" %].
+Similarly,
+we can use Python's [ast][py_ast] module
+to parse Python programs and produce an [%g abstract_syntax_tree "abstract syntax tree" %]
 that represents the structure of the code.
 For example,
 suppose we have this short program:
@@ -52,15 +55,16 @@ and each node's children are the element nested within it.
    caption="The abstract syntax tree for a simple Python program."
 %]
 
-We say "main parts of the AST" because
+We said that [%f linter-ast-simple %] showed the main parts of the AST because
 the full structure includes placeholders for elements
 that aren't present in this program.
-To see the full thing,
+To see them,
 we can use `ast.parse` to turn our short program into an AST
 and `ast.dump` to display it:
 
 [% inc file="dump_ast.py" %]
-[% inc pat="dump_ast_simple.*" fill="sh out" %]
+[% inc file="dump_ast_simple.sh" %]
+[% inc file="dump_ast_simple.out" head="10" %]
 
 Looking at the node representing the definition of the function `double`,
 it has:
@@ -81,9 +85,10 @@ that knew which fields of that node were worth exploring.
 Luckily for us,
 the [ast][py_ast] module comes with tools that can do this for us.
 The class `ast.NodeVisitor` uses
-the [%i "Visitor pattern" "design pattern!Visitor" %][%g visitor_pattern "Visitor" %][%/i%] design pattern
+the now-familiar
+[%i "Visitor pattern" "design pattern!Visitor" %][%g visitor_pattern "Visitor" %][%/i%] pattern
 to recurse through an AST.
-Each time it reaches a new node of type `Thing`,
+Each time the visitor reaches a new node of type `Thing`,
 it looks for a method called `visit_Thing`;
 for example,
 when it reaches a `FunctionDef` node it looks for `visit_FunctionDef`.
@@ -119,9 +124,6 @@ parse it,
 and then call the `visit` method of our class to trigger recursion:
 
 [% inc file="walk_ast.py" keep="main" %]
-
-Here's its output for our simple test program:
-
 [% inc pat="walk_ast.*" fill="sh out" %]
 
 With a little more work we could record class names as well,
@@ -130,31 +132,35 @@ class names use CamelCase
 while function and variable names use pothole\_case.
 We'll tackle this in the exercises.
 
-## Finding Things {: #linter-find}
+## Finding Duplicate Keys {: #linter-dup}
 
 Many programs store their configuration in dictionaries.
 As those dictionaries grow larger,
 it's easy for programmer to redefine values by accident.
-Python doesn't consider this an error—for example,
-both `no_duplicates` and `has_duplicates` are valid two-element dictionaries:
+For example,
+the dictionary in this short piece of code has two entries
+for the key `"third"`:
 
 [% inc file="has_duplicate_keys.py" %]
 
-<div class="callout" markdown="1">
+Python could:
+{: .continue}
 
-### Overwriting, not Appending
+1.  Treat this as an error.
+2.  Keep the first entry.
+3.  Keep the last entry.
+4.  Concatenate the entries somehow.
 
-Programmers who are new to Python sometimes believe that
-the "extra" values in the dictionary `has_duplicates`
-should be put in a list,
-so that (for example) the key `"third"` has the value `[3, 6]`.
-This behavior would be perfectly reasonable,
-but it isn't what Python does.
+As the output below shows,
+Python chooses option 3,
+even though code like this is probably not doing
+what its author thinks it's doing:
+{: .continue}
 
-</div>
+[% inc file="has_duplicate_keys.out" %]
 
 We can built a linter that finds dictionaries like `has_duplicates`
-in just 17 lines of code.
+with just a few lines of code.
 We define a `visit_Dict` method for `NodeVisitor` to call;
 in it,
 we add each constant key to an instance of `Counter`
@@ -173,7 +179,7 @@ Its output for the file containing our two example dictionaries is:
 ### As Far as We Can Go
 
 `FindDuplicateKeys` only considers constant keys,
-so it won't find duplicate keys that are created on the fly:
+so it won't find duplicate keys that are created on the fly like this:
 
 [% inc file="function_keys.py" %]
 
@@ -185,6 +191,8 @@ i.e.,
 tell us there aren't problems when there actually are.
 
 </div>
+
+## Finding Unused Variables {: #linter-unused}
 
 Finding unused variables—ones that are assigned values but never used—is
 more challenging than our previous examples.
@@ -243,6 +251,8 @@ let's create a program that has some unused variables:
 When we run our linter we get:
 
 [% inc file="find_unused_variables.out" %]
+
+## Method Definitions {: #lint-method .bonus}
 
 For our last example of finding things,
 let's build a tool that tells us which methods are defined in which classes.
@@ -376,136 +386,6 @@ we can now register as many handlers as we want
 for each kind of node.
 {: .continue}
 
-## Generating Documentation {: #linter-docs}
-
-Many programmers believe they're more likely to write documentation and keep it up to date
-if it is close to the code.
-Tools that extract specially-formatted comments from code and turn them into documentation
-have been around since at least the 1980s;
-both [Sphinx][sphinx] and [MkDocs][mkdocs] are popular ones for Python.
-
-Generating documentation isn't the same as checking code style,
-but they share some tooling.
-Let's start by building a `NodeVisitor` that extracts and saves docstrings:
-
-[% inc file="doc_extract.py" keep="start" %]
-
-The code to create a stack,
-extract docstrings,
-and save them in a dictionary should look familiar by now:
-
-[% inc file="doc_extract.py" keep="body" %]
-
-To format the docstrings,
-we create a Markdown page with module, class, and function names as headers:
-
-[% inc file="doc_format.py" keep="format" %]
-
-If our input file looks like this:
-
-[% inc file="doc_sample.py" %]
-
-then our output is:
-{: .continue}
-
-[% inc file="doc_sample.out" %]
-
-## Modifying Code {: #codegen-modify}
-
-An AST is a data structure like any other,
-which means we can modify it as well as inspecting it.
-Let's start with this short program:
-
-[% inc file="double_and_print.py" %]
-
-Its AST has two top-level nodes:
-one for the function definition and one for the `print` statement.
-We can duplicate the second of these and then [%g unparsing "unparse" %] the AST
-to produce a new program:
-
-[% inc file="unparse.py" keep="modify" %]
-[% inc file="unparse_modified.out" %]
-
-To run our machine-generated program,
-we have to compile the AST to [%g bytecode "bytecode" %]
-and tell Python to evaluate the result:
-
-[% inc file="unparse.py" keep="exec" %]
-[% inc file="unparse_exec.out" %]
-
-Duplicating a `print` statement isn't particularly useful,
-but other applications of this technique let us do some powerful things.
-Let's have another look at how Python represents a function call.
-Our example is:
-
-[% inc file="call.py" %]
-
-We parse it like this:
-{: .continue}
-
-[% inc file="inject.py" keep="parse" %]
-
-and get this AST:
-{: .continue}
-
-[% inc file="inject_parse.out" %]
-
-But we don't have to parse text to create an AST:
-it's just a bunch of objects,
-so we can construct one by hand
-that mirrors the structure shown above:
-
-[% inc file="inject.py" keep="make" %]
-[% inc file="inject_make.out" %]
-
-Alternatively,
-we can find existing function definitions
-and modify them programmatically:
-
-[% inc file="inject.py" keep="modify" %]
-
-To try this out,
-here's a program that adds and doubles numbers:
-
-[% inc file="add_double.py" %]
-
-The modified version is:
-{: .continue}
-
-[% inc file="inject_modified.out" %]
-
-So what exactly is `call`?
-We want a "function" that keeps track of
-how many times it has been passed different strings,
-so we define a class with a `__call__` method
-so that its instances can be used like functions:
-
-[% inc file="inject.py" keep="counter" %]
-
-Finally,
-when we're evaluating the bytecode generated from our modified AST,
-we pass in a dictionary of variable names and values
-that we want to have in scope.
-The result is exactly what we would get if we had defined all of this in the usual way:
-
-[% inc file="inject.py" keep="exec" %]
-[% inc file="inject_exec.out" %]
-
-<div class="callout" markdown="1">
-
-### There's Such a Thing as "Too Clever"
-
-Modifying code dynamically is the most powerful technique shown in this book.
-It is also the least comprehensible:
-as soon as the code you read and the code that's run can differ in arbitrary ways,
-you have a maintenance headache and a security nightmare.
-Limited forms of program modification,
-such as Python's [metaclasses][py_metaclass] or [%g decorator "decorators" %]
-give most of the power with only some of the headaches;
-please use those rather than the magic shown above.
-
-</div>
-
 ## Summary {: #linter-summary}
 
 [% figure
@@ -517,12 +397,12 @@ please use those rather than the magic shown above.
 
 ## Exercises {: #linter-exercises}
 
-### Finding unused parameters {: .exercise}
+### Finding Unused Parameters {: .exercise}
 
 Modify the code that finds unused variables
 to report unused function parameters as well.
 
-### Finding redundant assignments {: .exercise}
+### Finding Redundant Assignments {: .exercise}
 
 Write a linter that looks for redundant assignments to variables,
 i.e.,
@@ -536,18 +416,18 @@ x = 2
 (Redundant assignments are a common result of copying and pasting.)
 {: .continue}
 
-### Checking names {: .exercise}
+### Checking Names {: .exercise}
 
 Write a linter that checks that
 class names are written in CamelCase
 but function and variable names are pothole\_case.
 
-### Missing documentation {: .exercise}
+### Missing Documentation {: .exercise}
 
 Write a linter that complains about modules, classes, methods, and functions
 that don't have docstrings.
 
-### Missing tests {: .exercise}
+### Missing Tests {: .exercise}
 
 Write a linter that takes two files as input:
 one that defines one or more functions
@@ -555,16 +435,7 @@ and another that defines one or more tests of those functions.
 The linter looks through the tests to see what functions are being called,
 then reports any functions from the first file that it hasn't seen.
 
-### Nested functions {: .exercise}
-
-Modify the inheritance table code
-so that class names are shown in parent-to-child order
-and methods are shown in the order in which they are first defined.
-(You may find the discussion of
-[%i "topological order" %][%g topological_order "topological ordering" %][%/i%]
-in [%x build %] useful.)
-
-### Chaining methods {: .exercise}
+### Chaining Methods {: .exercise}
 
 1.  Modify the code that injects methods into `NodeVisitor`
     so that any previously-injected methods are also called.
@@ -573,18 +444,7 @@ in [%x build %] useful.)
     whether or not it has handled recursion
     (either directly or indirectly).
 
-### Decorating {: .exercise}
-
-Create a `@count` decorator that causes a function to count
-how many times it has been called.
-
-### Name conversion {: .exercise}
-
-Write a tool that find functions with pothole\_case names
-and replaces them with CamelCase names,
-then saves the resulting program as a legal Python file.
-
-### Sorting imports {: .exercise}
+### Sorting Imports {: .exercise}
 
 [isort][isort] checks that the imports in a file are sorted correctly:
 modules from Python's standard library come first (in alphabetical order),

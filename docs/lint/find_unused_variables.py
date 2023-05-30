@@ -17,7 +17,6 @@ class FindUnusedVariables(ast.NodeVisitor):
 
     def visit_FunctionDef(self, node):
         self.search(node.name, node)
-
     # [/class]
 
     # [search]
@@ -32,7 +31,6 @@ class FindUnusedVariables(ast.NodeVisitor):
         if unused:
             names = ", ".join(sorted(unused))
             print(f"unused in {scope.name}: {names}")
-
     # [/search]
 
     # [name]
