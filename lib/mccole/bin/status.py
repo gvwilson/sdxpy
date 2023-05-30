@@ -6,7 +6,6 @@ from pathlib import Path
 
 import utils
 
-
 RE_EXERCISE = re.compile(r"\{:\s+\.exercise\}")
 RE_STATUS = re.compile(r"\|\s*\*?(\d+)%\*?\s*\|")
 
@@ -44,7 +43,7 @@ def report_chapters(chapters):
         num_exercises = count_exercises(page)
         num_lines = count_lines(page)
         num_slides = count_slides(slides)
-        s = fmt.format(f'{slug}')
+        s = fmt.format(f"{slug}")
         print(f"{s} | {num_slides:6} | {num_exercises:9} | {num_lines:5}")
 
 

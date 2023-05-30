@@ -153,7 +153,7 @@ def _find_markers(lines, key):
     stop = f"[/{key}]"
     i_start = None
     i_stop = None
-    for (i, line) in enumerate(lines):
+    for i, line in enumerate(lines):
         if start in line:
             i_start = i
         elif stop in line:

@@ -48,7 +48,7 @@ def _cleanup(collected):
     glossary = {item["key"]: item[lang]["term"] for item in glossary}
 
     result = util.make_config("definitions")
-    for (slug, seen) in collected.items():
+    for slug, seen in collected.items():
         terms = [(key, glossary[key]) for key in glossary if key in seen]
         terms.sort(key=lambda item: item[1].lower())
         result.append((slug, terms))

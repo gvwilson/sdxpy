@@ -5,34 +5,37 @@
 # By default, show available commands (by finding '##' comments).
 .DEFAULT: commands
 
-# Where to find things relative to project root.
-MCCOLE=./lib/mccole
-MCCOLE_BIN=${MCCOLE}/bin
+# Get the absolute path to this file from wherever it is included.
+# See https://stackoverflow.com/questions/18136918/how-to-get-current-relative-directory-of-your-makefile
+MCCOLE:=$(realpath $(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
+
+# Get the project root.
+ROOT:=${realpath ${MCCOLE}/../..}
 
 # Get local configuration from the Ivy configuration file.
-CONFIG := ./config.py
+CONFIG := ${ROOT}/config.py
 ABBREV := $(shell python ${CONFIG} --abbrev)
 BUILD_DATE := $(shell date '+%Y-%m-%d')
 CHAPTERS := $(shell python ${CONFIG} --chapters)
 
 # Direct variables.
-BIN_PY := $(wildcard ${MCCOLE_BIN}/*.py)
+BIN_PY := $(wildcard ${MCCOLE}/bin/*.py)
 LIB_PY := $(wildcard ${MCCOLE}/extensions/*.py)
-EXAMPLES := $(patsubst %/Makefile,%,$(wildcard src/*/Makefile))
-HTML := info/head.html info/foot.html
-INFO := info/bibliography.bib info/credits.yml info/glossary.yml info/links.yml
+EXAMPLES := $(patsubst %/Makefile,%,$(wildcard ${ROOT}/src/*/Makefile))
+HTML := ${ROOT}/info/head.html ${ROOT}/info/foot.html
+INFO := ${ROOT}/info/bibliography.bib ${ROOT}/info/credits.yml ${ROOT}/info/glossary.yml ${ROOT}/info/links.yml
 IVY :=  $(wildcard ${MCCOLE}/extensions/*.*) $(wildcard ${MCCOLE}/resources/*.*) $(wildcard ${MCCOLE}/templates/*.*)
-TEX := info/head.tex info/foot.tex
-TEX_COPY := info/krantz.cls info/dedication.tex
-PAGES := $(wildcard src/*.md) $(wildcard src/*/index.md)
-SLIDES := $(wildcard src/*/slides.html)
-SRC_SVG := $(wildcard src/*/*.svg)
+TEX := ${ROOT}/info/head.tex ${ROOT}/info/foot.tex
+TEX_COPY := ${ROOT}/info/krantz.cls ${ROOT}/info/dedication.tex
+PAGES := $(wildcard ${ROOT}/src/*.md) $(wildcard ${ROOT}/src/*/index.md)
+SLIDES := $(wildcard ${ROOT}/src/*/slides.html)
+SRC_SVG := $(wildcard ${ROOT}/src/*/*.svg)
 
 # Calculated variables.
-DOCS := $(patsubst src/%.md,docs/%.html,$(PAGES)) $(patsubst src/%/slides.html,docs/%/slides/index.html,$(SLIDES))
-FIG_PDF := $(patsubst src/%.svg,docs/%.pdf,${FIG_SVG})
-SRC_PDF := $(patsubst src/%.svg,src/%.pdf,${SRC_SVG})
-DOCS_PDF := $(patsubst src/%.pdf,docs/%.pdf,${SRC_PDF})
+DOCS := $(patsubst ${ROOT}/src/%.md,${ROOT}/docs/%.html,$(PAGES)) $(patsubst ${ROOT}/src/%/slides.html,${ROOT}/docs/%/slides/index.html,$(SLIDES))
+FIG_PDF := $(patsubst ${ROOT}/src/%.svg,${ROOT}/docs/%.pdf,${FIG_SVG})
+SRC_PDF := $(patsubst ${ROOT}/src/%.svg,${ROOT}/src/%.pdf,${SRC_SVG})
+DOCS_PDF := $(patsubst ${ROOT}/src/%.pdf,${ROOT}/docs/%.pdf,${SRC_PDF})
 STEM := ${ABBREV}-${BUILD_DATE}
 SRC := ${PAGES} ${SLIDES}
 
@@ -51,8 +54,8 @@ commands:
 	| column -t -s ':'
 
 ## build: rebuild site without running server
-build: ./docs/index.html
-./docs/index.html: ${SRC} ${SRC_SVG} ${INFO} ${IVY} config.py
+build: ${ROOT}/docs/index.html
+${ROOT}/docs/index.html: ${SRC} ${SRC_SVG} ${INFO} ${IVY} ${ROOT}/config.py
 	ivy build && touch $@
 
 ## serve: build site and run server
@@ -61,27 +64,27 @@ serve:
 	ivy watch --port ${PORT}
 
 ## pdf: create PDF version of material
-pdf: docs/${STEM}.tex ${DOCS_PDF}
-	cp info/bibliography.bib docs
-	cd docs && pdflatex ${STEM}
-	cd docs && biber ${STEM}
-	cd docs && makeindex ${STEM}
-	cd docs && pdflatex ${STEM}
-	cd docs && pdflatex ${STEM}
+pdf: ${ROOT}/docs/${STEM}.tex ${DOCS_PDF}
+	cp ${ROOT}/info/bibliography.bib ${ROOT}/docs
+	cd ${ROOT}/docs && pdflatex ${STEM}
+	cd ${ROOT}/docs && biber ${STEM}
+	cd ${ROOT}/docs && makeindex ${STEM}
+	cd ${ROOT}/docs && pdflatex ${STEM}
+	cd ${ROOT}/docs && pdflatex ${STEM}
 
 ## ---: ---
 
 ## lint: check project structure
 .PHONY: lint
 lint: clean build
-	@python ${MCCOLE_BIN}/lint.py \
-	--config config.py \
+	@python ${MCCOLE}/bin/lint.py \
+	--config ${ROOT}/config.py \
 	--dom ${MCCOLE}/dom.yml
 
 ## inclusions: compare inclusions in prose and slides
 .PHONY: inclusions
 inclusions:
-	@python ${MCCOLE_BIN}/inclusions.py --pages ${CHAPTERS}
+	@python ${MCCOLE}/bin/inclusions.py --pages ${CHAPTERS}
 
 ## examples: re-run examples
 .PHONY: examples
@@ -91,18 +94,18 @@ examples:
 ## fonts: check fonts in diagrams
 .PHONY: fonts
 fonts:
-	@python ${MCCOLE_BIN}/check_svg_fonts.py $(SRC_SVG)
+	@python ${MCCOLE}/bin/check_svg_fonts.py $(SRC_SVG)
 
 ## spelling: check spelling against known words
 .PHONY: spelling
 spelling:
 	@make wordlist \
-	| python ${MCCOLE_BIN}/post_spellcheck.py info/wordlist.txt
+	| python ${MCCOLE}/bin/post_spellcheck.py ${ROOT}/info/wordlist.txt
 
 ## wordlist: make a list of unknown and unused words
 .PHONY: wordlist
-wordlist: ./docs/index.html
-	@python ${MCCOLE_BIN}/pre_spellcheck.py --pages ${PAGES} --slides ${SLIDES} \
+wordlist: ${ROOT}/docs/index.html
+	@python ${MCCOLE}/bin/pre_spellcheck.py --pages ${PAGES} --slides ${SLIDES} \
 	| aspell -H list \
 	| sort \
 	| uniq
@@ -110,81 +113,37 @@ wordlist: ./docs/index.html
 ## ---: ---
 
 ## html: create single-page HTML
-html: docs/all.html
-docs/all.html: ./docs/index.html ${HTML} ${MCCOLE_BIN}/single.py
-	python ${MCCOLE_BIN}/single.py \
-	--head info/head.html \
-	--foot info/foot.html \
-	--root docs \
+html: ${ROOT}/docs/all.html
+docs/all.html: ${ROOT}/docs/index.html ${HTML} ${MCCOLE}/bin/single.py
+	python ${MCCOLE}/bin/single.py \
+	--head ${ROOT}/info/head.html \
+	--foot ${ROOT}/info/foot.html \
+	--root ${ROOT}/docs \
 	--title "$$(python ${CONFIG} --title)" \
 	--tagline "$$(python ${CONFIG} --tagline)" \
-	> docs/all.html
+	> ${ROOT}/docs/all.html
 
 ## latex: create LaTeX document
-latex: docs/${STEM}.tex
-docs/${STEM}.tex: docs/all.html ${MCCOLE_BIN}/html2tex.py ${CONFIG} ${TEX} ${TEX_COPY}
-	python ${MCCOLE_BIN}/html2tex.py \
-	--head info/head.tex \
-	--foot info/foot.tex \
-	< docs/all.html \
-	> docs/${STEM}.tex
-	python ${CONFIG} --latex > docs/config.tex
-	cp ${TEX_COPY} docs
+latex: ${ROOT}/docs/${STEM}.tex
+${ROOT}/docs/${STEM}.tex: ${ROOT}/docs/all.html ${MCCOLE}/bin/html2tex.py ${CONFIG} ${TEX} ${TEX_COPY}
+	python ${MCCOLE}/bin/html2tex.py \
+	--head ${ROOT}/info/head.tex \
+	--foot ${ROOT}/info/foot.tex \
+	< ${ROOT}/docs/all.html \
+	> ${ROOT}/docs/${STEM}.tex
+	python ${CONFIG} --latex > ${ROOT}/docs/config.tex
+	cp ${TEX_COPY} ${ROOT}/docs
 
 ## pdf-once: create PDF document with a single compilation
-pdf-once: docs/${STEM}.tex ${DOCS_PDF}
-	cd docs && pdflatex ${STEM}
+pdf-once: ${ROOT}/docs/${STEM}.tex ${DOCS_PDF}
+	cd ${ROOT}/docs && pdflatex ${STEM}
 
 ## diagrams: convert diagrams from SVG to PDF
 diagrams: ${DOCS_PDF}
-src/%.pdf: src/%.svg
-	${MCCOLE_BIN}/convert_drawio.sh $< $@
-docs/%.pdf: src/%.pdf
+${ROOT}/src/%.pdf: ${ROOT}/src/%.svg
+	${MCCOLE}/bin/convert_drawio.sh $< $@
+${ROOT}/docs/%.pdf: ${ROOT}/src/%.pdf
 	cp $< $@
-
-## release: create archive of standard files
-.PHONY: release
-release:
-	zip -r mccole.zip \
-	CODE_OF_CONDUCT.md \
-	CONTRIBUTING.md \
-	LICENSE.md \
-	Makefile \
-	bin \
-	info/dom.yml \
-	info/*.html \
-	info/*.tex \
-	lib \
-	src/bibliography \
-	src/conduct \
-	src/contents \
-	src/credits \
-	src/glossary \
-	src/license \
-	src/links \
-	src/syllabus \
-	-x "*__pycache__*"
-
-## publisher: create archive to send to publisher
-.PHONY: publisher
-publisher:
-	zip -r ${STEM}.zip \
-	docs/${STEM}.tex \
-	docs/bibliography.bib \
-	docs/config.tex \
-	docs/dedication.tex \
-	docs/krantz.cls \
-	docs/*/*.pdf
-
-## web: export files for publishing on the web
-.PHONY: web
-web:
-	@if [ -z ${MCCOLE} ]; then echo "Must set MCCOLE" 1>&2; exit 1; fi
-	rm -rf ${MCCOLE}
-	MCCOLE=${MCCOLE} ivy build
-	@zip -q -r ${MCCOLE}/${ABBREV}-examples.zip docs \
-	-i '*.ht' '*.json' '*.out' '*.py' '*.sh' '*.txt' '*.yml' \
-	-x '*.html'
 
 ## ---: ---
 
@@ -204,46 +163,46 @@ fix:
 ## profile: profile compilation
 .PHONY: profile
 profile:
-	python ${MCCOLE_BIN}/run_profile.py
+	python ${MCCOLE}/bin/run_profile.py
 
 ## clean: clean up stray files
 clean:
-	@find . -name '*~' -exec rm {} \;
-	@find . -name '*.bkp' -exec rm {} \;
-	@find . -name '.*.dtmp' -exec rm {} \;
-	@find . -type d -name __pycache__ | xargs rm -r
+	@find ${ROOT} -name '*~' -exec rm {} \;
+	@find ${ROOT} -name '*.bkp' -exec rm {} \;
+	@find ${ROOT} -name '.*.dtmp' -exec rm {} \;
+	@find ${ROOT} -type d -name __pycache__ | xargs rm -r
 	@rm -f \
-	docs/*.aux \
-	docs/*.bbl \
-	docs/*.bcf \
-	docs/*.blg \
-	docs/*.idx \
-	docs/*.ilg \
-	docs/*.ind \
-	docs/*.log \
-	docs/*.out \
-	docs/*.pdf \
-	docs/*.run.xml \
-	docs/*.tex \
-	docs/*.toc
+	${ROOT}/docs/*.aux \
+	${ROOT}/docs/*.bbl \
+	${ROOT}/docs/*.bcf \
+	${ROOT}/docs/*.blg \
+	${ROOT}/docs/*.idx \
+	${ROOT}/docs/*.ilg \
+	${ROOT}/docs/*.ind \
+	${ROOT}/docs/*.log \
+	${ROOT}/docs/*.out \
+	${ROOT}/docs/*.pdf \
+	${ROOT}/docs/*.run.xml \
+	${ROOT}/docs/*.tex \
+	${ROOT}/docs/*.toc
 
 ## ---: ---
 
 ## status: status of chapters
 .PHONY: status
 status:
-	@python ${MCCOLE_BIN}/status.py --config config.py --readme README.md
-	@python ${MCCOLE_BIN}/check_prose_slides.py --config config.py
+	@python ${MCCOLE}/bin/status.py --config ${ROOT}/config.py --readme ${ROOT}/README.md
+	@python ${MCCOLE}/bin/check_prose_slides.py --config ${ROOT}/config.py
 
 ## count: words per file
 .PHONY: count
 count:
-	@(wc -w ${PAGES} && grep -c '\[% figure' ${PAGES}) | python ${MCCOLE_BIN}/count.py
+	@(wc -w ${PAGES} && grep -c '\[% figure' ${PAGES}) | python ${MCCOLE}/bin/count.py
 
 ## valid: run html5validator on generated files
 .PHONY: valid
-valid: docs/all.html
-	@html5validator --root docs ${DOCS} \
+valid: ${ROOT}/docs/all.html
+	@html5validator --root ${ROOT}/docs ${DOCS} \
 	--ignore \
 	'Attribute "ix-key" not allowed on element "span"' \
 	'Attribute "ix-ref" not allowed on element "a"' \

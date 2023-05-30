@@ -37,7 +37,7 @@ def syllabus(pargs, kwargs, node):
     """Display syllabus."""
     syllabi = util.get_config("syllabus")
     result = ["<ul>"]
-    for (slug, title, syllabus) in syllabi:
+    for slug, title, syllabus in syllabi:
         major = f'<li><a href="@root/{slug}" markdown="1">{title}</a>'
         major += f' (<a href="@root/{slug}/slides/">slides</a>)'
         result.append(major)

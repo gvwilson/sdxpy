@@ -232,7 +232,7 @@ as explained above,
 we only have to look at each file once,
 so the running time is as good as it possibly can be.
 
-## Summary {: #templating-summary}
+## Summary {: #dup-summary}
 
 Hashing is a tremendously powerful tool:
 Python's dictionaries hash their keys to make lookup fast,

@@ -180,7 +180,7 @@ we're not done until we test it:
 [% inc file="inherit_constructor.py" keep="call" %]
 [% inc file="inherit_constructor.out" %]
 
-## Summary {: #templating-summary}
+## Summary {: #oop-summary}
 
 We have only scratched the surface of what Python's object system provides.
 [%g multiple_inheritance "Multiple inheritance" %],

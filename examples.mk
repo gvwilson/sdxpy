@@ -1,11 +1,10 @@
 # Get the path to this file from wherever it is included.
 # See https://stackoverflow.com/questions/18136918/how-to-get-current-relative-directory-of-your-makefile
-RULES_PATH:=$(dir $(abspath $(lastword $(MAKEFILE_LIST))))
-MCCOLE_BIN:=${RULES_PATH}/lib/mccole/bin
+MCCOLE:=$(realpath $(dir $(abspath $(lastword $(MAKEFILE_LIST))))/lib/mccole)
 
 # How to reformat output.
-COLUMNS=68
-REFORMAT:=python ${MCCOLE_BIN}/reformat.py --home /sd4ds --columns ${COLUMNS}
+COLUMNS:=68
+REFORMAT:=python ${MCCOLE}/bin/reformat.py --home /sd4ds --columns ${COLUMNS}
 
 # The including file must define a variable TARGETS with the names of everything
 # to be created.

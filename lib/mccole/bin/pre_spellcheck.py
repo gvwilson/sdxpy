@@ -4,8 +4,8 @@
 
 
 import argparse
-import sys
-from bs4 import BeautifulSoup, Tag
+
+from bs4 import BeautifulSoup
 from markdown import markdown
 
 
@@ -19,7 +19,7 @@ def cleanup(soup):
     for tag in ("head", "pre", "code"):
         for node in soup.find_all(tag):
             node.decompose()
-    for (tag, cls) in (("div", "code-sample"),):
+    for tag, cls in (("div", "code-sample"),):
         for node in soup.find_all(tag, class_=cls):
             node.decompose()
     return soup

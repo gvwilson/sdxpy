@@ -126,11 +126,11 @@ def _titles():
     headings = util.get_config("headings")
 
     chapters = [headings[slug] for slug in ivy.site.config["chapters"]]
-    for (i, entry) in enumerate(chapters):
+    for i, entry in enumerate(chapters):
         entry.label = str(i + 1)
 
     appendices = [headings[slug] for slug in ivy.site.config["appendices"]]
-    for (i, entry) in enumerate(appendices):
+    for i, entry in enumerate(appendices):
         entry.label = chr(ord("A") + i)
 
     util.make_config("titles", {"chapters": chapters, "appendices": appendices})

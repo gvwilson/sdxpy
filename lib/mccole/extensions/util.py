@@ -242,6 +242,7 @@ def require(cond, msg):
     if not cond:
         fail(msg)
 
+
 def require_file(node, filename, kind):
     """Require that a file exists."""
     directory = Path(node.filepath).parent

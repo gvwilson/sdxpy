@@ -9,10 +9,9 @@ from fnmatch import fnmatch
 from pathlib import Path
 
 import utils
-from bs4 import BeautifulSoup, Tag
 import yaml
+from bs4 import BeautifulSoup, Tag
 from yaml_header_tools import NoValidHeader, get_header_from_file
-
 
 DIRECTIVES_FILE = ".mccole"
 
@@ -89,7 +88,7 @@ def check_config(config_path):
             print(f"Configuration value for {field} is not {str(kind)}")
 
     module = utils.load_config(config_path)
-    for (field, kind) in CONFIGURATION:
+    for field, kind in CONFIGURATION:
         _require(module, field, kind)
 
     return module
@@ -108,7 +107,7 @@ def check_dom(dom_spec, html_files):
 
 def check_files(source_dir, source_files, unreferenced):
     """Check for inclusions and figures."""
-    for (dirname, filename) in source_files:
+    for dirname, filename in source_files:
         filepath = Path(dirname, filename)
         referenced = get_inclusions(filepath) | get_figures(filepath)
         existing = get_files(source_dir, dirname, unreferenced)
@@ -124,7 +123,7 @@ def check_glossary(glossary_file, language):
         return
 
     glossary = {g["key"]: g for g in glossary}
-    for (key, entry) in sorted(glossary.items()):
+    for key, entry in sorted(glossary.items()):
         if language not in entry:
             print(f"glossary entry {key} missing {language}")
             break
@@ -144,14 +143,14 @@ def check_links(links_file, source_files):
         if not entry.get("direct", False)
     }
     referenced = set()
-    for (dirname, filename) in source_files:
+    for dirname, filename in source_files:
         referenced |= get_links(Path(dirname, filename))
     report("links", referenced, existing)
 
 
 def check_slides(source_files):
     """Check slides.html files if they exist."""
-    for (dir_path, index_file) in source_files:
+    for dir_path, index_file in source_files:
         slides_path = Path(dir_path, SLIDES_FILE)
         if not slides_path.exists():
             continue
@@ -171,7 +170,7 @@ def get_inclusions(filename):
         text = reader.read()
         result = {m.group(2) for m in RE_FILE.finditer(text)}
         pats = [(m.group(1), m.group(2)) for m in RE_PAT.finditer(text)]
-        for (pat, fill) in pats:
+        for pat, fill in pats:
             result |= {pat.replace("*", f) for f in fill.split()}
         return result
 
@@ -246,7 +245,7 @@ def report(title, expected, actual):
     if expected == actual:
         return
     print(title)
-    for (subtitle, items) in [
+    for subtitle, items in [
         ("missing", expected - actual),
         ("extra", actual - expected),
     ]:
@@ -265,7 +264,7 @@ def _collect_dom(seen, node):
         return
     if node.name not in seen:
         seen[node.name] = {}
-    for (key, value) in node.attrs.items():
+    for key, value in node.attrs.items():
         if key not in seen[node.name]:
             seen[node.name][key] = set()
         if isinstance(value, str):

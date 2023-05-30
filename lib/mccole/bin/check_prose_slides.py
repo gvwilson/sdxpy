@@ -39,7 +39,7 @@ def parse_args():
 
 def report(problems):
     """Print report."""
-    for (slug, diff) in problems.items():
+    for slug, diff in problems.items():
         if not diff:
             continue
         print(f"=== {slug}")

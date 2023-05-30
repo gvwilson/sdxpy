@@ -73,7 +73,7 @@ def collect():
 def _collect(node, major, collected):
     """Pull data from a single node."""
     collected[node.slug] = []
-    for (i, match) in enumerate(util.TABLE.finditer(node.text)):
+    for i, match in enumerate(util.TABLE.finditer(node.text)):
         caption = util.TABLE_CAPTION.search(match.group(0))
         util.require(
             caption is not None,
@@ -96,7 +96,7 @@ def _cleanup(major, collected):
     tables = util.make_config("tables")
     for fileslug in collected:
         if fileslug in major:
-            for (i, entry) in enumerate(collected[fileslug]):
+            for i, entry in enumerate(collected[fileslug]):
                 entry.number = (str(major[fileslug]), str(i + 1))
                 tables[entry.slug] = entry
 

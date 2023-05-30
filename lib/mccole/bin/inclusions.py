@@ -1,13 +1,11 @@
 """Compare inclusions between prose and slides."""
 
 import argparse
-import re
-import utils
-from pathlib import Path
 import difflib
+import re
+from pathlib import Path
 
-
-RE_INCLUSION = re.compile(r'(\[%\s+inc.+?%\])')
+RE_INCLUSION = re.compile(r"(\[%\s+inc.+?%\])")
 
 
 def main():

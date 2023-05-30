@@ -85,7 +85,7 @@ def get_entry_info(config):
     num_chapters = None
     kind = "Chapter"
     result = []
-    for (i, entry) in enumerate(config["chapters"]):
+    for i, entry in enumerate(config["chapters"]):
         if "appendix" in entry:
             num_chapters = i + 1
             kind = "Appendix"

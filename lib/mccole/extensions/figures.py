@@ -48,7 +48,7 @@ def _cleanup(major, collected):
     figures = util.make_config("figures")
     for fileslug in collected:
         if fileslug in major:
-            for (i, entry) in enumerate(collected[fileslug]):
+            for i, entry in enumerate(collected[fileslug]):
                 entry.fileslug = fileslug
                 entry.number = (str(major[fileslug]), str(i + 1))
                 figures[entry.slug] = entry
