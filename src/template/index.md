@@ -143,9 +143,9 @@ it uses that instead.
 `Visitor` defines two [%g abstract_method "abstract methods" %] `open` and `close`
 that are called when we first arrive at a node and when we are finished with it.
 Any class derived from `Visitor` must define these two methods.
-This requirement is different from that of the visitor we wrote in [%x check %],
-which provided do-nothing implementations of methods.
-{: .continue}
+This approach is different from that of the visitor in [%x check %],
+where we defined do-nothing methods so that derived classes could override
+only the ones they needed.
 
 The `Expander` class is specialization of `Visitor`
 that uses an `Env` to keep track of variables.

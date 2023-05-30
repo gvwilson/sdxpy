@@ -16,6 +16,8 @@ BUILD_DATE := $(shell date '+%Y-%m-%d')
 CHAPTERS := $(shell python ${CONFIG} --chapters)
 
 # Direct variables.
+BIN_PY := $(wildcard ${MCCOLE_BIN}/*.py)
+LIB_PY := $(wildcard ${MCCOLE}/extensions/*.py)
 EXAMPLES := $(patsubst %/Makefile,%,$(wildcard src/*/Makefile))
 HTML := info/head.html info/foot.html
 INFO := info/bibliography.bib info/credits.yml info/glossary.yml info/links.yml
@@ -40,6 +42,8 @@ SRC := ${PAGES} ${SLIDES}
 # Where to run the local preview server.
 PORT := 4000
 
+## ---: ---
+
 ## commands: show available commands
 commands:
 	@grep -h -E '^##' ${MAKEFILE_LIST} \
@@ -56,28 +60,6 @@ build: ./docs/index.html
 serve:
 	ivy watch --port ${PORT}
 
-## html: create single-page HTML
-html: docs/all.html
-docs/all.html: ./docs/index.html ${HTML} ${MCCOLE_BIN}/single.py
-	python ${MCCOLE_BIN}/single.py \
-	--head info/head.html \
-	--foot info/foot.html \
-	--root docs \
-	--title "$$(python ${CONFIG} --title)" \
-	--tagline "$$(python ${CONFIG} --tagline)" \
-	> docs/all.html
-
-## latex: create LaTeX document
-latex: docs/${STEM}.tex
-docs/${STEM}.tex: docs/all.html ${MCCOLE_BIN}/html2tex.py ${CONFIG} ${TEX} ${TEX_COPY}
-	python ${MCCOLE_BIN}/html2tex.py \
-	--head info/head.tex \
-	--foot info/foot.tex \
-	< docs/all.html \
-	> docs/${STEM}.tex
-	python ${CONFIG} --latex > docs/config.tex
-	cp ${TEX_COPY} docs
-
 ## pdf: create PDF version of material
 pdf: docs/${STEM}.tex ${DOCS_PDF}
 	cp info/bibliography.bib docs
@@ -87,37 +69,7 @@ pdf: docs/${STEM}.tex ${DOCS_PDF}
 	cd docs && pdflatex ${STEM}
 	cd docs && pdflatex ${STEM}
 
-## pdf-once: create PDF document with a single compilation
-pdf-once: docs/${STEM}.tex ${DOCS_PDF}
-	cd docs && pdflatex ${STEM}
-
-## diagrams: convert diagrams from SVG to PDF
-diagrams: ${DOCS_PDF}
-src/%.pdf: src/%.svg
-	${MCCOLE_BIN}/convert_drawio.sh $< $@
-docs/%.pdf: src/%.pdf
-	cp $< $@
-
-## clean: clean up stray files
-clean:
-	@find . -name '*~' -exec rm {} \;
-	@find . -name '*.bkp' -exec rm {} \;
-	@find . -name '.*.dtmp' -exec rm {} \;
-	@find . -type d -name __pycache__ | xargs rm -r
-	@rm -f \
-	docs/*.aux \
-	docs/*.bbl \
-	docs/*.bcf \
-	docs/*.blg \
-	docs/*.idx \
-	docs/*.ilg \
-	docs/*.ind \
-	docs/*.log \
-	docs/*.out \
-	docs/*.pdf \
-	docs/*.run.xml \
-	docs/*.tex \
-	docs/*.toc
+## ---: ---
 
 ## lint: check project structure
 .PHONY: lint
@@ -155,30 +107,40 @@ wordlist: ./docs/index.html
 	| sort \
 	| uniq
 
-## status: status of chapters
-.PHONY: status
-status:
-	@python ${MCCOLE_BIN}/status.py --config config.py --readme README.md
-	@python ${MCCOLE_BIN}/check_prose_slides.py --config config.py
+## ---: ---
 
-## count: words per file
-.PHONY: count
-count:
-	@(wc -w ${PAGES} && grep -c '\[% figure' ${PAGES}) | python ${MCCOLE_BIN}/count.py
+## html: create single-page HTML
+html: docs/all.html
+docs/all.html: ./docs/index.html ${HTML} ${MCCOLE_BIN}/single.py
+	python ${MCCOLE_BIN}/single.py \
+	--head info/head.html \
+	--foot info/foot.html \
+	--root docs \
+	--title "$$(python ${CONFIG} --title)" \
+	--tagline "$$(python ${CONFIG} --tagline)" \
+	> docs/all.html
 
-## valid: run html5validator on generated files
-.PHONY: valid
-valid: docs/all.html
-	@html5validator --root docs ${DOCS} \
-	--ignore \
-	'Attribute "ix-key" not allowed on element "span"' \
-	'Attribute "ix-ref" not allowed on element "a"' \
-	'Attribute "markdown" not allowed on element'
+## latex: create LaTeX document
+latex: docs/${STEM}.tex
+docs/${STEM}.tex: docs/all.html ${MCCOLE_BIN}/html2tex.py ${CONFIG} ${TEX} ${TEX_COPY}
+	python ${MCCOLE_BIN}/html2tex.py \
+	--head info/head.tex \
+	--foot info/foot.tex \
+	< docs/all.html \
+	> docs/${STEM}.tex
+	python ${CONFIG} --latex > docs/config.tex
+	cp ${TEX_COPY} docs
 
-## profile: profile compilation
-.PHONY: profile
-profile:
-	python ${MCCOLE_BIN}/run_profile.py
+## pdf-once: create PDF document with a single compilation
+pdf-once: docs/${STEM}.tex ${DOCS_PDF}
+	cd docs && pdflatex ${STEM}
+
+## diagrams: convert diagrams from SVG to PDF
+diagrams: ${DOCS_PDF}
+src/%.pdf: src/%.svg
+	${MCCOLE_BIN}/convert_drawio.sh $< $@
+docs/%.pdf: src/%.pdf
+	cp $< $@
 
 ## release: create archive of standard files
 .PHONY: release
@@ -223,6 +185,69 @@ web:
 	@zip -q -r ${MCCOLE}/${ABBREV}-examples.zip docs \
 	-i '*.ht' '*.json' '*.out' '*.py' '*.sh' '*.txt' '*.yml' \
 	-x '*.html'
+
+## ---: ---
+
+## check: check source code
+.PHONY: check
+check:
+	-@flake8 ${BIN_PY} ${LIB_PY}
+	-@isort --check ${BIN_PY} ${LIB_PY}
+	-@black --check ${BIN_PY} ${LIB_PY}
+
+## fix: fix source code
+.PHONY: fix
+fix:
+	@isort ${BIN_PY} ${LIB_PY}
+	@black ${BIN_PY} ${LIB_PY}
+
+## profile: profile compilation
+.PHONY: profile
+profile:
+	python ${MCCOLE_BIN}/run_profile.py
+
+## clean: clean up stray files
+clean:
+	@find . -name '*~' -exec rm {} \;
+	@find . -name '*.bkp' -exec rm {} \;
+	@find . -name '.*.dtmp' -exec rm {} \;
+	@find . -type d -name __pycache__ | xargs rm -r
+	@rm -f \
+	docs/*.aux \
+	docs/*.bbl \
+	docs/*.bcf \
+	docs/*.blg \
+	docs/*.idx \
+	docs/*.ilg \
+	docs/*.ind \
+	docs/*.log \
+	docs/*.out \
+	docs/*.pdf \
+	docs/*.run.xml \
+	docs/*.tex \
+	docs/*.toc
+
+## ---: ---
+
+## status: status of chapters
+.PHONY: status
+status:
+	@python ${MCCOLE_BIN}/status.py --config config.py --readme README.md
+	@python ${MCCOLE_BIN}/check_prose_slides.py --config config.py
+
+## count: words per file
+.PHONY: count
+count:
+	@(wc -w ${PAGES} && grep -c '\[% figure' ${PAGES}) | python ${MCCOLE_BIN}/count.py
+
+## valid: run html5validator on generated files
+.PHONY: valid
+valid: docs/all.html
+	@html5validator --root docs ${DOCS} \
+	--ignore \
+	'Attribute "ix-key" not allowed on element "span"' \
+	'Attribute "ix-ref" not allowed on element "a"' \
+	'Attribute "markdown" not allowed on element'
 
 ## vars: show variables
 .PHONY: vars

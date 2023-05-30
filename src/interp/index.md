@@ -133,7 +133,7 @@ Otherwise,
 `do` checks that its parameter is a list
 and then uses the first value in the list
 to decide what other function to call.
-This lookup-and-call process is the same [%g dynamic_dispatch "dynamic_dispatch" %]
+This lookup-and-call process is the same [%g dynamic_dispatch "dynamic dispatch" %]
 that we saw in [%x parse %].
 
 [% inc file="expr.py" keep="do" %]
