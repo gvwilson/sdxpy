@@ -4,7 +4,7 @@
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="repo" content="https://github.com/gvwilson/sd4ds">
-  <meta name="build_date" content="2023-05-30">
+  <meta name="build_date" content="2023-05-31">
   <meta name="template" content="slides">
   <meta name="major" content="Chapter 18">
   
@@ -108,16 +108,16 @@ class JustDict(Database):
 ## Experimental Records
 
 ```py
-class BasicExperiment:
+class BasicRec:
     MAX_NAME_LEN = 6
-    TIMESTAMP_LEN = 10
+    TIMESTAMP_LEN = 8
     MAX_READING = 10
     MAX_READING_LEN = 2
     MAX_READINGS_NUM = 2
 
     @staticmethod
     def key(record):
-        assert isinstance(record, BasicExperiment)
+        assert isinstance(record, BasicRec)
         return record._name
 
     def __init__(self, name, timestamp, readings):
@@ -233,17 +233,16 @@ class JustDictRefactored(Database):
 
 ## Saving Records
 
--   Whole point of database is to save data in files
-
 -   Records must know how to pack and unpack themselves
 
 -   Start by calculating the size of each
 
 ```py
-class Experiment(BasicExperiment):
-    RECORD_LEN = MAX_NAME_LEN + 1 \
-        + TIMESTAMP_LEN + 1 \
-        + (MAX_READING_LEN * 3 * MAX_READINGS_NUM)
+class Experiment(BasicRec):
+    RECORD_LEN = BasicRec.MAX_NAME_LEN + 1 \
+        + BasicRec.TIMESTAMP_LEN + 1 \
+        + (BasicRec.MAX_READING_LEN * BasicRec.MAX_READINGS_NUM) \
+        + (BasicRec.MAX_READINGS_NUM - 1)
 
     @staticmethod
     def size():
@@ -312,6 +311,15 @@ class Experiment(BasicExperiment):
 
 ## A File-Backed Database
 
+<figure>
+<img src="../single_file.svg" alt="Using a single file"/>
+</figure>
+
+
+---
+
+## A File-Backed Database
+
 ```py
 class FileBacked(Database):
     def __init__(self, record_cls, filename):
@@ -368,13 +376,40 @@ class FileBacked(Database):
 
 -   When reading, only load one block (ditto)
 
-<span class="fixme">FIXME "diagram for saving blocks</span>
-
 ---
 
 ## Allocating Blocks
 
-<span class="fixme">FIXME "explain block allocation</span>
+<figure>
+<img src="../alloc.svg" alt="Mapping records to blocks"/>
+</figure>
+
+
+---
+
+## Store Blocks in Memory
+
+```py
+class Blocked(Database):
+    RECORDS_PER_BLOCK = 2
+
+    @staticmethod
+    def size():
+        return Blocked.RECORDS_PER_BLOCK
+
+    def __init__(self, record_cls):
+        super().__init__(record_cls)
+        self._next = 0
+        self._index = {}
+        self._blocks = []
+
+    def num_blocks(self):
+        return len(self._blocks)
+
+    def num_records(self):
+        return len(self._index)
+```
+
 
 ---
 
@@ -421,32 +456,6 @@ class FileBacked(Database):
 -   Find the corresponding block
 
 -   Get the record
-
----
-
-## Store Blocks in Memory
-
-```py
-class Blocked(Database):
-    RECORDS_PER_BLOCK = 2
-
-    @staticmethod
-    def size():
-        return Blocked.RECORDS_PER_BLOCK
-
-    def __init__(self, record_cls):
-        super().__init__(record_cls)
-        self._next = 0
-        self._index = {}
-        self._blocks = []
-
-    def num_blocks(self):
-        return len(self._blocks)
-
-    def num_records(self):
-        return len(self._index)
-```
-
 
 ---
 
@@ -565,13 +574,50 @@ class BlockedFile(Blocked):
 
 ---
 
-## Next Steps
+## Cleanup
 
--   Clean up unused blocks
+```py
+    def _cleanup(self):
+        new_seq = {
+            o: i for i, o in enumerate(self._index.values())
+        }
+        keep = {self._get_block_id(o) for o in new_seq}
+
+        renaming = {o: i for i, o in enumerate(list(sorted(keep)))}
+        garbage_ids = {
+            i for i in range(len(self._blocks))
+            if i not in renaming
+        }
+
+        self._delete_blocks(garbage_ids)
+        self._rename_blocks(renaming)
+
+        new_index = {
+            k: new_seq[self._index[k]] for k in self._index
+        }
+        self._index = new_index
+        self._next = len(self._index)
+```
+
+
+---
+
+## Next Steps
 
 -   <a class="gl-ref" href="../../glossary/#compact" markdown="1">Compact</a> storage periodically
 
 -   Use other data structures for indexing
+
+---
+
+class: summary
+
+## Summary
+
+<figure>
+<img src="../concept_map.svg" alt="Concept map for database"/>
+</figure>
+
 
 
 [academic_prototyping]: https://www.fuzzingbook.org/html/AcademicPrototyping.html

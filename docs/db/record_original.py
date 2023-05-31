@@ -1,13 +1,13 @@
-class BasicExperiment:
+class BasicRec:
     MAX_NAME_LEN = 6
-    TIMESTAMP_LEN = 10
+    TIMESTAMP_LEN = 8
     MAX_READING = 10
     MAX_READING_LEN = 2
     MAX_READINGS_NUM = 2
 
     @staticmethod
     def key(record):
-        assert isinstance(record, BasicExperiment)
+        assert isinstance(record, BasicRec)
         return record._name
 
     def __init__(self, name, timestamp, readings):

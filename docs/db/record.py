@@ -1,10 +1,11 @@
-from record_original import BasicExperiment
+from record_original import BasicRec
 
 # [base]
-class Experiment(BasicExperiment):
-    RECORD_LEN = MAX_NAME_LEN + 1 \
-        + TIMESTAMP_LEN + 1 \
-        + (MAX_READING_LEN * 3 * MAX_READINGS_NUM)
+class Experiment(BasicRec):
+    RECORD_LEN = BasicRec.MAX_NAME_LEN + 1 \
+        + BasicRec.TIMESTAMP_LEN + 1 \
+        + (BasicRec.MAX_READING_LEN * BasicRec.MAX_READINGS_NUM) \
+        + (BasicRec.MAX_READINGS_NUM - 1)
 
     @staticmethod
     def size():
