@@ -301,7 +301,7 @@ to find all the available operations.
 
 ## Statements {: #interp-statements .bonus}
 
-One way to evaluate a design is to ask how [%g extensible "extensible" %] it is.
+One way to evaluate a design is to ask how [%g extensibility "extensible" %] it is.
 The answer for our interpreter is now, "Pretty easily."
 For example,
 we can add a `comment` "operation" that does nothing and returns `None`

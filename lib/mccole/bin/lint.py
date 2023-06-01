@@ -47,6 +47,7 @@ RE_CODE_BLOCK = re.compile("```.+?```", re.DOTALL)
 RE_CODE_INLINE = re.compile("`.+?`")
 RE_FILE = re.compile(r'\[%\s*inc\b.+?(file|html)="(.+?)".+?%\]')
 RE_FIGURE = re.compile(r'\[%\s*figure\b.+?img="(.+?)".+?%\]', re.DOTALL)
+RE_GLOSSREF = re.compile(r'\[%\s*g\s+\b(.+?)\b\s+".+?"\s*%\]')
 RE_LINK = re.compile(r"\[[^]]*?\]\[(\w+?)\]")
 RE_PAT = re.compile(r'\[%\s*inc\b.+?pat="(.+?)"\s+fill="(.+?)".+?%\]')
 RE_SHORTCODE = re.compile(r"\[%.+?%\]")
@@ -69,8 +70,10 @@ def main():
     unreferenced = set(getattr(config, "unreferenced", []))
 
     source_files = get_src(src_dir)
-    check_files(src_dir, source_files, unreferenced)
-    check_glossary(glossary_file, language)
+    glossary = utils.read_yaml(glossary_file)
+
+    check_files(src_dir, source_files, unreferenced, glossary)
+    check_glossary(glossary, language)
     check_links(links_file, source_files)
     check_slides(source_files)
 
@@ -105,18 +108,24 @@ def check_dom(dom_spec, html_files):
     _diff_dom(seen, allowed)
 
 
-def check_files(source_dir, source_files, unreferenced):
-    """Check for inclusions and figures."""
+def check_files(source_dir, source_files, unreferenced, glossary):
+    """Check for inclusions, figures, and glossary references."""
     for dirname, filename in source_files:
         filepath = Path(dirname, filename)
-        referenced = get_inclusions(filepath) | get_figures(filepath)
+        with open(filepath, "r") as reader:
+            text = reader.read()
+
+        referenced = get_inclusions(text) | get_figures(text)
         existing = get_files(source_dir, dirname, unreferenced)
         report(f"{dirname}: inclusions", referenced, existing)
 
+        referenced = get_glossrefs(text)
+        existing = set(entry["key"] for entry in glossary)
+        report_one(f"{dirname}: glossary", referenced - existing)
 
-def check_glossary(glossary_file, language):
+
+def check_glossary(glossary, language):
     """Check internal consistency of glossary."""
-    glossary = utils.read_yaml(glossary_file)
     missing_keys = [g for g in glossary if "key" not in g]
     if missing_keys:
         print(f"glossary entries without keys: {missing_keys}")
@@ -164,17 +173,6 @@ def check_slides(source_files):
             print(f"wrong template {slides_template} in {slides_path}")
 
 
-def get_inclusions(filename):
-    """Find inclusion filenames."""
-    with open(filename, "r") as reader:
-        text = reader.read()
-        result = {m.group(2) for m in RE_FILE.finditer(text)}
-        pats = [(m.group(1), m.group(2)) for m in RE_PAT.finditer(text)]
-        for pat, fill in pats:
-            result |= {pat.replace("*", f) for f in fill.split()}
-        return result
-
-
 def get_files(source_dir, dirname, unreferenced):
     """Return set of files in or below this directory."""
     if dirname == source_dir:
@@ -191,18 +189,30 @@ def get_files(source_dir, dirname, unreferenced):
     return result - EXPECTED_FILES
 
 
-def get_figures(filepath):
+def get_figures(text):
     """Return all figures."""
-    with open(filepath, "r") as reader:
-        text = reader.read()
-        figures = {m.group(1) for m in RE_FIGURE.finditer(text)}
-        pdfs = {f.replace(".svg", ".pdf") for f in figures if f.endswith(".svg")}
-        return figures | pdfs
+    figures = {m.group(1) for m in RE_FIGURE.finditer(text)}
+    pdfs = {f.replace(".svg", ".pdf") for f in figures if f.endswith(".svg")}
+    return figures | pdfs
+
+
+def get_glossrefs(text):
+    """Return all glossary reference keys."""
+    return {m.group(1) for m in RE_GLOSSREF.finditer(text)}
 
 
 def get_html(out_dir):
     """Get paths to HTML files for processing."""
     return list(Path(out_dir).glob("**/*.html"))
+
+
+def get_inclusions(text):
+    """Find inclusion filenames."""
+    result = {m.group(2) for m in RE_FILE.finditer(text)}
+    pats = [(m.group(1), m.group(2)) for m in RE_PAT.finditer(text)]
+    for pat, fill in pats:
+        result |= {pat.replace("*", f) for f in fill.split()}
+    return result
 
 
 def get_links(filename):
@@ -254,6 +264,15 @@ def report(title, expected, actual):
         print(f"- {subtitle}")
         for i in sorted(items):
             print(f"  - {i}")
+
+
+def report_one(title, items):
+    """Report single-sided problems."""
+    if not items:
+        return
+    print(title)
+    for i in sorted(items):
+        print(f"- {i}")
 
 
 def _collect_dom(seen, node):

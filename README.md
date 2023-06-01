@@ -70,7 +70,7 @@ This book is also designed for:
 | persist   | done   | done   | done     | done      | done   | *100%*  |
 | binary    | done   | done   | done     | done      | done   | *100%*  |
 | db        | done   | done   | -        | done      | done   | *100%*  |
-| build     | done   | done   | done     | done      | -      |   50%   |
+| build     | done   | done   | done     | done      | done   | *100%*  |
 | pack      | done   | done   | done     | done      | done   |  100%   |
 | server    | done   | -      | done     | done      | done   |   75%   |
 | editor    | revise | -      | -        | -         | -      |   10%   |
@@ -78,4 +78,4 @@ This book is also designed for:
 | vm        | done   | done   | done     | done      | done   | *100%*  |
 | debugger  | done   | done   | done     | done      | done   | *100%*  |
 | finale    | N/A    | done   | N/A      | N/A       | done   | *100%*  |
-|           |        |        |          |           |        |  *84%*  |
+|           |        |        |          |           |        |  *86%*  |
