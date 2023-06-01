@@ -4,7 +4,7 @@
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="repo" content="https://github.com/gvwilson/sd4ds">
-  <meta name="build_date" content="2023-05-31">
+  <meta name="build_date" content="2023-06-01">
   <meta name="template" content="slides">
   <meta name="major" content="Chapter 17">
   
@@ -46,24 +46,17 @@ class: slide-title
 
 ## Why Binary?
 
+-   Operations are much faster
+    -   Write addition using textual digits as an exercise
 -   Bits take less space
     -   `"10239472"` is 8 bytes, but `10239472` is just 4
--   Operations are much faster
 -   How would we represent images, audio, or video as characters?
 
 ```txt
-                      _. - ~ ~ ~ - .
-   ..       __.    .-~               ~-.
-   ((\     /   `}.~                     `.
-    \\\   {     }               /     \   \
-(\   \\~~^      }              |       }   \
- \`.-~ -@~      }  ,-.         |       )    \
- (___     ) _}   (    :        |    / /      `.
-  `----._-~.     _\ \ |_       \   / /- _      `.
-         ~~----~~  \ \| ~~--~~~(  + /     ~-.     ~- _
-                   /  /         \  \          ~- . _ _~_-_.
-                __/  /          _\  )
-              .<___.'         .<___/
+ ,_,
+(O,O)
+(   )
+-"-"-
 ```
 
 
@@ -76,7 +69,7 @@ class: slide-title
 -   Can write numbers in binary using `0b` prefix
 
 ```py
-print(0b101101)
+print(0b101101)  # (1 * 32) + (1 * 8) + (1 * 4) + 1
 ```
 
 
@@ -120,16 +113,15 @@ print(0x2D)  # (2 * 16) + 13
 
 -   <a class="gl-ref" href="../../glossary/#twos_complement" markdown="1">Two's complement</a> wraps around like an odometer
 
-| Base 10 | Base 2 |
-| ------- | ------ |
-| 3       | 011    |
-| 2       | 010    |
-| 1       | 001    |
-| 0       | 000    |
-| -1      | 111    |
-| -2      | 110    |
-| -3      | 101    |
-| -4      | 100    |
+<div class="small">
+<table>
+<tr><th>Base 10</th><th>Base 2</th><th>Base 10</th><th>Base 2</th></tr>
+<tr><td>3</td><td>011</td><td>-1</td><td>111</td></tr>
+<tr><td>2</td><td>010</td><td>-2</td><td>110</td></tr>
+<tr><td>1</td><td>001</td><td>-3</td><td>101</td></tr>
+<tr><td>0</td><td>000</td><td>-4</td><td>100</td></tr>
+</table>
+</div>
 
 ---
 
@@ -140,6 +132,24 @@ print(0x2D)  # (2 * 16) + 13
 -   But two's complement is asymmetric
 
 -   No positive number to match the largest negative number
+
+---
+
+## Bitwise Operations
+
+-   Operate on corresponding bits in representation
+
+-   `&` (and) is 1 if both bits are 1, 0 otherwise
+
+    -   `0b1100 & 0b1010 == 0b1000`
+
+    -   `12 & 10 == 8`
+
+-   `|` (or) is 1 if *either* bit is 1, 0 otherwise
+
+    -   `0b1100 | 0b1010 == 0b1110`
+
+    -   `12 | 10 == 14`
 
 ---
 
@@ -246,7 +256,26 @@ class: aside
 
 -   So Python uses two-digit hex representation `\xPQ`
 
+-   `\x00` is a <a class="gl-ref" href="../../glossary/#null_byte" markdown="1">null byte</a> (value 0)
+
 -   Easy to miss the actual `A` between one `\x00` and the next
+
+---
+
+class: aside
+
+## Which Bytes Where
+
+-   <a class="gl-ref" href="../../glossary/#big_endian" markdown="1">Big-endian</a> vs. <a class="gl-ref" href="../../glossary/#little_endian" markdown="1">little-endian</a> ordering
+
+<figure>
+<img src="../endian.svg" alt="Big-endian vs. little-endian"/>
+</figure>
+
+
+-   Most computers are little-endian
+
+-   Most networks are big-endian
 
 ---
 
@@ -291,7 +320,9 @@ print(f"{len(text)}s")
 
 ## Variable-Length Packing
 
--   Pack variable-length strings as a count (of known size) and that many bytes
+-   Pack strings as a fixed-size count and that many bytes
+
+-   Use `bytes` to convert character string to bytes
 
 ```py
 def pack_string(as_string):
@@ -302,8 +333,6 @@ def pack_string(as_string):
     return header + body
 ```
 
-
--   We'll explain the call to `bytes` later
 
 ---
 
@@ -322,7 +351,6 @@ b'\x06\x00\x00\x00hello!'
 
 -   First four bytes are the 32-bit integer representation of 6
 -   Next six bytes are our characters
--   <a class="gl-ref" href="../../glossary/#big_endian" markdown="1">Big-endian</a> vs. <a class="gl-ref" href="../../glossary/#little_endian" markdown="1">little-endian</a> ordering
 
 ---
 
@@ -354,7 +382,7 @@ hello!
     -   0–31 were <a class="gl-ref" href="../../glossary/#control_code" markdown="1">control codes</a>
 -   Since bytes have 8 bits, programmers used the values 128–255 however they wanted
 -   ANSI standard defined (for example) 231<sub>10</sub> to be "ç"
--   But what about Turkish? Or Devanagari? Or kanji, or hieroglyphics, or…?
+-   But what about Turkish, Devanagari, kanji, hieroglyphics, …?
     -   Two bytes wouldn't be enough
     -   Four bytes per character would quadruple storage requirements
     -   And would mostly not be needed (by American businesses)

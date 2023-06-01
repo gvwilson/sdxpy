@@ -68,7 +68,7 @@ This book is also designed for:
 | lint      | done   | done   | done     | done      | done   | *100%*  |
 | perf      | done   | done   | done     | done      | done   | *100%*  |
 | persist   | done   | done   | done     | done      | done   | *100%*  |
-| binary    | done   | done   | done     | -         | -      |   50%   |
+| binary    | done   | done   | done     | done      | done   | *100%*  |
 | db        | done   | done   | -        | done      | done   | *100%*  |
 | build     | done   | done   | done     | done      | -      |   50%   |
 | pack      | done   | done   | done     | done      | done   |  100%   |
@@ -78,4 +78,4 @@ This book is also designed for:
 | vm        | done   | done   | done     | done      | done   | *100%*  |
 | debugger  | done   | done   | done     | done      | done   | *100%*  |
 | finale    | N/A    | done   | N/A      | N/A       | done   | *100%*  |
-|           |        |        |          |           |        |  *83%*  |
+|           |        |        |          |           |        |  *84%*  |

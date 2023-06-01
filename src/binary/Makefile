@@ -1,5 +1,6 @@
 TARGETS=\
   binary_notation.out \
+  calcsize.out \
   dynamic_format.out \
   hex_notation.out \
   pack_count.out \
