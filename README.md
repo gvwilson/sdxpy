@@ -71,7 +71,7 @@ This book is also designed for:
 | binary    | done   | done   | done     | done      | done   | *100%*  |
 | db        | done   | done   | -        | done      | done   | *100%*  |
 | build     | done   | done   | done     | done      | done   | *100%*  |
-| pack      | done   | done   | done     | done      | done   |  100%   |
+| pack      | done   | done   | done     | done      | done   | *100%*  |
 | server    | done   | -      | done     | done      | done   |   75%   |
 | editor    | revise | -      | -        | -         | -      |   10%   |
 | undo      | -      | -      | -        | -         | -      |    0%   |

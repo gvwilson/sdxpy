@@ -12,9 +12,7 @@ syllabus:
 There is no point building software if you can't install it.
 Inspired by the [%i "Comprehensive TeX Archive Network" %]Comprehensive TeX Archive Network[%/i%]
 ([CTAN][ctan]),
-most languages have an online archive from which developers can download packages.
-[Michael Reim's][reim_michael] [history of Unix packaging][unix_packaging]
-
+most languages have an online archive from which people can download packages.
 Each package typically has a name and one or more versions;
 each version may have a list of dependencies,
 and the package may specify a version or range of versions for each dependency.
@@ -34,9 +32,11 @@ This chapter therefore explores how to find a workable installation or prove tha
 It is based in part on [this tutorial][package_manager_tutorial]
 by [%i "Nison, Maël" %][Maël Nison][nison_mael][%/i%]
 and on [Andreas Zeller's][zeller_andreas]
-lecture on [academic prototyping][academic_prototyping].
+lecture on [academic prototyping][academic_prototyping];
+interested readers might also enjoy
+[Michael Reim's][reim_michael] [history of Unix packaging][unix_packaging].
 
-## Semantic Versioning {: #packman-semver}
+## Semantic Versioning {: #pack-semver}
 
 Most software projects use
 [%i "semantic versioning" %][%g semantic_versioning "semantic versioning" %][%/i%]
@@ -71,7 +71,7 @@ Our examples therefore number versions with plain integers;
 we recommend the [semantic-version][py_semver] package
 for working with the real thing.
 
-## Exhaustive Search {: #packman-exhaustive}
+## Exhaustive Search {: #pack-exhaustive}
 
 To avoid messing around with parsers,
 we store the [%i "manifest (of package)" "package manifest" %][%g manifest "manifest" %][%/i%]
@@ -92,13 +92,13 @@ but JSON and CSV don't.
 </div>
 
 Imagine that each package we need is an axis on a multi-dimensional grid
-([%f packman-allowable %]).
+([%f pack-allowable %]).
 Each point on the grid is a possible combination of package versions.
 We can exclude regions of this grid using the constraints on the package versions;
 whatever points are left when we're done represent legal combinations.
 
 [% figure
-   slug="packman-allowable"
+   slug="pack-allowable"
    img="allowable.svg"
    alt="Allowable versions"
    caption="Finding allowable combinations of package versions."
@@ -110,9 +110,9 @@ If we were to add another package to the mix with 2 versions,
 the [%i "search space" %][%g search_space "search space" %][%/i%] would double;
 add another,
 and it would double again.
-This behavior is called a [%i "combinatorial explosion" %][%g combinatorial_explosion "combinatorial explosion" %][%/i%],
-and it means that brute force solutions are impractical
-even for small problems.
+This behavior is called
+[%i "combinatorial explosion" %][%g combinatorial_explosion "combinatorial explosion" %][%/i%],
+and it makes brute force solutions impractical even for small problems.
 We will implement it as a starting point
 (and to give us something to test more complicated solutions against),
 but then we will need to find a more efficient approach.
@@ -121,7 +121,8 @@ but then we will need to find a more efficient approach.
 
 ### Reproducibility
 
-There may not be a strong reason to prefer one mutually-compatible set of packages over another,
+There may not be a strong reason
+to prefer one mutually-compatible set of packages over another,
 but a package manager should resolve the ambiguity the same way every time.
 It might not be what everyone wants,
 but at least they will be unhappy for the same reasons everywhere.
@@ -146,12 +147,12 @@ we create a list of the available versions of each package,
 then use Python's [itertools][py_itertools] module
 to generate the [%g cross_product "cross product" %]
 that contains all possible combinations of items
-([%f packman-product %]):
+([%f pack-product %]):
 
 [% inc file="exhaustive.py" keep="possible" %]
 
 [% figure
-   slug="packman-product"
+   slug="pack-product"
    img="product.svg"
    alt="Generating a cross-product"
    caption="Generating all possible combinations of items."
@@ -189,13 +190,13 @@ it finds 3 valid combinations among our 18 possibilities:
 
 [% inc file="exhaustive.out" %]
 
-## Generating Possibilities Manually {: #packman-manual}
+## Generating Possibilities Manually {: #pack-manual}
 
 Our brute-force code uses `itertools.product`
 to generate all possible combinations of several lists of items.
 To see how it works,
 and to lay the ground for a more efficient algorithm,
-let's write `make_possibilities` to use a function of our own:
+let's rewrite `make_possibilities` to use a function of our own:
 
 [% inc file="manual.py" keep="start" %]
 
@@ -207,7 +208,7 @@ and calls a recursive function called `_make_possible` to fill it in.
 {: .continue}
 
 Each call to `_make_possible` handles one package's worth of work
-([%f packman-recursive %]).
+([%f pack-recursive %]).
 If the package is X,
 the function loops over the available versions of X,
 adds that version to the combination in progress,
@@ -219,7 +220,7 @@ so the combination is appended to the accumulator.
 [% inc file="manual.py" keep="make" %]
 
 [% figure
-   slug="packman-recursive"
+   slug="pack-recursive"
    img="recursive.svg"
    alt="Generating a cross-product recursively"
    caption="Generating all possible combinations of items recursively."
@@ -237,7 +238,7 @@ design pattern
 uses one recursive function call per loop
 so that we automatically get exactly as many loops as we need.
 
-## Incremental Search {: #packman-incremental}
+## Incremental Search {: #pack-incremental}
 
 Generating an exponentiality of combinations
 and then throwing most of them away
@@ -308,13 +309,13 @@ we only generate half as many candidates as before:
 
 [% inc pat="incremental_reverse.*" fill="sh out" %]
 
-## Using a Theorem Prover {: #packman-smt}
+## Using a Theorem Prover {: #pack-smt}
 
 Cutting the amount of work we have to do is good:
 can we do better?
 The answer is yes,
 but the algorithms involved quickly become complicated,
-as does the jargon.
+and the jargon impenetrable.
 To show how real package managers tackle this,
 we will solve our example problem using the [Z3 theorem prover][z3].
 
@@ -369,7 +370,8 @@ and the solver duly tells us that:
 [% inc file="z3_unequal.py" keep="solve" %]
 [% inc file="z3_unequal.out" %]
 
-Theorem provers like Z3 and [PicoSAT][picosat]are powerful tools.
+Theorem provers like Z3 and [PicoSAT][picosat]
+are far more powerful than most programmers realize.
 We can,
 for example,
 use them to generate test cases.
@@ -440,10 +442,10 @@ until the problem becomes unsolvable:
 [% inc file="z3_complete.py" keep="all" %]
 [% inc file="z3_complete.out" %]
 
-## Summary {: #packman-summary}
+## Summary {: #pack-summary}
 
 [% figure
-   slug="packman-concept-map"
+   slug="pack-concept-map"
    img="concept_map.svg"
    alt="Concept map for package manager."
    caption="Concepts for package manager."
