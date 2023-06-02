@@ -84,7 +84,7 @@ lint: clean build
 ## inclusions: compare inclusions in prose and slides
 .PHONY: inclusions
 inclusions:
-	@python ${MCCOLE}/bin/inclusions.py --pages ${CHAPTERS}
+	@python ${MCCOLE}/bin/compare_inclusions.py --pages ${CHAPTERS}
 
 ## examples: re-run examples
 .PHONY: examples
@@ -114,8 +114,8 @@ wordlist: ${ROOT}/docs/index.html
 
 ## html: create single-page HTML
 html: ${ROOT}/docs/all.html
-docs/all.html: ${ROOT}/docs/index.html ${HTML} ${MCCOLE}/bin/single.py
-	python ${MCCOLE}/bin/single.py \
+${ROOT}/docs/all.html: ${ROOT}/docs/index.html ${HTML} ${MCCOLE}/bin/make_single_html.py
+	python ${MCCOLE}/bin/make_single_html.py \
 	--head ${ROOT}/info/head.html \
 	--foot ${ROOT}/info/foot.html \
 	--root ${ROOT}/docs \
@@ -125,8 +125,8 @@ docs/all.html: ${ROOT}/docs/index.html ${HTML} ${MCCOLE}/bin/single.py
 
 ## latex: create LaTeX document
 latex: ${ROOT}/docs/${STEM}.tex
-${ROOT}/docs/${STEM}.tex: ${ROOT}/docs/all.html ${MCCOLE}/bin/html2tex.py ${CONFIG} ${TEX} ${TEX_COPY}
-	python ${MCCOLE}/bin/html2tex.py \
+${ROOT}/docs/${STEM}.tex: ${ROOT}/docs/all.html ${MCCOLE}/bin/html_to_latex.py ${CONFIG} ${TEX} ${TEX_COPY}
+	python ${MCCOLE}/bin/html_to_latex.py \
 	--head ${ROOT}/info/head.tex \
 	--foot ${ROOT}/info/foot.tex \
 	< ${ROOT}/docs/all.html \
@@ -193,11 +193,6 @@ clean:
 status:
 	@python ${MCCOLE}/bin/status.py --config ${ROOT}/config.py --readme ${ROOT}/README.md
 	@python ${MCCOLE}/bin/check_prose_slides.py --config ${ROOT}/config.py
-
-## count: words per file
-.PHONY: count
-count:
-	@(wc -w ${PAGES} && grep -c '\[% figure' ${PAGES}) | python ${MCCOLE}/bin/count.py
 
 ## valid: run html5validator on generated files
 .PHONY: valid

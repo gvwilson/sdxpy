@@ -22,7 +22,7 @@ every new record is appended to the end of the database.
 Programmers have invented many other ways to store large amounts of data,
 but this is one of the easiest to understand.
 
-## Starting Point {: db-start}
+## Starting Point {: #db-start}
 
 Our starting point is
 a simple [%g key_value_store "key-value store" %]
