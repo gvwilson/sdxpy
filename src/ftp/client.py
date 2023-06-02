@@ -2,7 +2,7 @@ import socket
 import sys
 
 KILOBYTE = 1024
-SERVER_ADDRESS = ("", 8080)
+SERVER_ADDRESS = ("localhost", 8080)
 
 message = "message text"
 

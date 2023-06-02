@@ -7,10 +7,10 @@
 
 # Get the absolute path to this file from wherever it is included.
 # See https://stackoverflow.com/questions/18136918/how-to-get-current-relative-directory-of-your-makefile
-MCCOLE:=$(realpath $(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
+MCCOLE:=$(patsubst %/,%,$(dir $(lastword $(MAKEFILE_LIST))))
 
-# Get the project root.
-ROOT:=${realpath ${MCCOLE}/../..}
+# Define the project root as the directory this file is included from.
+ROOT:=.
 
 # Get local configuration from the Ivy configuration file.
 CONFIG := ${ROOT}/config.py
@@ -214,8 +214,10 @@ vars:
 	@echo HTML ${HTML}
 	@echo INFO ${INFO}
 	@echo IVY ${IVY}
+	@echo MCCOLE ${MCCOLE}
 	@echo SRC ${SRC}
 	@echo SRC_PDF ${SRC_PDF}
 	@echo SRC_SVG ${SRC_SVG}
 	@echo STEM ${STEM}
+	@echo ROOT ${ROOT}
 	@echo TEX ${TEX}

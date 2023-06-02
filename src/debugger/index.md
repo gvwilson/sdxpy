@@ -135,7 +135,7 @@ which expect the function being tested to run to completion after being launched
 To make our single-stepping VM testable,
 we have to give it input when it wants some
 and capture its output for later inspection.
-We had a similar problem when testing the web server of [%x server %],
+We had a similar problem when testing the web server of [%x ftp %],
 and our solution is the similar:
 we will replace `input` and `print` with [%i "mock object" %]mock objects[%/i%].
 

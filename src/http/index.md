@@ -1,146 +1,11 @@
 ---
 syllabus:
--   Every computer on a network has a unique IP address.
--   The Domain Name System (DNS) translates human-readable names into IP addresses.
--   The programs on each computer send and receive messages through numbered sockets.
--   The program that receives a message must interpret the bytes in the message.
 -   The HyperText Transfer Protocol (HTTP) specifies one way to interact via messages over sockets.
 -   A minimal HTTP request has a method, a URL, and a protocol version.
 -   A complete HTTP request may also have headers and a body.
 -   An HTTP response has a status code, a status phrase, and optionally some headers and a body.
 -   "HTTP is a stateless protocol: the application is responsible for remembering things between requests."
 ---
-
-The Internet is simpler than most people realize
-(as well as being more complex than anyone could possibly comprehend).
-Most systems still follow the rules they did thirty years ago;
-in particular,
-most web servers still handle the same kinds of messages in the same way.
-
-## Using TCP/IP {: #server-tcpip}
-
-Pretty much every program on the web
-runs on a family of communication standards called
-[%i "Internet Protocol (IP)" "IP (Internet Protocol)" %][%g internet_protocol "Internet Protocol (IP)" %][%/i%].
-The one that concerns us is the
-[%i "Transmission Control Protocol (TCP/IP)" "TCP/IP (Transmission Control Protocol)" %][%g tcp "Transmission Control Protocol (TCP/IP)" %][%/i%],
-which makes communication between computers look like reading and writing files.
-
-Programs using IP communicate through [%i "socket" %][%g socket "sockets" %][%/i%]
-([%f server-sockets %]).
-Each socket is one end of a point-to-point communication channel,
-just like a phone is one end of a phone call.
-A socket consists of an [%i "IP address" %][%g ip_address "IP address" %][%/i%] that identifies a particular machine
-and a [%i "port" %][%g port "port" %][%/i%] on that machine
-The IP address consists of four 8-bit numbers,
-which are usually written as `93.184.216.34`;
-the [%i "Domain Name System (DNS)" "DNS (Domain Name System)" %][%g dns "Domain Name System (DNS)" %][%/i%]
-matches these numbers to symbolic names like `example.com`
-that are easier for human beings to remember.
-
-A port is a number in the range 0-65535
-that uniquely identifies the socket on the host machine.
-(If an IP address is like a company's phone number,
-then a port number is like an extension.)
-Ports 0-1023 are reserved for well-known TCP/IP applications like web servers;
-custom applications should use the remaining ports
-(and should allow users to decide *which* port,
-since there's always the chance that two different people will pick 1234 or 6789).
-
-[% figure
-   slug="server-sockets"
-   img="sockets.svg"
-   alt="Sockets, IP addresses, and DNS"
-   caption="How sockets, IP addresses, and DNS work together."
-%]
-
-Most web applications consists of [%i "client (web application)" %][%g client "clients" %][%/i%]
-and [%i "server (web application)" %][%g server "servers" %][%/i%].
-A client program initiates communication by sending a message and waiting for a response;
-a server,
-on the other hand,
-waits for requests and the replies to them.
-There are typically many more clients than servers:
-for example,
-there may be hundreds or thousands of browsers fetching pages from this book's website right now,
-but there is only one server handling those requests.
-
-Here's a simple socket client:
-
-[% inc file="socket_client.py" %]
-
-From top to bottom, this code:
-
-1.  Imports some modules and defines some constants.
-    The most interesting of these is `SERVER_ADDRESS` consisting of a host identifier and a port.
-    The empty string `""` for the host means "the current machine";
-    we could also use the string `"localhost"`.
-2.  We use `socket.socket` to create a new socket.
-    The values `AF_INET` and `SOCK_STREAM` specify the protocols we're using;
-    we'll always use those in our examples,
-    so we won't go into details about them.
-3.  We connect to the server…
-4.  …send our message as a bunch of bytes with `sock.sendall`…
-5.  …and print a message saying the data's been sent.
-6.  We then read up to a kilobyte from the socket with `sock.recv`.
-    If we were expecting longer messages,
-    we'd keep reading from the socket until there was no more data.
-7.  Finally, we print another message.
-
-The corresponding server is only a little more complicated:
-
-[% inc file="socket_server.py" %]
-
-Python's `socketserver` library provides two things:
-a class called `TCPServer` that listens for incoming connections
-and then manages them for us,
-and another class called `BaseRequestHandler`
-that does everything *except* process the incoming data.
-In order to do that,
-we derive a class of our own from `BaseRequestHandler` that provides a `handle` method.
-Every time `TCPServer` gets a new connection
-it creates a new object of our class
-and calls that object's `handle` method.
-This method is the inverse of the code that sends request.
-It:
-
-1.  Reads up to a kilobyte from `self.request`
-    (which is set up automatically for us in the base class `BaseRequestHandler`).
-2.  Prints a diagnostic message.
-3.  Use `self.request` again to send data back to whoever we received the message from.
-
-The easiest way to test this is to open two terminal windows side by side.
-[%t server-transcript %] shows the sequence of commands and their output:
-
-<div class="table" id="server-transcript" caption="Sequence of operations in socket client/server interaction" markdown="1">
-| Server                           | Client                                                      |
-| -------------------------------- | ----------------------------------------------------------- |
-| `$ python socket_server.py`      |                                                             |
-|                                  | `$ python socket_client.py`                                 |
-|                                  | `client sent 12 bytes`                                      |
-| `got request from 127.0.0.1: 12` |                                                             |
-|                                  | `client received 30 bytes: 'got request from 127.0.0.1: 12` |
-</div>
-
-<div class="callout" markdown="1">
-
-### Testing Multiprocess Applications
-
-Testing single-process command-line applications is straightforward:
-we just run a single command (either directly or via [%i "Make" %][Make][gnu_make][%/i%]).
-To test a client-server application,
-on the other hand,
-we have to start the server,
-wait for it to be ready,
-then run the client,
-and then shut down the server.
-It's easy to do this interactively,
-but automating it is difficult,
-since there's no way to tell how long to wait before trying to talk to the server,
-and no easy way to shut the server down.
-We will explore some possible approaches once we have a larger application to test.
-
-</div>
 
 ## HTTP {: #server-http}
 
@@ -150,11 +15,12 @@ HTTP is deliberately simple:
 the client sends a [%i "HTTP request" %][%g http_request "request" %][%/i%]
 specifying what it wants over a socket connection,
 and the server sends a [%i "HTTP response" %][%g http_response "response" %][%/i%] containing some data.
-That data may be copied from a file on disk,
-generated dynamically by a program,
-or some mix of the two.
+A server can construct responses however it wants;
+it can copy a file from disk,
+generated HTML dynamically,
+or almost anything else.
 
-The most important thing about an HTTP request is that it's just text:
+An HTTP request is that it's just text:
 any program that wants to can create one or parse one.
 An absolutely minimal HTTP request has just
 a [%g http_method "method" %],
@@ -162,9 +28,7 @@ a [%g url "URL" %],
 and a [%g http_protocol_version "protocol version" %]
 on a single line separated by spaces:
 
-```
-GET /index.html HTTP/1.1
-```
+[% inc file="minimal_http_request.txt" %]
 
 The HTTP method is almost always either `GET` (to fetch information)
 or `POST` (to submit form data or upload files).
@@ -180,12 +44,7 @@ Most real requests have a few extra lines called
 [%i "HTTP header" "header (HTTP)" %][%g http_header "headers" %][%/i%],
 which are key value pairs like the three shown below:
 
-```
-GET /index.html HTTP/1.1
-Accept: text/html
-Accept-Language: en, fr
-If-Modified-Since: 16-May-2022
-```
+[% inc file="http_request_headers.txt" %]
 
 Unlike the keys in hash tables,
 keys may appear any number of times in HTTP headers,
@@ -210,20 +69,7 @@ There are then some headers,
 a blank line,
 and the body of the response:
 
-```
-HTTP/1.1 200 OK
-Date: Thu, 16 June 2022 12:28:53 GMT
-Server: minserve/2.2.14 (Linux)
-Last-Modified: Wed, 15 Jun 2022 19:15:56 GMT
-Content-Type: text/html
-Content-Length: 53
-
-<html>
-<body>
-<h1>Hello, World!</h1>
-</body>
-</html>
-```
+[% inc file="http_response.txt" %]
 
 Constructing HTTP requests is tedious,
 so most people use libraries to do most of the work.
@@ -263,7 +109,7 @@ Here's the entire server:
 
 Let's start at the bottom and work our way up.
 
-1.  Again, `SERVER_ADDRESS` specifies the server's host and port.
+1.  `server_address` specifies the server's host and port.
 2.  The `HTTPServer` class takes care of parsing requests and sending back responses.
     When we construct it,
     we give it the server address and the name of the class we've written
@@ -302,10 +148,7 @@ Hello, web!
 
 and this in our shell:
 
-```
-127.0.0.1 - - [16/Sep/2022 06:34:59] "GET / HTTP/1.1" 200 -
-127.0.0.1 - - [16/Sep/2022 06:35:00] "GET /favicon.ico HTTP/1.1" 200 -
-```
+[% inc file="basic_server.out" %]
 
 The first line is straightforward:
 since we didn't ask for a particular file,
@@ -450,31 +293,18 @@ but programmers appreciate those that do.
    caption="Class hierarchy for a testable server."
 %]
 
-## Summary {: #server-summary}
+## Summary {: #http-summary}
 
 [% figure
-   slug="server-concept-map"
+   slug="http-concept-map"
    img="concept_map.svg"
-   alt="HTTP server concept map"
-   caption="HTTP server concept map."
+   alt="HTTP concept map"
+   caption="HTTP concept map."
 %]
 
-## Exercises {: #server-exercises}
+## Exercises {: #ftp-exercises}
 
-### Reading and writing chunks {: .exercise}
-
-Modify the socket client and socket server so that:
-
-1.  the client reads any amount of data from standard input
-    (including none at all)
-    and sends it to the server in kilobyte-sized chunks;
-    and
-
-2.  the server reads any amount of data from the socket
-    in chunks of four kilobytes
-    and sends a message with a byte count back to the client.
-
-### Parsing HTTP requests {: .exercise}
+### Parsing HTTP Requests {: .exercise}
 
 Write a function that takes a list of lines of text as input
 and parses them as if they were an HTTP request.
@@ -483,7 +313,7 @@ URL,
 protocol version,
 and headers.
 
-### Query parameters {: .exercise}
+### Query Parameters {: .exercise}
 
 A URL can contain [%i "query parameter" %][%g query_parameter "query parameters" %][%/i%].
 Read the documentation for the [urlparse][py_urlparse] module
@@ -492,7 +322,7 @@ a URL containing a query parameter `bytes=N`
 (for a positive integer N)
 returns the first N bytes of the requested file.
 
-### Better path resolution {: .exercise}
+### Better Path Resolution {: .exercise}
 
 Modify the file server so that:
 
@@ -504,13 +334,13 @@ Modify the file server so that:
     (so that paths containing `..` and other tricks
     can't be used to retrieve arbitrary files).
 
-### Better content types {: .exercise}
+### Better Content Types {: .exercise}
 
 Read the documentation for the [mimetypes][py_mimetypes] module
 and then modify the file server to return the correct content type
 for files that aren't HTML (such as images).
 
-### Uploading files {: .exercise}
+### Uploading Files {: .exercise}
 
 Modify the file server to handle POST requests.
 
@@ -522,7 +352,7 @@ Modify the file server to handle POST requests.
     i.e.,
     upload paths cannot contain directory components.
 
-### Checking content length {: .exercise}
+### Checking Content Length {: .exercise}
 
 Modify the file server so that:
 
@@ -534,7 +364,7 @@ Modify the file server so that:
 
 What status code should the server return to the client in each case?
 
-### Directory listing {: .exercise}
+### Directory Listing {: .exercise}
 
 1.  Modify the file server so that
     if the path portion of the URL identifies a directory,
@@ -542,12 +372,12 @@ What status code should the server return to the client in each case?
 
 2.  Write tests for this using the [pyfakefs][pyfakefs] module.
 
-### Dynamic results {: .exercise}
+### Dynamic Results {: .exercise}
 
 Modify the file server so that if the client requests the "file" `/time`,
 the server returns an HTML page that reports the current time on the server's machine.
 
-### Templated results {: .exercise}
+### Templated Results {: .exercise}
 
 Modify the file server to:
 

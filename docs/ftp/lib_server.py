@@ -1,13 +1,13 @@
 import socketserver
 
 KILOBYTE = 1024
-SERVER_ADDRESS = ("", 8080)
+SERVER_ADDRESS = ("localhost", 8080)
 
 class MyHandler(socketserver.BaseRequestHandler):
     def handle(self):
-        """Handle a single request."""
         data = self.request.recv(KILOBYTE)
-        msg = f"got request from {self.client_address[0]}: {len(data)}"
+        cli = self.client_address[0]
+        msg = f"got request from {cli}: {len(data)}"
         print(msg)
         self.request.sendall(bytes(msg, "utf-8"))
 
