@@ -218,6 +218,7 @@ the recursive calls must have included exactly one version of each package,
 so the combination is appended to the accumulator.
 
 [% inc file="manual.py" keep="make" %]
+[% inc file="manual.out" %]
 
 [% figure
    slug="pack-recursive"
