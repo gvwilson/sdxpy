@@ -232,11 +232,6 @@ and specifies `charset=utf-8` as part of the content type.
 ## Testing  {: #server-testing}
 
 At this point we really need to figure out how to test the servers we're building.
-The key to our approach is the notion of [%i "fidelity (in testing)" %][%g test_fidelity "fidelity" %][%/i%]:
-how close is what we test to what we use in production?
-In an ideal world they are exactly the same,
-but in cases like this it makes sense to sacrifice a little fidelity for testability's sake.
-
 Let's work backward from a test we want to be able to write.
 We would like to create a file,
 simulate an HTTP GET request,

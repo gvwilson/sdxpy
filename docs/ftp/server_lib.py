@@ -1,11 +1,11 @@
 import socketserver
 
-KILOBYTE = 1024
+CHUNK_SIZE = 1024
 SERVER_ADDRESS = ("localhost", 8080)
 
 class MyHandler(socketserver.BaseRequestHandler):
     def handle(self):
-        data = self.request.recv(KILOBYTE)
+        data = self.request.recv(CHUNK_SIZE)
         cli = self.client_address[0]
         msg = f"got request from {cli}: {len(data)}"
         print(msg)

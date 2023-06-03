@@ -64,7 +64,7 @@ but there is only one server handling those requests.
 
 Here's a basic socket client:
 
-[% inc file="client.py" %]
+[% inc file="client_all.py" %]
 
 We call it "basic" rather than "simple" because there's a lot going on here.
 From top to bottom, this code:
@@ -88,7 +88,7 @@ From top to bottom, this code:
 
 The corresponding server has just as much low-level detail:
 
-[% inc file="raw_server.py" omit="main" %]
+[% inc file="server_raw.py" omit="main" %]
 
 This code claims a socket,
 listens until it receives a connection request,
@@ -106,24 +106,6 @@ when we run the client and server in separate terminal windows.
    caption="Steps and messages in client/server interaction."
 %]
 
-<div class="callout" markdown="1">
-
-### Testing Multiprocess Applications
-
-Testing single-process command-line applications is hard enough;
-to test a client-server application,
-we have to start the server,
-wait for it to be ready,
-then run the client,
-and then shut down the server if it hasn't shut down by itself.
-It's easy to do this interactively,
-but automating it is difficult because
-there's no way to tell how long to wait before trying to talk to the server
-and no easy way to shut the server down.
-We will explore some approaches once we have a larger application to test.
-
-</div>
-
 There's a *lot* going on here,
 so most people who have to program at this level
 use Python's `socketserver` library,
@@ -139,7 +121,7 @@ and calls that object's `handle` method.
 Using these,
 our server is:
 
-[% inc file="lib_server.py" %]
+[% inc file="server_lib.py" %]
 
 These two library classes use a different design than what we've seen before.
 Instead of creating one class for programmers to extend,
@@ -151,6 +133,139 @@ This approach isn't intrinsically better or worse than
 the "derive and override" approach we've seen before;
 they're just two more tools in a software designer's toolbox.
 {: .continue}
+
+## Chunking {: #ftp-chunk}
+
+Our latest server reads data exactly once using `self.request.recv(CHUNK_SIZE)`
+with `CHUNK_SIZE` set to 1024.
+If the client sends more than a kilobyte of data,
+our server will ignore it.
+This can result in [%g deadlock "deadlock" %] because
+the server is trying to send its reply
+while the client is still trying to send the rest of the message.
+Increasing the size of the [%g buffer "buffer" %] used to store the incoming message
+won't make this problem go away:
+the client (or a malicious attacker) could always send more data than we have allowed for.
+
+Instead,
+we need to modify the server so that it keeps reading data
+until there is nothing left to read.
+Each time the `handle` method shown below goes around the loop,
+it tries to read another kilobyte.
+If it gets that much,
+it appends it to `data` and tries again.
+If it gets less than a kilobyte,
+we have reached the end of the transmission
+and can return the result:
+
+[% inc file="server_chunk.py" keep="class" %]
+
+We can modify the client to send data in chunks as well,
+but we handle this a little differently.
+Each call to `conn.send` in the function below
+tries to send all of the remaining data.
+The value returned by the function call tells us
+how many bytes were actually sent.
+If that number gets us to the end of the data we're sending,
+the function can exit the loop.
+If not,
+it adds the number of bytes send to `total`
+so that it knows where to start sending
+the next time around:
+
+[% inc file="client_chunk.py" keep="send" %]
+
+While we're here,
+we might as well write a function to create a socket:
+
+[% inc file="client_chunk.py" keep="make" %]
+
+and another to wait for the acknowledgment from the server:
+{: .continue}
+
+[% inc file="client_chunk.py" keep="receive" %]
+
+The main program is then:
+{: .continue}
+
+[% inc file="client_chunk.py" keep="main" %]
+
+When we run the client and server,
+the client prints:
+
+[% inc file="client_chunk.out" %]
+
+and the server prints
+{: .continue}
+
+[% inc file="server_chunk.out" %]
+
+## Testing {: #ftp-test}
+
+Testing single-process command-line applications is hard enough.
+To test a client-server application like the one above
+we have to start the server,
+wait for it to be ready,
+then run the client,
+and then shut down the server if it hasn't shut down by itself.
+It's easy to do this interactively,
+but automating it is difficult because
+there's no way to tell how long to wait before trying to talk to the server
+and no easy way to shut the server down.
+
+A partial solution is to use a [%g mock_object "mock object" %] ([%x mock %])
+in place of a real network connection
+so that we can test each part of the application independently.
+To start,
+let's refactor our server's `handle` method
+so that it calls `self.debug` instead of printing directly:
+
+[% inc file="logging_handler.py" keep="class" omit="debug" %]
+
+The `debug` method takes any number of arguments and passes them to `print`:
+{: .continue}
+
+[% inc file="logging_handler.py" keep="debug" %]
+
+The `handle` method in this class relies on
+the `self.request` object created by the framework
+to send and receive data.
+We can create a testable server by deriving a class from `LoggingHandler`
+that inherits the `handle` method (which is the part we want to test)
+but creates a mock `request` object
+and overrides the `debug` method so that it doesn't print logging messages:
+
+[% inc file="test_server.py" keep="handler" %]
+
+Notice that we *don't* upcall the constructor of `LoggingHandler`
+in the constructor of `MockHandler`.
+If we did,
+we would trigger a call to the constructor of `BaseRequestHandler`,
+which would then be upset because we haven't defined a host or a port.
+{: .continue}
+
+The class we use to create our mock `request` object needs three things:
+
+1.  A constructor that records the data we're going to pretend
+    to have received over a socket
+    and does whatever other setup is needed.
+
+2.  A `recv` method with the same signature as the real object's `recv` method.
+
+3.  A `sendall` method whose signature matches that of the real thing as well.
+
+The whole class is:
+
+[% inc file="test_server.py" keep="request" %]
+
+With it, we can now write unit tests like this:
+
+[% inc file="test_server.py" keep="test" %]
+
+The key to our approach is the notion of [%i "fidelity (in testing)" %][%g test_fidelity "fidelity" %][%/i%]:
+how close is what we test to what we use in production?
+In an ideal world they are exactly the same,
+but in cases like this it makes sense to sacrifice a little fidelity for testability's sake.
 
 ## Summary {: #ftp-summary}
 

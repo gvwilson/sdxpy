@@ -1,6 +1,6 @@
 import socket
 
-KILOBYTE = 1024
+CHUNK_SIZE = 1024
 
 def handler():
     host, port = socket.gethostbyname("localhost"), 8080
@@ -11,7 +11,7 @@ def handler():
     conn, address = server_socket.accept()
     print(f"Connection from {address}")
 
-    data = str(conn.recv(KILOBYTE), "utf-8")
+    data = str(conn.recv(CHUNK_SIZE), "utf-8")
     msg = f"got request from {address}: {len(data)}"
     print(msg)
 

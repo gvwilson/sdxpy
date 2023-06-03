@@ -1,7 +1,6 @@
 import socket
-import sys
 
-KILOBYTE = 1024
+CHUNK_SIZE = 1024
 SERVER_ADDRESS = ("localhost", 8080)
 
 message = "message text"
@@ -11,6 +10,6 @@ sock.connect(SERVER_ADDRESS)
 sock.sendall(bytes(message, "utf-8"))
 print(f"client sent {len(message)} bytes")
 
-received = sock.recv(KILOBYTE)
+received = sock.recv(CHUNK_SIZE)
 received_str = str(received, "utf-8")
 print(f"client received {len(received)} bytes: '{received_str}'")
