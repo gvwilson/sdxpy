@@ -3,6 +3,7 @@
 import argparse
 import re
 from pathlib import Path
+from prettytable import PrettyTable
 
 import utils
 
@@ -31,22 +32,22 @@ def report_readme(filename):
 
 def report_chapters(chapters):
     """Status of chapters."""
-    fmt, bar = build_format(chapters)
-    s = fmt.format("Chapter")
-    print(f"{s} | Slides | Exercises | Figures | Lines | Words")
-    print(f"{bar} | ------ | --------- | ------- | ----- | -----")
+    tbl = PrettyTable()
+    tbl.field_names = "Chapter Slides Exercises Figures Lines Words".split()
+    tbl.align = "r"
+    tbl.align["Chapter"] = "l"
     for slug in chapters.keys():
         with open(Path("src", slug, "index.md"), "r") as reader:
             page = reader.read()
-            n_ex = count_exercises(page)
-            n_fig = count_figures(page)
-            n_lines = count_lines(page)
+            n_ex = count_re(RE_EXERCISE, page)
+            n_fig = count_re(RE_FIGURE, page)
+            n_lines = page.count("\n")
             n_words = count_words(page)
         with open(Path("src", slug, "slides.html"), "r") as reader:
             slides = reader.read()
             n_slides = count_slides(slides)
-        s = fmt.format(f"{slug}")
-        print(f"{s} | {n_slides:6} | {n_ex:9} | {n_fig:7} | {n_lines:5} | {n_words:5}")
+        tbl.add_row([slug, n_slides, n_ex, n_fig, n_lines, n_words])
+    print(tbl)
 
 
 def build_format(chapters):
@@ -56,16 +57,8 @@ def build_format(chapters):
     return fmt, "-" * longest
 
 
-def count_exercises(text):
-    return len(list(RE_EXERCISE.finditer(text)))
-
-
-def count_figures(text):
-    return len(list(RE_FIGURE.finditer(text)))
-
-
-def count_lines(text):
-    return len(list(text.split("\n")))
+def count_re(pat, text):
+    return len(list(pat.finditer(text)))
 
 
 def count_slides(text):
