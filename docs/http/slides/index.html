@@ -46,7 +46,12 @@ class: slide-title
 
 ## The Problem
 
--   <span class="fixme">FIXME introduce slides</span>
+-   Uploading and downloading files (<a class="x-ref" href="../../ftp/">Chapter 21</a>) is useful,
+    but we want to do more
+
+-   Don't want to create a new <a class="gl-ref" href="../../glossary/#protocol" markdown="1">protocol</a> for every interaction
+
+-   Use a standard protocol in a variety of ways
 
 ---
 
@@ -204,6 +209,205 @@ python basic_http_server.py
 127.0.0.1 - - [16/Sep/2022 06:34:59] "GET / HTTP/1.1" 200 -
 127.0.0.1 - - [16/Sep/2022 06:35:00] "GET /favicon.ico HTTP/1.1" 200 -
 ```
+
+
+---
+
+## Serving Files
+
+```py
+class RequestHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        try:
+            url_path = self.path.lstrip("/")
+            full_path = Path.cwd().joinpath(url_path)
+            if not full_path.exists():
+                raise ServerException(f"{self.path} not found")
+            elif full_path.is_file():
+                self.handle_file(self.path, full_path)
+            else:
+                raise ServerException(f"{self.path} unknown")
+        except Exception as msg:
+            self.handle_error(msg)
+```
+
+
+---
+
+## Read and Reply
+
+-   Translate path in URL into path to local file
+
+-   <a class="gl-ref" href="../../glossary/#path_resolution" markdown="1">Resolve</a> paths relative to server's directory
+
+```py
+    def handle_file(self, given_path, full_path):
+        try:
+            with open(full_path, 'rb') as reader:
+                content = reader.read()
+            self.send_content(content, HTTPStatus.OK)
+        except IOError:
+            raise ServerException(f"Cannot read {given_path}")
+```
+
+
+---
+
+## Handling Errors
+
+```py
+ERROR_PAGE = """\
+<html>
+  <head><title>Error accessing {path}</title></head>
+  <body>
+    <h1>Error accessing {path}: {msg}</h1>
+  </body>
+</html>
+"""
+```
+
+```py
+    def handle_error(self, msg):
+        content = ERROR_PAGE.format(path=self.path, msg=msg)
+        content = bytes(content, "utf-8")
+        self.send_content(content, HTTPStatus.NOT_FOUND)
+```
+
+
+-   Use `try`/`except` to handle errors in called methods
+
+-   <a class="gl-ref" href="../../glossary/#throw_low_catch_high" markdown="1">Throw low, catch high</a>
+
+---
+
+## Problems
+
+-   Client can escape from our <a class="gl-ref" href="../../glossary/#sandbox" markdown="1">sandbox</a>
+    by asking for `http://localhost:8080/../../passwords.txt`
+
+-   `send_content` always says it is returning HTML with `Content-Type`
+
+    -   Should use things like `image/png` for images
+
+-   But we got <a class="gl-ref" href="../../glossary/#character_encoding" markdown="1">character encoding</a> right
+
+---
+
+## Test Case
+
+-   Want to write this
+
+```py
+def test_existing_path(fs):
+    content_str = "actual"
+    content_bytes = bytes(content_str, "utf-8")
+    fs.create_file("/actual.txt", contents=content_str)
+    handler = MockHandler("/actual.txt")
+    handler.do_GET()
+    assert handler.status == int(HTTPStatus.OK)
+    assert handler.headers["Content-Type"] == \
+        ["text/html; charset=utf-8"]
+    assert handler.headers["Content-Length"] == \
+        [str(len(content_bytes))]
+    assert handler.wfile.getvalue() == content_bytes
+```
+
+
+---
+
+## Combining Code
+
+-   Use <a class="gl-ref" href="../../glossary/#multiple_inheritance" markdown="1">multiple inheritance</a>
+
+<figure>
+<img src="../inheritance.svg" alt="Testing class hierarchy"/>
+</figure>
+
+
+---
+
+## Mock Request Handler
+
+```py
+from io import BytesIO
+
+class MockRequestHandler:
+    def __init__(self, path):
+        self.path = path
+        self.status = None
+        self.headers = {}
+        self.wfile = BytesIO()
+
+    def send_response(self, status):
+        self.status = status
+
+    def send_header(self, key, value):
+        if key not in self.headers:
+            self.headers[key] = []
+        self.headers[key].append(value)
+
+    def end_headers(self):
+        pass
+```
+
+
+---
+
+## Application Code
+
+```py
+class ApplicationRequestHandler:
+    def do_GET(self):
+        try:
+            url_path = self.path.lstrip("/")
+            full_path = Path.cwd().joinpath(url_path)
+            if not full_path.exists():
+                raise ServerException(f"'{self.path}' not found")
+            elif full_path.is_file():
+                self.handle_file(self.path, full_path)
+            else:
+                raise ServerException(f"Unknown object '{self.path}'")
+        except Exception as msg:
+            self.handle_error(msg)
+
+    # ...etc...
+```
+
+
+---
+
+## Two Servers
+
+```py
+if __name__ == '__main__':
+    class RequestHandler(
+            BaseHTTPRequestHandler,
+            ApplicationRequestHandler
+    ):
+        pass
+
+    serverAddress = ('', 8080)
+    server = HTTPServer(serverAddress, RequestHandler)
+    server.serve_forever()
+```
+
+
+```py
+class MockHandler(
+        MockRequestHandler,
+        ApplicationRequestHandler
+):
+    pass
+```
+
+
+---
+
+## Summary
+
+<figure>
+<img src="../concept_map.svg" alt="HTTP concept map"/>
+</figure>
 
 
 

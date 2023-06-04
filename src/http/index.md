@@ -7,7 +7,12 @@ syllabus:
 -   "HTTP is a stateless protocol: the application is responsible for remembering things between requests."
 ---
 
-## HTTP {: #server-http}
+Uploading and downloading files ([%x ftp %]) is useful,
+but we want to do more.
+What we *don't* want to do is
+create a new [%g protocol "protocol" %] for every kind interaction.
+Instead,
+we would like to use a single standardized protocol in a variety of ways.
 
 The [%i "Hypertext Transfer Protocol (HTTP)" "HTTP (Hypertext Transfer Protocol)" %][%g http "Hypertext Transfer Protocol (HTTP)" %][%/i%]
 specifies one way programs can exchange data over IP.
@@ -72,8 +77,9 @@ and the body of the response:
 [% inc file="http_response.txt" %]
 
 Constructing HTTP requests is tedious,
-so most people use libraries to do most of the work.
-The most popular such library in Python is called [requests][requests].
+so most people use a library to do most of the work.
+The most popular one in Python is called [requests][requests],
+and works like this:
 
 [% inc pat="requests_example.*" fill="py out" %]
 
@@ -91,14 +97,22 @@ that we can analyze or render.
    caption="Lifecycle of an HTTP request and response."
 %]
 
+Keep in mind that `requests` isn't doing anything magical.
+Instead,
+it is formatting a block of text,
+opening a socket connection ([%x ftp %]),
+sending that text through the connection,
+and then reading a response.
+We will implement some of this ourselves in the exercises.
+
 ## Hello, Web {: #server-static}
 
 We're now ready to write a simple HTTP server that will:
 
 1.  wait for someone to connect and send an HTTP request;
 2.  parse that request;
-3.  figure out what it's asking for;
-4.  send back an HTML page.
+3.  figure out what to send back; and
+4.  reply with an HTML page.
 
 Steps 1, 2, and 4 are the same from one application to another,
 so the Python standard library has a module called `http.server`
@@ -179,7 +193,7 @@ It might seem simpler to rewrite `do_GET` to use `if`/`else` instead of `try`/`e
 but the latter has an advantage:
 we can handle errors that occur inside methods we're calling (like `handle_file`)
 in the same place and in the same way as we handle errors that occur here.
-This approach is sometimes called "throw low, catch high",
+This approach is sometimes called [%g throw_low_catch_high "throw low, catch high" %],
 which means that errors should be flagged in many places
 but handled in a few places high up in the code.
 The method that handles files is an example of this:
@@ -231,50 +245,25 @@ and specifies `charset=utf-8` as part of the content type.
 
 ## Testing  {: #server-testing}
 
-At this point we really need to figure out how to test the servers we're building.
-Let's work backward from a test we want to be able to write.
+As with the server in [%x ftp %],
+we can work backward from a test we want to be able to write
+to create a testable server.
 We would like to create a file,
 simulate an HTTP GET request,
 and check that the status, headers, and content are correct.
-In the code below,
-the `CombinedHandler` class does double duty:
-it handles the simulated request,
-and also stores the values that the client would receive.
+[%f server-inheritance %] shows the final inheritance hierarchy:
 
-[% inc file="test_testable_server.py" keep="example" %]
+-   `BaseHTTPRequestHandler` comes from the Python standard library.
 
-The class we are testing is called `CombinedHandler`
-because it is derived from two things:
-a class that implements our application's `do_GET`
-and another class that provides replacements for
-the `BaseHTTPRequestHandler` properties and methods
-that our application actually uses.
-The latter is just a few lines long,
-though it would be larger if our application used
-more of `BaseHTTPRequestHandler`'s functionality:
+-   `MockRequestHandler` defines replacements for its method.
 
-[% inc file="mock_handler.py" %]
+-   `ApplicationRequestHandler` contains our server's logic.
 
-The application-specific class contains the code we've already seen:
+-   `RequestHandler` combines our application code
+    with Python's request handler.
 
-[% inc file="testable_server.py" keep="handler" omit="skip" %]
+-   `MockHandler` combines it with our mock request handler.
 
-However,
-`ApplicationRequestHandler` *doesn't* inherit from `BaseHTTPRequestHandler`.
-Instead,
-we create a class that combines the two when we need it:
-{: .continue}
-
-[% inc file="testable_server.py" keep="main" %]
-
-and create another class for testing that combines
-the application-specific class with `MockHandler`.
-This class is the `CombinedClass` that our test uses:
-{: .continue}
-
-[% inc file="test_testable_server.py" keep="combined" %]
-
-[%f server-inheritance %] shows the final inheritance hierarchy.
 It's a lot of work to test a GET request for one file,
 but we can re-use `MockRequestHandler` to test
 the application-specific code for other servers.
@@ -287,6 +276,35 @@ but programmers appreciate those that do.
    alt="Testing class hierarchy"
    caption="Class hierarchy for a testable server."
 %]
+
+`MockRequestHandler` is just a few lines of code,
+though it would be longer if our application relied on
+more methods from the library class we're replacing:
+
+[% inc file="mock_handler.py" %]
+
+The application-specific class contains the code we've already seen:
+
+[% inc file="testable_server.py" keep="handler" omit="skip" %]
+
+`MockHandler` handles the simulated request
+and also stores the values that the client would receive:
+
+[% inc file="test_testable_server.py" keep="example" %]
+
+The main body of our runnable server
+combines the two classes to create what it needs,
+instantiates the result,
+and runs it:
+
+[% inc file="testable_server.py" keep="main" %]
+
+Our tests,
+on the other hand,
+create a server with mocked methods:
+{: .continue}
+
+[% inc file="test_testable_server.py" keep="combined" %]
 
 ## Summary {: #http-summary}
 

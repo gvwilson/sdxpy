@@ -343,12 +343,17 @@
 
           
 <p class="definitions">
-  Terms defined: <a class="gl-ref" href="../glossary/#http_body" markdown="1">body (of HTTP request or response)</a>, <a class="gl-ref" href="../glossary/#http_header" markdown="1">header (of HTTP request or response)</a>, <a class="gl-ref" href="../glossary/#http_method" markdown="1">HTTP method</a>, <a class="gl-ref" href="../glossary/#http_protocol_version" markdown="1">HTTP protocol version</a>, <a class="gl-ref" href="../glossary/#http_request" markdown="1">HTTP request</a>, <a class="gl-ref" href="../glossary/#http_response" markdown="1">HTTP response</a>, <a class="gl-ref" href="../glossary/#http_status_code" markdown="1">HTTP status code</a>, <a class="gl-ref" href="../glossary/#http" markdown="1">HyperText Transfer Protocol</a>, <a class="gl-ref" href="../glossary/#path_resolution" markdown="1">path resolution</a>, <a class="gl-ref" href="../glossary/#query_parameter" markdown="1">query parameter</a>, <a class="gl-ref" href="../glossary/#url" markdown="1">Universal Resource Locator</a>, <a class="gl-ref" href="../glossary/#utf_8" markdown="1">UTF-8</a>
+  Terms defined: <a class="gl-ref" href="../glossary/#http_body" markdown="1">body (of HTTP request or response)</a>, <a class="gl-ref" href="../glossary/#http_header" markdown="1">header (of HTTP request or response)</a>, <a class="gl-ref" href="../glossary/#http_method" markdown="1">HTTP method</a>, <a class="gl-ref" href="../glossary/#http_protocol_version" markdown="1">HTTP protocol version</a>, <a class="gl-ref" href="../glossary/#http_request" markdown="1">HTTP request</a>, <a class="gl-ref" href="../glossary/#http_response" markdown="1">HTTP response</a>, <a class="gl-ref" href="../glossary/#http_status_code" markdown="1">HTTP status code</a>, <a class="gl-ref" href="../glossary/#http" markdown="1">HyperText Transfer Protocol</a>, <a class="gl-ref" href="../glossary/#path_resolution" markdown="1">path resolution</a>, <a class="gl-ref" href="../glossary/#protocol" markdown="1">protocol</a>, <a class="gl-ref" href="../glossary/#query_parameter" markdown="1">query parameter</a>, <a class="gl-ref" href="../glossary/#url" markdown="1">Universal Resource Locator</a>, <a class="gl-ref" href="../glossary/#utf_8" markdown="1">UTF-8</a>
 </p>
 
 
           <div class="page-toc"></div>
-          <h2 id="server-http">Section 22.1: HTTP</h2>
+          <p>Uploading and downloading files (<a class="x-ref" href="../ftp/">Chapter 21</a>) is useful,
+but we want to do more.
+What we <em>don&rsquo;t</em> want to do is
+create a new <a class="gl-ref" href="../glossary/#protocol" markdown="1">protocol</a> for every kind interaction.
+Instead,
+we would like to use a single standardized protocol in a variety of ways.</p>
 <p>The <span class="ix-entry" ix-key="Hypertext Transfer Protocol (HTTP);HTTP (Hypertext Transfer Protocol)" markdown="1"><a class="gl-ref" href="../glossary/#http" markdown="1">Hypertext Transfer Protocol (HTTP)</a></span>
 specifies one way programs can exchange data over IP.
 HTTP is deliberately simple:
@@ -423,8 +428,9 @@ Content-Length: 53
 </code></pre></div>
 </div>
 <p>Constructing HTTP requests is tedious,
-so most people use libraries to do most of the work.
-The most popular such library in Python is called <a href="https://requests.readthedocs.io/">requests</a>.</p>
+so most people use a library to do most of the work.
+The most popular one in Python is called <a href="https://requests.readthedocs.io/">requests</a>,
+and works like this:</p>
 <div class="code-sample lang-py" title="requests_example.py">
 <div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">requests</span>
 
@@ -458,13 +464,20 @@ that we can analyze or render.</p>
 <figcaption markdown="1">Figure 22.1: Lifecycle of an HTTP request and response.</figcaption>
 </figure>
 
-<h2 id="server-static">Section 22.2: Hello, Web</h2>
+<p>Keep in mind that <code>requests</code> isn&rsquo;t doing anything magical.
+Instead,
+it is formatting a block of text,
+opening a socket connection (<a class="x-ref" href="../ftp/">Chapter 21</a>),
+sending that text through the connection,
+and then reading a response.
+We will implement some of this ourselves in the exercises.</p>
+<h2 id="server-static">Section 22.1: Hello, Web</h2>
 <p>We&rsquo;re now ready to write a simple HTTP server that will:</p>
 <ol>
 <li>wait for someone to connect and send an HTTP request;</li>
 <li>parse that request;</li>
-<li>figure out what it&rsquo;s asking for;</li>
-<li>send back an HTML page.</li>
+<li>figure out what to send back; and</li>
+<li>reply with an HTML page.</li>
 </ol>
 <p>Steps 1, 2, and 4 are the same from one application to another,
 so the Python standard library has a module called <code>http.server</code>
@@ -542,7 +555,7 @@ The second line appears because
 our browser automatically sends a second request
 for an image file called <code>/favicon.ico</code>,
 which it will display as an icon in the address bar if it exists.</p>
-<h2 id="server-files">Section 22.3: Serving Files</h2>
+<h2 id="server-files">Section 22.2: Serving Files</h2>
 <p>Serving the same page for every request isn&rsquo;t particularly useful,
 so let&rsquo;s rewrite our simple server to return files.
 The basic logic looks like this:</p>
@@ -553,11 +566,11 @@ The basic logic looks like this:</p>
             <span class="n">url_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">lstrip</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)</span>
             <span class="n">full_path</span> <span class="o">=</span> <span class="n">Path</span><span class="o">.</span><span class="n">cwd</span><span class="p">()</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="n">url_path</span><span class="p">)</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">full_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
-                <span class="k">raise</span> <span class="n">ServerException</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="si">}</span><span class="s2">&#39; not found&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="n">ServerException</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="si">}</span><span class="s2"> not found&quot;</span><span class="p">)</span>
             <span class="k">elif</span> <span class="n">full_path</span><span class="o">.</span><span class="n">is_file</span><span class="p">():</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">handle_file</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">full_path</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="n">ServerException</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown object &#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="n">ServerException</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="si">}</span><span class="s2"> unknown&quot;</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">msg</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">handle_error</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
 </code></pre></div>
@@ -573,7 +586,7 @@ we send an error message.</p>
 but the latter has an advantage:
 we can handle errors that occur inside methods we&rsquo;re calling (like <code>handle_file</code>)
 in the same place and in the same way as we handle errors that occur here.
-This approach is sometimes called &ldquo;throw low, catch high&rdquo;,
+This approach is sometimes called <a class="gl-ref" href="../glossary/#throw_low_catch_high" markdown="1">throw low, catch high</a>,
 which means that errors should be flagged in many places
 but handled in a few places high up in the code.
 The method that handles files is an example of this:</p>
@@ -584,7 +597,7 @@ The method that handles files is an example of this:</p>
                 <span class="n">content</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">send_content</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="n">HTTPStatus</span><span class="o">.</span><span class="n">OK</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">IOError</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">ServerException</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="n">given_path</span><span class="si">}</span><span class="s2">&#39; cannot be read&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">ServerException</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Cannot read </span><span class="si">{</span><span class="n">given_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 </code></pre></div>
 </div>
 <p>If there&rsquo;s an error at any point in the processing cycle
@@ -601,12 +614,9 @@ we send a page with an error message
 <div class="code-sample lang-py" title="file_server.py">
 <div class="highlight"><pre><span></span><code><span class="n">ERROR_PAGE</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span><span class="se">\</span>
 <span class="s2">&lt;html&gt;</span>
-<span class="s2">  &lt;head&gt;</span>
-<span class="s2">    &lt;title&gt;Error accessing </span><span class="si">{path}</span><span class="s2">&lt;/title&gt;</span>
-<span class="s2">  &lt;/head&gt;</span>
+<span class="s2">  &lt;head&gt;&lt;title&gt;Error accessing </span><span class="si">{path}</span><span class="s2">&lt;/title&gt;&lt;/head&gt;</span>
 <span class="s2">  &lt;body&gt;</span>
-<span class="s2">    &lt;h1&gt;Error accessing </span><span class="si">{path}</span><span class="s2">&lt;/h1&gt;</span>
-<span class="s2">    &lt;p&gt;</span><span class="si">{msg}</span><span class="s2">&lt;/p&gt;</span>
+<span class="s2">    &lt;h1&gt;Error accessing </span><span class="si">{path}</span><span class="s2">: </span><span class="si">{msg}</span><span class="s2">&lt;/h1&gt;</span>
 <span class="s2">  &lt;/body&gt;</span>
 <span class="s2">&lt;/html&gt;</span>
 <span class="s2">&quot;&quot;&quot;</span>
@@ -647,38 +657,45 @@ by using <code>"rb"</code> instead of just <code>"r"</code> when it opens files 
 converts the internally-generated error page from characters to bytes
 using the <a class="gl-ref" href="../glossary/#utf_8" markdown="1">UTF-8</a> encoding,
 and specifies <code>charset=utf-8</code> as part of the content type.</p>
-<h2 id="server-testing">Section 22.4: Testing</h2>
-<p>At this point we really need to figure out how to test the servers we&rsquo;re building.
-Let&rsquo;s work backward from a test we want to be able to write.
+<h2 id="server-testing">Section 22.3: Testing</h2>
+<p>As with the server in <a class="x-ref" href="../ftp/">Chapter 21</a>,
+we can work backward from a test we want to be able to write
+to create a testable server.
 We would like to create a file,
 simulate an HTTP GET request,
 and check that the status, headers, and content are correct.
-In the code below,
-the <code>CombinedHandler</code> class does double duty:
-it handles the simulated request,
-and also stores the values that the client would receive.</p>
-<div class="code-sample lang-py" title="test_testable_server.py">
-<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">test_existing_path</span><span class="p">(</span><span class="n">fs</span><span class="p">):</span>
-    <span class="n">content_str</span> <span class="o">=</span> <span class="s2">&quot;actual&quot;</span>
-    <span class="n">content_bytes</span> <span class="o">=</span> <span class="nb">bytes</span><span class="p">(</span><span class="n">content_str</span><span class="p">,</span> <span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
-    <span class="n">fs</span><span class="o">.</span><span class="n">create_file</span><span class="p">(</span><span class="s2">&quot;/actual.txt&quot;</span><span class="p">,</span> <span class="n">contents</span><span class="o">=</span><span class="n">content_str</span><span class="p">)</span>
-    <span class="n">handler</span> <span class="o">=</span> <span class="n">CombinedHandler</span><span class="p">(</span><span class="s2">&quot;/actual.txt&quot;</span><span class="p">)</span>
-    <span class="n">handler</span><span class="o">.</span><span class="n">do_GET</span><span class="p">()</span>
-    <span class="k">assert</span> <span class="n">handler</span><span class="o">.</span><span class="n">status</span> <span class="o">==</span> <span class="nb">int</span><span class="p">(</span><span class="n">HTTPStatus</span><span class="o">.</span><span class="n">OK</span><span class="p">)</span>
-    <span class="k">assert</span> <span class="n">handler</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s2">&quot;Content-Type&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="p">[</span><span class="s2">&quot;text/html; charset=utf-8&quot;</span><span class="p">]</span>
-    <span class="k">assert</span> <span class="n">handler</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s2">&quot;Content-Length&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">content_bytes</span><span class="p">))]</span>
-    <span class="k">assert</span> <span class="n">handler</span><span class="o">.</span><span class="n">wfile</span><span class="o">.</span><span class="n">getvalue</span><span class="p">()</span> <span class="o">==</span> <span class="n">content_bytes</span>
-</code></pre></div>
-</div>
-<p>The class we are testing is called <code>CombinedHandler</code>
-because it is derived from two things:
-a class that implements our application&rsquo;s <code>do_GET</code>
-and another class that provides replacements for
-the <code>BaseHTTPRequestHandler</code> properties and methods
-that our application actually uses.
-The latter is just a few lines long,
-though it would be larger if our application used
-more of <code>BaseHTTPRequestHandler</code>&lsquo;s functionality:</p>
+<a class="fig-ref" href="../http/#server-inheritance">Figure 22.2</a> shows the final inheritance hierarchy:</p>
+<ul>
+<li>
+<p><code>BaseHTTPRequestHandler</code> comes from the Python standard library.</p>
+</li>
+<li>
+<p><code>MockRequestHandler</code> defines replacements for its method.</p>
+</li>
+<li>
+<p><code>ApplicationRequestHandler</code> contains our server&rsquo;s logic.</p>
+</li>
+<li>
+<p><code>RequestHandler</code> combines our application code
+    with Python&rsquo;s request handler.</p>
+</li>
+<li>
+<p><code>MockHandler</code> combines it with our mock request handler.</p>
+</li>
+</ul>
+<p>It&rsquo;s a lot of work to test a GET request for one file,
+but we can re-use <code>MockRequestHandler</code> to test
+the application-specific code for other servers.
+Most libraries don&rsquo;t provide helper classes like this to support testing,
+but programmers appreciate those that do.</p>
+<figure id="server-inheritance">
+<img src="./inheritance.svg" alt="Testing class hierarchy"/>
+<figcaption markdown="1">Figure 22.2: Class hierarchy for a testable server.</figcaption>
+</figure>
+
+<p><code>MockRequestHandler</code> is just a few lines of code,
+though it would be longer if our application relied on
+more methods from the library class we&rsquo;re replacing:</p>
 <div class="code-sample lang-py" title="mock_handler.py">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">io</span> <span class="kn">import</span> <span class="n">BytesIO</span>
 
@@ -720,13 +737,33 @@ more of <code>BaseHTTPRequestHandler</code>&lsquo;s functionality:</p>
     <span class="c1"># ...etc...</span>
 </code></pre></div>
 </div>
-<p class="continue">However,
-<code>ApplicationRequestHandler</code> <em>doesn&rsquo;t</em> inherit from <code>BaseHTTPRequestHandler</code>.
-Instead,
-we create a class that combines the two when we need it:</p>
+<p><code>MockHandler</code> handles the simulated request
+and also stores the values that the client would receive:</p>
+<div class="code-sample lang-py" title="test_testable_server.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">test_existing_path</span><span class="p">(</span><span class="n">fs</span><span class="p">):</span>
+    <span class="n">content_str</span> <span class="o">=</span> <span class="s2">&quot;actual&quot;</span>
+    <span class="n">content_bytes</span> <span class="o">=</span> <span class="nb">bytes</span><span class="p">(</span><span class="n">content_str</span><span class="p">,</span> <span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+    <span class="n">fs</span><span class="o">.</span><span class="n">create_file</span><span class="p">(</span><span class="s2">&quot;/actual.txt&quot;</span><span class="p">,</span> <span class="n">contents</span><span class="o">=</span><span class="n">content_str</span><span class="p">)</span>
+    <span class="n">handler</span> <span class="o">=</span> <span class="n">MockHandler</span><span class="p">(</span><span class="s2">&quot;/actual.txt&quot;</span><span class="p">)</span>
+    <span class="n">handler</span><span class="o">.</span><span class="n">do_GET</span><span class="p">()</span>
+    <span class="k">assert</span> <span class="n">handler</span><span class="o">.</span><span class="n">status</span> <span class="o">==</span> <span class="nb">int</span><span class="p">(</span><span class="n">HTTPStatus</span><span class="o">.</span><span class="n">OK</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">handler</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s2">&quot;Content-Type&quot;</span><span class="p">]</span> <span class="o">==</span> \
+        <span class="p">[</span><span class="s2">&quot;text/html; charset=utf-8&quot;</span><span class="p">]</span>
+    <span class="k">assert</span> <span class="n">handler</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s2">&quot;Content-Length&quot;</span><span class="p">]</span> <span class="o">==</span> \
+        <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">content_bytes</span><span class="p">))]</span>
+    <span class="k">assert</span> <span class="n">handler</span><span class="o">.</span><span class="n">wfile</span><span class="o">.</span><span class="n">getvalue</span><span class="p">()</span> <span class="o">==</span> <span class="n">content_bytes</span>
+</code></pre></div>
+</div>
+<p>The main body of our runnable server
+combines the two classes to create what it needs,
+instantiates the result,
+and runs it:</p>
 <div class="code-sample lang-py" title="testable_server.py">
 <div class="highlight"><pre><span></span><code><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
-    <span class="k">class</span> <span class="nc">RequestHandler</span><span class="p">(</span><span class="n">BaseHTTPRequestHandler</span><span class="p">,</span> <span class="n">ApplicationRequestHandler</span><span class="p">):</span>
+    <span class="k">class</span> <span class="nc">RequestHandler</span><span class="p">(</span>
+            <span class="n">BaseHTTPRequestHandler</span><span class="p">,</span>
+            <span class="n">ApplicationRequestHandler</span>
+    <span class="p">):</span>
         <span class="k">pass</span>
 
     <span class="n">serverAddress</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="mi">8080</span><span class="p">)</span>
@@ -734,32 +771,24 @@ we create a class that combines the two when we need it:</p>
     <span class="n">server</span><span class="o">.</span><span class="n">serve_forever</span><span class="p">()</span>
 </code></pre></div>
 </div>
-<p class="continue">and create another class for testing that combines
-the application-specific class with <code>MockHandler</code>.
-This class is the <code>CombinedClass</code> that our test uses:</p>
+<p class="continue">Our tests,
+on the other hand,
+create a server with mocked methods:</p>
 <div class="code-sample lang-py" title="test_testable_server.py">
-<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">CombinedHandler</span><span class="p">(</span><span class="n">MockRequestHandler</span><span class="p">,</span> <span class="n">ApplicationRequestHandler</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">MockHandler</span><span class="p">(</span>
+        <span class="n">MockRequestHandler</span><span class="p">,</span>
+        <span class="n">ApplicationRequestHandler</span>
+<span class="p">):</span>
     <span class="k">pass</span>
 </code></pre></div>
 </div>
-<p><a class="fig-ref" href="../http/#server-inheritance">Figure 22.2</a> shows the final inheritance hierarchy.
-It&rsquo;s a lot of work to test a GET request for one file,
-but we can re-use <code>MockRequestHandler</code> to test
-the application-specific code for other servers.
-Most libraries don&rsquo;t provide helper classes like this to support testing,
-but programmers appreciate those that do.</p>
-<figure id="server-inheritance">
-<img src="./inheritance.svg" alt="Testing class hierarchy"/>
-<figcaption markdown="1">Figure 22.2: Class hierarchy for a testable server.</figcaption>
-</figure>
-
-<h2 id="http-summary">Section 22.5: Summary</h2>
+<h2 id="http-summary">Section 22.4: Summary</h2>
 <figure id="http-concept-map">
 <img src="./concept_map.svg" alt="HTTP concept map"/>
 <figcaption markdown="1">Figure 22.3: HTTP concept map.</figcaption>
 </figure>
 
-<h2 id="http-exercises">Section 22.6: Exercises</h2>
+<h2 id="http-exercises">Section 22.5: Exercises</h2>
 <h3 class="exercise">Parsing HTTP Requests</h3>
 <p>Write a function that takes a list of lines of text as input
 and parses them as if they were an HTTP request.

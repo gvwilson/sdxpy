@@ -58,7 +58,10 @@ class ApplicationRequestHandler:
 
 # [main]
 if __name__ == '__main__':
-    class RequestHandler(BaseHTTPRequestHandler, ApplicationRequestHandler):
+    class RequestHandler(
+            BaseHTTPRequestHandler,
+            ApplicationRequestHandler
+    ):
         pass
 
     serverAddress = ('', 8080)

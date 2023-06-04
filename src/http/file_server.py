@@ -5,12 +5,9 @@ from pathlib import Path
 # [error_page]
 ERROR_PAGE = """\
 <html>
-  <head>
-    <title>Error accessing {path}</title>
-  </head>
+  <head><title>Error accessing {path}</title></head>
   <body>
-    <h1>Error accessing {path}</h1>
-    <p>{msg}</p>
+    <h1>Error accessing {path}: {msg}</h1>
   </body>
 </html>
 """
@@ -28,11 +25,11 @@ class RequestHandler(BaseHTTPRequestHandler):
             url_path = self.path.lstrip("/")
             full_path = Path.cwd().joinpath(url_path)
             if not full_path.exists():
-                raise ServerException(f"'{self.path}' not found")
+                raise ServerException(f"{self.path} not found")
             elif full_path.is_file():
                 self.handle_file(self.path, full_path)
             else:
-                raise ServerException(f"Unknown object '{self.path}'")
+                raise ServerException(f"{self.path} unknown")
         except Exception as msg:
             self.handle_error(msg)
 # [/do_get]
@@ -44,7 +41,7 @@ class RequestHandler(BaseHTTPRequestHandler):
                 content = reader.read()
             self.send_content(content, HTTPStatus.OK)
         except IOError:
-            raise ServerException(f"'{given_path}' cannot be read")
+            raise ServerException(f"Cannot read {given_path}")
     # [/handle_file]
 
     # [handle_error]
