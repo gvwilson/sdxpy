@@ -191,6 +191,202 @@ if __name__ == "__main__":
 
 ---
 
+## Chunking
+
+-   Server uses `self.request.recv(CHUNK_SIZE)`
+
+-   What if client sends more data than that?
+
+-   Allocating a larger <a class="gl-ref" href="../../glossary/#buffer" markdown="1">buffer</a> just delays the problem
+
+-   Better solution: keep reading until there is no more data
+
+---
+
+## Reading Chunks
+
+```py
+class FileHandler(socketserver.BaseRequestHandler):
+    def handle(self):
+        print("server about to start receiving")
+        data = bytes()
+        while True:
+            latest = self.request.recv(CHUNK_SIZE)
+            print(f"...server received {len(latest)} bytes")
+            data += latest
+            if len(latest) < CHUNK_SIZE:
+                print(f"...server breaking")
+                break
+        print(f"server finished received, about to reply")
+        self.request.sendall(bytes(f"{len(data)}", "utf-8"))
+```
+
+
+---
+
+## Writing Chunks
+
+```py
+def send_file(conn, filename):
+    with open(filename, "rb") as reader:
+        data = reader.read()
+    print(f"client sending {len(data)} bytes")
+    total = 0
+    while total < len(data):
+        sent = conn.send(data[total:])
+        print(f"...client sent {sent} bytes")
+        if sent == 0:
+            break
+        total += sent
+        print(f"...client total now {total} bytes")
+    return total
+```
+
+
+-   Try to send all remaining data
+
+-   Advance marker by amount actually sent and re-try
+
+---
+
+## Output
+
+-   Client
+
+```
+client sending 1236 bytes
+...client sent 1236 bytes
+...client total now 1236 bytes
+client main sent 1236 bytes
+client main received 1236 bytes
+True
+```
+
+
+- Server
+
+```
+server about to start receiving
+...server received 1024 bytes
+...server received 212 bytes
+...server breaking
+server finished received, about to reply
+```
+
+
+---
+
+## Testing
+
+-   Manual testing:
+    -   Start the server
+    -   Wait for it to be ready
+    -   Run the client
+    -   Shut down the server
+
+-   Better: use a <a class="gl-ref" href="../../glossary/#mock_object" markdown="1">mock object</a>
+    instead of a real network connection
+
+---
+
+## Refactor the Logging
+
+```py
+class LoggingHandler(socketserver.BaseRequestHandler):
+    def handle(self):
+        self.debug("server about to start receiving")
+        data = bytes()
+        while True:
+            latest = self.request.recv(BLOCK_SIZE)
+            self.debug(f"...server received {len(latest)} bytes")
+            data += latest
+            if len(latest) < BLOCK_SIZE:
+                self.debug(f"...server breaking")
+                break
+        self.debug(f"server finished received, about to reply")
+        self.request.sendall(bytes(f"{len(data)}", "utf-8"))
+
+```
+
+
+--
+
+```py
+    def debug(self, *args):
+        print(*args)
+```
+
+
+---
+
+## Creating a Testable Server
+
+```py
+class MockHandler(LoggingHandler):
+    def __init__(self, message):
+        self.request = MockRequest(message)
+
+    def debug(self, *args):
+        pass
+```
+
+
+-   *Don't* upcall constructor of `LoggingHandler`
+
+-   Don't want to trigger all of the library's socket machinery
+
+---
+
+## Mocking the Request Object
+
+1.  A constructor that records
+    the data we're going to pretend to have received over a socket
+    and does other setup
+
+2.  A `recv` method with the same signature as the real object's
+
+3.  A `sendall` method whose signature matches the real thing's
+
+---
+
+## Mocking the Request Object
+
+```py
+class MockRequest:
+    def __init__(self, message):
+        self._message = message
+        self._position = 0
+        self._sent = []
+
+    def recv(self, max_bytes):
+        assert self._position <= len(self._message)
+        top = min(len(self._message), self._position + BLOCK_SIZE)
+        result = self._message[self._position:top]
+        self._position = top
+        return result
+
+    def sendall(self, outgoing):
+        self._sent.append(outgoing)
+```
+
+
+---
+
+## Our First Test
+
+```py
+def test_short():
+    msg = bytes("message", "utf-8")
+    handler = MockHandler(msg)
+    handler.handle()
+    assert handler.request._sent == [bytes(f"{len(msg)}", "utf-8")]
+```
+
+
+-   Trade <a class="gl-ref" href="../../glossary/#test_fidelity" markdown="1">fidelity</a> for ease of use
+
+---
+
 class: summary
 
 ## Summary

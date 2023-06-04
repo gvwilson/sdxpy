@@ -72,11 +72,11 @@ This book is also designed for:
 | db        | done   | done   | -        | done      | done   | *100%*  |
 | build     | done   | done   | done     | done      | done   | *100%*  |
 | pack      | done   | done   | done     | done      | done   | *100%*  |
-| ftp       | -      | -      | -        | -         | -      |   25%   |
+| ftp       | done   | done   | done     | done      | done   | *100%*  |
 | http      | -      | -      | -        | -         | -      |   25%   |
 | editor    | revise | -      | -        | -         | -      |   10%   |
 | undo      | -      | -      | -        | -         | -      |    0%   |
 | vm        | done   | done   | done     | done      | done   | *100%*  |
 | debugger  | done   | done   | done     | done      | done   | *100%*  |
 | finale    | N/A    | done   | N/A      | N/A       | done   | *100%*  |
-|           |        |        |          |           |        |  *82%*  |
+|           |        |        |          |           |        |  *85%*  |

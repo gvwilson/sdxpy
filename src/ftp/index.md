@@ -278,4 +278,32 @@ but in cases like this it makes sense to sacrifice a little fidelity for testabi
 
 ## Exercises {: #ftp-exercises}
 
-[% fixme exercises %]
+### Chunk Sizes {: .exercise}
+
+What happens if the client tries to send zero bytes to the server?
+What happens if it sends exactly `CHUNK_SIZE` bytes or `CHUNK_SIZE+1` bytes?
+
+### Efficiency {: .exercise}
+
+Suppose a client sends \\( N \\) chunks of data to a server.
+The current implementation will copy the first chunk \\( N-1 \\) times,
+the second chunk \\( N-2 \\) times, and so on,
+so that the total copying work is \\( O(N^2) \\).
+Modify the server so that it collects chunks in a list
+and concatenates them at the end instead.
+
+### A Socket Client Class {: .exercise}
+
+Build a `socketclient` class that works like the `socketserver` class
+but sends data instead of handling requests.
+How useful is it in practice?
+
+### Saving and Listing Files {: .exercise}
+
+1.  Modify the [%g protocol "protocol" %] used by this chapter's client and server
+    so that the client sends the file's name, a newline, and then the file's contents,
+    and the server saves the file under that name.
+
+2.  Modify the protocol again so that the client can send the word `dir`
+    followed by a newline and no other data
+    and the server will send back a list of the files in its current working directory.
