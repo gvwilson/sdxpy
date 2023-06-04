@@ -104,7 +104,7 @@ so that failure reports from the test runner are easier to read.
 {: .continue}
 
 We could go ahead and build some more matchers right away,
-but as [%b Petre 2016 %] explains,
+but as [%b Petre2016 %] explains,
 good programmers build and check
 the parts of their code that they are *least* sure of
 as early as possible

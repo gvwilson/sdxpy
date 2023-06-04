@@ -297,7 +297,7 @@ but programmers appreciate those that do.
    caption="HTTP concept map."
 %]
 
-## Exercises {: #ftp-exercises}
+## Exercises {: #http-exercises}
 
 ### Parsing HTTP Requests {: .exercise}
 

@@ -301,7 +301,7 @@ We will explain the call to `self._build_index()` in a few paragraphs.
 
 Exploring ideas one at a time and then combining them
 is a common tactic among experienced designers [%b Petre2016 %].
-Creating classes like the all-in-one-file database of [%x db-file %]
+Creating classes like the all-in-one-file database
 that we don't put into production
 may feel like a waste of time,
 but it usually saves us effort in the long run
@@ -388,7 +388,7 @@ we will explore this idea in the exercises.
    caption="Concept map for a log-structured database."
 %]
 
-## Exercises {: #dup-exercises}
+## Exercises {: #db-exercises}
 
 ### Packing Null Bytes {: .exercise}
 
