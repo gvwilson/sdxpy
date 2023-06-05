@@ -81,11 +81,6 @@ exclude = [
     "*.xml",
 ]
 
-# Things to ignore when linting.
-unreferenced = [
-    ".pytest_cache/*"
-]
-
 # Debug.
 debug = False
 

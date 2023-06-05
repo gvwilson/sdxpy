@@ -72,6 +72,17 @@ or that a function is a function:
 
 [% inc pat="type_func.*" fill="py out" %]
 
+However,
+built-in functions have a different type:
+{: .continue}
+
+[% inc pat="type_len.*" fill="py out" %]
+
+so it's safer to use `callable` to check if something can be called:
+{: .continue}
+
+[% inc pat="callable.*" fill="py out" %]
+
 </div>
 
 Since functions are objects,
@@ -79,6 +90,13 @@ we can store them in a list just like numbers or strings
 ([%f tester-func-list %]):
 
 [% inc pat="func_list.*" fill="py out" %]
+
+However,
+we have to know how to call the functions in order for this trick to work,
+which means they must have the same [%g signature "signature" %]:
+{: .continue}
+
+[% inc pat="signature.*" fill="py out" %]
 
 [% figure
    slug="tester-func-list"
@@ -342,6 +360,15 @@ just as we could change the colors used for syntax highlighting.
 But today's tools don't do that,
 and any IDE smart enough to translate between comprehension levels automatically
 would also be smart enough to write the code without our help.
+
+## Summary {: #test-summary}
+
+[% figure
+   slug="build-concept-map"
+   img="concept_map.svg"
+   alt="Concept map of test runner"
+   caption="Concept map"
+%]
 
 ## Exercises {: #test-exercises}
 
