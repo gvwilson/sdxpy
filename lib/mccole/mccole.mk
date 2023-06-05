@@ -157,7 +157,7 @@ ${ROOT}/CODE_OF_CONDUCT.md: src/conduct/index.md ${MCCOLE}/bin/githubify.py
 	python ${MCCOLE}/bin/githubify.py --links ${ROOT}/info/links.yml --title "Code of Conduct" < $< > $@
 
 ${ROOT}/CONTRIBUTING.md: src/contrib/index.md ${MCCOLE}/bin/githubify.py
-	python ${MCCOLE}/bin/githubify.py --links ${ROOT}/info/links.yml --title "Contributing" < $< > $@
+	python ${MCCOLE}/bin/githubify.py --append ${ROOT}/info/contrib.md --links ${ROOT}/info/links.yml --title "Contributing" < $< > $@
 
 ${ROOT}/LICENSE.md: src/license/index.md ${MCCOLE}/bin/githubify.py
 	python ${MCCOLE}/bin/githubify.py --links ${ROOT}/info/links.yml --title "License" < $< > $@
@@ -189,6 +189,7 @@ clean:
 	@find ${ROOT} -name '*.bkp' -exec rm {} \;
 	@find ${ROOT} -name '.*.dtmp' -exec rm {} \;
 	@find ${ROOT} -type d -name __pycache__ | xargs rm -r
+	@find ${ROOT} -type d -name .pytest_cache | xargs rm -r
 	@rm -f \
 	${ROOT}/docs/*.aux \
 	${ROOT}/docs/*.bbl \

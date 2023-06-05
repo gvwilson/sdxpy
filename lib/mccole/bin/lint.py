@@ -7,6 +7,7 @@ import argparse
 import re
 from fnmatch import fnmatch
 from pathlib import Path
+import sys
 
 import utils
 import yaml
@@ -48,6 +49,7 @@ RE_CODE_INLINE = re.compile("`.+?`")
 RE_FILE = re.compile(r'\[%\s*inc\b.+?(file|html)="(.+?)".+?%\]')
 RE_FIGURE = re.compile(r'\[%\s*figure\b.+?img="(.+?)".+?%\]', re.DOTALL)
 RE_GLOSSREF = re.compile(r'\[%\s*g\s+\b(.+?)\b\s+".+?"\s*%\]')
+RE_IMG = re.compile(r'<img.+?src="(.+?)".+?>')
 RE_LINK = re.compile(r"\[[^]]*?\]\[(\w+?)\]")
 RE_PAT = re.compile(r'\[%\s*inc\b.+?pat="(.+?)"\s+fill="(.+?)".+?%\]')
 RE_SHORTCODE = re.compile(r"\[%.+?%\]")
@@ -62,20 +64,18 @@ def main():
     options = parse_args()
 
     config = check_config(options.config)
-    glossary_file = getattr(config, "glossary")
     language = getattr(config, "lang")
-    links_file = getattr(config, "links")
     out_dir = getattr(config, "out_dir")
     src_dir = getattr(config, "src_dir")
-    unreferenced = set(getattr(config, "unreferenced", []))
+    slugs = get_slugs(config)
+    glossary = utils.read_yaml(getattr(config, "glossary"))
+    links = utils.read_yaml(getattr(config, "links"))
 
-    source_files = get_src(src_dir)
-    glossary = utils.read_yaml(glossary_file)
+    if not check_dirs(src_dir, slugs):
+        sys.exit(1)
 
-    check_files(src_dir, source_files, unreferenced, glossary)
     check_glossary(glossary, language)
-    check_links(links_file, source_files)
-    check_slides(source_files)
+    check_files(src_dir, slugs, glossary)
 
     html_files = get_html(out_dir)
     check_dom(options.dom, html_files)
@@ -97,6 +97,16 @@ def check_config(config_path):
     return module
 
 
+def check_dirs(src_dir, slugs):
+    """Make sure source directores are present."""
+    expected = {str(Path(src_dir, s)) for s in slugs}
+    actual = {str(d) for d in Path(src_dir).iterdir()} - {str(Path(src_dir, "index.md"))}
+    if expected == actual:
+        return True
+    print("slug/directory mis-match", expected.symmetric_difference(actual))
+    return False
+
+
 def check_dom(dom_spec, html_files):
     """Check DOM elements in generated files."""
     allowed = utils.read_yaml(dom_spec)
@@ -108,20 +118,23 @@ def check_dom(dom_spec, html_files):
     _diff_dom(seen, allowed)
 
 
-def check_files(source_dir, source_files, unreferenced, glossary):
+def check_files(src_dir, slugs, glossary):
     """Check for inclusions, figures, and glossary references."""
-    for dirname, filename in source_files:
-        filepath = Path(dirname, filename)
-        with open(filepath, "r") as reader:
-            text = reader.read()
+    for slug in slugs:
+        dir_path = Path(src_dir, slug)
+        text = read_prose(dir_path)
+        slides = read_slides(dir_path)
 
-        referenced = get_inclusions(text) | get_figures(text)
-        existing = get_files(source_dir, dirname, unreferenced)
-        report(f"{dirname}: inclusions", referenced, existing)
+        referenced = set()
+        for source in (text, slides):
+            for func in (get_inc, get_fig, get_img):
+                referenced |= func(source)
+        existing = get_files(dir_path)
+        report(f"{dir_path}: inclusions", referenced, existing)
 
         referenced = get_glossrefs(text)
         existing = set(entry["key"] for entry in glossary)
-        report_one(f"{dirname}: glossary", referenced - existing)
+        report_one(f"{dir_path}: glossary", referenced - existing)
 
 
 def check_glossary(glossary, language):
@@ -144,11 +157,11 @@ def check_glossary(glossary, language):
                 print(f"missing ref(s) in glossary entry {key}: {missing}")
 
 
-def check_links(links_file, source_files):
+def check_links(links, source_files):
     """Check that all links are known."""
     existing = {
         entry["key"]
-        for entry in utils.read_yaml(links_file)
+        for entry in links
         if not entry.get("direct", False)
     }
     referenced = set()
@@ -173,23 +186,16 @@ def check_slides(source_files):
             print(f"wrong template {slides_template} in {slides_path}")
 
 
-def get_files(source_dir, dirname, unreferenced):
+def get_files(dir_path):
     """Return set of files in or below this directory."""
-    if dirname == source_dir:
-        candidates = set(Path(dirname).glob("*"))
-    else:
-        candidates = set(Path(dirname).rglob("**/*"))
-
-    prefix_len = len(str(dirname)) + 1
-    result = set(str(f)[prefix_len:] for f in candidates if f.is_file())
-
-    ignores = set(read_directives(dirname, "unreferenced")) | unreferenced
+    candidates = set(Path(dir_path).rglob("**/*"))
+    result = set(str(f.name) for f in candidates if f.is_file())
+    ignores = set(read_directives(dir_path, "unreferenced"))
     result = {f for f in result if not any(fnmatch(f, pat) for pat in ignores)}
-
     return result - EXPECTED_FILES
 
 
-def get_figures(text):
+def get_fig(text):
     """Return all figures."""
     figures = {m.group(1) for m in RE_FIGURE.finditer(text)}
     pdfs = {f.replace(".svg", ".pdf") for f in figures if f.endswith(".svg")}
@@ -206,7 +212,12 @@ def get_html(out_dir):
     return list(Path(out_dir).glob("**/*.html"))
 
 
-def get_inclusions(text):
+def get_img(text):
+    """Find direct image references."""
+    return {m.group(1) for m in RE_IMG.finditer(text)}
+
+
+def get_inc(text):
     """Find inclusion filenames."""
     result = {m.group(2) for m in RE_FILE.finditer(text)}
     pats = [(m.group(1), m.group(2)) for m in RE_PAT.finditer(text)]
@@ -223,6 +234,11 @@ def get_links(filename):
         text = RE_CODE_INLINE.sub("", text)
         text = RE_SHORTCODE.sub("", text)
         return {m.group(1) for m in RE_LINK.finditer(text)}
+
+def get_slugs(config):
+    """Get chapter and appendix slugs in order."""
+    return list(getattr(config, "chapters").keys()) + \
+        list(getattr(config, "appendices").keys())
 
 
 def get_src(src_dir):
@@ -248,6 +264,21 @@ def read_directives(dirname, section):
     with open(filepath, "r") as reader:
         content = yaml.safe_load(reader) or {}
         return content.get(section, [])
+
+
+def read_prose(dir_path):
+    """Read prose in index file."""
+    file_path = Path(dir_path, "index.md")
+    with open(file_path, "r") as reader:
+        return reader.read()
+
+
+def read_slides(dir_path):
+    slides_path = Path(dir_path, "slides.html")
+    if not slides_path.is_file():
+        return ""
+    with open(slides_path, "r") as reader:
+        return reader.read()
 
 
 def report(title, expected, actual):
