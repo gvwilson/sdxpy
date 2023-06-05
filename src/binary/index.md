@@ -481,7 +481,8 @@ then use it to figure out how big our string is:
 [% inc file="variable_packing.out" %]
 
 The unpacking function is analogous.
-We break the buffer into a header that's exactly four bytes long
+We break the [%g buffer "buffer" %]
+into a header that's exactly four bytes long
 (i.e., the right size for an integer)
 and a body made up of whatever's left.
 We then unpack the header,

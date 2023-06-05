@@ -119,7 +119,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 *The Hippocratic License is an [Ethical Source license][ethical_source].*
 
-[udhr]: https://www.un.org/en/universal-declaration-human-rights/
 [ethical_source]: https://ethicalsource.dev
-[ungc]: https://www.unglobalcompact.org/what-is-gc/mission/principles
 [hippocratic_license]: https://firstdonoharm.dev/
+[udhr]: https://www.un.org/en/universal-declaration-human-rights/
+[ungc]: https://www.unglobalcompact.org/what-is-gc/mission/principles

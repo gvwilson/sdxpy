@@ -24,22 +24,24 @@ BIN_PY := $(wildcard ${MCCOLE}/bin/*.py)
 LIB_PY := $(wildcard ${MCCOLE}/extensions/*.py)
 EXAMPLES := $(patsubst %/Makefile,%,$(wildcard ${ROOT}/src/*/Makefile))
 GITHUB_PAGES := ${ROOT}/CODE_OF_CONDUCT.md ${ROOT}/CONTRIBUTING.md ${ROOT}/LICENSE.md ${ROOT}/README.md
-HTML := ${ROOT}/info/head.html ${ROOT}/info/foot.html
-INFO := ${ROOT}/info/bibliography.bib ${ROOT}/info/credits.yml ${ROOT}/info/glossary.yml ${ROOT}/info/links.yml
+HTML_COPY := ${ROOT}/info/head.html ${ROOT}/info/foot.html
+INFO_FILES := ${ROOT}/info/bibliography.bib ${ROOT}/info/credits.yml ${ROOT}/info/glossary.yml ${ROOT}/info/links.yml
 IVY :=  $(wildcard ${MCCOLE}/extensions/*.*) $(wildcard ${MCCOLE}/resources/*.*) $(wildcard ${MCCOLE}/templates/*.*)
-TEX := ${ROOT}/info/head.tex ${ROOT}/info/foot.tex
+TEX_FILES := ${ROOT}/info/head.tex ${ROOT}/info/foot.tex
 TEX_COPY := ${ROOT}/info/krantz.cls ${ROOT}/info/dedication.tex
-PAGES := $(wildcard ${ROOT}/src/*.md) $(wildcard ${ROOT}/src/*/index.md)
-SLIDES := $(wildcard ${ROOT}/src/*/slides.html)
+SRC_PAGES := $(wildcard ${ROOT}/src/*.md) $(wildcard ${ROOT}/src/*/index.md)
+SRC_SLIDES := $(wildcard ${ROOT}/src/*/slides.html)
 SRC_SVG := $(wildcard ${ROOT}/src/*/*.svg)
 
 # Calculated variables.
-DOCS := $(patsubst ${ROOT}/src/%.md,${ROOT}/docs/%.html,$(PAGES)) $(patsubst ${ROOT}/src/%/slides.html,${ROOT}/docs/%/slides/index.html,$(SLIDES))
+STEM := ${ABBREV}-${BUILD_DATE}
+SRC := ${SRC_PAGES} ${SRC_SLIDES}
+DOCS_PAGES := $(patsubst ${ROOT}/src/%.md,${ROOT}/docs/%.html,$(SRC_PAGES))
+DOCS_SLIDES := $(patsubst ${ROOT}/src/%/slides.html,${ROOT}/docs/%/slides/index.html,$(SRC_SLIDES))
+DOCS := ${DOCS_PAGES} ${DOCS_SLIDES}
 FIG_PDF := $(patsubst ${ROOT}/src/%.svg,${ROOT}/docs/%.pdf,${FIG_SVG})
 SRC_PDF := $(patsubst ${ROOT}/src/%.svg,${ROOT}/src/%.pdf,${SRC_SVG})
 DOCS_PDF := $(patsubst ${ROOT}/src/%.pdf,${ROOT}/docs/%.pdf,${SRC_PDF})
-STEM := ${ABBREV}-${BUILD_DATE}
-SRC := ${PAGES} ${SLIDES}
 
 # Keep the PDF versions of diagrams under the 'src' directory.
 .PRECIOUS: ${SRC_PDF}
@@ -57,7 +59,7 @@ commands:
 
 ## build: rebuild site without running server
 build: ${ROOT}/docs/index.html
-${ROOT}/docs/index.html: ${SRC} ${SRC_SVG} ${INFO} ${IVY} ${ROOT}/config.py
+${ROOT}/docs/index.html: ${SRC} ${SRC_SVG} ${INFO_FILES} ${IVY} ${ROOT}/config.py
 	ivy build && touch $@
 
 ## serve: build site and run server
@@ -81,7 +83,8 @@ pdf: ${ROOT}/docs/${STEM}.tex ${DOCS_PDF}
 lint: clean build
 	@python ${MCCOLE}/bin/lint.py \
 	--config ${ROOT}/config.py \
-	--dom ${MCCOLE}/dom.yml
+	--dom ${MCCOLE}/dom.yml \
+	--pages ${DOCS_PAGES}
 
 ## inclusions: compare inclusions in prose and slides
 .PHONY: inclusions
@@ -107,7 +110,7 @@ spelling:
 ## wordlist: make a list of unknown and unused words
 .PHONY: wordlist
 wordlist: ${ROOT}/docs/index.html
-	@python ${MCCOLE}/bin/pre_spellcheck.py --pages ${PAGES} --slides ${SLIDES} \
+	@python ${MCCOLE}/bin/pre_spellcheck.py --pages ${SRC_PAGES} --slides ${SRC_SLIDES} \
 	| aspell -H list \
 	| sort \
 	| uniq
@@ -116,7 +119,7 @@ wordlist: ${ROOT}/docs/index.html
 
 ## html: create single-page HTML
 html: ${ROOT}/docs/all.html
-${ROOT}/docs/all.html: ${ROOT}/docs/index.html ${HTML} ${MCCOLE}/bin/make_single_html.py
+${ROOT}/docs/all.html: ${ROOT}/docs/index.html ${HTML_COPY} ${MCCOLE}/bin/make_single_html.py
 	python ${MCCOLE}/bin/make_single_html.py \
 	--head ${ROOT}/info/head.html \
 	--foot ${ROOT}/info/foot.html \
@@ -127,7 +130,7 @@ ${ROOT}/docs/all.html: ${ROOT}/docs/index.html ${HTML} ${MCCOLE}/bin/make_single
 
 ## latex: create LaTeX document
 latex: ${ROOT}/docs/${STEM}.tex
-${ROOT}/docs/${STEM}.tex: ${ROOT}/docs/all.html ${MCCOLE}/bin/html_to_latex.py ${CONFIG} ${TEX} ${TEX_COPY}
+${ROOT}/docs/${STEM}.tex: ${ROOT}/docs/all.html ${MCCOLE}/bin/html_to_latex.py ${CONFIG} ${TEX_FILES} ${TEX_COPY}
 	python ${MCCOLE}/bin/html_to_latex.py \
 	--head ${ROOT}/info/head.tex \
 	--foot ${ROOT}/info/foot.tex \
@@ -157,7 +160,7 @@ ${ROOT}/CODE_OF_CONDUCT.md: src/conduct/index.md ${MCCOLE}/bin/githubify.py
 	python ${MCCOLE}/bin/githubify.py --links ${ROOT}/info/links.yml --title "Code of Conduct" < $< > $@
 
 ${ROOT}/CONTRIBUTING.md: src/contrib/index.md ${MCCOLE}/bin/githubify.py
-	python ${MCCOLE}/bin/githubify.py --links ${ROOT}/info/links.yml --title "Contributing" < $< > $@
+	python ${MCCOLE}/bin/githubify.py --append ${ROOT}/info/contrib.md --links ${ROOT}/info/links.yml --title "Contributing" < $< > $@
 
 ${ROOT}/LICENSE.md: src/license/index.md ${MCCOLE}/bin/githubify.py
 	python ${MCCOLE}/bin/githubify.py --links ${ROOT}/info/links.yml --title "License" < $< > $@
@@ -189,6 +192,7 @@ clean:
 	@find ${ROOT} -name '*.bkp' -exec rm {} \;
 	@find ${ROOT} -name '.*.dtmp' -exec rm {} \;
 	@find ${ROOT} -type d -name __pycache__ | xargs rm -r
+	@find ${ROOT} -type d -name .pytest_cache | xargs rm -r
 	@rm -f \
 	${ROOT}/docs/*.aux \
 	${ROOT}/docs/*.bbl \
@@ -230,14 +234,16 @@ vars:
 	@echo DOCS_PDF: ${DOCS_PDF}
 	@echo EXPORT_FILES: ${EXPORT_FILES}
 	@echo GITHUB_PAGES: ${GITHUB_PAGES}
-	@echo HTML: ${HTML}
-	@echo INFO: ${INFO}
+	@echo HTML_COPY: ${HTML_COPY}
+	@echo INFO_FILES: ${INFO_FILES}
 	@echo IVY: ${IVY}
 	@echo MCCOLE: ${MCCOLE}
+	@echo ROOT: ${ROOT}
 	@echo SRC: ${SRC}
+	@echo SRC_PAGES: ${SRC_PAGES}
 	@echo SRC_PDF: ${SRC_PDF}
 	@echo SRC_SVG: ${SRC_SVG}
 	@echo STEM: ${STEM}
-	@echo ROOT: ${ROOT}
-	@echo TEX: ${TEX}
+	@echo TEX_COPY: ${TEX_COPY}
+	@echo TEX_FILES: ${TEX_FILES}
 	@echo TITLE: ${TITLE}
