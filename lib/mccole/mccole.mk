@@ -17,11 +17,13 @@ CONFIG := ${ROOT}/config.py
 ABBREV := $(shell python ${CONFIG} --abbrev)
 BUILD_DATE := $(shell date '+%Y-%m-%d')
 CHAPTERS := $(shell python ${CONFIG} --chapters)
+TITLE := $(shell python ${CONFIG} --title)
 
 # Direct variables.
 BIN_PY := $(wildcard ${MCCOLE}/bin/*.py)
 LIB_PY := $(wildcard ${MCCOLE}/extensions/*.py)
 EXAMPLES := $(patsubst %/Makefile,%,$(wildcard ${ROOT}/src/*/Makefile))
+GITHUB_PAGES := ${ROOT}/CODE_OF_CONDUCT.md ${ROOT}/CONTRIBUTING.md ${ROOT}/LICENSE.md ${ROOT}/README.md
 HTML := ${ROOT}/info/head.html ${ROOT}/info/foot.html
 INFO := ${ROOT}/info/bibliography.bib ${ROOT}/info/credits.yml ${ROOT}/info/glossary.yml ${ROOT}/info/links.yml
 IVY :=  $(wildcard ${MCCOLE}/extensions/*.*) $(wildcard ${MCCOLE}/resources/*.*) $(wildcard ${MCCOLE}/templates/*.*)
@@ -119,7 +121,7 @@ ${ROOT}/docs/all.html: ${ROOT}/docs/index.html ${HTML} ${MCCOLE}/bin/make_single
 	--head ${ROOT}/info/head.html \
 	--foot ${ROOT}/info/foot.html \
 	--root ${ROOT}/docs \
-	--title "$$(python ${CONFIG} --title)" \
+	--title ${TITLE} \
 	--tagline "$$(python ${CONFIG} --tagline)" \
 	> ${ROOT}/docs/all.html
 
@@ -146,6 +148,22 @@ ${ROOT}/docs/%.pdf: ${ROOT}/src/%.pdf
 	cp $< $@
 
 ## ---: ---
+
+## github: make root pages for GitHub
+.PHONY: github
+github: ${GITHUB_PAGES}
+
+${ROOT}/CODE_OF_CONDUCT.md: src/conduct/index.md ${MCCOLE}/bin/githubify.py
+	python ${MCCOLE}/bin/githubify.py --links ${ROOT}/info/links.yml --title "Code of Conduct" < $< > $@
+
+${ROOT}/CONTRIBUTING.md: src/contrib/index.md ${MCCOLE}/bin/githubify.py
+	python ${MCCOLE}/bin/githubify.py --links ${ROOT}/info/links.yml --title "Contributing" < $< > $@
+
+${ROOT}/LICENSE.md: src/license/index.md ${MCCOLE}/bin/githubify.py
+	python ${MCCOLE}/bin/githubify.py --links ${ROOT}/info/links.yml --title "License" < $< > $@
+
+${ROOT}/README.md: src/index.md ${MCCOLE}/bin/githubify.py
+	python ${MCCOLE}/bin/githubify.py --links ${ROOT}/info/links.yml --title "${TITLE}" < $< > $@
 
 ## check: check source code
 .PHONY: check
@@ -206,18 +224,20 @@ valid: ${ROOT}/docs/all.html
 ## vars: show variables
 .PHONY: vars
 vars:
-	@echo ABBREV ${ABBREV}
-	@echo BUILD_DATE ${BUILD_DATE}
-	@echo DOCS ${DOCS}
-	@echo DOCS_PDF ${DOCS_PDF}
-	@echo EXPORT_FILES ${EXPORT_FILES}
-	@echo HTML ${HTML}
-	@echo INFO ${INFO}
-	@echo IVY ${IVY}
-	@echo MCCOLE ${MCCOLE}
-	@echo SRC ${SRC}
-	@echo SRC_PDF ${SRC_PDF}
-	@echo SRC_SVG ${SRC_SVG}
-	@echo STEM ${STEM}
-	@echo ROOT ${ROOT}
-	@echo TEX ${TEX}
+	@echo ABBREV: ${ABBREV}
+	@echo BUILD_DATE: ${BUILD_DATE}
+	@echo DOCS: ${DOCS}
+	@echo DOCS_PDF: ${DOCS_PDF}
+	@echo EXPORT_FILES: ${EXPORT_FILES}
+	@echo GITHUB_PAGES: ${GITHUB_PAGES}
+	@echo HTML: ${HTML}
+	@echo INFO: ${INFO}
+	@echo IVY: ${IVY}
+	@echo MCCOLE: ${MCCOLE}
+	@echo SRC: ${SRC}
+	@echo SRC_PDF: ${SRC_PDF}
+	@echo SRC_SVG: ${SRC_SVG}
+	@echo STEM: ${STEM}
+	@echo ROOT: ${ROOT}
+	@echo TEX: ${TEX}
+	@echo TITLE: ${TITLE}
