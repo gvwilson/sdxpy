@@ -76,9 +76,7 @@ def main():
 
     check_glossary(glossary, language)
     check_files(src_dir, slugs, glossary)
-
-    html_files = get_html(out_dir)
-    check_dom(options.dom, html_files)
+    check_dom(options.dom, options.pages)
 
 
 def check_config(config_path):
@@ -253,6 +251,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", required=True, help="Configuration file")
     parser.add_argument("--dom", required=True, help="DOM specification file")
+    parser.add_argument("--pages", nargs="+", default=[], help="pages")
     return parser.parse_args()
 
 
