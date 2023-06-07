@@ -15,6 +15,8 @@ EX_PER_CHAPTER = 8
 SLIDES_PER_CHAPTER = 18
 WORDS_PER_CHAPTER = 2200
 
+SHORT_CHAPTERS = {"intro", "finale"}
+
 
 def main():
     """Main driver."""
@@ -30,12 +32,25 @@ def build_format(chapters):
     return fmt, "-" * longest
 
 
-def calc_fraction(n_slides, n_ex, n_words):
-    entries = ((n_slides, SLIDES_PER_CHAPTER),
-               (n_ex, EX_PER_CHAPTER),
-               (n_words, WORDS_PER_CHAPTER))
+def calc_fraction(n_slides, n_ex, n_words, slug=None):
+    if slug in SHORT_CHAPTERS:
+        entries = ((n_slides, SLIDES_PER_CHAPTER / 2),
+                   (n_words, WORDS_PER_CHAPTER / 2))
+    else:
+        entries = ((n_slides, SLIDES_PER_CHAPTER),
+                   (n_ex, EX_PER_CHAPTER),
+                   (n_words, WORDS_PER_CHAPTER))
     frac = sum(entry[0]/entry[1] for entry in entries)
     return int(100 * frac / len(entries))
+
+
+def calc_status(fraction):
+    if fraction < 80:
+        return "-"
+    elif fraction > 120:
+        return "+"
+    else:
+        return ""
 
 
 def count_page(slug):
@@ -62,14 +77,14 @@ def count_words(text):
 def make_table():
     tbl = PrettyTable()
     tbl.set_style(MARKDOWN)
-    tbl.field_names = "Chapter Slides Exercises Figures Words Status".split()
+    tbl.field_names = "Chapter Slides Exercises Figures Words Overall Status".split()
     tbl.align = "r"
     tbl.align["Chapter"] = "l"
     return tbl
 
 
 def overall(chapters, n_slides, n_ex, n_words):
-    n_chapters = len(chapters) - 1 # intro and conclusion count as 1
+    n_chapters = (len(chapters) - len(SHORT_CHAPTERS)) + (len(SHORT_CHAPTERS) / 2)
     frac = calc_fraction(n_slides, n_ex, n_words)
     return int(frac / n_chapters)
 
@@ -92,8 +107,9 @@ def report(chapters):
         tot_ex += n_ex
         tot_slides += n_slides
         tot_words += n_words
-        frac = f"{calc_fraction(n_slides, n_ex, n_words)}%"
-        tbl.add_row([slug, n_slides, n_ex, n_fig, n_words, frac])
+        frac = calc_fraction(n_slides, n_ex, n_words, slug)
+        status = calc_status(frac)
+        tbl.add_row([slug, n_slides, n_ex, n_fig, n_words, f"{frac}%", status])
     print(f"Overall: {overall(chapters, tot_slides, tot_ex, tot_words)}%")
     print(tbl)
 
