@@ -25,7 +25,7 @@ other files:
 
 To make this work:
 
--   `filter_files` tells Ivy to only process files ending in `.html`
+-   `filter_files` tells Ark to only process files ending in `.html`
     and `.md` so that it won't try to templatize source code files.
 
 -   `copy_files` copies all of the files used as inclusions to the
@@ -41,12 +41,12 @@ To make this work:
 import re
 from pathlib import Path
 
-import ivy
+import ark
 import shortcodes
 import util
 
 
-@ivy.filters.register(ivy.filters.Filter.LOAD_NODE_FILE)
+@ark.filters.register(ark.filters.Filter.LOAD_NODE_FILE)
 def filter_files(value, filepath):
     """Only process HTML and Markdown files."""
     result = filepath.suffix in {".html", ".md"}

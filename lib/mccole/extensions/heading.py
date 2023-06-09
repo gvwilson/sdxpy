@@ -4,7 +4,7 @@ import sys
 from dataclasses import dataclass
 
 import ibis
-import ivy
+import ark
 import shortcodes
 import util
 
@@ -21,16 +21,16 @@ class Heading:
     label: str = ""
 
 
-@ivy.events.register(ivy.events.Event.INIT)
+@ark.events.register(ark.events.Event.INIT)
 def collect():
     """Collect information from pages."""
     # Gather data.
     major = util.make_major()
     collected = {}
-    ivy.nodes.root().walk(lambda node: _collect(node, major, collected))
+    ark.nodes.root().walk(lambda node: _collect(node, major, collected))
     _number(collected, major)
     _flatten(collected)
-    ivy.nodes.root().walk(_modify)
+    ark.nodes.root().walk(_modify)
     _titles()
 
 
@@ -125,11 +125,11 @@ def _titles():
     """Create list of chapter/appendix titles for contents listing."""
     headings = util.get_config("headings")
 
-    chapters = [headings[slug] for slug in ivy.site.config["chapters"]]
+    chapters = [headings[slug] for slug in ark.site.config["chapters"]]
     for i, entry in enumerate(chapters):
         entry.label = str(i + 1)
 
-    appendices = [headings[slug] for slug in ivy.site.config["appendices"]]
+    appendices = [headings[slug] for slug in ark.site.config["appendices"]]
     for i, entry in enumerate(appendices):
         entry.label = chr(ord("A") + i)
 

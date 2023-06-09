@@ -1,6 +1,6 @@
 """Generate list of acknowledgments."""
 
-import ivy
+import ark
 import shortcodes
 import util
 import yaml
@@ -13,7 +13,7 @@ WIDTH = 3
 def acknowledgments(pargs, kwargs, node):
     """Convert acknowledgments to HTML table."""
     util.require((not pargs) and (not kwargs), "Bad 'acknowledgments' shortcode")
-    filename = ivy.site.config.get("acknowledgments", None)
+    filename = ark.site.config.get("acknowledgments", None)
     util.require(filename is not None, "No acnowledgments specified")
 
     with open(filename, "r") as reader:

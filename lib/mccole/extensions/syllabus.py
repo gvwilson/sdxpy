@@ -1,14 +1,14 @@
-import ivy
+import ark
 import shortcodes
 import util
 
 
-@ivy.events.register(ivy.events.Event.INIT)
+@ark.events.register(ark.events.Event.INIT)
 def collect():
     """Collect information from pages."""
     major = util.make_major()
     collected = {}
-    ivy.nodes.root().walk(lambda node: _collect(node, major, collected))
+    ark.nodes.root().walk(lambda node: _collect(node, major, collected))
     _cleanup(collected)
 
 
@@ -23,7 +23,7 @@ def _cleanup(collected):
     """Clean up collected data."""
     syllabi = [
         (slug, collected[slug][0], collected[slug][1])
-        for slug in ivy.site.config["chapters"]
+        for slug in ark.site.config["chapters"]
         if slug in collected
     ]
     util.make_config("syllabus", syllabi)

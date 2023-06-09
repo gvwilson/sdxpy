@@ -13,17 +13,17 @@ around the glossary shortcode:
 -   `make_index` displays the entire index.
 """
 
-import ivy
+import ark
 import shortcodes
 import util
 
 
-@ivy.events.register(ivy.events.Event.INIT)
+@ark.events.register(ark.events.Event.INIT)
 def collect():
     """Collect information from pages."""
     major = util.make_major()
     collected = util.make_config("index")
-    ivy.nodes.root().walk(lambda node: _collect(node, major, collected))
+    ark.nodes.root().walk(lambda node: _collect(node, major, collected))
 
 
 def _collect(node, major, collected):

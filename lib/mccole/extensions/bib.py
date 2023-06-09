@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-import ivy
+import ark
 import shortcodes
 import util
 from pybtex.database import parse_file
@@ -34,10 +34,10 @@ def bibliography(pargs, kwargs, node):
         f"Bad 'bibliography' shortcode {pargs} and {kwargs}",
     )
 
-    filename = ivy.site.config.get("bibliography", None)
+    filename = ark.site.config.get("bibliography", None)
     util.require(filename is not None, "No bibliography specified")
 
-    stylename = ivy.site.config.get("bibliography_style", None)
+    stylename = ark.site.config.get("bibliography_style", None)
     util.require(stylename is not None, "No bibliography style specified")
 
     bib = _read_bibliography(filename, stylename)
@@ -50,12 +50,12 @@ def bibliography(pargs, kwargs, node):
     return '<dl class="bib-list">\n\n' + "\n\n".join(entries) + "\n\n</dl>"
 
 
-@ivy.events.register(ivy.events.Event.EXIT)
+@ark.events.register(ark.events.Event.EXIT)
 def check_bibliography():
     """Check that bibliogrpahy entries are defined and used."""
-    if (filename := ivy.site.config.get("bibliography", None)) is None:
+    if (filename := ark.site.config.get("bibliography", None)) is None:
         return
-    if (stylename := ivy.site.config.get("bibliography_style", None)) is None:
+    if (stylename := ark.site.config.get("bibliography_style", None)) is None:
         return
     if (used := util.get_config("bibliography")) is None:
         return
@@ -69,7 +69,7 @@ def check_bibliography():
 
 def _read_bibliography(filename, style):
     """Load the bibliography file."""
-    filename = Path(ivy.site.home(), filename)
+    filename = Path(ark.site.home(), filename)
     bib = parse_file(filename)
 
     style = find_plugin("pybtex.style.formatting", style)()

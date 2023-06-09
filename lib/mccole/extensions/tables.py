@@ -44,7 +44,7 @@ so tables are represented as:
 
 from dataclasses import dataclass
 
-import ivy
+import ark
 import shortcodes
 import util
 
@@ -61,12 +61,12 @@ class Table:
     number: tuple = ()
 
 
-@ivy.events.register(ivy.events.Event.INIT)
+@ark.events.register(ark.events.Event.INIT)
 def collect():
     """Collect information from pages."""
     major = util.make_major()
     collected = {}
-    ivy.nodes.root().walk(lambda node: _collect(node, major, collected))
+    ark.nodes.root().walk(lambda node: _collect(node, major, collected))
     _cleanup(major, collected)
 
 
@@ -126,7 +126,7 @@ def table_ref(pargs, kwargs, node):
     return f'<a {cls} href="@root/{table.fileslug}/#{slug}">{label}</a>'
 
 
-@ivy.filters.register(ivy.filters.Filter.NODE_HTML)
+@ark.filters.register(ark.filters.Filter.NODE_HTML)
 def table_caption(text, node):
     """Get the caption in the right place."""
 

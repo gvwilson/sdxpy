@@ -12,7 +12,7 @@ MCCOLE:=$(patsubst %/,%,$(dir $(lastword $(MAKEFILE_LIST))))
 # Define the project root as the directory this file is included from.
 ROOT:=.
 
-# Get local configuration from the Ivy configuration file.
+# Get local configuration from the Ark configuration file.
 CONFIG := ${ROOT}/config.py
 ABBREV := $(shell python ${CONFIG} --abbrev)
 BUILD_DATE := $(shell date '+%Y-%m-%d')
@@ -26,7 +26,7 @@ EXAMPLES := $(patsubst %/Makefile,%,$(wildcard ${ROOT}/src/*/Makefile))
 GITHUB_PAGES := ${ROOT}/CODE_OF_CONDUCT.md ${ROOT}/CONTRIBUTING.md ${ROOT}/LICENSE.md ${ROOT}/README.md
 HTML_COPY := ${ROOT}/info/head.html ${ROOT}/info/foot.html
 INFO_FILES := ${ROOT}/info/bibliography.bib ${ROOT}/info/credits.yml ${ROOT}/info/glossary.yml ${ROOT}/info/links.yml
-IVY :=  $(wildcard ${MCCOLE}/extensions/*.*) $(wildcard ${MCCOLE}/resources/*.*) $(wildcard ${MCCOLE}/templates/*.*)
+ARK :=  $(wildcard ${MCCOLE}/extensions/*.*) $(wildcard ${MCCOLE}/resources/*.*) $(wildcard ${MCCOLE}/templates/*.*)
 TEX_FILES := ${ROOT}/info/head.tex ${ROOT}/info/foot.tex
 TEX_COPY := ${ROOT}/info/krantz.cls ${ROOT}/info/dedication.tex
 SRC_PAGES := $(wildcard ${ROOT}/src/*.md) $(wildcard ${ROOT}/src/*/index.md)
@@ -59,13 +59,13 @@ commands:
 
 ## build: rebuild site without running server
 build: ${ROOT}/docs/index.html
-${ROOT}/docs/index.html: ${SRC} ${SRC_SVG} ${INFO_FILES} ${IVY} ${ROOT}/config.py
-	ivy build && touch $@
+${ROOT}/docs/index.html: ${SRC} ${SRC_SVG} ${INFO_FILES} ${ARK} ${ROOT}/config.py
+	ark build && touch $@
 
 ## serve: build site and run server
 .PHONY: serve
 serve:
-	ivy watch --port ${PORT}
+	ark watch --port ${PORT}
 
 ## pdf: create PDF version of material
 pdf: ${ROOT}/docs/${STEM}.tex ${DOCS_PDF}
@@ -229,6 +229,7 @@ valid: ${ROOT}/docs/all.html
 .PHONY: vars
 vars:
 	@echo ABBREV: ${ABBREV}
+	@echo ARK: ${ARK}
 	@echo BUILD_DATE: ${BUILD_DATE}
 	@echo DOCS: ${DOCS}
 	@echo DOCS_PDF: ${DOCS_PDF}
@@ -236,7 +237,6 @@ vars:
 	@echo GITHUB_PAGES: ${GITHUB_PAGES}
 	@echo HTML_COPY: ${HTML_COPY}
 	@echo INFO_FILES: ${INFO_FILES}
-	@echo IVY: ${IVY}
 	@echo MCCOLE: ${MCCOLE}
 	@echo ROOT: ${ROOT}
 	@echo SRC: ${SRC}

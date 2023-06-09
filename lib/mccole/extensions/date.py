@@ -2,10 +2,10 @@
 
 from datetime import datetime
 
-import ivy
+import ark
 
 
-@ivy.events.register(ivy.events.Event.INIT)
+@ark.events.register(ark.events.Event.INIT)
 def build_date():
     """Add the date to the site configuration object."""
-    ivy.site.config["build_date"] = datetime.utcnow().strftime("%Y-%m-%d")
+    ark.site.config["build_date"] = datetime.utcnow().strftime("%Y-%m-%d")

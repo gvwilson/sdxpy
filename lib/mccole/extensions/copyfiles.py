@@ -4,13 +4,13 @@ from glob import iglob
 from pathlib import Path
 from shutil import copyfile
 
-import ivy
+import ark
 
 
-@ivy.events.register(ivy.events.Event.INIT)
+@ark.events.register(ark.events.Event.INIT)
 def copy_files():
     """Copy files."""
-    patterns = ivy.site.config.get("copy", None)
+    patterns = ark.site.config.get("copy", None)
 
     # Nothing to copy.
     if patterns is None:
@@ -18,8 +18,8 @@ def copy_files():
 
     # Copy everything that matches.
     for pat in patterns:
-        src_dir = ivy.site.src()
-        out_dir = ivy.site.out()
+        src_dir = ark.site.src()
+        out_dir = ark.site.out()
         pat = Path(src_dir, "**", pat)
         for src_file in iglob(str(pat), recursive=True):
             out_file = src_file.replace(src_dir, out_dir)

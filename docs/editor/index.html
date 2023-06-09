@@ -4,7 +4,7 @@
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="repo" content="https://github.com/gvwilson/sd4ds">
-  <meta name="build_date" content="2023-06-07">
+  <meta name="build_date" content="2023-06-09">
   <meta name="template" content="default">
   <meta name="major" content="Chapter 23">
   <meta name="has_slides" content="true">
@@ -331,64 +331,224 @@
 
           <div class="page-toc"></div>
           <ul>
-<li>MVC with simple line drawing<ul>
-<li><code>model_original.py</code> stores lines and current cursor Y position (we&rsquo;ll add X later)</li>
-<li><code>view_original.py</code> displays lines in a window<ul>
-<li>caller&rsquo;s job to make sure number of lines isn&rsquo;t larger than window</li>
-<li>if fewer lines, fill bottom with blanks</li>
+<li>
+<p><code>first_curses.py</code>: run a program with a screen</p>
+<ul>
+<li>Does nothing with keys</li>
+<li>Stop with Ctrl-C</li>
+<li>No way to see what it&rsquo;s doing (can&rsquo;t print)</li>
 </ul>
 </li>
-<li><code>controller_original.y</code> handles interactions<ul>
-<li>constrain cursor movement</li>
-<li>select which lines from model to display and ask view to display them</li>
-<li>all lines fit in window, so always show them all</li>
-<li>cursor near bottom of file, so show last N lines</li>
-<li>show slice from cursor down</li>
-<li>means the slice starts scrolling down as soon as the cursor moves,
-  which isn&rsquo;t how most editors work,
-  but it&rsquo;s a start</li>
+<li>
+<p><code>logging_curses.py</code>: create a log file</p>
+<ul>
+<li>Use <code>lambda</code> to create a function with the signature needed by <code>curses.wrapper</code></li>
+<li>Print representation of characters to file (so that <code>\n</code> shows up)</li>
+<li>Exit cleanly</li>
 </ul>
 </li>
-</ul>
-</li>
-<li><code>curses_wrapper.py</code> shows how to initialize curses using wrapper</li>
-<li>then show lines using <code>curses</code><ul>
-<li>model and controller stay the same for now</li>
-<li><code>view_show_lines.py</code> shows lines</li>
-<li><code>main_show_lines.py</code>creates and connects objects and does initialization and finalization</li>
-</ul>
-</li>
-<li>now motion<ul>
-<li><code>main_up_down.py</code>, <code>controller_up_down.py</code>, and <code>view_up_down.py</code></li>
-<li>event loop</li>
-<li>But it leaves characters on screen</li>
-<li>So <code>main_up_down_fixed.py</code> and <code>view_up_down_fixed.py</code></li>
-</ul>
-</li>
-<li>slice: <code>main_slice.py</code> (to get parameters) and <code>view_slice.py</code><ul>
-<li>Benefit of MVC: change parts independently</li>
-</ul>
-</li>
-<li>cursor: <code>main_cursor.py</code> with <code>controller_cursor.py</code> and <code>view_cursor.py</code><ul>
-<li>show the position of the cursor</li>
-<li>but now our scrolling and cursor positioning are biting us</li>
-</ul>
-</li>
-<li>viewport wraps the model<ul>
-<li><code>viewport_viewport.py</code></li>
-<li><code>test_viewport.py</code> to test that the viewport works</li>
-<li>then <code>controller_viewport.py</code> (much simpler)</li>
-<li>and <code>main_viewport.py</code> to bind it all together</li>
-</ul>
-</li>
-<li>finally the editing<ul>
-<li>insert digit at the start of the current line</li>
-<li>don&rsquo;t move the cursor right</li>
-<li>design decision: have the controller modify the model directly or go through viewport?</li>
-<li>decide to do the latter, but the former is common</li>
+<li>
+<p><code>show_lines.py</code>: show lines in location</p>
+<ul>
+<li>Screen coordinates put (0, 0) in the upper left</li>
+<li>Run <code>show_lines.py</code> with 1000 lines (anything larger than screen)<ul>
+<li><code>_curses.error: addwstr() returned ERR</code> because trying to draw off bottom of screen</li>
 </ul>
 </li>
 </ul>
+</li>
+<li>
+<p><code>use_window.py</code>: fix problem with <code>show_lines.py</code></p>
+<ul>
+<li>Create a <code>Window</code> class that knows how big the window is<ul>
+<li>Can&rsquo;t create this and then pass it in to <code>main</code> because <code>curses.wrapper</code> creates <code>stdscr</code></li>
+</ul>
+</li>
+<li>Redraw all the lines each time: it&rsquo;s a <em>view</em> class</li>
+</ul>
+</li>
+<li>
+<p><code>size_window.py</code>: allow user to specify size of window</p>
+<ul>
+<li>Helps with testing</li>
+</ul>
+</li>
+<li>
+<p><code>d2.py</code>: use a tuple and constants <code>ROW</code> and <code>COL</code></p>
+<ul>
+<li>Should create a class, but that&rsquo;s more effort than it&rsquo;s worth right now</li>
+</ul>
+</li>
+<li>
+<p><code>move_cursor.py</code>: create and move a cursor</p>
+<ul>
+<li><code>Cursor.pos</code> returns (y, x) position as tuple (so that caller can&rsquo;t modify internals)</li>
+<li>Spread that into <code>stdscr.move</code></li>
+<li>But can move right or below text</li>
+<li>And blow up when moving off left of screen or off top</li>
+<li><code>_curses.error: wmove() returned ERR</code></li>
+</ul>
+</li>
+<li>
+<p><code>main_app.py</code>: create an application object with a <code>__call__</code> method (required by <code>curses.wrapper</code>)</p>
+<ul>
+<li>Delayed instantiation of <code>Window</code></li>
+</ul>
+</li>
+<li>
+<p><code>dispatch_keys.py</code>: find and call key handlers dynamically</p>
+<ul>
+<li>Use a member variable <code>self._running</code> and have <code>_handle_q</code> handle that
+    so that other methods don&rsquo;t have to return anything</li>
+<li>But now can only quit with lower-case &lsquo;q&rsquo; (and will want to insert that character)</li>
+<li>So add <code>TRANSLATE</code> to turn things like Ctrl-X into strings <code>CONTROL_X</code></li>
+</ul>
+</li>
+<li>
+<p><code>buffer_class.py</code>: create a class to manage the buffer</p>
+</li>
+<li>
+<p><code>clip_cursor.py</code>: make sure cursor cannot move outside of lines</p>
+<ul>
+<li>But go to a long line and then move up to a shorter one</li>
+<li><code>clip_fixed.py</code></li>
+</ul>
+</li>
+<li>
+<p>Can still move below the window because cursor is in buffer space not window space</p>
+</li>
+<li>What if the buffer is bigger than the window?<ul>
+<li>Need a <em>viewport</em> to keep track of the portion of the buffer that is currently visible</li>
+<li>We&rsquo;ll do vertical and leave horizontal for exercises</li>
+</ul>
+</li>
+<li><code>viewport.py</code><ul>
+<li>Add <code>transform</code> to transform cursor coordinates into screen coordinates</li>
+<li>Keep track of the top visible line</li>
+<li>Add a <code>bottom</code> method for convenience</li>
+<li>Move the <code>_top</code> marker up or down as needed</li>
+<li>Cursor needs to clip left and right as well as up and down</li>
+</ul>
+</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>main</th>
+<th>window</th>
+<th>cursor</th>
+<th>buffer</th>
+<th>app</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>first_curses.py</code></td>
+<td><code>main</code></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td><code>logging_curses.py</code></td>
+<td><code>main</code></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td><code>show_lines.py</code></td>
+<td><code>main</code></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td><code>use_window.py</code></td>
+<td><code>main</code></td>
+<td><code>Window</code></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td><code>size_window.py</code></td>
+<td><code>main</code></td>
+<td><code>Window</code></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td><code>d2.py</code></td>
+<td><code>main</code></td>
+<td><code>Window</code></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td><code>move_cursor.py</code></td>
+<td><code>main</code></td>
+<td></td>
+<td><code>Cursor</code></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td><code>main_app.py</code></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td><code>MainApp</code></td>
+</tr>
+<tr>
+<td><code>dispatch_app.py</code></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td><code>DispatchApp</code></td>
+</tr>
+<tr>
+<td><code>buffer_class.py</code></td>
+<td></td>
+<td></td>
+<td></td>
+<td><code>Buffer</code></td>
+<td><code>BufferApp</code></td>
+</tr>
+<tr>
+<td><code>clip_cursor.py</code></td>
+<td></td>
+<td></td>
+<td><code>ClipCursor</code></td>
+<td><code>ClipBuffer</code></td>
+<td><code>ClipApp</code></td>
+</tr>
+<tr>
+<td><code>clip_fixed.py</code></td>
+<td></td>
+<td></td>
+<td><code>ClipCursorFixed</code></td>
+<td></td>
+<td><code>ClipAppFixed</code></td>
+</tr>
+<tr>
+<td><code>viewport.py</code></td>
+<td></td>
+<td></td>
+<td><code>ViewportCursor</code></td>
+<td><code>ViewportBuffer</code></td>
+<td><code>ViewportApp</code></td>
+</tr>
+</tbody>
+</table>
         </main>
       </div>
     </div>

@@ -2,7 +2,7 @@
 
 import re
 
-import ivy
+import ark
 import shortcodes
 import util
 
@@ -12,12 +12,12 @@ INTERNAL_REF = re.compile(r"\]\(#(.+?)\)")
 # ----------------------------------------------------------------------
 
 
-@ivy.events.register(ivy.events.Event.INIT)
+@ark.events.register(ark.events.Event.INIT)
 def collect():
     """Collect information from pages."""
     major = util.make_major()
     collected = {}
-    ivy.nodes.root().walk(lambda node: _collect(node, major, collected))
+    ark.nodes.root().walk(lambda node: _collect(node, major, collected))
     _cleanup(collected)
 
 
@@ -38,10 +38,10 @@ def _parse(pargs, kwargs, data):
 
 def _cleanup(collected):
     """Translate glossary definitions into required form."""
-    filename = ivy.site.config.get("glossary", None)
+    filename = ark.site.config.get("glossary", None)
     util.require(filename is not None, "No glossary specified")
 
-    lang = ivy.site.config.get("lang", None)
+    lang = ark.site.config.get("lang", None)
     util.require(lang is not None, "No language specified")
 
     glossary = util.read_glossary(filename)
@@ -78,10 +78,10 @@ def glossary(pargs, kwargs, node):
         (not pargs) and (not kwargs), f"Bad 'glossary' shortcode {pargs} and {kwargs}"
     )
 
-    filename = ivy.site.config.get("glossary", None)
+    filename = ark.site.config.get("glossary", None)
     util.require(filename is not None, "No glossary specified")
 
-    lang = ivy.site.config.get("lang", None)
+    lang = ark.site.config.get("lang", None)
     util.require(lang is not None, "No language specified")
 
     glossary = util.read_glossary(filename)
@@ -95,13 +95,13 @@ def glossary(pargs, kwargs, node):
     return f'<div class="glossary" markdown="1">\n{entries}\n</div>'
 
 
-@ivy.events.register(ivy.events.Event.EXIT)
+@ark.events.register(ark.events.Event.EXIT)
 def check():
     """Check that glossary entries are defined and used."""
-    filename = ivy.site.config.get("glossary", None)
+    filename = ark.site.config.get("glossary", None)
     util.require(filename is not None, "No glossary specified")
 
-    lang = ivy.site.config.get("lang", None)
+    lang = ark.site.config.get("lang", None)
     util.require(lang is not None, "No language defined for glossary")
 
     glossary = util.read_glossary(filename)
