@@ -2,9 +2,10 @@ import curses
 import sys
 
 from util import COL, ROW, setup
-from d2 import Window
+from cursor_const import Window
 from move_cursor import Cursor
 
+# [main]
 class MainApp:
     def __init__(self, size, lines):
         self._size = size
@@ -18,7 +19,9 @@ class MainApp:
         self._screen = screen
         self._window = Window(self._screen, self._size)
         self._cursor = Cursor()
+# [/main]
 
+# [run]
     def _run(self):
         while True:
             self._window.draw(self._lines)
@@ -30,8 +33,11 @@ class MainApp:
             elif key == "KEY_RIGHT": self._cursor.right()
             elif key.lower() == "q":
                 return
+# [/run]
 
+# [launch]
 if __name__ == "__main__":
     size, lines = setup()
     app = MainApp(size, lines)
     curses.wrapper(app)
+# [/launch]

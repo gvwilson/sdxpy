@@ -2,8 +2,9 @@ import curses
 import sys
 
 from util import COL, ROW, setup
-from d2 import Window
+from cursor_const import Window
 
+# [cursor]
 class Cursor:
     def __init__(self):
         self._pos = [0, 0]
@@ -18,7 +19,9 @@ class Cursor:
     def left(self): self._pos[COL] -= 1
 
     def right(self): self._pos[COL] += 1
+# [/cursor]
 
+# [main]
 def main(stdscr, size, lines):
     window = Window(stdscr, size)
     cursor = Cursor()
@@ -32,6 +35,7 @@ def main(stdscr, size, lines):
         elif key == "KEY_RIGHT": cursor.right()
         elif key.lower() == "q":
             return
+# [/main]
 
 if __name__ == "__main__":
     size, lines = setup()

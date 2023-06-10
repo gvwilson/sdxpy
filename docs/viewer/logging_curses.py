@@ -3,6 +3,7 @@ import sys
 
 import util
 
+# [show]
 def main(stdscr):
     while True:
         key = stdscr.getkey()
@@ -13,3 +14,4 @@ def main(stdscr):
 if __name__ == "__main__":
     util.open_log(sys.argv[1])
     curses.wrapper(main)
+# [/show]

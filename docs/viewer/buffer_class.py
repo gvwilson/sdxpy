@@ -2,17 +2,20 @@ import curses
 import sys
 
 from util import setup
-from d2 import Window
+from cursor_const import Window
 from dispatch_keys import DispatchApp
 from move_cursor import Cursor
 
+# [buffer]
 class Buffer:
     def __init__(self, lines):
         self._lines = lines[:]
 
     def lines(self):
         return self._lines
+# [/buffer]
 
+# [app]
 class BufferApp(DispatchApp):
     def __init__(self, size, lines):
         super().__init__(size, lines)
@@ -31,6 +34,7 @@ class BufferApp(DispatchApp):
 
     def _make_cursor(self):
         self._cursor = Cursor()
+# [/app]
 
     def _run(self):
         while self._running:

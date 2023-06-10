@@ -1,9 +1,6 @@
-import string
 import sys
 
-ROW = 0
-COL = 1
-
+# [log]
 LOG = None
 
 def open_log(filename):
@@ -12,14 +9,25 @@ def open_log(filename):
 
 def log(*args):
     print(*args, file=LOG)
+# [/log]
+
+# [coord]
+ROW = 0
+COL = 1
+# [/coord]
+
+# [lines]
+from string import ascii_lowercase
 
 def make_lines(num_lines):
     result = []
     for i in range(num_lines):
-        ch = string.ascii_lowercase[i % len(string.ascii_lowercase)]
+        ch = ascii_lowercase[i % len(ascii_lowercase)]
         result.append(ch + "".join(str(j % 10) for j in range(i)))
     return result
+# [/lines]
 
+# [setup]
 def setup():
     num_lines, logfile = int(sys.argv[1]), sys.argv[2]
     size = None
@@ -28,3 +36,4 @@ def setup():
     lines = make_lines(num_lines)
     open_log(logfile)
     return size, lines
+# [/setup]

@@ -4,7 +4,7 @@
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="repo" content="https://github.com/gvwilson/sd4ds">
-  <meta name="build_date" content="2023-06-09">
+  <meta name="build_date" content="2023-06-11">
   <meta name="template" content="slides">
   <meta name="major" content="Chapter 23">
   
@@ -25,7 +25,7 @@
     async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
   </script>
   <script defer src="../../mccole.js"></script>
-  <title>Software Design for Data Scientists: A Text Viewer</title>
+  <title>Software Design for Data Scientists: A File Viewer</title>
 </head>
 
   <body>
@@ -36,12 +36,709 @@ class: slide-title
 <p>
   <a href="https://third-bit.com/sd4ds/">Software Design for Data Scientists</a>
 </p>
-<h1>A Text Viewer</h1>
+<h1>A File Viewer</h1>
 <div class="bottom">
   <a href="../">chapter</a>
 </div>
 
 ---
+
+
+## The Problem
+
+-   We have been editing a lot of files
+
+-   How can we display a text file in a window?
+
+-   How can we move around in that file?
+
+-   How we can change it will be the topic of <a class="x-ref" href="../../undo/">Chapter 24</a>
+
+---
+
+## Curses
+
+```py
+import curses
+
+def main(stdscr):
+    while True:
+        key = stdscr.getkey()
+
+if __name__ == "__main__":
+    curses.wrapper(main)
+```
+
+
+-   The [curses][py_curses] library handles interaction with a text terminal
+
+-   `curses.wrapper` takes a function of a single argument
+
+-   Does setup, then calls that function with a standard screen
+
+-   This program just gobbles keystrokes: stop it with Ctrl-C
+
+---
+
+## Debugging
+
+-   Printing messages or single-stepping with a debugger is tricky
+
+-   Create a simple logging function
+
+```py
+LOG = None
+
+def open_log(filename):
+    global LOG
+    LOG = open(filename, "w")
+
+def log(*args):
+    print(*args, file=LOG)
+```
+
+
+---
+
+## Debugging
+
+```py
+def main(stdscr):
+    while True:
+        key = stdscr.getkey()
+        util.log(repr(key))
+        if key.lower() == "q":
+            return
+
+if __name__ == "__main__":
+    util.open_log(sys.argv[1])
+    curses.wrapper(main)
+```
+
+
+-   Print representation of characters to file (so that `\n` shows up)
+
+-   Exit cleanly
+
+---
+
+## Showing Lines
+
+```py
+def main(stdscr, lines):
+    while True:
+        stdscr.erase()
+        for (y, line) in enumerate(lines):
+            stdscr.addstr(y, 0, line)
+        key = stdscr.getkey()
+        if key.lower() == "q":
+            return
+```
+
+
+-   Screen coordinates put (0, 0) in the upper left
+
+-   And use (y, x) rather than (x, y)
+
+---
+
+## Showing Lines
+
+```py
+if __name__ == "__main__":
+    num_lines, logfile = int(sys.argv[1]), sys.argv[2]
+    lines = make_lines(num_lines)
+    open_log(logfile)
+    curses.wrapper(lambda stdscr: main(stdscr, lines))
+```
+
+
+-   Make lines for testing rather than showing file
+
+-   Open the log file
+
+-   Use `lambda` to make a one-parameter function for `curses.wrapper`
+
+---
+
+## Making Lines
+
+```py
+from string import ascii_lowercase
+
+def make_lines(num_lines):
+    result = []
+    for i in range(num_lines):
+        ch = ascii_lowercase[i % len(ascii_lowercase)]
+        result.append(ch + "".join(str(j % 10) for j in range(i)))
+    return result
+```
+
+```
+a
+b0
+c01
+d012
+e0123
+```
+
+
+---
+
+## Windowing
+
+-   Run program with 100 lines (or anything else larger than screen)
+
+-   `_curses.error: addwstr() returned ERR` because trying to draw outside screen
+
+-   So create a `Window` class that knows how big the screen is
+
+```py
+class Window:
+    def __init__(self, screen):
+        self._screen = screen
+
+    def draw(self, lines):
+        self._screen.erase()
+        for (y, line) in enumerate(lines):
+            if 0 <= y < curses.LINES:
+                self._screen.addstr(y, 0, line[:curses.COLS])
+```
+
+
+---
+
+## Windowing
+
+```py
+def main(stdscr, lines):
+    window = Window(stdscr)
+    window.draw(lines)
+    while True:
+        key = stdscr.getkey()
+        if key.lower() == "q":
+            return
+```
+
+
+-   Can't create `Window` before calling `curses.wrapper` because it needs the screen
+
+-   <a class="gl-ref" href="../../glossary/#delayed_construction" markdown="1">Delayed construction</a>
+
+---
+
+class: aside
+
+## Optimization
+
+-   `Window` re-draws everything after every keystroke
+
+-   Fast enough that people (usually) won't notice
+
+-   But an obvious target for optimization
+
+---
+
+## Sizing the Window
+
+-   Allow users to specify how big the window appears to be
+
+-   Helps with testing
+
+```py
+class Window:
+    def __init__(self, screen, size):
+        self._screen = screen
+        if size is None:
+            self._nrow = curses.LINES
+            self._ncol = curses.COLS
+        else:
+            self._nrow, self._ncol = size
+
+    def draw(self, lines):
+        self._screen.erase()
+        for (y, line) in enumerate(lines):
+            if 0 <= y < self._nrow:
+                self._screen.addstr(y, 0, line[:self._ncol])
+```
+
+
+---
+
+## Two Dimensions
+
+-   Use `ROW` and `COL` instead of 0 and 1 (or `R` and `C`)
+
+-   Should really create an <a class="gl-ref" href="../../glossary/#enumeration" markdown="1">enumeration</a>
+
+```py
+ROW = 0
+COL = 1
+```
+
+```py
+class Window:
+    def draw(self, lines):
+        self._screen.erase()
+        for (y, line) in enumerate(lines):
+            if 0 <= y < self._size[ROW]:
+                self._screen.addstr(y, 0, line[:self._size[COL]])
+```
+
+
+---
+
+## Moving the Cursor
+
+```py
+class Cursor:
+    def __init__(self):
+        self._pos = [0, 0]
+
+    def pos(self):
+        return tuple(self._pos)
+
+    def up(self): self._pos[ROW] -= 1
+
+    def down(self): self._pos[ROW] += 1
+
+    def left(self): self._pos[COL] -= 1
+
+    def right(self): self._pos[COL] += 1
+```
+
+
+-   `Cursor.pos` returns location as tuple so caller can't modify it
+
+---
+
+## Moving the Cursor
+
+```py
+def main(stdscr, size, lines):
+    window = Window(stdscr, size)
+    cursor = Cursor()
+    while True:
+        window.draw(lines)
+        stdscr.move(*cursor.pos())
+        key = stdscr.getkey()
+        if key == "KEY_UP": cursor.up()
+        elif key == "KEY_DOWN": cursor.down()
+        elif key == "KEY_LEFT": cursor.left()
+        elif key == "KEY_RIGHT": cursor.right()
+        elif key.lower() == "q":
+            return
+```
+
+
+-   <a class="gl-ref" href="../../glossary/#Spread" markdown="1">spread</a> position into `stdscr.move`
+
+-   Screen's `getkey` method returns names of cursor keys
+
+---
+
+## Boom
+
+-   We can move right or below text
+
+-   And blow up when moving off left of screen or off top with
+    `_curses.error: wmove() returned ERR`
+
+-   Do some <a class="gl-ref" href="../../glossary/#refactor" markdown="1">refactoring</a> before fixing this problem
+
+---
+
+## Application Class
+
+-   Create an object with a `__call__` method
+
+-   Fool `curses.wrapper` into thinking we have given it a function
+
+```py
+class MainApp:
+    def __init__(self, size, lines):
+        self._size = size
+        self._lines = lines
+
+    def __call__(self, screen):
+        self._setup(screen)
+        self._run()
+
+    def _setup(self, screen):
+        self._screen = screen
+        self._window = Window(self._screen, self._size)
+        self._cursor = Cursor()
+```
+
+
+---
+
+## Application Class
+
+```py
+    def _run(self):
+        while True:
+            self._window.draw(self._lines)
+            self._screen.move(*self._cursor.pos())
+            key = self._screen.getkey()
+            if key == "KEY_UP": self._cursor.up()
+            elif key == "KEY_DOWN": self._cursor.down()
+            elif key == "KEY_LEFT": self._cursor.left()
+            elif key == "KEY_RIGHT": self._cursor.right()
+            elif key.lower() == "q":
+                return
+```
+
+```py
+if __name__ == "__main__":
+    size, lines = setup()
+    app = MainApp(size, lines)
+    curses.wrapper(app)
+```
+
+
+---
+
+## Dispatching Keystrokes
+
+-   Find and call key handlers via <a class="gl-ref" href="../../glossary/#dynamic_dispatch" markdown="1">dynamic dispatch</a>
+
+```py
+    TRANSLATE = {
+        "\x18": "CONTROL_X"
+    }
+
+    def _interact(self):
+        key = self._screen.getkey()
+        key = self.TRANSLATE.get(key, key)
+        name = f"_do_{key}"
+        if hasattr(self, name):
+            getattr(self, name)()
+
+    def _do_CONTROL_X(self):
+        self._running = False
+
+    def _do_KEY_UP(self):
+        self._cursor.up()
+```
+
+
+---
+
+## Dispatching Keystrokes
+
+```py
+class DispatchApp(MainApp):
+    def __init__(self, size, lines):
+        super().__init__(size, lines)
+        self._running = True
+
+    def _run(self):
+        while self._running:
+            self._window.draw(self._lines)
+            self._screen.move(*self._cursor.pos())
+            self._interact()
+```
+
+
+-   Use a member variable `self._running` so that every other method
+    *doesn't* have to return a "keep running" flag
+
+-   Add `TRANSLATE` to turn things like Ctrl-X into strings `CONTROL_X`
+
+    -   Got the value by looking in our log file
+
+---
+
+class: aside
+
+## Inheritance
+
+-   `DispatchApp` is a child of `MainApp` so that we can recycle initialization
+
+-   `DispatchApp.__init__` <a class="gl-ref" href="../../glossary/#upcall" markdown="1">upcalls</a> to `MainApp.__init__`
+
+-   Probably wouldn't create multiple classes in a real program,
+    but simplifies exposition when teaching
+
+-   Had to move some earlier code around when writing later classes
+    to make everything work cleanly
+
+-   *This is normal*
+
+---
+
+## Managing the Buffer
+
+```py
+class Buffer:
+    def __init__(self, lines):
+        self._lines = lines[:]
+
+    def lines(self):
+        return self._lines
+```
+
+
+-   Doesn't do much yet, but will later keep track of viewable region
+
+-   Makes a copy of `lines` so that other code can't change its internals
+
+---
+
+## Changing the Application
+
+```py
+class BufferApp(DispatchApp):
+    def __init__(self, size, lines):
+        super().__init__(size, lines)
+
+    def _setup(self, screen):
+        self._screen = screen
+        self._make_window()
+        self._make_buffer()
+        self._make_cursor()
+
+    def _make_window(self):
+        self._window = Window(self._screen, self._size)
+
+    def _make_buffer(self):
+        self._buffer = Buffer(self._lines)
+
+    def _make_cursor(self):
+        self._cursor = Cursor()
+```
+
+
+---
+
+class: aside
+
+## Factory Methods
+
+-   Want to re-use as much of `BufferApp` as possible
+
+-   If `setup` calls constructors to create window, buffer, and cursor,
+    we have to rewrite it each time
+
+-   Putting constructor calls in <a class="gl-ref" href="../../glossary/#factory_method" markdown="1">factory methods</a>
+    allows us to override them one by one
+
+-   Could pass classes into `BufferApp` constructor…
+
+-   …but later on, these objects will need to reference each other
+
+-   Again, moving things around like this is normal
+
+---
+
+## Clipping
+
+```py
+class ClipCursor(Cursor):
+    def __init__(self, buf):
+        super().__init__()
+        self._buf = buf
+
+    def up(self):
+        self._pos[ROW] = max(self._pos[ROW]-1, 0)
+
+    def down(self):
+        self._pos[ROW] = min(self._pos[ROW]+1, self._buf.nrow()-1)
+
+    def left(self):
+        self._pos[COL] = max(self._pos[COL]-1, 0)
+
+    def right(self):
+        self._pos[COL] = min(
+            self._pos[COL]+1,
+            self._buf.ncol(self._pos[ROW])-1
+        )
+```
+
+
+---
+
+## Clipping
+
+```py
+class ClipBuffer(Buffer):
+    def nrow(self):
+        return len(self._lines)
+
+    def ncol(self, row):
+        return len(self._lines[row])
+
+class ClipApp(BufferApp):
+    def _make_buffer(self):
+        self._buffer = ClipBuffer(self._lines)
+
+    def _make_cursor(self):
+        self._cursor = ClipCursor(self._buffer)
+```
+
+
+-   Add methods to the buffer
+
+-   Construct different cursor and buffer objects
+    without changing anything else in the application
+
+---
+
+## A Bug
+
+-   Move to end of line and go up to shorter line
+    leaves cursor outside the text
+
+```py
+class ClipCursorFixed(ClipCursor):
+    def up(self):
+        super().up()
+        self._fix()
+
+    def down(self):
+        super().down()
+        self._fix()
+
+    def _fix(self):
+        self._pos[COL] = min(
+            self._pos[COL],
+            (self._buf.ncol(self._pos[ROW])-1))
+```
+
+
+-   Good design if there's one obvious place to make a change
+
+---
+
+## Viewport
+
+-   Can still move below the window because cursor is in buffer space not window space
+
+-   What if the buffer is bigger than the window?
+
+-   Need a <a class="gl-ref" href="../../glossary/#viewport" markdown="1">viewport</a> to track
+    the currently-visible portion of the buffer
+
+    -   Do vertical here and leave horizontal for exercises
+
+---
+
+## Buffer
+
+```py
+class ViewportBuffer(ClipBuffer):
+    def __init__(self, lines):
+        super().__init__(lines)
+        self._top = 0
+        self._height = None
+
+    def lines(self):
+        return self._lines[self._top:self._top + self._height]
+
+    def set_height(self, height):
+        self._height = height
+
+    def _bottom(self):
+        return self._top + self._height
+```
+
+
+---
+
+## Buffer
+
+```py
+    def transform(self, pos):
+        result = (pos[ROW] - self._top, pos[COL])
+        return result
+```
+
+```py
+    def scroll(self, row, col):
+        old = self._top
+        if (row == self._top - 1) and self._top > 0:
+            self._top -= 1
+        elif (row == self._bottom()) and \
+             (self._bottom() < self.nrow()):
+            self._top += 1
+```
+
+
+---
+
+## Application
+
+```py
+class ViewportApp(ClipAppFixed):
+    def _make_buffer(self):
+        self._buffer = ViewportBuffer(self._lines)
+
+    def _make_cursor(self):
+        self._cursor = ViewportCursor(self._buffer, self._window)
+
+    def _run(self):
+        self._buffer.set_height(self._window.size()[ROW])
+        while self._running:
+            self._window.draw(self._buffer.lines())
+            screen_pos = self._buffer.transform(self._cursor.pos())
+            self._screen.move(*screen_pos)
+            self._interact()
+            self._buffer.scroll(*self._cursor.pos())
+```
+
+
+-   Transform buffer coordinates into screen coordinates
+
+-   This class is where we need separate factory methods
+
+---
+
+## Cursor
+
+```py
+class ViewportCursor(ClipCursorFixed):
+    def __init__(self, buffer, window):
+        super().__init__(buffer)
+        self._window = window
+
+    def left(self):
+        super().left()
+        self._fix()
+
+    def right(self):
+        super().right()
+        self._fix()
+
+    def _fix(self):
+        self._pos[COL] = min(
+            self._pos[COL],
+            self._buffer.ncol(self._pos[ROW]) - 1,
+            self._window.size()[COL] - 1
+        )
+```
+
+
+---
+
+class: aside
+
+## Inheritance
+
+<figure>
+<img src="../inheritance.svg" alt="Inheritance in lesson"/>
+</figure>
+
+
+---
+
+class: summary
+
+## Summary
+
+<figure>
+<img src="../concept_map.svg" alt="Concept map of file viewer"/>
+</figure>
 
 
 
@@ -96,6 +793,7 @@ class: slide-title
 [lorgat_tutorial]: https://wasimlorgat.com/posts/editor.html
 [lorgat_wasim]: https://wasimlorgat.com/
 [marthas_rules]: https://journals.sagepub.com/doi/10.1177/088610998600100206
+[nano]: https://www.nano-editor.org/
 [nison_mael]: https://arcanis.github.io/
 [nystrom_bob]: http://journal.stuffwithstuff.com/
 [package_manager_tutorial]: https://classic.yarnpkg.com/blog/2017/07/11/lets-dev-a-package-manager/
@@ -110,6 +808,7 @@ class: slide-title
 [py_ast]: https://docs.python.org/3/library/ast.html
 [py_chainmap]: https://docs.python.org/3/library/collections.html#collections.ChainMap
 [py_cprofile]: https://docs.python.org/3/library/profile.html
+[py_curses]: https://docs.python.org/3/library/curses.html
 [py_fractions]: https://docs.python.org/3/library/fractions.html
 [py_glob]: https://docs.python.org/3/library/glob.html
 [py_hashlib]: https://docs.python.org/3/library/hashlib.html

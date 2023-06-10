@@ -47,7 +47,7 @@ chapters = {
     "pack": "A Package Manager",
     "ftp": "Transferring Files",
     "http": "Serving Web Pages",
-    "viewer": "A Text Viewer",
+    "viewer": "A File Viewer",
     "undo": "Undo and Redo",
     "vm": "A Virtual Machine",
     "debugger": "A Debugger",
