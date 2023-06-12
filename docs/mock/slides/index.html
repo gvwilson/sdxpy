@@ -25,7 +25,7 @@
     async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
   </script>
   <script defer src="../../mccole.js"></script>
-  <title>Software Design for Data Scientists: Mock Objects</title>
+  <title>Software Design for Data Scientists: Mocks, Protocols, and Decorators</title>
 </head>
 
   <body>
@@ -36,13 +36,175 @@ class: slide-title
 <p>
   <a href="https://third-bit.com/sd4ds/">Software Design for Data Scientists</a>
 </p>
-<h1>Mock Objects</h1>
+<h1>Mocks, Protocols, and Decorators</h1>
 <div class="bottom">
   <a href="../">chapter</a>
 </div>
 
 ---
 
+
+## Wrapping Functions
+
+```py
+def original(value):
+    print(f"original: {value}")
+
+def logging(value):
+    print("before call")
+    original(value)
+    print("after call")
+
+original = logging
+original("example")
+```
+
+
+```
+before call
+before call
+before call
+```
+
+
+-   Well, that didn't work
+
+---
+
+## Capture the Original
+
+```py
+def original(value):
+    print(f"original: {value}")
+
+def logging(func):
+    def _inner(value):
+        print("before call")
+        func(value)
+        print("after call")
+    return _inner
+
+original = logging(original)
+original("example")
+```
+
+
+```
+before call
+original: example
+after call
+```
+
+
+---
+
+## Parameters
+
+```py
+def original(value):
+    print(f"original: {value}")
+
+def logging(func, label):
+    def _inner(value):
+        print(f"++ {label}")
+        func(value)
+        print(f"-- {label}")
+    return _inner
+
+original = logging(original, "call")
+original("example")
+```
+
+
+```
+++ call
+original: example
+-- call
+```
+
+
+---
+
+## Decorators
+
+```py
+def wrap(func):
+    def _inner(*args):
+        print("before call")
+        func(*args)
+        print("after call")
+    return _inner
+
+@wrap
+def original(message):
+    print(f"original: {message}")
+
+original("example")
+```
+
+
+```
+before call
+original: example
+after call
+```
+
+
+---
+
+## Decorator Parameters
+
+```py
+def wrap(label):                  # function returning a decorator
+    def _decorate(func):          # the actual decorator
+        def _inner(*args):        # the wrapped function
+            print(f"++ {label}")  # 'label' is visible because
+            func(*args)           # it's captured in the closure
+            print(f"-- {label}")  # of '_decorate'
+        return _inner
+    return _decorate
+
+@wrap("wrapping")                 # call 'wrap' to get a decorator
+def original(message):            # decorator applied here
+    print(f"original: {message}")
+
+original("example")
+```
+
+
+```
+++ wrapping
+original: example
+-- wrapping
+```
+
+
+---
+
+class: aside
+
+## Design Flaw
+
+-   A decorator must take exactly one argument,
+    so how do we pass other parameters to the decorator itself?
+
+-   Simple-to-learn answer would have been to treat function being decorated
+    like `self` in method definition and call
+
+```py
+def decorator(func, label):
+    def _inner(arg):
+        print(f"entering {label}")
+        func(arg)
+    return _inner
+
+@decorator("message")
+def double(x):           # equivalent to
+    return 2 * x         # double = decorator(double, "message")
+```
+
+
+-   Instead, we have to create a closure
 
 
 [academic_prototyping]: https://www.fuzzingbook.org/html/AcademicPrototyping.html

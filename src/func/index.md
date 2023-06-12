@@ -12,9 +12,6 @@ syllabus:
 -   When a function needs to look up variables,
     it looks in its own stack frame and the global frame.
 -   A closure stores the variables referenced in a particular scope.
--   We can use decorators to wrap functions after defining them.
--   Defining a decorator that has parameters is much more complicated
-    than defining one that doesn't.
 ---
 
 One way to evaluate the design of a piece of software is
@@ -228,71 +225,6 @@ but nothing else in the program has access to that dictionary
    alt="Objects as closures"
    caption="Implementing objects using closures"
 %]
-
-It's easy to become confused when working with closures.
-For example,
-suppose we want to create a function called `logging`
-that prints a message before and after
-each call to some other arbitrary function.
-We could try to do it like this:
-
-[% inc file="wrap_infinite.py" %]
-
-but when we try to call `original` we wind up in an infinite loop.
-The wrapped version of our function refers to `original`,
-but Python looks that up at the time of call,
-which means it calls the wrapped function instead.
-We can solve this problem by creating a closure:
-
-[% inc pat="wrap_capture.*" fill="py out" %]
-
-Doing this also gives us a way to pass extra arguments
-when we create the wrapped function:
-
-[% inc pat="wrap_param.*" fill="py out" %]
-
-Wrapping functions like this is so useful
-that Python provides a special syntax for doing it
-called a [%g decorator "decorator" %].
-We define the function that does the wrapping as before,
-but then use `@wrap` to apply it
-rather than `name = wrap(name)`:
-
-[% inc pat="decorator_simple.*" fill="py out" %]
-
-If we want to pass parameters at the time we apply the decorator,
-though,
-it seems like we're stuck,
-because a Python decorator must take exactly one argument,
-which must be the function we want to decorate.
-If we want to pass extra parameters,
-we need to call a function that returns a function of one parameter
-that we can then use as a decorator.
-This means that we need to define a function inside a function *inside another function*
-to create a closure that captures the parameters:
-
-[% inc pat="decorator_param.*" fill="py out" %]
-
-<div class="callout" markdown="1">
-
-### Design Flaw
-
-Decorators didn't need to be this complicated.
-In order to define a method that takes \\( N \\) parameters in Python,
-we have to write a function of \\( N+1 \\) parameters,
-the first of which represents the object for which the method is being called.
-Python could have done the same thing with decorators,
-i.e.,
-allowed people to define a function of \\( N+1 \\) parameters
-and have `@` fill in the first automatically:
-
-[% inc file="decorators_simple.py" %]
-
-But this isn't the path Python took,
-and as a result,
-decorators are much harder to learn and use than they could have been.
-
-</div>
 
 ## Summary	       
 

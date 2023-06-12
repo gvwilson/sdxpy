@@ -25,7 +25,7 @@
     async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
   </script>
   <script defer src="../mccole.js"></script>
-  <title>Software Design for Data Scientists: Mock Objects</title>
+  <title>Software Design for Data Scientists: Mocks, Protocols, and Decorators</title>
 </head>
 
   <body>
@@ -83,7 +83,7 @@
   
   <li>
     <a href="../mock/">
-      <strong>Mock Objects</strong>
+      <strong>Mocks, Protocols, and Decorators</strong>
     </a>
   </li>
   
@@ -267,7 +267,7 @@
       <div id="printable" class="contents bordered">
         <main>
           
-  <h1>Chapter 8: Mock Objects</h1>
+  <h1>Chapter 8: Mocks, Protocols, and Decorators</h1>
 
 
           
@@ -300,6 +300,10 @@
   <li markdown="1">Temporarily replacing functions with mock objects can simplify testing.</li>
   
   <li markdown="1">Python defines protocols so that users' code can be triggered by keywords in the language.</li>
+  
+  <li markdown="1">We can use decorators to wrap functions after defining them.</li>
+  
+  <li markdown="1">Defining a decorator that has parameters is much more complicated than defining one that doesn't.</li>
   
   </ul>
   
@@ -341,7 +345,7 @@
 
           
 <p class="definitions">
-  Terms defined: <a class="gl-ref" href="../glossary/#context_manager" markdown="1">context manager</a>, <a class="gl-ref" href="../glossary/#mock_object" markdown="1">mock object</a>, <a class="gl-ref" href="../glossary/#protocol" markdown="1">protocol</a>
+  Terms defined: <a class="gl-ref" href="../glossary/#context_manager" markdown="1">context manager</a>, <a class="gl-ref" href="../glossary/#decorator" markdown="1">decorator</a>, <a class="gl-ref" href="../glossary/#mock_object" markdown="1">mock object</a>, <a class="gl-ref" href="../glossary/#protocol" markdown="1">protocol</a>
 </p>
 
 
@@ -558,7 +562,162 @@ what the exception was.</p>
     <span class="k">assert</span> <span class="n">subber</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span>
 </code></pre></div>
 </div>
-<h2 id="mock-exercises">Section 8.2: Exercises</h2>
+<h2 id="mock-decorator">Section 8.2: Decorators</h2>
+<p>It&rsquo;s easy to become confused when working with closures.
+For example,
+suppose we want to create a function called <code>logging</code>
+that prints a message before and after
+each call to some other arbitrary function.
+We could try to do it like this:</p>
+<div class="code-sample lang-py" title="wrap_infinite.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">original</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;original: </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">logging</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;before call&quot;</span><span class="p">)</span>
+    <span class="n">original</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;after call&quot;</span><span class="p">)</span>
+
+<span class="n">original</span> <span class="o">=</span> <span class="n">logging</span>
+<span class="n">original</span><span class="p">(</span><span class="s2">&quot;example&quot;</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<p>but when we try to call <code>original</code> we wind up in an infinite loop.
+The wrapped version of our function refers to <code>original</code>,
+but Python looks that up at the time of call,
+which means it calls the wrapped function instead.
+We can solve this problem by creating a closure:</p>
+<div class="code-sample lang-py" title="wrap_capture.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">original</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;original: </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">logging</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_inner</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;before call&quot;</span><span class="p">)</span>
+        <span class="n">func</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;after call&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_inner</span>
+
+<span class="n">original</span> <span class="o">=</span> <span class="n">logging</span><span class="p">(</span><span class="n">original</span><span class="p">)</span>
+<span class="n">original</span><span class="p">(</span><span class="s2">&quot;example&quot;</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<div class="code-sample lang-out" title="wrap_capture.out">
+<div class="highlight"><pre><span></span><code>before call
+original: example
+after call
+</code></pre></div>
+</div>
+<p>Doing this also gives us a way to pass extra arguments
+when we create the wrapped function:</p>
+<div class="code-sample lang-py" title="wrap_param.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">original</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;original: </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">logging</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">label</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_inner</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;++ </span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">func</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;-- </span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_inner</span>
+
+<span class="n">original</span> <span class="o">=</span> <span class="n">logging</span><span class="p">(</span><span class="n">original</span><span class="p">,</span> <span class="s2">&quot;call&quot;</span><span class="p">)</span>
+<span class="n">original</span><span class="p">(</span><span class="s2">&quot;example&quot;</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<div class="code-sample lang-out" title="wrap_param.out">
+<div class="highlight"><pre><span></span><code>++ call
+original: example
+-- call
+</code></pre></div>
+</div>
+<p>Wrapping functions like this is so useful
+that Python provides a special syntax for doing it
+called a <a class="gl-ref" href="../glossary/#decorator" markdown="1">decorator</a>.
+We define the function that does the wrapping as before,
+but then use <code>@wrap</code> to apply it
+rather than <code>name = wrap(name)</code>:</p>
+<div class="code-sample lang-py" title="decorator_simple.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">wrap</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_inner</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;before call&quot;</span><span class="p">)</span>
+        <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;after call&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_inner</span>
+
+<span class="nd">@wrap</span>
+<span class="k">def</span> <span class="nf">original</span><span class="p">(</span><span class="n">message</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;original: </span><span class="si">{</span><span class="n">message</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="n">original</span><span class="p">(</span><span class="s2">&quot;example&quot;</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<div class="code-sample lang-out" title="decorator_simple.out">
+<div class="highlight"><pre><span></span><code>before call
+original: example
+after call
+</code></pre></div>
+</div>
+<p>If we want to pass parameters at the time we apply the decorator,
+though,
+it seems like we&rsquo;re stuck,
+because a Python decorator must take exactly one argument,
+which must be the function we want to decorate.
+If we want to pass extra parameters,
+we need to call a function that returns a function of one parameter
+that we can then use as a decorator.
+This means that we need to define a function inside a function <em>inside another function</em>
+to create a closure that captures the parameters:</p>
+<div class="code-sample lang-py" title="decorator_param.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">wrap</span><span class="p">(</span><span class="n">label</span><span class="p">):</span>                  <span class="c1"># function returning a decorator</span>
+    <span class="k">def</span> <span class="nf">_decorate</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>          <span class="c1"># the actual decorator</span>
+        <span class="k">def</span> <span class="nf">_inner</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>        <span class="c1"># the wrapped function</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;++ </span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>  <span class="c1"># &#39;label&#39; is visible because</span>
+            <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>           <span class="c1"># it&#39;s captured in the closure</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;-- </span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>  <span class="c1"># of &#39;_decorate&#39;</span>
+        <span class="k">return</span> <span class="n">_inner</span>
+    <span class="k">return</span> <span class="n">_decorate</span>
+
+<span class="nd">@wrap</span><span class="p">(</span><span class="s2">&quot;wrapping&quot;</span><span class="p">)</span>                 <span class="c1"># call &#39;wrap&#39; to get a decorator</span>
+<span class="k">def</span> <span class="nf">original</span><span class="p">(</span><span class="n">message</span><span class="p">):</span>            <span class="c1"># decorator applied here</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;original: </span><span class="si">{</span><span class="n">message</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="n">original</span><span class="p">(</span><span class="s2">&quot;example&quot;</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<div class="code-sample lang-out" title="decorator_param.out">
+<div class="highlight"><pre><span></span><code>++ wrapping
+original: example
+-- wrapping
+</code></pre></div>
+</div>
+<div class="callout">
+<h3>Design Flaw</h3>
+<p>Decorators didn&rsquo;t need to be this complicated.
+In order to define a method that takes \( N \) parameters in Python,
+we have to write a function of \( N+1 \) parameters,
+the first of which represents the object for which the method is being called.
+Python could have done the same thing with decorators,
+i.e.,
+allowed people to define a function of \( N+1 \) parameters
+and have <code>@</code> fill in the first automatically:</p>
+<div class="code-sample lang-py" title="alternative_design.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">decorator</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">label</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_inner</span><span class="p">(</span><span class="n">arg</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;entering </span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">func</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_inner</span>
+
+<span class="nd">@decorator</span><span class="p">(</span><span class="s2">&quot;message&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">double</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>           <span class="c1"># equivalent to</span>
+    <span class="k">return</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">x</span>         <span class="c1"># double = decorator(double, &quot;message&quot;)</span>
+</code></pre></div>
+</div>
+<p>But this isn&rsquo;t the path Python took,
+and as a result,
+decorators are much harder to learn and use than they could have been.</p>
+</div>
+<h2 id="mock-exercises">Section 8.3: Exercises</h2>
 <h3 class="exercise">Timing blocks</h3>
 <p>Create a context manager called <code>Timer</code> that reports how long it has been
 since a block of code started running:</p>

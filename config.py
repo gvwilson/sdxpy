@@ -32,7 +32,7 @@ chapters = {
     "test": "A Test Runner",
     "interp": "An Interpreter",
     "func": "Functions and Closures",
-    "mock": "Mock Objects",
+    "mock": "Mocks, Protocols, and Decorators",
     "archive": "A File Archiver",
     "oop": "Objects and Classes",
     "check": "An HTML Validator",
