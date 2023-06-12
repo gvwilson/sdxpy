@@ -63,6 +63,7 @@ appendices = {
     "conduct": "Code of Conduct",
     "contrib": "Contributing",
     "glossary": "Glossary",
+    "figures": "Figures",
     "credits": "Credits",
     "contents": "Index",
 }

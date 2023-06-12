@@ -118,3 +118,31 @@ def figure_def(pargs, kwargs, node):
         </figure>
         """
     )
+
+
+@shortcodes.register("figure_list")
+def figure_list(pargs, kwargs, node):
+    """Display all figures."""
+    util.require(not pargs and not kwargs, "figure_list takes no arguments")
+    
+    # Haven't collected information yet.
+    if (figures := util.get_config("figures")) is None:
+        return ""
+
+    chapters = util.get_config("titles")["chapters"]
+    result = []
+    for entry in chapters:
+        result.append(f"## [{entry.title}](@root/{entry.slug}/)")
+        for (_, fig) in figures.items():
+            if fig.fileslug != entry.slug:
+                continue
+            alt = util.markdownify(fig.alt)
+            label = util.make_label('figure', fig.number)
+            caption = util.markdownify(fig.caption)
+            result.extend([
+                "<figure>",
+                f"<img src='@root/{entry.slug}/{fig.img}' alt='{alt}'>",
+                f'<figcaption markdown="1">{label}: {caption}</figcaption>',
+                "</figure>"
+            ])
+    return "\n\n".join(result)
