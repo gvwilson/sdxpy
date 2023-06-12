@@ -124,7 +124,7 @@ ${ROOT}/docs/all.html: ${ROOT}/docs/index.html ${HTML_COPY} ${MCCOLE}/bin/make_s
 	--head ${ROOT}/info/head.html \
 	--foot ${ROOT}/info/foot.html \
 	--root ${ROOT}/docs \
-	--title ${TITLE} \
+	--title "${TITLE}" \
 	--tagline "$$(python ${CONFIG} --tagline)" \
 	> ${ROOT}/docs/all.html
 

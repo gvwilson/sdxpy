@@ -468,10 +468,6 @@ in the same way as vertical movement:
 
 [% inc file="viewport.py" keep="cursor" %]
 
-<div class="callout" markdown="1">
-
-### Inheritance Revisited
-
 [%f viewer-inheritance %] shows the classes we have created
 at each stage of this tutorial.
 As we have said several times above,
@@ -492,8 +488,6 @@ Again,
    alt="Inheritance in lesson"
    caption="Class definitions and inheritance in lesson"
 %]
-
-</div>
 
 ## Summary
 
