@@ -132,15 +132,15 @@ def figure_list(pargs, kwargs, node):
     chapters = util.get_config("titles")["chapters"]
     result = []
     for entry in chapters:
-        result.append(f"## [{entry.title}](@root/{entry.slug}/)")
-        for (_, fig) in figures.items():
+        result.append(f"## {entry.title}")
+        for (i, fig) in enumerate(figures.values()):
             if fig.fileslug != entry.slug:
                 continue
             alt = util.markdownify(fig.alt)
             label = util.make_label('figure', fig.number)
             caption = util.markdownify(fig.caption)
             result.extend([
-                "<figure>",
+                f'<figure id="fig-{i:04}">',
                 f"<img src='@root/{entry.slug}/{fig.img}' alt='{alt}'>",
                 f'<figcaption markdown="1">{label}: {caption}</figcaption>',
                 "</figure>"

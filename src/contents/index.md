@@ -1,1 +1,3 @@
 [% index %]
+
+[% figure_list %]

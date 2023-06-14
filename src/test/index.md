@@ -364,7 +364,7 @@ would also be smart enough to write the code without our help.
 ## Summary {: #test-summary}
 
 [% figure
-   slug="build-concept-map"
+   slug="test-concept-map"
    img="concept_map.svg"
    alt="Concept map of test runner"
    caption="Concept map"
