@@ -32,15 +32,13 @@ def do_call(env, args):
 def do_comment(env, args):
     return None
 
-# [def]
-def do_def(env, args):
-    assert len(args) == 3
-    name = args[0]
-    params = args[1]
-    body = args[2]
-    env_set(env, name, ["func", params, body])
-    return None
-# [/def]
+# [func]
+def do_func(env, args):
+    assert len(args) == 2
+    params = args[0]
+    body = args[1]
+    return ["func", params, body]
+# [/func]
 
 def do_get(env, args):
     assert len(args) == 1

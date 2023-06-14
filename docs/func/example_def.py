@@ -4,22 +4,18 @@ def same(num):
 # [/python]
 
 # [def]
-["def", "same", ["num"], ["get", "num"]]
+["func", ["num"], ["get", "num"]]
 # [/def]
 
-# [store]
-["func", ["num"], ["get", "num"]]
-# [/store]
-
-# [alt]
+# [save]
 ["set", "same", ["func", ["num"], ["get", "num"]]]
-# [/alt]
-
-# [call]
-["call", "same", 3]
-# [/call]
+# [/save]
 
 # [lambda]
 double = lambda x: 2 * x
 double(3)
 # [/lambda]
+
+# [call]
+["call", "same", 3]
+# [/call]

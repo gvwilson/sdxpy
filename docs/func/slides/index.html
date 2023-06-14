@@ -54,7 +54,7 @@ class: slide-title
 
 ---
 
-## Definition and Call
+## Definition
 
 -   In Python
 
@@ -67,22 +67,66 @@ def same(num):
 -   In our little language
 
 ```py
-["def", "same", ["num"], ["get", "num"]]
+["func", ["num"], ["get", "num"]]
 ```
 
 
--   Name
+-   Keyword `"func"`
 -   (Possibly empty) list of parameter names
--   Body (usually a `seq`)
+-   Body
 
---
+---
+
+## Saving Functions
+
+-   A function is just another object
+
+-   Assign it to a variable so we can call it later
+
+```py
+["set", "same", ["func", ["num"], ["get", "num"]]]
+```
+
+
+---
+
+class: aside
+
+## Anonymous Functions
+
+-   An <a class="gl-ref" href="../../glossary/#anonymous_function" markdown="1">anonymous functions</a>
+    is one that doesn't have a name
+
+-   JavaScript and other languages use them frequently
+
+-   Python supports limited <a class="gl-ref" href="../../glossary/#lambda_expression" markdown="1">lambda expressions</a>
+
+```py
+double = lambda x: 2 * x
+double(3)
+```
+
+
+---
+
+## Implementing Call
 
 ```py
 ["call", "same", 3]
 ```
 
 
--   Values can be expressions (not in a sub-list)
+1.  Evaluate arguments.
+
+2.  Look up the function.
+
+3.  Create a new environment.
+
+4.  Call `do` to run the function's action and captures the result.
+
+5.  Discard environment created in step 3.
+
+6.  Return the result.
 
 ---
 
@@ -107,56 +151,6 @@ class: aside
 
 ---
 
-## Storing a Function
-
--   Like any other value
-
-```py
-["func", ["num"], ["get", "num"]]
-```
-
-
---
-
--   We could define functions like this
-
-```py
-["set", "same", ["func", ["num"], ["get", "num"]]]
-```
-
-
---
-
--   JavaScript makes heavy use of
-    <a class="gl-ref" href="../../glossary/#anonymous_function" markdown="1">anonymous functions</a>
-
--   Python supports limited <a class="gl-ref" href="../../glossary/#lambda_expression" markdown="1">lambda expressions</a>
-
-```py
-double = lambda x: 2 * x
-double(3)
-```
-
-
----
-
-## Implementing Call
-
-1.  Evaluate all of these expressions.
-
-2.  Look up the function.
-
-3.  Create a new environment whose keys are the parameters' names
-    and whose values are the expressions' values.
-
-4.  Call `do` to run the function's action and captures the result.
-
-5.  Discard environment created in step 3.
-
-6.  Return the function's result.
-
----
-
 ## The Environment
 
 -   A variable `x` in a function shouldn't clobber
@@ -176,15 +170,15 @@ double(3)
 ## Implementing Definition
 
 ```py
-def do_def(env, args):
-    assert len(args) == 3
-    name = args[0]
-    params = args[1]
-    body = args[2]
-    env_set(env, name, ["func", params, body])
-    return None
+def do_func(env, args):
+    assert len(args) == 2
+    params = args[0]
+    body = args[1]
+    return ["func", params, body]
 ```
 
+
+-   Should check that parameters are strings
 
 ---
 
@@ -219,8 +213,10 @@ def do_call(env, args):
 
 ```tll
 ["seq",
-  ["def", "double", ["num"],
-    ["add", ["get", "num"], ["get", "num"]]
+  ["set", "double",
+    ["func", ["num"],
+      ["add", ["get", "num"], ["get", "num"]]
+    ]
   ],
   ["set", "a", 1],
   ["repeat", 4, ["seq",
@@ -244,7 +240,8 @@ def do_call(env, args):
 
 ## Dynamic Scoping
 
--   Searching active stack for a variable is called <a class="gl-ref" href="../../glossary/#dynamic_scoping" markdown="1">dynamic scoping</a>
+-   Searching active stack for a variable is called
+    <a class="gl-ref" href="../../glossary/#dynamic_scoping" markdown="1">dynamic scoping</a>
 
 -   Have to trace execution to figure out what a variable might refer to
 
@@ -278,13 +275,13 @@ def do_call(env, args):
 
 -   More efficient for the person: limits scope of reasoning
 
--   And enables a very powerful programming technique
+-   More complicated to implement
+
+-   But enables a very powerful programming technique
 
 ---
 
 ## Closures
-
--   Define a function inside a function and return the inner function
 
 ```py
 def make_hidden(thing):
@@ -302,7 +299,8 @@ hidden thing is example
 ```
 
 
--   The inner function <a class="gl-ref" href="../../glossary/#variable_capture" markdown="1">captures</a> the variables in the enclosing function
+-   The inner function <a class="gl-ref" href="../../glossary/#variable_capture" markdown="1">captures</a>
+    the variables in the enclosing function
 
 -   A way to make data private
 
@@ -331,6 +329,67 @@ print(adder_func(1))
 <figure>
 <img src="../closure.svg" alt="Closures"/>
 </figure>
+
+
+---
+
+## Mapping
+
+-   `map` applies a function to each value in a list
+
+```py
+def double(x):
+    return 2 * x
+
+data = [5, 10, 15]
+print(list(map(double, data)))
+```
+
+
+```
+[10, 20, 30]
+```
+
+
+-   But it's annoying to have to define lots of little functions
+
+---
+
+## Mapping
+
+-   Use a function to define the function we want
+
+-   Rely on closures to remember the extra parameters
+
+```py
+def multiply_by(amount):
+    def _inner(value):
+        return amount * value
+    return _inner
+
+print(list(map(multiply_by(2), data)))
+print(list(map(multiply_by(3), data)))
+```
+
+```
+[10, 20, 30]
+[15, 30, 45]
+```
+
+
+---
+
+## Mapping
+
+-   Use `lambda` when all we want to do is wrap a function
+
+```py
+print(list(map(lambda x: 2 * x, data)))
+```
+
+```
+[10, 20, 30]
+```
 
 
 ---

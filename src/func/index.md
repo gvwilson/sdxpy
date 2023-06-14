@@ -40,10 +40,34 @@ It has a name,
 a (possibly empty) list of parameter names,
 and a body,
 which in this case is a single statement.
-Its equivalent in our little language is:
 {: .continue}
 
+Our little language does things differently.
+Since a function is just another kind of object,
+we can define it on its own without naming it:
+
 [% inc file="example_def.py" keep="def" %]
+
+To save the function for later use,
+we simply assign it to a name
+as we would assign any other value:
+
+[% inc file="example_def.py" keep="save" %]
+
+<div class="callout" markdown="1">
+
+### Anonymity
+
+A function without a name is called an [%g anonymous_function "anonymous" %].
+JavaScript makes heavy use of anonymous functions;
+Python supports a very limited version of them
+using [%g lambda_expression "lambda expressions" %]:
+
+[% inc file="example_def.py" keep="lambda" %]
+
+</div>
+
+## Calling Functions {: #func-call}
 
 In Python,
 we would call this function as `same(3)`.
@@ -51,6 +75,26 @@ Our little language requires us to specify an operator explicitly,
 so we write the call as:
 
 [% inc file="example_def.py" keep="call" %]
+
+To make `"call"` work,
+we need to implement [%g scope "scopes" %]
+so that parameters and variables used in a function
+don't overwrite those defined outside it.
+When a function is called with one or more expressions as arguments,
+we will:
+
+1.  Evaluate all of these expressions.
+
+2.  Look up the function.
+
+3.  Create a new environment whose keys are the parameters' names
+    and whose values are the expressions' values.
+
+4.  Call `do` to run the function's action and captures the result.
+
+5.  Discard the environment created in step 3.
+
+6.  Return the function's result.
 
 The arguments passed to the functions can be expressions rather than constants,
 so we have to evaluate them when we make the call.
@@ -74,62 +118,6 @@ and decide how to handle them.
 
 </div>
 
-Between defining and calling a function,
-we must store it somewhere.
-Since we are using lists for everything else,
-we will use them for stored functions as well:
-
-[% inc file="example_def.py" keep="store" %]
-
-Notice that we don't store the function's name with it.
-Instead,
-we are going to store functions in the environment
-in exactly the same way that we store other values.
-
-<div class="callout" markdown="1">
-
-### Anonymity
-
-We could skip the special syntax for definition a function
-and define them by creating the list that we're going to store (as shown above)
-and then assigning it to a name in the environment:
-
-[% inc file="example_def.py" keep="alt" %]
-
-In this case,
-the function itself is [%g anonymous_function "anonymous" %].
-JavaScript makes heavy use of anonymous functions;
-Python supports a very limited version of them
-using [%g lambda_expression "lambda expressions" %]:
-{: .continue}
-
-[% inc file="example_def.py" keep="lambda" %]
-
-</div>
-
-## Calling Functions {: #func-call}
-
-The last step in our implementation is to make sure that
-local variables defined inside a function
-don't overwrite variables defined outside the function.
-In other words,
-we need to implement [%g scope "scope" %].
-When a function is called with one or more expressions as arguments,
-we will:
-
-1.  Evaluate all of these expressions.
-
-2.  Look up the function.
-
-3.  Create a new environment whose keys are the parameters' names
-    and whose values are the expressions' values.
-
-4.  Call `do` to run the function's action and captures the result.
-
-5.  Discard the environment created in step 3.
-
-6.  Return the function's result.
-
 To make this work,
 the environment must be a list of dictionaries instead of a single dictionary.
 This list is the [%g call_stack "call stack" %] of our program,
@@ -151,7 +139,7 @@ which figures out what a variable name refers to based on the structure of the p
 
 The completed implementation of function definition is:
 
-[% inc file="func.py" keep="def" %]
+[% inc file="func.py" keep="func" %]
 
 The completed implementation of function call is:
 {: .continue}
@@ -205,7 +193,30 @@ that remember the values they're supposed to add *later*.
    caption="Closures"
 %]
 
-We can use closures to implement objects with truly private data.
+One common use of closures is
+to turn a function that needs many arguments
+into one that needs fewer.
+For example,
+Python's built-in `map` function
+applies a user-defined function to each value in a list:
+
+[% inc pat="map_double.*" fill="py out" %]
+
+It's annoying to have to define a one-line function
+each time we want to use this,
+so we can instead use a function to define the function we want
+and rely on closures to remember the extra parameters:
+
+[% inc file="map_closure.py" keep="keep" %]
+[% inc file="map_closure.out" %]
+
+In practice,
+most programmers would use `lambda` to wrap a function this way:
+
+[% inc file="map_lambda.py" keep="keep" %]
+[% inc file="map_lambda.out" %]
+
+We can also use closures to implement objects with truly private data.
 In the code below,
 for example,
 the function `make_object` creates a dictionary
@@ -226,7 +237,7 @@ but nothing else in the program has access to that dictionary
    caption="Implementing objects using closures"
 %]
 
-## Summary	       
+## Summary {: #func-summary}
 
 [% figure
    slug="func-concept-map"
@@ -234,3 +245,38 @@ but nothing else in the program has access to that dictionary
    alt="Concept map of functions and closures"
    caption="Concept map"
 %]
+
+## Exercises {: #func-exercises}
+
+### Defining Named Functions {: .exercise}
+
+Modify `do_func` so that if it is given three arguments instead of two,
+it uses the first one as the function's name
+without requiring a separate `"set"` instruction.
+
+### Implicit Sequence {: .exercise}
+
+1.  Modify `do_func` so that if it is given more than one argument,
+    it uses all but the first as the body of the function
+    (i.e., treats every after the parameter list as an implicit `"seq"`).
+
+2.  Is there a way to make this work in combination with
+    naming-at-creation from the previous exercise?
+
+### Preventing Redefinition {: .exercise}
+
+1.  Modify the interpreter so that programs cannot redefine functions,
+    i.e.,
+    so that once a function has been assigned to a variable,
+    that variable's value cannot be changed.
+
+2.  Why might this be a good idea?
+    What does it make more difficult?
+
+### How Private Are Closures? {: .exercise}
+
+If the data in a closure is private,
+explain why lines 1 and 2 are the same in the output of this program
+but lines 3 and 4 are different.
+
+[% inc pat="closure_list.*" fill="py out" %]
