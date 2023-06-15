@@ -214,7 +214,6 @@ clean:
 .PHONY: status
 status:
 	@python ${MCCOLE}/bin/status.py --config ${ROOT}/config.py --readme ${ROOT}/README.md
-	@python ${MCCOLE}/bin/check_prose_slides.py --config ${ROOT}/config.py
 
 ## valid: run html5validator on generated files
 .PHONY: valid

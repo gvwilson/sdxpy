@@ -9,11 +9,15 @@ import utils
 
 RE_EXERCISE = re.compile(r"\{:\s+\.exercise\}")
 RE_FIGURE = re.compile(r"\[%\s*figure\b")
-RE_STATUS = re.compile(r"\|\s*\*?(\d+)%\*?\s*\|")
 
 EX_PER_CHAPTER = 8
 SLIDES_PER_CHAPTER = 18
 WORDS_PER_CHAPTER = 2200
+
+RED = "\033[91m"
+GREEN = "\033[92m"
+BLUE = "\033[94m"
+ENDC = "\033[0m"
 
 SHORT_CHAPTERS = {"intro", "finale"}
 
@@ -22,7 +26,7 @@ def main():
     """Main driver."""
     options = parse_args()
     config = utils.load_config(options.config)
-    report(config.chapters)
+    report(options.plain, config.chapters)
 
 
 def build_format(chapters):
@@ -44,13 +48,13 @@ def calc_fraction(n_slides, n_ex, n_words, slug=None):
     return int(100 * frac / len(entries))
 
 
-def calc_status(fraction):
+def colorize(fraction):
     if fraction < 80:
-        return "-"
+        return f"{RED}{fraction}%{ENDC}"
     elif fraction > 120:
-        return "+"
+        return f"{BLUE}{fraction}%{ENDC}"
     else:
-        return ""
+        return f"{GREEN}{fraction}%{ENDC}"
 
 
 def count_page(slug):
@@ -77,7 +81,7 @@ def count_words(text):
 def make_table():
     tbl = PrettyTable()
     tbl.set_style(MARKDOWN)
-    tbl.field_names = "Chapter Slides Exercises Figures Words Overall Status".split()
+    tbl.field_names = "Chapter Slides Exercises Figures Words Overall".split()
     tbl.align = "r"
     tbl.align["Chapter"] = "l"
     return tbl
@@ -94,10 +98,11 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", required=True, help="Configuration file")
     parser.add_argument("--readme", required=True, help="README file with status table")
+    parser.add_argument("--plain", default=False, action="store_true", help="Plian text")
     return parser.parse_args()
 
 
-def report(chapters):
+def report(plain, chapters):
     """Status of chapters."""
     tbl = make_table()
     tot_slides, tot_ex, tot_words = 0, 0, 0
@@ -108,8 +113,11 @@ def report(chapters):
         tot_slides += n_slides
         tot_words += n_words
         frac = calc_fraction(n_slides, n_ex, n_words, slug)
-        status = calc_status(frac)
-        tbl.add_row([slug, n_slides, n_ex, n_fig, n_words, f"{frac}%", status])
+        if plain:
+            frac = f"{frac}%"
+        else:
+            frac = colorize(frac)
+        tbl.add_row([slug, n_slides, n_ex, n_fig, n_words, f"{frac}"])
     print(f"Overall: {overall(chapters, tot_slides, tot_ex, tot_words)}%")
     print(tbl)
 
