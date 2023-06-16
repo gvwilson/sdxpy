@@ -183,7 +183,7 @@ but we can do better:
     we should raise `ValueError` (or a custom exception of our own)
     to indicate a problem.
 
-4.  Our topological sort isn't [% g stable_sort "stable" %],
+4.  Our topological sort isn't [%g stable_sort "stable" %],
     i.e.,
     there's no way to predict the order in which two "equal" nodes
     will be added to the ordering.

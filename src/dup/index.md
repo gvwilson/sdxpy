@@ -36,7 +36,7 @@ The function `same_bytes` reads two files and compares them byte by byte:
 
 [% inc file="brute_force_1.py" keep="bytes" %]
 
-Notice that the files are opened in [% g binary_mode "binary mode" %]
+Notice that the files are opened in [%g binary_mode "binary mode" %]
 using `"rb"` instead of the usual `"r"`.
 As we'll see in [%x binary %],
 this tells Python to read the bytes as they are
@@ -105,8 +105,8 @@ and the overall running time will decrease
    caption="Grouping by hash code reduces comparisons from 15 to 4."
 %]
 
-We can construct IDs for files using a [% g hash_function "hash function" %]
-to produce a [% g hash_code "hash code" %].
+We can construct IDs for files using a [%g hash_function "hash function" %]
+to produce a [%g hash_code "hash code" %].
 Since bytes are just numbers,
 we can create a very simple hash function by adding up the bytes in a file
 and taking the remainder modulo some number:

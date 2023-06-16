@@ -333,7 +333,7 @@ processes selected columns of a table in bulk to do things like find averages ov
 Row-wise storage is usually best for OLTP,
 but column-wise storage is better suited for OLAP.
 If data volumes are large,
-[%i "data engineer" %][%g "data_engineer" "data engineers" %][%/i%] will sometimes run two databases in parallel,
+[%i "data engineer" %][%g data_engineer "data engineers" %][%/i%] will sometimes run two databases in parallel,
 using [%i "batch processing" %][%g batch_processing "batch processing" %][%/i%] jobs
 to copy new or updated records from the OLTP databases over to the OLAP database.
 

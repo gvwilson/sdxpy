@@ -417,7 +417,7 @@ Our options are:
 1.  Require it to inherit from a base class that we provide
     so that we can use `isinstance` to check if an object is persistable.
     This approach is used in strictly-typed languages like Java,
-    but method #2 below is considered more [%g "pythonic" Pythonic %].
+    but method #2 below is considered more [%g pythonic "Pythonic" %].
 
 2.  Require it to implement a method with a specific name and signature
     without deriving from a particular base class.

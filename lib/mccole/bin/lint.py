@@ -49,6 +49,7 @@ RE_CODE_INLINE = re.compile("`.+?`")
 RE_FILE = re.compile(r'\[%\s*inc\b.+?(file|html)="(.+?)".+?%\]')
 RE_FIGURE = re.compile(r'\[%\s*figure\b.+?img="(.+?)".+?%\]', re.DOTALL)
 RE_GLOSSREF = re.compile(r'\[%\s*g\s+\b(.+?)\b\s+".+?"\s*%\]')
+RE_CROSSREF = re.compile(r'\[.+?\]\(\#(.+?)\)', re.DOTALL)
 RE_IMG = re.compile(r'<img.+?src="(.+?)".+?>')
 RE_LINK = re.compile(r"\[[^]]*?\]\[(\w+?)\]")
 RE_PAT = re.compile(r'\[%\s*inc\b.+?pat="(.+?)"\s+fill="(.+?)".+?%\]')
@@ -74,8 +75,8 @@ def main():
     if not check_dirs(src_dir, slugs):
         sys.exit(1)
 
-    check_glossary(glossary, language)
-    check_files(src_dir, slugs, glossary)
+    cross_refs = check_glossary(glossary, language)
+    check_files(src_dir, slugs, glossary, cross_refs)
     check_dom(options.dom, options.pages)
 
 
@@ -116,8 +117,10 @@ def check_dom(dom_spec, html_files):
     _diff_dom(seen, allowed)
 
 
-def check_files(src_dir, slugs, glossary):
+def check_files(src_dir, slugs, glossary, cross_refs):
     """Check for inclusions, figures, and glossary references."""
+    gloss_keys = {entry["key"] for entry in glossary}
+    gloss_unused = gloss_keys.copy() - cross_refs
     for slug in slugs:
         dir_path = Path(src_dir, slug)
         text = read_prose(dir_path)
@@ -131,8 +134,12 @@ def check_files(src_dir, slugs, glossary):
         report(f"{dir_path}: inclusions", referenced, existing)
 
         referenced = get_glossrefs(text)
-        existing = set(entry["key"] for entry in glossary)
-        report_one(f"{dir_path}: glossary", referenced - existing)
+        report_one(f"{dir_path}: glossary", referenced - gloss_keys)
+        gloss_unused -= referenced
+    if gloss_unused:
+        print("glossary unused:")
+        for key in sorted(gloss_unused):
+            print(f"- {key}")
 
 
 def check_glossary(glossary, language):
@@ -143,16 +150,20 @@ def check_glossary(glossary, language):
         return
 
     glossary = {g["key"]: g for g in glossary}
+    cross_refs = set()
     for key, entry in sorted(glossary.items()):
+        if "ref" in entry:
+            missing = [ref for ref in entry["ref"] if ref not in glossary]
+            if any(missing):
+                print(f"missing ref(s) in glossary entry {key}: {missing}")
         if language not in entry:
             print(f"glossary entry {key} missing {language}")
             break
         if "def" not in entry[language]:
             print(f"glossary entry {key}/{language} missing 'def'")
-        if "ref" in entry:
-            missing = [ref for ref in entry["ref"] if ref not in glossary]
-            if any(missing):
-                print(f"missing ref(s) in glossary entry {key}: {missing}")
+            break
+        cross_refs |= {m.group(1) for m in RE_CROSSREF.finditer(entry[language]["def"])}
+    return cross_refs
 
 
 def check_links(links, source_files):
