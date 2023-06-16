@@ -57,6 +57,7 @@ chapters = {
 # Appendices (slugs in order).
 appendices = {
     "bib": "Bibliography",
+    "bonus": "Bonus Material",
     "syllabus": "Syllabus",
     "slides": "Slides",
     "license": "License",

@@ -299,56 +299,9 @@ we have to search through the source file (or possibly several files)
 to find all the available operations.
 {: .continue}
 
-## Statements {: #interp-statements .bonus}
-
-One way to evaluate a design is to ask how [%g extensibility "extensible" %] it is.
-The answer for our interpreter is now, "Pretty easily."
-For example,
-we can add a `comment` "operation" that does nothing and returns `None`
-simply by writing `do_comment` function:
-
-[% inc file="stmt.py" keep="comment" %]
-
-An `if` statement is a bit more complex.
-If its first argument is true it evaluates and returns its second argument
-(the "if" branch).
-Otherwise,
-it evaluates and returns its second argument (the "else" branch):
-
-[% inc file="stmt.py" keep="if" %]
-
-This is called [%g lazy_evaluation "lazy evaluation" %]
-to distinguish it from the more usual [%g eager_evaluation "eager evaluation" %]
-that evaluates everything up front.
-`do_if` only evaluates what it absolutely needs to;
-most languages do this so that we can safely write things like:
-{: .continue}
-
-[% inc file="lazy.py" %]
-
-If the language always evaluated both branches
-then the code shown above would fail whenever `x` was zero,
-even though it's supposed to handle that case.
-In this case it might seem obvious what the language should do,
-but most languages use lazy evaluation for `and` and `or` as well
-so that expressions like:
-{: .continue}
-
-```python
-thing and thing.part
-```
-
-will produce `None` if `thing` is `None`
-and `reference.part` if it isn't.
-{: .continue}
-
-While our interpreter is extensible,
-our little language is not:
-there is no way for a user to define and call functions of their own
-within the little language itself.
-We will tackle this in [%x func %].
-
 ## Summary {: #interp-summary}
+
+*Please see [%x bonus %] for extra material related to these ideas.*
 
 [% figure
    slug="interp-concept-map"

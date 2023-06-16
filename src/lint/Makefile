@@ -4,7 +4,6 @@ TARGETS=\
   find_duplicate_keys.out \
   find_unused_variables.out \
   has_duplicate_keys.out \
-  inheritance_example.out \
   walk_ast.out
 
 include ../../examples.mk
@@ -16,5 +15,4 @@ dump_ast_double.out: dump_ast.py double.py
 dump_ast_simple.out: dump_ast.py simple.py
 find_unused_variables.out: has_unused_variables.py
 find_duplicate_keys.out: has_duplicate_keys.py
-inheritance_example.out: inheritance.py
 walk_ast.out: double.py

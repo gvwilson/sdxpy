@@ -28,13 +28,13 @@ and introduces the single most important idea in this book:
   *Programs are just another kind of data.*
 </div>
 
-## Storing and Running Tests {: #tester-funcobj}
+## Storing and Running Tests {: #test-funcobj}
 
 The first thing we need to understand is that a function is an object.
 While the bytes in a string represent characters
 and the bytes in an image represent pixels,
 the bytes in a function are instructions
-([%f tester-func-obj %]).
+([%f test-func-obj %]).
 When Python executes the code below,
 it creates an object in memory
 that contains the instructions to print a string
@@ -43,7 +43,7 @@ and assigns that object to the variable `example`:
 [% inc file="func_obj.py" keep="def" %]
 
 [% figure
-   slug="tester-func-obj"
+   slug="test-func-obj"
    img="func_obj.svg"
    alt="Bytes as characters, pixels, or instructions"
    caption="Bytes can be interpreted as text, images, instructions, and more."
@@ -87,7 +87,7 @@ so it's safer to use `callable` to check if something can be called:
 
 Since functions are objects,
 we can store them in a list just like numbers or strings
-([%f tester-func-list %]):
+([%f test-func-list %]):
 
 [% inc pat="func_list.*" fill="py out" %]
 
@@ -99,7 +99,7 @@ which means they must have the same [%g signature "signature" %]:
 [% inc pat="signature.*" fill="py out" %]
 
 [% figure
-   slug="tester-func-list"
+   slug="test-func-list"
    img="func_list.svg"
    alt="A list of functions"
    caption="A list of functions."
@@ -181,7 +181,7 @@ doesn't affect other tests' behavior.
 
 </div>
 
-## Finding Functions {: #tester-reflection}
+## Finding Functions {: #test-reflection}
 
 Making lists of functions is clumsy and error-prone:
 sooner or later we'll add a function to `TESTS` twice
@@ -243,71 +243,7 @@ and summarizes their results:
 [% inc file="runner.py" keep="run" %]
 [% inc file="runner.out" %]
 
-<div class="bonus" markdown="1">
-
-## Going Further {: #tester-further .bonus}
-
-Since functions are objects,
-they can have attributes.
-The function `dir` (short for "directory") returns a list of those attributes' names:
-
-[% inc pat="func_dir.*" fill="py out" %]
-
-Most programmers never need to use most of these,
-but `__name__` holds the function's original name
-and `__doc__` holds its [%i "docstring" %][%g docstring "docstring" %][%/i%]:
-
-[% inc file="func_attr.py" keep="print" %]
-[% inc file="func_attr.out" %]
-
-We can modify our test runner to use this for reporting tests' results
-using the function's `__name__` attribute
-instead of the key in the `globals` dictionary:
-
-[% inc file="with_name.py" keep="run" %]
-[% inc file="with_name.out" %]
-
-More usefully,
-we can say that if a test function's docstring contains the string `"test:skip"`
-then we should skip the test,
-while `"test:fail"` means we expect this test to fail.
-Let's rewrite our tests to show this off:
-
-[% inc file="docstring.py" keep="tests" %]
-
-and then modify `run_tests` to look for these strings and act accordingly:
-{: .continue}
-
-[% inc file="docstring.py" keep="run" %]
-
-The output is now:
-
-[% inc file="docstring.out" %]
-
-Instead of (ab)using docstrings like this,
-we can add attributes of our own to test functions.
-Let's say that if a function has an attribute called `skip` with the value `True`
-then the function is to be skipped,
-while if it has an attribute called `fail` whose value is `True`
-then the test is expected to fail.
-Our tests become:
-
-[% inc file="attribute.py" keep="tests" %]
-
-We can write a helper function called `classify` to classify tests.
-Note that it uses `hasattr` to check if an attribute is present
-before trying to get its value:
-
-[% inc file="attribute.py" keep="classify" %]
-
-Finally,
-our test runner becomes:
-
-[% inc file="attribute.py" keep="run" %]
-
-</div>
-
-## Summary {: #tester-summary}
+## Origins {: #test-origins}
 
 [Clarke's Third Law][clarkes_laws] is that
 any sufficiently advanced technology is indistinguishable from magic.
@@ -360,6 +296,8 @@ just as we could change the colors used for syntax highlighting.
 But today's tools don't do that,
 and any IDE smart enough to translate between comprehension levels automatically
 would also be smart enough to write the code without our help.
+
+*Please see [%x bonus %] for extra material related to these ideas.*
 
 ## Summary {: #test-summary}
 

@@ -4,7 +4,7 @@
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="repo" content="https://github.com/gvwilson/sd4ds">
-  <meta name="build_date" content="2023-06-15">
+  <meta name="build_date" content="2023-06-16">
   <meta name="template" content="default">
   <meta name="major" content="Chapter 13">
   <meta name="has_slides" content="true">
@@ -207,6 +207,12 @@
   <li>
     <a href="../bib/">
       Bibliography
+    </a>
+  </li>
+  
+  <li>
+    <a href="../bonus/">
+      Bonus Material
     </a>
   </li>
   
@@ -726,149 +732,7 @@ let&rsquo;s create a program that has some unused variables:</p>
 unused in global: not_used
 </code></pre></div>
 </div>
-<h2 class="bonus" id="lint-method">Section 13.4: Method Definitions</h2>
-<p>For our last example of finding things,
-let&rsquo;s build a tool that tells us which methods are defined in which classes.
-(We used a tool like this when writing this book
-to keep track of examples that evolved step by step.)
-Here&rsquo;s a test file that defines four classes,
-each of which defines or redefines some methods:</p>
-<div class="code-sample lang-py" title="inheritance_example.py">
-<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Parent</span><span class="p">:</span>
-    <span class="k">def</span> <span class="nf">red</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">pass</span>
-
-    <span class="k">def</span> <span class="nf">green</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">pass</span>
-
-
-<span class="k">class</span> <span class="nc">LeftChild</span><span class="p">(</span><span class="n">Parent</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">green</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">pass</span>
-
-    <span class="k">def</span> <span class="nf">blue</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">pass</span>
-
-
-<span class="k">class</span> <span class="nc">RightChild</span><span class="p">(</span><span class="n">Parent</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">red</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">pass</span>
-
-    <span class="k">def</span> <span class="nf">blue</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">pass</span>
-
-
-<span class="k">class</span> <span class="nc">GrandChild</span><span class="p">(</span><span class="n">LeftChild</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">red</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">pass</span>
-
-    <span class="k">def</span> <span class="nf">blue</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">pass</span>
-
-    <span class="k">def</span> <span class="nf">orange</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">pass</span>
-</code></pre></div>
-</div>
-<p>As before,
-our class&rsquo;s constructor creates a stack to keep track of where we are.
-It also creates a couple of dictionaries to keep track of
-how classes inherit from each other
-and the methods each class defines:</p>
-<div class="code-sample lang-py" title="inheritance.py">
-<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">FindClassesAndMethods</span><span class="p">(</span><span class="n">ast</span><span class="o">.</span><span class="n">NodeVisitor</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">stack</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">parents</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">methods</span> <span class="o">=</span> <span class="p">{}</span>
-</code></pre></div>
-</div>
-<p>When we encounter a new class definition,
-we push its name on the stack,
-record its parents,
-and create an empty set to hold its methods:</p>
-<div class="code-sample lang-py" title="inheritance.py">
-<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">visit_ClassDef</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
-        <span class="n">class_name</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">name</span>
-        <span class="k">assert</span> <span class="n">class_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">methods</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">stack</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">class_name</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">methods</span><span class="p">[</span><span class="n">class_name</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">parents</span><span class="p">[</span><span class="n">class_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">p</span><span class="o">.</span><span class="n">id</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">bases</span><span class="p">}</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">generic_visit</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">stack</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
-</code></pre></div>
-</div>
-<p>When we encounter a function definition,
-the first thing we do is check the stack.
-If it&rsquo;s empty,
-we&rsquo;re looking at a top-level function rather than a method,
-so there&rsquo;s nothing for us to do.
-(We actually should recurse through the function&rsquo;s children,
-since it&rsquo;s possible to define classes inside functions,
-but we&rsquo;ll leave as an exercise.)
-If this function definition is inside a class,
-on the other hand,
-we add its name to our records:</p>
-<div class="code-sample lang-py" title="inheritance.py">
-<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">visit_FunctionDef</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">stack</span><span class="p">:</span>
-            <span class="k">return</span>
-        <span class="n">class_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stack</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-        <span class="k">assert</span> <span class="n">class_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">methods</span>
-        <span class="n">method_name</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">name</span>
-        <span class="k">assert</span> <span class="n">method_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">methods</span><span class="p">[</span><span class="n">class_name</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">methods</span><span class="p">[</span><span class="n">class_name</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">method_name</span><span class="p">)</span>
-</code></pre></div>
-</div>
-<p>Once we&rsquo;re done searching the AST we print out a table
-of the classes and methods we&rsquo;ve seen (<a class="tbl-ref" href="../lint/#linter-inheritance">Table 13.1</a>).
-We could make this display easier to read—for example,
-we could sort the classes from parent to child
-and display methods in the order in which they were first defined—but
-none of that requires us to inspect the AST.</p>
-<div class="table"><table id="linter-inheritance"><caption>Table 13.1: Inheritance and methods</caption>
-<thead>
-<tr>
-<th></th>
-<th>GrandChild</th>
-<th>LeftChild</th>
-<th>Parent</th>
-<th>RightChild</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>blue</td>
-<td>X</td>
-<td>X</td>
-<td></td>
-<td>X</td>
-</tr>
-<tr>
-<td>green</td>
-<td></td>
-<td>X</td>
-<td>X</td>
-<td></td>
-</tr>
-<tr>
-<td>orange</td>
-<td>X</td>
-<td></td>
-<td></td>
-<td></td>
-</tr>
-<tr>
-<td>red</td>
-<td>X</td>
-<td></td>
-<td>X</td>
-<td>X</td>
-</tr>
-</tbody>
-</table>
-</div>
-<h2 id="linter-extension">Section 13.5: Extension</h2>
+<h2 id="linter-extension">Section 13.4: Extension</h2>
 <p>It&rsquo;s easy to check a single style rule by extending <code>NodeVisitor</code>,
 but what if we want to check dozens of rules?
 Traversing the AST dozens of times would be inefficient.
@@ -979,13 +843,14 @@ since we have to create and register the handler:</p>
 <p class="continue">However,
 we can now register as many handlers as we want
 for each kind of node.</p>
-<h2 id="linter-summary">Section 13.6: Summary</h2>
+<h2 id="linter-summary">Section 13.5: Summary</h2>
+<p><em>Please see <a class="x-ref" href="../bonus/">Appendix B</a> for extra material related to these ideas.</em></p>
 <figure id="linter-concept-map">
 <img src="./concept_map.svg" alt="Concept map for code manipulation"/>
 <figcaption markdown="1">Figure 13.2: Concepts for code manipulation.</figcaption>
 </figure>
 
-<h2 id="linter-exercises">Section 13.7: Exercises</h2>
+<h2 id="linter-exercises">Section 13.6: Exercises</h2>
 <h3 class="exercise">Finding Unused Parameters</h3>
 <p>Modify the code that finds unused variables
 to report unused function parameters as well.</p>

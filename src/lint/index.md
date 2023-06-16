@@ -252,62 +252,6 @@ When we run our linter we get:
 
 [% inc file="find_unused_variables.out" %]
 
-## Method Definitions {: #lint-method .bonus}
-
-For our last example of finding things,
-let's build a tool that tells us which methods are defined in which classes.
-(We used a tool like this when writing this book
-to keep track of examples that evolved step by step.)
-Here's a test file that defines four classes,
-each of which defines or redefines some methods:
-
-[% inc file="inheritance_example.py" %]
-
-As before,
-our class's constructor creates a stack to keep track of where we are.
-It also creates a couple of dictionaries to keep track of
-how classes inherit from each other
-and the methods each class defines:
-
-[% inc file="inheritance.py" keep="init" %]
-
-When we encounter a new class definition,
-we push its name on the stack,
-record its parents,
-and create an empty set to hold its methods:
-
-[% inc file="inheritance.py" keep="classdef" %]
-
-When we encounter a function definition,
-the first thing we do is check the stack.
-If it's empty,
-we're looking at a top-level function rather than a method,
-so there's nothing for us to do.
-(We actually should recurse through the function's children,
-since it's possible to define classes inside functions,
-but we'll leave as an exercise.)
-If this function definition is inside a class,
-on the other hand,
-we add its name to our records:
-
-[% inc file="inheritance.py" keep="methoddef" %]
-
-Once we're done searching the AST we print out a table
-of the classes and methods we've seen ([%t linter-inheritance %]).
-We could make this display easier to read—for example,
-we could sort the classes from parent to child
-and display methods in the order in which they were first defined—but
-none of that requires us to inspect the AST.
-
-<div class="table" id="linter-inheritance" caption="Inheritance and methods" markdown="1">
-| | GrandChild | LeftChild | Parent | RightChild |
-| --- | --- | --- | --- | --- |
-| blue | X | X |   | X
-| green |   | X | X |
-| orange | X |   |   |
-| red | X |   | X | X
-</div>
-
 ## Extension {: #linter-extension}
 
 It's easy to check a single style rule by extending `NodeVisitor`,
@@ -387,6 +331,8 @@ for each kind of node.
 {: .continue}
 
 ## Summary {: #linter-summary}
+
+*Please see [%x bonus %] for extra material related to these ideas.*
 
 [% figure
    slug="linter-concept-map"
