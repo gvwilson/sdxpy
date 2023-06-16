@@ -26,7 +26,7 @@ EXAMPLES := $(patsubst %/Makefile,%,$(wildcard ${ROOT}/src/*/Makefile))
 GITHUB_PAGES := ${ROOT}/CODE_OF_CONDUCT.md ${ROOT}/CONTRIBUTING.md ${ROOT}/LICENSE.md ${ROOT}/README.md
 HTML_COPY := ${ROOT}/info/head.html ${ROOT}/info/foot.html
 INFO_FILES := ${ROOT}/info/bibliography.bib ${ROOT}/info/credits.yml ${ROOT}/info/glossary.yml ${ROOT}/info/links.yml
-ARK :=  $(wildcard ${MCCOLE}/extensions/*.*) $(wildcard ${MCCOLE}/resources/*.*) $(wildcard ${MCCOLE}/templates/*.*)
+ARK :=  $(wildcard ${MCCOLE}/extensions/*.py) $(wildcard ${MCCOLE}/resources/*.*) $(wildcard ${MCCOLE}/templates/*.*)
 TEX_FILES := ${ROOT}/info/head.tex ${ROOT}/info/foot.tex
 TEX_COPY := ${ROOT}/info/krantz.cls ${ROOT}/info/dedication.tex
 SRC_PAGES := $(wildcard ${ROOT}/src/*.md) $(wildcard ${ROOT}/src/*/index.md)
@@ -156,17 +156,17 @@ ${ROOT}/docs/%.pdf: ${ROOT}/src/%.pdf
 .PHONY: github
 github: ${GITHUB_PAGES}
 
-${ROOT}/CODE_OF_CONDUCT.md: src/conduct/index.md ${MCCOLE}/bin/githubify.py
-	python ${MCCOLE}/bin/githubify.py --links ${ROOT}/info/links.yml --title "Code of Conduct" < $< > $@
+${ROOT}/CODE_OF_CONDUCT.md: src/conduct/index.md ${MCCOLE}/bin/make_github_page.py
+	python ${MCCOLE}/bin/make_github_page.py --links ${ROOT}/info/links.yml --title "Code of Conduct" < $< > $@
 
-${ROOT}/CONTRIBUTING.md: src/contrib/index.md ${MCCOLE}/bin/githubify.py
-	python ${MCCOLE}/bin/githubify.py --append ${ROOT}/info/contrib.md --links ${ROOT}/info/links.yml --title "Contributing" < $< > $@
+${ROOT}/CONTRIBUTING.md: src/contrib/index.md ${MCCOLE}/bin/make_github_page.py
+	python ${MCCOLE}/bin/make_github_page.py --append ${ROOT}/info/contrib.md --links ${ROOT}/info/links.yml --title "Contributing" < $< > $@
 
-${ROOT}/LICENSE.md: src/license/index.md ${MCCOLE}/bin/githubify.py
-	python ${MCCOLE}/bin/githubify.py --links ${ROOT}/info/links.yml --title "License" < $< > $@
+${ROOT}/LICENSE.md: src/license/index.md ${MCCOLE}/bin/make_github_page.py
+	python ${MCCOLE}/bin/make_github_page.py --links ${ROOT}/info/links.yml --title "License" < $< > $@
 
-${ROOT}/README.md: src/index.md ${MCCOLE}/bin/githubify.py
-	python ${MCCOLE}/bin/githubify.py --links ${ROOT}/info/links.yml --title "${TITLE}" < $< > $@
+${ROOT}/README.md: src/index.md ${MCCOLE}/bin/make_github_page.py
+	python ${MCCOLE}/bin/make_github_page.py --links ${ROOT}/info/links.yml --title "${TITLE}" < $< > $@
 
 ## check: check source code
 .PHONY: check

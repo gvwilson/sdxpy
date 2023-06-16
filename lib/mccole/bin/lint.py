@@ -4,17 +4,15 @@
 
 
 import argparse
-import re
+import sys
 from fnmatch import fnmatch
 from pathlib import Path
-import sys
 
+import regex
 import utils
 import yaml
 from bs4 import BeautifulSoup, Tag
 from yaml_header_tools import NoValidHeader, get_header_from_file
-
-DIRECTIVES_FILE = ".mccole"
 
 CONFIGURATION = [
     ("abbrev", str),
@@ -42,21 +40,12 @@ CONFIGURATION = [
     ("title", str),
     ("warnings", bool),
 ]
+
+DIRECTIVES_FILE = ".mccole"
 INDEX_FILE = "index.md"
 MAKEFILE = "Makefile"
-RE_CODE_BLOCK = re.compile("```.+?```", re.DOTALL)
-RE_CODE_INLINE = re.compile("`.+?`")
-RE_FILE = re.compile(r'\[%\s*inc\b.+?(file|html)="(.+?)".+?%\]')
-RE_FIGURE = re.compile(r'\[%\s*figure\b.+?img="(.+?)".+?%\]', re.DOTALL)
-RE_GLOSSREF = re.compile(r'\[%\s*g\s+\b(.+?)\b\s+".+?"\s*%\]')
-RE_CROSSREF = re.compile(r'\[.+?\]\(\#(.+?)\)', re.DOTALL)
-RE_IMG = re.compile(r'<img.+?src="(.+?)".+?>')
-RE_LINK = re.compile(r"\[[^]]*?\]\[(\w+?)\]")
-RE_PAT = re.compile(r'\[%\s*inc\b.+?pat="(.+?)"\s+fill="(.+?)".+?%\]')
-RE_SHORTCODE = re.compile(r"\[%.+?%\]")
 SLIDES_FILE = "slides.html"
 SLIDES_TEMPLATE = "slides"
-
 EXPECTED_FILES = {DIRECTIVES_FILE, INDEX_FILE, MAKEFILE, SLIDES_FILE}
 
 
@@ -66,11 +55,9 @@ def main():
 
     config = check_config(options.config)
     language = getattr(config, "lang")
-    out_dir = getattr(config, "out_dir")
     src_dir = getattr(config, "src_dir")
     slugs = get_slugs(config)
     glossary = utils.read_yaml(getattr(config, "glossary"))
-    links = utils.read_yaml(getattr(config, "links"))
 
     if not check_dirs(src_dir, slugs):
         sys.exit(1)
@@ -99,7 +86,9 @@ def check_config(config_path):
 def check_dirs(src_dir, slugs):
     """Make sure source directores are present."""
     expected = {str(Path(src_dir, s)) for s in slugs}
-    actual = {str(d) for d in Path(src_dir).iterdir()} - {str(Path(src_dir, "index.md"))}
+    actual = {str(d) for d in Path(src_dir).iterdir()} - {
+        str(Path(src_dir, "index.md"))
+    }
     if expected == actual:
         return True
     print("slug/directory mis-match", expected.symmetric_difference(actual))
@@ -162,17 +151,15 @@ def check_glossary(glossary, language):
         if "def" not in entry[language]:
             print(f"glossary entry {key}/{language} missing 'def'")
             break
-        cross_refs |= {m.group(1) for m in RE_CROSSREF.finditer(entry[language]["def"])}
+        cross_refs |= {
+            m.group(1) for m in regex.GLOSSARY_CROSSREF.finditer(entry[language]["def"])
+        }
     return cross_refs
 
 
 def check_links(links, source_files):
     """Check that all links are known."""
-    existing = {
-        entry["key"]
-        for entry in links
-        if not entry.get("direct", False)
-    }
+    existing = {entry["key"] for entry in links if not entry.get("direct", False)}
     referenced = set()
     for dirname, filename in source_files:
         referenced |= get_links(Path(dirname, filename))
@@ -206,30 +193,25 @@ def get_files(dir_path):
 
 def get_fig(text):
     """Return all figures."""
-    figures = {m.group(1) for m in RE_FIGURE.finditer(text)}
+    figures = {m.group(1) for m in regex.FIGURE.finditer(text)}
     pdfs = {f.replace(".svg", ".pdf") for f in figures if f.endswith(".svg")}
     return figures | pdfs
 
 
 def get_glossrefs(text):
     """Return all glossary reference keys."""
-    return {m.group(1) for m in RE_GLOSSREF.finditer(text)}
-
-
-def get_html(out_dir):
-    """Get paths to HTML files for processing."""
-    return list(Path(out_dir).glob("**/*.html"))
+    return {m.group(1) for m in regex.GLOSSARY_REF.finditer(text)}
 
 
 def get_img(text):
     """Find direct image references."""
-    return {m.group(1) for m in RE_IMG.finditer(text)}
+    return {m.group(1) for m in regex.IMG.finditer(text)}
 
 
 def get_inc(text):
     """Find inclusion filenames."""
-    result = {m.group(2) for m in RE_FILE.finditer(text)}
-    pats = [(m.group(1), m.group(2)) for m in RE_PAT.finditer(text)]
+    result = {m.group(2) for m in regex.INCLUSION_FILE.finditer(text)}
+    pats = [(m.group(1), m.group(2)) for m in regex.INCLUSION_PAT.finditer(text)]
     for pat, fill in pats:
         result |= {pat.replace("*", f) for f in fill.split()}
     return result
@@ -239,15 +221,17 @@ def get_links(filename):
     """Get Markdown [text][key] links from file."""
     with open(filename, "r") as reader:
         text = reader.read()
-        text = RE_CODE_BLOCK.sub("", text)
-        text = RE_CODE_INLINE.sub("", text)
-        text = RE_SHORTCODE.sub("", text)
-        return {m.group(1) for m in RE_LINK.finditer(text)}
+        text = regex.MARKDOWN_CODE_BLOCK.sub("", text)
+        text = regex.MARKDOWN_CODE_INLINE.sub("", text)
+        text = regex.SHORTCODE.sub("", text)
+        return {m.group(1) for m in regex.MARKDOWN_FOOTER_LINK.finditer(text)}
+
 
 def get_slugs(config):
     """Get chapter and appendix slugs in order."""
-    return list(getattr(config, "chapters").keys()) + \
-        list(getattr(config, "appendices").keys())
+    return list(getattr(config, "chapters").keys()) + list(
+        getattr(config, "appendices").keys()
+    )
 
 
 def get_src(src_dir):
@@ -357,8 +341,6 @@ def _read_html(filename):
     """Read HTML, deleting problematic code blocks if slides."""
     with open(filename, "r") as reader:
         text = reader.read()
-    if SLIDES_FILE in str(filename):
-        text = RE_CODE_BLOCK.sub("", text)
     return text
 
 

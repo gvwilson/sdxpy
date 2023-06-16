@@ -2,10 +2,9 @@
 
 import argparse
 import difflib
-import re
 from pathlib import Path
 
-RE_INCLUSION = re.compile(r"(\[%\s+inc.+?%\])")
+import regex
 
 
 def main():
@@ -24,7 +23,7 @@ def main():
 def get_matches(filename):
     with open(filename, "r") as reader:
         lines = reader.readlines()
-        matches = [RE_INCLUSION.match(ln) for ln in lines]
+        matches = [regex.INCLUSION.match(ln) for ln in lines]
         return [m.group(1) for m in matches if m is not None]
 
 

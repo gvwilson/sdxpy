@@ -1,18 +1,15 @@
 #!/usr/bin/env python
 
 import argparse
-import re
 from pathlib import Path
-from prettytable import PrettyTable, MARKDOWN
 
+import regex
 import utils
+from prettytable import MARKDOWN, PrettyTable
 
-RE_EXERCISE = re.compile(r"\{:\s+\.exercise\}")
-RE_FIGURE = re.compile(r"\[%\s*figure\b")
-
-EX_PER_CHAPTER = 8
-SLIDES_PER_CHAPTER = 18
-WORDS_PER_CHAPTER = 2200
+EXERCISES_PER = 8
+SLIDES_PER = 18
+WORDS_PER = 2200
 
 RED = "\033[91m"
 GREEN = "\033[92m"
@@ -38,13 +35,14 @@ def build_format(chapters):
 
 def calc_fraction(n_slides, n_ex, n_words, slug=None):
     if slug in SHORT_CHAPTERS:
-        entries = ((n_slides, SLIDES_PER_CHAPTER / 2),
-                   (n_words, WORDS_PER_CHAPTER / 2))
+        entries = ((n_slides, SLIDES_PER / 2), (n_words, WORDS_PER / 2))
     else:
-        entries = ((n_slides, SLIDES_PER_CHAPTER),
-                   (n_ex, EX_PER_CHAPTER),
-                   (n_words, WORDS_PER_CHAPTER))
-    frac = sum(entry[0]/entry[1] for entry in entries)
+        entries = (
+            (n_slides, SLIDES_PER),
+            (n_ex, EXERCISES_PER),
+            (n_words, WORDS_PER),
+        )
+    frac = sum(entry[0] / entry[1] for entry in entries)
     return int(100 * frac / len(entries))
 
 
@@ -60,7 +58,11 @@ def colorize(fraction):
 def count_page(slug):
     with open(Path("src", slug, "index.md"), "r") as reader:
         page = reader.read()
-        return count_re(RE_EXERCISE, page), count_re(RE_FIGURE, page), count_words(page)
+        return (
+            count_re(regex.EXERCISE_HEADER, page),
+            count_re(regex.FIGURE, page),
+            count_words(page),
+        )
 
 
 def count_re(pat, text):
@@ -98,7 +100,9 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", required=True, help="Configuration file")
     parser.add_argument("--readme", required=True, help="README file with status table")
-    parser.add_argument("--plain", default=False, action="store_true", help="Plian text")
+    parser.add_argument(
+        "--plain", default=False, action="store_true", help="Plian text"
+    )
     return parser.parse_args()
 
 

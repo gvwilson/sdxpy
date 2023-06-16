@@ -1,7 +1,6 @@
 """Utilities."""
 
 import os
-import re
 import sys
 from pathlib import Path
 
@@ -47,21 +46,6 @@ TRANSLATIONS = {
         "table": "Tabla",
     },
 }
-
-# Match a Markdown heading with optional attributes.
-HEADING = re.compile(r"^(#+)\s*(.+?)(\{:\s*#(.+\b)\})?$", re.MULTILINE)
-
-# Used to turn multiple whitespace characters into a single space.
-MULTISPACE = re.compile(r"\s+", re.DOTALL)
-
-# Match table elements.
-TABLE = re.compile(r'<div\s+class="table(\s+[^"]+)?"[^>]*?>')
-TABLE_CAPTION = re.compile(r'caption="(.+?)"')
-TABLE_ID = re.compile(r'id="(.+?)"')
-TABLE_DIV = re.compile(
-    r'<div\s+caption="(.+?)"\s+class="(table(\s+[^"]+)?)"\s+id="(.+?)">\s*<table>',
-    re.DOTALL,
-)
 
 # Cached values.
 CACHE = {

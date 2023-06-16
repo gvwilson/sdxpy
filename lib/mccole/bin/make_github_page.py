@@ -1,14 +1,10 @@
 """Regenerate GitHub root pages."""
 
 import argparse
-import re
 import sys
+
+import regex
 import utils
-
-
-CONTINUE = re.compile(r"^\{:\s+.continue\}\s*$", re.MULTILINE)
-HEADING = re.compile(r"^##\s+(.+?)\s+\{:.+?\}\s+$", re.MULTILINE)
-LINK = re.compile(r'\[.+?\]\[(.+?)\]', re.MULTILINE)
 
 
 def main():
@@ -16,18 +12,18 @@ def main():
     options = parse_args()
 
     text = read_text(options)
-    text = HEADING.sub(lambda m: f"## {m.group(1)}\n", text)
-    text = CONTINUE.sub("", text)
+    text = regex.MARKDOWN_HEADING.sub(lambda m: f"## {m.group(1)}\n", text)
+    text = regex.PARAGRAPH_CONTINUE.sub("", text)
 
     links = utils.read_yaml(options.links)
     links = {ln["key"]: ln["url"] for ln in links}
 
-    needed = {m.group(1) for m in LINK.finditer(text)}
+    needed = {m.group(1) for m in regex.MARKDOWN_FOOTER_LINK.finditer(text)}
     needed = {key: links[key] for key in sorted(needed) if key in links}
 
     print(f"# {options.title}\n")
     print(text)
-    for (key, url) in needed.items():
+    for key, url in needed.items():
         print(f"[{key}]: {url}")
 
 
@@ -54,6 +50,7 @@ def read_text(options):
             text += reader.read()
 
     return text
+
 
 if __name__ == "__main__":
     main()

@@ -45,6 +45,7 @@ so tables are represented as:
 from dataclasses import dataclass
 
 import ark
+import regex
 import shortcodes
 import util
 
@@ -73,14 +74,14 @@ def collect():
 def _collect(node, major, collected):
     """Pull data from a single node."""
     collected[node.slug] = []
-    for i, match in enumerate(util.TABLE.finditer(node.text)):
-        caption = util.TABLE_CAPTION.search(match.group(0))
+    for i, match in enumerate(regex.TABLE_START.finditer(node.text)):
+        caption = regex.TABLE_CAPTION.search(match.group(0))
         util.require(
             caption is not None,
             "Table div '{match.group(0)}' without caption in {node.filepath}",
         )
 
-        slug = util.TABLE_ID.search(match.group(0))
+        slug = regex.TABLE_ID.search(match.group(0))
         util.require(
             slug is not None,
             f"Table div '{match.group(0)}' without ID in {node.filepath}",
@@ -130,7 +131,7 @@ def table_ref(pargs, kwargs, node):
 def table_caption(text, node):
     """Get the caption in the right place."""
 
-    return util.TABLE_DIV.sub(_table_caption_replace, text)
+    return regex.TABLE_FULL.sub(_table_caption_replace, text)
 
 
 def _table_caption_replace(match):

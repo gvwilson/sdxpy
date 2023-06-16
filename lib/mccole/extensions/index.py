@@ -14,6 +14,7 @@ around the glossary shortcode:
 """
 
 import ark
+import regex
 import shortcodes
 import util
 
@@ -40,7 +41,7 @@ def _parse(pargs, kwargs, extra, content):
     index = extra["index"]
     util.require(pargs, f"Empty index key in {node.filepath}")
     for entry in [key.strip() for key in pargs]:
-        entry = util.MULTISPACE.sub(" ", entry)
+        entry = regex.MULTISPACE.sub(" ", entry)
         entry = tuple(s.strip() for s in entry.split("!") if s.strip())
         util.require(
             1 <= len(entry) <= 2,

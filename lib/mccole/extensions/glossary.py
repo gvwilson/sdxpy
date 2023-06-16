@@ -1,15 +1,9 @@
 """Handle glossary references and glossary."""
 
-import re
-
 import ark
+import regex
 import shortcodes
 import util
-
-# Regex to extract internal cross-references from bodies of definitions.
-INTERNAL_REF = re.compile(r"\]\(#(.+?)\)")
-
-# ----------------------------------------------------------------------
 
 
 @ark.events.register(ark.events.Event.INIT)
@@ -124,7 +118,7 @@ def _as_markdown(glossary, lang, entry):
     if "acronym" in entry[lang]:
         first += f" ({entry[lang]['acronym']})"
 
-    body = util.MULTISPACE.sub(entry[lang]["def"], " ").rstrip()
+    body = regex.MULTISPACE.sub(entry[lang]["def"], " ").rstrip()
 
     if "ref" in entry[lang]:
         seealso = util.TRANSLATIONS[lang]["seealso"]
@@ -156,6 +150,6 @@ def _internal_references(glossary, lang):
     """Get all in-body cross-references from glossary entries."""
     result = set()
     for entry in glossary:
-        for match in INTERNAL_REF.finditer(entry[lang]["def"]):
+        for match in regex.GLOSSARY_INTERNAL_REF.finditer(entry[lang]["def"]):
             result.add(match.group(1))
     return result

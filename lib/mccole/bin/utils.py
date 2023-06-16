@@ -9,20 +9,8 @@ import yaml
 # Known languages.
 LANGUAGES = {"html", "js", "make", "out", "py", "sh", "txt", "yml"}
 
-# Multiple consecutive whitespace characters.
-WHITESPACE = re.compile(r"\s+")
-
-# Glossary references use <span g="...">...</span>.
-GLOSS_REF = re.compile(r'<span[^>]+g="(.+?)"[^>]*>', re.DOTALL)
-
-# Index references use <span i="...">...</span>.
-INDEX_REF = re.compile(r'<span[^>]+i="(.+?)"[^>]*>', re.DOTALL)
-
-# Citations use <cite>key,key</cite>.
-CITATION = re.compile(r"<cite>(.+?)</cite>", re.DOTALL)
-
 # Patterns to remove from input when tokenizing Markdown source files.
-ALWAYS = [
+ALWAYS_REMOVE = [
     re.compile(r"---"),  # em-dashes
     re.compile(r"[©×±μ…\(\);:]"),  # strange characters and punctuation
     re.compile(r"```.+?```", re.DOTALL),  # code blocks
@@ -32,7 +20,7 @@ ALWAYS = [
     re.compile(r"</div>"),  # closing callout
     re.compile(r"<http.+?>"),
 ]
-SCRUB = [
+OPTIONAL_REMOVE = [
     re.compile(r"{%\s+include\s+.+?%}", re.DOTALL),  # inclusions
     re.compile(r"{:\s+.continue\s*}", re.DOTALL),  # continued paragraphs
     re.compile("<code>"),  # start code
@@ -131,10 +119,10 @@ def read_file(filename, scrub=True):
     """Read a file, removing raw sections if requested."""
     with open(filename, "r") as reader:
         text = reader.read()
-        for pattern in ALWAYS:
+        for pattern in ALWAYS_REMOVE:
             text = pattern.sub(" ", text)
         if scrub:
-            for pattern in SCRUB:
+            for pattern in OPTIONAL_REMOVE:
                 text = pattern.sub(" ", text)
         return text
 

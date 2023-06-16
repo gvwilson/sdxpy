@@ -38,10 +38,10 @@ To make this work:
     does nothing; otehrwise, it dispatches to a case-specific handler.
 """
 
-import re
 from pathlib import Path
 
 import ark
+import regex
 import shortcodes
 import util
 
@@ -242,25 +242,17 @@ def _inclusion_filepath(inclusions, node, file):
     return src
 
 
-ESLINT_FULL_LINE = re.compile(r"^\s*//\s*eslint-")
-ESLINT_TRAILING = re.compile(r"\s*//\s*eslint-.+$")
-
-
 def _remove_eslint(lines):
     """Remove eslint markers."""
-    lines = [ln for ln in lines if not ESLINT_FULL_LINE.match(ln)]
-    lines = [ESLINT_TRAILING.sub("", ln) for ln in lines]
+    lines = [ln for ln in lines if not regex.ESLINT_FULL_LINE.match(ln)]
+    lines = [regex.ESLINT_TRAILING.sub("", ln) for ln in lines]
     return lines
-
-
-FLAKE8_FULL_LINE = re.compile(r"^\s*#\s*noqa")
-FLAKE8_TRAILING = re.compile(r"\s*#\s*noqa.+$")
 
 
 def _remove_flake8(lines):
     """Remove flake8 markers."""
-    lines = [ln for ln in lines if not FLAKE8_FULL_LINE.match(ln)]
-    lines = [FLAKE8_TRAILING.sub("", ln) for ln in lines]
+    lines = [ln for ln in lines if not regex.FLAKE8_FULL_LINE.match(ln)]
+    lines = [regex.FLAKE8_TRAILING.sub("", ln) for ln in lines]
     return lines
 
 

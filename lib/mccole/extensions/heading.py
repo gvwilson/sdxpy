@@ -3,8 +3,9 @@
 import sys
 from dataclasses import dataclass
 
-import ibis
 import ark
+import ibis
+import regex
 import shortcodes
 import util
 
@@ -52,7 +53,7 @@ def _collect(node, major, collected):
     collected[node.slug].extend(
         [
             Heading(node.slug, len(m.group(1)), m.group(2), m.group(4))
-            for m in util.HEADING.finditer(node.text)
+            for m in regex.MARKDOWN_HEADING.finditer(node.text)
         ]
     )
 
@@ -99,7 +100,7 @@ def _modify(node):
     # Don't process root index file.
     if is_root(node):
         return
-    node.text = util.HEADING.sub(_patch, node.text)
+    node.text = regex.MARKDOWN_HEADING.sub(_patch, node.text)
     headings = util.get_config("headings")
     slug = util.get_chapter_slug(node)
     if slug in headings:

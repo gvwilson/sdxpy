@@ -1,9 +1,10 @@
-import re
 import sys
 
+import regex
+
 PATTERNS = [
-    re.compile(r";fontFamily=([^;]+);"),
-    re.compile(r";\s*font-family:\s*([^;]+)\s*;"),
+    regex.FONT_FAMILY_1,
+    regex.FONT_FAMILY_2,
 ]
 
 for filename in sys.argv[1:]:
