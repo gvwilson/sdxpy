@@ -89,7 +89,7 @@ lint: clean build
 ## inclusions: compare inclusions in prose and slides
 .PHONY: inclusions
 inclusions:
-	@python ${MCCOLE}/bin/compare_inclusions.py --pages ${CHAPTERS}
+	@python ${MCCOLE}/bin/compare_inclusions.py --chapters ${CHAPTERS}
 
 ## examples: re-run examples
 .PHONY: examples
