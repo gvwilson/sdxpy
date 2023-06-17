@@ -96,6 +96,10 @@ inclusions:
 examples:
 	@for d in ${EXAMPLES}; do echo ""; echo $$d; make -C $$d; done
 
+## check-make: check Makefiles
+check-make:
+	@for d in ${EXAMPLES}; do echo ""; echo $$d; make -C $$d --dry-run; done
+
 ## fonts: check fonts in diagrams
 .PHONY: fonts
 fonts:

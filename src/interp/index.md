@@ -243,12 +243,8 @@ result =
 
 ## Introspection Again {: #interp-introspection}
 
-Now that we have evaluation, function lookup, and environments,
-we can write programs like this one,
-which starts with the number 1 and doubles it four times:
-
-[% inc pat="doubling.*" fill="tll out" %]
-
+Now that we have evaluation, function lookup, and environments
+we can write small programs.
 However,
 our `do` function now looks like this:
 
@@ -312,19 +308,19 @@ to find all the available operations.
 
 ## Exercises {: #interp-exercises}
 
+### More Statements {: .exercise}
+
+Add `print` and `repeat` commands to the interpreter
+so that the following program produces the output shown:
+
+[% inc pat="doubling.*" fill="tll out" %]
+
 ### Arrays {: .exercise}
 
 Implement fixed-size one-dimensional arrays:
 `["array", 10]` creates an array of 10 elements,
 while other instructions that you design
 get and set particular array elements by index.
-
-### Loop counters {: .exercise}
-
-The `"repeat"` instruction runs some other instruction(s) several times,
-but there is no way to access the loop counter inside those instructions.
-Modify `"repeat"` so that programs can do this.
-(Hint: allow people to create a new variable to hold the loop counter's current value.)
 
 ### Chained maps {: .exercise}
 

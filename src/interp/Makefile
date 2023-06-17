@@ -5,6 +5,6 @@ TARGETS=\
 
 include ../../examples.mk
 
-doubling.out: doubling.tll stmt.py
+doubling.out: doubling.tll vars.py
 expr.out: expr.tll
 vars.out: vars.tll
