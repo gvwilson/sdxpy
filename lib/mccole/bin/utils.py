@@ -127,10 +127,15 @@ def read_file(filename, scrub=True):
         return text
 
 
-def read_yaml(filename):
+def read_yaml(filename, allow_empty=False):
     """Load and return a YAML file."""
-    with open(filename, "r") as reader:
-        return yaml.load(reader, Loader=yaml.FullLoader)
+    try:
+        with open(filename, "r") as reader:
+            return yaml.load(reader, Loader=yaml.FullLoader)
+    except FileNotFoundError as exc:
+        if allow_empty:
+            return {}
+        raise exc
 
 
 def report(title, checkOnlyRight=True, **kwargs):

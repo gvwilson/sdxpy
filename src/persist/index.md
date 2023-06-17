@@ -157,7 +157,7 @@ We will use two tricks when doing this:
 
 [% inc file="test_builtin.py" keep="test_save_list_flat" %]
 
-## Converting to Classes {: #persistence-oop}
+## Converting to Classes {: #persist-oop}
 
 The `save` and `load` functions we built in the previous section work,
 but as we were extending them

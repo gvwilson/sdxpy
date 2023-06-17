@@ -84,14 +84,14 @@ and works like this:
 [% inc pat="requests_example.*" fill="py out" %]
 
 `request.get` sends an HTTP GET request to a server
-and returns an object containing the response ([%f server-http-lifecycle %]).
+and returns an object containing the response ([%f http-lifecycle %]).
 That object's `status_code` member is the response's status code;
 its `content_length` member  is the number of bytes in the response data,
 and `text` is the actual data—in this case, an HTML page
 that we can analyze or render.
 
 [% figure
-   slug="server-http-lifecycle"
+   slug="http-lifecycle"
    img="http_lifecycle.svg"
    alt="HTTP request/response lifecycle"
    caption="Lifecycle of an HTTP request and response."
@@ -105,7 +105,7 @@ sending that text through the connection,
 and then reading a response.
 We will implement some of this ourselves in the exercises.
 
-## Hello, Web {: #server-static}
+## Hello, Web {: #http-static}
 
 We're now ready to write a simple HTTP server that will:
 
@@ -172,7 +172,7 @@ our browser automatically sends a second request
 for an image file called `/favicon.ico`,
 which it will display as an icon in the address bar if it exists.
 
-## Serving Files {: #server-files}
+## Serving Files {: #http-files}
 
 Serving the same page for every request isn't particularly useful,
 so let's rewrite our simple server to return files.
@@ -243,7 +243,7 @@ converts the internally-generated error page from characters to bytes
 using the [%g utf_8 "UTF-8" %] encoding,
 and specifies `charset=utf-8` as part of the content type.
 
-## Testing  {: #server-testing}
+## Testing  {: #http-testing}
 
 As with the server in [%x ftp %],
 we can work backward from a test we want to be able to write
@@ -251,7 +251,7 @@ to create a testable server.
 We would like to create a file,
 simulate an HTTP GET request,
 and check that the status, headers, and content are correct.
-[%f server-inheritance %] shows the final inheritance hierarchy:
+[%f http-inheritance %] shows the final inheritance hierarchy:
 
 -   `BaseHTTPRequestHandler` comes from the Python standard library.
 
@@ -271,7 +271,7 @@ Most libraries don't provide helper classes like this to support testing,
 but programmers appreciate those that do.
 
 [% figure
-   slug="server-inheritance"
+   slug="http-inheritance"
    img="inheritance.svg"
    alt="Testing class hierarchy"
    caption="Class hierarchy for a testable server."

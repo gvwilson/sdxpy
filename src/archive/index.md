@@ -35,7 +35,7 @@ if you would like to see how that works,
 please see [%i "Cook, Mary Rose" %][Mary Rose Cook's][cook_mary_rose][%/i%] [Gitlet][gitlet]
 or [%i "Polge, Thibault" %]Thibault Polge's[%/i%] [Write yourself a Git][write_yourself_a_git].
 
-## Saving Files {: #backup-files}
+## Saving Files {: #archive-files}
 
 Many files only change occasionally after they're created, or not at all.
 It would be wasteful for a version control system to make copies
@@ -47,10 +47,10 @@ The hash keys tell us which unique files existed at the time of the snapshot,
 while the filenames tell us what each file was called when the snapshot was made.
 To restore a particular snapshot,
 we will copy the `.bck` files back to their original locations
-([%f backup-storage %]).
+([%f archive-storage %]).
 
 [% figure
-   slug="backup-storage"
+   slug="archive-storage"
    img="storage.svg"
    alt="Backup file storage"
    caption="Organization of backup file storage."
@@ -78,7 +78,7 @@ then our program's output is:
 
 [% inc pat="hash_all.*" fill="sh out" %]
 
-## Testing {: #backup-test}
+## Testing {: #archive-test}
 
 Before we go any further
 we need to figure out how we're going to test our code.
@@ -96,13 +96,13 @@ instead of the real filesystem ([%x test %]).
 The [pyfakefs][pyfakefs] module replaces key functions like `open`
 with functions that behave the same way
 but act on "files" stored in memory
-([%f backup-mock-fs %]).
+([%f archive-mock-fs %]).
 Using it prevents our tests from accidentally disturbing the filesystem;
 it also makes tests much faster
 since in-memory operations are thousands of times faster than ones that touch the disk.
 
 [% figure
-   slug="backup-mock-fs"
+   slug="archive-mock-fs"
    img="mock_fs.svg"
    alt="Mock filesystem"
    caption="Using a mock filesystem to simplify testing."
@@ -131,7 +131,7 @@ and that hashes change when files change:
 
 [% inc file="test_hash_all.py" keep="change" %]
 
-## Tracking Backups {: #backup-track}
+## Tracking Backups {: #archive-track}
 
 The second part of our backup tool
 keeps track of which files have and haven't been backed up already.
@@ -240,7 +240,7 @@ and an example of a single test is:
 
 [% inc file="test_backup.py" keep="test" %]
 
-## Refactoring {: #backup-refactor}
+## Refactoring {: #archive-refactor}
 
 Now that we have a better idea of what we're doing,
 we can go back and create a [%g base_class "base class" %]
@@ -287,16 +287,16 @@ It's easy to write programs in which new code uses old code;
 provided classes and objects are carefully designed,
 they allow old code to use new code without being changed.
 
-## Summary {: #backup-summary}
+## Summary {: #archive-summary}
 
 [% figure
-   slug="backup-concept-map"
+   slug="archive-concept-map"
    img="concept_map.svg"
    alt="Concept map of file backup"
    caption="Concept map for hashing-based file backup."
 %]
 
-## Exercises {: #backup-exercises}
+## Exercises {: #archive-exercises}
 
 ### Sequencing Backups {: .exercise}
 

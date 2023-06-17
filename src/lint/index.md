@@ -31,7 +31,7 @@ As a bonus,
 we then show how these tools can be used to extract documentation
 and to create code as well as check it.
 
-## Machinery {: #linter-machinery}
+## Machinery {: #lint-machinery}
 
 [%x check %] represented HTML as a [%g dom "DOM tree" %].
 Similarly,
@@ -43,19 +43,19 @@ suppose we have this short program:
 
 [% inc file="simple.py" %]
 
-[%f linter-ast-simple %] shows the main parts of this program's AST.
+[%f lint-ast-simple %] shows the main parts of this program's AST.
 Each node represents one element of the program,
 and each node's children are the element nested within it.
 {: .continue}
 
 [% figure
-   slug="linter-ast-simple"
+   slug="lint-ast-simple"
    img="ast_simple.svg"
    alt="Simple AST"
    caption="The abstract syntax tree for a simple Python program."
 %]
 
-We said that [%f linter-ast-simple %] showed the main parts of the AST because
+We said that [%f lint-ast-simple %] showed the main parts of the AST because
 the full structure includes placeholders for elements
 that aren't present in this program.
 To see them,
@@ -132,7 +132,7 @@ class names use CamelCase
 while function and variable names use pothole\_case.
 We'll tackle this in the exercises.
 
-## Finding Duplicate Keys {: #linter-dup}
+## Finding Duplicate Keys {: #lint-dup}
 
 Many programs store their configuration in dictionaries.
 As those dictionaries grow larger,
@@ -192,7 +192,7 @@ tell us there aren't problems when there actually are.
 
 </div>
 
-## Finding Unused Variables {: #linter-unused}
+## Finding Unused Variables {: #lint-unused}
 
 Finding unused variables—ones that are assigned values but never used—is
 more challenging than our previous examples.
@@ -252,7 +252,7 @@ When we run our linter we get:
 
 [% inc file="find_unused_variables.out" %]
 
-## Extension {: #linter-extension}
+## Extension {: #lint-extension}
 
 It's easy to check a single style rule by extending `NodeVisitor`,
 but what if we want to check dozens of rules?
@@ -330,18 +330,18 @@ we can now register as many handlers as we want
 for each kind of node.
 {: .continue}
 
-## Summary {: #linter-summary}
+## Summary {: #lint-summary}
 
 *Please see [%x bonus %] for extra material related to these ideas.*
 
 [% figure
-   slug="linter-concept-map"
+   slug="lint-concept-map"
    img="concept_map.svg"
    alt="Concept map for code manipulation"
    caption="Concepts for code manipulation."
 %]
 
-## Exercises {: #linter-exercises}
+## Exercises {: #lint-exercises}
 
 ### Finding Unused Parameters {: .exercise}
 

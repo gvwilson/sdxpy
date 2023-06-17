@@ -24,9 +24,9 @@ an [%g abstract_syntax_tree "abstract syntax tree" %].
    caption="Stages in parsing pipeline."
 %]
 
-[%t parser-grammar %] shows the grammar our parser will handle.
+[%t parse-grammar %] shows the grammar our parser will handle.
 
-<div class="table" id="parser-grammar" caption="Glob grammar." markdown="1">
+<div class="table" id="parse-grammar" caption="Glob grammar." markdown="1">
 | Meaning                   | Character       |
 | ------------------------- | --------------- |
 | Any literal character *c* | *c*             |
@@ -57,7 +57,7 @@ rather than inventing something of your own.
 
 </div>
 
-## Tokenizing {: #parser-tokenize}
+## Tokenizing {: #parse-tokenize}
 
 A [%i "token (in parsing)" %]token[%/i%] is a meaningful piece of text,
 such as the digits making up a number or the letters making up a variable name.
@@ -120,7 +120,7 @@ in which each sub-list represents a single token:
 
 [% inc file="test_tokenizer.py" keep="tests" %]
 
-## Parsing {: #parser-parse}
+## Parsing {: #parse-parse}
 
 We now need to turn the list of tokens into a tree.
 Just as we used a class for tokenizing,
@@ -207,16 +207,16 @@ then adds its own tests.
 
 </div>
 
-## Summary {: #parser-summary}
+## Summary {: #parse-summary}
 
 [% figure
-   slug="parser-concept-map"
+   slug="parse-concept-map"
    img="concept_map.svg"
    alt="Concept map for parser"
    caption="Parser concept map."
 %]
 
-## Exercises {: #parser-exercises}
+## Exercises {: #parse-exercises}
 
 ### Escape characters {: .exercise}
 

@@ -295,7 +295,6 @@ you will need these packages with `tlmgr` in order to build the PDF:
 -   `textgreek`
 -   `tocbibind`
 
-[diagrams]: https://www.diagrams.net/
 [glosario]: https://glosario.carpentries.org/
 [ivy]: https://www.dmulholl.com/docs/ivy/main/
 [marthas_rules]: https://journals.sagepub.com/doi/10.1177/088610998600100206
