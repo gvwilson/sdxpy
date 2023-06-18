@@ -125,11 +125,8 @@ in which each sub-list represents a single token:
 We now need to turn the list of tokens into a tree.
 Just as we used a class for tokenizing,
 we will create one for parsing
-and give it a `_parse` method to start things off:
-
-[% inc file="parser.py" keep="parse" %]
-
-The `_parse` method doesn't do any conversion.
+and give it a `_parse` method to start things off.
+This method doesn't do any conversion.
 Instead,
 it takes a token off the front of the list
 and figures out which method handles tokens of that kind:

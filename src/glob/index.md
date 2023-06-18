@@ -277,8 +277,6 @@ we can easily add matchers for other kinds of patterns.
 Why does the upper bound of the loop in the final version of `Any`
 run to `len(text) + 1`?
 
-[% inc file="glob_null.py" keep="any" %]
-
 ### Find One or More {: .exercise}
 
 Extend the regular expression matcher to support `+`,

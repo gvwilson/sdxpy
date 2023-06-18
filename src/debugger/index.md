@@ -140,10 +140,7 @@ and our solution is the similar:
 we will replace `input` and `print` with [%i "mock object" %]mock objects[%/i%].
 
 As shown earlier,
-our VM uses an object with a `write` method to produce output:
-
-[% inc file="vm_base.py" keep="write" %]
-
+our VM uses an object with a `write` method to produce output.
 We can define a class that provides this method,
 but which saves messages in a list for later inspection
 instead of printing them:
