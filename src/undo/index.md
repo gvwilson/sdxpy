@@ -1,3 +1,14 @@
--   Start from a tutorial on [how to write an editor][lorgat_tutorial]
-    written by [Wasim Lorgat][lorgat_wasim]
-    (source code is [available online][lorgat_editor])
+-   Bring over viewer app
+    -   `Window`, `Cursor`, `Buffer`, `App`
+    -   Add call to `._add_log` to `App._interact` (another unanticipated hook)
+
+-   Create headless versions
+    -   `HeadlessScreen` replaces the `curses` screen
+        -   Takes keystrokes as input (what we're simulating)
+        -   Automatically generate Ctrl-X when out of keystrokes
+        -   Store current state of display in rectangular grid
+	-   Would make more sense for `App` to have a method that gets keys
+    -   `HeadlessWindow` requires a size
+        -   Violates Liskov Substitution Principle
+    -   `HeadlessApp` fills in logging methods
+    -   First tests make sure we can move around
