@@ -1,4 +1,5 @@
 -   Bring over viewer app
+    -   `app.py`, `buffer.py`, `cursor.py`, `window.py`, `util.py`
     -   `Window`, `Cursor`, `Buffer`, `App`
     -   Add call to `._add_log` to `App._interact` (another unanticipated hook)
 
@@ -7,8 +8,20 @@
         -   Takes keystrokes as input (what we're simulating)
         -   Automatically generate Ctrl-X when out of keystrokes
         -   Store current state of display in rectangular grid
-	-   Would make more sense for `App` to have a method that gets keys
+        -   Would make more sense for `App` to have a method that gets keys
     -   `HeadlessWindow` requires a size
         -   Violates Liskov Substitution Principle
     -   `HeadlessApp` fills in logging methods
     -   First tests make sure we can move around
+    -   `headless.py`
+    -   `test_headless.py`
+
+-   Create insert/delete version
+    -   `InsertDeleteBuffer` in `insert_delete.py`
+        -   Add methods to insert and delete in buffer
+        -   Must allow column position of cursor to be `<= ncol` to handle empty lines
+        -   Exercise: allow cursor to go one space beyond end of line
+    -   `InsertDeleteApp` provides `_get_key` in the app to return (family, key)
+        -   `_interact` dispatches to one of two cases (special-purpose or generic + key)
+        -   Could define per-key method to make customization easier
+    -   `test_insert_delete.py`
