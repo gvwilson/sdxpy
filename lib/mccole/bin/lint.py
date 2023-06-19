@@ -1,6 +1,7 @@
 """Check project."""
 
 import argparse
+import sys
 from fnmatch import fnmatch
 from pathlib import Path
 
@@ -103,11 +104,11 @@ def check_glossary_internal(config):
 
         # No data for current language.
         if (details := entry.get(config["lang"], None)) is None:
-            _warn(f"glossary entry {key} missing {language}")
+            _warn(f"glossary entry {key} missing language {config['lang']}")
 
         # Term not defined for current language.
         elif "def" not in details:
-            _warn(f"glossary entry {key}/{language} missing 'def'")
+            _warn(f"glossary entry {key}/{config['lang']} missing 'def'")
 
         # Collect internal cross-references.
         else:
@@ -189,9 +190,9 @@ def get_config(filepath):
 
     for field, kind in CONFIG_REQUIRED.items():
         if field not in dir(module):
-            _fatal(f"Configuration does not have {field}")
+            _error(f"Configuration does not have {field}")
         elif not isinstance(getattr(module, field), kind):
-            _fatal(f"Configuration value for {field} is not {str(kind)}")
+            _error(f"Configuration value for {field} is not {str(kind)}")
 
     config = {key: getattr(module, key) for key in CONFIG_USED}
     for key in ["glossary", "links"]:

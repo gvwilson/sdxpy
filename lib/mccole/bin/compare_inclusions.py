@@ -27,7 +27,9 @@ def diff(prose, slides):
     prose = set(prose)
     not_in_slides = [inc for inc in slides if inc not in prose]
     in_slides = [inc for inc in slides if inc in prose]
-    out_of_order = [inc for inc in difflib.ndiff(slides, in_slides) if not inc.startswith(" ")]
+    out_of_order = [
+        inc for inc in difflib.ndiff(slides, in_slides) if not inc.startswith(" ")
+    ]
     return not_in_slides, out_of_order
 
 
@@ -50,7 +52,9 @@ def parse_args():
     """Parse command-line arguments."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--chapters", nargs="+", default=[], help="chapter slugs")
-    parser.add_argument("--missing", action="store_true", default=False, help="report missing")
+    parser.add_argument(
+        "--missing", action="store_true", default=False, help="report missing"
+    )
     return parser.parse_args()
 
 
