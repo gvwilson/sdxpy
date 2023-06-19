@@ -3,7 +3,7 @@ import sys
 
 from util import ROW, COL, setup
 from clip_cursor import ClipBuffer
-from clip_cursor_fixed import ClipCursorFixed, ClipAppFixed
+from clip_fixed import ClipCursorFixed, ClipAppFixed
 
 # [cursor]
 class ViewportCursor(ClipCursorFixed):
