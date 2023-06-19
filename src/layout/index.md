@@ -281,9 +281,15 @@ and write some new ones to test the functionality we've added:
 
 Note that we could have had columns handle resizing rather than rows,
 but we (probably) don't need to make both resizeable.
-This is an example of [%g intrinsic_complexity "intrinsic complexity"%]:
+This is an example of [%g intrinsic_complexity "intrinsic complexity" %]:
 the problem really is this hard,
 so something, somewhere, has to deal with it.
+(Programs often contain [%g accidental_complexity "accidental complexity" %]
+as well,
+which can be fixed if people are willing to accept that it is unnecessary
+and are willing to change.
+In practice,
+these requirements usually mean that it isn't ever fixed.)
 
 <div class="callout" markdown="1">
 

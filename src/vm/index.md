@@ -20,6 +20,8 @@ simulates a computer with three parts ([%f vm-architecture %]):
     holds the memory address of the next instruction to execute.
     It is automatically initialized to point at address 0,
     so that is where every program must start.
+    (This requirement is part of our VM's
+    [%g abi "Application Binary Interface" %], or ABI.)
 
 1.  Four [%i "register (in computer)" %][%g register "registers" %][%/i%] named R0 to R3
     that instructions can access directly.

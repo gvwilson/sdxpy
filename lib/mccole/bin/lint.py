@@ -120,7 +120,7 @@ def check_glossary_internal(config):
 def check_glossary_refs(config):
     """Check glossary references."""
     defined = {gl["key"] for gl in config["glossary_data"]}
-    seen = set()
+    seen = config["glossary_refs"]
     for text in config["prose"].values():
         seen |= {m.group(1) for m in regex.GLOSSARY_REF.finditer(text)}
     _diff("glossary", defined, seen)
