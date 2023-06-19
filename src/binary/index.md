@@ -251,7 +251,7 @@ if we want to represent a character whose code point is 1789:
     meaning "start of a character with one continuation byte
     and the 5 payload bits 11011".
 -   We encode the low 6 bits as 10111101,
-    meaning "a continuation byte with 6 payload bits 111101".
+    meaning "a [%g continuation_byte "continuation byte" %] with 6 payload bits 111101".
 
 ## And Now, Persistence {: #binary-binary}
 
@@ -400,7 +400,7 @@ Here's an example:
 
 What is `\x1f` and why is it in our data?
 If Python finds a character in a string that doesn't have a printable representation,
-it prints a 2-digit escape sequence in [%g hexadecimal "hexadecimal" %] (base 16).
+it prints a 2-digit [%g escape_sequence "escape sequence" %] in [%g hexadecimal "hexadecimal" %] (base 16).
 This uses the letters A-F (or a-f) to represent the digits from 10 to 15,
 so that (for example) `3D5` is \\((3×16^2)+(13×16^1)+(5×16^0)\\), or 981 in decimal.
 Python is therefore telling us that

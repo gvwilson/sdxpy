@@ -408,8 +408,9 @@ while filtering is 1.8 times slower.
    caption="Relative performance of row-wise and column-wise storage"
 %]
 
-We can get much more insight using Python [cProfile][py_cprofile] module,
-which runs a program for us,
+We can get much more insight by [%g profiling "profiling" %] our code
+using Python [cProfile][py_cprofile] module.
+This tool runs a program for us,
 collects detailed information on how long functions ran,
 and reports the result:
 

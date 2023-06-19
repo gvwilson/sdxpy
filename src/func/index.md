@@ -79,7 +79,8 @@ so we write the call as:
 To make `"call"` work,
 we need to implement [%g scope "scopes" %]
 so that parameters and variables used in a function
-don't overwrite those defined outside it.
+don't overwrite those defined outside it—in other words,
+to prevent [%g name_collision "name collision" %].
 When a function is called with one or more expressions as arguments,
 we will:
 

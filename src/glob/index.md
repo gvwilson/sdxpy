@@ -312,3 +312,21 @@ Rewrite `Any` so that it does not repeatedly re-match text.
 2.  Write some tests for it.
 
 3.  What does your implementation do when no sub-patterns are specified?
+
+### Returning Matches {: .exercise}
+
+Modify the matcher so that it returns the substrings that matched
+each part of the expression.
+For example,
+when `*.txt` matches `name.txt`,
+the library should return some indication that `*` matched the string `"name"`.
+
+### Alternative Matching {: .exercise}
+
+The tool we have built implements [%g lazy_matching "lazy matching" %],
+i.e.,
+the `*` character matches the shortest string it can
+that results in the overall pattern matching.
+Modify the code to do [%g greedy_matching "greedy matching" %] instead,
+and combine it with the solution to the previous exercise
+for testing.

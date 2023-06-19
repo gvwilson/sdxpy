@@ -310,3 +310,26 @@ via the associated [Python library][py_jsonschema].
     with those stored in `build_hash.json`
     to determine what is out of date,
     and to update `build_hash.json` each time it runs.
+
+### Dry Run {: .exercise}
+
+A [%g dry_run "dry run" %] of a build shows the rules that would be executed
+but doesn't actually execute them.
+Modify the build system in this chapter so that it can do dry runs.
+
+### Phony Targets {: .exercise}
+
+A [%g phony_target "phony target" %] is one that doesn't correspond to a file.
+Developers often put phony targets in build files
+to give themselves an easy way to re-run tests,
+check code style,
+and so on.
+Modify the build system in this target so that
+users can mark targets as phony.
+
+### Multiple Build Files {: .exercise}
+
+1.  Modify the tool built in this chapter so that
+    one build file can import definitions and dependencies from another.
+
+1.  How does your system prevent [%g circular_dependency "circular dependencies" %]?

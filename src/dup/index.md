@@ -275,6 +275,7 @@ What are the actual odds?
 ### Streaming I/O {: .exercise}
 
 [% fixme "streaming I/O exercise" %]
+[%g streaming_api "streaming API" %]
 
 ### Big Oh {: .exercise}
 

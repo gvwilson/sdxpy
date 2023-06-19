@@ -165,7 +165,11 @@ called [%i "race condition!time of check/time of use" "time of check/time of use
 If two users run the backup tool at the same time,
 they will both see that there isn't a file (yet) with the current timestamp,
 so they will both try to create the first one.
-We will look at better schemes in the exercises.
+Ensuring that multi-file updates are [%g atomic_operation "atomic operations" %]
+(i.e., that they always behave a single indivisible step)
+is a hard problem;
+[%g file_locking "file locking" %] is a common approach,
+but complete solutions are out of the scope of this book.
 
 </div>
 
