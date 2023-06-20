@@ -195,6 +195,10 @@ def handle(node, state, accum, doEscape):
         children(node, state, accum, doEscape)
         accum.append("\n\n")
 
+    # <div class="notex"> => skip
+    elif node_match(node, "div", "notex"):
+        pass
+
     # <div class="callout"> => create a callout
     elif node_match(node, "div", "callout"):
         accum.append("\\begin{callout}\n")

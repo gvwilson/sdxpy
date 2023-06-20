@@ -18,8 +18,8 @@ def main():
 
     content = open(options.head, "r").read()
     content = fill_template(options, content)
-    content += part(options.root, body, "ol.toc-chapter", "Chapter")
-    content += part(options.root, body, "ol.toc-appendix", "Appendix")
+    content += part(options.root, body, "ol.toc-chapter")
+    content += part(options.root, body, "ol.toc-appendix")
     content += open(options.foot, "r").read()
 
     print(content)
@@ -32,7 +32,7 @@ def fill_template(options, text):
     return text
 
 
-def get(path, slug, kind):
+def get(path, slug):
     """Get content from page."""
     with open(path, "r") as reader:
         soup = BeautifulSoup(reader.read(), "html.parser")
@@ -47,7 +47,7 @@ def get(path, slug, kind):
 
     title = soup.find("h1")
     title["id"] = slug
-    title.string = f"{kind}: {title.text}"
+    title.string = title.text
     main.insert(0, title)
 
     return str(main)
@@ -64,14 +64,14 @@ def parse_args():
     return parser.parse_args()
 
 
-def part(root, body, key, kind):
+def part(root, body, key):
     """Construct part of table of contents."""
     toc = body.select_one(key)
     content = []
     for ref in toc.find_all("a"):
         slug = ref.attrs["href"].rstrip("/")
         path = os.path.join(root, slug, "index.html")
-        content.append(get(path, slug, kind))
+        content.append(get(path, slug))
     return "\n".join(content)
 
 
