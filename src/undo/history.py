@@ -10,7 +10,6 @@ class HistoryApp(InsertDeleteApp):
 
     def _do_DELETE(self):
         row, col = self._cursor.pos()
-        col -= 1
         char = self._buffer.char((row, col))
         self._history.append(("delete", (row, col), char))
         self._buffer.delete(self._cursor.pos())

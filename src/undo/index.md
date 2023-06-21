@@ -19,18 +19,18 @@
 -   Create insert/delete version
     -   `InsertDeleteBuffer` in `insert_delete.py`
         -   Add methods to insert and delete in buffer
-        -   Must allow column position of cursor to be `<= ncol` to handle empty lines
-        -   Exercise: allow cursor to go one space beyond end of line
+	-   Delete character *under* cursor, not to the left
     -   `InsertDeleteApp` provides `_get_key` in the app to return (family, key)
         -   `_interact` dispatches to one of two cases (special-purpose or generic + key)
         -   Could define per-key method to make customization easier
     -   `test_insert_delete.py`
+    -   But one test fails: empty screen (cursor isn't on top of a character)
+        -   Our focus is undo, so we'll ignore this for now
+	-   Tackle it in the exercises
 
 -   Record history of insertions and deletions
     -   `HistoryApp` in `history.py` creates a list `_history`
     -   Modify `_do_INSERT` and `_do_DELETE` to append records
-    -   Seems to work, but we have to look at the character *left* of the cursor when doing deletion
-    -   Which fails when someone tries to delete and is in column 0
     -   Could add more logic to history recording, but this approach is broken anyway
     -   Insert, move, move, undo: where does it leave the cursor?
     -   Next step is to create objects that record actions
