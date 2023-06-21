@@ -25,3 +25,12 @@
         -   `_interact` dispatches to one of two cases (special-purpose or generic + key)
         -   Could define per-key method to make customization easier
     -   `test_insert_delete.py`
+
+-   Record history of insertions and deletions
+    -   `HistoryApp` in `history.py` creates a list `_history`
+    -   Modify `_do_INSERT` and `_do_DELETE` to append records
+    -   Seems to work, but we have to look at the character *left* of the cursor when doing deletion
+    -   Which fails when someone tries to delete and is in column 0
+    -   Could add more logic to history recording, but this approach is broken anyway
+    -   Insert, move, move, undo: where does it leave the cursor?
+    -   Next step is to create objects that record actions

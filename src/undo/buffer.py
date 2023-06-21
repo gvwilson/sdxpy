@@ -15,6 +15,11 @@ class Buffer:
     def ncol(self, row):
         return len(self._lines[row])
 
+    def char(self, pos):
+        assert 0 <= pos[ROW] < len(self._lines)
+        assert 0 <= pos[COL] < len(self._lines[ROW])
+        return self._lines[pos[ROW]][pos[COL]]
+
     def set_height(self, height):
         self._height = height
 
