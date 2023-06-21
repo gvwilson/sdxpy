@@ -356,3 +356,16 @@ Your implementation can use either a Python `while` loop or recursion.
 Implement a `for` loop instruction that repeats instructions a certain number of times.
 Your implementation should allow users to specify a loop variable
 so that they know which iteration of the loop they're in.
+
+### Internal Checks {: .exercise}
+
+[%g defensive_programming "Defensive programming" %] is an approach to software development
+that starts from the assumption that people make mistakes
+and should therefore put checks in their code to catch "impossible" situations.
+These checks are typically implement as `assert` statements
+that check the state of the program as it executes,
+like those in our interpreter that checks the lengths of lists.
+
+1.  What other assertions could we add to this code?
+
+2.  How many of these checks can be implemented as [%g type_hint "type hints" %] instead?
