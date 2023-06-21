@@ -14,7 +14,7 @@ class InsertDeleteBuffer(Buffer):
 
     def delete(self, pos):
         assert 0 <= pos[ROW] < self.nrow()
-        assert 0 <= pos[COL] <= self.ncol(pos[ROW])
+        assert 0 <= pos[COL] < self.ncol(pos[ROW])
         line = self._lines[pos[ROW]]
         line = line[:pos[COL]] + line[pos[COL] + 1:]
         self._lines[pos[ROW]] = line

@@ -4,6 +4,7 @@ syllabus:
 -   Use globs and regular expressions to match patterns in text.
 -   Use inheritance to make matchers composable and extensible.
 -   Simplify code by having objects delegate work to other objects.
+depends:
 ---
 
 We had to tell the duplicate file finder of [%x dup %] which files to compare.

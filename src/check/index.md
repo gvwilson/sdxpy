@@ -1,6 +1,8 @@
 ---
 syllabus:
 -   FIXME
+depends:
+-   parse
 ---
 
 Suppose we want to generate HTML summaries of experiments.

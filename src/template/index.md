@@ -5,6 +5,8 @@ syllabus:
 -   Programs can use the Visitor pattern to separate traversal of a data structure from operations on its elements.
 -   HTML documents are usually represented in memory as trees using the Document Object Model (DOM).
 -   The style of code that programmers find easiest to read changes as they become more experienced.
+depends:
+-   check
 ---
 
 Every program needs documentation in order to be usable,

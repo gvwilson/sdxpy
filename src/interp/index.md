@@ -7,6 +7,8 @@ syllabus:
     to functions that implement low-level details.
 -   Programs store variables in stacked dictionaries called environments.
 -   One way to evaluate a program's design is to ask how extensible it is.
+depends:
+-   test
 ---
 
 [%x test %] introduced the idea that programs are just another kind of data.

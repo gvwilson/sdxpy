@@ -2,6 +2,8 @@
 syllabus:
 -   Parsing in two or more passes is often simpler than parsing in a single pass.
 -   Tokenize input text and then analyze the tokens.
+depends:
+-   glob
 ---
 
 We constructed objects to match patterns in [%x glob %],

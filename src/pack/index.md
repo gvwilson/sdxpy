@@ -7,6 +7,9 @@ syllabus:
 -   Eliminating partially-formed combinations of packages can reduce the work required to find a compatible set.
 -   An automated theorem prover can determine if a set of logical propositions can be made consistent with each other.
 -   Most package managers use some kind of theorem prover to find compatible sets of packages to install.
+depends:
+-   build
+-   perf
 ---
 
 There is no point building software if you can't install it.

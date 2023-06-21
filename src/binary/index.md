@@ -7,6 +7,8 @@ syllabus:
 -   The relative error in a floating point number is usually more important than the absolute error.
 -   Low-level compiled languages usually store raw values, while high-level interpreted languages use boxed values.
 -   Sets of values can be packed into contiguous byte arrays for efficient transmission and storage.
+depends:
+-   persist
 ---
 
 

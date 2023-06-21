@@ -156,6 +156,15 @@ ${ROOT}/docs/%.pdf: ${ROOT}/src/%.pdf
 
 ## ---: ---
 
+ifdef SYLLABUS_DIR
+## syllabus: remake syllabus diagram
+SYLLABUS_IMG=${SYLLABUS_DIR}/syllabus_regular.pdf ${SYLLABUS_DIR}/syllabus_regular.svg ${SYLLABUS_DIR}/syllabus_regular.png ${SYLLABUS_DIR}/syllabus_linear.pdf ${SYLLABUS_DIR}/syllabus_linear.png ${SYLLABUS_DIR}/syllabus_linear.svg
+syllabus: ${SYLLABUS_IMG}
+${SYLLABUS_IMG}: ${CONFIG} $(patsubst %,${ROOT}/src/%/index.md,${CHAPTERS}) ${MCCOLE}/bin/make_dot.py
+	python ${MCCOLE}/bin/make_dot.py --config ${CONFIG} --skip intro finale --output ${SYLLABUS_DIR}/syllabus
+	rm -f ${SYLLABUS_DIR}/syllabus_*.gv
+endif
+
 ## github: make root pages for GitHub
 .PHONY: github
 github: ${GITHUB_PAGES}
@@ -247,6 +256,8 @@ vars:
 	@echo SRC_PDF: ${SRC_PDF}
 	@echo SRC_SVG: ${SRC_SVG}
 	@echo STEM: ${STEM}
+	@echo SYLLABUS_DIR: ${SYLLABUS_DIR}
+	@echo SYLLABUS_IMG: ${SYLLABUS_IMG}
 	@echo TEX_COPY: ${TEX_COPY}
 	@echo TEX_FILES: ${TEX_FILES}
 	@echo TITLE: ${TITLE}

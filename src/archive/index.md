@@ -3,6 +3,10 @@ syllabus:
 -   Version control tools use hashing to uniquely identify each saved file.
 -   Each snapshot of a set of files is recorded in a manifest.
 -   Using a mock filesystem to test version control is safer and faster than using the real thing.
+depends:
+-   dup
+-   glob
+-   mock
 ---
 
 We've written almost a thousand lines of Python so far.

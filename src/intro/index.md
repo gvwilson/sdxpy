@@ -87,7 +87,7 @@ which in turn define this book's big ideas [%f intro-syllabus %]:
 
 [% figure
    slug="intro-syllabus"
-   img="syllabus.svg"
+   img="syllabus_regular.svg"
    alt="Syllabus"
    caption="Lesson topics and dependencies."
 %]

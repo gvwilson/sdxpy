@@ -5,6 +5,8 @@ syllabus:
 -   Linters typically use the Visitor design pattern to find nodes of interest in an AST.
 -   Programs can modify a program's AST and then unparse it to create modified versions of the original program.
 -   Dynamic code modification is very powerful, but the technique can produce insecure and unmaintainable code.
+depends:
+-   check
 ---
 
 This book relies on about 2500 lines of Python to turn Markdown into HTML,

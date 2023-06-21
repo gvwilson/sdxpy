@@ -1,3 +1,10 @@
+---
+syllabus:
+-   FIXME
+depends:
+-   viewer
+---
+
 -   Bring over viewer app
     -   `app.py`, `buffer.py`, `cursor.py`, `window.py`, `util.py`
     -   `Window`, `Cursor`, `Buffer`, `App`

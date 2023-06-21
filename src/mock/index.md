@@ -5,6 +5,9 @@ syllabus:
 -   We can use decorators to wrap functions after defining them.
 -   Defining a decorator that has parameters is much more complicated
     than defining one that doesn't.
+depends:
+-   func
+-   oop
 ---
 
 We can do more than look up functions:

@@ -109,6 +109,7 @@ def get_matches(pattern, filename, group=1, scrub=True, duplicates=None, split="
 
 
 def load_config(filename):
+    """Load configuration file as module."""
     spec = importlib.util.spec_from_file_location("config", filename)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
