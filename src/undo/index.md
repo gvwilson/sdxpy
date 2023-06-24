@@ -41,3 +41,20 @@ depends:
     -   Could add more logic to history recording, but this approach is broken anyway
     -   Insert, move, move, undo: where does it leave the cursor?
     -   Next step is to create objects that record actions
+
+-   `action.py` is the fully object-oriented version
+    -   `Action` records the app and has `do` and `undo`
+    -   Derive `Insert` to:
+        -   insert a character and a position
+	-   delete that saved character
+    -   Derive `Exit` to stop the app running
+        -   no `undo` action (should never arise)
+    -   `_interact` is now:
+        -   get the action name
+	-   find a handler
+	-   call it to construct an object
+	-   `do` that object
+	-   append the action to the history so that we can undo it
+    -   works until we try to undo (see `undoable.py`), at which point we get stuck in a loop
+        -   undo calls undo calls undo
+	-   so write `undoable.py` with "save this?"
