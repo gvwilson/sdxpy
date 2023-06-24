@@ -79,7 +79,7 @@ so we write the call as:
 [% inc file="example_def.py" keep="call" %]
 
 To make `"call"` work,
-we need to implement [%g scope "scopes" %]
+we need to implement [%i scope %]scope[%/i%]
 so that parameters and variables used in a function
 don't overwrite those defined outside it—in other words,
 to prevent [%g name_collision "name collision" %].
@@ -133,9 +133,9 @@ we look through the list from the most recent dictionary to the oldest.
 ### Scoping Rules
 
 Searching through all active stack frames for a variable
-is called is [%i "dynamic scoping" "scoping!dynamic" %][%g dynamic_scoping "dynamic scoping" %][%/i%].
+is called is [%g dynamic_scoping "dynamic scoping" %].
 In contrast,
-most programming languages used [%i "lexical scoping" "scoping!lexical" %][%g lexical_scoping "lexical scoping" %][%/i%],
+most programming languages used [%g lexical_scoping "lexical scoping" %],
 which figures out what a variable name refers to based on the structure of the program text.
 
 </div>

@@ -8,6 +8,7 @@ syllabus:
 depends:
 -   persist
 -   binary
+-   mock
 ---
 
 Persisting objects ([%x persist %]) lets us save and restore program state,
@@ -54,7 +55,7 @@ Let's create a class to store experimental records:
 
 [% inc file="record_original.py" omit="omit" %]
 
-and use the `pytest.fixture` decorator from [%x func %]
+and use the `pytest.fixture` decorator from [%x mock %]
 to create a database and two records:
 {: .continue}
 
@@ -83,7 +84,7 @@ Saving a class is no different from saving a function,
 which in turn is no different from saving a string or a list.
 The proof is that we can refactor
 the dictionary-based implementation of our database
-to use a [%g static_method "static method" %] of the record class
+to use a [%i "static method" %]static method[%/i%] of the record class
 when it needs a key:
 
 [% inc file="just_dict_refactored.py" %]
@@ -174,7 +175,7 @@ either way,
 we then load the entire database into memory.
 When we add a record,
 we save it in the dictionary
-and call a [%g helper_method "helper method" %] `_save`
+and call a [%i "helper method" %]helper method[%/i%] `_save`
 to write the entire database back to the file.
 When we get a record,
 we simply get it from the in-memory dictionary.
@@ -211,7 +212,7 @@ and then gives us just the byte we asked for.
 A more efficient strategy is therefore
 to group records together in [%g block "blocks" %],
 each of which is the same size as a page,
-and an [%g index_database "index" %] in memory
+and an [%i "index (database)" %]index[%/i%] in memory
 to tell us which records are in which blocks.
 When we add a record,
 we only write its block to disk;
@@ -308,7 +309,7 @@ Creating classes like the all-in-one-file database
 that we don't put into production
 may feel like a waste of time,
 but it usually saves us effort in the long run
-by reducing [%g cognitive_load "cognitive load" %].
+by reducing [%i "cognitive load" %]cognitive load [%/i%].
 
 </div>
 
@@ -339,7 +340,7 @@ we should profile this change before putting it into production
 to see if it actually improves performance ([%x perf %]),
 since many small writes might cost more than one large multi-file read.
 We would also have to do something
-to avoid creating a [%g race_condition "race condition" %];
+to avoid creating a [%i "race condition" %]race condition[%/i%];
 as in [%x archive %],
 operating on two files (one for the index and one for the block)
 could lead to harmful inconsistencies.
@@ -349,8 +350,8 @@ could lead to harmful inconsistencies.
 The final step in our implementation is
 to clean up blocks that are no longer needed
 because we have a more recent version of every record they contain.
-Reclaiming unused space in this way
-is called [%g garbage_collection "garbage collection" %];
+Reclaiming unused space this way is another form of
+[%g garbage_collection "garbage collection" %].
 Python and most other modern languages do it automatically
 to recycle unused memory,
 but it's our responsibility to do it for the files our database creates.

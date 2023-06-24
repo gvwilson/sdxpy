@@ -12,16 +12,16 @@ depends:
 Uploading and downloading files ([%x ftp %]) is useful,
 but we want to do more.
 What we *don't* want to do is
-create a new [%g protocol "protocol" %] for every kind interaction.
+create a new [%i protocol %]protocol[%/i%] for every kind interaction.
 Instead,
 we would like to use a single standardized protocol in a variety of ways.
 
-The [%i "Hypertext Transfer Protocol (HTTP)" "HTTP (Hypertext Transfer Protocol)" %][%g http "Hypertext Transfer Protocol (HTTP)" %][%/i%]
+The [%g http "Hypertext Transfer Protocol (HTTP)" %]
 specifies one way programs can exchange data over IP.
 HTTP is deliberately simple:
-the client sends a [%i "HTTP request" %][%g http_request "request" %][%/i%]
+the client sends a [%g http_request "request" %]
 specifying what it wants over a socket connection,
-and the server sends a [%i "HTTP response" %][%g http_response "response" %][%/i%] containing some data.
+and the server sends a [%g http_response "response" %] containing some data.
 A server can construct responses however it wants;
 it can copy a file from disk,
 generated HTML dynamically,
@@ -48,7 +48,7 @@ The HTTP version is usually "HTTP/1.0" or "HTTP/1.1";
 the differences between the two don't matter to us.
 
 Most real requests have a few extra lines called
-[%i "HTTP header" "header (HTTP)" %][%g http_header "headers" %][%/i%],
+[%g http_header "headers" %],
 which are key value pairs like the three shown below:
 
 [% inc file="http_request_headers.txt" %]
@@ -69,7 +69,7 @@ that tells the server how many bytes to read.
 
 An HTTP response is formatted like an HTTP request.
 Its first line has the protocol,
-a [%i "HTTP status code" "status code (HTTP)" %][%g http_status_code "status code" %][%/i%]
+a [%g http_status_code "status code" %]
 like 200 for "OK" or 404 for "Not Found",
 and a status phrase (e.g., the word "OK").
 There are then some headers,
@@ -242,7 +242,7 @@ because the HTTP protocol requires the content length to be the number of bytes.
 The server reads files in binary mode
 by using `"rb"` instead of just `"r"` when it opens files in `handle_file`,
 converts the internally-generated error page from characters to bytes
-using the [%g utf_8 "UTF-8" %] encoding,
+using the [%i "UTF-8" %]UTF-8[%/i%] encoding,
 and specifies `charset=utf-8` as part of the content type.
 
 ## Testing  {: #http-testing}
@@ -330,7 +330,7 @@ and headers.
 
 ### Query Parameters {: .exercise}
 
-A URL can contain [%i "query parameter" %][%g query_parameter "query parameters" %][%/i%].
+A URL can contain [%g query_parameter "query parameters" %].
 Read the documentation for the [urlparse][py_urlparse] module
 and then modify the file server example so that
 a URL containing a query parameter `bytes=N`

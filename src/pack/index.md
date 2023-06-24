@@ -8,8 +8,6 @@ syllabus:
 -   An automated theorem prover can determine if a set of logical propositions can be made consistent with each other.
 -   Most package managers use some kind of theorem prover to find compatible sets of packages to install.
 depends:
--   build
--   perf
 ---
 
 There is no point building software if you can't install it.
@@ -42,18 +40,18 @@ interested readers might also enjoy
 ## Semantic Versioning {: #pack-semver}
 
 Most software projects use
-[%i "semantic versioning" %][%g semantic_versioning "semantic versioning" %][%/i%]
+[%g semantic_versioning "semantic versioning" %]
 for software releases.
 Each version is three integers X.Y.Z,
 where X is the major version,
 Y is the minor version,
-and Z is the [%i "patch" "semantic versioning!patch" %][%g patch "patch" %][%/i%].
+and Z is the [%g patch "patch" %].
 (The [full specification][semver_spec] allows for more fields,
 but we will ignore them in this tutorial.)
 
 A package's authors increment its major version number
 when a change to the package breaks
-[%i "backward compatibility" %][%g backward_compatible "backward compatibility" %][%/i%].
+[%g backward_compatible "backward compatibility" %].
 For example,
 if the new version adds a required parameter to a function,
 then code built for the old version will fail or behave unpredictably with the new one.
@@ -77,7 +75,7 @@ for working with the real thing.
 ## Exhaustive Search {: #pack-exhaustive}
 
 To avoid messing around with parsers,
-we store the [%i "manifest (of package)" "package manifest" %][%g manifest "manifest" %][%/i%]
+we store the [%i "manifest (of package)" "package manifest" %]manifest[%/i%]
 of available packages as JSON:
 
 [% inc file="triple.json" %]
@@ -110,11 +108,11 @@ whatever points are left when we're done represent legal combinations.
 How much work is it to check all of these possibilities?
 Our example has 3×3×2=18 combinations.
 If we were to add another package to the mix with 2 versions,
-the [%i "search space" %][%g search_space "search space" %][%/i%] would double;
+the [%g search_space "search space" %] would double;
 add another,
 and it would double again.
 This behavior is called
-[%i "combinatorial explosion" %][%g combinatorial_explosion "combinatorial explosion" %][%/i%],
+[%g combinatorial_explosion "combinatorial explosion" %],
 and it makes brute force solutions impractical even for small problems.
 We will implement it as a starting point
 (and to give us something to test more complicated solutions against),
@@ -237,8 +235,7 @@ we would write a triply-nested loop to generate combinations,
 but if there were four,
 we would need a quadruply-nested loop,
 and so on.
-This [%i "Recursive Enumeration pattern" %][%g recursive_enumeration_pattern "Recursive Enumeration" %][%/i%]
-design pattern
+This [%g recursive_enumeration_pattern "Recursive Enumeration" %] design pattern
 uses one recursive function call per loop
 so that we automatically get exactly as many loops as we need.
 
@@ -535,6 +532,6 @@ and generates the constraints needed by the Z3 theorem prover.
     and use the solution to find a legal build order.
 
 2.  Modify the constraints to introduce
-    a [%g circular_dependency "circular dependency" %]
+    a [%i "circular dependency" %]circular dependency[%/i%]
     and check that the solver correctly determines
     that there is no legal build order.

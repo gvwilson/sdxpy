@@ -6,6 +6,7 @@ syllabus:
 -   Software designs should be open for extension but closed for modification.
 -   Extensibility can be implemented using multiple inheritance, duck typing, or helper classes.
 depends:
+-   interp
 ---
 
 Version control systems can manage our files for us,
@@ -23,7 +24,7 @@ which program written in other languages can read.
 
 The phrase "some kinds of objects" is the most important part of the preceding paragraph.
 Since programs can define new classes,
-a [%i "persistence" %][%g persistence "persistence framework" %][%/i%]
+a [%g persistence "persistence framework" %]
 has to choose one of the following:
 
 1.  Only handle built-in types,
@@ -52,7 +53,7 @@ has to choose one of the following:
     it has to trust that those methods aren't doing anything malicious.
 
 This chapter starts by implementing the first option (built-in types only),
-then extends it to handle [%g alias "aliases" %]
+then extends it to handle [%i alias %]aliases[%/i%]
 (which JSON does not),
 and finally adds ways to convert user-defined types to storable data.
 To keep parsing and testing simple
@@ -152,7 +153,7 @@ We will use two tricks when doing this:
 1.  The `dedent` function from Python's [textwrap][py_textwrap] module
     removes leading indentation from the body of a string.
     As the example below shows,
-    `dedent` allows us to indent a [%g fixture "fixture" %]
+    `dedent` allows us to indent a [%i fixture %]fixture[%/i%]
     the same way we indent our Python code,
     which makes the test easier to read.
 
@@ -165,7 +166,7 @@ but as we were extending them
 we had to modify their internals
 every time we wanted to do something new.
 
-The [%i "Open-Closed Principle" "software design!Open-Closed Principle" %][%g open_closed_principle "Open-Closed Principle" %][%/i%] states that
+The [%g open_closed_principle "Open-Closed Principle" %] states that
 software should be open for extension but closed for modification,
 i.e., that it should be possible to extend functionality
 without having to rewrite existing code.
@@ -178,7 +179,7 @@ the things we make learn how to do things better as we use them.
 
 In this case,
 we can follow the Open-Closed Principle by rewriting our functions as classes.
-We will also use [%g dynamic_dispatch "dynamic dispatch" %]
+We will also use [%i "dynamic dispatch" %]dynamic dispatch[%/i%]
 as we did in [%x interp %]
 to handle each item
 so that we don't have to modify a multiway `if` statement
@@ -198,7 +199,7 @@ and then calling it.
 Again,
 as in [%x interp %],
 the methods that handle specific items
-must all have the same [%g signature "signature" %]
+must all have the same [%i signature %]signature[%/i%]
 so that they can be called interchangeably.
 For example,
 the methods that write integers and strings are:
@@ -422,7 +423,7 @@ Our options are:
 
 2.  Require it to implement a method with a specific name and signature
     without deriving from a particular base class.
-    This approach is called [%i "duck typing" %][%g duck_typing "duck typing" %][%/i%]:
+    This approach is called [%g duck_typing "duck typing" %]:
     if it walks like a duck and quacks like a duck, it's a duck.
     Since option #1 would require users to write this method anyway,
     it's the one we'll choose.
@@ -448,7 +449,7 @@ of a particular class:
 
 Loading user-defined classes requires more work
 because we have to map class names back to actual classes.
-(We could also use [%i "introspection" %][%g introspection "introspection" %][%/i%]
+(We could also use [%i "introspection" %]introspection[%/i%]
 to find *all* the classes in the program
 and build a lookup table of the ones with the right method;
 we'll explore that in the exercises.)

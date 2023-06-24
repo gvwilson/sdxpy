@@ -14,7 +14,7 @@ You might be reading this as HTML in your browser,
 as an e-book (which is basically the same thing),
 or on the printed page.
 In all three cases
-a [%i "layout engine" %][%g layout_engine "layout engine" %][%/i%] took some text and some layout instructions
+a [%g layout_engine "layout engine" %] took some text and some layout instructions
 and decided where to put each character and image.
 To explore how they work,
 we will build a small layout engine
@@ -87,7 +87,7 @@ We can therefore represent our document as a tree
 and calculate the width and height of each cell every time we need it.
 This is simple but inefficient:
 we could calculate both width and height at the same time
-and [%i "cache!calculated values" %][%g cache "cache" %][%/i%] those values to avoid recalculation,
+and [%g cache "cache" %] those values to avoid recalculation,
 but we called this "easy mode" for a reason.
 
 As simple as it is,
@@ -181,9 +181,9 @@ while its children will be 'b', 'c', and so on.
 To teach each kind of cell how to render itself,
 we have to derive a new class from each of the ones we have
 and give the new class a `render` method with the same
-[%i "signature!of function" "function signature" %][%g signature "signature" %][%/i%].
-Since Python supports [%i "multiple inheritance" %][%g multiple_inheritance "multiple inheritance" %][%/i%],
-we can do this with a [%i "mixin class" %][%g mixin "mixin" %][%/i%] class
+[%i "signature!of function" "function signature" %]signature[%/i%].
+Since Python supports [%i "multiple inheritance" %]multiple inheritance[%/i%],
+we can do this with a [%g mixin "mixin" %] class
 ([%f layout-mixin %]):
 
 [% inc file="rendered.py" %]
@@ -218,7 +218,7 @@ The fact that our tests are difficult to understand
 is a sign that we should do more testing
 It would be very easy for us to get a wrong result
 and convince ourselves that it was actually correct;
-[%i "confirmation bias" %][%g confirmation_bias "confirmation bias" %][%/i%] of this kind
+[%g confirmation_bias "confirmation bias" %] of this kind
 is very common in software development.
 {: .continue}
 
@@ -299,7 +299,7 @@ these requirements usually mean that it isn't ever fixed.)
 ### The Liskov Substitution Principle
 
 We are able to re-use tests as our code evolved
-because of the [%i "Liskov Substitution Principle" "software design!Liskov Substitution Principle" %][%g liskov_substitution_principle "Liskov Substitution Principle" %][%/i%],
+because of the [%g liskov_substitution_principle "Liskov Substitution Principle" %],
 which states that
 it should be possible to replace objects in a program
 with objects of derived classes
@@ -310,8 +310,9 @@ though it may be able to process more inputs as well.
 Conversely,
 its output must be a subset of what the old code produced
 so that whatever is downstream from it won't be surprised.
-Thinking in these terms leads to a methodology called
-[%i "design by contract" "software design!design by contract" %][%g design_by_contract "design by contract" %][%/i%].
+Thinking in these terms leads to the methodology called
+[%i "design by contract" "software design!design by contract" %]design by contract[%/i%]
+first discussed in [%x oop %].
 
 </div>
 

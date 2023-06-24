@@ -1,6 +1,7 @@
 """Check project."""
 
 import argparse
+import re
 import sys
 from fnmatch import fnmatch
 from pathlib import Path
@@ -41,6 +42,7 @@ CONFIG_REQUIRED = {
 # Parts of configuration used in linting.
 CONFIG_USED = [
     "appendices",
+    "bibliography",
     "chapters",
     "glossary",
     "lang",
@@ -66,14 +68,31 @@ def main():
     for f in [
         check_glossary_internal,
         check_glossary_refs,
+        check_glossary_redef,
+        check_glossary_ref_in_index,
         check_ids,
         check_links,
         check_inclusions,
+        check_bib,
         check_slides,
     ]:
         f(config)
 
     check_dom(options.dom, options.pages)
+
+
+def check_bib(config):
+    """Check bibliography citations."""
+    used = set()
+    for text in config["prose"].values():
+        for match in regex.BIBLIOGRAPHY_REF.finditer(text):
+            for key in match.group(1).split():
+                used.add(key.strip())
+    unknown = used - {b for b in config["bibliography_data"].entries}
+    if unknown:
+        _warn("unknown bibliography keys")
+        for u in unknown:
+            _warn(f"- {u}")
 
 
 def check_dom(dom_spec, html_files):
@@ -115,6 +134,39 @@ def check_glossary_internal(config):
             config["glossary_refs"] |= {
                 m.group(1) for m in regex.GLOSSARY_CROSSREF.finditer(details["def"])
             }
+
+
+def check_glossary_redef(config):
+    """Check for redefinition of glossary terms."""
+    seen = {}
+    for slug, text in config["prose"].items():
+        for match in regex.GLOSSARY_REF.finditer(text):
+            key = match.group(1)
+            if key not in seen:
+                seen[key] = []
+            seen[key].append(slug)
+    problems = {key: occurrences for key, occurrences in sorted(seen.items()) if len(occurrences) > 1}
+    if problems:
+        _warn("glossary re-definitions")
+        for key, occurrences in problems.items():
+            print(f"- {key}: {', '.join(occurrences)}")
+
+
+def check_glossary_ref_in_index(config):
+    """Check for glossary references immediately inside index references."""
+    pat = re.compile(r'\[%\s*i\b.+?%\]\[%g.+?\]\[%/i%\]')
+    problems = {
+        slug: [m.group(0) for m in pat.finditer(text)]
+        for (slug, text) in config["prose"].items()
+    }
+    if sum(len(prob) for prob in problems.values()):
+        _warn("glossary references inside index terms")
+        for slug in problems:
+            if not problems[slug]:
+                continue
+            print(f"- {slug}")
+            for p in problems[slug]:
+                print(f"  - {p}")
 
 
 def check_glossary_refs(config):
@@ -198,6 +250,7 @@ def get_config(filepath):
     for key in ["glossary", "links"]:
         config[f"{key}_data"] = utils.read_yaml(config[key])
         config[f"{key}_refs"] = set()
+    config["bibliography_data"] = utils.read_bibliography(config["bibliography"])
 
     config["prose"] = {
         slug: _read_file(Path(config["src_dir"], slug, INDEX_FILE))
@@ -259,9 +312,9 @@ def _diff(title, defined, seen):
     ]:
         if not items:
             continue
-        print(f"{title} {subtitle}")
+        _warn(f"{title} {subtitle}")
         for i in sorted(items):
-            print(f"- {i}")
+            _warn(f"- {i}")
 
 
 def _directive(dir_path, section):
@@ -297,17 +350,17 @@ def _dom_diff(actual, expected):
     """Show difference between two DOM structures."""
     for name in sorted(actual):
         if name not in expected:
-            print(f"{name} seen but not expected")
+            _warn(f"{name} seen but not expected")
             continue
         for attr in sorted(actual[name]):
             if attr not in expected[name]:
-                print(f"{name}.{attr} seen but not expected")
+                _warn(f"{name}.{attr} seen but not expected")
                 continue
             if expected[name][attr] == "any":
                 continue
             for value in sorted(actual[name][attr]):
                 if value not in expected[name][attr]:
-                    print(f"{name}.{attr} == '{value}' seen but not expected")
+                    _warn(f"{name}.{attr} == '{value}' seen but not expected")
 
 
 def _dom_skip(node):

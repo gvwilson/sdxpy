@@ -19,7 +19,7 @@ is there to make the other 2% always does the right thing.
 We're going to write a lot of programs in this book.
 To make sure they work correctly,
 we're also going to write a lot of [%g unit_test "unit tests" %]
-[%b  Meszaros2007,Aniche2022 %].
+[%b  Meszaros2007 Aniche2022 %].
 To make those tests easier to write (so that we actually write them)
 we use a unit testing framework that finds and run tests automatically.
 Our tool is inspired by [pytest][pytest],
@@ -51,7 +51,8 @@ and assigns that object to the variable `example`:
 %]
 
 We can assign the function to another variable
-and then call the function by referencing that variable:
+to create an [%g alias "alias" %] for the function
+and then call the function by referencing that second variable:
 {: .continue}
 
 [% inc file="func_obj.py" keep="alias" %]
@@ -94,7 +95,7 @@ we can store them in a list just like numbers or strings
 
 However,
 we have to know how to call the functions in order for this trick to work,
-which means they must have the same [%g signature "signature" %]:
+which means they must have the same [%i signature %]signature[%/i%]:
 {: .continue}
 
 [% inc pat="signature.*" fill="py out" %]
@@ -112,7 +113,7 @@ We can then call the function as `func()`
 just as we called `example` using `alias()`.
 In order for this to work,
 though,
-all of the functions in the list must have the same [%g signature "signature" %],
+all of the functions in the list must have the same [%i signature %]signature[%/i%],
 i.e.,
 they must all take the same number of parameters
 in the same order
@@ -234,7 +235,7 @@ Python shows us its name and its address in memory.
 {: .continue}
 
 Having a program find things in itself like this at runtime
-is another example of [%g introspection "introspection" %]
+is another example of [%i introspection %]introspection[%/i%]
 ([%x parse %]).
 Combining introspection with the pass-fail-error pattern of the previous section
 gives us something that finds test functions,
@@ -263,7 +264,7 @@ and tried to make sense of the key ideas.
 
 The problem is that "making sense" depends on who we are.
 When we use a low-level language,
-we incur the [%i "cognitive load" %][%g cognitive_load "cognitive load" %][%/i%]
+we incur the [%g cognitive_load "cognitive load" %]
 of assembling micro-steps into something more meaningful.
 When we use a high-level language,
 on the other hand,

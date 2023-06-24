@@ -120,7 +120,7 @@ A good rule of software design is that if we have written something three times,
 we should turn what we've learned into something reusable
 so that we never have to write it again.
 In this case,
-we can use the [%i "Visitor pattern" "design pattern!Visitor" %][%g visitor_pattern "Visitor" %][%/i%] design pattern.
+we can use the [%g visitor_pattern "Visitor" %] design pattern.
 A visitor is a class that knows how to get to each element of a data structure
 and call a user-defined method when it gets there.
 Our visitor will have three methods:
@@ -157,12 +157,12 @@ the more helpful the Visitor pattern becomes.
 ## Checking Style {: #check-style}
 
 To wrap up our style checker,
-let's create a [%g manifest "manifest" %] that specifies
+let's create a [%i "manifest" %]manifest[%/i%] that specifies
 which types of nodes can be children of which others:
 
 [% inc file="manifest.yml" %]
 
-We've chosen to use [%g yaml "YAML" %] for the manifest
+We've chosen to use [%i "YAML" %]YAML[%/i%] for the manifest
 because it's a relatively simple way to write nested rules.
 We could have used [%g json "JSON" %],
 but as we said in [%x parse %],

@@ -28,6 +28,14 @@ class Cursor:
         )
         self._fix()
 
+    def act(self, direction):
+        assert hasattr(self, direction)
+        getattr(self, direction)()
+
+    def move_to(self, pos):
+        self._pos = pos
+        self._fix()
+
     def _fix(self):
         self._pos[COL] = min(
             self._pos[COL],

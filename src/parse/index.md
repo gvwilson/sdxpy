@@ -11,7 +11,7 @@ but an expression like `"2023-*{pdf,txt}"`
 is a lot easier to read and write
 than `Lit("2023-", Any(Either("pdf", "txt")))`.
 If we want to use the former,
-we need a [%i "parser" %][%g parser "parser" %][%/i%]
+we need a [%g parser "parser" %]
 to convert those strings to objects.
 
 Most parsers are written in two parts ([%f parse-pipeline %]).
@@ -67,7 +67,7 @@ Our grammar's tokens are the special characters `*`, `{`, `}`, and `,`;
 any sequence of one or more other characters is a single multi-letter token.
 This classification guides the design of our parser:
 
-1.  If it is a [%i "literal (in parsing)" %][%g literal "literal" %][%/i%] then
+1.  If it is a [%g literal "literal" %] then
     combine it with the current literal (if there is one)
     or start a new literal (if there isn't).
 
@@ -193,7 +193,7 @@ we can manipulates objects of those classes using familiar operations.
 And yes,
 this is another example of introspection.
 
-Since we're using [%g inheritance "inheritance" %] to implement our matchers,
+Since we're using [%i "inheritance" %]inheritance[%/i%] to implement our matchers,
 we write the check for equality in two parts.
 The parent `Match` class performs the checks that all classes need to perform
 (in this case,

@@ -4,7 +4,6 @@ syllabus:
 -   Floating-point numbers have a sign, a mantissa, and an exponent.
 -   Characters are usually encoded as bytes using either ASCII, UTF-8, or UTF-32.
 -   Programs can use bitwise operators to manipulate the bits representing data directly.
--   The relative error in a floating point number is usually more important than the absolute error.
 -   Low-level compiled languages usually store raw values, while high-level interpreted languages use boxed values.
 -   Sets of values can be packed into contiguous byte arrays for efficient transmission and storage.
 depends:
@@ -68,7 +67,7 @@ for example,
 
 [% inc pat="binary_notation.*" fill="py out" %]
 
-Programmers usually write [%g hexadecimal "hexadecimal" %] (base 16) instead:
+Programmers usually write [%i "hexadecimal" i%]hexadecimal[%/i%] instead:
 the digits 0–9 have the usual meaning,
 and the letters A-F (or a-f) are used to represent the digits 11–15.
 We signal that we're using hexadecimal with a `0x` prefix,
@@ -321,9 +320,7 @@ put each value in a data structure
 that keeps track of its type along with a bit of extra administrative information
 ([%f binary-boxing %]).
 Something stored this way is called a [%g boxed_value "boxed value" %];
-this extra data allows the language to do [%g introspection "introspection" %],
-[%g garbage_collection "garbage collection" %],
-and much more.
+this extra data allows the language to do [%i introspection %]introspection[%/i%] and much more.
 
 [% figure
    slug="binary-boxing"
@@ -402,9 +399,7 @@ Here's an example:
 
 What is `\x1f` and why is it in our data?
 If Python finds a character in a string that doesn't have a printable representation,
-it prints a 2-digit [%g escape_sequence "escape sequence" %] in [%g hexadecimal "hexadecimal" %] (base 16).
-This uses the letters A-F (or a-f) to represent the digits from 10 to 15,
-so that (for example) `3D5` is \\((3×16^2)+(13×16^1)+(5×16^0)\\), or 981 in decimal.
+it prints a 2-digit [%g escape_sequence "escape sequence" %] in [%i "hexadecimal" %]hexadecimal[%/i%].
 Python is therefore telling us that
 our string contains the eight bytes
 `['\x1f', '\x00', '\x00', '\x00', 'A', '\x00', '\x00', '\x00']`.
@@ -595,15 +590,3 @@ Getting a single value out of an array created with the [array][py_array] module
 since the value must be boxed before it can be used.
 Write some tests to see how much slower working with values in arrays is
 compared to working with values in lists.
-
-### Roundoff {: .exercise}
-
-1.  Write a program that loops over the integers from 1 to 9
-    and uses them to create the values 0.9, 0.09, and so on.
-1.  Calculate the same values by subtracting 0.1 from 1,
-    then subtracting 0.01,
-    and so on.
-1.  Calculate the absolute and relative differences between corresponding values
-    (which should be identical).
-1.  Repeat the exercise using the `Fraction` class
-    from the [fractions][py_fractions] module.

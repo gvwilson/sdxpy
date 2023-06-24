@@ -15,7 +15,7 @@ but we'd rather not have to.
 We'd also like to be able to see what we've changed
 and to collaborate with other people.
 
-A [%i "version control system" %][%g version_control_system "version control system" %][%/i%]
+A [%g version_control_system "version control system" %]
 like [%i "Git" "version control system!Git" %][Git][git][%/i%]
 solves all of these problems at once.
 It keeps track of changes to files
@@ -87,7 +87,7 @@ then our program's output is:
 Before we go any further
 we need to figure out how we're going to test our code.
 The obvious approach is to create directories and sub-directories
-containing some files we can use as [%i "fixture" %][%g fixture "fixtures" %][%/i%].
+containing some files we can use as [%i "fixture" %]fixtures[%/i%].
 However,
 we are going to change or delete those files
 as we back things up and restore them.
@@ -95,8 +95,8 @@ To make sure early tests don't contaminate later ones
 we would have to re-create those files and directories after each test.
 
 As discussed in [%x mock %],
-a better approach is to use a [%i "mock object" %][%g mock_object "mock object" %][%/i%]
-instead of the real filesystem ([%x test %]).
+a better approach is to use a [%i "mock object" %]mock object[%/i%]
+instead of the real filesystem.
 The [pyfakefs][pyfakefs] module replaces key functions like `open`
 with functions that behave the same way
 but act on "files" stored in memory
@@ -164,8 +164,8 @@ are the result of programmers assuming things weren't going to happen.
 
 We could try to avoid this problem by using a two-part naming scheme `ssssssss-a.csv`,
 `ssssssss-b.csv`, and so on,
-but this leads to a [%i "race condition" %][%g race_condition "race condition" %][%/i%]
-called [%i "race condition!time of check/time of use" "time of check/time of use" %][%g toctou "time of check/time of use" %][%/i%].
+but this leads to a [%g race_condition "race condition" %]
+called [%g toctou "time of check/time of use" %].
 If two users run the backup tool at the same time,
 they will both see that there isn't a file (yet) with the current timestamp,
 so they will both try to create the first one.
@@ -184,10 +184,11 @@ it will once we fill in all the functions it depends on:
 
 Writing a high-level function first
 and then filling in the things it needs
-is called [%g successive_refinement "successive refinement" %].
+is called [%g successive_refinement "successive refinement" %]
+or [%g top_down_design "top-down design" %].
 In practice,
-nobody designs and implements code in a strictly top-down fashion
-unless they have solved closely-related problems before [%b Petre 2016 %].
+nobody designs code and then implements the design without changes
+unless they have solved closely-related problems before [%b Petre2016 %].
 Instead,
 good programmers jump back and forth between higher and lower levels of design,
 adjusting their overall strategy as work on low-level details

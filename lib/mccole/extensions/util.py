@@ -7,6 +7,7 @@ from pathlib import Path
 import ark
 import markdown
 import yaml
+from pybtex.database import parse_file
 
 # File containing things to ignore.
 DIRECTIVES_FILE = ".mccole"
@@ -178,6 +179,11 @@ def markdownify(text, ext=None, strip=True):
 def mccole():
     """Get configuration section, creating if necessary."""
     return ark.site.config.setdefault("mccole", {})
+
+
+def read_bibliography(filename):
+    """Read BibTeX bibliography."""
+    return parse_file(filename)
 
 
 def read_directives(dirname, section):

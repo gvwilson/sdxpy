@@ -107,7 +107,7 @@ From top to bottom,
 we make a list of strings to display,
 open the log file,
 and then use `lambda` to make
-an [%g anonymous_function "anonymous function" %]
+an [%i "anonymous function" %]anonymous function[%/i%]
 that takes a single screen object as input (which `curses.wrapper` requires)
 and immediately calls `main` with the two arguments that *it* requires.
 
@@ -208,7 +208,7 @@ As this code shows,
 the screen's `getkey` method returns the names of the arrow keys.
 And since `stdscr.move` takes two arguments
 but `cursor.pos` returns a two-element tuple,
-we [%g spread "spread" %] the latter position to satisfy the former.
+we [%i "spread" %]spread[%/i%] the latter position to satisfy the former.
 
 When we run this program and start pressing the arrow keys,
 the cursor does indeed move.
@@ -227,7 +227,7 @@ We need to constrain the cursor's movement
 so that it stays inside the text (not just the window),
 while simultaneously moving the text up or down when appropriate.
 Rather than tackling those problems immediately,
-we will do some [%g refactor "refactoring" %]
+we will do some [%i refactor %]refactoring[%/i%]
 to give ourselves a better starting point.
 
 ## Refactoring {: #viewer-refactor}
@@ -267,7 +267,7 @@ and then launch our application like this:
 [% inc file="main_app.py" keep="launch" %]
 
 Next,
-we refactor `_run` to handle keystrokes using [%g dynamic_dispatch "dynamic dispatch" %]
+we refactor `_run` to handle keystrokes using [%i "dynamic dispatch" %]dynamic dispatch[%/i%]
 instead of a long chain of `if`/`elif` statement:
 
 [% inc file="dispatch_keys.py" keep="interact" %]
@@ -312,7 +312,7 @@ we should have divided things up differently in earlier examples.
 *This is normal.*
 Nobody has perfect foresight;
 if we haven't built a particular kind of application several times,
-we can't anticipate all of the [%g affordance "affordances" %] we might need,
+we can't anticipate all of the [%i "affordance" %]affordances[%/i%] we might need,
 so going back and refactoring old code to make new code easier to write
 is perfectly natural.
 If we need to refactor every time we want to add something new,
@@ -366,7 +366,7 @@ The `ClipCursor` class below takes the buffer as a constructor argument
 so that it can ask how many rows there are
 and how big each one is,
 but its `up`, `down`, `left`, and `right` methods
-have exactly the same [%g signature "signatures" %] as
+have exactly the same [%i signature %]signatures[%/i%] as
 the corresponding methods in the original `Cursor` class.
 As a result,
 while we have to change the code that *creates* a cursor,

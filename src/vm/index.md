@@ -16,17 +16,17 @@ have a look at the game [%i "Human Resource Machine" %][Human Resource Machine][
 
 ## Architecture {: #vm-arch}
 
-Our [%i "virtual machine" %][%g virtual_machine "virtual machine" %][%/i%]
+Our [%g virtual_machine "virtual machine" %]
 simulates a computer with three parts ([%f vm-architecture %]):
 
-1.  The [%i "instruction pointer" %][%g instruction_pointer "instruction pointer" %][%/i%] (IP)
+1.  The [%g instruction_pointer "instruction pointer" %] (IP)
     holds the memory address of the next instruction to execute.
     It is automatically initialized to point at address 0,
     so that is where every program must start.
     (This requirement is part of our VM's
     [%g abi "Application Binary Interface" %], or ABI.)
 
-1.  Four [%i "register (in computer)" %][%g register "registers" %][%/i%] named R0 to R3
+1.  Four [%g register "registers" %] named R0 to R3
     that instructions can access directly.
     There are no memory-to-memory operations in our VM:
     everything happens in or through registers.
@@ -42,15 +42,15 @@ simulates a computer with three parts ([%f vm-architecture %]):
    caption="Architecture of the virtual machine."
 %]
 
-Our processor's [%i "instruction set" %][%g instruction_set "instruction set" %][%/i%]
+Our processor's [%g instruction_set "instruction set" %]
 defines what it can do.
 Instructions are just numbers,
 but we will write them in a simple text format called
-[%i "assembly code" %][%g assembly_code "assembly code" %][%/i%]
+[%g assembly_code "assembly code" %]
 that gives those number human-readable names.
 
 The instructions for our VM are 3 bytes long.
-The [%i "op code" "virtual machine!op code" %][%g op_code "op code" %][%/i%] fits in one byte,
+The [%g op_code "op code" %] fits in one byte,
 and each instruction may include zero, one, or two single-byte operands.
 Each operand is a register identifier,
 a constant,
@@ -108,7 +108,7 @@ we copy those numbers into memory and reset the instruction pointer and register
 To handle the next instruction,
 the VM gets the value in memory that the instruction pointer currently refers to
 and moves the instruction pointer on by one address.
-It then uses [%i "bitwise operation" %][%g bitwise_operation "bitwise operations" %][%/i%]
+It then uses [%i "bitwise operation" %]bitwise operations[%/i%]
 ([%x binary %])
 to extract the op code and operands from the instruction
 ([%f vm-unpacking %]).
@@ -150,7 +150,7 @@ This [%g conditional_jump "conditional jump" %] instruction is how we implement 
 
 We could write out numerical op codes by hand just as [early programmers][eniac_programmers] did.
 However,
-it is much easier to use an [%i "assembler" %][%g assembler "assembler" %][%/i%],
+it is much easier to use an [%g assembler "assembler" %],
 which is just a small compiler for a language
 that very closely represents actual machine instructions.
 
@@ -165,7 +165,7 @@ Its numeric representation (in hexadecimal) is:
 [% inc file="print_r1.mx" %]
 
 One thing the assembly language has that the instruction set doesn't
-is [%i "label (on address)" %][%g label_address "labels on addresses" %][%/i%].
+is [%g label_address "labels on addresses" %].
 A label like `loop` doesn't take up any space;
 instead,
 it tells the assembler to give the address of the next instruction a name

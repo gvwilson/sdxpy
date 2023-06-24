@@ -192,7 +192,7 @@ which is known as the [%g null_object_pattern "Null Object" %] pattern.
 ## We Didn't Invent This
 
 We didn't invent any of the patterns or refactorings used in this chapter.
-Instead, we learned them from books like [%b Gamma1994,Fowler2018,Kerievsky2004 %].
+Instead, we learned them from books like [%b Gamma1994 Fowler2018 Kerievsky2004 %].
 And as [%b Tichy2010 %] showed,
 learning these patterns makes people better programmers.
 
@@ -246,7 +246,8 @@ becomes:
 [% inc file="glob_null.py" keep="either" %]
 
 Looping over the left and right alternative
-saves us from repeating code or introducing a [%g helper_method "helper method" %].
+saves us from repeating code or introducing
+a [%g helper_method "helper method" %].
 It also simplifies the handling of more than two options,
 which we explore in the exercises.
 {: .continue}

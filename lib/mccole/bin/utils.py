@@ -5,6 +5,7 @@ import re
 import sys
 
 import yaml
+from pybtex.database import parse_file
 
 # Known languages.
 LANGUAGES = {"html", "js", "make", "out", "py", "sh", "txt", "yml"}
@@ -114,6 +115,11 @@ def load_config(filename):
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
+
+
+def read_bibliography(filename):
+    """Read BibTeX bibliography."""
+    return parse_file(filename)
 
 
 def read_file(filename, scrub=True):

@@ -14,7 +14,7 @@ The function `dir` (short for "directory") returns a list of those attributes' n
 
 Most programmers never need to use most of these,
 but `__name__` holds the function's original name
-and `__doc__` holds its [%i "docstring" %][%g docstring "docstring" %][%/i%]:
+and `__doc__` holds its [%i "docstring" %]docstring[%/i%]:
 
 [% inc file="func_attr.py" keep="print" %]
 [% inc file="func_attr.out" %]
@@ -68,7 +68,7 @@ our test runner becomes:
 
 *This material extends [%x interp %].*
 
-One way to evaluate a design is to ask how [%g extensibility "extensible" %] it is.
+One way to evaluate a design is to ask how [%i extensibility %]extensible[%/i%] it is.
 The answer for our interpreter is now, "Pretty easily."
 For example,
 we can add a `comment` "operation" that does nothing and returns `None`
@@ -84,8 +84,9 @@ it evaluates and returns its second argument (the "else" branch):
 
 [% inc file="stmt.py" keep="if" %]
 
-This is called [%g lazy_evaluation "lazy evaluation" %]
-to distinguish it from the more usual [%g eager_evaluation "eager evaluation" %]
+As we said in [%x func %],
+this is called [%i "lazy evaluation" %]lazy evaluation[%/i%]
+to distinguish it from the more usual [%i "eager evaluation" %]eager evaluation[%/i%]
 that evaluates everything up front.
 `do_if` only evaluates what it absolutely needs to;
 most languages do this so that we can safely write things like:
@@ -190,7 +191,7 @@ please read [%b Goldberg1991 %] for more detail.
 Floating point numbers are represented by a sign,
 a [%g mantissa "mantissa" %],
 and an [%g exponent "exponent" %].
-In a 32-bit [%g word_memory "word" %]
+In a 32-bit [%i "word (of memory)" %]word[%/i%]
 the [%i "IEEE 754 standard" %]IEEE 754[%/i%] standard calls for 1 bit of sign,
 23 bits for the mantissa,
 and 8 bits for the exponent.
@@ -273,3 +274,17 @@ the [fractions][py_fractions] module,
 which (as its name suggests) uses numerators and denominators
 to avoid some precision issues.
 [This post][textualize_fraction] describes one clever use of the module.
+
+## Exercises {: #bonus-exercises}
+
+### Roundoff {: .exercise}
+
+1.  Write a program that loops over the integers from 1 to 9
+    and uses them to create the values 0.9, 0.09, and so on.
+1.  Calculate the same values by subtracting 0.1 from 1,
+    then subtracting 0.01,
+    and so on.
+1.  Calculate the absolute and relative differences between corresponding values
+    (which should be identical).
+1.  Repeat the exercise using the `Fraction` class
+    from the [fractions][py_fractions] module.

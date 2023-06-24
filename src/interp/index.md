@@ -20,7 +20,7 @@ or calculating sums and averages like spreadsheets,
 compilers turn text into instructions for interpreters or hardware to run.
 
 Most real programming languages have two parts:
-a [%g parser "parser" %] that translates the source code into a data structure in memory,
+a [%i parser %]parser[%/i%] that translates the source code into a data structure in memory,
 and a [%g runtime "runtime" %] that executes the instructions in that data structure.
 [%x parse %] explored parsing;
 this chapter will build a runtime for a very simple interpreter,
@@ -122,7 +122,7 @@ and calculates a different return value:
 
 [% inc file="expr.py" keep="do_abs" %]
 
-Notice that `do_abs` and `do_add` have the same [%g signature "signature" %].
+Notice that `do_abs` and `do_add` have the same [%i signature %]signature[%/i%].
 As with the unit testing functions in [%x test %],
 this allows us to call them interchangeably.
 
@@ -135,7 +135,7 @@ Otherwise,
 `do` checks that its parameter is a list
 and then uses the first value in the list
 to decide what other function to call.
-This lookup-and-call process is the same [%g dynamic_dispatch "dynamic dispatch" %]
+This lookup-and-call process is the same [%i "dynamic dispatch" %]dynamic dispatch[%/i%]
 that we saw in [%x parse %].
 
 [% inc file="expr.py" keep="do" %]
@@ -256,7 +256,7 @@ The sequence of `if` statements that decide what function to call
 is becoming unwieldy.
 (Quick:
 can you see if any of the instruction names are accidentally duplicated?)
-We can replace this by using [%g introspection "introspection" %]
+We can replace this by using [%i introspection %]introspection[%/i%]
 to create a lookup table
 that stores every function whose name starts with `do_`:
 
@@ -280,7 +280,7 @@ the code to select and run an operation is:
 [% inc file="vars_reflect.py" keep="do" %]
 
 As with unit test functions in [%x test %],
-the `do_*` functions must have exactly the same [%g signature "signature" %]
+the `do_*` functions must have exactly the same [%i signature %]signature[%/i%]
 so that we can call any of them with an environment and a list of arguments
 without knowing exactly which function we're calling.
 And as with finding tests,

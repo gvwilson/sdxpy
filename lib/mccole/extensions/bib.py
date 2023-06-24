@@ -5,7 +5,6 @@ from pathlib import Path
 import ark
 import shortcodes
 import util
-from pybtex.database import parse_file
 from pybtex.plugin import find_plugin
 
 
@@ -40,7 +39,7 @@ def bibliography(pargs, kwargs, node):
     stylename = ark.site.config.get("bibliography_style", None)
     util.require(stylename is not None, "No bibliography style specified")
 
-    bib = _read_bibliography(filename, stylename)
+    bib = _style_bibliography(filename, stylename)
     html = find_plugin("pybtex.backends", "html")()
 
     def _format(key, body):
@@ -60,17 +59,16 @@ def check_bibliography():
     if (used := util.get_config("bibliography")) is None:
         return
 
-    bib = _read_bibliography(filename, stylename)
+    bib = _style_bibliography(filename, stylename)
     defined = {e.key for e in bib.entries}
 
     util.warn("unknown bibliography references", used - defined)
     util.warn("unused bibliography entries", defined - used)
 
 
-def _read_bibliography(filename, style):
+def _style_bibliography(filename, style):
     """Load the bibliography file."""
     filename = Path(ark.site.home(), filename)
-    bib = parse_file(filename)
-
+    bib = util.read_bibliography(filename)
     style = find_plugin("pybtex.style.formatting", style)()
     return style.format_bibliography(bib)

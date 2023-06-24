@@ -6,6 +6,7 @@ syllabus:
 -   HTML documents are usually represented in memory as trees using the Document Object Model (DOM).
 -   The style of code that programmers find easiest to read changes as they become more experienced.
 depends:
+-   interp
 -   check
 ---
 
@@ -14,7 +15,7 @@ and the best place to put that documentation is on the web.
 Writing and updating pages by hand is time-consuming and error-prone,
 particularly when many parts are the same,
 so most documentation sites use some kind of
-[%i "static site generator" %][%g static_site_generator "static site generator" %][%/i%]
+[%g static_site_generator "static site generator" %]
 to create web pages from templates.
 
 At the heart of every static site generator is a page templating system.
@@ -133,7 +134,7 @@ If the variable can't be found,
 
 HTML pages have a nested structure,
 so we will process them using
-the [%i "Visitor pattern" "design pattern!Visitor" %][%g visitor_pattern "Visitor" %][%/i%] design pattern.
+the [%i "Visitor pattern" "design pattern!Visitor" %]Visitor[%/i%] design pattern.
 `Visitor`'s constructor takes the root node of the DOM tree as an argument and saves it.
 When we call `Visitor.walk` without a value,
 it starts recursing from that saved root;
@@ -144,7 +145,9 @@ it uses that instead.
 
 `Visitor` defines two [%g abstract_method "abstract methods" %] `open` and `close`
 that are called when we first arrive at a node and when we are finished with it.
-Any class derived from `Visitor` must define these two methods.
+We cannot use `Visitor` itself—it is an [%g abstract_class "abstract class" %].
+Instead,
+we must derive a class from `Visitor` that defines these two methods.
 This approach is different from that of the visitor in [%x check %],
 where we defined do-nothing methods so that derived classes could override
 only the ones they needed.
@@ -193,7 +196,7 @@ The `z_num` expander is a class,
 but we don't plan to create instances of it.
 Instead,
 it's just a way to manage a pair of related `open` and `close` functions,
-which we declare as [%i "static method" %][%g static_method "static methods" %][%/i%].
+which we declare as [%i "static method" %]static methods[%/i%].
 When we enter a node like `<span z-num="123"/>`
 this handler asks the expander to show an opening tag
 followed by the value of the `z-num` attribute.

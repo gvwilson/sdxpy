@@ -46,12 +46,12 @@ and then builds what it needs to in that order
 
 ### A Bit of History
 
-Make was created to manage programs in [%i "compiled language" "language!compiled" %][%g compiled_language "compiled languages" %][%/i%]
+Make was created to manage programs in [%g compiled_language "compiled languages" %]
 like [%i "C" %]C[%/i%] and [%i "Java" %]Java[%/i%],
 which have to be translated into lower-level forms before they can run.
 There are usually two stages to the translation:
 compiling each source file into some intermediate form,
-and then [%i "linking (compiled language)" "compiled language!linking" %][%g link "linking" %][%/i%] the compiled modules
+and then [%g link "linking" %] the compiled modules
 to each other and to libraries
 to create a runnable program.
 If a source file hasn't changed,
@@ -70,7 +70,7 @@ and would also feel morally obliged to implement auto-completion for various edi
 some kind of debugger ([%x debugger %]),
 and so on.
 
-The other option is to use a pre-existing syntax such as [%g json "JSON" %],
+The other option is to use a pre-existing syntax such as [%i "JSON" %]JSON[%/i%],
 which gives us tooling for free.
 For example,
 this file describes two targets `A` and `B`
@@ -79,8 +79,7 @@ and states that the former depends on the latter:
 [% inc file="double_linear_dep.json" %]
 
 As in [%x archive %],
-we will use [%g successive_refinement "successive refinement" %]
-(also called [%g top_down_design "top-down design" %])
+we will use [%i "successive refinement" %]successive refinement[%/i%]
 to create our first build manager.
 Our `BuildBase` class takes a configuration file as a constructor argument,
 loads it,
@@ -219,7 +218,7 @@ We can also extend it.
 For example,
 suppose we only want to update targets that are older than their dependencies.
 If the targets are files,
-we could their [%g timestamp "timestamps" %],
+we could their [%i timestamp %]timestamps[%/i%],
 but for testing purposes
 we would like to specify pretended times in the configuration:
 
@@ -252,7 +251,7 @@ the first two or three times we try to use or extend something,
 we discover changes that would make those tasks easier.
 We should do less of this as time goes by;
 putting it another way,
-if we are still doing large-scale [%g refactor "refactoring" %]
+if we are still doing large-scale [%i refactor %]refactoring[%/i%]
 the tenth or dozenth time we try to use something,
 we probably need to rethink our entire design.
 
@@ -333,4 +332,5 @@ users can mark targets as phony.
 1.  Modify the tool built in this chapter so that
     one build file can import definitions and dependencies from another.
 
-1.  How does your system prevent [%g circular_dependency "circular dependencies" %]?
+1.  How does your system prevent
+    [%g circular_dependency "circular dependencies" %]?

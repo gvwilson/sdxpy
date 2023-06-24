@@ -1,6 +1,6 @@
 ---
 syllabus:
--   Create abstract base classes to specify interfaces.
+-   Create abstract classes to specify interfaces.
 -   Store two-dimensional data as rows or as columns.
 -   Use reflection to match data to function parameters.
 -   Measure performance to evaluate engineering tradeoffs.
@@ -13,7 +13,7 @@ Which pages did they look at, and for how long?
 Whether we use Excel, SQL, R, or Python,
 we will almost certainly be using tables
 that have named columns and multiple rows.
-Tables of this kind are called [%i "dataframe" %][%g dataframe "dataframes" %][%/i%],
+Tables of this kind are called [%g dataframe "dataframes" %],
 and to explore how we should implement them,
 this chapter builds them two different ways
 and then compares their performance.
@@ -21,10 +21,10 @@ and then compares their performance.
 ## Options {: #perf-options}
 
 To start,
-let's create an [%g abstract_class "abstract class" %]
+let's create an [%i "abstract class" %]abstract class[%/i%]
 that defines the methods our dataframe classes will support.
 This class (unimaginatively called `DF`)
-requires [%g concrete_class "concrete classes" %] to implement eight methods:
+requires [%i "concrete class" %]concrete classes[%/i%] to implement eight methods:
 
 -   `ncol`: report the number of columns.
 -   `nrow`: report the number of rows.
@@ -44,7 +44,7 @@ requires [%g concrete_class "concrete classes" %] to implement eight methods:
 Every method in Python needs a body,
 so many programmers will write `pass` (Python's "do nothing" statement).
 However,
-a [%i "docstring" %][%g docstring "docstring" %][%/i%] also counts as a body,
+a [%g docstring "docstring" %] also counts as a body,
 so if we write those (which we should)
 there's no need to write `pass`.
 
@@ -52,7 +52,7 @@ there's no need to write `pass`.
 
 For our first usable implementation,
 we will derive a class `DfRow` that uses
-[%i "row-wise storage; storage!row-wise" %][%g row_wise "row-wise" %][%/i%] storage
+[%g row_wise "row-wise" %] storage
 ([%f perf-row-storage %]).
 The dataframe is stored as a list of dictionaries,
 each of which represents a row.
@@ -69,7 +69,7 @@ and the values associated with a particular key must all have the same type.
 
 Our second implementation,
 `DfCol`,
-will use [%i "column-wise storage; storage!column-wise" %][%g column_wise "column-wise" %][%/i%] storage
+will use [%g column_wise "column-wise" %] storage
 ([%f perf-col-storage %]).
 Each column is stored as a list of values,
 all of which are of the same type.
@@ -128,8 +128,8 @@ and the same values in every column:
 
 Notice that we use `other.cols()` and `other.get()`
 rather than reaching into the other dataframe.
-We defined the abstract base class because
-we expect to implement dataframes in several different ways.
+We defined the [%i "abstract class" %]abstract class[%/i%]
+because we expect to implement dataframes in several different ways.
 Those other ways might not use the same data structures,
 so we can only rely on the interface defined in the base class.
 {: .continue}
@@ -171,7 +171,7 @@ then we should be able to write this test:
 
 [% inc file="test_df_row.py" keep="filter" %]
 
-We can implement this  by using `**` to [%g spread "spread" %] the row
+We can implement this  by using `**` to [%i spread %]spread[%/i%] the row
 across the function's parameters.
 When `**` is used in the definition of a function,
 it means, "Capture all the named arguments that aren't otherwise accounted for."
@@ -325,17 +325,17 @@ particularly if we're expecting to work with large datasets.
 
 Regardless of data volumes,
 different storage schemes are better (or worse) for different kinds of work.
-[%i "online transaction processing (OLTP); OLTP (online transaction processing)" %][%g oltp "Online transaction processing" %][%/i%] (OLTP)
+[%g oltp "Online transaction processing" %] (OLTP)
 refers to adding or querying individual records,
 such as online sales.
-[%i "online analytical processing (OLAP); OLAP (online analytical processing)" %][%g olap "online analytical processing" %][%/i%] (OLAP),
+[%g olap "online analytical processing" %] (OLAP),
 on the other hand,
 processes selected columns of a table in bulk to do things like find averages over time.
 Row-wise storage is usually best for OLTP,
 but column-wise storage is better suited for OLAP.
 If data volumes are large,
-[%i "data engineer" %][%g data_engineer "data engineers" %][%/i%] will sometimes run two databases in parallel,
-using [%i "batch processing" %][%g batch_processing "batch processing" %][%/i%] jobs
+[%g data_engineer "data engineers" %] will sometimes run two databases in parallel,
+using [%g batch_processing "batch processing" %] jobs
 to copy new or updated records from the OLTP databases over to the OLAP database.
 
 </div>
@@ -346,7 +346,7 @@ and time how long it takes to select their columns and filter their rows.
 To keep things simple
 we will create dataframes whose columns are called `label_1`, `label_2`, and so on,
 and whose values are all integers in the range 0–9.
-A thorough set of [%i "benchmarking" %][%g benchmark "benchmarks" %][%/i%]
+A thorough set of [%g benchmark "benchmarks" %]
 would create columns of other kinds as well,
 but this is enough to illustrate the technique.
 
@@ -385,7 +385,7 @@ and reports the results:
 
 This function is called `sweep` because
 executing code multiple times with different parameters to measure performance
-is called [%i "parameter sweeping" %][%g parameter_sweeping "parameter sweeping" %][%/i%].
+is called [%g parameter_sweeping "parameter sweeping" %].
 {: .continue}
 
 The results are shown in [%t perf-timing %] and [%f perf-analysis %].

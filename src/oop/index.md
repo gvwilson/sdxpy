@@ -26,7 +26,8 @@ Let's start by defining the things a generic two-dimensional shape must be able 
 
 [% inc file="shapes_original.py" keep="shape" %]
 
-A specification like this is sometimes called a [%g design_by_contract "contract" %],
+A specification like this is sometimes called
+a [%g design_by_contract "contract" %]
 because any particular shape must conform to it:
 {: .continue}
 
@@ -39,7 +40,7 @@ and use different shapes interchangeably.
 [% inc file="shapes_original.py" keep="poly" %]
 
 This is called [%g polymorphism "polymorphism" %].
-It reduces [%g cognitive_load "cognitive load" %]
+It reduces [%i "cognitive load" %]cognitive load[%/i%]
 by allowing the people using a set of related things (in this case, objects)
 to ignore their differences.
 
@@ -126,7 +127,7 @@ and to call functions by [%g spread "spreading" %] a list or dictionary:
 
 ## Inheritance {: #oop-inheritance}
 
-The last step in building our own object system is to implement [%g inheritance "inheritance" %].
+The last step in building our own object system is to implement [%i inheritance %]inheritance[%/i%].
 First,
 we add a method to our original `Shape` class that uses methods defined in derived classes:
 
@@ -187,7 +188,7 @@ we're not done until we test it:
 We have only scratched the surface of what Python's object system provides.
 [%g multiple_inheritance "Multiple inheritance" %],
 [%g class_method "class methods" %],
-[%g static_method "static methods" %],
+[%i "static method" %]static methods[%/i%],
 and [%g monkey_patching "monkey patching" %] are all useful,
 but all can be understood in terms of dictionaries
 that contain references to attributes, functions, and other dictionaries.
@@ -203,10 +204,11 @@ that contain references to attributes, functions, and other dictionaries.
 
 ### Multiple Inheritance {: .exercise}
 
-Implement [%g multiple_inheritance "multiple inheritance" %] using dictionaries.
+Implement [%i "multiple inheritance" %]multiple inheritance[%/i%] using dictionaries.
 Does your implementation look methods up in the same order as Python would?
 
 ### Class Methods and Static Methods {: .exercise}
 
-Implement [%g class_method "class methods" %] and [%g static_method "static methods" %]
+Implement [%i "class method" %]class methods[%/i%]
+and [%i "static method" %]static methods[%/i%]
 and explain how they differ.

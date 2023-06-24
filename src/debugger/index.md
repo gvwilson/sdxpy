@@ -44,7 +44,7 @@ For now,
 The virtual machine we're starting from loads a program and runs it to completion,
 so it's either running or finished.
 We want to add a third state for single-step execution,
-so let's start by adding an [%g enumeration "enumeration" %] to `architecture.py`:
+so let's start by adding an [%i enumeration %]enumeration[%/i%] to `architecture.py`:
 
 [% inc file="architecture.py" keep="state" %]
 
@@ -276,11 +276,11 @@ that only occurs after several thousand lines of code have been executed.
 We would have to be pretty desperate to single-step through all of that even once,
 much less dozens of times as we're exploring new ideas or trying new fixes.
 Instead,
-we want to set a [%i "breakpoint" %][%g breakpoint "breakpoint" %][%/i%]
+we want to set a [%g breakpoint "breakpoint" %]
 to tell the computer to stop at a particular location
 and drop us into the debugger.
 (We might even use
-a [%i "conditional breakpoint" %][%g conditional_breakpoint "conditional breakpoint" %][%/i%]
+a [%g conditional_breakpoint "conditional breakpoint" %]
 that would only stop if (for example)
 the variable `x` was zero at that point,
 but we'll leave that for the exercises.)
@@ -305,7 +305,7 @@ When the user sets a breakpoint at some address,
 we replace the instruction at that address with a breakpoint instruction
 and store the original instruction in a lookup table.
 If the user later
-[%i "clear (a breakpoint); breakpoint!clear" %][%g clear_breakpoint "clears" %][%/i%]
+[%g clear_breakpoint "clears" %]
 the breakpoint,
 we copy the original instruction back into place,
 and if the VM encounters a breakpoint instruction while its running,
@@ -359,7 +359,7 @@ We also update `show` to display any breakpoints that have been set:
 Notice how the implementation first calls the parent's `show` method
 to display everything we've been displaying so far,
 then adds a few lines to display extra information.
-Extending methods by [%i "upcall" %][%g upcall "upcalling" %][%/i%] this way
+Extending methods by [%i "upcall" %]upcalling[%/i%] this way
 saves us typing,
 and ensures that changes in the parent class
 will automatically show up in the child class.
@@ -443,7 +443,7 @@ or explore ways of using `eval` to support the general case.)
 ### Watchpoints {: .exercise}
 
 Modify the debugger and VM so that the user can create
-[%i "watchpoints" %][%g watchpoint "watchpoints" %][%/i%],
+[%g watchpoint "watchpoints" %],
 i.e.,
 can specify that the debugger should halt the VM
 when the value at a particular address changes.

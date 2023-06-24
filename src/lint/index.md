@@ -35,10 +35,10 @@ and to create code as well as check it.
 
 ## Machinery {: #lint-machinery}
 
-[%x check %] represented HTML as a [%g dom "DOM tree" %].
+[%x check %] represented HTML as a [%i "DOM" "DOM tree" %]DOM tree[%/i%].
 Similarly,
 we can use Python's [ast][py_ast] module
-to parse Python programs and produce an [%g abstract_syntax_tree "abstract syntax tree" %]
+to parse Python programs and produce an [%i "abstract syntax tree" %]abstract syntax tree[%/i%]
 that represents the structure of the code.
 For example,
 suppose we have this short program:
@@ -88,7 +88,7 @@ Luckily for us,
 the [ast][py_ast] module comes with tools that can do this for us.
 The class `ast.NodeVisitor` uses
 the now-familiar
-[%i "Visitor pattern" "design pattern!Visitor" %][%g visitor_pattern "Visitor" %][%/i%] pattern
+[%i "Visitor pattern" "design pattern!Visitor" %]Visitor[%/i%] pattern
 to recurse through an AST.
 Each time the visitor reaches a new node of type `Thing`,
 it looks for a method called `visit_Thing`;
@@ -198,7 +198,7 @@ tell us there aren't problems when there actually are.
 
 Finding unused variables—ones that are assigned values but never used—is
 more challenging than our previous examples.
-The problem is [%g scope "scope" %]:
+The problem is [%i scope %]scope[%/i%]:
 a variable defined in a function or method might have the same name
 as one defined elsewhere,
 but they are different variables.

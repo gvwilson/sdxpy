@@ -179,7 +179,7 @@ so we can't possibly do better than this,
 but how can we ensure that each unique file winds up in its own group?
 
 The answer is to use a
-[%i "cryptographic hash function" "hash function!cryptographic" %][%g cryptographic_hash_function "cryptographic hash function" %][%/i%].
+[%g cryptographic_hash_function "cryptographic hash function" %].
 The output is completely deterministic:
 given the same bytes in the same order,
 it will always produce the same output.
@@ -196,7 +196,9 @@ We will therefore use a function from Python's [hashing library][py_hashlib]
 that implements the [%g sha256 "SHA256" %] algorithm.
 Given some bytes as input,
 this function produces a 256-bit hash,
-which is normally written as a 64-character [%g hexadecimal "hexadecimal" %] string:
+which is normally written as a 64-character [%g hexadecimal "hexadecimal" %] string.
+This uses the letters A-F (or a-f) to represent the digits from 10 to 15,
+so that (for example) `3D5` is \\((3×16^2)+(13×16^1)+(5×16^0)\\), or 981 in decimal:
 
 [% inc file="using_sha256.py" keep="example" %]
 [% inc file="using_sha256.out" %]

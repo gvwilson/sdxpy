@@ -18,17 +18,17 @@ most web servers still handle the same kinds of messages in the same way.
 
 Pretty much every program on the web
 runs on a family of communication standards called
-[%i "Internet Protocol (IP)" "IP (Internet Protocol)" %][%g internet_protocol "Internet Protocol (IP)" %][%/i%].
+[%g internet_protocol "Internet Protocol (IP)" %].
 The one that concerns us is the
-[%i "Transmission Control Protocol (TCP/IP)" "TCP/IP (Transmission Control Protocol)" %][%g tcp "Transmission Control Protocol (TCP/IP)" %][%/i%],
+[%g tcp "Transmission Control Protocol (TCP/IP)" %],
 which makes communication between computers look like reading and writing files.
 
-Programs using IP communicate through [%i "socket" %][%g socket "sockets" %][%/i%]
+Programs using IP communicate through [%g socket "sockets" %]
 ([%f ftp-sockets %]).
 Each socket is one end of a point-to-point communication channel,
 just like a phone is one end of a phone call.
-A socket consists of an [%i "IP address" %][%g ip_address "IP address" %][%/i%] that identifies a particular machine
-and a [%i "port" %][%g port "port" %][%/i%] on that machine.
+A socket consists of an [%g ip_address "IP address" %] that identifies a particular machine
+and a [%g port "port" %] on that machine.
 
 [% figure
    slug="ftp-sockets"
@@ -39,7 +39,7 @@ and a [%i "port" %][%g port "port" %][%/i%] on that machine.
 
 The IP address consists of four 8-bit numbers,
 which are usually written as `93.184.216.34`;
-the [%i "Domain Name System (DNS)" "DNS (Domain Name System)" %][%g dns "Domain Name System (DNS)" %][%/i%]
+the [%g dns "Domain Name System (DNS)" %]
 matches these numbers to symbolic names like `example.com`
 that are easier for human beings to remember.
 
@@ -52,8 +52,8 @@ custom applications should use the remaining ports
 (and should allow users to decide *which* port,
 since there's always the chance that two different people will pick 1234 or 6789).
 
-Most web applications consists of [%i "client (web application)" %][%g client "clients" %][%/i%]
-and [%i "server (web application)" %][%g server "servers" %][%/i%].
+Most web applications consists of [%g client "clients" %]
+and [%g server "servers" %].
 A client program initiates communication by sending a message and waiting for a response;
 a server,
 on the other hand,
@@ -145,7 +145,7 @@ our server will ignore it.
 This can result in [%g deadlock "deadlock" %] because
 the server is trying to send its reply
 while the client is still trying to send the rest of the message.
-Increasing the size of the [%g buffer "buffer" %] used to store the incoming message
+Increasing the size of the [%i "buffer" %]buffer[%/i%] used to store the incoming message
 won't make this problem go away:
 the client (or a malicious attacker) could always send more data than we have allowed for.
 
@@ -215,7 +215,7 @@ but automating it is difficult because
 there's no way to tell how long to wait before trying to talk to the server
 and no easy way to shut the server down.
 
-A partial solution is to use a [%g mock_object "mock object" %] ([%x mock %])
+A partial solution is to use a [%i "mock object" %]mock object[%/i%] ([%x mock %])
 in place of a real network connection
 so that we can test each part of the application independently.
 To start,
@@ -264,7 +264,7 @@ With it, we can now write unit tests like this:
 
 [% inc file="test_server.py" keep="test" %]
 
-The key to our approach is the notion of [%i "fidelity (in testing)" %][%g test_fidelity "fidelity" %][%/i%]:
+The key to our approach is the notion of [%g test_fidelity "fidelity" %]:
 how close is what we test to what we use in production?
 In an ideal world they are exactly the same,
 but in cases like this it makes sense to sacrifice a little fidelity for testability's sake.
@@ -302,7 +302,7 @@ How useful is it in practice?
 
 ### Saving and Listing Files {: .exercise}
 
-1.  Modify the [%g protocol "protocol" %] used by this chapter's client and server
+1.  Modify the [%i protocol %]protocol[%/i%] used by this chapter's client and server
     so that the client sends the file's name, a newline, and then the file's contents,
     and the server saves the file under that name.
 
