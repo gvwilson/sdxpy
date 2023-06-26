@@ -168,6 +168,8 @@ if __name__ == "__main__":
         print(abbrev)
     elif sys.argv[1] == "--chapters":
         print("\n".join(chapters))
+    elif sys.argv[1] == "--lang":
+        print(lang)
     elif sys.argv[1] == "--latex":
         print(f"\\title{{{title}}}")
         print(f"\\subtitle{{{tagline}}}")

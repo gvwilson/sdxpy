@@ -17,6 +17,7 @@ CONFIG := ${ROOT}/config.py
 ABBREV := $(shell python ${CONFIG} --abbrev)
 BUILD_DATE := $(shell date '+%Y-%m-%d')
 CHAPTERS := $(shell python ${CONFIG} --chapters)
+LANG := $(shell python ${CONFIG} --lang)
 TITLE := $(shell python ${CONFIG} --title)
 
 # Direct variables.
@@ -134,10 +135,12 @@ ${ROOT}/docs/all.html: ${ROOT}/docs/index.html ${HTML_COPY} ${MCCOLE}/bin/make_s
 
 ## latex: create LaTeX document
 latex: ${ROOT}/docs/${STEM}.tex
-${ROOT}/docs/${STEM}.tex: ${ROOT}/docs/all.html ${MCCOLE}/bin/html_to_latex.py ${CONFIG} ${TEX_FILES} ${TEX_COPY}
+${ROOT}/docs/${STEM}.tex: ${ROOT}/docs/all.html ${MCCOLE}/bin/html_to_latex.py ${TEX_FILES} ${TEX_COPY}
 	python ${MCCOLE}/bin/html_to_latex.py \
 	--head ${ROOT}/info/head.tex \
 	--foot ${ROOT}/info/foot.tex \
+	--glossary ${ROOT}/info/glossary.yml \
+	--language ${LANG} \
 	< ${ROOT}/docs/all.html \
 	> ${ROOT}/docs/${STEM}.tex
 	python ${CONFIG} --latex > ${ROOT}/docs/config.tex

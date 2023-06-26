@@ -7,6 +7,8 @@ import sys
 
 from bs4 import BeautifulSoup, NavigableString, Tag
 
+import utils
+
 CROSSREFS = {"Appendix": "appref", "Chapter": "chapref", "Section": "secref"}
 
 PRINT_INDEX = r"""
@@ -25,10 +27,11 @@ LATEX_FIG_REGULAR = 0.8
 def main():
     """Convert HTML to LateX."""
     options = parse_args()
+    glossary = read_glossary(options.glossary)
     text = sys.stdin.read()
     text = text.replace(r"\(", "<math>").replace(r"\)", "</math>")
     soup = BeautifulSoup(text, "html.parser")
-    state = {"appendix": False, "seen": {}, "unknown": set()}
+    state = {"appendix": False, "seen": {}, "unknown": set(), "glossary": glossary, "language": options.language}
     accum = []
     for child in soup.find_all("section", class_="new-chapter"):
         accum = handle(child, state, accum, True)
@@ -137,6 +140,9 @@ def handle(node, state, accum, doEscape):
         accum.append(r"\glossref{")
         children(node, state, accum, doEscape)
         accum.append("}")
+        key = href_key(node)
+        term = state["glossary"][key][state["language"]]["term"]
+        accum.append(rf"\index{{{escape(term, True)}}}")
 
     # <a class="link-ref"> => just show the link
     elif node_match(node, "a", "link-ref"):
@@ -464,9 +470,17 @@ def parse_args():
     """Handle command-line arguments."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--debug", action="store_true", help="show debugging")
-    parser.add_argument("--head", required=True, help="LaTeX head")
     parser.add_argument("--foot", required=True, help="LaTeX foot")
+    parser.add_argument("--glossary", required=True, help="glossary file")
+    parser.add_argument("--head", required=True, help="LaTeX head")
+    parser.add_argument("--language", required=True, help="language code")
     return parser.parse_args()
+
+
+def read_glossary(filename):
+    """Read glossary and convert to dictionary."""
+    glossary = utils.read_yaml(filename)
+    return {entry["key"]: entry for entry in glossary}
 
 
 def record_seen(node, state):
