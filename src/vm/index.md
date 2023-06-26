@@ -32,7 +32,7 @@ simulates a computer with three parts ([%f vm-architecture %]):
     everything happens in or through registers.
 
 1.  256 [%g word_memory "words" %] of memory, each of which can store a single value.
-    Both the program and its data live in this single block of memory;
+    Both the program and its data live in this single [%i "block (of memory)" %]block[%/i%] of memory;
     we chose the size 256 so that the address of each word will fit in a single byte.
 
 [% figure
@@ -52,6 +52,10 @@ that gives those number human-readable names.
 The instructions for our VM are 3 bytes long.
 The [%g op_code "op code" %] fits in one byte,
 and each instruction may include zero, one, or two single-byte operands.
+(Instructions are often called [%g bytecode "bytecode" %],
+since they're packed into bytes,
+but so is everything else in a computer…)
+
 Each operand is a register identifier,
 a constant,
 or an address
@@ -151,7 +155,7 @@ This [%g conditional_jump "conditional jump" %] instruction is how we implement 
 We could write out numerical op codes by hand just as [early programmers][eniac_programmers] did.
 However,
 it is much easier to use an [%g assembler "assembler" %],
-which is just a small compiler for a language
+which is just a small [%i "compiler" %]compiler[%/i%] for a language
 that very closely represents actual machine instructions.
 
 Each command in our assembly languages matches an instruction in the VM.

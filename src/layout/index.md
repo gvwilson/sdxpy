@@ -53,7 +53,7 @@ the past is all around us.
 Let's start on [%g easy_mode "easy mode" %]
 without margins, padding, line-wrapping, or other complications.
 Everything we can put on the screen is represented as a rectangular cell,
-and every cell is either a row, a column, or a block.
+and every cell is either a row, a column, or a [%g block_page "block" %].
 A block has a fixed width and height:
 
 [% inc file="easy_mode.py" keep="block" %]

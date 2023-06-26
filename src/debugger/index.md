@@ -362,7 +362,7 @@ then adds a few lines to display extra information.
 Extending methods by [%i "upcall" %]upcalling[%/i%] this way
 saves us typing,
 and ensures that changes in the parent class
-will automatically show up in the child class.
+will automatically show up in the [%i "child class" %]child class[%/i%].
 
 The final step is to change the `run` method
 so that the VM actually stops at a breakpoint.
@@ -464,7 +464,8 @@ or at particular addresses in memory while the program is running.
 ### Displaying Source {: .exercise}
 
 1.  Modify the debugger so that when the debugger is displaying memory,
-    it shows the assembly code instructions corresponding to particular addresses
+    it shows the [%i "assembly code" %]assembly code[%/i%] instructions
+    corresponding to particular addresses
     as well as the numeric codes.
 
 2.  How can the debugger distinguish between locations that contain instructions

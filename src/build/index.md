@@ -27,7 +27,10 @@ the builder manager runs a [%g build_recipe "recipe" %] to refresh it.
 The build manager runs recipes in an order that respects dependencies,
 and it only runs each recipe once (if at all).
 In order for this to be possible,
-targets and dependencies must form a [%g dag "directed acyclic graph" %].
+targets and dependencies must form a [%g dag "directed acyclic graph" %],
+i.e.,
+there cannot be a [%g cycle "cycle" %] of links
+leading from a node back to itself.
 The builder manager constructs
 a [%g topological_order "topological ordering" %] of that graph,
 i.e.,
@@ -147,7 +150,7 @@ The next step is to figure out a safe order in which to build things.
     we go back to the first step.
 
 4.  If at any point the graph isn't empty but nothing is available,
-    we have found a circular dependency,
+    we have found a [%g circular_dependency "circular dependency" %],
     so we report the problem and fail.
 
 [% figure
@@ -238,7 +241,8 @@ each of which does one job:
 Our final design uses
 the [%i "Template Method pattern" "design pattern!Template Method" %]Template Method[%/i%] pattern:
 a method in a parent class defines the overall order of operations,
-while child classes implement those operations without changing the flow of control.
+while [%i "child class" %]child class[%/i%] implement those operations
+without changing the [%i "control flow" %]flow of control[%/i%].
 As you might suspect,
 we didn't know in advance exactly
 how to divide our code into methods.
@@ -333,4 +337,4 @@ users can mark targets as phony.
     one build file can import definitions and dependencies from another.
 
 1.  How does your system prevent
-    [%g circular_dependency "circular dependencies" %]?
+    [%i "circular dependencies" %]circular dependencies[%/i%]?

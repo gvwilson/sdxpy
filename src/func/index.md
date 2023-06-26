@@ -157,7 +157,7 @@ Our test program and its output are:
 Once again,
 Python and other languages work exactly as shown here.
 The interpreter
-(or the CPU, if we're running code compiled to machine instructions)
+(or the CPU, if we're running code [%i "compile" %]compiled[%/i%] to machine instructions)
 reads an instruction,
 figures out what operation it corresponds to,
 and executes that operation.

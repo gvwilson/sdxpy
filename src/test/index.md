@@ -51,12 +51,15 @@ and assigns that object to the variable `example`:
 %]
 
 We can assign the function to another variable
-to create an [%g alias "alias" %] for the function
 and then call the function by referencing that second variable:
 {: .continue}
 
 [% inc file="func_obj.py" keep="alias" %]
 [% inc file="func_obj.out" %]
+
+This doesn't alter or erase
+the connection between the function and the original name.
+{: .continue}
 
 <div class="callout" markdown="1">
 

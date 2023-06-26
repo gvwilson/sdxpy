@@ -98,7 +98,7 @@ and have each particular square contain a reference to that higher-level diction
 [% figure
    slug="oop-shapes-class"
    img="shapes_class.svg"
-   alt="Separating attributes from methods"
+   alt="Separating properties from methods"
    caption="Using dictionaries to emulate classes."
 %]
 
@@ -191,7 +191,7 @@ We have only scratched the surface of what Python's object system provides.
 [%i "static method" %]static methods[%/i%],
 and [%g monkey_patching "monkey patching" %] are all useful,
 but all can be understood in terms of dictionaries
-that contain references to attributes, functions, and other dictionaries.
+that contain references to properties, functions, and other dictionaries.
 
 [% figure
    slug="oop-concept-map"

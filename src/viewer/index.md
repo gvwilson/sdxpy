@@ -274,7 +274,8 @@ instead of a long chain of `if`/`elif` statement:
 
 A little experimentation showed that
 while the curses library uses names like `"KEY_DOWN"` for arrow keys,
-it returns actual control codes for control key combinations like Ctrl-X.
+it returns actual [%i "control code" %]control codes[%/i%]
+for key combinations like Ctrl-X.
 The `TRANSLATE` dictionary turns these into human-readable names
 that we can glue together with `_do_` to make a method name;
 we got the value by logging keystrokes to a file
@@ -327,7 +328,7 @@ Let's wrap it up in a class:
 
 [% inc file="buffer_class.py" keep="buffer" %]
 
-This class doesn't do much yet,
+This [%g buffer_text "text buffer" %] class doesn't do much yet,
 but will later keep track of the viewable region.
 Again,
 we make a copy of `lines` rather than using the list the caller gives us

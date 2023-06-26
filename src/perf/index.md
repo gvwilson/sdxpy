@@ -131,7 +131,7 @@ rather than reaching into the other dataframe.
 We defined the [%i "abstract class" %]abstract class[%/i%]
 because we expect to implement dataframes in several different ways.
 Those other ways might not use the same data structures,
-so we can only rely on the interface defined in the base class.
+so we can only rely on the interface defined in the [%i "base class" %]base class[%/i%].
 {: .continue}
 
 Our final operations are selection,
@@ -364,7 +364,7 @@ to see what fraction of rows filtering usually kept,
 and simulate that.
 Notice that `time_filter` doesn't know or care
 whether it's being given a `DfCol` or a `DfRow`.
-That's the whole point of deriving them from a base class:
+That's the whole point of deriving them from a [%i "base class" %]base class[%/i%]:
 we can use them interchangeably.
 {: .continue}
 

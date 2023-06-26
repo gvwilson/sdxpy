@@ -202,7 +202,7 @@ Our new parent class `Match` looks like this:
 
 [% inc file="glob_null.py" keep="parent" %]
 
-It assumes every child class has a `_match` method
+It assumes every [%g child_class "child class" %] has a `_match` method
 that returns the location from which searching is to continue
 rather than just `True` or `False`.
 `Match.match` therefore checks that we've reached the end of the text.

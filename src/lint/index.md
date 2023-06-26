@@ -1,8 +1,7 @@
 ---
 syllabus:
--   An abstract syntax tree (AST) represents the elements of a program as a data structure.
 -   A linter checks that a program conforms to a set of style and usage rules.
--   Linters typically use the Visitor design pattern to find nodes of interest in an AST.
+-   Linters typically use the Visitor design pattern to find nodes of interest in an abstract syntax tree.
 -   Programs can modify a program's AST and then unparse it to create modified versions of the original program.
 -   Dynamic code modification is very powerful, but the technique can produce insecure and unmaintainable code.
 depends:
@@ -45,9 +44,10 @@ suppose we have this short program:
 
 [% inc file="simple.py" %]
 
-[%f lint-ast-simple %] shows the main parts of this program's AST.
+[%f lint-ast-simple %] shows the main parts of
+this program's [%i "abstract syntax tree" %]abstract syntax tree[%/i%].
 Each node represents one element of the program,
-and each node's children are the element nested within it.
+and each node's [%i "child (in a tree)" %]children[%/i%] are the element nested within it.
 {: .continue}
 
 [% figure

@@ -87,8 +87,8 @@ of available packages as JSON:
 If you ever design a data format,
 please include a standard way for people to add comments,
 because they will always want to.
-YAML has this,
-but JSON and CSV don't.
+[%i "YAML" %]YAML[%/i%] has this,
+but [%i "JSON" %]JSON[%/i%] and [%i "CSV" %]CSV[%/i%] don't.
 
 </div>
 
@@ -327,7 +327,7 @@ to determine if a set of logical propositions can be consistent with each other,
 and that's exactly what we need.
 To start,
 let's import a few things from the `z3` module
-and then create three Boolean variables:
+and then create three [%i "Boolean value" %]Boolean variables[%/i%]:
 
 [% inc file="z3_setup.py" %]
 

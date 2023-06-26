@@ -17,7 +17,7 @@ to convert those strings to objects.
 Most parsers are written in two parts ([%f parse-pipeline %]).
 The first groups characters into atoms of text called "[%g token "tokens" %]".
 The second assembles those tokens to create
-an [%g abstract_syntax_tree "abstract syntax tree" %].
+an [%g abstract_syntax_tree "abstract syntax tree" %] (AST).
 
 [% figure
    slug="parse-pipeline"
@@ -53,7 +53,8 @@ and vice versa,
 so we need parsers to translate the former into the latter.
 However,
 the world doesn't need more file formats:
-please use CSV, JSON, [%g yaml "YAML" %],
+please use [%g csv "comma-separated values" %] (CSV),
+[%g json "JSON" %], [%g yaml "YAML" %],
 or something else that already has an acronym
 rather than inventing something of your own.
 
@@ -199,7 +200,7 @@ The parent `Match` class performs the checks that all classes need to perform
 (in this case,
 that the objects being compared have the same
 [%g concrete_class "concrete class" %]).
-If the child class needs to do any more checking
+If the [%i "child class" %]child class[%/i%] needs to do any more checking
 (for example, that the characters in two `Lit` objects are the same)
 it calls up to the parent method first,
 then adds its own tests.
