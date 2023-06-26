@@ -464,7 +464,8 @@ or at particular addresses in memory while the program is running.
 ### Displaying Source {: .exercise}
 
 1.  Modify the debugger so that when the debugger is displaying memory,
-    it shows the assembly code instructions corresponding to particular addresses
+    it shows the [%i "assembly code" %]assembly code[%/i%] instructions
+    corresponding to particular addresses
     as well as the numeric codes.
 
 2.  How can the debugger distinguish between locations that contain instructions

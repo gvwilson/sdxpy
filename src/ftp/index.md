@@ -145,7 +145,8 @@ our server will ignore it.
 This can result in [%g deadlock "deadlock" %] because
 the server is trying to send its reply
 while the client is still trying to send the rest of the message.
-Increasing the size of the [%i "buffer" %]buffer[%/i%] used to store the incoming message
+Increasing the size of the [%i "buffer (in memory)" %]memory buffer[%/i%]
+used to store the incoming message
 won't make this problem go away:
 the client (or a malicious attacker) could always send more data than we have allowed for.
 

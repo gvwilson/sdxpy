@@ -53,7 +53,7 @@ has to choose one of the following:
     it has to trust that those methods aren't doing anything malicious.
 
 This chapter starts by implementing the first option (built-in types only),
-then extends it to handle [%i alias %]aliases[%/i%]
+then extends it to handle shared objects
 (which JSON does not),
 and finally adds ways to convert user-defined types to storable data.
 To keep parsing and testing simple
@@ -235,6 +235,9 @@ fixture = [shared, shared]
    caption="Saving aliased data without respecting aliases."
 %]
 
+The problem is that the list `shared` is [%g alias "aliased" %],
+i.e.,
+there are two or more references to it.
 To reconstruct the original data correctly we need to:
 
 1.  keep track of everything we have saved;
@@ -416,7 +419,7 @@ to make each piece easier to understand.
 So how does a class indicate that it can be saved and loaded by our framework?
 Our options are:
 
-1.  Require it to inherit from a base class that we provide
+1.  Require it to inherit from a [%i "base class" %]base class[%/i%] that we provide
     so that we can use `isinstance` to check if an object is persistable.
     This approach is used in strictly-typed languages like Java,
     but method #2 below is considered more [%g pythonic "Pythonic" %].

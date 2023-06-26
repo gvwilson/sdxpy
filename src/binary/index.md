@@ -331,7 +331,8 @@ this extra data allows the language to do [%i introspection %]introspection[%/i%
 
 The same is true of collections.
 For example,
-Fortran stores the values in an array side by side in one big block of memory
+Fortran stores the values in an array side by side
+in one big [%i "block (of memory)" %]block[%/i%] of memory
 ([%f binary-arrays %]).
 Writing this to disk is easy:
 if the array starts at location L in memory and has N values,
@@ -478,7 +479,7 @@ then use it to figure out how big our string is:
 [% inc file="variable_packing.out" %]
 
 The unpacking function is analogous.
-We break the [%g buffer "buffer" %]
+We break the [%g buffer_memory "memory buffer" %]
 into a header that's exactly four bytes long
 (i.e., the right size for an integer)
 and a body made up of whatever's left.

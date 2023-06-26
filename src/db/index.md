@@ -199,7 +199,7 @@ we are getting closer to our ultimate goal.
 ## Playing With Blocks {: #db-block}
 
 How can we make our file-backed implementation more efficient?
-One option would be to save each block in a file of its own,
+One option would be to save each record in a file of its own,
 in the same way that we saved each version of a file in [%x archive %].
 However,
 this strategy won't give us as much of a performance boost as we'd like.
@@ -210,7 +210,7 @@ the operating system actually reads a full page
 and then gives us just the byte we asked for.
 
 A more efficient strategy is therefore
-to group records together in [%g block "blocks" %],
+to group records together in [%g block_memory "blocks" %],
 each of which is the same size as a page,
 and an [%i "index (database)" %]index[%/i%] in memory
 to tell us which records are in which blocks.

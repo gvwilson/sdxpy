@@ -101,7 +101,11 @@ there shouldn't be any `z-*` attributes left to confuse a browser.
 
 </div>
 
-The next step is to define the [%g api "API" %] for filling in templates.
+The next step is to define the [%g api "Application Programming Interface" %] (API)
+for filling in templates,
+which is just a fancy way of saying that
+we need to specify what function or functions a program calls
+to use our code.
 Our tool needs the template itself,
 somewhere to write its output,
 and some variables to use in the expansion.
@@ -257,7 +261,7 @@ software isn't done until it has been tested.
 ## Control Flow {: #template-flow}
 
 Our tool supports conditional expressions and loops.
-Since it doesn't handle Boolean expressions like `and` and `or`,
+Since it doesn't handle [%i "Boolean expression" %]Boolean expressions[%/i%] like `and` and `or`,
 implementing a conditional is as simple as looking up a variable
 and then expanding the node if Python thinks the value is [%g truthy "truthy" %]:
 

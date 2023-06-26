@@ -327,7 +327,7 @@ Let's wrap it up in a class:
 
 [% inc file="buffer_class.py" keep="buffer" %]
 
-This class doesn't do much yet,
+This [%g buffer_text "text buffer" %] class doesn't do much yet,
 but will later keep track of the viewable region.
 Again,
 we make a copy of `lines` rather than using the list the caller gives us

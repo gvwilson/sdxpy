@@ -40,7 +40,10 @@ def _collect(node, major, collected):
     parser = shortcodes.Parser(inherit_globals=False, ignore_unknown=True)
     parser.register(_parse, "figure")
     collected[node.slug] = []
-    parser.parse(node.text, {"node": node, "values": collected[node.slug]})
+    try:
+        parser.parse(node.text, {"node": node, "values": collected[node.slug]})
+    except shortcodes.ShortcodeSyntaxError as exc:
+        util.fail(f"%figure shortcode parsing error in {node.filepath}: {exc}")
 
 
 def _cleanup(major, collected):

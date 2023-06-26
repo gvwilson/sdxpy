@@ -17,7 +17,7 @@ to convert those strings to objects.
 Most parsers are written in two parts ([%f parse-pipeline %]).
 The first groups characters into atoms of text called "[%g token "tokens" %]".
 The second assembles those tokens to create
-an [%g abstract_syntax_tree "abstract syntax tree" %].
+an [%g abstract_syntax_tree "abstract syntax tree" %] (AST).
 
 [% figure
    slug="parse-pipeline"

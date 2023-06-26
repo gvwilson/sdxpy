@@ -327,7 +327,7 @@ to determine if a set of logical propositions can be consistent with each other,
 and that's exactly what we need.
 To start,
 let's import a few things from the `z3` module
-and then create three Boolean variables:
+and then create three [%i "Boolean value" %]Boolean variables[%/i%]:
 
 [% inc file="z3_setup.py" %]
 

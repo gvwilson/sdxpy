@@ -101,7 +101,7 @@ that we can analyze or render.
 
 Keep in mind that `requests` isn't doing anything magical.
 Instead,
-it is formatting a block of text,
+it is formatting a piece of text,
 opening a socket connection ([%x ftp %]),
 sending that text through the connection,
 and then reading a response.
@@ -239,7 +239,7 @@ One thing the server is doing right is character encoding.
 The `send_content` method expects `content` to be a `bytes` object,
 not a string,
 because the HTTP protocol requires the content length to be the number of bytes.
-The server reads files in binary mode
+The server reads files in [%i "binary mode" %]binary mode[%/i%]
 by using `"rb"` instead of just `"r"` when it opens files in `handle_file`,
 converts the internally-generated error page from characters to bytes
 using the [%i "UTF-8" %]UTF-8[%/i%] encoding,

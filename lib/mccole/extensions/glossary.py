@@ -20,7 +20,10 @@ def _collect(node, major, collected):
     parser = shortcodes.Parser(inherit_globals=False, ignore_unknown=True)
     parser.register(_parse, "g")
     temp = set()
-    parser.parse(node.text, temp)
+    try:
+        parser.parse(node.text, temp)
+    except shortcodes.ShortcodeSyntaxError as exc:
+        util.fail(f"%g shortcode parsing error in {node.filepath}: {exc}")
     collected[node.slug] = temp
 
 

@@ -15,7 +15,7 @@ depends:
 Similarly,
 the [%g compiler "compilers" %] and [%g interpreter "interpreters" %]
 that make programs run are just programs themselves.
-Instead of changing the characters in a block of memory like text editors,
+Instead of changing the characters in a [%i "block (of memory)" %]block[%/i%] of memory like text editors,
 or calculating sums and averages like spreadsheets,
 compilers turn text into instructions for interpreters or hardware to run.
 
