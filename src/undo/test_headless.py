@@ -23,6 +23,7 @@ def test_move_right():
         ("CONTROL_X", (0, 1), lines)
     ]
 
+# [example]
 def test_scroll_down():
     size = (2, 2)
     lines = ["abc", "def", "ghi"]
@@ -31,3 +32,4 @@ def test_scroll_down():
     app = HeadlessApp(size, lines)
     app(screen)
     assert app.get_log()[-1] == ("CONTROL_X", (2, 0), ["de", "gh"])
+# [/example]

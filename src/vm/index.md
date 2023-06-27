@@ -155,7 +155,7 @@ This [%g conditional_jump "conditional jump" %] instruction is how we implement 
 We could write out numerical op codes by hand just as [early programmers][eniac_programmers] did.
 However,
 it is much easier to use an [%g assembler "assembler" %],
-which is just a small [%i "compiler" %]compiler[%/i%] for a language
+which is just a small [%i "compiler" %][%/i%] for a language
 that very closely represents actual machine instructions.
 
 Each command in our assembly languages matches an instruction in the VM.

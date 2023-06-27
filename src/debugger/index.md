@@ -10,7 +10,7 @@ depends:
 ---
 
 We have finally come to another of the questions that sparked this book:
-how does a [%i "debugger" %]debugger[%/i%] work?
+how does a [%i "debugger" %][%/i%] work?
 Debuggers are as much a part of good programmers' lives as version control
 but are taught far less often
 (in part, we believe, because it's harder to create homework questions for them).
@@ -44,7 +44,7 @@ For now,
 The virtual machine we're starting from loads a program and runs it to completion,
 so it's either running or finished.
 We want to add a third state for single-step execution,
-so let's start by adding an [%i enumeration %]enumeration[%/i%] to `architecture.py`:
+so let's start by adding an [%i "enumeration" %][%/i%] to `architecture.py`:
 
 [% inc file="architecture.py" keep="state" %]
 
@@ -225,7 +225,7 @@ reduce that complexity.
 
 We are going to add one more big feature to our debugger,
 but before we do,
-let's do some [%i refactor %]refactoring[%/i%].
+let's do some [%i "refactor" %]refactoring[%/i%].
 First,
 we move every interactive operation into a method of its own
 that does something
@@ -362,7 +362,7 @@ then adds a few lines to display extra information.
 Extending methods by [%i "upcall" %]upcalling[%/i%] this way
 saves us typing,
 and ensures that changes in the parent class
-will automatically show up in the [%i "child class" %]child class[%/i%].
+will automatically show up in the [%i "child class" %][%/i%].
 
 The final step is to change the `run` method
 so that the VM actually stops at a breakpoint.
@@ -464,7 +464,7 @@ or at particular addresses in memory while the program is running.
 ### Displaying Source {: .exercise}
 
 1.  Modify the debugger so that when the debugger is displaying memory,
-    it shows the [%i "assembly code" %]assembly code[%/i%] instructions
+    it shows the [%i "assembly code" %][%/i%] instructions
     corresponding to particular addresses
     as well as the numeric codes.
 

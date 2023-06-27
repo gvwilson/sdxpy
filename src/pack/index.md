@@ -11,7 +11,7 @@ depends:
 ---
 
 There is no point building software if you can't install it.
-Inspired by the [%i "Comprehensive TeX Archive Network" %]Comprehensive TeX Archive Network[%/i%]
+Inspired by the [%i "Comprehensive TeX Archive Network" %][%/i%]
 ([CTAN][ctan]),
 most languages have an online archive from which people can download packages.
 Each package typically has a name and one or more versions;
@@ -87,8 +87,8 @@ of available packages as JSON:
 If you ever design a data format,
 please include a standard way for people to add comments,
 because they will always want to.
-[%i "YAML" %]YAML[%/i%] has this,
-but [%i "JSON" %]JSON[%/i%] and [%i "CSV" %]CSV[%/i%] don't.
+[%i "YAML" %][%/i%] has this,
+but [%i "JSON" %][%/i%] and [%i "CSV" %][%/i%] don't.
 
 </div>
 
@@ -532,6 +532,6 @@ and generates the constraints needed by the Z3 theorem prover.
     and use the solution to find a legal build order.
 
 2.  Modify the constraints to introduce
-    a [%i "circular dependency" %]circular dependency[%/i%]
+    a [%i "circular dependency" %][%/i%]
     and check that the solver correctly determines
     that there is no legal build order.

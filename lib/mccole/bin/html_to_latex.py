@@ -7,7 +7,7 @@ import sys
 
 from bs4 import BeautifulSoup, NavigableString, Tag
 
-import utils
+import util
 
 CROSSREFS = {"Appendix": "appref", "Chapter": "chapref", "Section": "secref"}
 
@@ -479,7 +479,7 @@ def parse_args():
 
 def read_glossary(filename):
     """Read glossary and convert to dictionary."""
-    glossary = utils.read_yaml(filename)
+    glossary = util.read_yaml(filename)
     return {entry["key"]: entry for entry in glossary}
 
 

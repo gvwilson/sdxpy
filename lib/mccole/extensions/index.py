@@ -3,10 +3,13 @@
 Index entries are created using `[% i "some" "key" %]...text...[% /i %]`.  Keys
 can use `major!minor` notation to create subheadings (LaTeX-style).
 
-If some text is in both the glossary and the index, wrap the index shortcode
-around the glossary shortcode:
+    [% i "some" %]some text[% /i %]
 
-    [% i "some" %][% g key %]some text[% /g %][% /i %]
+If an index entry has a single key and no text like this:
+
+    [% i "thing" %][%/i%]
+
+then "thing" is used as the text as well as the index key.
 
 -   `index_ref` turns an index reference shortcode into text.
 
@@ -59,11 +62,18 @@ def _parse(pargs, kwargs, extra, content):
 @shortcodes.register("i", "/i")
 def index_ref(pargs, kwargs, node, content):
     """Handle [%i "some" "key" %]...text...[% /i %] index shortcodes."""
-    util.require(pargs, f"Badly-formatted 'i' shortcode {pargs} in {node.filepath}")
-
-    joined = ";".join(pargs)
+    util.require(pargs, f"'i' shortcode in {node.filepath} has no arguments")
+    if content:
+        pargs = ";".join(pargs)
+    else:
+        util.require(
+            len(pargs) == 1,
+            f"Badly-formatted empty 'i' shortcode {pargs} in {node.filepath}"
+        )
+        content = pargs[0].strip()
+        pargs = content
     cls = 'class="ix-entry"'
-    return f'<span {cls} ix-key="{joined}" markdown="1">{content}</span>'
+    return f'<span {cls} ix-key="{pargs}" markdown="1">{content}</span>'
 
 
 @shortcodes.register("index")

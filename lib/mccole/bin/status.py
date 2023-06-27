@@ -4,7 +4,7 @@ import argparse
 from pathlib import Path
 
 import regex
-import utils
+import util
 from prettytable import MARKDOWN, PrettyTable
 
 EXERCISES_PER = 8
@@ -22,7 +22,7 @@ SHORT_CHAPTERS = {"intro", "finale"}
 def main():
     """Main driver."""
     options = parse_args()
-    config = utils.load_config(options.config)
+    config = util.load_config(options.config)
     report(options.plain, config.chapters)
 
 

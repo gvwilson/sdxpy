@@ -37,7 +37,7 @@ and to create code as well as check it.
 [%x check %] represented HTML as a [%i "DOM" "DOM tree" %]DOM tree[%/i%].
 Similarly,
 we can use Python's [ast][py_ast] module
-to parse Python programs and produce an [%i "abstract syntax tree" %]abstract syntax tree[%/i%]
+to parse Python programs and produce an [%i "abstract syntax tree" %][%/i%]
 that represents the structure of the code.
 For example,
 suppose we have this short program:
@@ -45,7 +45,7 @@ suppose we have this short program:
 [% inc file="simple.py" %]
 
 [%f lint-ast-simple %] shows the main parts of
-this program's [%i "abstract syntax tree" %]abstract syntax tree[%/i%].
+this program's [%i "abstract syntax tree" %][%/i%].
 Each node represents one element of the program,
 and each node's [%i "child (in a tree)" %]children[%/i%] are the element nested within it.
 {: .continue}
@@ -198,7 +198,7 @@ tell us there aren't problems when there actually are.
 
 Finding unused variables—ones that are assigned values but never used—is
 more challenging than our previous examples.
-The problem is [%i scope %]scope[%/i%]:
+The problem is [%i "scope" %][%/i%]:
 a variable defined in a function or method might have the same name
 as one defined elsewhere,
 but they are different variables.

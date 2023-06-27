@@ -3,6 +3,7 @@ import string
 from action import Action, ActionApp
 
 
+# [Undo]
 class Undo(Action):
     def do(self):
         action = self._app._history.pop()
@@ -13,6 +14,7 @@ class Undo(Action):
 
     def __str__(self):
         return f"Undo({self._app._history[-1]})"
+# [/Undo]
 
 
 class UndoableApp(ActionApp):

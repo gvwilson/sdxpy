@@ -120,6 +120,11 @@ wordlist: ${ROOT}/docs/index.html
 	| sort \
 	| uniq
 
+## index: show all index entries
+.PHONY: index
+index: ${MCCOLE}/bin/show_index.py
+	@python ${MCCOLE}/bin/show_index.py --config ${CONFIG}
+
 ## ---: ---
 
 ## html: create single-page HTML

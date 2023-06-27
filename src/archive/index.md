@@ -95,7 +95,7 @@ To make sure early tests don't contaminate later ones
 we would have to re-create those files and directories after each test.
 
 As discussed in [%x mock %],
-a better approach is to use a [%i "mock object" %]mock object[%/i%]
+a better approach is to use a [%i "mock object" %][%/i%]
 instead of the real filesystem.
 The [pyfakefs][pyfakefs] module replaces key functions like `open`
 with functions that behave the same way
@@ -148,7 +148,7 @@ so that losing one hard drive wouldn't mean losing all our work,
 so we need to design our system with multiple back ends in mind.
 
 For now,
-we will store manifests in [%i "CSV" %]CSV[%/i%] files named `ssssssssss.csv`,
+we will store manifests in [%i "CSV" %][%/i%] files named `ssssssssss.csv`,
 where `ssssssssss` is the [%g utc "UTC" %] [%g timestamp "timestamp" %]
 of the backup's creation.
 
@@ -257,7 +257,7 @@ that prescribes the general steps in creating a backup:
 
 [% inc file="backup_oop.py" keep="base" %]
 
-We can then derive a [%i "child class" %]child class[%/i%]
+We can then derive a [%i "child class" %][%/i%]
 to archive things locally
 and fill in its methods by re-using code from the functions
 we have just written.

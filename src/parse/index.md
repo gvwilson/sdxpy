@@ -194,13 +194,13 @@ we can manipulates objects of those classes using familiar operations.
 And yes,
 this is another example of introspection.
 
-Since we're using [%i "inheritance" %]inheritance[%/i%] to implement our matchers,
+Since we're using [%i "inheritance" %][%/i%] to implement our matchers,
 we write the check for equality in two parts.
 The parent `Match` class performs the checks that all classes need to perform
 (in this case,
 that the objects being compared have the same
 [%g concrete_class "concrete class" %]).
-If the [%i "child class" %]child class[%/i%] needs to do any more checking
+If the [%i "child class" %][%/i%] needs to do any more checking
 (for example, that the characters in two `Lit` objects are the same)
 it calls up to the parent method first,
 then adds its own tests.

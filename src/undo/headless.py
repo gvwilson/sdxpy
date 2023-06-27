@@ -2,6 +2,7 @@ from app import App
 from util import ROW, COL
 from window import Window
 
+# [screen]
 class HeadlessScreen:
     def __init__(self, size, keystrokes):
         self._size = size
@@ -17,6 +18,13 @@ class HeadlessScreen:
             self._i_key += 1
         return key
 
+    def addstr(self, row, col, text):
+        assert 0 <= row < self._size[ROW]
+        assert col == 0
+        assert len(text) <= self._size[COL]
+        self._display[row] = text + self._display[row][len(text):]
+# [/screen]
+
     def move(self, row, col):
         assert 0 <= row < self._size[ROW]
         assert 0 <= col < self._size[COL]
@@ -24,23 +32,20 @@ class HeadlessScreen:
     def erase(self):
         self._display = ['_' * self._size[COL] for _ in range(self._size[ROW])]
 
-    def addstr(self, row, col, text):
-        assert 0 <= row < self._size[ROW]
-        assert col == 0
-        assert len(text) <= self._size[COL]
-        self._display[row] = text + self._display[row][len(text):]
-
     def display(self):
         return self._display
 
     def __str__(self):
         return f"Screen(Z={self._size})"
 
+# [window]
 class HeadlessWindow(Window):
     def __init__(self, screen, size):
         assert size is not None and len(size) == 2
         super().__init__(screen, size)
+# [/window]
 
+# [app]
 class HeadlessApp(App):
     def __init__(self, size, lines):
         super().__init__(size, lines)
@@ -54,3 +59,4 @@ class HeadlessApp(App):
 
     def _make_window(self):
         self._window = HeadlessWindow(self._screen, self._size)
+# [/app]

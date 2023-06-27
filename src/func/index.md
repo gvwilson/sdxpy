@@ -79,7 +79,7 @@ so we write the call as:
 [% inc file="example_def.py" keep="call" %]
 
 To make `"call"` work,
-we need to implement [%i scope %]scope[%/i%]
+we need to implement [%i "scope" %][%/i%]
 so that parameters and variables used in a function
 don't overwrite those defined outside it—in other words,
 to prevent [%g name_collision "name collision" %].

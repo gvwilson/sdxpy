@@ -98,7 +98,7 @@ we can store them in a list just like numbers or strings
 
 However,
 we have to know how to call the functions in order for this trick to work,
-which means they must have the same [%i signature %]signature[%/i%]:
+which means they must have the same [%i "signature" %][%/i%]:
 {: .continue}
 
 [% inc pat="signature.*" fill="py out" %]
@@ -116,7 +116,7 @@ We can then call the function as `func()`
 just as we called `example` using `alias()`.
 In order for this to work,
 though,
-all of the functions in the list must have the same [%i signature %]signature[%/i%],
+all of the functions in the list must have the same [%i "signature" %][%/i%],
 i.e.,
 they must all take the same number of parameters
 in the same order
@@ -238,7 +238,7 @@ Python shows us its name and its address in memory.
 {: .continue}
 
 Having a program find things in itself like this at runtime
-is another example of [%i introspection %]introspection[%/i%]
+is another example of [%i "introspection" %][%/i%]
 ([%x parse %]).
 Combining introspection with the pass-fail-error pattern of the previous section
 gives us something that finds test functions,

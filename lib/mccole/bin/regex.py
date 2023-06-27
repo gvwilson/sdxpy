@@ -15,6 +15,7 @@ FIGURE = re.compile(r'\[%\s*figure\b.+?slug="(.+?)".+?img="(.+?)".+?%\]', re.DOT
 GLOSSARY_REF = re.compile(r'\[%\s*g\s+\b(.+?)\b\s+"(.+?)"\s*%\]')
 GLOSSARY_CROSSREF = re.compile(r"\[.+?\]\(\#(.+?)\)", re.DOTALL)
 IMG = re.compile(r'<img.+?src="(.+?)".+?>')
+INDEX_REF = re.compile(r'\[%\s*i\b(.+?)%\](.+?)\[%\s*/i\s*%\]')
 SHORTCODE = re.compile(r"\[%.+?%\]")
 
 # Markdown elements.

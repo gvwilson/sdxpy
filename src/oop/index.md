@@ -40,7 +40,7 @@ and use different shapes interchangeably.
 [% inc file="shapes_original.py" keep="poly" %]
 
 This is called [%g polymorphism "polymorphism" %].
-It reduces [%i "cognitive load" %]cognitive load[%/i%]
+It reduces [%i "cognitive load" %][%/i%]
 by allowing the people using a set of related things (in this case, objects)
 to ignore their differences.
 
@@ -127,7 +127,7 @@ and to call functions by [%g spread "spreading" %] a list or dictionary:
 
 ## Inheritance {: #oop-inheritance}
 
-The last step in building our own object system is to implement [%i inheritance %]inheritance[%/i%].
+The last step in building our own object system is to implement [%i "inheritance" %][%/i%].
 First,
 we add a method to our original `Shape` class that uses methods defined in derived classes:
 
@@ -204,7 +204,7 @@ that contain references to properties, functions, and other dictionaries.
 
 ### Multiple Inheritance {: .exercise}
 
-Implement [%i "multiple inheritance" %]multiple inheritance[%/i%] using dictionaries.
+Implement [%i "multiple inheritance" %][%/i%] using dictionaries.
 Does your implementation look methods up in the same order as Python would?
 
 ### Class Methods and Static Methods {: .exercise}

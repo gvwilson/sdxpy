@@ -8,7 +8,7 @@ from pathlib import Path
 
 import frontmatter
 import regex
-import utils
+import util
 from bs4 import BeautifulSoup, Tag
 
 # Required keys in configuration and their types.
@@ -71,6 +71,7 @@ def main():
         check_glossary_redef,
         check_glossary_ref_in_index,
         check_ids,
+        check_index_refs,
         check_links,
         check_inclusions,
         check_bib,
@@ -97,7 +98,7 @@ def check_bib(config):
 
 def check_dom(dom_spec, html_files):
     """Check DOM elements in generated files."""
-    allowed = utils.read_yaml(dom_spec)
+    allowed = util.read_yaml(dom_spec)
     seen = {}
     for filename in html_files:
         with open(filename, "r") as reader:
@@ -210,6 +211,16 @@ def check_inclusions(config):
         _diff(f"{slug} inclusions", referenced, existing)
 
 
+def check_index_refs(config):
+    """Check formatting of index references."""
+    for slug, text in config["prose"].items():
+        for match in regex.INDEX_REF.finditer(text):
+            keys = match.group(1).strip()
+            content = match.group(2)
+            if not (keys.startswith('"') and keys.endswith('"')):
+                _warn(f"{slug} badly-formatted index reference {match.group(0)}")
+
+
 def check_links(config):
     """Check external link references."""
     defined = {ln["key"] for ln in config["links_data"] if "direct" not in ln}
@@ -238,7 +249,7 @@ def check_slides(config):
 
 def get_config(filepath):
     """Load and check configuration file."""
-    module = utils.load_config(filepath)
+    module = util.load_config(filepath)
 
     for field, kind in CONFIG_REQUIRED.items():
         if field not in dir(module):
@@ -248,9 +259,9 @@ def get_config(filepath):
 
     config = {key: getattr(module, key) for key in CONFIG_USED}
     for key in ["glossary", "links"]:
-        config[f"{key}_data"] = utils.read_yaml(config[key])
+        config[f"{key}_data"] = util.read_yaml(config[key])
         config[f"{key}_refs"] = set()
-    config["bibliography_data"] = utils.read_bibliography(config["bibliography"])
+    config["bibliography_data"] = util.read_bibliography(config["bibliography"])
 
     config["prose"] = {
         slug: _read_file(Path(config["src_dir"], slug, INDEX_FILE))
@@ -322,7 +333,7 @@ def _directive(dir_path, section):
     file_path = Path(dir_path).joinpath(DIRECTIVES_FILE)
     if not file_path.exists():
         return []
-    content = utils.read_yaml(file_path, True)
+    content = util.read_yaml(file_path, True)
     return content.get(section, [])
 
 
