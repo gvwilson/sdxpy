@@ -21,7 +21,7 @@ and then compares their performance.
 ## Options {: #perf-options}
 
 To start,
-let's create an [%i "abstract class" %]abstract class[%/i%]
+let's create an [%i "abstract class" %][%/i%]
 that defines the methods our dataframe classes will support.
 This class (unimaginatively called `DF`)
 requires [%i "concrete class" %]concrete classes[%/i%] to implement eight methods:
@@ -128,10 +128,10 @@ and the same values in every column:
 
 Notice that we use `other.cols()` and `other.get()`
 rather than reaching into the other dataframe.
-We defined the [%i "abstract class" %]abstract class[%/i%]
+We defined the [%i "abstract class" %][%/i%]
 because we expect to implement dataframes in several different ways.
 Those other ways might not use the same data structures,
-so we can only rely on the interface defined in the [%i "base class" %]base class[%/i%].
+so we can only rely on the interface defined in the [%i "base class" %][%/i%].
 {: .continue}
 
 Our final operations are selection,
@@ -171,7 +171,7 @@ then we should be able to write this test:
 
 [% inc file="test_df_row.py" keep="filter" %]
 
-We can implement this  by using `**` to [%i spread %]spread[%/i%] the row
+We can implement this  by using `**` to [%i "spread" %][%/i%] the row
 across the function's parameters.
 When `**` is used in the definition of a function,
 it means, "Capture all the named arguments that aren't otherwise accounted for."
@@ -364,7 +364,7 @@ to see what fraction of rows filtering usually kept,
 and simulate that.
 Notice that `time_filter` doesn't know or care
 whether it's being given a `DfCol` or a `DfRow`.
-That's the whole point of deriving them from a [%i "base class" %]base class[%/i%]:
+That's the whole point of deriving them from a [%i "base class" %][%/i%]:
 we can use them interchangeably.
 {: .continue}
 

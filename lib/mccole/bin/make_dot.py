@@ -6,7 +6,7 @@ import frontmatter
 import graphviz
 import sys
 import textwrap
-import utils
+import util
 
 # Colors to use for node types.
 COLORS = {
@@ -41,7 +41,7 @@ FORMATS = ["pdf", "png", "svg"]
 def main():
     """Main driver."""
     options = parse_args()
-    config = utils.load_config(options.config)
+    config = util.load_config(options.config)
     chapters = make_chapters(options, config)
     check_chapters(chapters)
     dot = graphviz.Digraph(graph_attr=GRAPH_ATTRIBUTES, node_attr=NODE_ATTRIBUTES)

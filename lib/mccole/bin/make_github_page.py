@@ -4,7 +4,7 @@ import argparse
 import sys
 
 import regex
-import utils
+import util
 
 
 def main():
@@ -15,7 +15,7 @@ def main():
     text = regex.MARKDOWN_HEADING.sub(lambda m: f"## {m.group(1)}\n", text)
     text = regex.PARAGRAPH_CONTINUE.sub("", text)
 
-    links = utils.read_yaml(options.links)
+    links = util.read_yaml(options.links)
     links = {ln["key"]: ln["url"] for ln in links}
 
     needed = {m.group(1) for m in regex.MARKDOWN_FOOTER_LINK.finditer(text)}

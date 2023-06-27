@@ -68,7 +68,7 @@ our test runner becomes:
 
 *This material extends [%x interp %].*
 
-One way to evaluate a design is to ask how [%i extensibility %]extensible[%/i%] it is.
+One way to evaluate a design is to ask how [%i "extensibility" %]extensible[%/i%] it is.
 The answer for our interpreter is now, "Pretty easily."
 For example,
 we can add a `comment` "operation" that does nothing and returns `None`

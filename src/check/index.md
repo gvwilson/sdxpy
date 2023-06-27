@@ -117,7 +117,7 @@ it produces this output
 [% inc file="contains.out" %]
 
 We have written several recursive functions already,
-all of which have more or less the same [%i "control flow" %]control flow[%/i%].
+all of which have more or less the same [%i "control flow" %][%/i%].
 A good rule of software design is that if we have written something three times,
 we should turn what we've learned into something reusable
 so that we never have to write it again.
@@ -159,14 +159,14 @@ the more helpful the Visitor pattern becomes.
 ## Checking Style {: #check-style}
 
 To wrap up our style checker,
-let's create a [%i "manifest" %]manifest[%/i%] that specifies
+let's create a [%i "manifest" %][%/i%] that specifies
 which types of nodes can be children of which others:
 
 [% inc file="manifest.yml" %]
 
-We've chosen to use [%i "YAML" %]YAML[%/i%] for the manifest
+We've chosen to use [%i "YAML" %][%/i%] for the manifest
 because it's a relatively simple way to write nested rules.
-We could have used [%i JSON %]JSON[%/i%],
+We could have used [%i "JSON" %][%/i%],
 but as we said in [%x parse %],
 we shouldn't invent a syntax of our own:
 there are already too many in the world.

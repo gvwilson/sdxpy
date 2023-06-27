@@ -67,7 +67,7 @@ for example,
 
 [% inc pat="binary_notation.*" fill="py out" %]
 
-Programmers usually write [%i "hexadecimal" i%]hexadecimal[%/i%] instead:
+Programmers usually write [%i "hexadecimal" %]hexadecimal[%/i%] instead:
 the digits 0–9 have the usual meaning,
 and the letters A-F (or a-f) are used to represent the digits 11–15.
 We signal that we're using hexadecimal with a `0x` prefix,
@@ -324,7 +324,7 @@ put each value in a data structure
 that keeps track of its type along with a bit of extra administrative information
 ([%f binary-boxing %]).
 Something stored this way is called a [%g boxed_value "boxed value" %];
-this extra data allows the language to do [%i introspection %]introspection[%/i%] and much more.
+this extra data allows the language to do [%i "introspection" %][%/i%] and much more.
 
 [% figure
    slug="binary-boxing"
@@ -404,7 +404,7 @@ Here's an example:
 
 What is `\x1f` and why is it in our data?
 If Python finds a character in a string that doesn't have a printable representation,
-it prints a 2-digit [%g escape_sequence "escape sequence" %] in [%i "hexadecimal" %]hexadecimal[%/i%].
+it prints a 2-digit [%g escape_sequence "escape sequence" %] in [%i "hexadecimal" %][%/i%].
 Python is therefore telling us that
 our string contains the eight bytes
 `['\x1f', '\x00', '\x00', '\x00', 'A', '\x00', '\x00', '\x00']`.

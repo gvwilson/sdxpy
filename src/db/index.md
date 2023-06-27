@@ -84,7 +84,7 @@ Saving a class is no different from saving a function,
 which in turn is no different from saving a string or a list.
 The proof is that we can refactor
 the dictionary-based implementation of our database
-to use a [%i "static method" %]static method[%/i%] of the record class
+to use a [%i "static method" %][%/i%] of the record class
 when it needs a key:
 
 [% inc file="just_dict_refactored.py" %]
@@ -175,7 +175,7 @@ either way,
 we then load the entire database into memory.
 When we add a record,
 we save it in the dictionary
-and call a [%i "helper method" %]helper method[%/i%] `_save`
+and call a [%i "helper method" %][%/i%] `_save`
 to write the entire database back to the file.
 When we get a record,
 we simply get it from the in-memory dictionary.
@@ -340,7 +340,7 @@ we should profile this change before putting it into production
 to see if it actually improves performance ([%x perf %]),
 since many small writes might cost more than one large multi-file read.
 We would also have to do something
-to avoid creating a [%i "race condition" %]race condition[%/i%];
+to avoid creating a [%i "race condition" %][%/i%];
 as in [%x archive %],
 operating on two files (one for the index and one for the block)
 could lead to harmful inconsistencies.

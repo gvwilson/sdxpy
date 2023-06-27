@@ -92,8 +92,6 @@ depends:
    caption="Relationships between classes in file viewer"
 %]
 
----
-
 ## A Headless Screen
 
 -   Create a [%g headless "headless" %] screen for testing
@@ -105,13 +103,9 @@ depends:
     -   Would have made more sense for `App` to have a method
         that gets keystrokes
 
----
-
 ## A Headless Screen
 
 [% inc file="headless.py" keep="screen" %]
-
----
 
 ## Bad But Necessary
 
@@ -121,9 +115,7 @@ depends:
 [% inc file="headless.py" keep="window" %]
 
 -   Violates the
-    [%i "Liskov Substitution Principle" %]Liskov Substitution Principle[%/i%]
-
----
+    [%i "Liskov Substitution Principle" %][%/i%]
 
 ## Logging
 
@@ -131,15 +123,11 @@ depends:
 
 [% inc file="headless.py" keep="app" %]
 
----
-
 ## Testing
 
 [% inc file="test_headless.py" keep="example" %]
 
 -   Last key is always `CONTROL_X` (exit)
-
----
 
 ## Insertion and Deletion
 
@@ -147,17 +135,13 @@ depends:
 
 -   Delete character *under* the cursor, not to the left
 
--   A little [%i "defensive programming" %]defensive programming[%/i%] as well
-
----
+-   A little [%i "defensive programming" %][%/i%] as well
 
 ## Application
 
 [% inc file="insert_delete.py" keep="app" %]
 
 [% inc file="insert_delete.py" keep="action" %]
-
----
 
 ## Application
 
@@ -169,8 +153,6 @@ depends:
 
     -   Could provide per-key methods to make customization easier
 
----
-
 ## Testing
 
 -   Write a function to make the fixture and run the test
@@ -181,10 +163,6 @@ depends:
 
 [% inc file="test_insert_delete.py" keep="example" %]
 
----
-
-class: aside
-
 ## Edge Case
 
 -   Can't delete when in an empty screen
@@ -192,8 +170,6 @@ class: aside
 [% inc file="test_insert_delete.py" keep="empty" %]
 
 -   Our focus is implementing undo, so leave this for an exercise
-
----
 
 ## Recording History
 
@@ -207,8 +183,6 @@ class: aside
 
 -   Have actions append entries to a log
 
----
-
 ## The Simple Approach
 
 [% inc file="history.py" keep="app" %]
@@ -216,8 +190,6 @@ class: aside
 -   What about undoing cursor movement?
 
 -   And do we write an interpreter for these log records?
-
----
 
 ## Verbs as Nouns
 
@@ -227,11 +199,9 @@ class: aside
     with methods to go forward and backward
 
 -   Every action is derived from
-    an [%i "abstract base class" %]abstract base class[%/i%]
+    an [%i "abstract base class" %][%/i%]
 
 [% inc file="action.py" keep="Action" %]
-
----
 
 ## Insertion and Deletion
 
@@ -239,16 +209,12 @@ class: aside
 
 [% inc file="action.py" keep="Delete" %]
 
----
-
 ## Movement
 
 [% inc file="action.py" keep="Move" %]
 
 -   Give `Cursor` methods to move in a particular direction (by name)
     and move to a particular location
-
----
 
 ## Application
 
@@ -260,8 +226,6 @@ class: aside
 
 -   Modify all action methods to take a key to simplify the code a little
 
----
-
 ## Application
 
 [% inc file="action.py" keep="actions" %]
@@ -271,8 +235,6 @@ class: aside
 -   Our first implementation of `Undo` creates an infinite loop
     because it puts itself on the undo stack
     and then does the action on the top of the stack
-
----
 
 ## Finally
 
@@ -286,10 +248,6 @@ class: aside
 
 -   More general design would give `Action` a `.post_action` method
     that by default adds the action to the undo stack
-
----
-
-class: summary
 
 ## Summary
 

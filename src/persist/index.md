@@ -153,7 +153,7 @@ We will use two tricks when doing this:
 1.  The `dedent` function from Python's [textwrap][py_textwrap] module
     removes leading indentation from the body of a string.
     As the example below shows,
-    `dedent` allows us to indent a [%i fixture %]fixture[%/i%]
+    `dedent` allows us to indent a [%i "fixture" %][%/i%]
     the same way we indent our Python code,
     which makes the test easier to read.
 
@@ -179,7 +179,7 @@ the things we make learn how to do things better as we use them.
 
 In this case,
 we can follow the Open-Closed Principle by rewriting our functions as classes.
-We will also use [%i "dynamic dispatch" %]dynamic dispatch[%/i%]
+We will also use [%i "dynamic dispatch" %][%/i%]
 as we did in [%x interp %]
 to handle each item
 so that we don't have to modify a multiway `if` statement
@@ -199,7 +199,7 @@ and then calling it.
 Again,
 as in [%x interp %],
 the methods that handle specific items
-must all have the same [%i signature %]signature[%/i%]
+must all have the same [%i "signature" %][%/i%]
 so that they can be called interchangeably.
 For example,
 the methods that write integers and strings are:
@@ -419,7 +419,7 @@ to make each piece easier to understand.
 So how does a class indicate that it can be saved and loaded by our framework?
 Our options are:
 
-1.  Require it to inherit from a [%i "base class" %]base class[%/i%] that we provide
+1.  Require it to inherit from a [%i "base class" %][%/i%] that we provide
     so that we can use `isinstance` to check if an object is persistable.
     This approach is used in strictly-typed languages like Java,
     but method #2 below is considered more [%g pythonic "Pythonic" %].
@@ -452,7 +452,7 @@ of a particular class:
 
 Loading user-defined classes requires more work
 because we have to map class names back to actual classes.
-(We could also use [%i "introspection" %]introspection[%/i%]
+(We could also use [%i "introspection" %][%/i%]
 to find *all* the classes in the program
 and build a lookup table of the ones with the right method;
 we'll explore that in the exercises.)

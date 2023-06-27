@@ -22,7 +22,7 @@ based on [%i "Brubeck, Matt" %][Matt Brubeck's][brubeck_matt][%/i%] [tutorial][b
 and on [Pavel Panchekha][panchekha_pavel] and [Chris Harrelson's][harrelson_chris]
 [*Web Browser Engineering*][browser_engineering].
 Since our focus is layout rather than parsing,
-we will create objects in memory that represent [%i "DOM" %]DOM[%/i%] nodes
+we will create objects in memory that represent [%i "DOM" %][%/i%] nodes
 to test our ideas.
 
 <div class="callout" markdown="1">
@@ -182,7 +182,7 @@ To teach each kind of cell how to render itself,
 we have to derive a new class from each of the ones we have
 and give the new class a `render` method with the same
 [%i "signature!of function" "function signature" %]signature[%/i%].
-Since Python supports [%i "multiple inheritance" %]multiple inheritance[%/i%],
+Since Python supports [%i "multiple inheritance" %][%/i%],
 we can do this with a [%g mixin "mixin" %] class
 ([%f layout-mixin %]):
 
