@@ -87,8 +87,8 @@ of available packages as JSON:
 If you ever design a data format,
 please include a standard way for people to add comments,
 because they will always want to.
-YAML has this,
-but JSON and CSV don't.
+[%i "YAML" %]YAML[%/i%] has this,
+but [%i "JSON" %]JSON[%/i%] and [%i "CSV" %]CSV[%/i%] don't.
 
 </div>
 

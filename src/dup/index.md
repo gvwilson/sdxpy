@@ -218,7 +218,7 @@ there's a 50% chance of two people sharing a birthday in a group of just 23 peop
 and a 99.9% chance with 70 people.
 
 The same math can tell us how many files we need to hash
-before there's a 50% chance of a collision with a 256-bit hash.
+before there's a 50% chance of a [%g hash_collision "collision" %] with a 256-bit hash.
 According to [Wikipedia][birthday_problem],
 the answer is approximately \\(4{\times}10^{38}\\) files.
 We're willing to take that risk…

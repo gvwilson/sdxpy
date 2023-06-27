@@ -64,7 +64,9 @@ and a string specifying exactly what kind of parsing we want to do.
 
 `Tag` nodes have two properties `name` and `children`
 to tell us what element the tag represents
-and to give us access to the node's children.
+and to give us access to the node's [%g child_tree "children" %],
+i.e.,
+the nodes below it in the tree.
 We can therefore write a short recursive function
 to show us everything in the DOM:
 
@@ -115,7 +117,7 @@ it produces this output
 [% inc file="contains.out" %]
 
 We have written several recursive functions already,
-all of which have more or less the same control flow.
+all of which have more or less the same [%i "control flow" %]control flow[%/i%].
 A good rule of software design is that if we have written something three times,
 we should turn what we've learned into something reusable
 so that we never have to write it again.
@@ -164,7 +166,7 @@ which types of nodes can be children of which others:
 
 We've chosen to use [%i "YAML" %]YAML[%/i%] for the manifest
 because it's a relatively simple way to write nested rules.
-We could have used [%g json "JSON" %],
+We could have used [%i JSON %]JSON[%/i%],
 but as we said in [%x parse %],
 we shouldn't invent a syntax of our own:
 there are already too many in the world.

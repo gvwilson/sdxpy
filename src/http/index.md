@@ -19,7 +19,7 @@ we would like to use a single standardized protocol in a variety of ways.
 The [%g http "Hypertext Transfer Protocol (HTTP)" %]
 specifies one way programs can exchange data over IP.
 HTTP is deliberately simple:
-the client sends a [%g http_request "request" %]
+the [%i "client" %]client[%/i%] sends a [%g http_request "request" %]
 specifying what it wants over a socket connection,
 and the server sends a [%g http_response "response" %] containing some data.
 A server can construct responses however it wants;

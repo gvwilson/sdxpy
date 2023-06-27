@@ -69,7 +69,7 @@ Let's use this to create a table of files and hashes:
 [% inc file="hash_all.py" keep="func" %]
 
 Notice that we're truncating the hash code of each file to just 16 hexadecimal digits.
-This greatly increases the odds of [%g collision "collision" %],
+This greatly increases the odds of [%i "collision (in hashing)" %]collision[%/i%],
 so real version control systems don't do this,
 but it makes our program's output easier to show on screen.
 For example,
@@ -148,7 +148,7 @@ so that losing one hard drive wouldn't mean losing all our work,
 so we need to design our system with multiple back ends in mind.
 
 For now,
-we will store manifests in [%g csv "CSV" %] files named `ssssssssss.csv`,
+we will store manifests in [%i "CSV" %]CSV[%/i%] files named `ssssssssss.csv`,
 where `ssssssssss` is the [%g utc "UTC" %] [%g timestamp "timestamp" %]
 of the backup's creation.
 
@@ -257,7 +257,7 @@ that prescribes the general steps in creating a backup:
 
 [% inc file="backup_oop.py" keep="base" %]
 
-We can then derive a [%g child_class "child class" %]
+We can then derive a [%i "child class" %]child class[%/i%]
 to archive things locally
 and fill in its methods by re-using code from the functions
 we have just written.

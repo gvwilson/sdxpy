@@ -362,7 +362,7 @@ then adds a few lines to display extra information.
 Extending methods by [%i "upcall" %]upcalling[%/i%] this way
 saves us typing,
 and ensures that changes in the parent class
-will automatically show up in the child class.
+will automatically show up in the [%i "child class" %]child class[%/i%].
 
 The final step is to change the `run` method
 so that the VM actually stops at a breakpoint.

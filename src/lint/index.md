@@ -44,9 +44,10 @@ suppose we have this short program:
 
 [% inc file="simple.py" %]
 
-[%f lint-ast-simple %] shows the main parts of this program's [%i "abstract syntax tree" %]abstract syntax tree[%/i%].
+[%f lint-ast-simple %] shows the main parts of
+this program's [%i "abstract syntax tree" %]abstract syntax tree[%/i%].
 Each node represents one element of the program,
-and each node's children are the element nested within it.
+and each node's [%i "child (in a tree)" %]children[%/i%] are the element nested within it.
 {: .continue}
 
 [% figure

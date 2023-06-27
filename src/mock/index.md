@@ -150,7 +150,7 @@ Here's a test to prove that our context manager works:
 
 ## Decorators {: #mock-decorator}
 
-It's easy to become confused when working with closures.
+It's easy to become confused when working with [%i "closure" %]closures[%/i%].
 For example,
 suppose we want to create a function called `logging`
 that prints a message before and after

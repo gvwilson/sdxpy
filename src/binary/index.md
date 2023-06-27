@@ -192,10 +192,13 @@ different programmers used them to represent different symbols:
 non-Latin characters,
 graphic characters like boxes,
 and so on.
-The chaos was eventually tamed by the [%g ansi_encoding "ANSI" %] standard
+The chaos was eventually tamed by the [%g ansi_encoding "ANSI standard" %]
 which (for example) defined the value 231 to mean the character "ç".
 
-But the ANSI standard only solved part of the problem.
+A standard that specifies how characters are represented in memory
+is called a [%g character_encoding "character encoding" %].
+Unfortunately,
+the encoding defined by the ANSI standard only solved a small part of a large problem.
 It didn't include characters from Turkish, Devanagari, and many other alphabets,
 much less the thousands of characters used in some East Asian writing systems.
 One solution would have been to use 16 or even 32 bits per character,
@@ -237,7 +240,8 @@ if the first byte of the character is `11101101` then:
 -   the final 1101 is the first four bits of the character.
 
 But that's not all:
-every byte that's a continuation of a character starts with 10.
+every byte that's a continuation of a character starts with the bits 10.
+(Such bytes are, unsurprisingly, called [%g continuation_byte "continuation bytes" %].)
 This rule means that if we look at any byte in a string
 we can immediately tell if it's the start of a character
 or the continuation of a character.
@@ -252,7 +256,7 @@ if we want to represent a character whose code point is 1789:
     meaning "start of a character with one continuation byte
     and the 5 payload bits 11011".
 -   We encode the low 6 bits as 10111101,
-    meaning "a [%g continuation_byte "continuation byte" %] with 6 payload bits 111101".
+    meaning "a continuation byte with 6 payload bits 111101".
 
 ## And Now, Persistence {: #binary-binary}
 
