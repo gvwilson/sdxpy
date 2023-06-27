@@ -3,6 +3,7 @@ import string
 from insert_delete import InsertDeleteApp
 
 
+# [Action]
 class Action:
     def __init__(self, app):
         self._app = app
@@ -12,11 +13,13 @@ class Action:
 
     def undo(self):
         raise NotImplementedError(f"{self.__class__.__name__}: undo")
+# [/Action]
 
     def save(self):
         return True
 
 
+# [Insert]
 class Insert(Action):
     def __init__(self, app, pos, char):
         super().__init__(app)
@@ -28,11 +31,13 @@ class Insert(Action):
 
     def undo(self):
         self._app._buffer.delete(self._pos)
+# [/Insert]
 
     def __str__(self):
         return f"Insert({self._pos}, '{self._char}')"
 
 
+# [Delete]
 class Delete(Action):
     def __init__(self, app, pos):
         super().__init__(app)
@@ -44,11 +49,13 @@ class Delete(Action):
 
     def undo(self):
         self._app._buffer.insert(self._pos, self._char)
+# [/Delete]
 
     def __str__(self):
         return f"Delete({self._pos}, '{self._char}')"
 
 
+# [Move]
 class Move(Action):
     def __init__(self, app, direction):
         super().__init__(app)
@@ -62,6 +69,7 @@ class Move(Action):
 
     def undo(self):
         self._app._cursor.move_to(self._old)
+# [/Move]
 
     def __str__(self):
         return f"Move('{self._direction}', {self._old}, {self._new})"
@@ -92,6 +100,7 @@ class ActionApp(InsertDeleteApp):
         else:
             return None, key
 
+    # [interact]
     def _interact(self):
         family, key = self._get_key()
         name = f"_do_{family}" if family else f"_do_{key}"
@@ -101,21 +110,21 @@ class ActionApp(InsertDeleteApp):
         self._history.append(action)
         action.do()
         self._add_log(key)
+    # [/interact]
 
     def _add_log(self, key):
         self._log.append((key, self._cursor.pos(), self._screen.display()))
 
+    # [actions]
     def _do_DELETE(self, key):
         return Delete(self, self._cursor.pos())
 
     def _do_INSERT(self, key):
         return Insert(self, self._cursor.pos(), key)
 
-    def _do_CONTROL_X(self, key):
-        return Exit(self)
-
     def _do_KEY_UP(self, key):
         return Move(self, "up")
+    # [/actions]
 
     def _do_KEY_DOWN(self, key):
         return Move(self, "down")
@@ -126,5 +135,5 @@ class ActionApp(InsertDeleteApp):
     def _do_KEY_RIGHT(self, key):
         return Move(self, "right")
 
-    def _do_UNDO(self, key):
-        return Undo(self)
+    def _do_CONTROL_X(self, key):
+        return Exit(self)

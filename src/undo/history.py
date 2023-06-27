@@ -1,5 +1,6 @@
 from insert_delete import InsertDeleteApp
 
+# [app]
 class HistoryApp(InsertDeleteApp):
     def __init__(self, size, keystrokes):
         super().__init__(size, keystrokes)
@@ -13,6 +14,7 @@ class HistoryApp(InsertDeleteApp):
         char = self._buffer.char((row, col))
         self._history.append(("delete", (row, col), char))
         self._buffer.delete(self._cursor.pos())
+# [/app]
 
     def _do_INSERT(self, key):
         pos = self._cursor.pos()
