@@ -1,12 +1,12 @@
 """Show all index terms."""
 
 import argparse
-from pathlib import Path
 import sys
+from pathlib import Path
 
 import shortcodes
-
 import util
+
 
 def main():
     """Main driver."""
@@ -20,9 +20,7 @@ def main():
         entry["key"]: entry[config.lang]["term"]
         for entry in util.read_yaml(config.glossary)
     }
-    forward = {
-        slug: get_index(glossary, text) for (slug, text) in prose.items()
-    }
+    forward = {slug: get_index(glossary, text) for (slug, text) in prose.items()}
     for key, slugs in sorted(reverse_dict(forward).items(), key=lambda x: x[0].lower()):
         print(f"{key}: {', '.join(slugs)}")
 

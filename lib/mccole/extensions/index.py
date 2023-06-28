@@ -68,7 +68,7 @@ def index_ref(pargs, kwargs, node, content):
     else:
         util.require(
             len(pargs) == 1,
-            f"Badly-formatted empty 'i' shortcode {pargs} in {node.filepath}"
+            f"Badly-formatted empty 'i' shortcode {pargs} in {node.filepath}",
         )
         content = pargs[0].strip()
         pargs = content

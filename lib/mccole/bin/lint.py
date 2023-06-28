@@ -146,7 +146,11 @@ def check_glossary_redef(config):
             if key not in seen:
                 seen[key] = []
             seen[key].append(slug)
-    problems = {key: occurrences for key, occurrences in sorted(seen.items()) if len(occurrences) > 1}
+    problems = {
+        key: occurrences
+        for key, occurrences in sorted(seen.items())
+        if len(occurrences) > 1
+    }
     if problems:
         _warn("glossary re-definitions")
         for key, occurrences in problems.items():
@@ -155,7 +159,7 @@ def check_glossary_redef(config):
 
 def check_glossary_ref_in_index(config):
     """Check for glossary references immediately inside index references."""
-    pat = re.compile(r'\[%\s*i\b.+?%\]\[%g.+?\]\[%/i%\]')
+    pat = re.compile(r"\[%\s*i\b.+?%\]\[%g.+?\]\[%/i%\]")
     problems = {
         slug: [m.group(0) for m in pat.finditer(text)]
         for (slug, text) in config["prose"].items()

@@ -5,9 +5,8 @@
 import argparse
 import sys
 
-from bs4 import BeautifulSoup, NavigableString, Tag
-
 import util
+from bs4 import BeautifulSoup, NavigableString, Tag
 
 CROSSREFS = {"Appendix": "appref", "Chapter": "chapref", "Section": "secref"}
 
@@ -31,7 +30,13 @@ def main():
     text = sys.stdin.read()
     text = text.replace(r"\(", "<math>").replace(r"\)", "</math>")
     soup = BeautifulSoup(text, "html.parser")
-    state = {"appendix": False, "seen": {}, "unknown": set(), "glossary": glossary, "language": options.language}
+    state = {
+        "appendix": False,
+        "seen": {},
+        "unknown": set(),
+        "glossary": glossary,
+        "language": options.language,
+    }
     accum = []
     for child in soup.find_all("section", class_="new-chapter"):
         accum = handle(child, state, accum, True)

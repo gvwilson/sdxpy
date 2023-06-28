@@ -10,12 +10,12 @@ INCLUSION_FILE = re.compile(r'\[%\s*inc\b.+?(file|html)="(.+?)".+?%\]')
 INCLUSION_PAT = re.compile(r'\[%\s*inc\b.+?pat="(.+?)"\s+fill="(.+?)".+?%\]')
 
 # Other markup elements.
-BIBLIOGRAPHY_REF = re.compile(r'\[%\s*b\s+(.+?)\s*%\]')
+BIBLIOGRAPHY_REF = re.compile(r"\[%\s*b\s+(.+?)\s*%\]")
 FIGURE = re.compile(r'\[%\s*figure\b.+?slug="(.+?)".+?img="(.+?)".+?%\]', re.DOTALL)
 GLOSSARY_REF = re.compile(r'\[%\s*g\s+\b(.+?)\b\s+"(.+?)"\s*%\]')
 GLOSSARY_CROSSREF = re.compile(r"\[.+?\]\(\#(.+?)\)", re.DOTALL)
 IMG = re.compile(r'<img.+?src="(.+?)".+?>')
-INDEX_REF = re.compile(r'\[%\s*i\b(.+?)%\](.+?)\[%\s*/i\s*%\]')
+INDEX_REF = re.compile(r"\[%\s*i\b(.+?)%\](.+?)\[%\s*/i\s*%\]")
 SHORTCODE = re.compile(r"\[%.+?%\]")
 
 # Markdown elements.

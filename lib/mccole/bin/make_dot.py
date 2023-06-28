@@ -1,11 +1,12 @@
 """Build GraphViz file showing chapter dependencies."""
 
-from pathlib import Path
 import argparse
-import frontmatter
-import graphviz
 import sys
 import textwrap
+from pathlib import Path
+
+import frontmatter
+import graphviz
 import util
 
 # Colors to use for node types.
@@ -25,8 +26,7 @@ NODE_ATTRIBUTES = {
     "shape": "box",
     "style": "filled",
 }
-DEPENDENCY_ATTRIBUTES = {
-}
+DEPENDENCY_ATTRIBUTES = {}
 ORDER_ATTRIBUTES = {
     "arrowhead": "none",
     "style": "dashed",
@@ -37,6 +37,7 @@ LABEL_WIDTH = 12
 
 # Output formats.
 FORMATS = ["pdf", "png", "svg"]
+
 
 def main():
     """Main driver."""
@@ -65,11 +66,18 @@ def check_chapters(chapters):
             print(f"{slug}: unknown {', '.join(sorted(unknown))}", file=sys.stderr)
             good = False
 
-    ordering = {slug:i for i, slug in enumerate(chapters.keys())}
+    ordering = {slug: i for i, slug in enumerate(chapters.keys())}
     for i, slug in enumerate(chapters.keys()):
-        out_of_order = {other for other in chapters[slug]["depends"] if ordering[other] > ordering[slug]}
+        out_of_order = {
+            other
+            for other in chapters[slug]["depends"]
+            if ordering[other] > ordering[slug]
+        }
         if out_of_order:
-            print(f"{slug}: out of order {', '.join(sorted(out_of_order))}", file=sys.stderr)
+            print(
+                f"{slug}: out of order {', '.join(sorted(out_of_order))}",
+                file=sys.stderr,
+            )
             good = False
 
     if not good:
@@ -86,7 +94,11 @@ def get_info(config, slug):
 
 def make_chapters(options, config):
     """Make data structure representing chapters."""
-    chapters = {slug: title for slug, title in config.chapters.items() if slug not in options.skip}
+    chapters = {
+        slug: title
+        for slug, title in config.chapters.items()
+        if slug not in options.skip
+    }
     for slug, title in chapters.items():
         chapters[slug] = {"title": title, "depends": get_info(config, slug)}
     return chapters
@@ -120,7 +132,7 @@ def make_order_links(dot, chapters):
     for i, slug in enumerate(ordered):
         if i == 0:
             continue
-        dot.edge(ordered[i-1], slug, **ORDER_ATTRIBUTES)
+        dot.edge(ordered[i - 1], slug, **ORDER_ATTRIBUTES)
 
 
 def parse_args():
@@ -128,9 +140,11 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", required=True, help="Configuration file")
     parser.add_argument("--skip", nargs="+", default=[], help="Slugs to skip")
-    parser.add_argument("--output", required=False, default=None, help="Output file (default stdout)")
+    parser.add_argument(
+        "--output", required=False, default=None, help="Output file (default stdout)"
+    )
     return parser.parse_args()
-    
+
 
 if __name__ == "__main__":
     main()
