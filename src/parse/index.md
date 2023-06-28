@@ -60,7 +60,7 @@ rather than inventing something of your own.
 
 </div>
 
-## Tokenizing {: #parse-tokenize}
+## Tokenizing {: #parse-token}
 
 A [%i "token (in parsing)" %]token[%/i%] is a meaningful piece of text,
 such as the digits making up a number or the letters making up a variable name.
