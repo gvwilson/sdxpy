@@ -246,7 +246,7 @@ this program counts up to three:
 ## Arrays {: #vm-arrays}
 
 It's tedious to write programs when each value needs a unique name.
-We can do a lot more once we have [%i "array!implementation of" %]arrays[%/i%],
+We can do a lot more once we have [%i "array (implementation of)" %]arrays[%/i%],
 so let's add those to our assembler.
 We don't have to make any changes to the virtual machine,
 which doesn't care if we think of a bunch of numbers as individuals or elements of an array,

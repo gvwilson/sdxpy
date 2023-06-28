@@ -16,7 +16,7 @@ We'd also like to be able to see what we've changed
 and to collaborate with other people.
 
 A [%g version_control_system "version control system" %]
-like [%i "Git" "version control system!Git" %][Git][git][%/i%]
+like [%i "Git" "version control system" %][Git][git][%/i%]
 solves all of these problems at once.
 It keeps track of changes to files
 so that we can see what we've changed,
@@ -148,7 +148,7 @@ so that losing one hard drive wouldn't mean losing all our work,
 so we need to design our system with multiple back ends in mind.
 
 For now,
-we will store manifests in [%i "CSV" %][%/i%] files named `ssssssssss.csv`,
+we will store manifests in [%i "comma-separated values" %]CSV[%/i%] files named `ssssssssss.csv`,
 where `ssssssssss` is the [%g utc "UTC" %] [%g timestamp "timestamp" %]
 of the backup's creation.
 

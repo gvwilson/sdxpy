@@ -164,9 +164,10 @@ which types of nodes can be children of which others:
 
 [% inc file="manifest.yml" %]
 
-We've chosen to use [%i "YAML" %][%/i%] for the manifest
+We've chosen to use [%i "Yet Another Markup Language" %]YAML[%/i%]
+for the manifest
 because it's a relatively simple way to write nested rules.
-We could have used [%i "JSON" %][%/i%],
+We could have used [%i "JavaScript Object Notation" %]JSON[%/i%],
 but as we said in [%x parse %],
 we shouldn't invent a syntax of our own:
 there are already too many in the world.

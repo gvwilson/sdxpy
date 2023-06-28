@@ -75,7 +75,7 @@ for working with the real thing.
 ## Exhaustive Search {: #pack-exhaustive}
 
 To avoid messing around with parsers,
-we store the [%i "manifest (of package)" "package manifest" %]manifest[%/i%]
+we store the [%i "manifest" %]manifest[%/i%]
 of available packages as JSON:
 
 [% inc file="triple.json" %]
@@ -87,8 +87,9 @@ of available packages as JSON:
 If you ever design a data format,
 please include a standard way for people to add comments,
 because they will always want to.
-[%i "YAML" %][%/i%] has this,
-but [%i "JSON" %][%/i%] and [%i "CSV" %][%/i%] don't.
+[%i "Yet Another Markup Language" %]YAML[%/i%] has this,
+but [%i "JavaScript Object Notation" %]JSON[%/i%]
+and [%i "comma-separated values" %]CSV[%/i%] don't.
 
 </div>
 

@@ -22,7 +22,8 @@ based on [%i "Brubeck, Matt" %][Matt Brubeck's][brubeck_matt][%/i%] [tutorial][b
 and on [Pavel Panchekha][panchekha_pavel] and [Chris Harrelson's][harrelson_chris]
 [*Web Browser Engineering*][browser_engineering].
 Since our focus is layout rather than parsing,
-we will create objects in memory that represent [%i "DOM" %][%/i%] nodes
+we will create objects in memory that represent
+[%i "Document Object Model" %]DOM[%/i%] nodes
 to test our ideas.
 
 <div class="callout" markdown="1">
@@ -181,7 +182,7 @@ while its children will be 'b', 'c', and so on.
 To teach each kind of cell how to render itself,
 we have to derive a new class from each of the ones we have
 and give the new class a `render` method with the same
-[%i "signature!of function" "function signature" %]signature[%/i%].
+[%i "signature" %][%/i%].
 Since Python supports [%i "multiple inheritance" %][%/i%],
 we can do this with a [%g mixin "mixin" %] class
 ([%f layout-mixin %]):
@@ -311,8 +312,7 @@ Conversely,
 its output must be a subset of what the old code produced
 so that whatever is downstream from it won't be surprised.
 Thinking in these terms leads to the methodology called
-[%i "design by contract" "software design!design by contract" %]design by contract[%/i%]
-first discussed in [%x oop %].
+[%i "design by contract" %][%/i%] first discussed in [%x oop %].
 
 </div>
 

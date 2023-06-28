@@ -50,7 +50,7 @@ Most of these systems use one of three designs
 
 This chapter builds a simple page templating system using the third strategy.
 We will process each page independently by parsing the HTML
-and walking the [%i "DOM" %][%/i%] to find nodes with special attributes.
+and walking the [%i "Document Object Model" %][%/i%] to find nodes with special attributes.
 Our program will execute the instructions in those nodes
 to implement loops and if/else statements;
 other nodes will be copied as-is to create text.
@@ -138,7 +138,7 @@ If the variable can't be found,
 
 HTML pages have a nested structure,
 so we will process them using
-the [%i "Visitor pattern" "design pattern!Visitor" %]Visitor[%/i%] design pattern.
+the [%i "Visitor pattern" %]Visitor[%/i%] design pattern.
 `Visitor`'s constructor takes the root node of the DOM tree as an argument and saves it.
 When we call `Visitor.walk` without a value,
 it starts recursing from that saved root;

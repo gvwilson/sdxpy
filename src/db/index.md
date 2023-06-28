@@ -212,7 +212,7 @@ and then gives us just the byte we asked for.
 A more efficient strategy is therefore
 to group records together in [%g block_memory "blocks" %],
 each of which is the same size as a page,
-and an [%i "index (database)" %]index[%/i%] in memory
+and an [%i "index (a database)" %]index[%/i%] in memory
 to tell us which records are in which blocks.
 When we add a record,
 we only write its block to disk;

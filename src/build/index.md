@@ -73,7 +73,8 @@ and would also feel morally obliged to implement auto-completion for various edi
 some kind of debugger ([%x debugger %]),
 and so on.
 
-The other option is to use a pre-existing syntax such as [%i "JSON" %][%/i%],
+The other option is to use a pre-existing syntax
+such as [%i "JavaScript Object Notation" %]JSON[%/i%],
 which gives us tooling for free.
 For example,
 this file describes two targets `A` and `B`
@@ -239,7 +240,7 @@ each of which does one job:
 ### How We Actually Did It
 
 Our final design uses
-the [%i "Template Method pattern" "design pattern!Template Method" %]Template Method[%/i%] pattern:
+the [%g template_method_pattern "Template Method" %] pattern:
 a method in a parent class defines the overall order of operations,
 while [%i "child class" %][%/i%] implement those operations
 without changing the [%i "control flow" %][%/i%].
@@ -337,4 +338,4 @@ users can mark targets as phony.
     one build file can import definitions and dependencies from another.
 
 1.  How does your system prevent
-    [%i "circular dependencies" %][%/i%]?
+    [%i "circular dependency" %]circular dependencies[%/i%]?

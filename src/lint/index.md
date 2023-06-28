@@ -34,7 +34,8 @@ and to create code as well as check it.
 
 ## Machinery {: #lint-machinery}
 
-[%x check %] represented HTML as a [%i "DOM" "DOM tree" %]DOM tree[%/i%].
+[%x check %] represented HTML as
+a [%i "Document Object Model" "DOM tree" %]DOM tree[%/i%].
 Similarly,
 we can use Python's [ast][py_ast] module
 to parse Python programs and produce an [%i "abstract syntax tree" %][%/i%]
@@ -87,8 +88,7 @@ that knew which fields of that node were worth exploring.
 Luckily for us,
 the [ast][py_ast] module comes with tools that can do this for us.
 The class `ast.NodeVisitor` uses
-the now-familiar
-[%i "Visitor pattern" "design pattern!Visitor" %]Visitor[%/i%] pattern
+the now-familiar [%i "Visitor pattern" %][%/i%]
 to recurse through an AST.
 Each time the visitor reaches a new node of type `Thing`,
 it looks for a method called `visit_Thing`;
