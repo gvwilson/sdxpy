@@ -6,7 +6,7 @@ All contributors must abide by our Code of Conduct.
 
 ## Making Decisions
 
-This project uses [Martha's Rules][marthas-rules] for consensus decision making:
+This project uses [Martha's Rules][marthas_rules] for consensus decision making:
 
 1.  Before each meeting, anyone who wishes may sponsor a proposal by filing an
     issue in the GitHub repository tagged "proposal".  People must file proposals
@@ -47,8 +47,8 @@ This project uses [Martha's Rules][marthas-rules] for consensus decision making:
 
 ## Formatting
 
-This material uses [Ivy][ivy] with some custom extensions.
-Run `make` in the root directory to get a list of available commands.
+This material uses [Ivy][ivy] with some custom extensions;
+run `make` in the root directory to get a list of available commands.
 Some of these rely on scripts in the `./bin/` directory.
 
 ### Chapters and Appendices
@@ -295,7 +295,6 @@ you will need these packages with `tlmgr` in order to build the PDF:
 -   `textgreek`
 -   `tocbibind`
 
-[diagrams]: https://www.diagrams.net/
 [glosario]: https://glosario.carpentries.org/
-[ivy]: https://www.dmulholl.com/docs/ivy/dev/
-[marthas-rules]: https://journals.sagepub.com/doi/10.1177/088610998600100206
+[ivy]: https://www.dmulholl.com/docs/ivy/main/
+[marthas_rules]: https://journals.sagepub.com/doi/10.1177/088610998600100206

@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="repo" content="https://github.com/gvwilson/sd4ds">
+  <meta name="build_date" content="2023-06-28">
+  <meta name="template" content="slides">
+  <meta name="major" content="Chapter 19">
+  
+  <link rel="icon" type="image/x-icon" href="../../favicon.ico">
+  <link rel="stylesheet" href="../../mccole.css">
+  <link rel="stylesheet" href="../../tango.css">
+  <script defer data-domain="third-bit.com" src="https://plausible.io/js/plausible.js"></script>
+  <script>
+    MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']]
+      }
+    };
+  </script>
+  <script
+    type="text/javascript"
+    id="MathJax-script"
+    async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+  </script>
+  <script defer src="../../mccole.js"></script>
+  <title>Software Design for Data Scientists: A Build Manager</title>
+</head>
+
+  <body>
+    <textarea id="source">
+
+class: slide-title
+
+<p>
+  <a href="https://third-bit.com/sd4ds/">Software Design for Data Scientists</a>
+</p>
+<h1>A Build Manager</h1>
+<div class="bottom">
+  <a href="../">chapter</a>
+</div>
+
+---
+
+
+## The Problem
+
+-   `plot.py` produces `result.svg` from `collated.csv`
+
+-   `analyze.py` produces `collated.csv` from `samples.csv` and `controls.csv`
+
+-   Both `samples.csv` and `controls.csv` depends on `normalize.py` and `raw.csv`,
+    but `normalize.py` takes a long time to run
+
+-   How can we regenerate the files we need, but only when we need them?
+
+---
+
+## Make
+
+-   <a class="gl-ref" href="../../glossary/#build_manager" markdown="1">Build managers</a>
+    keep track of which files depend on which
+
+    -   First tool of this kind was [Make][gnu_make]
+
+    -   Many others now exist (e.g., [Snakemake][snakemake])
+
+-   If a <a class="gl-ref" href="../../glossary/#target" markdown="1">target</a> is <a class="gl-ref" href="../../glossary/#build_stale" markdown="1">stale</a>
+    with respect to any of its  <a class="gl-ref" href="../../glossary/#dependency" markdown="1">dependencies</a>,
+    run a <a class="gl-ref" href="../../glossary/#build_recipe" markdown="1">recipe</a> to refresh it
+
+-   Run recipes in order
+
+-   Run each recipe at most once
+
+---
+
+## Terminology
+
+-   Targets and dependencies must form a <a class="gl-ref" href="../../glossary/#dag" markdown="1">directed acyclic graph</a>
+
+-   A <a class="gl-ref" href="../../glossary/#topological_order" markdown="1">topological ordering</a> of a graph
+    arranges nodes so that each one comes after everything it depends on
+
+<figure>
+<img src="../dependencies.svg" alt="Dependencies in a four-node graph"/>
+</figure>
+
+
+---
+
+## Representing Rules
+
+1.  Invent a special-purpose syntax
+    -   Fits the problem
+    -   But you need a parser, auto-complete, a debugger, etc.
+2.  Use existing syntax
+    -   Get tooling for free
+    -   But the semantics are invisible to those tools
+-   We will use JSON
+
+```json
+{
+  "A": {"depends": ["B"], "rule": "build A"},
+  "B": {"depends": [], "rule": "build B"}
+}
+```
+
+
+---
+
+## Top-Down Design
+
+-   Start with the big picture
+
+```py
+class BuildBase:
+    def build(self, config_file):
+        config = self._configure(config_file)
+        ordered = self._topo_sort(config)
+        for node in ordered:
+            self._refresh(config, node)
+
+    def _refresh(self, config, node):
+        assert node in config, f"Unknown node {node}"
+        print(config[node]["rule"])
+```
+
+
+--
+
+1.  Get the configuration
+2.  Figure out the update order
+3.  Refresh each file (for now, just print action)
+
+---
+
+## Configuration
+
+```py
+    def _configure(self, config_file):
+        with open(config_file, "r") as reader:
+            config = json.load(reader)
+            known = set(config.keys())
+            return {
+                n: self._check(n, d, known)
+                for n, d in config.items()
+            }
+```
+
+
+-   Use a dictionary comprehension
+    -   Key is node name (for lookup)
+    -   Value contains rule and dependencies
+
+---
+
+## Check and Build
+
+```py
+    def _check(self, name, details, known):
+        assert "rule" in details, f"Missing rule for {name}"
+        assert "depends" in details, f"Missing depends for {name}"
+        depends = set(details["depends"])
+        assert depends.issubset(known), \
+            f"Unknown depends for {name}"
+        return {"rule": details["rule"], "depends": depends}
+```
+
+
+<figure>
+<img src="../diamond.svg" alt="Representing graph"/>
+</figure>
+
+
+---
+
+## Topological Sorting
+
+<figure>
+<img src="../topo_sort.svg" alt="Trace of topological sorting"/>
+</figure>
+
+
+---
+
+## Topological Sorting
+
+```py
+    def _topo_sort(self, config):
+        graph = {n: config[n]["depends"] for n in config}
+        result = []
+        while graph:
+            available = {n for n in graph if not graph[n]}
+            assert available, f"Circular graph {graph.keys()}"
+            result.extend(available)
+            graph = {
+                n: graph[n] - available
+                for n in graph
+                if n not in available
+            }
+        return result
+```
+
+
+---
+
+## Testing
+
+```json
+{
+  "A": {"depends": ["B"], "rule": "build A"},
+  "B": {"depends": [], "rule": "build B"}
+}
+```
+
+
+```
+build B
+build A
+```
+
+
+---
+
+## Critique
+
+1.  Configuration might not come directly from a JSON file
+    -   So modify constructor to take config as input
+2.  Printing actions to the screen isn't very useful
+    -   So collect them and return an ordered list of commands
+3.  `assert` isn't a friendly way to handle user errors
+    -   Raise `ValueError`
+4.  Topological sort isn't <a class="gl-ref" href="../../glossary/#stable_sort" markdown="1">stable</a>
+    -   `dict` is ordered but `set` is not
+    -   So sort node names when appending
+5.  We might want to add other keys to rules
+    -   So put that check in a separate method we can override
+
+---
+
+## Revise the Big Picture
+
+```py
+class BuildBetter:
+    def build(self, config):
+        config = self._configure(config)
+        ordered = self._topo_sort(config)
+        actions = []
+        for node in ordered:
+            self._refresh(config, node, actions)
+        return actions
+
+    def _refresh(self, config, node, actions):
+        assert node in config, f"Unknown node {node}"
+        actions.append(config[node]["rule"])
+
+    def _must(self, condition, message):
+        if not condition:
+            raise ValueError(message)
+```
+
+
+---
+
+## Revise Configuration
+
+```py
+    def _configure(self, config):
+        known = set(config.keys())
+        return {n: self._check(n, d, known)
+                for n, d in config.items()}
+
+    def _check(self, name, details, known):
+        self._check_keys(name, details)
+        depends = set(details["depends"])
+        self._must(
+            depends.issubset(known), f"Unknown depends for {name}"
+        )
+        result = details.copy()
+        result["depends"] = depends
+        return result
+
+    def _check_keys(self, name, details):
+        self._must("rule" in details, f"Missing rule for {name}")
+        self._must(
+            "depends" in details, f"Missing depends for {name}"
+        )
+```
+
+
+---
+
+## Revise Topological Sort
+
+```py
+    def _topo_sort(self, config):
+        graph = {n: config[n]["depends"] for n in config}
+        result = []
+        while graph:
+            available = {n for n in graph if not graph[n]}
+            self._must(
+                available,
+                f"Circular graph {list(graph.keys())}",
+            )
+            result.extend(sorted(available))
+            graph = {
+                n: graph[n] - available
+                for n in graph
+                if n not in available
+            }
+        return result
+```
+
+
+---
+
+## Now It's Testable
+
+```py
+def test_circular():
+    action_A = "build A"
+    action_B = "build B"
+    config = {
+        "A": {"depends": ["B"], "rule": action_A},
+        "B": {"depends": ["A"], "rule": action_B},
+    }
+    try:
+        Builder().build(config)
+        assert False, "should have had exception"
+    except ValueError:
+        pass
+```
+
+
+---
+
+## Now It's Testable
+
+```py
+def test_no_dep():
+    action_A = "build A"
+    action_B = "build B"
+    config = {
+        "A": {"depends": [], "rule": action_A},
+        "B": {"depends": [], "rule": action_B},
+    }
+    assert Builder().build(config) == [action_A, action_B]
+```
+
+
+---
+
+## And Extensible
+
+```py
+class BuildTime(BuildBetter):
+    def _check_keys(self, name, details):
+        super()._check_keys(name, details)
+        self._require("time" in details, f"No time for {name}")
+
+    def _refresh(self, config, node, actions):
+        assert node in config, f"Unknown node {node}"
+        if self._needs_update(config, node):
+            actions.append(config[node]["rule"])
+
+    def _needs_update(self, config, node):
+        return any(
+            config[node]["time"] < config[d]["time"]
+            for d in config[node]["depends"]
+        )
+```
+
+
+---
+
+## More Testing
+
+```py
+def test_diamond_dep():
+    action_A = "build A"
+    action_B = "build B"
+    action_C = "build C"
+    action_D = "build D"
+    config = {
+        "A": {"depends": ["B", "C"], "rule": action_A, "time": 0},
+        "B": {"depends": ["D"], "rule": action_B, "time": 0},
+        "C": {"depends": ["D"], "rule": action_C, "time": 1},
+        "D": {"depends": [], "rule": action_D, "time": 1},
+    }
+    assert Builder().build(config) == [action_B, action_A]
+```
+
+
+---
+
+class: summary
+
+## Summary
+
+<figure>
+<img src="../concept_map.svg" alt="Concept map of build manager"/>
+</figure>
+
+
+
+[academic_prototyping]: https://www.fuzzingbook.org/html/AcademicPrototyping.html
+[aosa]: https://aosabook.org/
+[beautiful_soup]: https://beautiful-soup-4.readthedocs.io/
+[birthday_problem]: https://en.wikipedia.org/wiki/Birthday_problem
+[black]: https://black.readthedocs.io/
+[book_repo]: https://github.com/gvwilson/sd4ds/
+[book_site]: https://third-bit.com/sd4ds/
+[browser_engine_tutorial]: https://limpet.net/mbrubeck/2014/08/08/toy-layout-engine-1.html
+[browser_engineering]: https://browser.engineering/
+[brubeck_matt]: https://limpet.net/mbrubeck/
+[cc_by_nc]: https://creativecommons.org/licenses/by-nc/4.0/
+[cc_by_nc_legal]: https://creativecommons.org/licenses/by-nc/4.0/legalcode
+[clarkes_laws]: https://en.wikipedia.org/wiki/Clarke%27s_three_laws
+[contributor_covenant]: https://www.contributor-covenant.org/
+[cook_mary_rose]: https://maryrosecook.com/
+[crafting_interpreters]: https://craftinginterpreters.com/
+[ctan]: https://www.ctan.org/
+[cypress]: https://www.cypress.io/
+[db_tutorial]: https://cstack.github.io/db_tutorial/
+[dresser_christopher]: https://en.wikipedia.org/wiki/Christopher_Dresser
+[ejs]: https://ejs.co/
+[email]: mailto:gvwilson@third-bit.com
+[eniac_programmers]: http://eniacprogrammers.org/
+[ethical_source]: https://ethicalsource.dev
+[evans_julia]: https://jvns.ca/
+[evans_zines]: https://wizardzines.com/
+[expect]: https://en.wikipedia.org/wiki/Expect
+[flake8]: https://flake8.pycqa.org/
+[git]: https://git-scm.com/
+[git_man_page_generator]: https://git-man-page-generator.lokaltog.net/
+[gitlet]: http://gitlet.maryrosecook.com/
+[glosario]: https://glosario.carpentries.org/
+[gnu_make]: https://www.gnu.org/software/make/
+[gutenberg]: https://www.gutenberg.org/
+[harrelson_chris]: https://twitter.com/chrishtr
+[hippocratic_license]: https://firstdonoharm.dev/
+[hoye_mike]: http://exple.tive.org/blarg/
+[html5_data_attributes]: https://developer.mozilla.org/en-US/docs/Learn/HTML/Howto/Use_data_attributes
+[human_resource_machine]: https://tomorrowcorporation.com/humanresourcemachine
+[isort]: https://pycqa.github.io/isort/
+[ivy]: https://www.dmulholl.com/docs/ivy/main/
+[jekyll]: https://jekyllrb.com/
+[json_schema]: https://json-schema.org/
+[kilo_editor]: https://viewsourcecode.org/snaptoken/kilo/index.html
+[latex]: https://www.latex-project.org/
+[loewy_raymond]: https://en.wikipedia.org/wiki/Raymond_Loewy
+[lorgat_editor]: https://github.com/seem/editor
+[lorgat_tutorial]: https://wasimlorgat.com/posts/editor.html
+[lorgat_wasim]: https://wasimlorgat.com/
+[marthas_rules]: https://journals.sagepub.com/doi/10.1177/088610998600100206
+[nano]: https://www.nano-editor.org/
+[nison_mael]: https://arcanis.github.io/
+[nystrom_bob]: http://journal.stuffwithstuff.com/
+[package_manager_tutorial]: https://classic.yarnpkg.com/blog/2017/07/11/lets-dev-a-package-manager/
+[panchekha_pavel]: https://pavpanchekha.com/
+[pexpect]: https://pexpect.readthedocs.io/
+[php]: https://www.php.net/
+[picosat]: http://fmv.jku.at/picosat/
+[pip]: https://pip.pypa.io/
+[programming_tools]: https://en.wikipedia.org/wiki/Programming_tool
+[punching_holes]: http://exple.tive.org/blarg/2020/11/26/punching-holes/
+[py_array]: https://docs.python.org/3/library/array.html
+[py_ast]: https://docs.python.org/3/library/ast.html
+[py_chainmap]: https://docs.python.org/3/library/collections.html#collections.ChainMap
+[py_cprofile]: https://docs.python.org/3/library/profile.html
+[py_curses]: https://docs.python.org/3/library/curses.html
+[py_fractions]: https://docs.python.org/3/library/fractions.html
+[py_glob]: https://docs.python.org/3/library/glob.html
+[py_hashlib]: https://docs.python.org/3/library/hashlib.html
+[py_inspect]: https://docs.python.org/3/library/inspect.html
+[py_io]: https://docs.python.org/3/library/io.html
+[py_itertools]: https://docs.python.org/3/library/itertools.html
+[py_json]: https://docs.python.org/3/library/json.html
+[py_jsonschema]: https://python-jsonschema.readthedocs.io/
+[py_mimetypes]: https://docs.python.org/3/library/mimetypes.html
+[py_pickle]: https://docs.python.org/3/library/pickle.html
+[py_property]: https://docs.python.org/3/library/functions.html#property
+[py_semver]: https://pypi.org/project/semantic-version/
+[py_struct]: https://docs.python.org/3/library/struct.html
+[py_textwrap]: https://docs.python.org/3/library/textwrap.html
+[py_urlparse]: https://docs.python.org/3/library/urllib.parse.html
+[pyfakefs]: https://pytest-pyfakefs.readthedocs.io/
+[pytest]: https://docs.pytest.org/
+[pytest_approx]: https://docs.pytest.org/en/4.6.x/reference.html#pytest-approx
+[python]: https://www.python.org/
+[reim_michael]: https://elderlinux.org/
+[requests]: https://requests.readthedocs.io/
+[ruten_paige]: https://viewsourcecode.org/
+[selenium]: https://www.selenium.dev/
+[semver_spec]: https://semver.org/
+[sinel_joseph]: https://en.wikipedia.org/wiki/Joseph_Claude_Sinel
+[snakemake]: https://snakemake.readthedocs.io/
+[sqlite]: https://sqlite.org/
+[stack_connor]: https://connorstack.com/
+[svg_screenshot]: https://chrome.google.com/webstore/detail/svg-screenshot/nfakpcpmhhilkdpphcjgnokknpbpdllg
+[t3_personas]: https://teachtogether.tech/en/index.html#s:process-personas
+[textualize_fraction]: https://www.textualize.io/blog/posts/7-things-about-terminals
+[udhr]: https://www.un.org/en/universal-declaration-human-rights/
+[ungc]: https://www.unglobalcompact.org/what-is-gc/mission/principles
+[unicode]: https://www.unicode.org/
+[unix_glob]: https://en.wikipedia.org/wiki/Glob_(programming)
+[unix_packaging]: https://eerielinux.wordpress.com/2017/08/15/the-history-of-nix-package-management/
+[webaim_wave]: https://wave.webaim.org/
+[write_yourself_a_git]: https://wyag.thb.lt/
+[z3]: https://en.wikipedia.org/wiki/Z3_Theorem_Prover
+[zeller_andreas]: https://andreas-zeller.info/
+
+    </textarea>
+    <script src="../../remark-latest.min.js"></script>
+    <script>
+      var slideshow = remark.create({
+        highlightLines: true
+      })
+    </script>
+  </body>
+</html>

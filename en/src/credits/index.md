@@ -1,5 +1,0 @@
----
-title: "Credits"
----
-
-[% credits %]

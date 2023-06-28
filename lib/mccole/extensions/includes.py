@@ -21,9 +21,11 @@ other files:
     `path.one` and `path.two` (i.e., replaces `*` in `pat` with each
     of the tokens in `fill`, then includes all of that file).
 
+-   `[% inc file="path" head="N" %]` keeps the first N lines.
+
 To make this work:
 
--   `filter_files` tells Ivy to only process files ending in `.html`
+-   `filter_files` tells Ark to only process files ending in `.html`
     and `.md` so that it won't try to templatize source code files.
 
 -   `copy_files` copies all of the files used as inclusions to the
@@ -36,15 +38,15 @@ To make this work:
     does nothing; otehrwise, it dispatches to a case-specific handler.
 """
 
-import re
 from pathlib import Path
 
-import ivy
+import ark
+import regex
 import shortcodes
 import util
 
 
-@ivy.filters.register(ivy.filters.Filter.LOAD_NODE_FILE)
+@ark.filters.register(ark.filters.Filter.LOAD_NODE_FILE)
 def filter_files(value, filepath):
     """Only process HTML and Markdown files."""
     result = filepath.suffix in {".html", ".md"}
@@ -84,6 +86,8 @@ def include(pargs, kwargs, node):
         return _keep(inclusions, node, **kwargs)
     elif "omit" in kwargs:
         return _omit(inclusions, node, **kwargs)
+    elif "head" in kwargs:
+        return _head(inclusions, node, **kwargs)
     else:
         return _file(inclusions, node, **kwargs)
 
@@ -92,6 +96,13 @@ def _file(inclusions, node, file):
     """Handle a simple file inclusion."""
     filepath = _inclusion_filepath(inclusions, node, file)
     return _include_file(node, filepath)
+
+
+def _head(inclusions, node, file, head):
+    """Keep the first `head` lines."""
+    num = int(head)
+    filepath = _inclusion_filepath(inclusions, node, file)
+    return _include_file(node, filepath, lambda lns: _keep_head(filepath, lns, num))
 
 
 def _html(inclusions, node, html):
@@ -142,7 +153,7 @@ def _find_markers(lines, key):
     stop = f"[/{key}]"
     i_start = None
     i_stop = None
-    for (i, line) in enumerate(lines):
+    for i, line in enumerate(lines):
         if start in line:
             i_start = i
         elif stop in line:
@@ -170,12 +181,17 @@ def _is_slides(node):
     return node.meta.get("template", None) == "slides"
 
 
+def _keep_head(filepath, lines, num):
+    """Keep first N lines."""
+    return lines[:num]
+
+
 def _keep_lines(filepath, lines, key):
     """Select lines between markers."""
     start, stop = _find_markers(lines, key)
     util.require(
         (start is not None) and (stop is not None),
-        f"Failed to match inclusion 'keep' key {key} in {filepath}",
+        f"Failed to match inclusion 'keep' key '{key}' in {filepath}",
     )
     result = []
     while start is not None:
@@ -211,7 +227,7 @@ def _omit_lines(filepath, lines, key):
     start, stop = _find_markers(lines, key)
     util.require(
         (start is not None) and (stop is not None),
-        f"Failed to match inclusion 'omit' key {key} in {filepath}",
+        f"Failed to match inclusion 'omit' key '{key}' in {filepath}",
     )
     while start is not None:
         lines = lines[:start] + lines[stop + 1 :]
@@ -226,25 +242,17 @@ def _inclusion_filepath(inclusions, node, file):
     return src
 
 
-ESLINT_FULL_LINE = re.compile(r"^\s*//\s*eslint-")
-ESLINT_TRAILING = re.compile(r"\s*//\s*eslint-.+$")
-
-
 def _remove_eslint(lines):
     """Remove eslint markers."""
-    lines = [ln for ln in lines if not ESLINT_FULL_LINE.match(ln)]
-    lines = [ESLINT_TRAILING.sub("", ln) for ln in lines]
+    lines = [ln for ln in lines if not regex.ESLINT_FULL_LINE.match(ln)]
+    lines = [regex.ESLINT_TRAILING.sub("", ln) for ln in lines]
     return lines
-
-
-FLAKE8_FULL_LINE = re.compile(r"^\s*#\s*noqa")
-FLAKE8_TRAILING = re.compile(r"\s*#\s*noqa.+$")
 
 
 def _remove_flake8(lines):
     """Remove flake8 markers."""
-    lines = [ln for ln in lines if not FLAKE8_FULL_LINE.match(ln)]
-    lines = [FLAKE8_TRAILING.sub("", ln) for ln in lines]
+    lines = [ln for ln in lines if not regex.FLAKE8_FULL_LINE.match(ln)]
+    lines = [regex.FLAKE8_TRAILING.sub("", ln) for ln in lines]
     return lines
 
 

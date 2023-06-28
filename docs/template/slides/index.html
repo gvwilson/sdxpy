@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="repo" content="https://github.com/gvwilson/sd4ds">
+  <meta name="build_date" content="2023-06-28">
+  <meta name="template" content="slides">
+  <meta name="major" content="Chapter 12">
+  
+  <link rel="icon" type="image/x-icon" href="../../favicon.ico">
+  <link rel="stylesheet" href="../../mccole.css">
+  <link rel="stylesheet" href="../../tango.css">
+  <script defer data-domain="third-bit.com" src="https://plausible.io/js/plausible.js"></script>
+  <script>
+    MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']]
+      }
+    };
+  </script>
+  <script
+    type="text/javascript"
+    id="MathJax-script"
+    async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+  </script>
+  <script defer src="../../mccole.js"></script>
+  <title>Software Design for Data Scientists: A Template Expander</title>
+</head>
+
+  <body>
+    <textarea id="source">
+
+class: slide-title
+
+<p>
+  <a href="https://third-bit.com/sd4ds/">Software Design for Data Scientists</a>
+</p>
+<h1>A Template Expander</h1>
+<div class="bottom">
+  <a href="../">chapter</a>
+</div>
+
+---
+
+
+## The Problem
+
+-   Most pages on a site share some content
+
+-   Many pages want to be customized based on data
+
+-   So many sites use a templating system
+
+    -   Turn data and HTML page with embedded directives into final page
+
+---
+
+## Design Options
+
+1.  Embed commands in an existing language like [EJS][ejs]
+
+2.  Create a mini-language with its own commands like [Jekyll][jekyll]
+
+3.  Put directives in specially-named attributes in the HTML
+
+<figure>
+<img src="../design_options.svg" alt="Three options for page templates"/>
+</figure>
+
+
+-   We will use the third option so that we don't have to write a parser
+
+---
+
+## What Does Done Look Like?
+
+```ht
+<html>
+  <body>
+    <ul z-loop="item:names">
+      <li><span z-var="item"/></li>
+    </ul>
+  </body>
+</html>
+```
+
+
+-   `z-loop`: repeat this
+
+-   `z-num`: a constant number
+
+-   `z-var`: fill in a variable
+
+-   `z-if`: conditional
+
+---
+
+## What Does Done Look Like?
+
+```
+<html>
+<body>
+<ul>
+<li><span>Johnson</span></li>
+
+<li><span>Vaughan</span></li>
+
+<li><span>Jackson</span></li>
+</ul>
+</body>
+</html>
+```
+
+
+-   HTML doesn't care about extra blank lines, so we won't either
+
+---
+
+## How Do We Call This?
+
+-   Design the <a class="gl-ref" href="../../glossary/#api" markdown="1">API</a> of our library first
+
+```py
+data = {"names": ["Johnson", "Vaughan", "Jackson"]}
+
+dom = read_html("template.html")
+expander = Expander(dom, data)
+expander.walk()
+print(expander.result)
+```
+
+
+-   In real life, `data` would come from a configuration file or database
+
+---
+
+## Managing Variables
+
+-   Could use a `ChainMap`, but we'll write our own
+
+```py
+class Env:
+    def __init__(self, initial):
+        self.stack = [initial.copy()]
+
+    def push(self, frame):
+        self.stack.append(frame)
+
+    def pop(self):
+        self.stack.pop()
+
+    def find(self, name):
+        for frame in reversed(self.stack):
+            if name in frame:
+                return frame[name]
+        return None
+```
+
+
+---
+
+## Visiting Nodes
+
+-   Use the <a class="gl-ref" href="../../glossary/#visitor_pattern" markdown="1">Visitor</a> design pattern
+
+```py
+class Visitor:
+    def __init__(self, root):
+        self.root = root
+
+    def walk(self, node=None):
+        if node is None:
+            node = self.root
+        if self.open(node):
+            for child in node.children:
+                self.walk(child)
+        self.close(node)
+
+    def open(self, node):
+        raise NotImplementedError("open")
+
+    def close(self, node):
+        raise NotImplementedError("close")
+```
+
+
+---
+
+## Expanding a Template
+
+```py
+class Expander(Visitor):
+    def __init__(self, root, variables):
+        super().__init__(root)
+        self.env = Env(variables)
+        self.handlers = HANDLERS
+        self.result = []
+```
+
+
+-   The environment
+
+-   Handlers for our special node types
+
+-   The result (strings we'll concatenate at the end)
+
+---
+
+## Open…
+
+```py
+    def open(self, node):
+        if isinstance(node, NavigableString):
+            self.output(node.string)
+            return False
+        elif self.hasHandler(node):
+            return self.getHandler(node).open(self, node)
+        else:
+            self.showTag(node, False)
+            return True
+```
+
+
+-   If this is text, "display" it
+
+-   If this is a special node, run a function
+
+-   Otherwise, show the opening tag
+
+-   Return value is "do we proceed"?
+
+---
+
+## …and Close
+
+```py
+    def close(self, node):
+        if isinstance(node, NavigableString):
+            return
+        elif self.hasHandler(node):
+            self.getHandler(node).close(self, node)
+        else:
+            self.showTag(node, True)
+```
+
+
+-   Handlers come in open/close pairs
+
+    -   Because some might need to do cleanup
+
+---
+
+## Managing Handlers
+
+```py
+    def hasHandler(self, node):
+        return any(
+            name in self.handlers
+            for name in node.attrs
+        )
+
+    def getHandler(self, node):
+        possible = [
+            name for name in node.attrs
+            if name in self.handlers
+        ]
+        assert len(possible) == 1, "Should be exactly one handler"
+        return self.handlers[possible[0]]
+```
+
+
+-   `hasHandler` looks for attributes with special names
+
+-   `getHandler` gets the one we need
+
+---
+
+## But What's a Handler?
+
+```py
+"""Insert a constant."""
+
+def open(expander, node):
+    expander.showTag(node, False)
+    expander.output(node.attrs["z-num"])
+
+def close(expander, node):
+    expander.showTag(node, True)
+```
+
+
+-   A module with `open` and `close` functions
+
+-   None of our handlers need state, so we don't need objects
+
+---
+
+## Variables Are Similar
+
+```py
+"""Insert value of variable."""
+
+def open(expander, node):
+    expander.showTag(node, False)
+    expander.output(expander.env.find(node.attrs["z-var"]))
+
+def close(expander, node):
+    expander.showTag(node, True)
+```
+
+
+-   We should think about error handling…
+
+---
+
+## Testing
+
+```py
+import json
+import sys
+from bs4 import BeautifulSoup
+from expander import Expander
+
+def main():
+    with open(sys.argv[1], "r") as reader:
+        variables = json.load(reader)
+
+    with open(sys.argv[2], "r") as reader:
+        doc = BeautifulSoup(reader.read(), "html.parser")
+        template = doc.find("html")
+
+    expander = Expander(template, variables)
+    expander.walk()
+    print(expander.getResult())
+
+if __name__ == "__main__":
+    main()
+```
+
+
+---
+
+## Static Text
+
+-   If this doesn't work, nothing else will
+
+```ht
+<html>
+  <body>
+    <h1>Static Text</h1>
+    <p>test</p>
+  </body>
+</html>
+```
+
+
+```
+<html>
+<body>
+<h1>Static Text</h1>
+<p>test</p>
+</body>
+</html>
+```
+
+
+---
+
+## Constants
+
+```ht
+<html>
+  <body>
+    <p><span z-num="123"/></p>
+  </body>
+</html>
+```
+
+
+```
+<html>
+<body>
+<p><span>123</span></p>
+</body>
+</html>
+```
+
+
+---
+
+## Variables
+
+```ht
+<html>
+  <body>
+    <p><span z-var="varName"/></p>
+  </body>
+</html>
+```
+
+
+```
+<html>
+<body>
+<p><span>varValue</span></p>
+</body>
+</html>
+```
+
+
+-   Input is a JSON file containing `{"varName": "varValue"}`
+
+---
+
+## Conditionals
+
+```py
+"""Conditionalize part of a template."""
+
+def open(expander, node):
+    check = expander.env.find(node.attrs["z-if"])
+    if check:
+        expander.showTag(node, False)
+    return check
+
+def close(expander, node):
+    if expander.env.find(node.attrs["z-if"]):
+        expander.showTag(node, True)
+```
+
+
+-   The handler determines whether to show this tag and go deeper
+
+-   What if the variable's value changes between opening and closing?
+
+---
+
+## Testing
+
+```ht
+<html>
+  <body>
+    <p z-if="yes">This should be shown.</p>
+    <p z-if="no">This should <em>not</em> be shown.</p>
+  </body>
+</html>
+```
+
+
+```
+<html>
+<body>
+<p>This should be shown.</p>
+
+</body>
+</html>
+```
+
+
+-   With JSON `{"yes": True, "no": False}`
+
+---
+
+## Loops
+
+1.  Create a new stack frame holding the current value of the loop variable
+
+1.  Expand all of the node's children with that stack frame in place
+
+1.  Pop the stack frame to get rid of the temporary variable
+
+---
+
+## Loops
+
+```py
+"""Repeat operations."""
+
+def open(expander, node):
+    index_name, target_name = node.attrs["z-loop"].split(":")
+    expander.showTag(node, False)
+    target = expander.env.find(target_name)
+    for value in target:
+        expander.env.push({index_name: value})
+        for child in node.children:
+            expander.walk(child)
+        expander.env.pop()
+    return False
+
+def close(expander, node):
+    expander.showTag(node, True)
+```
+
+
+-   The most complicated handler yet
+
+---
+
+## Testing
+
+```ht
+<html>
+  <body>
+    <ul z-loop="item:names">
+      <li><span z-var="item"/></li>
+    </ul>
+  </body>
+</html>
+```
+
+
+```
+<html>
+<body>
+<ul>
+<li><span>Johnson</span></li>
+
+<li><span>Vaughan</span></li>
+
+<li><span>Jackson</span></li>
+</ul>
+</body>
+</html>
+```
+
+
+---
+
+## Next Steps
+
+-   The `z-if` issue might mean we need state after all
+
+-   Tackle that before going any further
+
+-   And figure out how to do unit testing
+
+---
+
+class: summary
+
+## Summary
+
+<figure>
+<img src="../concept_map.svg" alt="Concept map for page templates"/>
+</figure>
+
+
+
+[academic_prototyping]: https://www.fuzzingbook.org/html/AcademicPrototyping.html
+[aosa]: https://aosabook.org/
+[beautiful_soup]: https://beautiful-soup-4.readthedocs.io/
+[birthday_problem]: https://en.wikipedia.org/wiki/Birthday_problem
+[black]: https://black.readthedocs.io/
+[book_repo]: https://github.com/gvwilson/sd4ds/
+[book_site]: https://third-bit.com/sd4ds/
+[browser_engine_tutorial]: https://limpet.net/mbrubeck/2014/08/08/toy-layout-engine-1.html
+[browser_engineering]: https://browser.engineering/
+[brubeck_matt]: https://limpet.net/mbrubeck/
+[cc_by_nc]: https://creativecommons.org/licenses/by-nc/4.0/
+[cc_by_nc_legal]: https://creativecommons.org/licenses/by-nc/4.0/legalcode
+[clarkes_laws]: https://en.wikipedia.org/wiki/Clarke%27s_three_laws
+[contributor_covenant]: https://www.contributor-covenant.org/
+[cook_mary_rose]: https://maryrosecook.com/
+[crafting_interpreters]: https://craftinginterpreters.com/
+[ctan]: https://www.ctan.org/
+[cypress]: https://www.cypress.io/
+[db_tutorial]: https://cstack.github.io/db_tutorial/
+[dresser_christopher]: https://en.wikipedia.org/wiki/Christopher_Dresser
+[ejs]: https://ejs.co/
+[email]: mailto:gvwilson@third-bit.com
+[eniac_programmers]: http://eniacprogrammers.org/
+[ethical_source]: https://ethicalsource.dev
+[evans_julia]: https://jvns.ca/
+[evans_zines]: https://wizardzines.com/
+[expect]: https://en.wikipedia.org/wiki/Expect
+[flake8]: https://flake8.pycqa.org/
+[git]: https://git-scm.com/
+[git_man_page_generator]: https://git-man-page-generator.lokaltog.net/
+[gitlet]: http://gitlet.maryrosecook.com/
+[glosario]: https://glosario.carpentries.org/
+[gnu_make]: https://www.gnu.org/software/make/
+[gutenberg]: https://www.gutenberg.org/
+[harrelson_chris]: https://twitter.com/chrishtr
+[hippocratic_license]: https://firstdonoharm.dev/
+[hoye_mike]: http://exple.tive.org/blarg/
+[html5_data_attributes]: https://developer.mozilla.org/en-US/docs/Learn/HTML/Howto/Use_data_attributes
+[human_resource_machine]: https://tomorrowcorporation.com/humanresourcemachine
+[isort]: https://pycqa.github.io/isort/
+[ivy]: https://www.dmulholl.com/docs/ivy/main/
+[jekyll]: https://jekyllrb.com/
+[json_schema]: https://json-schema.org/
+[kilo_editor]: https://viewsourcecode.org/snaptoken/kilo/index.html
+[latex]: https://www.latex-project.org/
+[loewy_raymond]: https://en.wikipedia.org/wiki/Raymond_Loewy
+[lorgat_editor]: https://github.com/seem/editor
+[lorgat_tutorial]: https://wasimlorgat.com/posts/editor.html
+[lorgat_wasim]: https://wasimlorgat.com/
+[marthas_rules]: https://journals.sagepub.com/doi/10.1177/088610998600100206
+[nano]: https://www.nano-editor.org/
+[nison_mael]: https://arcanis.github.io/
+[nystrom_bob]: http://journal.stuffwithstuff.com/
+[package_manager_tutorial]: https://classic.yarnpkg.com/blog/2017/07/11/lets-dev-a-package-manager/
+[panchekha_pavel]: https://pavpanchekha.com/
+[pexpect]: https://pexpect.readthedocs.io/
+[php]: https://www.php.net/
+[picosat]: http://fmv.jku.at/picosat/
+[pip]: https://pip.pypa.io/
+[programming_tools]: https://en.wikipedia.org/wiki/Programming_tool
+[punching_holes]: http://exple.tive.org/blarg/2020/11/26/punching-holes/
+[py_array]: https://docs.python.org/3/library/array.html
+[py_ast]: https://docs.python.org/3/library/ast.html
+[py_chainmap]: https://docs.python.org/3/library/collections.html#collections.ChainMap
+[py_cprofile]: https://docs.python.org/3/library/profile.html
+[py_curses]: https://docs.python.org/3/library/curses.html
+[py_fractions]: https://docs.python.org/3/library/fractions.html
+[py_glob]: https://docs.python.org/3/library/glob.html
+[py_hashlib]: https://docs.python.org/3/library/hashlib.html
+[py_inspect]: https://docs.python.org/3/library/inspect.html
+[py_io]: https://docs.python.org/3/library/io.html
+[py_itertools]: https://docs.python.org/3/library/itertools.html
+[py_json]: https://docs.python.org/3/library/json.html
+[py_jsonschema]: https://python-jsonschema.readthedocs.io/
+[py_mimetypes]: https://docs.python.org/3/library/mimetypes.html
+[py_pickle]: https://docs.python.org/3/library/pickle.html
+[py_property]: https://docs.python.org/3/library/functions.html#property
+[py_semver]: https://pypi.org/project/semantic-version/
+[py_struct]: https://docs.python.org/3/library/struct.html
+[py_textwrap]: https://docs.python.org/3/library/textwrap.html
+[py_urlparse]: https://docs.python.org/3/library/urllib.parse.html
+[pyfakefs]: https://pytest-pyfakefs.readthedocs.io/
+[pytest]: https://docs.pytest.org/
+[pytest_approx]: https://docs.pytest.org/en/4.6.x/reference.html#pytest-approx
+[python]: https://www.python.org/
+[reim_michael]: https://elderlinux.org/
+[requests]: https://requests.readthedocs.io/
+[ruten_paige]: https://viewsourcecode.org/
+[selenium]: https://www.selenium.dev/
+[semver_spec]: https://semver.org/
+[sinel_joseph]: https://en.wikipedia.org/wiki/Joseph_Claude_Sinel
+[snakemake]: https://snakemake.readthedocs.io/
+[sqlite]: https://sqlite.org/
+[stack_connor]: https://connorstack.com/
+[svg_screenshot]: https://chrome.google.com/webstore/detail/svg-screenshot/nfakpcpmhhilkdpphcjgnokknpbpdllg
+[t3_personas]: https://teachtogether.tech/en/index.html#s:process-personas
+[textualize_fraction]: https://www.textualize.io/blog/posts/7-things-about-terminals
+[udhr]: https://www.un.org/en/universal-declaration-human-rights/
+[ungc]: https://www.unglobalcompact.org/what-is-gc/mission/principles
+[unicode]: https://www.unicode.org/
+[unix_glob]: https://en.wikipedia.org/wiki/Glob_(programming)
+[unix_packaging]: https://eerielinux.wordpress.com/2017/08/15/the-history-of-nix-package-management/
+[webaim_wave]: https://wave.webaim.org/
+[write_yourself_a_git]: https://wyag.thb.lt/
+[z3]: https://en.wikipedia.org/wiki/Z3_Theorem_Prover
+[zeller_andreas]: https://andreas-zeller.info/
+
+    </textarea>
+    <script src="../../remark-latest.min.js"></script>
+    <script>
+      var slideshow = remark.create({
+        highlightLines: true
+      })
+    </script>
+  </body>
+</html>

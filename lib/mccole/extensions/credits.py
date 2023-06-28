@@ -1,6 +1,6 @@
 """Generate credits."""
 
-import ivy
+import ark
 import shortcodes
 import util
 import yaml
@@ -11,10 +11,10 @@ def bibliography(pargs, kwargs, node):
     """Insert credits."""
     util.require((not pargs) and (not kwargs), "Bad 'credits' shortcode")
 
-    filename = ivy.site.config.get("credits", None)
+    filename = ark.site.config.get("credits", None)
     util.require(filename is not None, "No credits specified")
 
-    lang = ivy.site.config.get("lang", None)
+    lang = ark.site.config.get("lang", None)
     util.require(lang is not None, "No language specified")
 
     with open(filename, "r") as reader:

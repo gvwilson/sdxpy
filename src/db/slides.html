@@ -1,0 +1,263 @@
+---
+template: slides
+---
+
+## The Problem
+
+-   Persisting objects ([%x persist %]) lets us save and restore program state
+
+-   But we often want fast lookup *without* reloading all the data
+
+-   And interoperability across languages
+
+-   Create a simple [%g log_structured_database "log-structured database" %]
+
+---
+
+## Starting Point
+
+-   A simple [%g key_value_store "key-value store" %] that lets us look things up
+
+-   User must provide a function that gets key from record
+
+[% inc file="interface_original.py" %]
+
+---
+
+## Just a Dictionary
+
+-   Store in memory using a dictionary
+
+[% inc file="just_dict_original.py" %]
+
+-   Lets us start writing tests
+
+---
+
+## Experimental Records
+
+[% inc file="record_original.py" omit="omit" %]
+
+---
+
+## Test Fixtures
+
+-   Use the `pytest.fixture` decorator from [%x func %]
+
+[% inc file="test_db_original.py" keep="fixture" %]
+
+---
+
+## Tests
+
+[% inc file="test_db_original.py" keep="test" %]
+
+---
+
+## Refactor Interface
+
+-   We're going to need other record manipulation functions
+
+-   So save the record class instead of the key function
+
+[% inc file="interface.py" %]
+
+---
+
+## Refactor Database
+
+-   Corresponding change to use a [%g static_method "static method" %]
+    of the record class
+
+[% inc file="just_dict_refactored.py" %]
+
+---
+
+## Saving Records
+
+-   Records must know how to pack and unpack themselves
+
+-   Start by calculating the size of each
+
+[% inc file="record.py" keep="base" %]
+
+---
+
+## Packing
+
+[% inc file="record.py" keep="pack" %]
+
+-   Save as strings with [%g null_byte "null byte" %] `\0` between them
+
+-   A real implementation would pack as binary ([%x binary %])
+
+---
+
+## Unpacking
+
+[% inc file="record.py" keep="unpack" %]
+
+-   Note: this doesn't handle strings with null bytes
+
+-   A real implementation etc.
+
+---
+
+## Multiple Records
+
+[% inc file="record.py" keep="multi" %]
+
+---
+
+## A File-Backed Database
+
+[% figure
+   slug="db-single-file"
+   img="single_file.svg"
+   alt="Using a single file"
+   caption="Saving the entire database in a single file."
+%]
+
+---
+
+## A File-Backed Database
+
+[% inc file="file_backed.py" keep="core" %]
+
+-   Needs two [%g helper_method "helper methods" %]
+
+---
+
+## A File-Backed Database
+
+[% inc file="file_backed.py" keep="helper" %]
+
+-   Still saving and loading entire database
+
+-   But look at all the infrastructure we've built
+
+---
+
+## Saving Blocks
+
+-   Save *N* records per [%g block "block" %]
+
+-   Keep the [%g index_database "index" %] in memory
+
+-   When writing, only modify one block (smaller and faster)
+
+-   When reading, only load one block (ditto)
+
+---
+
+## Allocating Blocks
+
+[% figure
+   slug="db-alloc"
+   img="alloc.svg"
+   alt="Mapping records to blocks"
+   caption="Mapping records to blocks."
+%]
+
+---
+
+## Store Blocks in Memory
+
+[% inc file="blocked.py" keep="class" %]
+
+---
+
+## Adding a Record
+
+[% inc file="blocked.py" keep="add" %]
+
+-   Get the sequence ID for this record
+
+-   Store the key-to-sequence mapping in the index
+
+-   Find or create the right block
+
+-   Add the record
+
+---
+
+## Getting a Record
+
+[% inc file="blocked.py" keep="get" %]
+
+-   Do we even know about this record?
+
+-   Find its current sequence ID
+
+-   Find the corresponding block
+
+-   Get the record
+
+---
+
+## Helper Methods
+
+[% inc file="blocked.py" keep="helper" %]
+
+---
+
+## Persisting Blocks
+
+-   Use inheritance to do everything described above while saving and loading blocks
+
+[% inc file="blocked_file.py" keep="class" %]
+
+---
+
+## Saving
+
+[% inc file="blocked_file.py" keep="save" %]
+
+-  Have to pack and save all the records in the block
+
+---
+
+## Loading
+
+[% inc file="blocked_file.py" keep="load" %]
+
+-   Unpack all the records in the block
+
+---
+
+## Why Split Loading?
+
+-   Need to initialize the in-memory index when restarting the database
+
+[% inc file="blocked_file.py" keep="index" %]
+
+-   Obvious extension: save the index in another file
+
+-   Would have to profile ([%x perf %]) to see if this was worthwhile
+
+---
+
+## Cleanup
+
+[% inc file="cleanup.py" keep="cleanup" %]
+
+---
+
+## Next Steps
+
+-   [%g compact "Compact" %] storage periodically
+
+-   Use other data structures for indexing
+
+---
+
+class: summary
+
+## Summary
+
+[% figure
+   slug="db-concept-map"
+   img="concept_map.svg"
+   alt="Concept map for database"
+   caption="Concept map for a log-structured database."
+%]

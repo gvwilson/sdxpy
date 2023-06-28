@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="repo" content="https://github.com/gvwilson/sd4ds">
+  <meta name="build_date" content="2023-06-28">
+  <meta name="template" content="slides">
+  <meta name="major" content="Chapter 16">
+  
+  <link rel="icon" type="image/x-icon" href="../../favicon.ico">
+  <link rel="stylesheet" href="../../mccole.css">
+  <link rel="stylesheet" href="../../tango.css">
+  <script defer data-domain="third-bit.com" src="https://plausible.io/js/plausible.js"></script>
+  <script>
+    MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']]
+      }
+    };
+  </script>
+  <script
+    type="text/javascript"
+    id="MathJax-script"
+    async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+  </script>
+  <script defer src="../../mccole.js"></script>
+  <title>Software Design for Data Scientists: Object Persistence</title>
+</head>
+
+  <body>
+    <textarea id="source">
+
+class: slide-title
+
+<p>
+  <a href="https://third-bit.com/sd4ds/">Software Design for Data Scientists</a>
+</p>
+<h1>Object Persistence</h1>
+<div class="bottom">
+  <a href="../">chapter</a>
+</div>
+
+---
+
+
+## How to Save Data?
+
+-   Prose as plain text
+-   Tables as CSV
+-   What about objects?
+    -   List of dictionaries of lists of dictionaries
+
+---
+
+## Existing Options
+
+-   [JSON][py_json] or [YAML][py_yaml]: language-neutral
+    -   But therefore lowest common denominator
+    -   Boolean, number, string, list, dictionary (with string keys)
+-   [pickle][py_pickle] module: Python-specific
+    -   Arbitrary nested objects (good)
+    -   Other languages can't read its files (bad)
+
+---
+
+## Getting Started
+
+-   Store each __atomic value__ on a line of its own
+    -   `type_name:value`
+
+```txt
+bool:True
+int:123
+```
+
+
+-   Split strings on newlines
+    -   Save the number of lines
+
+```txt
+# input
+this is
+two lines
+```
+
+```txt
+# output
+str:2
+this is
+two lines
+```
+
+
+---
+
+## Implementation
+
+```py
+def save(writer, thing):
+    if isinstance(thing, bool):
+        print(f"bool:{thing}", file=writer)
+
+    elif isinstance(thing, float):
+        print(f"float:{thing}", file=writer)
+
+    elif isinstance(thing, int):
+        print(f"int:{thing}", file=writer)
+
+    else:
+        raise ValueError(f"unknown type of thing {type(thing)}")
+```
+
+
+---
+
+## Collections
+
+-   Save type and number of elements
+
+```py
+    elif isinstance(thing, list):
+        print(f"list:{len(thing)}", file=writer)
+        for item in thing:
+            save(writer, item)
+```
+
+
+---
+
+## What This Looks Like
+
+```py
+save(sys.stdout, [False, 3.14, "hello", {"left": 1, "right": [2, 3]}])
+```
+
+```
+list:4
+bool:False
+float:3.14
+str:1
+hello
+dict:2
+str:1
+left
+int:1
+str:1
+right
+list:2
+int:2
+int:3
+```
+
+
+--
+
+-   Computer doesn't need indentation or end markers
+-   But we might add them for readability
+
+---
+
+## Reading Data
+
+```py
+def load(reader):
+    line = reader.readline()[:-1]
+    assert line, "Nothing to read"
+    fields = line.split(":", maxsplit=1)
+    assert len(fields) == 2, f"Badly-formed line {line}"
+    key, value = fields
+
+    if key == "bool":
+        names = {"True": True, "False": False}
+        assert value in names, f"Unknown Boolean {value}"
+        return names[value]
+
+    elif key == "float":
+        return float(value)
+
+    elif key == "int":
+        return int(value)
+
+    else:
+        raise ValueError(f"unknown type of thing {line}")
+```
+
+
+---
+
+## Reading Multi-line Values
+
+```py
+    elif key == "list":
+        return [load(reader) for _ in range(int(value))]
+```
+
+
+-   Use a list comprehension instead of a loop
+
+---
+
+## Open-Closed Principle
+
+-   Software should be open for extension but closed for modification
+    -   I.e., should be able to add new code without rewriting existing code
+-   Create a dispatch function that figures out what reader or writer to call
+-   Find appropriate things to call dynamically
+-   Instead of looking for functions, look for methods
+-   If the type of the thing we're saving is `something`,
+    provide a method `_something`
+
+---
+
+## Saving
+
+```py
+class SaveOop:
+    def __init__(self, writer):
+        self.writer = writer
+
+    def save(self, thing):
+        typename = type(thing).__name__
+        method = f"_{typename}"
+        assert hasattr(self, method), \
+            f"Unknown object type {typename}"
+        getattr(self, method)(thing)
+```
+
+
+-   Handle loading the same way
+
+---
+
+## Next Steps
+
+-   What to do with user-defined classes?
+    -   Or things from the standard library, for that matter?
+-   Convert user types to built-in types
+    -   Either the object tells us how…
+    -   …or we do it generically
+    -   Either way, how to convert back?
+-   Save class definitions as well as objects' values
+    -   Most general (code is just data)
+    -   But most difficult to implement
+    -   And a potential security hole
+
+---
+
+## Aliasing
+
+<figure>
+<img src="../shared.svg" alt="A shared data structure"/>
+</figure>
+
+
+```py
+shared = ["shared"]
+fixture = [shared, shared]
+```
+
+
+-   "Surely nobody would ever do this!"
+-   But every child node in an HTML tree has a reference to its parent
+
+---
+
+## Aliasing
+
+-   Store a unique ID for every object using Python's `id`
+
+-   Keep track of the objects seen so far
+
+-   Write that ID the first time we see the object
+
+-   Write a special entry when we see the object again
+
+---
+
+## Saving
+
+```py
+    def save(self, thing):
+        thing_id = id(thing)
+        if thing_id in self.seen:
+            self._write("alias", thing_id, "")
+            return
+
+        self.seen.add(thing_id)
+        typename = type(thing).__name__
+        method = f"_{typename}"
+        assert hasattr(self, method), \
+            f"Unknown object type {typename}"
+        getattr(self, method)(thing)
+```
+
+
+---
+
+## What It Looks Like
+
+```py
+word = "word"
+child = [word, word]
+parent = []
+parent.append(parent)
+parent.append(child)
+
+saver = SaveAlias(sys.stdout)
+saver.save(parent)
+```
+
+```
+list:4499069632:2
+alias:4499069632:
+list:4498772736:2
+str:4498771824:1
+word
+alias:4498771824:
+```
+
+
+---
+
+class: summary
+
+## Summary
+
+<figure>
+<img src="../concept_map.svg" alt="Concept map of persistence"/>
+</figure>
+
+
+
+[academic_prototyping]: https://www.fuzzingbook.org/html/AcademicPrototyping.html
+[aosa]: https://aosabook.org/
+[beautiful_soup]: https://beautiful-soup-4.readthedocs.io/
+[birthday_problem]: https://en.wikipedia.org/wiki/Birthday_problem
+[black]: https://black.readthedocs.io/
+[book_repo]: https://github.com/gvwilson/sd4ds/
+[book_site]: https://third-bit.com/sd4ds/
+[browser_engine_tutorial]: https://limpet.net/mbrubeck/2014/08/08/toy-layout-engine-1.html
+[browser_engineering]: https://browser.engineering/
+[brubeck_matt]: https://limpet.net/mbrubeck/
+[cc_by_nc]: https://creativecommons.org/licenses/by-nc/4.0/
+[cc_by_nc_legal]: https://creativecommons.org/licenses/by-nc/4.0/legalcode
+[clarkes_laws]: https://en.wikipedia.org/wiki/Clarke%27s_three_laws
+[contributor_covenant]: https://www.contributor-covenant.org/
+[cook_mary_rose]: https://maryrosecook.com/
+[crafting_interpreters]: https://craftinginterpreters.com/
+[ctan]: https://www.ctan.org/
+[cypress]: https://www.cypress.io/
+[db_tutorial]: https://cstack.github.io/db_tutorial/
+[dresser_christopher]: https://en.wikipedia.org/wiki/Christopher_Dresser
+[ejs]: https://ejs.co/
+[email]: mailto:gvwilson@third-bit.com
+[eniac_programmers]: http://eniacprogrammers.org/
+[ethical_source]: https://ethicalsource.dev
+[evans_julia]: https://jvns.ca/
+[evans_zines]: https://wizardzines.com/
+[expect]: https://en.wikipedia.org/wiki/Expect
+[flake8]: https://flake8.pycqa.org/
+[git]: https://git-scm.com/
+[git_man_page_generator]: https://git-man-page-generator.lokaltog.net/
+[gitlet]: http://gitlet.maryrosecook.com/
+[glosario]: https://glosario.carpentries.org/
+[gnu_make]: https://www.gnu.org/software/make/
+[gutenberg]: https://www.gutenberg.org/
+[harrelson_chris]: https://twitter.com/chrishtr
+[hippocratic_license]: https://firstdonoharm.dev/
+[hoye_mike]: http://exple.tive.org/blarg/
+[html5_data_attributes]: https://developer.mozilla.org/en-US/docs/Learn/HTML/Howto/Use_data_attributes
+[human_resource_machine]: https://tomorrowcorporation.com/humanresourcemachine
+[isort]: https://pycqa.github.io/isort/
+[ivy]: https://www.dmulholl.com/docs/ivy/main/
+[jekyll]: https://jekyllrb.com/
+[json_schema]: https://json-schema.org/
+[kilo_editor]: https://viewsourcecode.org/snaptoken/kilo/index.html
+[latex]: https://www.latex-project.org/
+[loewy_raymond]: https://en.wikipedia.org/wiki/Raymond_Loewy
+[lorgat_editor]: https://github.com/seem/editor
+[lorgat_tutorial]: https://wasimlorgat.com/posts/editor.html
+[lorgat_wasim]: https://wasimlorgat.com/
+[marthas_rules]: https://journals.sagepub.com/doi/10.1177/088610998600100206
+[nano]: https://www.nano-editor.org/
+[nison_mael]: https://arcanis.github.io/
+[nystrom_bob]: http://journal.stuffwithstuff.com/
+[package_manager_tutorial]: https://classic.yarnpkg.com/blog/2017/07/11/lets-dev-a-package-manager/
+[panchekha_pavel]: https://pavpanchekha.com/
+[pexpect]: https://pexpect.readthedocs.io/
+[php]: https://www.php.net/
+[picosat]: http://fmv.jku.at/picosat/
+[pip]: https://pip.pypa.io/
+[programming_tools]: https://en.wikipedia.org/wiki/Programming_tool
+[punching_holes]: http://exple.tive.org/blarg/2020/11/26/punching-holes/
+[py_array]: https://docs.python.org/3/library/array.html
+[py_ast]: https://docs.python.org/3/library/ast.html
+[py_chainmap]: https://docs.python.org/3/library/collections.html#collections.ChainMap
+[py_cprofile]: https://docs.python.org/3/library/profile.html
+[py_curses]: https://docs.python.org/3/library/curses.html
+[py_fractions]: https://docs.python.org/3/library/fractions.html
+[py_glob]: https://docs.python.org/3/library/glob.html
+[py_hashlib]: https://docs.python.org/3/library/hashlib.html
+[py_inspect]: https://docs.python.org/3/library/inspect.html
+[py_io]: https://docs.python.org/3/library/io.html
+[py_itertools]: https://docs.python.org/3/library/itertools.html
+[py_json]: https://docs.python.org/3/library/json.html
+[py_jsonschema]: https://python-jsonschema.readthedocs.io/
+[py_mimetypes]: https://docs.python.org/3/library/mimetypes.html
+[py_pickle]: https://docs.python.org/3/library/pickle.html
+[py_property]: https://docs.python.org/3/library/functions.html#property
+[py_semver]: https://pypi.org/project/semantic-version/
+[py_struct]: https://docs.python.org/3/library/struct.html
+[py_textwrap]: https://docs.python.org/3/library/textwrap.html
+[py_urlparse]: https://docs.python.org/3/library/urllib.parse.html
+[pyfakefs]: https://pytest-pyfakefs.readthedocs.io/
+[pytest]: https://docs.pytest.org/
+[pytest_approx]: https://docs.pytest.org/en/4.6.x/reference.html#pytest-approx
+[python]: https://www.python.org/
+[reim_michael]: https://elderlinux.org/
+[requests]: https://requests.readthedocs.io/
+[ruten_paige]: https://viewsourcecode.org/
+[selenium]: https://www.selenium.dev/
+[semver_spec]: https://semver.org/
+[sinel_joseph]: https://en.wikipedia.org/wiki/Joseph_Claude_Sinel
+[snakemake]: https://snakemake.readthedocs.io/
+[sqlite]: https://sqlite.org/
+[stack_connor]: https://connorstack.com/
+[svg_screenshot]: https://chrome.google.com/webstore/detail/svg-screenshot/nfakpcpmhhilkdpphcjgnokknpbpdllg
+[t3_personas]: https://teachtogether.tech/en/index.html#s:process-personas
+[textualize_fraction]: https://www.textualize.io/blog/posts/7-things-about-terminals
+[udhr]: https://www.un.org/en/universal-declaration-human-rights/
+[ungc]: https://www.unglobalcompact.org/what-is-gc/mission/principles
+[unicode]: https://www.unicode.org/
+[unix_glob]: https://en.wikipedia.org/wiki/Glob_(programming)
+[unix_packaging]: https://eerielinux.wordpress.com/2017/08/15/the-history-of-nix-package-management/
+[webaim_wave]: https://wave.webaim.org/
+[write_yourself_a_git]: https://wyag.thb.lt/
+[z3]: https://en.wikipedia.org/wiki/Z3_Theorem_Prover
+[zeller_andreas]: https://andreas-zeller.info/
+
+    </textarea>
+    <script src="../../remark-latest.min.js"></script>
+    <script>
+      var slideshow = remark.create({
+        highlightLines: true
+      })
+    </script>
+  </body>
+</html>

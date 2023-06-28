@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="repo" content="https://github.com/gvwilson/sd4ds">
+  <meta name="build_date" content="2023-06-28">
+  <meta name="template" content="default">
+  <meta name="major" content="Chapter 24">
+  <meta name="has_slides" content="true">
+  <link rel="icon" type="image/x-icon" href="../favicon.ico">
+  <link rel="stylesheet" href="../mccole.css">
+  <link rel="stylesheet" href="../tango.css">
+  <script defer data-domain="third-bit.com" src="https://plausible.io/js/plausible.js"></script>
+  <script>
+    MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']]
+      }
+    };
+  </script>
+  <script
+    type="text/javascript"
+    id="MathJax-script"
+    async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+  </script>
+  <script defer src="../mccole.js"></script>
+  <title>Software Design for Data Scientists: Undo and Redo</title>
+</head>
+
+  <body>
+    <div class="row">
+      <div class="sidebar">
+        <p>
+  
+  <img src="../logo.svg" alt="site logo" class="logo" />
+  <a href="../">Software Design for Data Scientists</a>
+  
+</p>
+<ol class="toc-chapter">
+  
+  <li>
+    <a href="../intro/">
+      Introduction
+    </a>
+  </li>
+  
+  <li>
+    <a href="../dup/">
+      Finding Duplicate Files
+    </a>
+  </li>
+  
+  <li>
+    <a href="../glob/">
+      Matching Patterns
+    </a>
+  </li>
+  
+  <li>
+    <a href="../parse/">
+      Parsing Text
+    </a>
+  </li>
+  
+  <li>
+    <a href="../test/">
+      Running Tests
+    </a>
+  </li>
+  
+  <li>
+    <a href="../interp/">
+      An Interpreter
+    </a>
+  </li>
+  
+  <li>
+    <a href="../oop/">
+      Objects and Classes
+    </a>
+  </li>
+  
+  <li>
+    <a href="../func/">
+      Functions and Closures
+    </a>
+  </li>
+  
+  <li>
+    <a href="../mock/">
+      Mocks, Protocols, and Decorators
+    </a>
+  </li>
+  
+  <li>
+    <a href="../archive/">
+      A File Archiver
+    </a>
+  </li>
+  
+  <li>
+    <a href="../check/">
+      An HTML Validator
+    </a>
+  </li>
+  
+  <li>
+    <a href="../template/">
+      A Template Expander
+    </a>
+  </li>
+  
+  <li>
+    <a href="../lint/">
+      A Code Linter
+    </a>
+  </li>
+  
+  <li>
+    <a href="../layout/">
+      Page Layout
+    </a>
+  </li>
+  
+  <li>
+    <a href="../perf/">
+      Performance Profiling
+    </a>
+  </li>
+  
+  <li>
+    <a href="../persist/">
+      Object Persistence
+    </a>
+  </li>
+  
+  <li>
+    <a href="../binary/">
+      Binary Data
+    </a>
+  </li>
+  
+  <li>
+    <a href="../db/">
+      A Database
+    </a>
+  </li>
+  
+  <li>
+    <a href="../build/">
+      A Build Manager
+    </a>
+  </li>
+  
+  <li>
+    <a href="../pack/">
+      A Package Manager
+    </a>
+  </li>
+  
+  <li>
+    <a href="../ftp/">
+      Transferring Files
+    </a>
+  </li>
+  
+  <li>
+    <a href="../http/">
+      Serving Web Pages
+    </a>
+  </li>
+  
+  <li>
+    <a href="../viewer/">
+      A File Viewer
+    </a>
+  </li>
+  
+  <li>
+    <a href="../undo/">
+      <strong>Undo and Redo</strong>
+    </a>
+  </li>
+  
+  <li>
+    <a href="../vm/">
+      A Virtual Machine
+    </a>
+  </li>
+  
+  <li>
+    <a href="../debugger/">
+      A Debugger
+    </a>
+  </li>
+  
+  <li>
+    <a href="../finale/">
+      Conclusion
+    </a>
+  </li>
+  
+</ol>
+<ol class="toc-appendix">
+  
+  <li>
+    <a href="../bib/">
+      Bibliography
+    </a>
+  </li>
+  
+  <li>
+    <a href="../bonus/">
+      Bonus Material
+    </a>
+  </li>
+  
+  <li>
+    <a href="../syllabus/">
+      Syllabus
+    </a>
+  </li>
+  
+  <li>
+    <a href="../slides/">
+      Slides
+    </a>
+  </li>
+  
+  <li>
+    <a href="../license/">
+      License
+    </a>
+  </li>
+  
+  <li>
+    <a href="../conduct/">
+      Code of Conduct
+    </a>
+  </li>
+  
+  <li>
+    <a href="../contrib/">
+      Contributing
+    </a>
+  </li>
+  
+  <li>
+    <a href="../glossary/">
+      Glossary
+    </a>
+  </li>
+  
+  <li>
+    <a href="../credits/">
+      Credits
+    </a>
+  </li>
+  
+  <li>
+    <a href="../contents/">
+      Index
+    </a>
+  </li>
+  
+</ol>
+
+<p><a href="../sd4ds-examples.zip" type="application/zip">download examples</a></p>
+
+
+      </div>
+      <div id="printable" class="contents bordered">
+        <main>
+          
+  <h1>Chapter 24: Undo and Redo</h1>
+
+
+          
+<div class="draft notex">
+  <p>DRAFT</p>
+  <p>
+    <em>Please use section heading links to submit feedback.</em>
+  </p>
+</div>
+
+
+          
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+  <ul class="syllabus">
+  
+  <li markdown="1">FIXME</li>
+  
+  </ul>
+  
+
+  
+
+  
+
+
+          
+<p class="definitions">
+  Terms defined: <a class="gl-ref" href="../glossary/#command_pattern" markdown="1">Command pattern</a>, <a class="gl-ref" href="../glossary/#headless" markdown="1">headless application</a>
+</p>
+
+
+          <div class="page-toc"></div>
+          <ul>
+<li>
+<p>Bring over viewer app</p>
+<ul>
+<li><code>app.py</code>, <code>buffer.py</code>, <code>cursor.py</code>, <code>window.py</code>, <code>util.py</code></li>
+<li><code>Window</code>, <code>Cursor</code>, <code>Buffer</code>, <code>App</code></li>
+<li>Add call to <code>._add_log</code> to <code>App._interact</code> (another unanticipated hook)</li>
+</ul>
+</li>
+<li>
+<p>Create headless versions</p>
+<ul>
+<li><code>HeadlessScreen</code> replaces the <code>curses</code> screen<ul>
+<li>Takes keystrokes as input (what we&rsquo;re simulating)</li>
+<li>Automatically generate Ctrl-X when out of keystrokes</li>
+<li>Store current state of display in rectangular grid</li>
+<li>Would make more sense for <code>App</code> to have a method that gets keys</li>
+</ul>
+</li>
+<li><code>HeadlessWindow</code> requires a size<ul>
+<li>Violates Liskov Substitution Principle</li>
+</ul>
+</li>
+<li><code>HeadlessApp</code> fills in logging methods</li>
+<li>First tests make sure we can move around</li>
+<li><code>headless.py</code></li>
+<li><code>test_headless.py</code></li>
+</ul>
+</li>
+<li>
+<p>Create insert/delete version</p>
+<ul>
+<li><code>InsertDeleteBuffer</code> in <code>insert_delete.py</code><ul>
+<li>Add methods to insert and delete in buffer</li>
+</ul>
+</li>
+<li>Delete character <em>under</em> cursor, not to the left</li>
+<li><code>InsertDeleteApp</code> provides <code>_get_key</code> in the app to return (family, key)<ul>
+<li><code>_interact</code> dispatches to one of two cases (special-purpose or generic + key)</li>
+<li>Could define per-key method to make customization easier</li>
+</ul>
+</li>
+<li><code>test_insert_delete.py</code></li>
+<li>But one test fails: empty screen (cursor isn&rsquo;t on top of a character)<ul>
+<li>Our focus is undo, so we&rsquo;ll ignore this for now</li>
+</ul>
+</li>
+<li>Tackle it in the exercises</li>
+</ul>
+</li>
+<li>
+<p>Record history of insertions and deletions</p>
+<ul>
+<li><code>HistoryApp</code> in <code>history.py</code> creates a list <code>_history</code></li>
+<li>Modify <code>_do_INSERT</code> and <code>_do_DELETE</code> to append records</li>
+<li>Could add more logic to history recording, but this approach is broken anyway</li>
+<li>Insert, move, move, undo: where does it leave the cursor?</li>
+<li>Next step is to create objects that record actions</li>
+</ul>
+</li>
+<li>
+<p><code>action.py</code> is the fully object-oriented version</p>
+<ul>
+<li><code>Action</code> records the app and has <code>do</code> and <code>undo</code></li>
+<li>Derive <code>Insert</code> to:<ul>
+<li>insert a character and a position</li>
+</ul>
+</li>
+<li>delete that saved character</li>
+<li>Derive <code>Exit</code> to stop the app running<ul>
+<li>no <code>undo</code> action (should never arise)</li>
+</ul>
+</li>
+<li><code>_interact</code> is now:<ul>
+<li>get the action name</li>
+</ul>
+</li>
+<li>find a handler</li>
+<li>call it to construct an object</li>
+<li><code>do</code> that object</li>
+<li>append the action to the history so that we can undo it</li>
+<li>works until we try to undo (see <code>undoable.py</code>), at which point we get stuck in a loop<ul>
+<li>undo calls undo calls undo</li>
+</ul>
+</li>
+<li>so write <code>undoable.py</code> with &ldquo;save this?&rdquo;</li>
+</ul>
+</li>
+</ul>
+<hr />
+<h2>The Problem</h2>
+<ul>
+<li>
+<p>Want to change files as well as viewing them</p>
+</li>
+<li>
+<p>So modify the file viewer of <a class="x-ref" href="../viewer/">Chapter 23</a> to allow editing</p>
+</li>
+<li>
+<p>And since people make mistakes when editing, implement undo</p>
+</li>
+</ul>
+<hr />
+<h2>Starting Point</h2>
+<ul>
+<li>
+<p><code>Window</code> can draw lines and report its size</p>
+</li>
+<li>
+<p><code>Buffer</code> stores lines of text,
+    keeps track of a viewport,
+    and transforms buffer coordinates to screen coordinates</p>
+</li>
+<li>
+<p><code>Cursor</code> knows its position in the buffer
+    and can move up, down, left, and right</p>
+</li>
+<li>
+<p><code>App</code> makes a window, a buffer, and a cursor,
+    then maps keys to actions</p>
+</li>
+</ul>
+<figure id="undo-classes">
+<img src="./classes.svg" alt="Classes in file viewer"/>
+<figcaption markdown="1">Figure 24.1: Relationships between classes in file viewer</figcaption>
+</figure>
+
+<h2>A Headless Screen</h2>
+<ul>
+<li>
+<p>Create a <a class="gl-ref" href="../glossary/#headless" markdown="1">headless</a> screen for testing</p>
+</li>
+<li>
+<p>Store current state of display in rectangular grid</p>
+</li>
+<li>
+<p>Take a list of keystrokes (for simulation)</p>
+<ul>
+<li>Would have made more sense for <code>App</code> to have a method
+    that gets keystrokes</li>
+</ul>
+</li>
+</ul>
+<h2>A Headless Screen</h2>
+<div class="code-sample lang-py" title="headless.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">HeadlessScreen</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">keystrokes</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_size</span> <span class="o">=</span> <span class="n">size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_keys</span> <span class="o">=</span> <span class="n">keystrokes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_i_key</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">erase</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">getkey</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_i_key</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_keys</span><span class="p">):</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="s2">&quot;CONTROL_X&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_keys</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_i_key</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_i_key</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="n">key</span>
+
+    <span class="k">def</span> <span class="nf">addstr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">row</span><span class="p">,</span> <span class="n">col</span><span class="p">,</span> <span class="n">text</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">row</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_size</span><span class="p">[</span><span class="n">ROW</span><span class="p">]</span>
+        <span class="k">assert</span> <span class="n">col</span> <span class="o">==</span> <span class="mi">0</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_size</span><span class="p">[</span><span class="n">COL</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_display</span><span class="p">[</span><span class="n">row</span><span class="p">]</span> <span class="o">=</span> <span class="n">text</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_display</span><span class="p">[</span><span class="n">row</span><span class="p">][</span><span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">):]</span>
+</code></pre></div>
+</div>
+<h2>Bad But Necessary</h2>
+<ul>
+<li>Also need to define <code>HeadlessWindow</code> to take a size
+    and pass it to the screen</li>
+</ul>
+<div class="code-sample lang-py" title="headless.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">HeadlessWindow</span><span class="p">(</span><span class="n">Window</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">screen</span><span class="p">,</span> <span class="n">size</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="n">size</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">size</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">screen</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<ul>
+<li>Violates the
+    <span class="ix-entry" ix-key="Liskov Substitution Principle" markdown="1">Liskov Substitution Principle</span></li>
+</ul>
+<h2>Logging</h2>
+<ul>
+<li>Record keys, cursor position, and screen contents for testing</li>
+</ul>
+<div class="code-sample lang-py" title="headless.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">HeadlessApp</span><span class="p">(</span><span class="n">App</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">lines</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">lines</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_log</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">def</span> <span class="nf">get_log</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_log</span>
+
+    <span class="k">def</span> <span class="nf">_add_log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_log</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">key</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cursor</span><span class="o">.</span><span class="n">pos</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">_screen</span><span class="o">.</span><span class="n">display</span><span class="p">()))</span>
+
+    <span class="k">def</span> <span class="nf">_make_window</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_window</span> <span class="o">=</span> <span class="n">HeadlessWindow</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_screen</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_size</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<h2>Testing</h2>
+<div class="code-sample lang-py" title="test_headless.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">test_scroll_down</span><span class="p">():</span>
+    <span class="n">size</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="n">lines</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;abc&quot;</span><span class="p">,</span> <span class="s2">&quot;def&quot;</span><span class="p">,</span> <span class="s2">&quot;ghi&quot;</span><span class="p">]</span>
+    <span class="n">keys</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;KEY_DOWN&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="mi">3</span>
+    <span class="n">screen</span> <span class="o">=</span> <span class="n">HeadlessScreen</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">keys</span><span class="p">)</span>
+    <span class="n">app</span> <span class="o">=</span> <span class="n">HeadlessApp</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">lines</span><span class="p">)</span>
+    <span class="n">app</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">app</span><span class="o">.</span><span class="n">get_log</span><span class="p">()[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="p">(</span><span class="s2">&quot;CONTROL_X&quot;</span><span class="p">,</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">[</span><span class="s2">&quot;de&quot;</span><span class="p">,</span> <span class="s2">&quot;gh&quot;</span><span class="p">])</span>
+</code></pre></div>
+</div>
+<ul>
+<li>Last key is always <code>CONTROL_X</code> (exit)</li>
+</ul>
+<h2>Insertion and Deletion</h2>
+<div class="code-sample lang-py" title="insert_delete.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">InsertDeleteBuffer</span><span class="p">(</span><span class="n">Buffer</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">insert</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">char</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">pos</span><span class="p">[</span><span class="n">ROW</span><span class="p">]</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">nrow</span><span class="p">()</span>
+        <span class="k">assert</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">pos</span><span class="p">[</span><span class="n">COL</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ncol</span><span class="p">(</span><span class="n">pos</span><span class="p">[</span><span class="n">ROW</span><span class="p">])</span>
+        <span class="n">line</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lines</span><span class="p">[</span><span class="n">pos</span><span class="p">[</span><span class="n">ROW</span><span class="p">]]</span>
+        <span class="n">line</span> <span class="o">=</span> <span class="n">line</span><span class="p">[:</span><span class="n">pos</span><span class="p">[</span><span class="n">COL</span><span class="p">]]</span> <span class="o">+</span> <span class="n">char</span> <span class="o">+</span> <span class="n">line</span><span class="p">[</span><span class="n">pos</span><span class="p">[</span><span class="n">COL</span><span class="p">]:]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_lines</span><span class="p">[</span><span class="n">pos</span><span class="p">[</span><span class="n">ROW</span><span class="p">]]</span> <span class="o">=</span> <span class="n">line</span>
+
+    <span class="k">def</span> <span class="nf">delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">pos</span><span class="p">[</span><span class="n">ROW</span><span class="p">]</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">nrow</span><span class="p">()</span>
+        <span class="k">assert</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">pos</span><span class="p">[</span><span class="n">COL</span><span class="p">]</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">ncol</span><span class="p">(</span><span class="n">pos</span><span class="p">[</span><span class="n">ROW</span><span class="p">])</span>
+        <span class="n">line</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lines</span><span class="p">[</span><span class="n">pos</span><span class="p">[</span><span class="n">ROW</span><span class="p">]]</span>
+        <span class="n">line</span> <span class="o">=</span> <span class="n">line</span><span class="p">[:</span><span class="n">pos</span><span class="p">[</span><span class="n">COL</span><span class="p">]]</span> <span class="o">+</span> <span class="n">line</span><span class="p">[</span><span class="n">pos</span><span class="p">[</span><span class="n">COL</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_lines</span><span class="p">[</span><span class="n">pos</span><span class="p">[</span><span class="n">ROW</span><span class="p">]]</span> <span class="o">=</span> <span class="n">line</span>
+</code></pre></div>
+</div>
+<ul>
+<li>
+<p>Delete character <em>under</em> the cursor, not to the left</p>
+</li>
+<li>
+<p>A little <span class="ix-entry" ix-key="defensive programming" markdown="1">defensive programming</span> as well</p>
+</li>
+</ul>
+<h2>Application</h2>
+<div class="code-sample lang-py" title="insert_delete.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">InsertDeleteApp</span><span class="p">(</span><span class="n">HeadlessApp</span><span class="p">):</span>
+    <span class="n">INSERTABLE</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">string</span><span class="o">.</span><span class="n">ascii_letters</span> <span class="o">+</span> <span class="n">string</span><span class="o">.</span><span class="n">digits</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_make_buffer</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span> <span class="o">=</span> <span class="n">InsertDeleteBuffer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_lines</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<div class="code-sample lang-py" title="insert_delete.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">_do_DELETE</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_cursor</span><span class="o">.</span><span class="n">pos</span><span class="p">())</span>
+
+    <span class="k">def</span> <span class="nf">_do_INSERT</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_cursor</span><span class="o">.</span><span class="n">pos</span><span class="p">(),</span> <span class="n">key</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<h2>Application</h2>
+<div class="code-sample lang-py" title="insert_delete.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">_get_key</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_screen</span><span class="o">.</span><span class="n">getkey</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">INSERTABLE</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;INSERT&quot;</span><span class="p">,</span> <span class="n">key</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="n">key</span>
+
+    <span class="k">def</span> <span class="nf">_interact</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">family</span><span class="p">,</span> <span class="n">key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_key</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">family</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;_do_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+                <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">)()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;_do_</span><span class="si">{</span><span class="n">family</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+                <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">)(</span><span class="n">key</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_add_log</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<ul>
+<li>
+<p>Add <code>_get_key</code> to the application</p>
+<ul>
+<li>
+<p>Return family (for generic handlers) and key (specific)</p>
+</li>
+<li>
+<p>Could provide per-key methods to make customization easier</p>
+</li>
+</ul>
+</li>
+</ul>
+<h2>Testing</h2>
+<ul>
+<li>Write a function to make the fixture and run the test</li>
+</ul>
+<div class="code-sample lang-py" title="test_insert_delete.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">make_fixture</span><span class="p">(</span><span class="n">keys</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">lines</span><span class="p">):</span>
+    <span class="n">screen</span> <span class="o">=</span> <span class="n">HeadlessScreen</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">keys</span><span class="p">)</span>
+    <span class="n">app</span> <span class="o">=</span> <span class="n">InsertDeleteApp</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">lines</span><span class="p">)</span>
+    <span class="n">app</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">app</span>
+</code></pre></div>
+</div>
+<ul>
+<li>Tests are straightforward</li>
+</ul>
+<div class="code-sample lang-py" title="test_insert_delete.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">test_delete_middle</span><span class="p">():</span>
+    <span class="n">app</span> <span class="o">=</span> <span class="n">make_fixture</span><span class="p">([</span><span class="s2">&quot;KEY_RIGHT&quot;</span><span class="p">,</span> <span class="s2">&quot;DELETE&quot;</span><span class="p">],</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="p">[</span><span class="s2">&quot;abc&quot;</span><span class="p">])</span>
+    <span class="k">assert</span> <span class="n">app</span><span class="o">.</span><span class="n">get_log</span><span class="p">()[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="p">(</span><span class="s2">&quot;CONTROL_X&quot;</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">[</span><span class="s2">&quot;ac_&quot;</span><span class="p">])</span>
+</code></pre></div>
+</div>
+<h2>Edge Case</h2>
+<ul>
+<li>Can&rsquo;t delete when in an empty screen</li>
+</ul>
+<div class="code-sample lang-py" title="test_insert_delete.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">test_delete_when_impossible</span><span class="p">():</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">make_fixture</span><span class="p">([</span><span class="s2">&quot;DELETE&quot;</span><span class="p">],</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">[</span><span class="s2">&quot;&quot;</span><span class="p">])</span>
+    <span class="k">except</span> <span class="ne">AssertionError</span><span class="p">:</span>
+        <span class="k">pass</span>
+</code></pre></div>
+</div>
+<ul>
+<li>Our focus is implementing undo, so leave this for an exercise</li>
+</ul>
+<h2>Recording History</h2>
+<ul>
+<li>
+<p>In order to undo things we have to:</p>
+<ol>
+<li>
+<p>keep track of <em>actions</em> and reverse them, or</p>
+</li>
+<li>
+<p>keep track of <em>state</em> and restore it</p>
+</li>
+</ol>
+</li>
+<li>
+<p>Recording actions requires less space but can be trickier to implement</p>
+</li>
+<li>
+<p>Have actions append entries to a log</p>
+</li>
+</ul>
+<h2>The Simple Approach</h2>
+<div class="code-sample lang-py" title="history.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">HistoryApp</span><span class="p">(</span><span class="n">InsertDeleteApp</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">keystrokes</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">keystrokes</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_history</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">def</span> <span class="nf">get_history</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_history</span>
+
+    <span class="k">def</span> <span class="nf">_do_DELETE</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">row</span><span class="p">,</span> <span class="n">col</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cursor</span><span class="o">.</span><span class="n">pos</span><span class="p">()</span>
+        <span class="n">char</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span><span class="o">.</span><span class="n">char</span><span class="p">((</span><span class="n">row</span><span class="p">,</span> <span class="n">col</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_history</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s2">&quot;delete&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="n">col</span><span class="p">),</span> <span class="n">char</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_cursor</span><span class="o">.</span><span class="n">pos</span><span class="p">())</span>
+</code></pre></div>
+</div>
+<ul>
+<li>
+<p>What about undoing cursor movement?</p>
+</li>
+<li>
+<p>And do we write an interpreter for these log records?</p>
+</li>
+</ul>
+<h2>Verbs as Nouns</h2>
+<ul>
+<li>
+<p>Use the <a class="gl-ref" href="../glossary/#command_pattern" markdown="1">Command</a> design pattern</p>
+</li>
+<li>
+<p>Each action (verb) is an object (noun)
+    with methods to go forward and backward</p>
+</li>
+<li>
+<p>Every action is derived from
+    an <span class="ix-entry" ix-key="abstract base class" markdown="1">abstract base class</span></p>
+</li>
+</ul>
+<div class="code-sample lang-py" title="action.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Action</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_app</span> <span class="o">=</span> <span class="n">app</span>
+
+    <span class="k">def</span> <span class="nf">do</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">: do&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">undo</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">: undo&quot;</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<h2>Insertion and Deletion</h2>
+<div class="code-sample lang-py" title="action.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Insert</span><span class="p">(</span><span class="n">Action</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">char</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pos</span> <span class="o">=</span> <span class="n">pos</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_char</span> <span class="o">=</span> <span class="n">char</span>
+
+    <span class="k">def</span> <span class="nf">do</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_app</span><span class="o">.</span><span class="n">_buffer</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_pos</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_char</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">undo</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_app</span><span class="o">.</span><span class="n">_buffer</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_pos</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<div class="code-sample lang-py" title="action.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Delete</span><span class="p">(</span><span class="n">Action</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">,</span> <span class="n">pos</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pos</span> <span class="o">=</span> <span class="n">pos</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_char</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_app</span><span class="o">.</span><span class="n">_buffer</span><span class="o">.</span><span class="n">char</span><span class="p">(</span><span class="n">pos</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">do</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_app</span><span class="o">.</span><span class="n">_buffer</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_pos</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">undo</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_app</span><span class="o">.</span><span class="n">_buffer</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_pos</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_char</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<h2>Movement</h2>
+<div class="code-sample lang-py" title="action.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Move</span><span class="p">(</span><span class="n">Action</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">,</span> <span class="n">direction</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_direction</span> <span class="o">=</span> <span class="n">direction</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_old</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_app</span><span class="o">.</span><span class="n">_cursor</span><span class="o">.</span><span class="n">pos</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_new</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">do</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_app</span><span class="o">.</span><span class="n">_cursor</span><span class="o">.</span><span class="n">act</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_direction</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_new</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_app</span><span class="o">.</span><span class="n">_cursor</span><span class="o">.</span><span class="n">pos</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">undo</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_app</span><span class="o">.</span><span class="n">_cursor</span><span class="o">.</span><span class="n">move_to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_old</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<ul>
+<li>Give <code>Cursor</code> methods to move in a particular direction (by name)
+    and move to a particular location</li>
+</ul>
+<h2>Application</h2>
+<div class="code-sample lang-py" title="action.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">_interact</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">family</span><span class="p">,</span> <span class="n">key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_key</span><span class="p">()</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;_do_</span><span class="si">{</span><span class="n">family</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="n">family</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">&quot;_do_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+            <span class="k">return</span>
+        <span class="n">action</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">)(</span><span class="n">key</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">action</span><span class="p">)</span>
+        <span class="n">action</span><span class="o">.</span><span class="n">do</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_add_log</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<ul>
+<li>
+<p>Create the action object</p>
+</li>
+<li>
+<p>Call its <code>.do</code> method</p>
+</li>
+<li>
+<p>Modify all action methods to take a key to simplify the code a little</p>
+</li>
+</ul>
+<h2>Application</h2>
+<div class="code-sample lang-py" title="action.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">_do_DELETE</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cursor</span><span class="o">.</span><span class="n">pos</span><span class="p">())</span>
+
+    <span class="k">def</span> <span class="nf">_do_INSERT</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Insert</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cursor</span><span class="o">.</span><span class="n">pos</span><span class="p">(),</span> <span class="n">key</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_do_KEY_UP</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Move</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;up&quot;</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<ul>
+<li>
+<p>And it <em>almost</em> works!</p>
+</li>
+<li>
+<p>Our first implementation of <code>Undo</code> creates an infinite loop
+    because it puts itself on the undo stack
+    and then does the action on the top of the stack</p>
+</li>
+</ul>
+<h2>Finally</h2>
+<ul>
+<li>
+<p>Modify <code>Action</code> to have a <code>.save</code> method that returns <code>True</code></p>
+</li>
+<li>
+<p>Override in <code>Undo</code></p>
+</li>
+</ul>
+<div class="code-sample lang-py" title="undoable.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Undo</span><span class="p">(</span><span class="n">Action</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">do</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">action</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_app</span><span class="o">.</span><span class="n">_history</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+        <span class="n">action</span><span class="o">.</span><span class="n">undo</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Undo(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_app</span><span class="o">.</span><span class="n">_history</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">)&quot;</span>
+</code></pre></div>
+</div>
+<ul>
+<li>
+<p>Only add object to undo stack if <code>.save</code> is <code>True</code></p>
+</li>
+<li>
+<p>More general design would give <code>Action</code> a <code>.post_action</code> method
+    that by default adds the action to the undo stack</p>
+</li>
+</ul>
+<h2>Summary</h2>
+<figure id="undo-concept-map">
+<img src="./concept_map.svg" alt="Concept map of undo"/>
+<figcaption markdown="1">Figure 24.2: Concept map</figcaption>
+</figure>
+        </main>
+      </div>
+    </div>
+  </body>
+</html>

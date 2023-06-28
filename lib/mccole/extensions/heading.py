@@ -1,10 +1,11 @@
 """Headings and cross-references."""
 
-from dataclasses import dataclass
 import sys
+from dataclasses import dataclass
 
+import ark
 import ibis
-import ivy
+import regex
 import shortcodes
 import util
 
@@ -21,23 +22,23 @@ class Heading:
     label: str = ""
 
 
-@ivy.events.register(ivy.events.Event.INIT)
+@ark.events.register(ark.events.Event.INIT)
 def collect():
     """Collect information from pages."""
     # Gather data.
     major = util.make_major()
     collected = {}
-    ivy.nodes.root().walk(lambda node: _collect(node, major, collected))
+    ark.nodes.root().walk(lambda node: _collect(node, major, collected))
     _number(collected, major)
     _flatten(collected)
-    ivy.nodes.root().walk(_modify)
+    ark.nodes.root().walk(_modify)
     _titles()
 
 
 def _collect(node, major, collected):
     """Pull data from a single node."""
     # Home page is untitled.
-    if node.slug not in major:
+    if is_root(node):
         return
 
     # Only collecting top-level chapters and appendices.
@@ -45,17 +46,14 @@ def _collect(node, major, collected):
         return
 
     # Use page metadata to create entry for level-1 heading.
-    try:
-        title = node.meta["title"]
-    except KeyError:
-        util.fail(f"No title in metadata of {node.filepath}")
+    title = util.get_title(node)
     collected[node.slug] = [Heading(node.slug, 1, title, node.slug)]
 
     # Collect depth, text, and slug from each heading.
     collected[node.slug].extend(
         [
             Heading(node.slug, len(m.group(1)), m.group(2), m.group(4))
-            for m in util.HEADING.finditer(node.text)
+            for m in regex.MARKDOWN_HEADING.finditer(node.text)
         ]
     )
 
@@ -99,10 +97,14 @@ def _flatten(collected):
 
 def _modify(node):
     """Post-processing changes."""
-    node.text = util.HEADING.sub(_patch, node.text)
+    # Don't process root index file.
+    if is_root(node):
+        return
+    node.text = regex.MARKDOWN_HEADING.sub(_patch, node.text)
     headings = util.get_config("headings")
-    if node.slug in headings:
-        node.meta["major"] = util.make_label("part", headings[node.slug].number)
+    slug = util.get_chapter_slug(node)
+    if slug in headings:
+        node.meta["major"] = util.make_label("part", headings[slug].number)
 
 
 def _patch(match):
@@ -124,17 +126,19 @@ def _titles():
     """Create list of chapter/appendix titles for contents listing."""
     headings = util.get_config("headings")
 
-    chapters = [headings[slug] for slug in ivy.site.config["chapters"]]
-    for (i, entry) in enumerate(chapters):
+    chapters = [headings[slug] for slug in ark.site.config["chapters"]]
+    for i, entry in enumerate(chapters):
         entry.label = str(i + 1)
 
-    appendices = [headings[slug] for slug in ivy.site.config["appendices"]]
-    for (i, entry) in enumerate(appendices):
-         entry.label = chr(ord("A") + i)
+    appendices = [headings[slug] for slug in ark.site.config["appendices"]]
+    for i, entry in enumerate(appendices):
+        entry.label = chr(ord("A") + i)
 
     util.make_config("titles", {"chapters": chapters, "appendices": appendices})
 
+
 # ----------------------------------------------------------------------
+
 
 @shortcodes.register("x")
 def heading_ref(pargs, kwargs, node):
@@ -155,10 +159,28 @@ def heading_ref(pargs, kwargs, node):
         return "FIXME"
 
 
+@ibis.filters.register("is_root")
+def is_root(node):
+    """Is this the root node?"""
+    return len(node.path) == 0
+
+
+@ibis.filters.register("not_root")
+def not_root(node):
+    """Is this _not_ the root node?"""
+    return not is_root(node)
+
+
 @ibis.filters.register("part_name")
-def part_name(slug):
+def part_name(node):
     """Insert chapter/appendix part name."""
     headings = util.get_config("headings")
-    util.require(slug in headings, f"Unknown slug for part name {slug}")
-    entry = headings[slug]
+    util.require(node.slug in headings, f"Unknown slug for part name {node.slug}")
+    entry = headings[node.slug]
     return f'{util.make_label("part", entry.number)}'
+
+
+@ibis.filters.register("part_title")
+def part_title(node):
+    """Insert chapter/appendix title."""
+    return util.get_title(node)

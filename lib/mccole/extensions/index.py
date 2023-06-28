@@ -3,38 +3,42 @@
 Index entries are created using `[% i "some" "key" %]...text...[% /i %]`.  Keys
 can use `major!minor` notation to create subheadings (LaTeX-style).
 
-If some text is in both the glossary and the index, wrap the index shortcode
-around the glossary shortcode:
+    [% i "some" %]some text[% /i %]
 
-    [% i "some" %][% g key %]some text[% /g %][% /i %]
+If an index entry has a single key and no text like this:
+
+    [% i "thing" %][%/i%]
+
+then "thing" is used as the text as well as the index key.
 
 -   `index_ref` turns an index reference shortcode into text.
 
 -   `make_index` displays the entire index.
 """
 
-import ivy
+import ark
+import regex
 import shortcodes
 import util
 
 
-@ivy.events.register(ivy.events.Event.INIT)
+@ark.events.register(ark.events.Event.INIT)
 def collect():
     """Collect information from pages."""
     major = util.make_major()
     collected = util.make_config("index")
-    ivy.nodes.root().walk(lambda node: _collect(node, major, collected))
+    ark.nodes.root().walk(lambda node: _collect(node, major, collected))
 
 
 def _collect(node, major, collected):
     """Pull data from a single node."""
     parser = shortcodes.Parser(inherit_globals=False, ignore_unknown=True)
     parser.register(_parse, "i", "/i")
-    temp = {
-        "node": node,
-        "index": collected
-    }
-    parser.parse(node.text, temp)
+    temp = {"node": node, "index": collected}
+    try:
+        parser.parse(node.text, temp)
+    except shortcodes.ShortcodeSyntaxError as exc:
+        util.fail(f"%i shortcode parsing error in {node.filepath}: {exc}")
 
 
 def _parse(pargs, kwargs, extra, content):
@@ -43,7 +47,7 @@ def _parse(pargs, kwargs, extra, content):
     index = extra["index"]
     util.require(pargs, f"Empty index key in {node.filepath}")
     for entry in [key.strip() for key in pargs]:
-        entry = util.MULTISPACE.sub(" ", entry)
+        entry = regex.MULTISPACE.sub(" ", entry)
         entry = tuple(s.strip() for s in entry.split("!") if s.strip())
         util.require(
             1 <= len(entry) <= 2,
@@ -54,14 +58,22 @@ def _parse(pargs, kwargs, extra, content):
 
 # ----------------------------------------------------------------------
 
+
 @shortcodes.register("i", "/i")
 def index_ref(pargs, kwargs, node, content):
     """Handle [%i "some" "key" %]...text...[% /i %] index shortcodes."""
-    util.require(pargs, f"Badly-formatted 'i' shortcode {pargs} in {node.filepath}")
-
-    joined = ";".join(pargs)
+    util.require(pargs, f"'i' shortcode in {node.filepath} has no arguments")
+    if content:
+        pargs = ";".join(pargs)
+    else:
+        util.require(
+            len(pargs) == 1,
+            f"Badly-formatted empty 'i' shortcode {pargs} in {node.filepath}",
+        )
+        content = pargs[0].strip()
+        pargs = content
     cls = 'class="ix-entry"'
-    return f'<span {cls} ix-key="{joined}" markdown="1">{content}</span>'
+    return f'<span {cls} ix-key="{pargs}" markdown="1">{content}</span>'
 
 
 @shortcodes.register("index")

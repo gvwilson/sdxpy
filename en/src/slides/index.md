@@ -1,5 +1,0 @@
----
-title: "Slides"
----
-
-[% slides %]

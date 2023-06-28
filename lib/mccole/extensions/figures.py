@@ -3,17 +3,18 @@
 from dataclasses import dataclass
 from textwrap import dedent
 
-import ivy
+import ark
 import shortcodes
 import util
 
 # ----------------------------------------------------------------------
 
+
 @dataclass
 class Figure:
     """Keep track of information about a figure."""
 
-    node: ivy.nodes.Node = None
+    node: ark.nodes.Node = None
     fileslug: str = ""
     cls: str = ""
     slug: str = ""
@@ -24,13 +25,13 @@ class Figure:
     width: str = ""
 
 
-@ivy.events.register(ivy.events.Event.INIT)
+@ark.events.register(ark.events.Event.INIT)
 def collect():
     """Collect information from pages."""
     # Gather data.
     major = util.make_major()
     collected = {}
-    ivy.nodes.root().walk(lambda node: _collect(node, major, collected))
+    ark.nodes.root().walk(lambda node: _collect(node, major, collected))
     _cleanup(major, collected)
 
 
@@ -39,10 +40,10 @@ def _collect(node, major, collected):
     parser = shortcodes.Parser(inherit_globals=False, ignore_unknown=True)
     parser.register(_parse, "figure")
     collected[node.slug] = []
-    parser.parse(node.text, {
-        "node": node,
-        "values": collected[node.slug]
-    })
+    try:
+        parser.parse(node.text, {"node": node, "values": collected[node.slug]})
+    except shortcodes.ShortcodeSyntaxError as exc:
+        util.fail(f"%figure shortcode parsing error in {node.filepath}: {exc}")
 
 
 def _cleanup(major, collected):
@@ -50,7 +51,7 @@ def _cleanup(major, collected):
     figures = util.make_config("figures")
     for fileslug in collected:
         if fileslug in major:
-            for (i, entry) in enumerate(collected[fileslug]):
+            for i, entry in enumerate(collected[fileslug]):
                 entry.fileslug = fileslug
                 entry.number = (str(major[fileslug]), str(i + 1))
                 figures[entry.slug] = entry
@@ -61,7 +62,9 @@ def _parse(pargs, kwargs, data):
     data["values"].append(Figure(data["node"], **kwargs))
     return ""
 
+
 # ----------------------------------------------------------------------
+
 
 @shortcodes.register("f")
 def figure_ref(pargs, kwargs, node):
@@ -97,14 +100,54 @@ def figure_def(pargs, kwargs, node):
     alt = util.markdownify(kwargs["alt"])
     caption = util.markdownify(kwargs["caption"])
 
+    util.require_file(node, img, "figure")
+
+    if util.is_slides(node):
+        return dedent(
+            f"""\
+            <figure{cls}>
+            <img src="../{img}" alt="{alt}"/>
+            </figure>
+            """
+        )
+
     figure = util.get_config("figures")[slug]
     label = util.make_label("figure", figure.number)
-
     return dedent(
         f"""\
-    <figure id="{slug}"{cls}>
-      <img src="./{img}" alt="{alt}"/>
-      <figcaption markdown="1">{label}: {caption}</figcaption>
-    </figure>
-    """
+        <figure id="{slug}"{cls}>
+        <img src="./{img}" alt="{alt}"/>
+        <figcaption markdown="1">{label}: {caption}</figcaption>
+        </figure>
+        """
     )
+
+
+@shortcodes.register("figure_list")
+def figure_list(pargs, kwargs, node):
+    """Display all figures."""
+    util.require(not pargs and not kwargs, "figure_list takes no arguments")
+
+    # Haven't collected information yet.
+    if (figures := util.get_config("figures")) is None:
+        return ""
+
+    chapters = util.get_config("titles")["chapters"]
+    result = []
+    for entry in chapters:
+        result.append(f"## {entry.title}")
+        for i, fig in enumerate(figures.values()):
+            if fig.fileslug != entry.slug:
+                continue
+            alt = util.markdownify(fig.alt)
+            label = util.make_label("figure", fig.number)
+            caption = util.markdownify(fig.caption)
+            result.extend(
+                [
+                    f'<figure id="fig-{i:04}">',
+                    f"<img src='@root/{entry.slug}/{fig.img}' alt='{alt}'>",
+                    f'<figcaption markdown="1">{label}: {caption}</figcaption>',
+                    "</figure>",
+                ]
+            )
+    return "\n\n".join(result)

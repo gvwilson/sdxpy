@@ -1,14 +1,22 @@
-# Software Design in Python: A Tool-Based Introduction
+# Software Design for Data Scientists
 
-The best way to learn design is to study examples,
-and some of the best examples of software design come from
-the tools programmers use in their own work.
-These lessons build small versions of file backup systems,
-testing frameworks,
-and regular expression matchers
-both to demystify them
-and to give some insights into how experienced programmers think.
+Most data scientists have taught themselves most of what they know
+about programming.  As a result, many have gaps in their knowledge:
+they may be experts in some areas, but don't even know what they don't
+know about others.
 
-> We shape our tools, and thereafter our tools shape us.
->
-> — Marshall McLuhan
+One of those other areas is software design.  A large program is not
+just a dozen short programs stacked on top of each other: doubling the
+size of a program more than doubles its complexity.  Since our brains
+can only hold a small number of things at once, making large programs
+comprehensible, testable, shareable, and maintainable requires more
+than using functions and sensible variable names: it requires design.
+
+The best way to learn design in any field is to study examples.  These
+lessons therefore build small versions of tools that programmers use
+every day to show how experienced software designers think.  Along the
+way, they introduce some fundamental ideas in computer science that
+most data scientists haven't encountered.  Finally, we hope that if
+you know how programming tools work, you'll be more likely to use them
+and better able to use them well.
+

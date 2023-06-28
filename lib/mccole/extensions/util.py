@@ -1,20 +1,20 @@
 """Utilities."""
 
 import os
-import re
 import sys
 from pathlib import Path
 
-import ivy
+import ark
 import markdown
 import yaml
+from pybtex.database import parse_file
 
 # File containing things to ignore.
 DIRECTIVES_FILE = ".mccole"
 
 # Configuration sections and their default values.
 # These are added to the config dynamically under the `mccole` key,
-# i.e., `"figures"` becomes `ivy.site.config["mccole"]["figures"]`.
+# i.e., `"figures"` becomes `ark.site.config["mccole"]["figures"]`.
 CONFIGURATIONS = {
     "bibliography": set(),  # citations
     "definitions": [],  # glossary definitions
@@ -48,26 +48,13 @@ TRANSLATIONS = {
     },
 }
 
-# Match a Markdown heading with optional attributes.
-HEADING = re.compile(r"^(#+)\s*(.+?)(\{:\s*#(.+\b)\})?$", re.MULTILINE)
-
-# Used to turn multiple whitespace characters into a single space.
-MULTISPACE = re.compile(r"\s+", re.DOTALL)
-
-# Match table elements.
-TABLE = re.compile(r'<div\s+class="table(\s+[^"]+)?"[^>]*?>')
-TABLE_CAPTION = re.compile(r'caption="(.+?)"')
-TABLE_ID = re.compile(r'id="(.+?)"')
-TABLE_DIV = re.compile(
-    r'<div\s+caption="(.+?)"\s+class="(table(\s+[^"]+)?)"\s+id="(.+?)">\s*<table>',
-    re.DOTALL,
-)
-
 # Cached values.
 CACHE = {
     "glossary": None,
     "links": None,
     "links_table": None,
+    "major": None,
+    "titles": None,
 }
 
 
@@ -84,8 +71,33 @@ def get_config(part):
     in the processing cycle.
     """
     require(part in CONFIGURATIONS, f"Unknown configuration section '{part}'")
-    mccole = ivy.site.config.setdefault("mccole", {})
+    mccole = ark.site.config.setdefault("mccole", {})
     return mccole.get(part, None)
+
+
+def get_chapter_slug(node):
+    """Get chapter-level slug of index files or slides file, or None."""
+    if is_slides(node):
+        require(len(node.path) > 1, f"Bad path {node.path} for slides")
+        return node.path[-2]
+    return node.path[-1]
+
+
+def get_title(node):
+    """Get chapter/appendix title from configuration."""
+    if CACHE["titles"] is None:
+        CACHE["titles"] = {
+            **ark.site.config["chapters"],
+            **ark.site.config["appendices"],
+        }
+    slug = get_chapter_slug(node)
+    require(slug in CACHE["titles"], f"Unknown slug {slug} for titles")
+    return CACHE["titles"][slug]
+
+
+def is_slides(node):
+    """Is this a slides file?"""
+    return "slides" in node.get_template_list()
 
 
 def make_config(part, filler=None):
@@ -96,7 +108,7 @@ def make_config(part, filler=None):
     """
     require(part in CONFIGURATIONS, f"Unknown configuration section '{part}'")
     filler = filler if (filler is not None) else CONFIGURATIONS[part]
-    return ivy.site.config.setdefault("mccole", {}).setdefault(part, filler)
+    return ark.site.config.setdefault("mccole", {}).setdefault(part, filler)
 
 
 def make_copy_paths(node, filename, original=None, replacement=None):
@@ -110,7 +122,7 @@ def make_copy_paths(node, filename, original=None, replacement=None):
 
 def make_label(kind, number):
     """Create numbered labels for figures, tables, and document parts."""
-    translations = TRANSLATIONS[ivy.site.config["lang"]]
+    translations = TRANSLATIONS[ark.site.config["lang"]]
     if kind == "figure":
         name = translations["figure"]
     elif kind == "part":
@@ -143,12 +155,14 @@ def make_major():
     This function relies on the configuration containing `"chapters"`
     and `"appendices"`, which must be lists of slugs.
     """
-    chapters = {slug: i + 1 for (i, slug) in enumerate(ivy.site.config["chapters"])}
-    appendices = {
-        slug: chr(ord("A") + i)
-        for (i, slug) in enumerate(ivy.site.config["appendices"])
-    }
-    return chapters | appendices
+    if CACHE["major"] is None:
+        chapters = {slug: i + 1 for (i, slug) in enumerate(ark.site.config["chapters"])}
+        appendices = {
+            slug: chr(ord("A") + i)
+            for (i, slug) in enumerate(ark.site.config["appendices"])
+        }
+        CACHE["major"] = chapters | appendices
+    return CACHE["major"]
 
 
 def markdownify(text, ext=None, strip=True):
@@ -164,7 +178,12 @@ def markdownify(text, ext=None, strip=True):
 
 def mccole():
     """Get configuration section, creating if necessary."""
-    return ivy.site.config.setdefault("mccole", {})
+    return ark.site.config.setdefault("mccole", {})
+
+
+def read_bibliography(filename):
+    """Read BibTeX bibliography."""
+    return parse_file(filename)
 
 
 def read_directives(dirname, section):
@@ -180,10 +199,10 @@ def read_directives(dirname, section):
 def read_glossary(filename):
     """Load the glossary definitions."""
     if CACHE["glossary"] is None:
-        filename = Path(ivy.site.home(), filename)
+        filename = Path(ark.site.home(), filename)
         with open(filename, "r") as reader:
             glossary = yaml.safe_load(reader) or []
-        lang = ivy.site.config.get("lang", None)
+        lang = ark.site.config.get("lang", None)
         if lang is not None:
             for entry in glossary:
                 assert lang in entry, f"Bad glossary entry {entry}"
@@ -195,10 +214,17 @@ def read_glossary(filename):
 def read_links():
     """Read links file."""
     if CACHE["links"] is None:
-        filepath = Path(ivy.site.home(), ivy.site.config["links"])
+        filepath = Path(ark.site.home(), ark.site.config["links"])
         with open(filepath, "r") as reader:
             CACHE["links"] = yaml.safe_load(reader)
     return CACHE["links"]
+
+
+def read_thanks():
+    """Load the thanks definitions."""
+    filename = Path(ark.site.home(), ark.site.config["thanks"])
+    with open(filename, "r") as reader:
+        return yaml.safe_load(reader) or []
 
 
 def require(cond, msg):
@@ -207,9 +233,17 @@ def require(cond, msg):
         fail(msg)
 
 
+def require_file(node, filename, kind):
+    """Require that a file exists."""
+    directory = Path(node.filepath).parent
+    filepath = Path(directory, filename)
+    msg = f"Missing {kind} file {filename} from {node.filepath}"
+    require(filepath.exists(), msg)
+
+
 def warn(title, items):
     """Warn about missing or unused items."""
-    if not ivy.site.config.get("warnings", False):
+    if not ark.site.config.get("warnings", False):
         return
     if not items:
         return

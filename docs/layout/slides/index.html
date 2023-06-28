@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="repo" content="https://github.com/gvwilson/sd4ds">
+  <meta name="build_date" content="2023-06-28">
+  <meta name="template" content="slides">
+  <meta name="major" content="Chapter 14">
+  
+  <link rel="icon" type="image/x-icon" href="../../favicon.ico">
+  <link rel="stylesheet" href="../../mccole.css">
+  <link rel="stylesheet" href="../../tango.css">
+  <script defer data-domain="third-bit.com" src="https://plausible.io/js/plausible.js"></script>
+  <script>
+    MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']]
+      }
+    };
+  </script>
+  <script
+    type="text/javascript"
+    id="MathJax-script"
+    async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+  </script>
+  <script defer src="../../mccole.js"></script>
+  <title>Software Design for Data Scientists: Page Layout</title>
+</head>
+
+  <body>
+    <textarea id="source">
+
+class: slide-title
+
+<p>
+  <a href="https://third-bit.com/sd4ds/">Software Design for Data Scientists</a>
+</p>
+<h1>Page Layout</h1>
+<div class="bottom">
+  <a href="../">chapter</a>
+</div>
+
+---
+
+
+## The Problem
+
+-   Text is a sequence of characters, but a page is two-dimensional
+
+-   How can we put the right things in the right places?
+
+-   Create a simple version of a <a class="gl-ref" href="../../glossary/#layout_engine" markdown="1">layout engine</a> for a browser
+
+-   But the same ideas apply to print
+
+---
+
+## Coordinate Systems
+
+-   Teletypes started printing in the upper left corner of the page
+
+-   So the coordinate systems for screens put (0, 0) in the upper left
+    instead of the lower left
+
+-   Y increases going *down*
+
+-   At least X increases to the right as usual
+
+<figure>
+<img src="../coordinate_system.svg" alt="Coordinate system"/>
+</figure>
+
+
+---
+
+## Block Model
+
+-   Every cell is a rectangular block
+
+-   Row arranges sub-blocks horizontally
+
+-   Column arranges sub-blocks vertically
+
+<figure>
+<img src="../sizing.svg" alt="Calculating sizes of fixed blocks"/>
+</figure>
+
+
+---
+
+## Generic Block
+
+```py
+class Block:
+    def __init__(self, width, height):
+        self.width = width
+        self.height = height
+
+    def get_width(self):
+        return self.width
+
+    def get_height(self):
+        return self.height
+```
+
+
+-   Would calculate size based on contents (image, text, etc.)
+
+---
+
+## Rows
+
+-   Width: sum of widths of children
+
+-   Height: height of tallest child
+
+```py
+class Row:
+    def __init__(self, *children):
+        self.children = list(children)
+
+    def get_width(self):
+        return sum([c.get_width() for c in self.children])
+
+    def get_height(self):
+        return max(
+            [c.get_height() for c in self.children],
+            default=0
+        )
+```
+
+
+---
+
+## Columns
+
+-   Width: width of widest child
+
+-   Height: sum of heights of children
+
+```py
+class Col:
+    def __init__(self, *children):
+        self.children = list(children)
+
+    def get_width(self):
+        return max(
+            [c.get_width() for c in self.children],
+            default=0
+        )
+
+    def get_height(self):
+        return sum([c.get_height() for c in self.children])
+```
+
+
+---
+
+## Nesting
+
+-   Rows can contain blocks and columns
+    but must be contained in a single column (unless it's the root)
+
+-   Columns can contain blocks or rows
+    but must be contained in a single row (unless it's the root)
+
+-   Can therefore represent document as a tree
+
+```py
+def test_lays_out_a_grid_of_rows_of_columns():
+    fixture = Col(
+        Row(Block(1, 2), Block(3, 4)),
+        Row(Block(5, 6), Col(Block(7, 8), Block(9, 10)))
+    )
+    assert fixture.get_width() == 14
+    assert fixture.get_height() == 22
+```
+
+
+---
+
+## Positioning
+
+-   Once we know sizes we can calculate positions
+
+-   E.g., if cell is a row at `(x0, y0)`:
+
+    -   Its lower edge is `y1 = y0 + height`
+
+    -   Its first child's upper-left corner is `(x0, y1)`
+
+    -   Second child's upper-left corner is `(x0 + width0, y1)`
+
+<figure>
+<img src="../layout.svg" alt="Laying out rows and columns"/>
+</figure>
+
+
+---
+
+## Positioning
+
+```py
+    def place(self, x0, y0):
+        self.x0 = x0
+        self.y0 = y0
+        y1 = self.y0 + self.get_height()
+        x_current = x0
+        for child in self.children:
+            child_y = y1 - child.get_height()
+            child.place(x_current, child_y)
+            x_current += child.get_width()
+```
+
+
+---
+
+## Rendering
+
+-   Draw parents before children so that children over-draw
+
+-   A simple form of <a class="gl-ref" href="../../glossary/#z_buffering" markdown="1">z-buffering</a>
+
+<figure>
+<img src="../draw_over.svg" alt="Children drawing over their parents"/>
+</figure>
+
+
+---
+
+## Rendering
+
+-   Create a character "screen"
+
+```py
+def make_screen(width, height):
+    screen = []
+    for i in range(height):
+        screen.append([" "] * width)
+    return screen
+```
+
+
+-   Add a method for blocks to draw
+
+```py
+    def render(self, screen, fill):
+        for ix in range(self.get_width()):
+            for iy in range(self.get_height()):
+                screen[self.y0 + iy][self.x0 + ix] = fill
+```
+
+
+---
+
+## Mixin Class
+
+<figure>
+<img src="../mixin.svg" alt="Adding methods with a mixin class"/>
+</figure>
+
+
+---
+
+## Wrapping
+
+-   Fix width of row (for example)
+
+-   If total width of children is greater than this,
+    need to wrap the children to a new row
+
+    -   Assuming no single child is too wide
+
+-   Handle this by modifying the tree
+
+```py
+class WrappedBlock(PlacedBlock):
+    def wrap(self):
+        return self
+
+class WrappedCol(PlacedCol):
+    def wrap(self):
+        return PlacedCol(*[c.wrap() for c in self.children])
+```
+
+
+---
+
+## Wrapping Rows
+
+<figure>
+<img src="../wrap.svg" alt="Wrapping rows"/>
+</figure>
+
+
+---
+
+## Wrapping Rows
+
+-   New row class takes a fixed width and some children
+
+-   Returns that fixed width when asked for its size
+
+```py
+class WrappedRow(PlacedRow):
+    def __init__(self, width, *children):
+        super().__init__(*children)
+        assert width >= 0, "Need non-negative width"
+        self.width = width
+
+    def get_width(self):
+        return self.width
+
+
+    # [bucket]
+    def _bucket(self, children):
+        result = []
+        current_row = []
+        current_x = 0
+
+        for child in children:
+            child_width = child.get_width()
+            if (current_x + child_width) <= self.width:
+                current_row.append(child)
+                current_x += child_width
+            else:
+                result.append(current_row)
+                current_row = [child]
+                current_x = child_width
+        result.append(current_row)
+
+        return result
+    # [/bucket]
+```
+
+
+---
+
+## Wrapping Rows
+
+-   Wrapping puts the row's children into buckets
+
+-   Converts each bucket to a row with a column of rows
+
+```py
+    def wrap(self):
+        children = [c.wrap() for c in self.children]
+        rows = self._bucket(children)
+        new_rows = [PlacedRow(*r) for r in rows]
+        new_col = PlacedCol(*new_rows)
+        return PlacedRow(new_col)
+```
+
+
+---
+
+## Bucketing
+
+```py
+    def _bucket(self, children):
+        result = []
+        current_row = []
+        current_x = 0
+
+        for child in children:
+            child_width = child.get_width()
+            if (current_x + child_width) <= self.width:
+                current_row.append(child)
+                current_x += child_width
+            else:
+                result.append(current_row)
+                current_row = [child]
+                current_x = child_width
+        result.append(current_row)
+
+        return result
+```
+
+
+---
+
+class: summary
+
+## Summary
+
+<figure>
+<img src="../concept_map.svg" alt="Concept map for page layout"/>
+</figure>
+
+
+
+[academic_prototyping]: https://www.fuzzingbook.org/html/AcademicPrototyping.html
+[aosa]: https://aosabook.org/
+[beautiful_soup]: https://beautiful-soup-4.readthedocs.io/
+[birthday_problem]: https://en.wikipedia.org/wiki/Birthday_problem
+[black]: https://black.readthedocs.io/
+[book_repo]: https://github.com/gvwilson/sd4ds/
+[book_site]: https://third-bit.com/sd4ds/
+[browser_engine_tutorial]: https://limpet.net/mbrubeck/2014/08/08/toy-layout-engine-1.html
+[browser_engineering]: https://browser.engineering/
+[brubeck_matt]: https://limpet.net/mbrubeck/
+[cc_by_nc]: https://creativecommons.org/licenses/by-nc/4.0/
+[cc_by_nc_legal]: https://creativecommons.org/licenses/by-nc/4.0/legalcode
+[clarkes_laws]: https://en.wikipedia.org/wiki/Clarke%27s_three_laws
+[contributor_covenant]: https://www.contributor-covenant.org/
+[cook_mary_rose]: https://maryrosecook.com/
+[crafting_interpreters]: https://craftinginterpreters.com/
+[ctan]: https://www.ctan.org/
+[cypress]: https://www.cypress.io/
+[db_tutorial]: https://cstack.github.io/db_tutorial/
+[dresser_christopher]: https://en.wikipedia.org/wiki/Christopher_Dresser
+[ejs]: https://ejs.co/
+[email]: mailto:gvwilson@third-bit.com
+[eniac_programmers]: http://eniacprogrammers.org/
+[ethical_source]: https://ethicalsource.dev
+[evans_julia]: https://jvns.ca/
+[evans_zines]: https://wizardzines.com/
+[expect]: https://en.wikipedia.org/wiki/Expect
+[flake8]: https://flake8.pycqa.org/
+[git]: https://git-scm.com/
+[git_man_page_generator]: https://git-man-page-generator.lokaltog.net/
+[gitlet]: http://gitlet.maryrosecook.com/
+[glosario]: https://glosario.carpentries.org/
+[gnu_make]: https://www.gnu.org/software/make/
+[gutenberg]: https://www.gutenberg.org/
+[harrelson_chris]: https://twitter.com/chrishtr
+[hippocratic_license]: https://firstdonoharm.dev/
+[hoye_mike]: http://exple.tive.org/blarg/
+[html5_data_attributes]: https://developer.mozilla.org/en-US/docs/Learn/HTML/Howto/Use_data_attributes
+[human_resource_machine]: https://tomorrowcorporation.com/humanresourcemachine
+[isort]: https://pycqa.github.io/isort/
+[ivy]: https://www.dmulholl.com/docs/ivy/main/
+[jekyll]: https://jekyllrb.com/
+[json_schema]: https://json-schema.org/
+[kilo_editor]: https://viewsourcecode.org/snaptoken/kilo/index.html
+[latex]: https://www.latex-project.org/
+[loewy_raymond]: https://en.wikipedia.org/wiki/Raymond_Loewy
+[lorgat_editor]: https://github.com/seem/editor
+[lorgat_tutorial]: https://wasimlorgat.com/posts/editor.html
+[lorgat_wasim]: https://wasimlorgat.com/
+[marthas_rules]: https://journals.sagepub.com/doi/10.1177/088610998600100206
+[nano]: https://www.nano-editor.org/
+[nison_mael]: https://arcanis.github.io/
+[nystrom_bob]: http://journal.stuffwithstuff.com/
+[package_manager_tutorial]: https://classic.yarnpkg.com/blog/2017/07/11/lets-dev-a-package-manager/
+[panchekha_pavel]: https://pavpanchekha.com/
+[pexpect]: https://pexpect.readthedocs.io/
+[php]: https://www.php.net/
+[picosat]: http://fmv.jku.at/picosat/
+[pip]: https://pip.pypa.io/
+[programming_tools]: https://en.wikipedia.org/wiki/Programming_tool
+[punching_holes]: http://exple.tive.org/blarg/2020/11/26/punching-holes/
+[py_array]: https://docs.python.org/3/library/array.html
+[py_ast]: https://docs.python.org/3/library/ast.html
+[py_chainmap]: https://docs.python.org/3/library/collections.html#collections.ChainMap
+[py_cprofile]: https://docs.python.org/3/library/profile.html
+[py_curses]: https://docs.python.org/3/library/curses.html
+[py_fractions]: https://docs.python.org/3/library/fractions.html
+[py_glob]: https://docs.python.org/3/library/glob.html
+[py_hashlib]: https://docs.python.org/3/library/hashlib.html
+[py_inspect]: https://docs.python.org/3/library/inspect.html
+[py_io]: https://docs.python.org/3/library/io.html
+[py_itertools]: https://docs.python.org/3/library/itertools.html
+[py_json]: https://docs.python.org/3/library/json.html
+[py_jsonschema]: https://python-jsonschema.readthedocs.io/
+[py_mimetypes]: https://docs.python.org/3/library/mimetypes.html
+[py_pickle]: https://docs.python.org/3/library/pickle.html
+[py_property]: https://docs.python.org/3/library/functions.html#property
+[py_semver]: https://pypi.org/project/semantic-version/
+[py_struct]: https://docs.python.org/3/library/struct.html
+[py_textwrap]: https://docs.python.org/3/library/textwrap.html
+[py_urlparse]: https://docs.python.org/3/library/urllib.parse.html
+[pyfakefs]: https://pytest-pyfakefs.readthedocs.io/
+[pytest]: https://docs.pytest.org/
+[pytest_approx]: https://docs.pytest.org/en/4.6.x/reference.html#pytest-approx
+[python]: https://www.python.org/
+[reim_michael]: https://elderlinux.org/
+[requests]: https://requests.readthedocs.io/
+[ruten_paige]: https://viewsourcecode.org/
+[selenium]: https://www.selenium.dev/
+[semver_spec]: https://semver.org/
+[sinel_joseph]: https://en.wikipedia.org/wiki/Joseph_Claude_Sinel
+[snakemake]: https://snakemake.readthedocs.io/
+[sqlite]: https://sqlite.org/
+[stack_connor]: https://connorstack.com/
+[svg_screenshot]: https://chrome.google.com/webstore/detail/svg-screenshot/nfakpcpmhhilkdpphcjgnokknpbpdllg
+[t3_personas]: https://teachtogether.tech/en/index.html#s:process-personas
+[textualize_fraction]: https://www.textualize.io/blog/posts/7-things-about-terminals
+[udhr]: https://www.un.org/en/universal-declaration-human-rights/
+[ungc]: https://www.unglobalcompact.org/what-is-gc/mission/principles
+[unicode]: https://www.unicode.org/
+[unix_glob]: https://en.wikipedia.org/wiki/Glob_(programming)
+[unix_packaging]: https://eerielinux.wordpress.com/2017/08/15/the-history-of-nix-package-management/
+[webaim_wave]: https://wave.webaim.org/
+[write_yourself_a_git]: https://wyag.thb.lt/
+[z3]: https://en.wikipedia.org/wiki/Z3_Theorem_Prover
+[zeller_andreas]: https://andreas-zeller.info/
+
+    </textarea>
+    <script src="../../remark-latest.min.js"></script>
+    <script>
+      var slideshow = remark.create({
+        highlightLines: true
+      })
+    </script>
+  </body>
+</html>

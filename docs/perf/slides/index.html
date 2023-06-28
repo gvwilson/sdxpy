@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="repo" content="https://github.com/gvwilson/sd4ds">
+  <meta name="build_date" content="2023-06-28">
+  <meta name="template" content="slides">
+  <meta name="major" content="Chapter 15">
+  
+  <link rel="icon" type="image/x-icon" href="../../favicon.ico">
+  <link rel="stylesheet" href="../../mccole.css">
+  <link rel="stylesheet" href="../../tango.css">
+  <script defer data-domain="third-bit.com" src="https://plausible.io/js/plausible.js"></script>
+  <script>
+    MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']]
+      }
+    };
+  </script>
+  <script
+    type="text/javascript"
+    id="MathJax-script"
+    async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+  </script>
+  <script defer src="../../mccole.js"></script>
+  <title>Software Design for Data Scientists: Performance Profiling</title>
+</head>
+
+  <body>
+    <textarea id="source">
+
+class: slide-title
+
+<p>
+  <a href="https://third-bit.com/sd4ds/">Software Design for Data Scientists</a>
+</p>
+<h1>Performance Profiling</h1>
+<div class="bottom">
+  <a href="../">chapter</a>
+</div>
+
+---
+
+
+## The Problem
+
+-   We can build dataframes several different ways
+
+-   Which will be most efficient?
+
+-   Find out by doing experiments
+
+---
+
+## What Can Dataframes Do?
+
+```py
+class DataFrame:
+    def ncol(self):
+        """Report the number of columns."""
+
+    def nrow(self):
+        """Report the number of rows."""
+
+    def cols(self):
+        """Return the set of column names."""
+
+    def eq(self, other):
+        """Check equality of two dataframes."""
+
+    def get(self, col, row):
+        """Get a scalar value."""
+
+    def select(self, *names):
+        """Select a subset of columns."""
+
+    def filter(self, func):
+        """Select a subset of rows."""
+```
+
+
+---
+
+## Row-wise Storage
+
+-   A list of dictionaries
+
+<figure>
+<img src="../row_storage.svg" alt="Row-wise storage"/>
+</figure>
+
+
+---
+
+## Column-wise Storage
+
+-   A dictionary of lists
+
+<figure>
+<img src="../col_storage.svg" alt="Column-wise storage"/>
+</figure>
+
+
+---
+
+## Row-wise: Starting
+
+```py
+from df_base import DataFrame
+from util import dict_match
+
+class DfRow(DataFrame):
+    def __init__(self, rows):
+        assert len(rows) > 0
+        assert all(dict_match(r, rows[0]) for r in rows)
+        self._data = rows
+```
+
+```py
+def dict_match(d, prototype):
+    if set(d.keys()) != set(prototype.keys()):
+        return False
+    return all(type(d[k]) == type(prototype[k]) for k in d)
+```
+
+
+---
+
+## Row-wise Operations
+
+```py
+    def ncol(self):
+        return len(self._data[0])
+
+    def nrow(self):
+        return len(self._data)
+
+    def cols(self):
+        return set(self._data[0].keys())
+
+    def get(self, col, row):
+        assert col in self._data[0]
+        assert 0 <= row < len(self._data)
+        return self._data[row][col]
+```
+
+
+---
+
+## Row-wise Equality
+
+```py
+    def eq(self, other):
+        assert isinstance(other, DataFrame)
+        for (i, row) in enumerate(self._data):
+            for key in row:
+                if key not in other.cols():
+                    return False
+                if row[key] != other.get(key, i):
+                    return False
+        return True
+```
+
+
+-   Don't rely on implementation details of the other dataframe
+-   We might want to compare this dataframe with one that's stored a different way
+
+---
+
+## Row-wise Selection
+
+```py
+    def select(self, *names):
+        assert all(n in self._data[0] for n in names)
+        rows = [{key: r[key] for key in names} for r in self._data]
+        return DfRow(rows)
+```
+
+
+<figure>
+<img src="../row_select.svg" alt="Row-wise selection"/>
+</figure>
+
+
+---
+
+## How to Filter?
+
+-   User provides `func(red, green)` returning `True` or `False`
+
+-   Need to match column names with parameters
+
+```py
+def odd_even():
+    return DfRow([{"a": 1, "b": 3}, {"a": 2, "b": 4}])
+```
+
+```py
+def test_filter():
+    def odd(a, b):
+        return (a % 2) == 1
+
+    df = odd_even()
+    assert df.filter(odd).eq(DfRow([{"a": 1, "b": 3}]))
+```
+
+
+---
+
+## How to Call?
+
+-   Use `**` to <a class="gl-ref" href="../../glossary/#spread" markdown="1">spread</a> the row
+
+```py
+def example(left, right):
+    print(left, right)
+
+args = {"right": 3, "left": 5}
+example(**args)
+```
+
+
+```
+5 3
+```
+
+
+---
+
+## Row-wise Filter
+
+```py
+    def filter(self, func):
+        result = [r for r in self._data if func(**r)]
+        return DfRow(result)
+```
+
+
+-   Spread the rows out to match
+
+-   Convert the result to a row-wise dataframe
+
+---
+
+## Row-wise Filter
+
+<figure>
+<img src="../row_filter.svg" alt="Row-wise filtering"/>
+</figure>
+
+
+---
+
+## Column-Wise: Starting
+
+```py
+from df_base import DataFrame
+from util import all_eq
+
+class DfCol(DataFrame):
+    def __init__(self, **kwargs):
+        assert len(kwargs) > 0
+        assert all_eq(len(kwargs[k]) for k in kwargs)
+        for k in kwargs:
+            assert all_eq(type(v) for v in kwargs[k])
+        self._data = kwargs
+```
+
+```py
+def all_eq(*values):
+    return (not values) or all(v == values[0] for v in values)
+```
+
+
+---
+
+## Column-wise Operations
+
+```py
+    def ncol(self):
+        return len(self._data)
+
+    def nrow(self):
+        n = list(self._data.keys())[0]
+        return len(self._data[n])
+
+    def cols(self):
+        return set(self._data.keys())
+
+    def get(self, col, row):
+        assert col in self._data
+        assert 0 <= row < len(self._data[col])
+        return self._data[col][row]
+```
+
+
+-   Doesn't allow for empty dataframes
+
+---
+
+## Column-wise Selection
+
+```py
+    def select(self, *names):
+        assert all(n in self._data for n in names)
+        return DfCol(**{n: self._data[n] for n in names})
+```
+
+
+<figure>
+<img src="../col_select.svg" alt="Column-wise selection"/>
+</figure>
+
+
+---
+
+## Column-wise Filter
+
+```py
+    def filter(self, func):
+        result = {n: [] for n in self._data}
+        for i in range(self.nrow()):
+            args = {n: self._data[n][i] for n in self._data}
+            if func(**args):
+                for n in self._data:
+                    result[n].append(self._data[n][i])
+        return DfCol(**result)
+```
+
+
+-   Build a temporary "row" to give the filter function
+
+-   Build a dictionary of columns as a result
+
+-   Convert that to a dataframe
+
+---
+
+## Column-wise Filter
+
+<figure>
+<img src="../col_filter.svg" alt="Column-wise filter"/>
+</figure>
+
+
+---
+
+## How to Compare?
+
+-   Select is (probably) fast for column-wise but slow for row-wise
+
+-   Filter is (probably) slower for column-wise than for row-wise
+
+-   Overall performance will depend on the ratio of selects to filters
+
+-   So we do experiments
+
+---
+
+## Creating Dataframes
+
+```py
+RANGE = 10
+
+def make_col(nrow, ncol):
+    def _col(n, start):
+        return [((start + i) % RANGE) for i in range(n)]
+    fill = {f"label_{c}": _col(nrow, c) for c in range(ncol)}
+    return DfCol(**fill)
+
+def make_row(nrow, ncol):
+    labels = [f"label_{c}" for c in range(ncol)]
+    def _row(r):
+        return {
+            c: ((r + i) % RANGE) for (i, c) in enumerate(labels)
+        }
+    fill = [_row(r) for r in range(nrow)]
+    return DfRow(fill)
+```
+
+
+---
+
+## Results
+
+```
+column-wise
+{'label_0': [0, 1, 2], 'label_1': [1, 2, 3], 'label_2': [2, 3, 4]}
+
+row-wise
+[{'label_0': 0, 'label_1': 1, 'label_2': 2},
+ {'label_0': 1, 'label_1': 2, 'label_2': 3},
+ {'label_0': 2, 'label_1': 3, 'label_2': 4}]
+```
+
+
+---
+
+## Timing Filter
+
+```py
+FILTER = 2
+
+def time_filter(df):
+    def f(label_0, **args):
+        return label_0 % FILTER == 1
+
+    start = time.time()
+    df.filter(f)
+    return time.time() - start
+```
+
+
+-   Should vary the filtering criteria, the proportion of rows kept, etc.
+
+---
+
+## So Which Is Better?
+
+| nrow | ncol | filter_col | select_col | filter_row | select_row |
+| ---: | ---: | ---------: | ---------: | ---------: | ---------: |
+| 10 | 10 | 7.8e-05 | 8.8e-06 | 3.7e-05 | 2.1e-05 |
+| 50 | 50 | 6.0e-4 | 1.9e-05 | 3.4e-4 | 2.4e-4 |
+| 100 | 100 | 2.2e-3 | 3.5e-05 | 1.3e-3 | 8.4e-4 |
+| 500 | 500 | 0.05 | 1.5e-4 | 0.03 | 0.02 |
+| 1000 | 1000 | 0.21 | 3.0e-4 | 0.12 | 0.08 |
+| 5000 | 5000 | 6.6 | 1.5e-3 | 3.5 | 2.1 |
+| 10000 | 10000 | 25.4 | 3.0e-3 | 14.0 | 8.8 |
+
+---
+
+## So Which Is Better?
+
+<figure>
+<img src="../analysis.svg" alt="Comparing performance"/>
+</figure>
+
+
+---
+
+## How Can We Improve Performance?
+
+-   A <a class="gl-ref" href="../../glossary/#profiler" markdown="1">profiler</a> measures where a program spends its time
+
+-   More accurate than our `time.time()` calls
+
+-   Doesn't require us to modify our code
+
+-   But _does_ change the execution profile slightly
+
+---
+
+## Using `cProfile`
+
+```sh
+python -m cProfile --sort=tottime \
+  timing.py --silent 10x10 50x50 100x100 500x500 1000x1000
+```
+
+```
+         3007281 function calls (3003108 primitive calls) in 1.790 seconds
+
+   Ordered by: internal time
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+  2319840    0.605    0.000    0.605    0.000 util.py:10(<genexpr>)
+     1660    0.258    0.000    0.258    0.000 timing.py:20(<dictcomp>)
+        5    0.201    0.040    0.408    0.082 df_col.py:50(filter)
+     1660    0.176    0.000    0.176    0.000 df_col.py:53(<dictcomp>)
+     1660    0.158    0.000    0.158    0.000 timing.py:13(<listcomp>)
+```
+
+
+--
+
+-   Uh, what is line 7 of `util.py` doing?
+
+---
+
+## The Offending Lines
+
+-   A quarter of our total runtime is calling `dict_match` to check that
+    all the rows in a row-wise dataframe
+    have the same types for the same keys
+
+-   Surely we can do better…
+
+---
+
+## Evidence First
+
+<figure>
+<img src="../hennessy-patterson.jpg" alt="Cover of Hennessy &amp; Patterson"/>
+</figure>
+
+
+-   Whoever controls the benchmarks controls the future
+
+
+[academic_prototyping]: https://www.fuzzingbook.org/html/AcademicPrototyping.html
+[aosa]: https://aosabook.org/
+[beautiful_soup]: https://beautiful-soup-4.readthedocs.io/
+[birthday_problem]: https://en.wikipedia.org/wiki/Birthday_problem
+[black]: https://black.readthedocs.io/
+[book_repo]: https://github.com/gvwilson/sd4ds/
+[book_site]: https://third-bit.com/sd4ds/
+[browser_engine_tutorial]: https://limpet.net/mbrubeck/2014/08/08/toy-layout-engine-1.html
+[browser_engineering]: https://browser.engineering/
+[brubeck_matt]: https://limpet.net/mbrubeck/
+[cc_by_nc]: https://creativecommons.org/licenses/by-nc/4.0/
+[cc_by_nc_legal]: https://creativecommons.org/licenses/by-nc/4.0/legalcode
+[clarkes_laws]: https://en.wikipedia.org/wiki/Clarke%27s_three_laws
+[contributor_covenant]: https://www.contributor-covenant.org/
+[cook_mary_rose]: https://maryrosecook.com/
+[crafting_interpreters]: https://craftinginterpreters.com/
+[ctan]: https://www.ctan.org/
+[cypress]: https://www.cypress.io/
+[db_tutorial]: https://cstack.github.io/db_tutorial/
+[dresser_christopher]: https://en.wikipedia.org/wiki/Christopher_Dresser
+[ejs]: https://ejs.co/
+[email]: mailto:gvwilson@third-bit.com
+[eniac_programmers]: http://eniacprogrammers.org/
+[ethical_source]: https://ethicalsource.dev
+[evans_julia]: https://jvns.ca/
+[evans_zines]: https://wizardzines.com/
+[expect]: https://en.wikipedia.org/wiki/Expect
+[flake8]: https://flake8.pycqa.org/
+[git]: https://git-scm.com/
+[git_man_page_generator]: https://git-man-page-generator.lokaltog.net/
+[gitlet]: http://gitlet.maryrosecook.com/
+[glosario]: https://glosario.carpentries.org/
+[gnu_make]: https://www.gnu.org/software/make/
+[gutenberg]: https://www.gutenberg.org/
+[harrelson_chris]: https://twitter.com/chrishtr
+[hippocratic_license]: https://firstdonoharm.dev/
+[hoye_mike]: http://exple.tive.org/blarg/
+[html5_data_attributes]: https://developer.mozilla.org/en-US/docs/Learn/HTML/Howto/Use_data_attributes
+[human_resource_machine]: https://tomorrowcorporation.com/humanresourcemachine
+[isort]: https://pycqa.github.io/isort/
+[ivy]: https://www.dmulholl.com/docs/ivy/main/
+[jekyll]: https://jekyllrb.com/
+[json_schema]: https://json-schema.org/
+[kilo_editor]: https://viewsourcecode.org/snaptoken/kilo/index.html
+[latex]: https://www.latex-project.org/
+[loewy_raymond]: https://en.wikipedia.org/wiki/Raymond_Loewy
+[lorgat_editor]: https://github.com/seem/editor
+[lorgat_tutorial]: https://wasimlorgat.com/posts/editor.html
+[lorgat_wasim]: https://wasimlorgat.com/
+[marthas_rules]: https://journals.sagepub.com/doi/10.1177/088610998600100206
+[nano]: https://www.nano-editor.org/
+[nison_mael]: https://arcanis.github.io/
+[nystrom_bob]: http://journal.stuffwithstuff.com/
+[package_manager_tutorial]: https://classic.yarnpkg.com/blog/2017/07/11/lets-dev-a-package-manager/
+[panchekha_pavel]: https://pavpanchekha.com/
+[pexpect]: https://pexpect.readthedocs.io/
+[php]: https://www.php.net/
+[picosat]: http://fmv.jku.at/picosat/
+[pip]: https://pip.pypa.io/
+[programming_tools]: https://en.wikipedia.org/wiki/Programming_tool
+[punching_holes]: http://exple.tive.org/blarg/2020/11/26/punching-holes/
+[py_array]: https://docs.python.org/3/library/array.html
+[py_ast]: https://docs.python.org/3/library/ast.html
+[py_chainmap]: https://docs.python.org/3/library/collections.html#collections.ChainMap
+[py_cprofile]: https://docs.python.org/3/library/profile.html
+[py_curses]: https://docs.python.org/3/library/curses.html
+[py_fractions]: https://docs.python.org/3/library/fractions.html
+[py_glob]: https://docs.python.org/3/library/glob.html
+[py_hashlib]: https://docs.python.org/3/library/hashlib.html
+[py_inspect]: https://docs.python.org/3/library/inspect.html
+[py_io]: https://docs.python.org/3/library/io.html
+[py_itertools]: https://docs.python.org/3/library/itertools.html
+[py_json]: https://docs.python.org/3/library/json.html
+[py_jsonschema]: https://python-jsonschema.readthedocs.io/
+[py_mimetypes]: https://docs.python.org/3/library/mimetypes.html
+[py_pickle]: https://docs.python.org/3/library/pickle.html
+[py_property]: https://docs.python.org/3/library/functions.html#property
+[py_semver]: https://pypi.org/project/semantic-version/
+[py_struct]: https://docs.python.org/3/library/struct.html
+[py_textwrap]: https://docs.python.org/3/library/textwrap.html
+[py_urlparse]: https://docs.python.org/3/library/urllib.parse.html
+[pyfakefs]: https://pytest-pyfakefs.readthedocs.io/
+[pytest]: https://docs.pytest.org/
+[pytest_approx]: https://docs.pytest.org/en/4.6.x/reference.html#pytest-approx
+[python]: https://www.python.org/
+[reim_michael]: https://elderlinux.org/
+[requests]: https://requests.readthedocs.io/
+[ruten_paige]: https://viewsourcecode.org/
+[selenium]: https://www.selenium.dev/
+[semver_spec]: https://semver.org/
+[sinel_joseph]: https://en.wikipedia.org/wiki/Joseph_Claude_Sinel
+[snakemake]: https://snakemake.readthedocs.io/
+[sqlite]: https://sqlite.org/
+[stack_connor]: https://connorstack.com/
+[svg_screenshot]: https://chrome.google.com/webstore/detail/svg-screenshot/nfakpcpmhhilkdpphcjgnokknpbpdllg
+[t3_personas]: https://teachtogether.tech/en/index.html#s:process-personas
+[textualize_fraction]: https://www.textualize.io/blog/posts/7-things-about-terminals
+[udhr]: https://www.un.org/en/universal-declaration-human-rights/
+[ungc]: https://www.unglobalcompact.org/what-is-gc/mission/principles
+[unicode]: https://www.unicode.org/
+[unix_glob]: https://en.wikipedia.org/wiki/Glob_(programming)
+[unix_packaging]: https://eerielinux.wordpress.com/2017/08/15/the-history-of-nix-package-management/
+[webaim_wave]: https://wave.webaim.org/
+[write_yourself_a_git]: https://wyag.thb.lt/
+[z3]: https://en.wikipedia.org/wiki/Z3_Theorem_Prover
+[zeller_andreas]: https://andreas-zeller.info/
+
+    </textarea>
+    <script src="../../remark-latest.min.js"></script>
+    <script>
+      var slideshow = remark.create({
+        highlightLines: true
+      })
+    </script>
+  </body>
+</html>

@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="repo" content="https://github.com/gvwilson/sd4ds">
+  <meta name="build_date" content="2023-06-28">
+  <meta name="template" content="slides">
+  <meta name="major" content="Chapter 5">
+  
+  <link rel="icon" type="image/x-icon" href="../../favicon.ico">
+  <link rel="stylesheet" href="../../mccole.css">
+  <link rel="stylesheet" href="../../tango.css">
+  <script defer data-domain="third-bit.com" src="https://plausible.io/js/plausible.js"></script>
+  <script>
+    MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']]
+      }
+    };
+  </script>
+  <script
+    type="text/javascript"
+    id="MathJax-script"
+    async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+  </script>
+  <script defer src="../../mccole.js"></script>
+  <title>Software Design for Data Scientists: Running Tests</title>
+</head>
+
+  <body>
+    <textarea id="source">
+
+class: slide-title
+
+<p>
+  <a href="https://third-bit.com/sd4ds/">Software Design for Data Scientists</a>
+</p>
+<h1>Running Tests</h1>
+<div class="bottom">
+  <a href="../">chapter</a>
+</div>
+
+---
+
+
+## The Problem
+
+-   Not all software needs formal testing
+    -   Check one-off data analysis script incrementally
+-   But 98% of the code in [SQLite][sqlite] is there to test the other 2%
+    -   For which I am grateful
+-   Good tools make tests easier to write
+    -   So that programmers have fewer excuses not to write them
+-   This lesson build a unit testing framework like [pytest][pytest]
+    -   Most frameworks in most other languages share its design
+
+---
+
+## The Big Idea
+
+<p class="shout">A program is just another data structure.</p>
+
+<figure>
+<img src="../func_obj.svg" alt="Bytes as characters, pixels, or instructions"/>
+</figure>
+
+
+---
+
+## Functions are Objects
+
+-   `def` defines a variable whose value is the function's instructions
+
+```py
+def example():
+    print("in example")
+```
+
+
+-   We can assign that value to another variable
+
+```py
+alias = example
+alias()
+```
+
+```
+in example
+```
+
+
+---
+
+class: aside
+
+## Checking
+
+-   Use `type` to see if something is a function
+
+```py
+print(type(3))
+```
+
+
+```
+<class 'int'>
+```
+
+
+```py
+def example():
+    pass
+
+print(type(example))
+```
+
+
+```
+<class 'function'>
+```
+
+
+---
+
+class: aside
+
+## Checking
+
+-   But built-in functions have a different type
+
+```py
+print(type(len))
+```
+
+
+```
+<class 'builtin_function_or_method'>
+```
+
+
+-   So use `callable` to check if something can be called
+
+```py
+def example():
+    pass
+
+print(callable(example), callable(len))
+```
+
+
+```
+True True
+```
+
+
+---
+
+## Functions in Lists
+
+-   We can put functions in lists
+
+```py
+def first():
+    print("First")
+
+def second():
+    print("Second")
+
+def third():
+    print("Third")
+
+everything = [first, second, third]
+for func in everything:
+    func()
+```
+
+
+```
+First
+Second
+Third
+```
+
+
+---
+
+## Signatures
+
+-   We have to know how to call the functions
+    -   They must have the same <a class="gl-ref" href="../../glossary/#signature" markdown="1">signature</a>
+
+```py
+def zero():
+    print("zero")
+
+def one(value):
+    print("one", value)
+
+for func in [zero, one]:
+    func()
+```
+
+
+```
+zero
+Traceback (most recent call last):
+  File "/sd4ds/test/signature.py", line 8, in <module>
+    func()
+TypeError: one() missing 1 required positional argument: 'value'
+```
+
+
+---
+
+## Testing Terminology
+
+-   Apply the function we want to test to a <a class="gl-ref" href="../../glossary/#fixture" markdown="1">fixture</a>
+-   Compare the <a class="gl-ref" href="../../glossary/#actual_result" markdown="1">actual result</a>
+    to the <a class="gl-ref" href="../../glossary/#expected_result" markdown="1">expected result</a>
+-   Possible outcomes are:
+    -   <a class="gl-ref" href="../../glossary/#pass_test" markdown="1">pass</a>: the target function worked
+    -   <a class="gl-ref" href="../../glossary/#fail_test" markdown="1">fail</a>: the target function didn't do what we expected
+    -   <a class="gl-ref" href="../../glossary/#error_test" markdown="1">error</a>: something went wrong with the test itself
+-   Typically use `assert` to check results
+    -   If condition is `True`, does nothing
+    -   Otherwise, raises an `AssertionError`
+-   Failed assertions usually cause the program to halt
+    -   But we can catch the exception ourselves if we want
+
+---
+
+## A Function and Some Tests
+
+```py
+def sign(value):
+    if value < 0:
+        return -1
+    else:
+        return 1
+```
+
+```py
+def test_sign_negative():
+    assert sign(-3) == -1
+
+def test_sign_positive():
+    assert sign(19) == 1
+
+def test_sign_zero():
+    assert sign(0) == 0
+
+def test_sign_error():
+    assert sgn(1) == 1
+```
+
+
+---
+
+## What We Want
+
+```py
+TESTS = [
+    test_sign_negative,
+    test_sign_positive,
+    test_sign_zero,
+    test_sign_error
+]
+```
+
+```
+pass 2
+fail 1
+error 1
+```
+
+
+---
+
+## How We Do It
+
+```py
+def run_tests(all_tests):
+    results = {"pass": 0, "fail": 0, "error": 0}
+    for test in all_tests:
+        try:
+            test()
+            results["pass"] += 1
+        except AssertionError:
+            results["fail"] += 1
+        except Exception:
+            results["error"] += 1
+    print(f"pass {results['pass']}")
+    print(f"fail {results['fail']}")
+    print(f"error {results['error']}")
+
+run_tests(TESTS)
+```
+
+
+-   Easy to create new tests
+-   But we have to remember to add each one to `TESTS`
+
+---
+
+## How Python Stores Variables
+
+-   Python stores variables in (something very much like) a dictionary
+
+```py
+import pprint
+pprint.pprint(globals())
+```
+
+
+```
+{'__annotations__': {},
+ '__builtins__': <module 'builtins' (built-in)>,
+ '__cached__': None,
+ '__doc__': None,
+ '__file__': '/sd4ds/test/globals.py',
+ '__loader__': <_frozen_importlib_external.SourceFileLoader object \
+at 0x10b475090>,
+ '__name__': '__main__',
+ '__package__': None,
+ '__spec__': None,
+ 'pprint': <module 'pprint' from '/Users/gvwilson/opt/anaconda3/envs \
+/mccole/lib/python3.11/pprint.py'>}
+```
+
+
+---
+
+## Further Proof
+
+```py
+import pprint
+my_variable = 123
+pprint.pprint(globals())
+```
+
+
+```
+{'__annotations__': {},
+ '__builtins__': <module 'builtins' (built-in)>,
+ '__cached__': None,
+ '__doc__': None,
+ '__file__': '/sd4ds/test/globals_plus.py',
+ '__loader__': <_frozen_importlib_external.SourceFileLoader object \
+at 0x10b411110>,
+ '__name__': '__main__',
+ '__package__': None,
+ '__spec__': None,
+ 'my_variable': 123,
+ 'pprint': <module 'pprint' from '/Users/gvwilson/opt/anaconda3/envs \
+/mccole/lib/python3.11/pprint.py'>}
+```
+
+
+--
+
+-   The function `locals` gives local variables
+
+---
+
+## Introspection
+
+-   We know how to loop over a dictionary's keys
+
+```py
+def find_tests(prefix):
+    for (name, func) in globals().items():
+        if name.startswith(prefix):
+            print(name, func)
+
+find_tests("test_")
+```
+
+```
+test_sign_negative <function test_sign_negative at 0x10b56d620>
+test_sign_positive <function test_sign_positive at 0x10b56d6c0>
+test_sign_zero <function test_sign_zero at 0x10b56d760>
+test_sign_error <function test_sign_error at 0x10b56d800>
+```
+
+
+--
+
+-   When we print a function, Python shows its name and address
+
+---
+
+## A Better Test Runner
+
+```py
+def run_tests():
+    results = {"pass": 0, "fail": 0, "error": 0}
+    for (name, test) in globals().items():
+        if not name.startswith("test_"):
+            continue
+        try:
+            test()
+            results["pass"] += 1
+        except AssertionError:
+            results["fail"] += 1
+        except Exception:
+            results["error"] += 1
+    print(f"pass {results['pass']}")
+    print(f"fail {results['fail']}")
+    print(f"error {results['error']}")
+```
+
+
+--
+
+-   Really should check that tests are callable
+
+---
+
+## Who's Your Audience?
+
+<figure>
+<img src="../comprehension.svg" alt="Abstract vs. comprehension"/>
+</figure>
+
+
+-   Experts understand lower and higher abstraction levels than novices
+
+-   Preferred level shifts with experience
+
+-   Code that is optimal for one reader may not be optimal for another
+
+---
+
+class: summary
+
+## Summary
+
+<figure>
+<img src="../concept_map.svg" alt="Concept map of unit testing framework"/>
+</figure>
+
+
+
+[academic_prototyping]: https://www.fuzzingbook.org/html/AcademicPrototyping.html
+[aosa]: https://aosabook.org/
+[beautiful_soup]: https://beautiful-soup-4.readthedocs.io/
+[birthday_problem]: https://en.wikipedia.org/wiki/Birthday_problem
+[black]: https://black.readthedocs.io/
+[book_repo]: https://github.com/gvwilson/sd4ds/
+[book_site]: https://third-bit.com/sd4ds/
+[browser_engine_tutorial]: https://limpet.net/mbrubeck/2014/08/08/toy-layout-engine-1.html
+[browser_engineering]: https://browser.engineering/
+[brubeck_matt]: https://limpet.net/mbrubeck/
+[cc_by_nc]: https://creativecommons.org/licenses/by-nc/4.0/
+[cc_by_nc_legal]: https://creativecommons.org/licenses/by-nc/4.0/legalcode
+[clarkes_laws]: https://en.wikipedia.org/wiki/Clarke%27s_three_laws
+[contributor_covenant]: https://www.contributor-covenant.org/
+[cook_mary_rose]: https://maryrosecook.com/
+[crafting_interpreters]: https://craftinginterpreters.com/
+[ctan]: https://www.ctan.org/
+[cypress]: https://www.cypress.io/
+[db_tutorial]: https://cstack.github.io/db_tutorial/
+[dresser_christopher]: https://en.wikipedia.org/wiki/Christopher_Dresser
+[ejs]: https://ejs.co/
+[email]: mailto:gvwilson@third-bit.com
+[eniac_programmers]: http://eniacprogrammers.org/
+[ethical_source]: https://ethicalsource.dev
+[evans_julia]: https://jvns.ca/
+[evans_zines]: https://wizardzines.com/
+[expect]: https://en.wikipedia.org/wiki/Expect
+[flake8]: https://flake8.pycqa.org/
+[git]: https://git-scm.com/
+[git_man_page_generator]: https://git-man-page-generator.lokaltog.net/
+[gitlet]: http://gitlet.maryrosecook.com/
+[glosario]: https://glosario.carpentries.org/
+[gnu_make]: https://www.gnu.org/software/make/
+[gutenberg]: https://www.gutenberg.org/
+[harrelson_chris]: https://twitter.com/chrishtr
+[hippocratic_license]: https://firstdonoharm.dev/
+[hoye_mike]: http://exple.tive.org/blarg/
+[html5_data_attributes]: https://developer.mozilla.org/en-US/docs/Learn/HTML/Howto/Use_data_attributes
+[human_resource_machine]: https://tomorrowcorporation.com/humanresourcemachine
+[isort]: https://pycqa.github.io/isort/
+[ivy]: https://www.dmulholl.com/docs/ivy/main/
+[jekyll]: https://jekyllrb.com/
+[json_schema]: https://json-schema.org/
+[kilo_editor]: https://viewsourcecode.org/snaptoken/kilo/index.html
+[latex]: https://www.latex-project.org/
+[loewy_raymond]: https://en.wikipedia.org/wiki/Raymond_Loewy
+[lorgat_editor]: https://github.com/seem/editor
+[lorgat_tutorial]: https://wasimlorgat.com/posts/editor.html
+[lorgat_wasim]: https://wasimlorgat.com/
+[marthas_rules]: https://journals.sagepub.com/doi/10.1177/088610998600100206
+[nano]: https://www.nano-editor.org/
+[nison_mael]: https://arcanis.github.io/
+[nystrom_bob]: http://journal.stuffwithstuff.com/
+[package_manager_tutorial]: https://classic.yarnpkg.com/blog/2017/07/11/lets-dev-a-package-manager/
+[panchekha_pavel]: https://pavpanchekha.com/
+[pexpect]: https://pexpect.readthedocs.io/
+[php]: https://www.php.net/
+[picosat]: http://fmv.jku.at/picosat/
+[pip]: https://pip.pypa.io/
+[programming_tools]: https://en.wikipedia.org/wiki/Programming_tool
+[punching_holes]: http://exple.tive.org/blarg/2020/11/26/punching-holes/
+[py_array]: https://docs.python.org/3/library/array.html
+[py_ast]: https://docs.python.org/3/library/ast.html
+[py_chainmap]: https://docs.python.org/3/library/collections.html#collections.ChainMap
+[py_cprofile]: https://docs.python.org/3/library/profile.html
+[py_curses]: https://docs.python.org/3/library/curses.html
+[py_fractions]: https://docs.python.org/3/library/fractions.html
+[py_glob]: https://docs.python.org/3/library/glob.html
+[py_hashlib]: https://docs.python.org/3/library/hashlib.html
+[py_inspect]: https://docs.python.org/3/library/inspect.html
+[py_io]: https://docs.python.org/3/library/io.html
+[py_itertools]: https://docs.python.org/3/library/itertools.html
+[py_json]: https://docs.python.org/3/library/json.html
+[py_jsonschema]: https://python-jsonschema.readthedocs.io/
+[py_mimetypes]: https://docs.python.org/3/library/mimetypes.html
+[py_pickle]: https://docs.python.org/3/library/pickle.html
+[py_property]: https://docs.python.org/3/library/functions.html#property
+[py_semver]: https://pypi.org/project/semantic-version/
+[py_struct]: https://docs.python.org/3/library/struct.html
+[py_textwrap]: https://docs.python.org/3/library/textwrap.html
+[py_urlparse]: https://docs.python.org/3/library/urllib.parse.html
+[pyfakefs]: https://pytest-pyfakefs.readthedocs.io/
+[pytest]: https://docs.pytest.org/
+[pytest_approx]: https://docs.pytest.org/en/4.6.x/reference.html#pytest-approx
+[python]: https://www.python.org/
+[reim_michael]: https://elderlinux.org/
+[requests]: https://requests.readthedocs.io/
+[ruten_paige]: https://viewsourcecode.org/
+[selenium]: https://www.selenium.dev/
+[semver_spec]: https://semver.org/
+[sinel_joseph]: https://en.wikipedia.org/wiki/Joseph_Claude_Sinel
+[snakemake]: https://snakemake.readthedocs.io/
+[sqlite]: https://sqlite.org/
+[stack_connor]: https://connorstack.com/
+[svg_screenshot]: https://chrome.google.com/webstore/detail/svg-screenshot/nfakpcpmhhilkdpphcjgnokknpbpdllg
+[t3_personas]: https://teachtogether.tech/en/index.html#s:process-personas
+[textualize_fraction]: https://www.textualize.io/blog/posts/7-things-about-terminals
+[udhr]: https://www.un.org/en/universal-declaration-human-rights/
+[ungc]: https://www.unglobalcompact.org/what-is-gc/mission/principles
+[unicode]: https://www.unicode.org/
+[unix_glob]: https://en.wikipedia.org/wiki/Glob_(programming)
+[unix_packaging]: https://eerielinux.wordpress.com/2017/08/15/the-history-of-nix-package-management/
+[webaim_wave]: https://wave.webaim.org/
+[write_yourself_a_git]: https://wyag.thb.lt/
+[z3]: https://en.wikipedia.org/wiki/Z3_Theorem_Prover
+[zeller_andreas]: https://andreas-zeller.info/
+
+    </textarea>
+    <script src="../../remark-latest.min.js"></script>
+    <script>
+      var slideshow = remark.create({
+        highlightLines: true
+      })
+    </script>
+  </body>
+</html>

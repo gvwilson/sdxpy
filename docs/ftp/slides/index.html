@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="repo" content="https://github.com/gvwilson/sd4ds">
+  <meta name="build_date" content="2023-06-28">
+  <meta name="template" content="slides">
+  <meta name="major" content="Chapter 21">
+  
+  <link rel="icon" type="image/x-icon" href="../../favicon.ico">
+  <link rel="stylesheet" href="../../mccole.css">
+  <link rel="stylesheet" href="../../tango.css">
+  <script defer data-domain="third-bit.com" src="https://plausible.io/js/plausible.js"></script>
+  <script>
+    MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']]
+      }
+    };
+  </script>
+  <script
+    type="text/javascript"
+    id="MathJax-script"
+    async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+  </script>
+  <script defer src="../../mccole.js"></script>
+  <title>Software Design for Data Scientists: Transferring Files</title>
+</head>
+
+  <body>
+    <textarea id="source">
+
+class: slide-title
+
+<p>
+  <a href="https://third-bit.com/sd4ds/">Software Design for Data Scientists</a>
+</p>
+<h1>Transferring Files</h1>
+<div class="bottom">
+  <a href="../">chapter</a>
+</div>
+
+---
+
+
+## The Problem
+
+-   We want to make information available to others
+
+    -   Which includes programs as well as people
+
+-   Understanding how a web server works will help us do this
+
+---
+
+## TCP/IP
+
+-   Most networked computers use <a class="gl-ref" href="../../glossary/#internet_protocol" markdown="1">Internet Protocol (IP)</a>
+
+-   Defines multiple layers on top of each other
+
+-   <a class="gl-ref" href="../../glossary/#tcp" markdown="1">Transmission Control Protocol (TCP/IP)</a>
+    makes communication between computers look like
+    reading and writing files
+
+---
+
+## Sockets
+
+-   A <a class="gl-ref" href="../../glossary/#socket" markdown="1">sockets</a> is one end of a point-to-point communication channel
+
+-   <a class="gl-ref" href="../../glossary/#ip_address" markdown="1">IP address</a> identifies machine
+
+    -   Typically written as four 8-bit numbers like `93.184.216.34`
+
+-   <a class="gl-ref" href="../../glossary/#port" markdown="1">port</a> identifies a specific connection on that machine
+
+    -   A number in the range 0–65535
+
+    -   Some numbers reserved for well-known applications
+
+    -   E.g., port 80 is usually a web server
+
+---
+
+class: aside
+
+## Naming Things
+
+-   IP addresses are hard to remember
+
+    -   And might actually identify a set of machines
+
+-   <a class="gl-ref" href="../../glossary/#dns" markdown="1">Domain Name System (DNS)</a> translates names like `third-bit.com`
+    into numerical identifiers
+
+---
+
+## Clients and Servers
+
+-   A <a class="gl-ref" href="../../glossary/#client" markdown="1">client</a> sends requests and processes responses
+    (e.g., web browser)
+
+-   A <a class="gl-ref" href="../../glossary/#server" markdown="1">server</a> waits for requests and replies to them
+    (e.g., a web server)
+
+---
+
+## Socket Client
+
+```py
+import socket
+
+CHUNK_SIZE = 1024
+SERVER_ADDRESS = ("localhost", 8080)
+
+message = "message text"
+
+sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+sock.connect(SERVER_ADDRESS)
+sock.sendall(bytes(message, "utf-8"))
+print(f"client sent {len(message)} bytes")
+
+received = sock.recv(CHUNK_SIZE)
+received_str = str(received, "utf-8")
+print(f"client received {len(received)} bytes: '{received_str}'")
+```
+
+
+---
+
+## Socket Server
+
+```py
+import socket
+
+CHUNK_SIZE = 1024
+
+def handler():
+    host, port = socket.gethostbyname("localhost"), 8080
+    server_socket = socket.socket()
+    server_socket.bind((host, port))
+
+    server_socket.listen(1)
+    conn, address = server_socket.accept()
+    print(f"Connection from {address}")
+
+    data = str(conn.recv(CHUNK_SIZE), "utf-8")
+    msg = f"got request from {address}: {len(data)}"
+    print(msg)
+
+    conn.send(bytes(msg, "utf-8"))
+    conn.close()
+
+```
+
+
+---
+
+## Interactions
+
+<figure>
+<img src="../interaction.svg" alt="Client/server interaction"/>
+</figure>
+
+
+---
+
+## Using the Library
+
+```py
+import socketserver
+
+CHUNK_SIZE = 1024
+SERVER_ADDRESS = ("localhost", 8080)
+
+class MyHandler(socketserver.BaseRequestHandler):
+    def handle(self):
+        data = self.request.recv(CHUNK_SIZE)
+        cli = self.client_address[0]
+        msg = f"got request from {cli}: {len(data)}"
+        print(msg)
+        self.request.sendall(bytes(msg, "utf-8"))
+
+if __name__ == "__main__":
+    server = socketserver.TCPServer(SERVER_ADDRESS, MyHandler)
+    server.serve_forever()
+```
+
+
+---
+
+## Chunking
+
+-   Server uses `self.request.recv(CHUNK_SIZE)`
+
+-   What if client sends more data than that?
+
+-   Allocating a larger <a class="gl-ref" href="../../glossary/#buffer" markdown="1">buffer</a> just delays the problem
+
+-   Better solution: keep reading until there is no more data
+
+---
+
+## Reading Chunks
+
+```py
+class FileHandler(socketserver.BaseRequestHandler):
+    def handle(self):
+        print("server about to start receiving")
+        data = bytes()
+        while True:
+            latest = self.request.recv(CHUNK_SIZE)
+            print(f"...server received {len(latest)} bytes")
+            data += latest
+            if len(latest) < CHUNK_SIZE:
+                print(f"...server breaking")
+                break
+        print(f"server finished received, about to reply")
+        self.request.sendall(bytes(f"{len(data)}", "utf-8"))
+```
+
+
+---
+
+## Writing Chunks
+
+```py
+def send_file(conn, filename):
+    with open(filename, "rb") as reader:
+        data = reader.read()
+    print(f"client sending {len(data)} bytes")
+    total = 0
+    while total < len(data):
+        sent = conn.send(data[total:])
+        print(f"...client sent {sent} bytes")
+        if sent == 0:
+            break
+        total += sent
+        print(f"...client total now {total} bytes")
+    return total
+```
+
+
+-   Try to send all remaining data
+
+-   Advance marker by amount actually sent and re-try
+
+---
+
+## Output
+
+-   Client
+
+```
+client sending 1236 bytes
+...client sent 1236 bytes
+...client total now 1236 bytes
+client main sent 1236 bytes
+client main received 1236 bytes
+True
+```
+
+
+- Server
+
+```
+server about to start receiving
+...server received 1024 bytes
+...server received 212 bytes
+...server breaking
+server finished received, about to reply
+```
+
+
+---
+
+## Testing
+
+-   Manual testing:
+    -   Start the server
+    -   Wait for it to be ready
+    -   Run the client
+    -   Shut down the server
+
+-   Better: use a <a class="gl-ref" href="../../glossary/#mock_object" markdown="1">mock object</a>
+    instead of a real network connection
+
+---
+
+## Refactor the Logging
+
+```py
+class LoggingHandler(socketserver.BaseRequestHandler):
+    def handle(self):
+        self.debug("server about to start receiving")
+        data = bytes()
+        while True:
+            latest = self.request.recv(BLOCK_SIZE)
+            self.debug(f"...server received {len(latest)} bytes")
+            data += latest
+            if len(latest) < BLOCK_SIZE:
+                self.debug(f"...server breaking")
+                break
+        self.debug(f"server finished received, about to reply")
+        self.request.sendall(bytes(f"{len(data)}", "utf-8"))
+
+```
+
+
+--
+
+```py
+    def debug(self, *args):
+        print(*args)
+```
+
+
+---
+
+## Creating a Testable Server
+
+```py
+class MockHandler(LoggingHandler):
+    def __init__(self, message):
+        self.request = MockRequest(message)
+
+    def debug(self, *args):
+        pass
+```
+
+
+-   *Don't* upcall constructor of `LoggingHandler`
+
+-   Don't want to trigger all of the library's socket machinery
+
+---
+
+## Mocking the Request Object
+
+1.  A constructor that records
+    the data we're going to pretend to have received over a socket
+    and does other setup
+
+2.  A `recv` method with the same signature as the real object's
+
+3.  A `sendall` method whose signature matches the real thing's
+
+---
+
+## Mocking the Request Object
+
+```py
+class MockRequest:
+    def __init__(self, message):
+        self._message = message
+        self._position = 0
+        self._sent = []
+
+    def recv(self, max_bytes):
+        assert self._position <= len(self._message)
+        top = min(len(self._message), self._position + BLOCK_SIZE)
+        result = self._message[self._position:top]
+        self._position = top
+        return result
+
+    def sendall(self, outgoing):
+        self._sent.append(outgoing)
+```
+
+
+---
+
+## Our First Test
+
+```py
+def test_short():
+    msg = bytes("message", "utf-8")
+    handler = MockHandler(msg)
+    handler.handle()
+    assert handler.request._sent == [bytes(f"{len(msg)}", "utf-8")]
+```
+
+
+-   Trade <a class="gl-ref" href="../../glossary/#test_fidelity" markdown="1">fidelity</a> for ease of use
+
+---
+
+class: summary
+
+## Summary
+
+<figure>
+<img src="../concept_map.svg" alt="Concept map of web server"/>
+</figure>
+
+
+
+[academic_prototyping]: https://www.fuzzingbook.org/html/AcademicPrototyping.html
+[aosa]: https://aosabook.org/
+[beautiful_soup]: https://beautiful-soup-4.readthedocs.io/
+[birthday_problem]: https://en.wikipedia.org/wiki/Birthday_problem
+[black]: https://black.readthedocs.io/
+[book_repo]: https://github.com/gvwilson/sd4ds/
+[book_site]: https://third-bit.com/sd4ds/
+[browser_engine_tutorial]: https://limpet.net/mbrubeck/2014/08/08/toy-layout-engine-1.html
+[browser_engineering]: https://browser.engineering/
+[brubeck_matt]: https://limpet.net/mbrubeck/
+[cc_by_nc]: https://creativecommons.org/licenses/by-nc/4.0/
+[cc_by_nc_legal]: https://creativecommons.org/licenses/by-nc/4.0/legalcode
+[clarkes_laws]: https://en.wikipedia.org/wiki/Clarke%27s_three_laws
+[contributor_covenant]: https://www.contributor-covenant.org/
+[cook_mary_rose]: https://maryrosecook.com/
+[crafting_interpreters]: https://craftinginterpreters.com/
+[ctan]: https://www.ctan.org/
+[cypress]: https://www.cypress.io/
+[db_tutorial]: https://cstack.github.io/db_tutorial/
+[dresser_christopher]: https://en.wikipedia.org/wiki/Christopher_Dresser
+[ejs]: https://ejs.co/
+[email]: mailto:gvwilson@third-bit.com
+[eniac_programmers]: http://eniacprogrammers.org/
+[ethical_source]: https://ethicalsource.dev
+[evans_julia]: https://jvns.ca/
+[evans_zines]: https://wizardzines.com/
+[expect]: https://en.wikipedia.org/wiki/Expect
+[flake8]: https://flake8.pycqa.org/
+[git]: https://git-scm.com/
+[git_man_page_generator]: https://git-man-page-generator.lokaltog.net/
+[gitlet]: http://gitlet.maryrosecook.com/
+[glosario]: https://glosario.carpentries.org/
+[gnu_make]: https://www.gnu.org/software/make/
+[gutenberg]: https://www.gutenberg.org/
+[harrelson_chris]: https://twitter.com/chrishtr
+[hippocratic_license]: https://firstdonoharm.dev/
+[hoye_mike]: http://exple.tive.org/blarg/
+[html5_data_attributes]: https://developer.mozilla.org/en-US/docs/Learn/HTML/Howto/Use_data_attributes
+[human_resource_machine]: https://tomorrowcorporation.com/humanresourcemachine
+[isort]: https://pycqa.github.io/isort/
+[ivy]: https://www.dmulholl.com/docs/ivy/main/
+[jekyll]: https://jekyllrb.com/
+[json_schema]: https://json-schema.org/
+[kilo_editor]: https://viewsourcecode.org/snaptoken/kilo/index.html
+[latex]: https://www.latex-project.org/
+[loewy_raymond]: https://en.wikipedia.org/wiki/Raymond_Loewy
+[lorgat_editor]: https://github.com/seem/editor
+[lorgat_tutorial]: https://wasimlorgat.com/posts/editor.html
+[lorgat_wasim]: https://wasimlorgat.com/
+[marthas_rules]: https://journals.sagepub.com/doi/10.1177/088610998600100206
+[nano]: https://www.nano-editor.org/
+[nison_mael]: https://arcanis.github.io/
+[nystrom_bob]: http://journal.stuffwithstuff.com/
+[package_manager_tutorial]: https://classic.yarnpkg.com/blog/2017/07/11/lets-dev-a-package-manager/
+[panchekha_pavel]: https://pavpanchekha.com/
+[pexpect]: https://pexpect.readthedocs.io/
+[php]: https://www.php.net/
+[picosat]: http://fmv.jku.at/picosat/
+[pip]: https://pip.pypa.io/
+[programming_tools]: https://en.wikipedia.org/wiki/Programming_tool
+[punching_holes]: http://exple.tive.org/blarg/2020/11/26/punching-holes/
+[py_array]: https://docs.python.org/3/library/array.html
+[py_ast]: https://docs.python.org/3/library/ast.html
+[py_chainmap]: https://docs.python.org/3/library/collections.html#collections.ChainMap
+[py_cprofile]: https://docs.python.org/3/library/profile.html
+[py_curses]: https://docs.python.org/3/library/curses.html
+[py_fractions]: https://docs.python.org/3/library/fractions.html
+[py_glob]: https://docs.python.org/3/library/glob.html
+[py_hashlib]: https://docs.python.org/3/library/hashlib.html
+[py_inspect]: https://docs.python.org/3/library/inspect.html
+[py_io]: https://docs.python.org/3/library/io.html
+[py_itertools]: https://docs.python.org/3/library/itertools.html
+[py_json]: https://docs.python.org/3/library/json.html
+[py_jsonschema]: https://python-jsonschema.readthedocs.io/
+[py_mimetypes]: https://docs.python.org/3/library/mimetypes.html
+[py_pickle]: https://docs.python.org/3/library/pickle.html
+[py_property]: https://docs.python.org/3/library/functions.html#property
+[py_semver]: https://pypi.org/project/semantic-version/
+[py_struct]: https://docs.python.org/3/library/struct.html
+[py_textwrap]: https://docs.python.org/3/library/textwrap.html
+[py_urlparse]: https://docs.python.org/3/library/urllib.parse.html
+[pyfakefs]: https://pytest-pyfakefs.readthedocs.io/
+[pytest]: https://docs.pytest.org/
+[pytest_approx]: https://docs.pytest.org/en/4.6.x/reference.html#pytest-approx
+[python]: https://www.python.org/
+[reim_michael]: https://elderlinux.org/
+[requests]: https://requests.readthedocs.io/
+[ruten_paige]: https://viewsourcecode.org/
+[selenium]: https://www.selenium.dev/
+[semver_spec]: https://semver.org/
+[sinel_joseph]: https://en.wikipedia.org/wiki/Joseph_Claude_Sinel
+[snakemake]: https://snakemake.readthedocs.io/
+[sqlite]: https://sqlite.org/
+[stack_connor]: https://connorstack.com/
+[svg_screenshot]: https://chrome.google.com/webstore/detail/svg-screenshot/nfakpcpmhhilkdpphcjgnokknpbpdllg
+[t3_personas]: https://teachtogether.tech/en/index.html#s:process-personas
+[textualize_fraction]: https://www.textualize.io/blog/posts/7-things-about-terminals
+[udhr]: https://www.un.org/en/universal-declaration-human-rights/
+[ungc]: https://www.unglobalcompact.org/what-is-gc/mission/principles
+[unicode]: https://www.unicode.org/
+[unix_glob]: https://en.wikipedia.org/wiki/Glob_(programming)
+[unix_packaging]: https://eerielinux.wordpress.com/2017/08/15/the-history-of-nix-package-management/
+[webaim_wave]: https://wave.webaim.org/
+[write_yourself_a_git]: https://wyag.thb.lt/
+[z3]: https://en.wikipedia.org/wiki/Z3_Theorem_Prover
+[zeller_andreas]: https://andreas-zeller.info/
+
+    </textarea>
+    <script src="../../remark-latest.min.js"></script>
+    <script>
+      var slideshow = remark.create({
+        highlightLines: true
+      })
+    </script>
+  </body>
+</html>

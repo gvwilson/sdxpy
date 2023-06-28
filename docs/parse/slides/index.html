@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="repo" content="https://github.com/gvwilson/sd4ds">
+  <meta name="build_date" content="2023-06-28">
+  <meta name="template" content="slides">
+  <meta name="major" content="Chapter 4">
+  
+  <link rel="icon" type="image/x-icon" href="../../favicon.ico">
+  <link rel="stylesheet" href="../../mccole.css">
+  <link rel="stylesheet" href="../../tango.css">
+  <script defer data-domain="third-bit.com" src="https://plausible.io/js/plausible.js"></script>
+  <script>
+    MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']]
+      }
+    };
+  </script>
+  <script
+    type="text/javascript"
+    id="MathJax-script"
+    async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+  </script>
+  <script defer src="../../mccole.js"></script>
+  <title>Software Design for Data Scientists: Parsing Text</title>
+</head>
+
+  <body>
+    <textarea id="source">
+
+class: slide-title
+
+<p>
+  <a href="https://third-bit.com/sd4ds/">Software Design for Data Scientists</a>
+</p>
+<h1>Parsing Text</h1>
+<div class="bottom">
+  <a href="../">chapter</a>
+</div>
+
+---
+
+
+## The Problem
+
+-   `"2023-*{pdf,txt}"` is easier to read and write
+    than `Lit("2023-", Any(Either("pdf", "txt")))`
+
+-   How can we translate the former into the latter?
+
+--
+
+1.  Group characters into <a class="gl-ref" href="../../glossary/#token" markdown="1">tokens</a>
+
+2.  Use tokens to create an <a class="gl-ref" href="../../glossary/#abstract_syntax_tree" markdown="1">abstract syntax tree</a>
+
+<figure>
+<img src="../pipeline.svg" alt="Parsing pipeline"/>
+</figure>
+
+
+---
+
+## Cases
+
+-   Characters like `{` and `*` can be processed immediately
+
+-   But "regular" characters need to be accumulated
+
+    -   `Lit("abc")` rather than `Lit("a", Lit("b", Lit("c")))`
+
+    -   When we encounter a special character or '}',
+        we close the current literal token
+
+-   The `,` character closes a literal but doesn't produce a token
+
+---
+
+## A Bit More Design
+
+-   The result is the final (flat) list of tokens
+
+-   We could pass around a list and append to it
+
+-   But we also need to know the characters in each `Literal`
+    and the options in each `Either`
+
+-   So create a class rather than a function
+
+    -   Easier than carrying state around explicitly
+
+---
+
+## Tokenizer
+
+```py
+    def tok(self, text):
+        self._setup()
+        for ch in text:
+            if ch == "*":
+                self._add("Any")
+            elif ch == "{":
+                self._add("EitherStart")
+            elif ch == ",":
+                self._add(None)
+            elif ch == "}":
+                self._add("EitherEnd")
+            elif ch in CHARS:
+                self.current += ch
+            else:
+                raise NotImplementedError(f"what is '{ch}'?")
+        self._add(None)
+        return self.result
+```
+
+
+---
+
+## Tokenizer
+
+-   Call `self._setup()` at the start so that the tokenizer can be re-used
+
+-   *Don't* call `self._add()` for regular characters
+
+    -   Add literals when we see special characters
+
+    -   And after all the input has been parsed
+
+---
+
+## Adding Tokens
+
+```py
+    def _add(self, thing):
+        if len(self.current) > 0:
+            self.result.append(["Lit", self.current])
+            self.current = ""
+        if thing is not None:
+            self.result.append([thing])
+```
+
+
+-   `self._add(None)` means "add the literal but nothing else"
+
+<figure>
+<img src="../tokenize.svg" alt="Tokenizing"/>
+</figure>
+
+
+---
+
+## Testing
+
+```py
+def test_tok_empty_string():
+    assert Tokenizer().tok("") == []
+
+
+def test_tok_any_either():
+    assert Tokenizer().tok("*{abc,def}") == [
+        ["Any"],
+        ["EitherStart"],
+        ["Lit", "abc"],
+        ["Lit", "def"],
+        ["EitherEnd"],
+    ]
+```
+
+
+-   Each sub-list represents one token
+
+---
+
+## Parsing
+
+```py
+    def _parse(self, tokens):
+        if not tokens:
+            return Null()
+
+        front, back = tokens[0], tokens[1:]
+        handler_name = f"_parse_{front[0]}"
+        if not hasattr(self, handler_name):
+            raise NotImplementedError(f"what is '{front}'")
+
+        handler = getattr(self, handler_name)
+        return handler(front[1:], back)
+```
+
+
+-   `front[0]` is the token's name, `front[1:]` is any other data
+
+-   `back` is the remaining tokens
+
+-   Look for a <code>\_parse\_<em>thing</em></code> method to handle each token
+
+---
+
+class: aside
+
+## Introspection and Dispatch
+
+-   <a class="gl-ref" href="../../glossary/#introspection" markdown="1">Introspection</a>:
+    having a program look up a function or method inside itself
+    while it is running
+
+-   <a class="gl-ref" href="../../glossary/#dynamic_dispatch" markdown="1">Dynamic dispatch</a>:
+    using introspection to decide what to do next
+    rather than a long chain of `if` statements
+
+-   These are powerful techniques and we use them frequently
+
+---
+
+## Fill in the Simple Stuff
+
+```py
+    def _parse_Any(self, rest, back):
+        return Any(self._parse(back))
+
+    def _parse_Lit(self, rest, back):
+        return Lit(rest[0], self._parse(back))
+```
+
+
+-   Hardest part is making sure to name them properly
+    so that `_parse` can find them
+
+---
+
+## `Either` is Messy
+
+```py
+    def _parse_EitherStart(self, rest, back):
+        if (
+            len(back) < 3
+            or (back[0][0] != "Lit")
+            or (back[1][0] != "Lit")
+            or (back[2][0] != "EitherEnd")
+        ):
+            raise ValueError("badly-formatted Either")
+        left = Lit(back[0][1])
+        right = Lit(back[1][1])
+        return Either([left, right], self._parse(back[3:]))
+```
+
+
+-   Remember, we didn't save the commas
+
+--
+
+-   It really should pull things from `back` until it hits `EitherEnd`
+
+---
+
+## A Better Implementation
+
+```py
+    def _parse_EitherStart(self, rest, back):
+        children = []
+        while back and (back[0][0] == "Lit"):
+            children.append(Lit(back[0][1]))
+            back = back[1:]
+
+        if not children:
+            raise ValueError("empty Either")
+
+        if back[0][0] != "EitherEnd":
+            raise ValueError("badly-formatted Either")
+
+        return Either(children, self._parse(back[1:]))
+```
+
+
+---
+
+## Testing
+
+```py
+def test_parse_either_two_lit():
+    assert Parser().parse("{abc,def}") == Either(
+        [Lit("abc"), Lit("def")]
+    )
+```
+
+
+-   But this assumes we can compare `Match` objects
+
+---
+
+class: aside
+
+## They're Just Methods
+
+-   `a == b` is "just" `a.__eq__(b)`
+-   <a class="gl-ref" href="../../glossary/#operator_overloading" markdown="1">Operator overloading</a>:
+    if our class has methods with the right names,
+    Python calls them to perform "built-in" operations
+-   Parent `Match` class does shared work
+    -   E.g., make sure objects have
+        the same <a class="gl-ref" href="../../glossary/#concrete_class" markdown="1">concrete class</a>
+-   Child method (if any) does details
+    -   E.g., make sure two `Lit` objects are checking for the same text
+
+---
+
+## Infrastructure
+
+```py
+class Match:
+    def __init__(self, rest):
+        self.rest = rest if rest else Null()
+
+    def __eq__(self, other):
+        return (other is not None) and (
+            self.__class__ == other.__class__
+        )
+
+class Lit(Match):
+    def __init__(self, chars, rest=None):
+        super().__init__(rest)
+        self.chars = chars
+
+    def __eq__(self, other):
+        return super().__eq__(other) and (
+            self.chars == other.chars
+        )
+```
+
+
+---
+
+class: summary
+
+## Summary
+
+<figure>
+<img src="../concept_map.svg" alt="Concept map of parsing"/>
+</figure>
+
+
+
+[academic_prototyping]: https://www.fuzzingbook.org/html/AcademicPrototyping.html
+[aosa]: https://aosabook.org/
+[beautiful_soup]: https://beautiful-soup-4.readthedocs.io/
+[birthday_problem]: https://en.wikipedia.org/wiki/Birthday_problem
+[black]: https://black.readthedocs.io/
+[book_repo]: https://github.com/gvwilson/sd4ds/
+[book_site]: https://third-bit.com/sd4ds/
+[browser_engine_tutorial]: https://limpet.net/mbrubeck/2014/08/08/toy-layout-engine-1.html
+[browser_engineering]: https://browser.engineering/
+[brubeck_matt]: https://limpet.net/mbrubeck/
+[cc_by_nc]: https://creativecommons.org/licenses/by-nc/4.0/
+[cc_by_nc_legal]: https://creativecommons.org/licenses/by-nc/4.0/legalcode
+[clarkes_laws]: https://en.wikipedia.org/wiki/Clarke%27s_three_laws
+[contributor_covenant]: https://www.contributor-covenant.org/
+[cook_mary_rose]: https://maryrosecook.com/
+[crafting_interpreters]: https://craftinginterpreters.com/
+[ctan]: https://www.ctan.org/
+[cypress]: https://www.cypress.io/
+[db_tutorial]: https://cstack.github.io/db_tutorial/
+[dresser_christopher]: https://en.wikipedia.org/wiki/Christopher_Dresser
+[ejs]: https://ejs.co/
+[email]: mailto:gvwilson@third-bit.com
+[eniac_programmers]: http://eniacprogrammers.org/
+[ethical_source]: https://ethicalsource.dev
+[evans_julia]: https://jvns.ca/
+[evans_zines]: https://wizardzines.com/
+[expect]: https://en.wikipedia.org/wiki/Expect
+[flake8]: https://flake8.pycqa.org/
+[git]: https://git-scm.com/
+[git_man_page_generator]: https://git-man-page-generator.lokaltog.net/
+[gitlet]: http://gitlet.maryrosecook.com/
+[glosario]: https://glosario.carpentries.org/
+[gnu_make]: https://www.gnu.org/software/make/
+[gutenberg]: https://www.gutenberg.org/
+[harrelson_chris]: https://twitter.com/chrishtr
+[hippocratic_license]: https://firstdonoharm.dev/
+[hoye_mike]: http://exple.tive.org/blarg/
+[html5_data_attributes]: https://developer.mozilla.org/en-US/docs/Learn/HTML/Howto/Use_data_attributes
+[human_resource_machine]: https://tomorrowcorporation.com/humanresourcemachine
+[isort]: https://pycqa.github.io/isort/
+[ivy]: https://www.dmulholl.com/docs/ivy/main/
+[jekyll]: https://jekyllrb.com/
+[json_schema]: https://json-schema.org/
+[kilo_editor]: https://viewsourcecode.org/snaptoken/kilo/index.html
+[latex]: https://www.latex-project.org/
+[loewy_raymond]: https://en.wikipedia.org/wiki/Raymond_Loewy
+[lorgat_editor]: https://github.com/seem/editor
+[lorgat_tutorial]: https://wasimlorgat.com/posts/editor.html
+[lorgat_wasim]: https://wasimlorgat.com/
+[marthas_rules]: https://journals.sagepub.com/doi/10.1177/088610998600100206
+[nano]: https://www.nano-editor.org/
+[nison_mael]: https://arcanis.github.io/
+[nystrom_bob]: http://journal.stuffwithstuff.com/
+[package_manager_tutorial]: https://classic.yarnpkg.com/blog/2017/07/11/lets-dev-a-package-manager/
+[panchekha_pavel]: https://pavpanchekha.com/
+[pexpect]: https://pexpect.readthedocs.io/
+[php]: https://www.php.net/
+[picosat]: http://fmv.jku.at/picosat/
+[pip]: https://pip.pypa.io/
+[programming_tools]: https://en.wikipedia.org/wiki/Programming_tool
+[punching_holes]: http://exple.tive.org/blarg/2020/11/26/punching-holes/
+[py_array]: https://docs.python.org/3/library/array.html
+[py_ast]: https://docs.python.org/3/library/ast.html
+[py_chainmap]: https://docs.python.org/3/library/collections.html#collections.ChainMap
+[py_cprofile]: https://docs.python.org/3/library/profile.html
+[py_curses]: https://docs.python.org/3/library/curses.html
+[py_fractions]: https://docs.python.org/3/library/fractions.html
+[py_glob]: https://docs.python.org/3/library/glob.html
+[py_hashlib]: https://docs.python.org/3/library/hashlib.html
+[py_inspect]: https://docs.python.org/3/library/inspect.html
+[py_io]: https://docs.python.org/3/library/io.html
+[py_itertools]: https://docs.python.org/3/library/itertools.html
+[py_json]: https://docs.python.org/3/library/json.html
+[py_jsonschema]: https://python-jsonschema.readthedocs.io/
+[py_mimetypes]: https://docs.python.org/3/library/mimetypes.html
+[py_pickle]: https://docs.python.org/3/library/pickle.html
+[py_property]: https://docs.python.org/3/library/functions.html#property
+[py_semver]: https://pypi.org/project/semantic-version/
+[py_struct]: https://docs.python.org/3/library/struct.html
+[py_textwrap]: https://docs.python.org/3/library/textwrap.html
+[py_urlparse]: https://docs.python.org/3/library/urllib.parse.html
+[pyfakefs]: https://pytest-pyfakefs.readthedocs.io/
+[pytest]: https://docs.pytest.org/
+[pytest_approx]: https://docs.pytest.org/en/4.6.x/reference.html#pytest-approx
+[python]: https://www.python.org/
+[reim_michael]: https://elderlinux.org/
+[requests]: https://requests.readthedocs.io/
+[ruten_paige]: https://viewsourcecode.org/
+[selenium]: https://www.selenium.dev/
+[semver_spec]: https://semver.org/
+[sinel_joseph]: https://en.wikipedia.org/wiki/Joseph_Claude_Sinel
+[snakemake]: https://snakemake.readthedocs.io/
+[sqlite]: https://sqlite.org/
+[stack_connor]: https://connorstack.com/
+[svg_screenshot]: https://chrome.google.com/webstore/detail/svg-screenshot/nfakpcpmhhilkdpphcjgnokknpbpdllg
+[t3_personas]: https://teachtogether.tech/en/index.html#s:process-personas
+[textualize_fraction]: https://www.textualize.io/blog/posts/7-things-about-terminals
+[udhr]: https://www.un.org/en/universal-declaration-human-rights/
+[ungc]: https://www.unglobalcompact.org/what-is-gc/mission/principles
+[unicode]: https://www.unicode.org/
+[unix_glob]: https://en.wikipedia.org/wiki/Glob_(programming)
+[unix_packaging]: https://eerielinux.wordpress.com/2017/08/15/the-history-of-nix-package-management/
+[webaim_wave]: https://wave.webaim.org/
+[write_yourself_a_git]: https://wyag.thb.lt/
+[z3]: https://en.wikipedia.org/wiki/Z3_Theorem_Prover
+[zeller_andreas]: https://andreas-zeller.info/
+
+    </textarea>
+    <script src="../../remark-latest.min.js"></script>
+    <script>
+      var slideshow = remark.create({
+        highlightLines: true
+      })
+    </script>
+  </body>
+</html>

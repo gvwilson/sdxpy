@@ -1,22 +1,17 @@
 """Handle glossary references and glossary."""
 
-import re
-
-import ivy
+import ark
+import regex
 import shortcodes
 import util
 
-# Regex to extract internal cross-references from bodies of definitions.
-INTERNAL_REF = re.compile(r"\]\(#(.+?)\)")
 
-# ----------------------------------------------------------------------
-
-@ivy.events.register(ivy.events.Event.INIT)
+@ark.events.register(ark.events.Event.INIT)
 def collect():
     """Collect information from pages."""
     major = util.make_major()
     collected = {}
-    ivy.nodes.root().walk(lambda node: _collect(node, major, collected))
+    ark.nodes.root().walk(lambda node: _collect(node, major, collected))
     _cleanup(collected)
 
 
@@ -25,7 +20,10 @@ def _collect(node, major, collected):
     parser = shortcodes.Parser(inherit_globals=False, ignore_unknown=True)
     parser.register(_parse, "g")
     temp = set()
-    parser.parse(node.text, temp)
+    try:
+        parser.parse(node.text, temp)
+    except shortcodes.ShortcodeSyntaxError as exc:
+        util.fail(f"%g shortcode parsing error in {node.filepath}: {exc}")
     collected[node.slug] = temp
 
 
@@ -37,23 +35,24 @@ def _parse(pargs, kwargs, data):
 
 def _cleanup(collected):
     """Translate glossary definitions into required form."""
-    filename = ivy.site.config.get("glossary", None)
+    filename = ark.site.config.get("glossary", None)
     util.require(filename is not None, "No glossary specified")
 
-    lang = ivy.site.config.get("lang", None)
+    lang = ark.site.config.get("lang", None)
     util.require(lang is not None, "No language specified")
 
     glossary = util.read_glossary(filename)
     glossary = {item["key"]: item[lang]["term"] for item in glossary}
 
     result = util.make_config("definitions")
-    for (slug, seen) in collected.items():
+    for slug, seen in collected.items():
         terms = [(key, glossary[key]) for key in glossary if key in seen]
         terms.sort(key=lambda item: item[1].lower())
         result.append((slug, terms))
 
 
 # ----------------------------------------------------------------------
+
 
 @shortcodes.register("g")
 def glossary_ref(pargs, kwargs, node):
@@ -76,10 +75,10 @@ def glossary(pargs, kwargs, node):
         (not pargs) and (not kwargs), f"Bad 'glossary' shortcode {pargs} and {kwargs}"
     )
 
-    filename = ivy.site.config.get("glossary", None)
+    filename = ark.site.config.get("glossary", None)
     util.require(filename is not None, "No glossary specified")
 
-    lang = ivy.site.config.get("lang", None)
+    lang = ark.site.config.get("lang", None)
     util.require(lang is not None, "No language specified")
 
     glossary = util.read_glossary(filename)
@@ -93,13 +92,13 @@ def glossary(pargs, kwargs, node):
     return f'<div class="glossary" markdown="1">\n{entries}\n</div>'
 
 
-@ivy.events.register(ivy.events.Event.EXIT)
+@ark.events.register(ark.events.Event.EXIT)
 def check():
     """Check that glossary entries are defined and used."""
-    filename = ivy.site.config.get("glossary", None)
+    filename = ark.site.config.get("glossary", None)
     util.require(filename is not None, "No glossary specified")
 
-    lang = ivy.site.config.get("lang", None)
+    lang = ark.site.config.get("lang", None)
     util.require(lang is not None, "No language defined for glossary")
 
     glossary = util.read_glossary(filename)
@@ -122,7 +121,7 @@ def _as_markdown(glossary, lang, entry):
     if "acronym" in entry[lang]:
         first += f" ({entry[lang]['acronym']})"
 
-    body = util.MULTISPACE.sub(entry[lang]["def"], " ").rstrip()
+    body = regex.MULTISPACE.sub(entry[lang]["def"], " ").rstrip()
 
     if "ref" in entry[lang]:
         seealso = util.TRANSLATIONS[lang]["seealso"]
@@ -154,6 +153,6 @@ def _internal_references(glossary, lang):
     """Get all in-body cross-references from glossary entries."""
     result = set()
     for entry in glossary:
-        for match in INTERNAL_REF.finditer(entry[lang]["def"]):
+        for match in regex.GLOSSARY_INTERNAL_REF.finditer(entry[lang]["def"]):
             result.add(match.group(1))
     return result

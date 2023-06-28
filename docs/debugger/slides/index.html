@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="repo" content="https://github.com/gvwilson/sd4ds">
+  <meta name="build_date" content="2023-06-28">
+  <meta name="template" content="slides">
+  <meta name="major" content="Chapter 26">
+  
+  <link rel="icon" type="image/x-icon" href="../../favicon.ico">
+  <link rel="stylesheet" href="../../mccole.css">
+  <link rel="stylesheet" href="../../tango.css">
+  <script defer data-domain="third-bit.com" src="https://plausible.io/js/plausible.js"></script>
+  <script>
+    MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']]
+      }
+    };
+  </script>
+  <script
+    type="text/javascript"
+    id="MathJax-script"
+    async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+  </script>
+  <script defer src="../../mccole.js"></script>
+  <title>Software Design for Data Scientists: A Debugger</title>
+</head>
+
+  <body>
+    <textarea id="source">
+
+class: slide-title
+
+<p>
+  <a href="https://third-bit.com/sd4ds/">Software Design for Data Scientists</a>
+</p>
+<h1>A Debugger</h1>
+<div class="bottom">
+  <a href="../">chapter</a>
+</div>
+
+---
+
+
+## The Problem
+
+-   Tracing execution with `print` statements is tedious
+
+-   And impossible (or nearly so) in some situations
+
+-   Single-stepping/breakpoint debugger is far more effective
+
+-   Build one to understand how they work
+
+-   And to show how to test interactive applications
+
+---
+
+## Preparation
+
+-   We will want non-interactive input and output for testing
+
+-   So <a class="gl-ref" href="../../glossary/#refactor" markdown="1">refactor</a> the virtual machine of <a class="x-ref" href="../../vm/">Chapter 25</a>
+
+-   Pass an output stream (by default `sys.stdout`)
+
+```py
+    def __init__(self, writer=sys.stdout):
+        """Set up memory."""
+        self.writer = writer
+        self.initialize([])
+```
+
+
+-   Replace every `print` with a call to `self.write`
+
+```py
+    def write(self, *args):
+        msg = "".join(args) + "\n"
+        self.writer.write(msg)
+```
+
+
+---
+
+## Getting Input
+
+-   Similarly, don't use `input` function directly
+
+```py
+    def __init__(self, reader=input, writer=sys.stdout):
+        super().__init__(writer)
+        self.reader = reader
+```
+
+
+```py
+    def read(self, prompt):
+        return self.reader(prompt).strip()
+```
+
+
+---
+
+## Enumerating State
+
+-   Old VM was either running or finished
+
+-   New one has a third state: single-stepping
+
+-   So define an <a class="gl-ref" href="../../glossary/#enumeration" markdown="1">enumeration</a>
+
+```py
+class VMState(Enum):
+    """Virtual machine states."""
+    FINISHED = 0
+    STEPPING = 1
+    RUNNING = 2
+```
+
+
+-   Safer than using strings (which can be mis-spelled)
+
+---
+
+## Running
+
+-   New `run` method starts in `STEPPING` state
+
+    -   If it started in `RUNNING` we could never tell it to do otherwise
+
+```py
+    def run(self):
+        self.state = VMState.STEPPING
+        while True:
+            if self.state == VMState.STEPPING:
+                self.interact(self.ip)
+            if self.state == VMState.FINISHED:
+                break
+            instruction = self.ram[self.ip]
+            self.ip += 1
+            op, arg0, arg1 = self.decode(instruction)
+            self.execute(op, arg0, arg1)
+```
+
+
+---
+
+## Interaction Cases
+
+1.  Empty line: go around again
+
+2.  <a class="gl-ref" href="../../glossary/#disassemble" markdown="1">Disassemble</a> current instruction or show memory:
+    do that and go around again
+
+3.  Quit:
+    change state to `FINISHED`.
+
+4.  Run normally:
+    change state to `RUNNING`
+
+5.  Single-step:
+    exit loop without changing state
+
+---
+
+## Disassembling
+
+```py
+OPS_LOOKUP = {value["code"]: key for key, value in OPS.items()}
+```
+
+
+-   If we type in the number-to-instruction lookup table,
+    it will eventually fall out of step
+
+-   So build it from architecture description
+
+<figure>
+<img src="../table.svg" alt="Building a consistent lookup table"/>
+</figure>
+
+
+---
+
+## Capturing Output
+
+-   Has to be an object with a `write` method
+
+-   But can save what it's given for later inspection
+
+```py
+class Writer:
+    def __init__(self):
+        self.seen = []
+
+    def write(self, *args):
+        self.seen.extend(args)
+```
+
+
+---
+
+## Providing Input
+
+-   Need a "function" that takes a prompt and returns a string
+
+-   Create a class with a `__call__` method that "reads" from a list
+
+```py
+class Reader:
+    def __init__(self, *args):
+        self.commands = args
+        self.index = 0
+
+    def __call__(self, prompt):
+        assert self.index < len(self.commands)
+        self.index += 1
+        return self.commands[self.index - 1]
+```
+
+
+---
+
+## Testing Disassembly
+
+```py
+def test_disassemble():
+    source = """
+    hlt
+    """
+    reader = Reader("d", "q")
+    writer = Writer()
+    execute(source, reader, writer)
+    assert writer.seen == ["hlt | 0 | 0\n"]
+```
+
+
+1.  Create program (just a `hlt` instruction)
+2.  Create a `Reader` with the commands `"d"` and `"q"`
+3.  Create a `Writer` to capture output
+4.  Run the program
+5.  Check that the output is correct
+
+---
+
+## Is It Worth It?
+
+-   Yes
+
+-   Test that the debugger can single-step three times and then quit
+
+```py
+def test_print_two_values():
+    source = """
+    ldc R0 55
+    prr R0
+    ldc R0 65
+    prr R0
+    hlt
+    """
+    reader = Reader("s", "s", "s", "q")
+    writer = Writer()
+    execute(source, reader, writer)
+    assert writer.seen == [
+        "000037\n"
+    ]
+```
+
+
+---
+
+class: aside
+
+## Other Tools
+
+-   [Expect][expect] often used to script command-line applications
+
+    -   Can be used through the [pexpect][pexpect] module
+
+-   [Selenium][selenium] and [Cypress][cypress] for browser-based applications
+
+    -   Simulate mouse clicks, window resizing, etc.
+
+-   Harder to set up and use than a simple `assert`
+
+-   But so are the things they're testing
+
+---
+
+## Extensibility
+
+-   Move every interactive operation to a method
+
+-   Return Boolean to signal whether debugger should stay in interactive mode
+
+```py
+    def _do_memory(self, addr):
+        self.show()
+        return True
+```
+
+
+```py
+    def _do_step(self, addr):
+        self.state = VMState.STEPPING
+        return False
+```
+
+
+---
+
+## Extensibility
+
+-   Modify `interact` to choose operations from a lookup table
+
+```py
+    def interact(self, addr):
+        prompt = "".join(sorted({key[0] for key in self.handlers}))
+        interacting = True
+        while interacting:
+            try:
+                command = self.read(f"{addr:06x} [{prompt}]> ")
+                if not command:
+                    continue
+                elif command not in self.handlers:
+                    self.write(f"Unknown command {command}")
+                else:
+                    interacting = self.handlers[command](self.ip)
+            except EOFError:
+                self.state = VMState.FINISHED
+                interacting = False
+```
+
+
+---
+
+## Extensibility
+
+-   Build the table in the constructor
+
+```py
+    def __init__(self, reader=input, writer=sys.stdout):
+        super().__init__(reader, writer)
+        self.handlers = {
+            "d": self._do_disassemble,
+            "dis": self._do_disassemble,
+            "i": self._do_ip,
+            "ip": self._do_ip,
+            "m": self._do_memory,
+            "memory": self._do_memory,
+            "q": self._do_quit,
+            "quit": self._do_quit,
+            "r": self._do_run,
+            "run": self._do_run,
+            "s": self._do_step,
+            "step": self._do_step,
+        }
+```
+
+
+---
+
+## Stop Here
+
+-   A <a class="gl-ref" href="../../glossary/#breakpoint" markdown="1">breakpoint</a> tells the computer to stop at a particular instruction
+
+    -   A <a class="gl-ref" href="../../glossary/#conditional_breakpoint" markdown="1">conditional breakpoint</a> stops if a condition is true
+
+---
+
+## Breakpoint Sets
+
+-   Design #1: store breakpoint addresses in a set for `run` to check
+
+<figure>
+<img src="../beside.svg" alt="Storing breakpoint addresses beside the program"/>
+</figure>
+
+
+---
+
+## What Hardware Does
+
+-   Replace actual instruction with new `brk` instruction
+
+-   Look up the real instruction when we hit a `brk`
+
+<figure>
+<img src="../break.svg" alt="Inserting breakpoint instructions"/>
+</figure>
+
+
+---
+
+## Add Commands
+
+-   Rely on parent class to initialize most of the table
+
+-   Then add more entries
+
+```py
+    def __init__(self):
+        super().__init__()
+        self.breaks = {}
+        self.handlers |= {
+            "b": self._do_add_breakpoint,
+            "break": self._do_add_breakpoint,
+            "c": self._do_clear_breakpoint,
+            "clear": self._do_clear_breakpoint,
+        }
+```
+
+
+---
+
+## Setting and Clearing
+
+```py
+    def _do_add_breakpoint(self, addr):
+        if self.ram[addr] == OPS["brk"]["code"]:
+            return
+        self.breaks[addr] = self.ram[addr]
+        self.ram[addr] = OPS["brk"]["code"]
+        return True
+```
+
+
+```py
+    def _do_clear_breakpoint(self, addr):
+        if self.ram[addr] != OPS["brk"]["code"]:
+            return
+        self.ram[addr] = self.breaks[addr]
+        del self.breaks[addr]
+        return True
+```
+
+
+---
+
+## Running
+
+```py
+    def run(self):
+        self.state = VMState.STEPPING
+        while self.state != VMState.FINISHED:
+            instruction = self.ram[self.ip]
+            op, arg0, arg1 = self.decode(instruction)
+
+            if op == OPS["brk"]["code"]:
+                original = self.breaks[self.ip]
+                op, arg0, arg1 = self.decode(original)
+                self.interact(self.ip)
+                self.ip += 1
+                self.execute(op, arg0, arg1)
+
+            else:
+                if self.state == VMState.STEPPING:
+                    self.interact(self.ip)
+                self.ip += 1
+                self.execute(op, arg0, arg1)
+```
+
+
+---
+
+class: summary
+
+## Summary
+
+<figure>
+<img src="../concept_map.svg" alt="Concept map for debugger"/>
+</figure>
+
+
+
+[academic_prototyping]: https://www.fuzzingbook.org/html/AcademicPrototyping.html
+[aosa]: https://aosabook.org/
+[beautiful_soup]: https://beautiful-soup-4.readthedocs.io/
+[birthday_problem]: https://en.wikipedia.org/wiki/Birthday_problem
+[black]: https://black.readthedocs.io/
+[book_repo]: https://github.com/gvwilson/sd4ds/
+[book_site]: https://third-bit.com/sd4ds/
+[browser_engine_tutorial]: https://limpet.net/mbrubeck/2014/08/08/toy-layout-engine-1.html
+[browser_engineering]: https://browser.engineering/
+[brubeck_matt]: https://limpet.net/mbrubeck/
+[cc_by_nc]: https://creativecommons.org/licenses/by-nc/4.0/
+[cc_by_nc_legal]: https://creativecommons.org/licenses/by-nc/4.0/legalcode
+[clarkes_laws]: https://en.wikipedia.org/wiki/Clarke%27s_three_laws
+[contributor_covenant]: https://www.contributor-covenant.org/
+[cook_mary_rose]: https://maryrosecook.com/
+[crafting_interpreters]: https://craftinginterpreters.com/
+[ctan]: https://www.ctan.org/
+[cypress]: https://www.cypress.io/
+[db_tutorial]: https://cstack.github.io/db_tutorial/
+[dresser_christopher]: https://en.wikipedia.org/wiki/Christopher_Dresser
+[ejs]: https://ejs.co/
+[email]: mailto:gvwilson@third-bit.com
+[eniac_programmers]: http://eniacprogrammers.org/
+[ethical_source]: https://ethicalsource.dev
+[evans_julia]: https://jvns.ca/
+[evans_zines]: https://wizardzines.com/
+[expect]: https://en.wikipedia.org/wiki/Expect
+[flake8]: https://flake8.pycqa.org/
+[git]: https://git-scm.com/
+[git_man_page_generator]: https://git-man-page-generator.lokaltog.net/
+[gitlet]: http://gitlet.maryrosecook.com/
+[glosario]: https://glosario.carpentries.org/
+[gnu_make]: https://www.gnu.org/software/make/
+[gutenberg]: https://www.gutenberg.org/
+[harrelson_chris]: https://twitter.com/chrishtr
+[hippocratic_license]: https://firstdonoharm.dev/
+[hoye_mike]: http://exple.tive.org/blarg/
+[html5_data_attributes]: https://developer.mozilla.org/en-US/docs/Learn/HTML/Howto/Use_data_attributes
+[human_resource_machine]: https://tomorrowcorporation.com/humanresourcemachine
+[isort]: https://pycqa.github.io/isort/
+[ivy]: https://www.dmulholl.com/docs/ivy/main/
+[jekyll]: https://jekyllrb.com/
+[json_schema]: https://json-schema.org/
+[kilo_editor]: https://viewsourcecode.org/snaptoken/kilo/index.html
+[latex]: https://www.latex-project.org/
+[loewy_raymond]: https://en.wikipedia.org/wiki/Raymond_Loewy
+[lorgat_editor]: https://github.com/seem/editor
+[lorgat_tutorial]: https://wasimlorgat.com/posts/editor.html
+[lorgat_wasim]: https://wasimlorgat.com/
+[marthas_rules]: https://journals.sagepub.com/doi/10.1177/088610998600100206
+[nano]: https://www.nano-editor.org/
+[nison_mael]: https://arcanis.github.io/
+[nystrom_bob]: http://journal.stuffwithstuff.com/
+[package_manager_tutorial]: https://classic.yarnpkg.com/blog/2017/07/11/lets-dev-a-package-manager/
+[panchekha_pavel]: https://pavpanchekha.com/
+[pexpect]: https://pexpect.readthedocs.io/
+[php]: https://www.php.net/
+[picosat]: http://fmv.jku.at/picosat/
+[pip]: https://pip.pypa.io/
+[programming_tools]: https://en.wikipedia.org/wiki/Programming_tool
+[punching_holes]: http://exple.tive.org/blarg/2020/11/26/punching-holes/
+[py_array]: https://docs.python.org/3/library/array.html
+[py_ast]: https://docs.python.org/3/library/ast.html
+[py_chainmap]: https://docs.python.org/3/library/collections.html#collections.ChainMap
+[py_cprofile]: https://docs.python.org/3/library/profile.html
+[py_curses]: https://docs.python.org/3/library/curses.html
+[py_fractions]: https://docs.python.org/3/library/fractions.html
+[py_glob]: https://docs.python.org/3/library/glob.html
+[py_hashlib]: https://docs.python.org/3/library/hashlib.html
+[py_inspect]: https://docs.python.org/3/library/inspect.html
+[py_io]: https://docs.python.org/3/library/io.html
+[py_itertools]: https://docs.python.org/3/library/itertools.html
+[py_json]: https://docs.python.org/3/library/json.html
+[py_jsonschema]: https://python-jsonschema.readthedocs.io/
+[py_mimetypes]: https://docs.python.org/3/library/mimetypes.html
+[py_pickle]: https://docs.python.org/3/library/pickle.html
+[py_property]: https://docs.python.org/3/library/functions.html#property
+[py_semver]: https://pypi.org/project/semantic-version/
+[py_struct]: https://docs.python.org/3/library/struct.html
+[py_textwrap]: https://docs.python.org/3/library/textwrap.html
+[py_urlparse]: https://docs.python.org/3/library/urllib.parse.html
+[pyfakefs]: https://pytest-pyfakefs.readthedocs.io/
+[pytest]: https://docs.pytest.org/
+[pytest_approx]: https://docs.pytest.org/en/4.6.x/reference.html#pytest-approx
+[python]: https://www.python.org/
+[reim_michael]: https://elderlinux.org/
+[requests]: https://requests.readthedocs.io/
+[ruten_paige]: https://viewsourcecode.org/
+[selenium]: https://www.selenium.dev/
+[semver_spec]: https://semver.org/
+[sinel_joseph]: https://en.wikipedia.org/wiki/Joseph_Claude_Sinel
+[snakemake]: https://snakemake.readthedocs.io/
+[sqlite]: https://sqlite.org/
+[stack_connor]: https://connorstack.com/
+[svg_screenshot]: https://chrome.google.com/webstore/detail/svg-screenshot/nfakpcpmhhilkdpphcjgnokknpbpdllg
+[t3_personas]: https://teachtogether.tech/en/index.html#s:process-personas
+[textualize_fraction]: https://www.textualize.io/blog/posts/7-things-about-terminals
+[udhr]: https://www.un.org/en/universal-declaration-human-rights/
+[ungc]: https://www.unglobalcompact.org/what-is-gc/mission/principles
+[unicode]: https://www.unicode.org/
+[unix_glob]: https://en.wikipedia.org/wiki/Glob_(programming)
+[unix_packaging]: https://eerielinux.wordpress.com/2017/08/15/the-history-of-nix-package-management/
+[webaim_wave]: https://wave.webaim.org/
+[write_yourself_a_git]: https://wyag.thb.lt/
+[z3]: https://en.wikipedia.org/wiki/Z3_Theorem_Prover
+[zeller_andreas]: https://andreas-zeller.info/
+
+    </textarea>
+    <script src="../../remark-latest.min.js"></script>
+    <script>
+      var slideshow = remark.create({
+        highlightLines: true
+      })
+    </script>
+  </body>
+</html>
