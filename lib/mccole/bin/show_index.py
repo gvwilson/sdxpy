@@ -21,8 +21,8 @@ def main():
         for entry in util.read_yaml(config.glossary)
     }
     forward = {slug: get_index(glossary, text) for (slug, text) in prose.items()}
-    for key, slugs in sorted(reverse_dict(forward).items(), key=lambda x: x[0].lower()):
-        print(f"{key}: {', '.join(slugs)}")
+    for key, found in sorted(reverse_dict(forward).items()):
+        print(f"{key}: {', '.join(found)}")
 
 
 def get_index(glossary, text):
@@ -41,12 +41,12 @@ def get_index(glossary, text):
 
 def _glossary_keys(pargs, kwargs, extra):
     """Get keys out of glossary entry."""
-    extra["keys"].add(extra["glossary"][pargs[0]])
+    extra["keys"].add((extra["glossary"][pargs[0]], True))
 
 
 def _index_keys(pargs, kwargs, extra, content):
     """Get keys out of index entry."""
-    extra["keys"].update(key.strip() for key in pargs)
+    extra["keys"].update((key.strip(), False) for key in pargs)
 
 
 def parse_args():
@@ -59,11 +59,12 @@ def parse_args():
 def reverse_dict(original):
     """Reverse a dictionary."""
     result = {}
-    for slug, set_of_values in original.items():
-        for value in set_of_values:
+    for slug, value_pairs in original.items():
+        for value, in_glossary in value_pairs:
             if value not in result:
                 result[value] = []
-            result[value].append(slug)
+            formatted = f"{util.BLUE}+{slug}{util.ENDC}" if in_glossary else slug
+            result[value].append(formatted)
     return result
 
 

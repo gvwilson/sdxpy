@@ -122,7 +122,7 @@ wordlist: ${ROOT}/docs/index.html
 
 ## index: show all index entries
 .PHONY: index
-index: ${MCCOLE}/bin/show_index.py
+index: ${MCCOLE}/bin/show_index.py ${ROOT}/docs/index.html
 	@python ${MCCOLE}/bin/show_index.py --config ${CONFIG}
 
 ## ---: ---

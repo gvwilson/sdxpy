@@ -48,6 +48,12 @@ YAML_CHARACTERS = {
     r"\xF6": "ö",
 }
 
+# Color codes.
+RED = "\033[91m"
+GREEN = "\033[92m"
+BLUE = "\033[94m"
+ENDC = "\033[0m"
+
 
 def cook_yaml(text, doublespace_keys=True):
     """Fix text produced by converting YAML to text."""

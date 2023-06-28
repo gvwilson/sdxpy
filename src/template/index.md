@@ -261,7 +261,7 @@ software isn't done until it has been tested.
 ## Control Flow {: #template-flow}
 
 Our tool supports conditional expressions and loops.
-Since it doesn't handle [%i "Boolean expression" %]Boolean expressions[%/i%] like `and` and `or`,
+Since it doesn't handle [%g boolean_expression "Boolean expressions" %] like `and` and `or`,
 implementing a conditional is as simple as looking up a variable
 and then expanding the node if Python thinks the value is [%g truthy "truthy" %]:
 

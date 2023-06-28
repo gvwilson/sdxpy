@@ -11,11 +11,6 @@ EXERCISES_PER = 8
 SLIDES_PER = 18
 WORDS_PER = 2200
 
-RED = "\033[91m"
-GREEN = "\033[92m"
-BLUE = "\033[94m"
-ENDC = "\033[0m"
-
 SHORT_CHAPTERS = {"intro", "finale"}
 
 
@@ -48,11 +43,11 @@ def calc_fraction(n_slides, n_ex, n_words, slug=None):
 
 def colorize(fraction):
     if fraction < 80:
-        return f"{RED}{fraction}%{ENDC}"
+        return f"{util.RED}{fraction}%{util.ENDC}"
     elif fraction > 120:
-        return f"{BLUE}{fraction}%{ENDC}"
+        return f"{util.BLUE}{fraction}%{util.ENDC}"
     else:
-        return f"{GREEN}{fraction}%{ENDC}"
+        return f"{util.GREEN}{fraction}%{util.ENDC}"
 
 
 def count_page(slug):

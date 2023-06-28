@@ -199,7 +199,7 @@ depends:
     with methods to go forward and backward
 
 -   Every action is derived from
-    an [%i "abstract base class" %][%/i%]
+    an [%g abstract_base_class "abstract base class" %]
 
 [% inc file="action.py" keep="Action" %]
 

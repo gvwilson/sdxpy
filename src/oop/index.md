@@ -188,7 +188,7 @@ we're not done until we test it:
 We have only scratched the surface of what Python's object system provides.
 [%g multiple_inheritance "Multiple inheritance" %],
 [%g class_method "class methods" %],
-[%i "static method" %]static methods[%/i%],
+[%g static_method "static methods" %],
 and [%g monkey_patching "monkey patching" %] are all useful,
 but all can be understood in terms of dictionaries
 that contain references to properties, functions, and other dictionaries.
