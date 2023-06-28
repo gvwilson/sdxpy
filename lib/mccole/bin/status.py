@@ -109,11 +109,12 @@ def parse_args():
 def report(plain, chapters):
     """Status of chapters."""
     tbl = make_table()
-    tot_slides, tot_ex, tot_words = 0, 0, 0
+    tot_slides, tot_ex, tot_fig, tot_words = 0, 0, 0, 0
     for slug in chapters.keys():
         n_ex, n_fig, n_words = count_page(slug)
         n_slides = count_slides(slug)
         tot_ex += n_ex
+        tot_fig += n_fig
         tot_slides += n_slides
         tot_words += n_words
         frac = calc_fraction(n_slides, n_ex, n_words, slug)
@@ -122,7 +123,8 @@ def report(plain, chapters):
         else:
             frac = colorize(frac)
         tbl.add_row([slug, n_slides, n_ex, n_fig, n_words, f"{frac}"])
-    print(f"Overall: {overall(chapters, tot_slides, tot_ex, tot_words)}%")
+    ov = f"{overall(chapters, tot_slides, tot_ex, tot_words)}%"
+    tbl.add_row(["Total", tot_slides, tot_ex, tot_fig, tot_words, ov])
     print(tbl)
 
 
