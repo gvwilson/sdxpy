@@ -87,9 +87,9 @@ of available packages as JSON:
 If you ever design a data format,
 please include a standard way for people to add comments,
 because they will always want to.
-[%i "Yet Another Markup Language" %]YAML[%/i%] has this,
-but [%i "JavaScript Object Notation" %]JSON[%/i%]
-and [%i "comma-separated values" %]CSV[%/i%] don't.
+[%i "YAML" %][%/i%] has this,
+but [%i "JSON" %][%/i%]
+and [%i "CSV" %][%/i%] don't.
 
 </div>
 

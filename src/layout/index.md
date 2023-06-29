@@ -23,7 +23,7 @@ and on [Pavel Panchekha][panchekha_pavel] and [Chris Harrelson's][harrelson_chri
 [*Web Browser Engineering*][browser_engineering].
 Since our focus is layout rather than parsing,
 we will create objects in memory that represent
-[%i "Document Object Model" %]DOM[%/i%] nodes
+[%i "DOM" %][%/i%] nodes
 to test our ideas.
 
 <div class="callout" markdown="1">

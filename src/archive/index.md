@@ -148,7 +148,7 @@ so that losing one hard drive wouldn't mean losing all our work,
 so we need to design our system with multiple back ends in mind.
 
 For now,
-we will store manifests in [%i "comma-separated values" %]CSV[%/i%] files named `ssssssssss.csv`,
+we will store manifests in [%i "CSV" %][%/i%] files named `ssssssssss.csv`,
 where `ssssssssss` is the [%g utc "UTC" %] [%g timestamp "timestamp" %]
 of the backup's creation.
 

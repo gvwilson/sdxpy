@@ -120,6 +120,8 @@ def _as_markdown(glossary, lang, entry):
 
     if "acronym" in entry[lang]:
         first += f" ({entry[lang]['acronym']})"
+    elif "full" in entry[lang]:
+        first += f" ({entry[lang]['full']})"
 
     body = regex.MULTISPACE.sub(entry[lang]["def"], " ").rstrip()
 

@@ -35,7 +35,7 @@ and to create code as well as check it.
 ## Machinery {: #lint-machinery}
 
 [%x check %] represented HTML as
-a [%i "Document Object Model" "DOM tree" %]DOM tree[%/i%].
+a [%i "DOM" "DOM tree" %]DOM tree[%/i%].
 Similarly,
 we can use Python's [ast][py_ast] module
 to parse Python programs and produce an [%i "abstract syntax tree" %][%/i%]

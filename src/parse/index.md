@@ -53,8 +53,7 @@ and vice versa,
 so we need parsers to translate the former into the latter.
 However,
 the world doesn't need more file formats:
-please use [%g csv "comma-separated values" %] (CSV),
-[%g json "JSON" %], [%g yaml "YAML" %],
+please use [%g csv "CSV" %], [%g json "JSON" %], [%g yaml "YAML" %],
 or something else that already has an acronym
 rather than inventing something of your own.
 
