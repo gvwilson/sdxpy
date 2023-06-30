@@ -118,8 +118,26 @@ def report(plain, chapters):
         else:
             frac = colorize(frac)
         tbl.add_row([slug, n_slides, n_ex, n_fig, n_words, f"{frac}"])
-    ov = f"{overall(chapters, tot_slides, tot_ex, tot_words)}%"
-    tbl.add_row(["Total", tot_slides, tot_ex, tot_fig, tot_words, ov])
+    tbl.add_row(
+        [
+            "Total",
+            tot_slides,
+            tot_ex,
+            tot_fig,
+            tot_words,
+            f"{overall(chapters, tot_slides, tot_ex, tot_words)}%",
+        ]
+    )
+    tbl.add_row(
+        [
+            "Average",
+            f"{(tot_slides / len(chapters)):.1f}",
+            f"{(tot_ex / len(chapters)):.1f}",
+            f"{(tot_fig / len(chapters)):.1f}",
+            f"{tot_words // len(chapters)}",
+            "",
+        ]
+    )
     print(tbl)
 
 
