@@ -12,6 +12,8 @@ def make_fixture(keys, size=(2, 2), lines=LINES):
 def get_screen(app):
     return app.get_log()[-1][-1]
 
+# [example]
 def test_insert_undo():
     app = make_fixture(["z", "UNDO"])
     assert get_screen(app) == ["ab", "cd"]
+# [/example]

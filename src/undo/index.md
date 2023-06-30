@@ -5,85 +5,29 @@ depends:
 -   viewer
 ---
 
--   Bring over viewer app
-    -   `app.py`, `buffer.py`, `cursor.py`, `window.py`, `util.py`
-    -   `Window`, `Cursor`, `Buffer`, `App`
-    -   Add call to `._add_log` to `App._interact` (another unanticipated hook)
+Viewing text files is useful,
+but we'd like to be able to edit them as well.
+This chapter therefore modifies the file viewer of [%x viewer %]
+so that we can add and delete text.
+And since people make mistakes,
+we will also implement undo,
+which will introduce another commonly-used software design pattern.
 
--   Create headless versions
-    -   `HeadlessScreen` replaces the `curses` screen
-        -   Takes keystrokes as input (what we're simulating)
-        -   Automatically generate Ctrl-X when out of keystrokes
-        -   Store current state of display in rectangular grid
-        -   Would make more sense for `App` to have a method that gets keys
-    -   `HeadlessWindow` requires a size
-        -   Violates Liskov Substitution Principle
-    -   `HeadlessApp` fills in logging methods
-    -   First tests make sure we can move around
-    -   `headless.py`
-    -   `test_headless.py`
+## Getting Started {: #undo-start}
 
--   Create insert/delete version
-    -   `InsertDeleteBuffer` in `insert_delete.py`
-        -   Add methods to insert and delete in buffer
-	-   Delete character *under* cursor, not to the left
-    -   `InsertDeleteApp` provides `_get_key` in the app to return (family, key)
-        -   `_interact` dispatches to one of two cases (special-purpose or generic + key)
-        -   Could define per-key method to make customization easier
-    -   `test_insert_delete.py`
-    -   But one test fails: empty screen (cursor isn't on top of a character)
-        -   Our focus is undo, so we'll ignore this for now
-	-   Tackle it in the exercises
+Our file fiewer has four classes ([%f undo-classes %]):
 
--   Record history of insertions and deletions
-    -   `HistoryApp` in `history.py` creates a list `_history`
-    -   Modify `_do_INSERT` and `_do_DELETE` to append records
-    -   Could add more logic to history recording, but this approach is broken anyway
-    -   Insert, move, move, undo: where does it leave the cursor?
-    -   Next step is to create objects that record actions
+-   A `Window` can draw lines and report its size.
 
--   `action.py` is the fully object-oriented version
-    -   `Action` records the app and has `do` and `undo`
-    -   Derive `Insert` to:
-        -   insert a character and a position
-	-   delete that saved character
-    -   Derive `Exit` to stop the app running
-        -   no `undo` action (should never arise)
-    -   `_interact` is now:
-        -   get the action name
-	-   find a handler
-	-   call it to construct an object
-	-   `do` that object
-	-   append the action to the history so that we can undo it
-    -   works until we try to undo (see `undoable.py`), at which point we get stuck in a loop
-        -   undo calls undo calls undo
-	-   so write `undoable.py` with "save this?"
-
----
-
-## The Problem
-
--   Want to change files as well as viewing them
-
--   So modify the file viewer of [%x viewer %] to allow editing
-
--   And since people make mistakes when editing, implement undo
-
----
-
-## Starting Point
-
--   `Window` can draw lines and report its size
-
--   `Buffer` stores lines of text,
+-   A `Buffer` stores lines of text,
     keeps track of a viewport,
-    and transforms buffer coordinates to screen coordinates
+    and transforms buffer coordinates to screen coordinates.
 
--   `Cursor` knows its position in the buffer
-    and can move up, down, left, and right
+-   A `Cursor` knows its position in the buffer
+    and can move up, down, left, and right.
 
--   `App` makes a window, a buffer, and a cursor,
-    then maps keys to actions
+-   The `App` makes a window, a buffer, and a cursor,
+    then maps keys to actions.
 
 [% figure
    slug="undo-classes"
@@ -92,162 +36,219 @@ depends:
    caption="Relationships between classes in file viewer"
 %]
 
-## A Headless Screen
-
--   Create a [%g headless "headless" %] screen for testing
-
--   Store current state of display in rectangular grid
-
--   Take a list of keystrokes (for simulation)
-
-    -   Would have made more sense for `App` to have a method
-        that gets keystrokes
-
-## A Headless Screen
+To make unit testing simpler,
+we start by adding one more class:
+a replacement for the screen object provided by the [curses][py_curses] library.
+This class stores the current state of the display in a rectangular grid for checking.
+It also takes a list of keystrokes as input
+to simulate interaction with the user:
 
 [% inc file="headless.py" keep="screen" %]
 
-## Bad But Necessary
+GUI applications that don't display anything
+are often called [%g headless "headless" %] applications.
+Giving our simulated keystrokes to the screen seems odd—it would make more sense
+for `App` to have a method that gets keystrokes—but
+it's the simplest way to fit everything in beside
+the classes we already have.
+{: .continue}
 
--   Also need to define `HeadlessWindow` to take a size
-    and pass it to the screen
+<div class="callout" markdown="1">
+### Clean Exit
+
+Notice that when the screen runs out of simulated keystrokes
+it produces `CONTROL_X`,
+meaning "exit the application".
+We need this to break out of the keystroke-processing loop in the application,
+and no,
+we didn't think of this up front…
+
+</div>
+
+To finish this change,
+we also need to define a `HeadlessWindow`
+that takes a desired screen size and passes it to the screen:
 
 [% inc file="headless.py" keep="window" %]
 
--   Violates the
-    [%i "Liskov Substitution Principle" %][%/i%]
-
-## Logging
-
--   Record keys, cursor position, and screen contents for testing
+Finally,
+our new application class records keystrokes,
+the cursor position,
+and the screen contents for testing:
 
 [% inc file="headless.py" keep="app" %]
 
-## Testing
+We can now write tests like this:
 
 [% inc file="test_headless.py" keep="example" %]
 
--   Last key is always `CONTROL_X` (exit)
+## Insertion and Deletion {: #undo-indel}
 
-## Insertion and Deletion
+We are now ready to implement insertion and deletion.
+The first step is to add methods to the buffer class
+that update a line of text:
 
 [% inc file="insert_delete.py" keep="buffer" %]
 
--   Delete character *under* the cursor, not to the left
+Notice that we delete the character *under* the cursor,
+not the one to the left of the cursor:
+this is delete-in-place rather than backspace-delete.
+Notice also that we have done a little [%i "defensive programming" %][%/i%]
+by checking that the coordinates given for the operation make sense.
+{: .continue}
 
--   A little [%i "defensive programming" %][%/i%] as well
-
-## Application
+The window, cursor, and screen don't need to change
+to support insertion and deletion,
+but the application class needs several updates.
+The first is to define the set of characters that can be inserted,
+which for our example will be letters and digits,
+and to create a buffer of the appropriate kind:
 
 [% inc file="insert_delete.py" keep="app" %]
 
+We also need to create handlers for insertion and deletion:
+
 [% inc file="insert_delete.py" keep="action" %]
 
-## Application
+Finally,
+since we don't want to have to add one handler
+for each insertable character,
+let's write a `_get_key` method that returns a pair of values.
+The first indicates the "family" of the key,
+while the second is the actual key.
+If the family is `None`,
+the key is a special key with its own handler;
+otherwise,
+we look up the handler for the key's family:
 
 [% inc file="insert_delete.py" keep="dispatch" %]
 
--   Add `_get_key` to the application
-
-    -   Return family (for generic handlers) and key (specific)
-
-    -   Could provide per-key methods to make customization easier
-
-## Testing
-
--   Write a function to make the fixture and run the test
+We're going to write a lot of tests for this application,
+so let's write a [%i "helper function" %][%/i%]
+to create a [%i "fixture" %][%/i%],
+run the application,
+and return it:
 
 [% inc file="test_insert_delete.py" keep="fixture" %]
 
--   Tests are straightforward
+Our tests are now straightforward to set up and check:
 
 [% inc file="test_insert_delete.py" keep="example" %]
 
-## Edge Case
+<div class="callout" markdown="1">
 
--   Can't delete when in an empty screen
+### Edge Case
+
+One of our tests uncovers the fact that
+our application crashes if we try to delete a character
+when the buffer is empty:
 
 [% inc file="test_insert_delete.py" keep="empty" %]
 
--   Our focus is implementing undo, so leave this for an exercise
+Our focus is implementing undo,
+so we will leave fixing this for an exercise.
 
-## Recording History
+</div>
 
--   In order to undo things we have to:
+## Going Backward {: #undo-backward}
 
-    1.  keep track of *actions* and reverse them, or
+In order to undo things we have to:
 
-    2.  keep track of *state* and restore it
+1.  keep track of *actions* and reverse them, or
 
--   Recording actions requires less space but can be trickier to implement
+2.  keep track of *state* and restore it.
 
--   Have actions append entries to a log
-
-## The Simple Approach
+Recording actions can be trickier to implement
+but requires less space than saving the entire state of the application
+after each change,
+so that's what most systems do.
+The starting point is to append a record of every action to a log:
 
 [% inc file="history.py" keep="app" %]
 
--   What about undoing cursor movement?
+But what about undoing cursor movement?
+If we add a character,
+move to another location,
+and then undo,
+shouldn't the cursor go back to where it was before deleting the character?
+And how are we going to interpret these log records?
+Will we need a second dispatch method with its own handlers?
 
--   And do we write an interpreter for these log records?
+The common solution to these problems is to use
+the [%g command_pattern "Command" %] design pattern.
+This pattern turns verbs into nouns,
+i.e.,
+each action is represented as an object
+with methods to go forward and backward.
 
-## Verbs as Nouns
-
--   Use the [%g command_pattern "Command" %] design pattern
-
--   Each action (verb) is an object (noun)
-    with methods to go forward and backward
-
--   Every action is derived from
-    an [%g abstract_base_class "abstract base class" %]
+Actions are all derived from
+an [%g abstract_base_class "abstract base class" %]
+so that they can be used interchangeably.
+Our base class is:
 
 [% inc file="action.py" keep="Action" %]
 
-## Insertion and Deletion
+The [%i "child class" %]child classes[%/i%] for insertion and deletion are:
 
 [% inc file="action.py" keep="Insert" %]
 
 [% inc file="action.py" keep="Delete" %]
 
-## Movement
+We could implement one class for each direction of cursor movement,
+but instead choose to create a single class:
 
 [% inc file="action.py" keep="Move" %]
 
--   Give `Cursor` methods to move in a particular direction (by name)
-    and move to a particular location
+This class depends on adding two new methods to `Cursor`
+to move in a particular direction by name
+(e.g., "right" or "left")
+and to move to a particular location:
 
-## Application
+[% inc file="cursor.py" keep="extra" %]
+
+Our application's `_interact` method changes too.
+Instead of relying on keystroke handler methods to do things,
+it expects them to create action objects.
+These objects are appended to the application's history,
+and then asked to do whatever they do:
 
 [% inc file="action.py" keep="interact" %]
 
--   Create the action object
+Note that we have modified all the handler methods
+to take the keystroke as an input parameter
+so that we don't have to distinguish between
+cases where it's needed and cases where it isn't.
+This simplifies the code a little
+at the expense of introducing unused parameters into
+the handlers for special keys like cursor movement.
+{: .continue}
 
--   Call its `.do` method
-
--   Modify all action methods to take a key to simplify the code a little
-
-## Application
+Finally,
+each handler method now builds an object and returns it:
 
 [% inc file="action.py" keep="actions" %]
 
--   And it *almost* works!
-
--   Our first implementation of `Undo` creates an infinite loop
-    because it puts itself on the undo stack
-    and then does the action on the top of the stack
-
-## Finally
-
--   Modify `Action` to have a `.save` method that returns `True`
-
--   Override in `Undo`
+With all these changes in place
+our application *almost* works.
+We add an `_do_UNDO` handler that pops the most recent action from the history
+and calls its `undo` method.
+When we test this,
+though,
+we wind up in an infinite loop because
+we are appending the action to the history before doing the action,
+so we are essentially undoing our undo forever.
+The solution is to modify the base class `Action` to have a `.save` method
+that tells the application whether or not to save this action.
+The default implemenation returns `True`,
+but we override it in `Undo` to return `False`:
 
 [% inc file="undoable.py" keep="Undo" %]
 
--   Only add object to undo stack if `.save` is `True`
+We can now write tests like this to check that we can insert a character,
+undo the action,
+and get back the screen we originally had:
 
--   More general design would give `Action` a `.post_action` method
-    that by default adds the action to the undo stack
+[% inc file="test_undoable.py" keep="example" %]
 
 ## Summary
 

@@ -4,7 +4,7 @@
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="repo" content="https://github.com/gvwilson/sd4ds">
-  <meta name="build_date" content="2023-06-29">
+  <meta name="build_date" content="2023-06-30">
   <meta name="template" content="default">
   <meta name="major" content="Chapter 24">
   <meta name="has_slides" content="true">
@@ -350,126 +350,31 @@
 
 
           <div class="page-toc"></div>
-          <ul>
-<li>
-<p>Bring over viewer app</p>
-<ul>
-<li><code>app.py</code>, <code>buffer.py</code>, <code>cursor.py</code>, <code>window.py</code>, <code>util.py</code></li>
-<li><code>Window</code>, <code>Cursor</code>, <code>Buffer</code>, <code>App</code></li>
-<li>Add call to <code>._add_log</code> to <code>App._interact</code> (another unanticipated hook)</li>
-</ul>
-</li>
-<li>
-<p>Create headless versions</p>
-<ul>
-<li><code>HeadlessScreen</code> replaces the <code>curses</code> screen<ul>
-<li>Takes keystrokes as input (what we&rsquo;re simulating)</li>
-<li>Automatically generate Ctrl-X when out of keystrokes</li>
-<li>Store current state of display in rectangular grid</li>
-<li>Would make more sense for <code>App</code> to have a method that gets keys</li>
-</ul>
-</li>
-<li><code>HeadlessWindow</code> requires a size<ul>
-<li>Violates Liskov Substitution Principle</li>
-</ul>
-</li>
-<li><code>HeadlessApp</code> fills in logging methods</li>
-<li>First tests make sure we can move around</li>
-<li><code>headless.py</code></li>
-<li><code>test_headless.py</code></li>
-</ul>
-</li>
-<li>
-<p>Create insert/delete version</p>
-<ul>
-<li><code>InsertDeleteBuffer</code> in <code>insert_delete.py</code><ul>
-<li>Add methods to insert and delete in buffer</li>
-</ul>
-</li>
-<li>Delete character <em>under</em> cursor, not to the left</li>
-<li><code>InsertDeleteApp</code> provides <code>_get_key</code> in the app to return (family, key)<ul>
-<li><code>_interact</code> dispatches to one of two cases (special-purpose or generic + key)</li>
-<li>Could define per-key method to make customization easier</li>
-</ul>
-</li>
-<li><code>test_insert_delete.py</code></li>
-<li>But one test fails: empty screen (cursor isn&rsquo;t on top of a character)<ul>
-<li>Our focus is undo, so we&rsquo;ll ignore this for now</li>
-</ul>
-</li>
-<li>Tackle it in the exercises</li>
-</ul>
-</li>
-<li>
-<p>Record history of insertions and deletions</p>
-<ul>
-<li><code>HistoryApp</code> in <code>history.py</code> creates a list <code>_history</code></li>
-<li>Modify <code>_do_INSERT</code> and <code>_do_DELETE</code> to append records</li>
-<li>Could add more logic to history recording, but this approach is broken anyway</li>
-<li>Insert, move, move, undo: where does it leave the cursor?</li>
-<li>Next step is to create objects that record actions</li>
-</ul>
-</li>
-<li>
-<p><code>action.py</code> is the fully object-oriented version</p>
-<ul>
-<li><code>Action</code> records the app and has <code>do</code> and <code>undo</code></li>
-<li>Derive <code>Insert</code> to:<ul>
-<li>insert a character and a position</li>
-</ul>
-</li>
-<li>delete that saved character</li>
-<li>Derive <code>Exit</code> to stop the app running<ul>
-<li>no <code>undo</code> action (should never arise)</li>
-</ul>
-</li>
-<li><code>_interact</code> is now:<ul>
-<li>get the action name</li>
-</ul>
-</li>
-<li>find a handler</li>
-<li>call it to construct an object</li>
-<li><code>do</code> that object</li>
-<li>append the action to the history so that we can undo it</li>
-<li>works until we try to undo (see <code>undoable.py</code>), at which point we get stuck in a loop<ul>
-<li>undo calls undo calls undo</li>
-</ul>
-</li>
-<li>so write <code>undoable.py</code> with &ldquo;save this?&rdquo;</li>
-</ul>
-</li>
-</ul>
-<hr />
-<h2>The Problem</h2>
+          <p>Viewing text files is useful,
+but we&rsquo;d like to be able to edit them as well.
+This chapter therefore modifies the file viewer of <a class="x-ref" href="../viewer/">Chapter 23</a>
+so that we can add and delete text.
+And since people make mistakes,
+we will also implement undo,
+which will introduce another commonly-used software design pattern.</p>
+<h2 id="undo-start">Section 24.1: Getting Started</h2>
+<p>Our file fiewer has four classes (<a class="fig-ref" href="../undo/#undo-classes">Figure 24.1</a>):</p>
 <ul>
 <li>
-<p>Want to change files as well as viewing them</p>
+<p>A <code>Window</code> can draw lines and report its size.</p>
 </li>
 <li>
-<p>So modify the file viewer of <a class="x-ref" href="../viewer/">Chapter 23</a> to allow editing</p>
-</li>
-<li>
-<p>And since people make mistakes when editing, implement undo</p>
-</li>
-</ul>
-<hr />
-<h2>Starting Point</h2>
-<ul>
-<li>
-<p><code>Window</code> can draw lines and report its size</p>
-</li>
-<li>
-<p><code>Buffer</code> stores lines of text,
+<p>A <code>Buffer</code> stores lines of text,
     keeps track of a viewport,
-    and transforms buffer coordinates to screen coordinates</p>
+    and transforms buffer coordinates to screen coordinates.</p>
 </li>
 <li>
-<p><code>Cursor</code> knows its position in the buffer
-    and can move up, down, left, and right</p>
+<p>A <code>Cursor</code> knows its position in the buffer
+    and can move up, down, left, and right.</p>
 </li>
 <li>
-<p><code>App</code> makes a window, a buffer, and a cursor,
-    then maps keys to actions</p>
+<p>The <code>App</code> makes a window, a buffer, and a cursor,
+    then maps keys to actions.</p>
 </li>
 </ul>
 <figure id="undo-classes">
@@ -477,23 +382,12 @@
 <figcaption markdown="1">Figure 24.1: Relationships between classes in file viewer</figcaption>
 </figure>
 
-<h2>A Headless Screen</h2>
-<ul>
-<li>
-<p>Create a <a class="gl-ref" href="../glossary/#headless" markdown="1">headless</a> screen for testing</p>
-</li>
-<li>
-<p>Store current state of display in rectangular grid</p>
-</li>
-<li>
-<p>Take a list of keystrokes (for simulation)</p>
-<ul>
-<li>Would have made more sense for <code>App</code> to have a method
-    that gets keystrokes</li>
-</ul>
-</li>
-</ul>
-<h2>A Headless Screen</h2>
+<p>To make unit testing simpler,
+we start by adding one more class:
+a replacement for the screen object provided by the <a href="https://docs.python.org/3/library/curses.html">curses</a> library.
+This class stores the current state of the display in a rectangular grid for checking.
+It also takes a list of keystrokes as input
+to simulate interaction with the user:</p>
 <div class="code-sample lang-py" title="headless.py">
 <div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">HeadlessScreen</span><span class="p">:</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">keystrokes</span><span class="p">):</span>
@@ -517,11 +411,24 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_display</span><span class="p">[</span><span class="n">row</span><span class="p">]</span> <span class="o">=</span> <span class="n">text</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_display</span><span class="p">[</span><span class="n">row</span><span class="p">][</span><span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">):]</span>
 </code></pre></div>
 </div>
-<h2>Bad But Necessary</h2>
-<ul>
-<li>Also need to define <code>HeadlessWindow</code> to take a size
-    and pass it to the screen</li>
-</ul>
+<p class="continue">GUI applications that don&rsquo;t display anything
+are often called <a class="gl-ref" href="../glossary/#headless" markdown="1">headless</a> applications.
+Giving our simulated keystrokes to the screen seems odd—it would make more sense
+for <code>App</code> to have a method that gets keystrokes—but
+it&rsquo;s the simplest way to fit everything in beside
+the classes we already have.</p>
+<div class="callout">
+<h3>Clean Exit</h3>
+<p>Notice that when the screen runs out of simulated keystrokes
+it produces <code>CONTROL_X</code>,
+meaning &ldquo;exit the application&rdquo;.
+We need this to break out of the keystroke-processing loop in the application,
+and no,
+we didn&rsquo;t think of this up front…</p>
+</div>
+<p>To finish this change,
+we also need to define a <code>HeadlessWindow</code>
+that takes a desired screen size and passes it to the screen:</p>
 <div class="code-sample lang-py" title="headless.py">
 <div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">HeadlessWindow</span><span class="p">(</span><span class="n">Window</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">screen</span><span class="p">,</span> <span class="n">size</span><span class="p">):</span>
@@ -529,14 +436,10 @@
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">screen</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span>
 </code></pre></div>
 </div>
-<ul>
-<li>Violates the
-    <span class="ix-entry" ix-key="Liskov Substitution Principle" markdown="1">Liskov Substitution Principle</span></li>
-</ul>
-<h2>Logging</h2>
-<ul>
-<li>Record keys, cursor position, and screen contents for testing</li>
-</ul>
+<p>Finally,
+our new application class records keystrokes,
+the cursor position,
+and the screen contents for testing:</p>
 <div class="code-sample lang-py" title="headless.py">
 <div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">HeadlessApp</span><span class="p">(</span><span class="n">App</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">lines</span><span class="p">):</span>
@@ -553,7 +456,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_window</span> <span class="o">=</span> <span class="n">HeadlessWindow</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_screen</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_size</span><span class="p">)</span>
 </code></pre></div>
 </div>
-<h2>Testing</h2>
+<p>We can now write tests like this:</p>
 <div class="code-sample lang-py" title="test_headless.py">
 <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">test_scroll_down</span><span class="p">():</span>
     <span class="n">size</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
@@ -565,10 +468,10 @@
     <span class="k">assert</span> <span class="n">app</span><span class="o">.</span><span class="n">get_log</span><span class="p">()[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="p">(</span><span class="s2">&quot;CONTROL_X&quot;</span><span class="p">,</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">[</span><span class="s2">&quot;de&quot;</span><span class="p">,</span> <span class="s2">&quot;gh&quot;</span><span class="p">])</span>
 </code></pre></div>
 </div>
-<ul>
-<li>Last key is always <code>CONTROL_X</code> (exit)</li>
-</ul>
-<h2>Insertion and Deletion</h2>
+<h2 id="undo-indel">Section 24.2: Insertion and Deletion</h2>
+<p>We are now ready to implement insertion and deletion.
+The first step is to add methods to the buffer class
+that update a line of text:</p>
 <div class="code-sample lang-py" title="insert_delete.py">
 <div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">InsertDeleteBuffer</span><span class="p">(</span><span class="n">Buffer</span><span class="p">):</span>
     <span class="k">def</span> <span class="nf">insert</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">char</span><span class="p">):</span>
@@ -586,15 +489,17 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_lines</span><span class="p">[</span><span class="n">pos</span><span class="p">[</span><span class="n">ROW</span><span class="p">]]</span> <span class="o">=</span> <span class="n">line</span>
 </code></pre></div>
 </div>
-<ul>
-<li>
-<p>Delete character <em>under</em> the cursor, not to the left</p>
-</li>
-<li>
-<p>A little <span class="ix-entry" ix-key="defensive programming" markdown="1">defensive programming</span> as well</p>
-</li>
-</ul>
-<h2>Application</h2>
+<p class="continue">Notice that we delete the character <em>under</em> the cursor,
+not the one to the left of the cursor:
+this is delete-in-place rather than backspace-delete.
+Notice also that we have done a little <span class="ix-entry" ix-key="defensive programming" markdown="1">defensive programming</span>
+by checking that the coordinates given for the operation make sense.</p>
+<p>The window, cursor, and screen don&rsquo;t need to change
+to support insertion and deletion,
+but the application class needs several updates.
+The first is to define the set of characters that can be inserted,
+which for our example will be letters and digits,
+and to create a buffer of the appropriate kind:</p>
 <div class="code-sample lang-py" title="insert_delete.py">
 <div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">InsertDeleteApp</span><span class="p">(</span><span class="n">HeadlessApp</span><span class="p">):</span>
     <span class="n">INSERTABLE</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">string</span><span class="o">.</span><span class="n">ascii_letters</span> <span class="o">+</span> <span class="n">string</span><span class="o">.</span><span class="n">digits</span><span class="p">)</span>
@@ -603,6 +508,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span> <span class="o">=</span> <span class="n">InsertDeleteBuffer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_lines</span><span class="p">)</span>
 </code></pre></div>
 </div>
+<p>We also need to create handlers for insertion and deletion:</p>
 <div class="code-sample lang-py" title="insert_delete.py">
 <div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">_do_DELETE</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_cursor</span><span class="o">.</span><span class="n">pos</span><span class="p">())</span>
@@ -611,7 +517,16 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_cursor</span><span class="o">.</span><span class="n">pos</span><span class="p">(),</span> <span class="n">key</span><span class="p">)</span>
 </code></pre></div>
 </div>
-<h2>Application</h2>
+<p>Finally,
+since we don&rsquo;t want to have to add one handler
+for each insertable character,
+let&rsquo;s write a <code>_get_key</code> method that returns a pair of values.
+The first indicates the &ldquo;family&rdquo; of the key,
+while the second is the actual key.
+If the family is <code>None</code>,
+the key is a special key with its own handler;
+otherwise,
+we look up the handler for the key&rsquo;s family:</p>
 <div class="code-sample lang-py" title="insert_delete.py">
 <div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">_get_key</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_screen</span><span class="o">.</span><span class="n">getkey</span><span class="p">()</span>
@@ -633,23 +548,11 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_add_log</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
 </code></pre></div>
 </div>
-<ul>
-<li>
-<p>Add <code>_get_key</code> to the application</p>
-<ul>
-<li>
-<p>Return family (for generic handlers) and key (specific)</p>
-</li>
-<li>
-<p>Could provide per-key methods to make customization easier</p>
-</li>
-</ul>
-</li>
-</ul>
-<h2>Testing</h2>
-<ul>
-<li>Write a function to make the fixture and run the test</li>
-</ul>
+<p>We&rsquo;re going to write a lot of tests for this application,
+so let&rsquo;s write a <span class="ix-entry" ix-key="helper function" markdown="1">helper function</span>
+to create a <span class="ix-entry" ix-key="fixture" markdown="1">fixture</span>,
+run the application,
+and return it:</p>
 <div class="code-sample lang-py" title="test_insert_delete.py">
 <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">make_fixture</span><span class="p">(</span><span class="n">keys</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">lines</span><span class="p">):</span>
     <span class="n">screen</span> <span class="o">=</span> <span class="n">HeadlessScreen</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">keys</span><span class="p">)</span>
@@ -658,19 +561,18 @@
     <span class="k">return</span> <span class="n">app</span>
 </code></pre></div>
 </div>
-<ul>
-<li>Tests are straightforward</li>
-</ul>
+<p>Our tests are now straightforward to set up and check:</p>
 <div class="code-sample lang-py" title="test_insert_delete.py">
 <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">test_delete_middle</span><span class="p">():</span>
     <span class="n">app</span> <span class="o">=</span> <span class="n">make_fixture</span><span class="p">([</span><span class="s2">&quot;KEY_RIGHT&quot;</span><span class="p">,</span> <span class="s2">&quot;DELETE&quot;</span><span class="p">],</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="p">[</span><span class="s2">&quot;abc&quot;</span><span class="p">])</span>
     <span class="k">assert</span> <span class="n">app</span><span class="o">.</span><span class="n">get_log</span><span class="p">()[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="p">(</span><span class="s2">&quot;CONTROL_X&quot;</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">[</span><span class="s2">&quot;ac_&quot;</span><span class="p">])</span>
 </code></pre></div>
 </div>
-<h2>Edge Case</h2>
-<ul>
-<li>Can&rsquo;t delete when in an empty screen</li>
-</ul>
+<div class="callout">
+<h3>Edge Case</h3>
+<p>One of our tests uncovers the fact that
+our application crashes if we try to delete a character
+when the buffer is empty:</p>
 <div class="code-sample lang-py" title="test_insert_delete.py">
 <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">test_delete_when_impossible</span><span class="p">():</span>
     <span class="k">try</span><span class="p">:</span>
@@ -679,30 +581,24 @@
         <span class="k">pass</span>
 </code></pre></div>
 </div>
-<ul>
-<li>Our focus is implementing undo, so leave this for an exercise</li>
-</ul>
-<h2>Recording History</h2>
-<ul>
-<li>
+<p>Our focus is implementing undo,
+so we will leave fixing this for an exercise.</p>
+</div>
+<h2 id="undo-backward">Section 24.3: Going Backward</h2>
 <p>In order to undo things we have to:</p>
 <ol>
 <li>
 <p>keep track of <em>actions</em> and reverse them, or</p>
 </li>
 <li>
-<p>keep track of <em>state</em> and restore it</p>
+<p>keep track of <em>state</em> and restore it.</p>
 </li>
 </ol>
-</li>
-<li>
-<p>Recording actions requires less space but can be trickier to implement</p>
-</li>
-<li>
-<p>Have actions append entries to a log</p>
-</li>
-</ul>
-<h2>The Simple Approach</h2>
+<p>Recording actions can be trickier to implement
+but requires less space than saving the entire state of the application
+after each change,
+so that&rsquo;s what most systems do.
+The starting point is to append a record of every action to a log:</p>
 <div class="code-sample lang-py" title="history.py">
 <div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">HistoryApp</span><span class="p">(</span><span class="n">InsertDeleteApp</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">keystrokes</span><span class="p">):</span>
@@ -719,28 +615,23 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_cursor</span><span class="o">.</span><span class="n">pos</span><span class="p">())</span>
 </code></pre></div>
 </div>
-<ul>
-<li>
-<p>What about undoing cursor movement?</p>
-</li>
-<li>
-<p>And do we write an interpreter for these log records?</p>
-</li>
-</ul>
-<h2>Verbs as Nouns</h2>
-<ul>
-<li>
-<p>Use the <a class="gl-ref" href="../glossary/#command_pattern" markdown="1">Command</a> design pattern</p>
-</li>
-<li>
-<p>Each action (verb) is an object (noun)
-    with methods to go forward and backward</p>
-</li>
-<li>
-<p>Every action is derived from
-    an <a class="gl-ref" href="../glossary/#abstract_base_class" markdown="1">abstract base class</a></p>
-</li>
-</ul>
+<p>But what about undoing cursor movement?
+If we add a character,
+move to another location,
+and then undo,
+shouldn&rsquo;t the cursor go back to where it was before deleting the character?
+And how are we going to interpret these log records?
+Will we need a second dispatch method with its own handlers?</p>
+<p>The common solution to these problems is to use
+the <a class="gl-ref" href="../glossary/#command_pattern" markdown="1">Command</a> design pattern.
+This pattern turns verbs into nouns,
+i.e.,
+each action is represented as an object
+with methods to go forward and backward.</p>
+<p>Actions are all derived from
+an <a class="gl-ref" href="../glossary/#abstract_base_class" markdown="1">abstract base class</a>
+so that they can be used interchangeably.
+Our base class is:</p>
 <div class="code-sample lang-py" title="action.py">
 <div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Action</span><span class="p">:</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">):</span>
@@ -753,7 +644,7 @@
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">: undo&quot;</span><span class="p">)</span>
 </code></pre></div>
 </div>
-<h2>Insertion and Deletion</h2>
+<p>The <span class="ix-entry" ix-key="child class" markdown="1">child classes</span> for insertion and deletion are:</p>
 <div class="code-sample lang-py" title="action.py">
 <div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Insert</span><span class="p">(</span><span class="n">Action</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">char</span><span class="p">):</span>
@@ -782,7 +673,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_app</span><span class="o">.</span><span class="n">_buffer</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_pos</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_char</span><span class="p">)</span>
 </code></pre></div>
 </div>
-<h2>Movement</h2>
+<p>We could implement one class for each direction of cursor movement,
+but instead choose to create a single class:</p>
 <div class="code-sample lang-py" title="action.py">
 <div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Move</span><span class="p">(</span><span class="n">Action</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">,</span> <span class="n">direction</span><span class="p">):</span>
@@ -799,11 +691,25 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_app</span><span class="o">.</span><span class="n">_cursor</span><span class="o">.</span><span class="n">move_to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_old</span><span class="p">)</span>
 </code></pre></div>
 </div>
-<ul>
-<li>Give <code>Cursor</code> methods to move in a particular direction (by name)
-    and move to a particular location</li>
-</ul>
-<h2>Application</h2>
+<p>This class depends on adding two new methods to <code>Cursor</code>
+to move in a particular direction by name
+(e.g., &ldquo;right&rdquo; or &ldquo;left&rdquo;)
+and to move to a particular location:</p>
+<div class="code-sample lang-py" title="cursor.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">act</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">direction</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">direction</span><span class="p">)</span>
+        <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">direction</span><span class="p">)()</span>
+
+    <span class="k">def</span> <span class="nf">move_to</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pos</span> <span class="o">=</span> <span class="n">pos</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_fix</span><span class="p">()</span>
+</code></pre></div>
+</div>
+<p>Our application&rsquo;s <code>_interact</code> method changes too.
+Instead of relying on keystroke handler methods to do things,
+it expects them to create action objects.
+These objects are appended to the application&rsquo;s history,
+and then asked to do whatever they do:</p>
 <div class="code-sample lang-py" title="action.py">
 <div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">_interact</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">family</span><span class="p">,</span> <span class="n">key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_key</span><span class="p">()</span>
@@ -816,18 +722,15 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_add_log</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
 </code></pre></div>
 </div>
-<ul>
-<li>
-<p>Create the action object</p>
-</li>
-<li>
-<p>Call its <code>.do</code> method</p>
-</li>
-<li>
-<p>Modify all action methods to take a key to simplify the code a little</p>
-</li>
-</ul>
-<h2>Application</h2>
+<p class="continue">Note that we have modified all the handler methods
+to take the keystroke as an input parameter
+so that we don&rsquo;t have to distinguish between
+cases where it&rsquo;s needed and cases where it isn&rsquo;t.
+This simplifies the code a little
+at the expense of introducing unused parameters into
+the handlers for special keys like cursor movement.</p>
+<p>Finally,
+each handler method now builds an object and returns it:</p>
 <div class="code-sample lang-py" title="action.py">
 <div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">_do_DELETE</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">Delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cursor</span><span class="o">.</span><span class="n">pos</span><span class="p">())</span>
@@ -839,25 +742,19 @@
         <span class="k">return</span> <span class="n">Move</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;up&quot;</span><span class="p">)</span>
 </code></pre></div>
 </div>
-<ul>
-<li>
-<p>And it <em>almost</em> works!</p>
-</li>
-<li>
-<p>Our first implementation of <code>Undo</code> creates an infinite loop
-    because it puts itself on the undo stack
-    and then does the action on the top of the stack</p>
-</li>
-</ul>
-<h2>Finally</h2>
-<ul>
-<li>
-<p>Modify <code>Action</code> to have a <code>.save</code> method that returns <code>True</code></p>
-</li>
-<li>
-<p>Override in <code>Undo</code></p>
-</li>
-</ul>
+<p>With all these changes in place
+our application <em>almost</em> works.
+We add an <code>_do_UNDO</code> handler that pops the most recent action from the history
+and calls its <code>undo</code> method.
+When we test this,
+though,
+we wind up in an infinite loop because
+we are appending the action to the history before doing the action,
+so we are essentially undoing our undo forever.
+The solution is to modify the base class <code>Action</code> to have a <code>.save</code> method
+that tells the application whether or not to save this action.
+The default implemenation returns <code>True</code>,
+but we override it in <code>Undo</code> to return <code>False</code>:</p>
 <div class="code-sample lang-py" title="undoable.py">
 <div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Undo</span><span class="p">(</span><span class="n">Action</span><span class="p">):</span>
     <span class="k">def</span> <span class="nf">do</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -871,15 +768,15 @@
         <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Undo(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_app</span><span class="o">.</span><span class="n">_history</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">)&quot;</span>
 </code></pre></div>
 </div>
-<ul>
-<li>
-<p>Only add object to undo stack if <code>.save</code> is <code>True</code></p>
-</li>
-<li>
-<p>More general design would give <code>Action</code> a <code>.post_action</code> method
-    that by default adds the action to the undo stack</p>
-</li>
-</ul>
+<p>We can now write tests like this to check that we can insert a character,
+undo the action,
+and get back the screen we originally had:</p>
+<div class="code-sample lang-py" title="test_undoable.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">test_insert_undo</span><span class="p">():</span>
+    <span class="n">app</span> <span class="o">=</span> <span class="n">make_fixture</span><span class="p">([</span><span class="s2">&quot;z&quot;</span><span class="p">,</span> <span class="s2">&quot;UNDO&quot;</span><span class="p">])</span>
+    <span class="k">assert</span> <span class="n">get_screen</span><span class="p">(</span><span class="n">app</span><span class="p">)</span> <span class="o">==</span> <span class="p">[</span><span class="s2">&quot;ab&quot;</span><span class="p">,</span> <span class="s2">&quot;cd&quot;</span><span class="p">]</span>
+</code></pre></div>
+</div>
 <h2>Summary</h2>
 <figure id="undo-concept-map">
 <img src="./concept_map.svg" alt="Concept map of undo"/>
