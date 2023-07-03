@@ -55,6 +55,22 @@ BLUE = "\033[94m"
 ENDC = "\033[0m"
 
 
+def cleanup_html(soup, bib=False):
+    """Remove code-ish things from DOM."""
+    for tag in ("head", "pre", "code"):
+        for node in soup.find_all(tag):
+            node.decompose()
+    for tag, cls in (("div", "code-sample"),):
+        for node in soup.find_all(tag, class_=cls):
+            node.decompose()
+    if bib:
+        for node in soup.find_all("dt", class_="bib-def"):
+            node.decompose()
+        for node in soup.find_all("a", class_="bib-ref"):
+            node.decompose()
+    return soup
+
+
 def cook_yaml(text, doublespace_keys=True):
     """Fix text produced by converting YAML to text."""
     for src in YAML_CHARACTERS:
@@ -178,7 +194,10 @@ def strip_nested(value):
     return value
 
 
-def write_yaml(filename, data):
+def write_yaml(data, filename=None):
     """Save a YAML file."""
-    with open(filename, "w") as writer:
-        return yaml.dump(data, writer)
+    if not filename:
+        yaml.dump(data, sys.stdout)
+    else:
+        with open(filename, "w") as writer:
+            yaml.dump(data, writer)

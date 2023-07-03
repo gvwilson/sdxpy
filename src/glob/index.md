@@ -42,13 +42,13 @@ Our matcher will handle only the cases shown in
 [%t pattern-glob-cases %].
 
 <div class="table" id="pattern-glob-cases" caption="Pattern matching cases" markdown="1">
-| Pattern | Text     | Match? || Pattern | Text     | Match? |
-| ------- | -------- | ------ || ------- | -------- | ------ |
-| abc     | "abc"    | True   || a*c     | "abc"    | True   |
-| ab      | "abc"    | False  || {a,b}   | "a"      | True   |
-| abc     | "ab"     | False  || {a,b}   | "c"      | False  |
-| *       | ""       | True   || {a,b}   | "ab"     | False  |
-| *       | "abc"    | True   || *{x,y}  | "abcx"   | True   |
+| Pattern | Text     | Match? || Pattern  | Text     | Match? |
+| ------- | -------- | ------ || -------- | -------- | ------ |
+| `abc`   | "abc"    | true   || `a*c`    | "abc"    | true   |
+| `ab`    | "abc"    | false  || `{a,b}`  | "a"      | true   |
+| `abc`   | "ab"     | false  || `{a,b}`  | "c"      | false  |
+| `*`     | ""       | true   || `{a,b}`  | "ab"     | false  |
+| `*`     | "abc"    | true   || `*{x,y}` | "abcx"   | true   |
 </div>
 
 Matching is conceptually simple.
