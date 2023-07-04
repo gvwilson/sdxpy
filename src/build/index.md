@@ -74,7 +74,7 @@ some kind of debugger ([%x debugger %]),
 and so on.
 
 The other option is to use a pre-existing syntax
-such as [%i "JavaScript Object Notation" %]JSON[%/i%],
+such as [%i "JSON" %][%/i%],
 which gives us tooling for free.
 For example,
 this file describes two targets `A` and `B`

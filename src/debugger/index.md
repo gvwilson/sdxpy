@@ -10,7 +10,7 @@ depends:
 ---
 
 We have finally come to another of the questions that sparked this book:
-how does a [%i "debugger" %][%/i%] work?
+how does a [%g debugger "debugger" %] work?
 Debuggers are as much a part of good programmers' lives as version control
 but are taught far less often
 (in part, we believe, because it's harder to create homework questions for them).

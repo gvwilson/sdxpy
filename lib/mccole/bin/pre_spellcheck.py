@@ -8,21 +8,13 @@ import argparse
 from bs4 import BeautifulSoup
 from markdown import markdown
 
+import util
+
 
 def main():
     options = parse_args()
     handle(options.pages, expand)
     handle(options.slides, expand)
-
-
-def cleanup(soup):
-    for tag in ("head", "pre", "code"):
-        for node in soup.find_all(tag):
-            node.decompose()
-    for tag, cls in (("div", "code-sample"),):
-        for node in soup.find_all(tag, class_=cls):
-            node.decompose()
-    return soup
 
 
 def expand(text):
@@ -35,7 +27,7 @@ def handle(filenames, pre_processor=None):
             text = reader.read()
             if pre_processor is not None:
                 text = pre_processor(text)
-            print(cleanup(BeautifulSoup(text, "html.parser")))
+            print(util.cleanup_html(BeautifulSoup(text, "html.parser")))
 
 
 def parse_args():

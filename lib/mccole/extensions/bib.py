@@ -43,7 +43,7 @@ def bibliography(pargs, kwargs, node):
     html = find_plugin("pybtex.backends", "html")()
 
     def _format(key, body):
-        return f'<dt id="{key}">{key}</dt>\n<dd>{body}</dd>'
+        return f'<dt id="{key}" class="bib-def">{key}</dt>\n<dd>{body}</dd>'
 
     entries = [_format(entry.key, entry.text.render(html)) for entry in bib]
     return '<dl class="bib-list">\n\n' + "\n\n".join(entries) + "\n\n</dl>"

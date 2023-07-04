@@ -28,6 +28,7 @@ class Cursor:
         )
         self._fix()
 
+    # [extra]
     def act(self, direction):
         assert hasattr(self, direction)
         getattr(self, direction)()
@@ -35,6 +36,7 @@ class Cursor:
     def move_to(self, pos):
         self._pos = pos
         self._fix()
+    # [/extra]
 
     def _fix(self):
         self._pos[COL] = min(

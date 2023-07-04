@@ -212,7 +212,7 @@ def check_inclusions(config):
         for text in (config["prose"][slug], config["slides"].get(slug, "")):
             for f in (get_inc, get_fig, get_img):
                 referenced |= f(text)
-        _diff(f"{slug} inclusions", referenced, existing)
+        _diff(f"{slug} inclusions", existing, referenced)
 
 
 def check_index_refs(config):

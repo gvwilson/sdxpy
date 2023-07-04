@@ -16,7 +16,8 @@ create a new [%i "protocol" %][%/i%] for every kind interaction.
 Instead,
 we would like to use a single standardized protocol in a variety of ways.
 
-The [%g http "Hypertext Transfer Protocol (HTTP)" %]
+The Hypertext Transfer Protocol,
+more commonly called [%g http "HTTP" %],
 specifies one way programs can exchange data over IP.
 HTTP is deliberately simple:
 the [%i "client" %][%/i%] sends a [%g http_request "request" %]
@@ -24,7 +25,7 @@ specifying what it wants over a socket connection,
 and the server sends a [%g http_response "response" %] containing some data.
 A server can construct responses however it wants;
 it can copy a file from disk,
-generated HTML dynamically,
+generated [%i "HTML" %][%/i%] dynamically,
 or almost anything else.
 
 An HTTP request is that it's just text:

@@ -5,7 +5,7 @@ depends:
 -   parse
 ---
 
-Suppose we want to generate HTML summaries of experiments.
+Suppose we want to generate summaries of experiments as web pages.
 We want to be sure the generated pages have the right structure
 so that people can get information out of them reliably.
 We also want to make sure that they meet accessibility standards
@@ -19,7 +19,7 @@ and another to check the structure and style of our code ([%x lint %]).
 
 ## HTML and the DOM {: #check-htmldom}
 
-An HTML document is made up of [%g element "elements" %] and text.
+An [%g html "HTML" %] document is made up of [%g element "elements" %] and text.
 (It can actually contain other things, but we'll ignore those for now.)
 Elements are represented using [%g tag "tags" %] enclosed in `<` and `>`.
 An [%g tag_opening "opening tag" %] like `<p>` starts an element,
@@ -46,7 +46,7 @@ which has two consequences:
 %]
 
 The objects that represent the nodes and text in an HTML tree
-are called the [%g dom "Document Object Model" %], or DOM.
+are called the Document Object Model or [%g dom "DOM" %].
 Hundreds of tools have been written to convert HTML text to DOM;
 our favorite is a Python library called [Beautiful Soup][beautiful_soup],
 which can handle messy real-world documents
@@ -164,10 +164,10 @@ which types of nodes can be children of which others:
 
 [% inc file="manifest.yml" %]
 
-We've chosen to use [%i "Yet Another Markup Language" %]YAML[%/i%]
+We've chosen to use [%i "YAML" %][%/i%]
 for the manifest
 because it's a relatively simple way to write nested rules.
-We could have used [%i "JavaScript Object Notation" %]JSON[%/i%],
+We could have used [%i "JSON" %][%/i%],
 but as we said in [%x parse %],
 we shouldn't invent a syntax of our own:
 there are already too many in the world.

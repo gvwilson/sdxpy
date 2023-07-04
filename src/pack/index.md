@@ -87,9 +87,9 @@ of available packages as JSON:
 If you ever design a data format,
 please include a standard way for people to add comments,
 because they will always want to.
-[%i "Yet Another Markup Language" %]YAML[%/i%] has this,
-but [%i "JavaScript Object Notation" %]JSON[%/i%]
-and [%i "comma-separated values" %]CSV[%/i%] don't.
+[%i "YAML" %][%/i%] has this,
+but [%i "JSON" %][%/i%]
+and [%i "CSV" %][%/i%] don't.
 
 </div>
 
@@ -328,7 +328,7 @@ to determine if a set of logical propositions can be consistent with each other,
 and that's exactly what we need.
 To start,
 let's import a few things from the `z3` module
-and then create three [%i "Boolean value" %]Boolean variables[%/i%]:
+and then create three [%g boolean_value "Boolean variables" %]:
 
 [% inc file="z3_setup.py" %]
 

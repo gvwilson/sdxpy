@@ -53,8 +53,7 @@ and vice versa,
 so we need parsers to translate the former into the latter.
 However,
 the world doesn't need more file formats:
-please use [%g csv "comma-separated values" %] (CSV),
-[%g json "JSON" %], [%g yaml "YAML" %],
+please use [%g csv "CSV" %], [%g json "JSON" %], [%g yaml "YAML" %],
 or something else that already has an acronym
 rather than inventing something of your own.
 
@@ -62,7 +61,7 @@ rather than inventing something of your own.
 
 ## Tokenizing {: #parse-token}
 
-A [%i "token (in parsing)" %]token[%/i%] is a meaningful piece of text,
+A [%i "token" %]token[%/i%] is a meaningful piece of text,
 such as the digits making up a number or the letters making up a variable name.
 Our grammar's tokens are the special characters `*`, `{`, `}`, and `,`;
 any sequence of one or more other characters is a single multi-letter token.

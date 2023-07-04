@@ -122,7 +122,7 @@ wordlist: ${ROOT}/docs/index.html
 
 ## index: show all index entries
 .PHONY: index
-index: ${MCCOLE}/bin/show_index.py
+index: ${MCCOLE}/bin/show_index.py ${ROOT}/docs/index.html
 	@python ${MCCOLE}/bin/show_index.py --config ${CONFIG}
 
 ## ---: ---
@@ -234,7 +234,7 @@ clean:
 ## status: status of chapters
 .PHONY: status
 status:
-	@python ${MCCOLE}/bin/status.py --config ${ROOT}/config.py --readme ${ROOT}/README.md
+	@python ${MCCOLE}/bin/status.py --colorize --config ${ROOT}/config.py
 
 ## valid: run html5validator on generated files
 .PHONY: valid
