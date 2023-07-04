@@ -10,6 +10,8 @@ from prettytable import MARKDOWN, PrettyTable
 EXERCISES_PER = 8
 SLIDES_PER = 18
 WORDS_PER = 2200
+THRESHOLD_LOW = 80
+THRESHOLD_HIGH = 120
 
 SHORT_CHAPTERS = {"intro", "finale"}
 
@@ -18,7 +20,8 @@ def main():
     """Main driver."""
     options = parse_args()
     config = util.load_config(options.config)
-    report(options.plain, config.chapters)
+    wrapper = choose_wrapper(options)
+    report(wrapper, config.chapters)
 
 
 def build_format(chapters):
@@ -41,10 +44,19 @@ def calc_fraction(n_slides, n_ex, n_words, slug=None):
     return int(100 * frac / len(entries))
 
 
+def choose_wrapper(options):
+    """Choose how to wrap status figures."""
+    if options.colorize:
+        return colorize
+    if options.markdown:
+        return markdownify
+    return lambda x: f"{x}%"
+
+
 def colorize(fraction):
-    if fraction < 80:
+    if fraction < THRESHOLD_LOW:
         return f"{util.RED}{fraction}%{util.ENDC}"
-    elif fraction > 120:
+    elif fraction > THRESHOLD_HIGH:
         return f"{util.BLUE}{fraction}%{util.ENDC}"
     else:
         return f"{util.GREEN}{fraction}%{util.ENDC}"
@@ -84,6 +96,15 @@ def make_table():
     return tbl
 
 
+def markdownify(fraction):
+    if fraction < 80:
+        return f"**{fraction}%**"
+    elif fraction > 120:
+        return f"*{fraction}%*"
+    else:
+        return f"{fraction}%"
+
+
 def overall(chapters, n_slides, n_ex, n_words):
     n_chapters = (len(chapters) - len(SHORT_CHAPTERS)) + (len(SHORT_CHAPTERS) / 2)
     frac = calc_fraction(n_slides, n_ex, n_words)
@@ -93,15 +114,17 @@ def overall(chapters, n_slides, n_ex, n_words):
 def parse_args():
     """Parse arguments."""
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", required=True, help="Configuration file")
-    parser.add_argument("--readme", required=True, help="README file with status table")
     parser.add_argument(
-        "--plain", default=False, action="store_true", help="Plian text"
+        "--colorize", default=False, action="store_true", help="Colorize text"
+    )
+    parser.add_argument("--config", required=True, help="Configuration file")
+    parser.add_argument(
+        "--markdown", default=False, action="store_true", help="Bold/italic text"
     )
     return parser.parse_args()
 
 
-def report(plain, chapters):
+def report(wrapper, chapters):
     """Status of chapters."""
     tbl = make_table()
     tot_slides, tot_ex, tot_fig, tot_words = 0, 0, 0, 0
@@ -113,10 +136,7 @@ def report(plain, chapters):
         tot_slides += n_slides
         tot_words += n_words
         frac = calc_fraction(n_slides, n_ex, n_words, slug)
-        if plain:
-            frac = f"{frac}%"
-        else:
-            frac = colorize(frac)
+        frac = wrapper(frac)
         tbl.add_row([slug, n_slides, n_ex, n_fig, n_words, f"{frac}"])
     tbl.add_row(
         [
