@@ -182,7 +182,7 @@ we can follow the Open-Closed Principle by rewriting our functions as classes.
 We will also use [%i "dynamic dispatch" %][%/i%]
 as we did in [%x interp %]
 to handle each item
-so that we don't have to modify a multiway `if` statement
+so that we don't have to modify a multi-way `if` statement
 each time we add a new capability.
 The core of our saving class is:
 

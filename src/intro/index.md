@@ -129,7 +129,7 @@ All of the written material in this book
 is licensed under the [Creative Commons - Attribution - NonCommercial 4.0 International license][cc_by_nc]
 (CC-BY-NC-4.0),
 while the software is covered by the [Hippocratic License][hippocratic_license].
-The first license allows you to use and remix this material for non-commercial purposes,
+The first license allows you to use and remix this material for noncommercial purposes,
 as-is or in adapted form,
 provided you cite its original source;
 if you want to sell copies or make money from this material in any other way,
@@ -207,5 +207,5 @@ we all get a lot.
 <div class="center" markdown="1">
   *This one's for Mike and Jon:*
   <br>
-  *I'm glad you always found time to chat.*
+  *I am glad you always found time to chat.*
 </div>

@@ -166,7 +166,7 @@ with just a few lines of code.
 We define a `visit_Dict` method for `NodeVisitor` to call;
 in it,
 we add each constant key to an instance of `Counter`
-(a specialized `dict` that counts entries`)
+(a specialized `dict` that counts entries)
 and then look for keys that have been seen more than once:
 
 [% inc file="find_duplicate_keys.py" keep="class" %]

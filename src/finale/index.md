@@ -5,7 +5,8 @@
    caption="De Rosa SK Pininfarina bicycle."
 %]
 
-Consider the bicycle–more specifically,
+Consider the bicycle:
+more specifically,
 the De Rosa SK Pininfarina ([%f finale-bicycle %]).
 I think it's beautiful,
 but I wouldn't call it art,

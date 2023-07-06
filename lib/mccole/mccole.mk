@@ -108,17 +108,8 @@ fonts:
 
 ## spelling: check spelling against known words
 .PHONY: spelling
-spelling:
-	@make wordlist \
-	| python ${MCCOLE}/bin/post_spellcheck.py ${ROOT}/info/wordlist.txt
-
-## wordlist: make a list of unknown and unused words
-.PHONY: wordlist
-wordlist: ${ROOT}/docs/index.html
-	@python ${MCCOLE}/bin/pre_spellcheck.py --pages ${SRC_PAGES} --slides ${SRC_SLIDES} \
-	| aspell -H list \
-	| sort \
-	| uniq
+spelling: ${ROOT}/docs/index.html
+	@python ${MCCOLE}/bin/spelling.py --config ${ROOT}/config.py --extra info/wordlist.txt
 
 ## index: show all index entries
 .PHONY: index
