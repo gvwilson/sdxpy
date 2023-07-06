@@ -234,7 +234,7 @@ clean:
 ## status: status of chapters
 .PHONY: status
 status:
-	@python ${MCCOLE}/bin/status.py --colorize --config ${ROOT}/config.py
+	@python ${MCCOLE}/bin/status.py --highlight ascii --config ${ROOT}/config.py
 
 ## valid: run html5validator on generated files
 .PHONY: valid
