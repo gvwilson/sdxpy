@@ -218,7 +218,7 @@ The methods that load individual items are even simpler:
 ## Aliasing {: #persist-aliasing}
 
 Consider the two lines of code below,
-which created the data structure show in [%f persist-shared %].
+which created the data structure shown in [%f persist-shared %].
 If we save this structure and then reload it
 using what we have built so far
 we will wind up duplicating the string `"shared"`.
