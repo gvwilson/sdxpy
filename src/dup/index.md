@@ -124,7 +124,7 @@ The output seems random,
 but is it?
 As a more stringent test,
 let's try hashing every line of text in
-[Project Gutenberg][gutenberg]'s version of the novel *Dracula*
+the [Project Gutenberg][gutenberg] version of the novel *Dracula*
 and plot the distribution ([%f dup-naive-dracula %]).
 
 [% figure

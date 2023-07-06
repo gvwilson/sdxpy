@@ -207,5 +207,5 @@ we all get a lot.
 <div class="center" markdown="1">
   *This one's for Mike and Jon:*
   <br>
-  *I'm glad you always found time to chat.*
+  *I am glad you always found time to chat.*
 </div>

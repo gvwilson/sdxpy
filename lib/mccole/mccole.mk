@@ -110,7 +110,7 @@ fonts:
 .PHONY: spelling
 spelling:
 	@make wordlist \
-	| python ${MCCOLE}/bin/diff_words.py ${ROOT}/info/wordlist.txt
+	| diff - ${ROOT}/info/wordlist.txt
 
 ## wordlist: make a list of words
 .PHONY: wordlist

@@ -17,14 +17,13 @@ SPECIAL = {
 }
 
 # Things to strip.
-HEADING = re.compile(r"Section\s+([A-Z]|\d+)(\.\d+)*")
+DASHES = re.compile(r"[–—]")
 MATH = re.compile(r"\\\(.+?\\\)")
 NUMBER = re.compile(r"^(#|0x)?[\d\.–\+]+$")
 POSSESSIVE = re.compile("’s")
 PUNC_CHARS = r"[\[\]‘’,\.!\?\(\):“”…;%°]*"
 PUNC_START = re.compile(r"^" + PUNC_CHARS)
 PUNC_END = re.compile(PUNC_CHARS + r"$")
-SPACIFY = re.compile(r"[——\(\)]")
 
 # Contractions.
 CONTRACTIONS = {
@@ -63,6 +62,12 @@ CONTRACTIONS = {
     "you’re": "you are",
 }
 
+ACCENTS = {
+    "é": "e",
+    "ë": "e",
+    "í": "i",
+}
+
 def main():
     """Main driver."""
     options = parse_args()
@@ -83,24 +88,12 @@ def extract_words(docs):
     words = set()
     for doc in docs:
         text = doc.text
-        for (pat, subst) in ((MATH, ""), (HEADING, ""), (SPACIFY, " ")):
+        for (pat, subst) in ((DASHES, " "), (MATH, "")):
             text = pat.sub(subst, text)
         for (original, replacement) in CONTRACTIONS.items():
             text = text.replace(original, replacement)
-        for word in text.split():
-            words.add(normalize(word))
+        words |= {normalize(w) for w in text.split()}
     return words
-
-
-def whoops(before, after):
-    before = before.split("\n")
-    after = after.split("\n")
-    if before == after:
-        return
-    for i in range(len(before)):
-        if before[i] != after[i]:
-            print(before[i], "!=", after[i])
-            return
 
 
 def normalize(word):
@@ -108,14 +101,12 @@ def normalize(word):
     original = word
     if word in SPECIAL:
         return word
-    if word[0] not in string.ascii_letters:
+    if (':' in word) or (word[0] not in string.ascii_letters):
         return ""
-    if ':' in word:
-        return ""
-    word = PUNC_START.sub("", word)
-    word = PUNC_END.sub("", word)
-    word = NUMBER.sub("", word)
-    word = POSSESSIVE.sub("", word)
+    for pat in (POSSESSIVE, PUNC_START, PUNC_END, NUMBER):
+        word = pat.sub("", word)
+    for (accented, plain) in ACCENTS.items():
+        word = word.replace(accented, plain)
     return word
 
 
