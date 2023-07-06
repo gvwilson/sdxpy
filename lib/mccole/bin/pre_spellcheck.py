@@ -5,10 +5,9 @@
 
 import argparse
 
+import util
 from bs4 import BeautifulSoup
 from markdown import markdown
-
-import util
 
 
 def main():

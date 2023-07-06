@@ -35,7 +35,7 @@ def get_index(glossary, text):
         parser.parse(text, temp)
         return temp["keys"]
     except shortcodes.ShortcodeSyntaxError as exc:
-        print(f"%i shortcode parsing error in {node.filepath}: {exc}", file=sys.stderr)
+        print(f"%i shortcode parsing error: {exc}", file=sys.stderr)
         sys.exit(1)
 
 

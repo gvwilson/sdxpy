@@ -146,6 +146,29 @@ or [send email][email].
 All contributors are required to abide by our Code of Conduct
 ([%x conduct %]).
 
+## What People Are Saying {: #intro-praise}
+
+Here's what people said about [%b Wilson2022b %]:
+
+-   [Jessica Kerr][kerr_jessica]:
+    *Software Design by Example* is the book I'll recommend to every new dev…
+    It is nice to you.
+    It wants you to succeed…
+    It's a bridge from "learn to program" to working programmer.
+
+-   [Jenn Schiffer][schiffer_jenn]:
+    I am v much enjoying gvwilson's book *Software Design by Example*.
+    It makes me miss teaching, it would be such a fun text to use!
+
+-   [Emily Gorcenski][gorcenski_emily]:
+    There's a lot of books on programming
+    but fewer books that couple software development with effective and practical use of tools,
+    presenting a language not as a main course but as a part of an engineering ecosystem.
+    Greg Wilson's book hits all the right notes in bringing together theory, pragmatism, and best practices.
+
+-   [Danielle Navarro][navarro_danielle]:
+    The book is really bloody lovely.
+
 ## Acknowledgments {: #intro-acknowledgments}
 
 This book is a sequel to [%b Wilson2022b %],
@@ -182,7 +205,7 @@ if we all give a little,
 we all get a lot.
 
 <div class="center" markdown="1">
-  *This one's for Mike and both Jons:*
+  *This one's for Mike and Jon:*
   <br>
   *I'm glad you always found time to chat.*
 </div>

@@ -15,7 +15,6 @@ from bs4 import BeautifulSoup, Tag
 CONFIG_REQUIRED = {
     "abbrev": str,
     "acknowledgments": str,
-    "acronym": str,
     "appendices": dict,
     "author": str,
     "bibliography": str,
@@ -220,7 +219,6 @@ def check_index_refs(config):
     for slug, text in config["prose"].items():
         for match in regex.INDEX_REF.finditer(text):
             keys = match.group(1).strip()
-            content = match.group(2)
             if not (keys.startswith('"') and keys.endswith('"')):
                 _warn(f"{slug} badly-formatted index reference {match.group(0)}")
 

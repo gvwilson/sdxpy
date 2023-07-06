@@ -3,16 +3,15 @@
 import os
 
 # Abbreviation for this document.
-abbrev = "sd4ds"
+abbrev = "sdxpy"
 
 # GitHub repository.
-repo = "https://github.com/gvwilson/sd4ds"
+repo = "https://github.com/gvwilson/sdxpy"
 
 # Site settings.
 lang = "en"
-title = "Software Design for Data Scientists"
-acronym = "SD4DS"
-tagline = "a tool-based introduction"
+title = "Software Design by Example"
+tagline = "a tool-based introduction with Python"
 author = "Greg Wilson"
 email = "gvwilson@third-bit.com"
 domain = "third-bit.com"
@@ -26,12 +25,12 @@ website = f"https://{domain}/{abbrev}/"
 # Chapters.
 chapters = {
     "intro": "Introduction",
+    "oop": "Objects and Classes",
     "dup": "Finding Duplicate Files",
     "glob": "Matching Patterns",
     "parse": "Parsing Text",
     "test": "Running Tests",
     "interp": "An Interpreter",
-    "oop": "Objects and Classes",
     "func": "Functions and Closures",
     "mock": "Mocks, Protocols, and Decorators",
     "archive": "A File Archiver",

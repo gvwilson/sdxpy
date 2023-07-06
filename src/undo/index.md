@@ -250,7 +250,7 @@ and get back the screen we originally had:
 
 [% inc file="test_undoable.py" keep="example" %]
 
-## Summary
+## Summary {: #undo-summary}
 
 [% figure
    slug="undo-concept-map"

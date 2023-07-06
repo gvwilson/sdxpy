@@ -10,8 +10,22 @@ depends:
 -   oop
 ---
 
-We can do more than look up functions:
-we can change them to make testing easier.
+This book is supposed to teach software design
+by implementing small versions of real-world tools,
+but we have reached a point where we have to learn a little more about Python
+in order to proceed.
+The same thing happened in [%b Wilson2022b %],
+which had to explain how [%g promise "promises" %] work
+to make later examples approachable;
+as in that book,
+the explanations below refer back to what we've already seen
+about how languages themselves work.
+
+## Mock Objects {: #mock-mock}
+
+[%x func %] showed that functions are bound to names
+just like other values are bound to other variables.
+We can use this fact to change functions at runtime to make testing easier.
 For example,
 if the function we want to test uses the time of day,
 we can temporarily replace the real `time.time` function
@@ -150,9 +164,16 @@ Here's a test to prove that our context manager works:
 
 ## Decorators {: #mock-decorator}
 
-It's easy to become confused when working with [%i "closure" %]closures[%/i%].
-For example,
-suppose we want to create a function called `logging`
+Python programs rely on several other protocols,
+each of which gives user-level code a way to interact with
+some aspect of the Python [%i "interpreter" %][%/i%].
+One of the most widely used is called a [%g decorator "decorator" %],
+which allows us to wrap one function with another.
+
+In order to understand how decorators work,
+we must take another look at [%i "closure" %]closures[%/i%],
+which were introduced in [%x func %].
+Suppose we want to create a function called `logging`
 that prints a message before and after
 each call to some other arbitrary function.
 We could try to do it like this:
@@ -162,8 +183,17 @@ We could try to do it like this:
 but when we try to call `original` we wind up in an infinite loop.
 The wrapped version of our function refers to `original`,
 but Python looks that up at the time of call,
-which means it calls the wrapped function instead.
-We can solve this problem by creating a closure:
+which means it calls the wrapped function instead
+([%f mock-bad-wrapping %]).
+
+[% figure
+   slug="mock-bad-wrapping"
+   img="bad_wrapping.svg"
+   alt="The wrong way to wrap a function"
+   caption="Accidentally creating infinite recursion when wrapping a function."
+%]
+
+We can solve the problem of infinite recursion by creating a closure:
 
 [% inc pat="wrap_capture.*" fill="py out" %]
 
@@ -173,9 +203,8 @@ when we create the wrapped function:
 [% inc pat="wrap_param.*" fill="py out" %]
 
 Wrapping functions like this is so useful
-that Python provides a special syntax for doing it
-called a [%g decorator "decorator" %].
-We define the function that does the wrapping as before,
+that Python has built-in support for doing it.
+We define the decorator function that does the wrapping as before,
 but then use `@wrap` to apply it
 rather than `name = wrap(name)`:
 
@@ -186,6 +215,7 @@ though,
 it seems like we're stuck,
 because a Python decorator must take exactly one argument,
 which must be the function we want to decorate.
+
 If we want to pass extra parameters,
 we need to call a function that returns a function of one parameter
 that we can then use as a decorator.
@@ -215,9 +245,91 @@ decorators are much harder to learn and use than they could have been.
 
 </div>
 
+## Iterators {: #mock-iterator}
+
+As a last example of how protocols work,
+consider the `for` loop.
+A statement like `for thing in collection`
+assigns each item in `collection` to the variable `thing` one at a time,
+possibly in a predetermined order.
+Python implements this using a two-part [%g iterator "iterator" %] protocol:
+
+1.  If an object has an `__iter__` method,
+    that method is called to create an iterator object.
+
+2.  That iterator object must have a `__next__` method,
+    which must return a value each time it is called.
+    When there are no more values to return,
+    it must raise a `StopIteration` exception.
+
+For example,
+suppose we have a class that stores a list of strings
+and we want to return the characters from the strings in order.
+(We will use a [%i "buffer" %][%/i%] class like this
+to store text for viewing in [%x viewer %].)
+In our first attempt,
+each object is its own iterator,
+i.e.,
+each object keeps track of what value to return next when looping:
+
+[% inc file="naive_iterator.py" keep="body" %]
+
+The `advance` method moves the column marker forward within the current row,
+advancing the row and resetting the column to 0 when it reaches
+the end of the current line:
+
+[% inc file="naive_iterator.py" keep="advance" %]
+
+Our first test seems to work:
+
+[% inc file="test_naive_iterator.py" keep="success" %]
+
+However,
+our iterator doesn't work if the buffer contains an empty string:
+{: .continue}
+
+[% inc file="test_naive_iterator.py" keep="failure" %]
+
+It also fails when we use a nested loop:
+{: .continue}
+
+[% inc file="test_naive_iterator.py" keep="nested" %]
+
+We can fix the first problem with more careful bookkeeping—we leave that
+as an exercise—but
+fixing the second problem requires us to re-think our design.
+The problem is that we only have one pair of variables
+(the `_row` and `_col` attributes of the buffer)
+to store the current location,
+but two loops trying to use them.
+What we need to do instead is
+create a separate object for each loop to use:
+
+[% inc file="better_iterator.py" keep="buffer" %]
+
+Each [%i "cursor" %][%/i%] keeps track of the current location
+for a single loop
+using code identical to what we've already seen
+(including the same bug with empty strings):
+
+[% inc file="better_iterator.py" keep="cursor" omit="advance" %]
+
+With this change in place,
+our test of nested loops pass.
+{: .continue}
+
+## Summary {: #mock-summary}
+
+[% figure
+   slug="mock-concept-map"
+   img="concept_map.svg"
+   alt="Concept map of mocks, protocols, and iterators"
+   caption="Concept map"
+%]
+
 ## Exercises {: #mock-exercises}
 
-### Timing blocks {: .exercise}
+### Timing Blocks {: .exercise}
 
 Create a context manager called `Timer` that reports how long it has been
 since a block of code started running:
@@ -229,3 +341,9 @@ with Timer() as start:
     # …do some lengthy operation…
     print(start.elapsed())  # time since the start of the block
 ```
+
+### Handling Empty Strings {: .exercise}
+
+Modify the iterator example so that it handles empty strings correctly,
+i.e.,
+so that iterating over the list `["a", ""]` produces `["a"]`.

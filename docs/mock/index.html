@@ -3,8 +3,8 @@
   <head>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="repo" content="https://github.com/gvwilson/sd4ds">
-  <meta name="build_date" content="2023-06-30">
+  <meta name="repo" content="https://github.com/gvwilson/sdxpy">
+  <meta name="build_date" content="2023-07-06">
   <meta name="template" content="default">
   <meta name="major" content="Chapter 9">
   <meta name="has_slides" content="true">
@@ -25,7 +25,7 @@
     async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
   </script>
   <script defer src="../mccole.js"></script>
-  <title>Software Design for Data Scientists: Mocks, Protocols, and Decorators</title>
+  <title>Software Design by Example: Mocks, Protocols, and Decorators</title>
 </head>
 
   <body>
@@ -34,7 +34,7 @@
         <p>
   
   <img src="../logo.svg" alt="site logo" class="logo" />
-  <a href="../">Software Design for Data Scientists</a>
+  <a href="../">Software Design by Example</a>
   
 </p>
 <ol class="toc-chapter">
@@ -42,6 +42,12 @@
   <li>
     <a href="../intro/">
       Introduction
+    </a>
+  </li>
+  
+  <li>
+    <a href="../oop/">
+      Objects and Classes
     </a>
   </li>
   
@@ -72,12 +78,6 @@
   <li>
     <a href="../interp/">
       An Interpreter
-    </a>
-  </li>
-  
-  <li>
-    <a href="../oop/">
-      Objects and Classes
     </a>
   </li>
   
@@ -266,7 +266,7 @@
   
 </ol>
 
-<p><a href="../sd4ds-examples.zip" type="application/zip">download examples</a></p>
+<p><a href="../sdxpy-examples.zip" type="application/zip">download examples</a></p>
 
 
       </div>
@@ -351,13 +351,25 @@
 
           
 <p class="definitions">
-  Terms defined: <a class="gl-ref" href="../glossary/#context_manager" markdown="1">context manager</a>, <a class="gl-ref" href="../glossary/#decorator" markdown="1">decorator</a>, <a class="gl-ref" href="../glossary/#mock_object" markdown="1">mock object</a>, <a class="gl-ref" href="../glossary/#protocol" markdown="1">protocol</a>
+  Terms defined: <a class="gl-ref" href="../glossary/#context_manager" markdown="1">context manager</a>, <a class="gl-ref" href="../glossary/#decorator" markdown="1">decorator</a>, <a class="gl-ref" href="../glossary/#iterator" markdown="1">iterator</a>, <a class="gl-ref" href="../glossary/#mock_object" markdown="1">mock object</a>, <a class="gl-ref" href="../glossary/#promise" markdown="1">promise</a>, <a class="gl-ref" href="../glossary/#protocol" markdown="1">protocol</a>
 </p>
 
 
           <div class="page-toc"></div>
-          <p>We can do more than look up functions:
-we can change them to make testing easier.
+          <p>This book is supposed to teach software design
+by implementing small versions of real-world tools,
+but we have reached a point where we have to learn a little more about Python
+in order to proceed.
+The same thing happened in <span class="bib-ref">[<a class="bib-ref" href="../bibliography/#Wilson2022b">Wilson2022b</a>]</span>,
+which had to explain how <a class="gl-ref" href="../glossary/#promise" markdown="1">promises</a> work
+to make later examples approachable;
+as in that book,
+the explanations below refer back to what we&rsquo;ve already seen
+about how languages themselves work.</p>
+<h2 id="mock-mock">Section 9.1: Mock Objects</h2>
+<p><a class="x-ref" href="../func/">Chapter 8</a> showed that functions are bound to names
+just like other values are bound to other variables.
+We can use this fact to change functions at runtime to make testing easier.
 For example,
 if the function we want to test uses the time of day,
 we can temporarily replace the real <code>time.time</code> function
@@ -488,7 +500,7 @@ the user can provide a function to calculate a return value:</p>
     <span class="k">assert</span> <span class="n">adder</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span> <span class="o">==</span> <span class="mi">23</span>
 </code></pre></div>
 </div>
-<h2 id="mock-protocols">Section 9.1: Protocols</h2>
+<h2 id="mock-protocols">Section 9.2: Protocols</h2>
 <p>Mock objects are very useful,
 but the way we&rsquo;re using them is going to cause strange errors.
 The problem is that
@@ -568,10 +580,16 @@ what the exception was.</p>
     <span class="k">assert</span> <span class="n">subber</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span>
 </code></pre></div>
 </div>
-<h2 id="mock-decorator">Section 9.2: Decorators</h2>
-<p>It&rsquo;s easy to become confused when working with <span class="ix-entry" ix-key="closure" markdown="1">closures</span>.
-For example,
-suppose we want to create a function called <code>logging</code>
+<h2 id="mock-decorator">Section 9.3: Decorators</h2>
+<p>Python programs rely on several other protocols,
+each of which gives user-level code a way to interact with
+some aspect of the Python <span class="ix-entry" ix-key="interpreter" markdown="1">interpreter</span>.
+One of the most widely used is called a <a class="gl-ref" href="../glossary/#decorator" markdown="1">decorator</a>,
+which allows us to wrap one function with another.</p>
+<p>In order to understand how decorators work,
+we must take another look at <span class="ix-entry" ix-key="closure" markdown="1">closures</span>,
+which were introduced in <a class="x-ref" href="../func/">Chapter 8</a>.
+Suppose we want to create a function called <code>logging</code>
 that prints a message before and after
 each call to some other arbitrary function.
 We could try to do it like this:</p>
@@ -591,8 +609,14 @@ We could try to do it like this:</p>
 <p>but when we try to call <code>original</code> we wind up in an infinite loop.
 The wrapped version of our function refers to <code>original</code>,
 but Python looks that up at the time of call,
-which means it calls the wrapped function instead.
-We can solve this problem by creating a closure:</p>
+which means it calls the wrapped function instead
+(<a class="fig-ref" href="../mock/#mock-bad-wrapping">Figure 9.2</a>).</p>
+<figure id="mock-bad-wrapping">
+<img src="./bad_wrapping.svg" alt="The wrong way to wrap a function"/>
+<figcaption markdown="1">Figure 9.2: Accidentally creating infinite recursion when wrapping a function.</figcaption>
+</figure>
+
+<p>We can solve the problem of infinite recursion by creating a closure:</p>
 <div class="code-sample lang-py" title="wrap_capture.py">
 <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">original</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;original: </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
@@ -638,9 +662,8 @@ original: example
 </code></pre></div>
 </div>
 <p>Wrapping functions like this is so useful
-that Python provides a special syntax for doing it
-called a <a class="gl-ref" href="../glossary/#decorator" markdown="1">decorator</a>.
-We define the function that does the wrapping as before,
+that Python has built-in support for doing it.
+We define the decorator function that does the wrapping as before,
 but then use <code>@wrap</code> to apply it
 rather than <code>name = wrap(name)</code>:</p>
 <div class="code-sample lang-py" title="decorator_simple.py">
@@ -668,8 +691,8 @@ after call
 though,
 it seems like we&rsquo;re stuck,
 because a Python decorator must take exactly one argument,
-which must be the function we want to decorate.
-If we want to pass extra parameters,
+which must be the function we want to decorate.</p>
+<p>If we want to pass extra parameters,
 we need to call a function that returns a function of one parameter
 that we can then use as a decorator.
 This means that we need to define a function inside a function <em>inside another function</em>
@@ -723,8 +746,142 @@ and have <code>@</code> fill in the first automatically:</p>
 and as a result,
 decorators are much harder to learn and use than they could have been.</p>
 </div>
-<h2 id="mock-exercises">Section 9.3: Exercises</h2>
-<h3 class="exercise">Timing blocks</h3>
+<h2 id="mock-iterator">Section 9.4: Iterators</h2>
+<p>As a last example of how protocols work,
+consider the <code>for</code> loop.
+A statement like <code>for thing in collection</code>
+assigns each item in <code>collection</code> to the variable <code>thing</code> one at a time,
+possibly in a predetermined order.
+Python implements this using a two-part <a class="gl-ref" href="../glossary/#iterator" markdown="1">iterator</a> protocol:</p>
+<ol>
+<li>
+<p>If an object has an <code>__iter__</code> method,
+    that method is called to create an iterator object.</p>
+</li>
+<li>
+<p>That iterator object must have a <code>__next__</code> method,
+    which must return a value each time it is called.
+    When there are no more values to return,
+    it must raise a <code>StopIteration</code> exception.</p>
+</li>
+</ol>
+<p>For example,
+suppose we have a class that stores a list of strings
+and we want to return the characters from the strings in order.
+(We will use a <span class="ix-entry" ix-key="buffer" markdown="1">buffer</span> class like this
+to store text for viewing in <a class="x-ref" href="../viewer/">Chapter 23</a>.)
+In our first attempt,
+each object is its own iterator,
+i.e.,
+each object keeps track of what value to return next when looping:</p>
+<div class="code-sample lang-py" title="naive_iterator.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">NaiveIterator</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_text</span> <span class="o">=</span> <span class="n">text</span><span class="p">[:]</span>
+
+    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_row</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_col</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="fm">__next__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_advance</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_row</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_text</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">StopIteration</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_text</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_row</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">_col</span><span class="p">]</span>
+</code></pre></div>
+</div>
+<p>The <code>advance</code> method moves the column marker forward within the current row,
+advancing the row and resetting the column to 0 when it reaches
+the end of the current line:</p>
+<div class="code-sample lang-py" title="naive_iterator.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">_advance</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_row</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_text</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_col</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_col</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_text</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_row</span><span class="p">]):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_row</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_col</span> <span class="o">=</span> <span class="mi">0</span>
+</code></pre></div>
+</div>
+<p>Our first test seems to work:</p>
+<div class="code-sample lang-py" title="test_naive_iterator.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">gather</span><span class="p">(</span><span class="n">buffer</span><span class="p">):</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">char</span> <span class="ow">in</span> <span class="n">buffer</span><span class="p">:</span>
+        <span class="n">result</span> <span class="o">+=</span> <span class="n">char</span>
+    <span class="k">return</span> <span class="n">result</span>
+
+
+<span class="k">def</span> <span class="nf">test_naive_buffer</span><span class="p">():</span>
+    <span class="n">buffer</span> <span class="o">=</span> <span class="n">NaiveIterator</span><span class="p">([</span><span class="s2">&quot;ab&quot;</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">])</span>
+    <span class="k">assert</span> <span class="n">gather</span><span class="p">(</span><span class="n">buffer</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;abc&quot;</span>
+</code></pre></div>
+</div>
+<p class="continue">However,
+our iterator doesn&rsquo;t work if the buffer contains an empty string:</p>
+<div class="code-sample lang-py" title="test_naive_iterator.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">test_naive_buffer_empty_string</span><span class="p">():</span>
+    <span class="n">buffer</span> <span class="o">=</span> <span class="n">NaiveIterator</span><span class="p">([</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">])</span>
+    <span class="k">with</span> <span class="n">pytest</span><span class="o">.</span><span class="n">raises</span><span class="p">(</span><span class="ne">IndexError</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="n">gather</span><span class="p">(</span><span class="n">buffer</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;a&quot;</span>
+</code></pre></div>
+</div>
+<p class="continue">It also fails when we use a nested loop:</p>
+<div class="code-sample lang-py" title="test_naive_iterator.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">test_naive_buffer_nested_loop</span><span class="p">():</span>
+    <span class="n">buffer</span> <span class="o">=</span> <span class="n">NaiveIterator</span><span class="p">([</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">])</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">outer</span> <span class="ow">in</span> <span class="n">buffer</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">inner</span> <span class="ow">in</span> <span class="n">buffer</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">+=</span> <span class="n">inner</span>
+    <span class="k">assert</span> <span class="n">result</span> <span class="o">==</span> <span class="s2">&quot;abab&quot;</span>
+</code></pre></div>
+</div>
+<p>We can fix the first problem with more careful bookkeeping—we leave that
+as an exercise—but
+fixing the second problem requires us to re-think our design.
+The problem is that we only have one pair of variables
+(the <code>_row</code> and <code>_col</code> attributes of the buffer)
+to store the current location,
+but two loops trying to use them.
+What we need to do instead is
+create a separate object for each loop to use:</p>
+<div class="code-sample lang-py" title="better_iterator.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">BetterIterator</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_text</span> <span class="o">=</span> <span class="n">text</span><span class="p">[:]</span>
+
+    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">BetterCursor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_text</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<p>Each <span class="ix-entry" ix-key="cursor" markdown="1">cursor</span> keeps track of the current location
+for a single loop
+using code identical to what we&rsquo;ve already seen
+(including the same bug with empty strings):</p>
+<div class="code-sample lang-py" title="better_iterator.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">BetterCursor</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_text</span> <span class="o">=</span> <span class="n">text</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_row</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_col</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+
+    <span class="k">def</span> <span class="fm">__next__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_advance</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_row</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_text</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">StopIteration</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_text</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_row</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">_col</span><span class="p">]</span>
+</code></pre></div>
+</div>
+<p class="continue">With this change in place,
+our test of nested loops pass.</p>
+<h2 id="mock-summary">Section 9.5: Summary</h2>
+<figure id="mock-concept-map">
+<img src="./concept_map.svg" alt="Concept map of mocks, protocols, and iterators"/>
+<figcaption markdown="1">Figure 9.3: Concept map</figcaption>
+</figure>
+
+<h2 id="mock-exercises">Section 9.6: Exercises</h2>
+<h3 class="exercise">Timing Blocks</h3>
 <p>Create a context manager called <code>Timer</code> that reports how long it has been
 since a block of code started running:</p>
 <div class="highlight"><pre><span></span><code><span class="c1"># your class goes here</span>
@@ -733,6 +890,10 @@ since a block of code started running:</p>
     <span class="c1"># …do some lengthy operation…</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">start</span><span class="o">.</span><span class="n">elapsed</span><span class="p">())</span>  <span class="c1"># time since the start of the block</span>
 </code></pre></div>
+<h3 class="exercise">Handling Empty Strings</h3>
+<p>Modify the iterator example so that it handles empty strings correctly,
+i.e.,
+so that iterating over the list <code>["a", ""]</code> produces <code>["a"]</code>.</p>
         </main>
       </div>
     </div>

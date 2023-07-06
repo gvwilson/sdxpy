@@ -8,10 +8,12 @@ syllabus:
 -   Programs store variables in stacked dictionaries called environments.
 -   One way to evaluate a program's design is to ask how extensible it is.
 depends:
+-   oop
 -   test
 ---
 
-[%x test %] introduced the idea that programs are just another kind of data.
+[%x oop %] introduced the idea that functions, objects, and classes are just data,
+while [%x test %] showed how Python itself manages them.
 Similarly,
 the [%g compiler "compilers" %] and [%g interpreter "interpreters" %]
 that make programs run are just programs themselves.

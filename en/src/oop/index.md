@@ -1,3 +1,0 @@
----
-title: "Classes and Objects"
----
