@@ -2,8 +2,8 @@
 
 import argparse
 from collections.abc import Iterable
+import frontmatter
 from pathlib import Path
-
 import regex
 import util
 from prettytable import MARKDOWN, PrettyTable
@@ -11,11 +11,12 @@ from prettytable import MARKDOWN, PrettyTable
 EXERCISES_PER = 5
 FIGURES_PER = 4
 SLIDES_PER = 18
+SYLLABUS_PER = 5
 WORDS_PER = 2200
 THRESHOLD_LOW = 80
 THRESHOLD_HIGH = 200
 SHORT_CHAPTERS = {"intro", "finale"}
-HEADINGS = "title slides exercises figures words".split()
+HEADINGS = "title slides exercises figures syllabus words".split()
 
 
 def main():
@@ -40,19 +41,19 @@ def calculate_fraction(slug, actual, expected):
 
 def create_row(slug, wrap, total):
     n_slides = count_slides(slug)
-    n_ex, n_fig, n_words = count_page(slug)
-    for (key, val) in (
-            ("slides", n_slides),
-            ("exercises", n_ex),
-            ("figures", n_fig),
-            ("words", n_words)):
+    n_ex, n_fig, n_syll, n_words = count_page(slug)
+    combined = (
+        ("slides", n_slides, SLIDES_PER),
+        ("exercises", n_ex, EXERCISES_PER),
+        ("figures", n_fig, FIGURES_PER),
+        ("syllabus", n_syll, SYLLABUS_PER),
+        ("words", n_words, WORDS_PER),
+    )
+    for (key, val, _) in combined:
         total[key] += val
     return [
         slug,
-        wrap(slug, n_slides, SLIDES_PER),
-        wrap(slug, n_ex, EXERCISES_PER),
-        wrap(slug, n_fig, FIGURES_PER),
-        wrap(slug, n_words, WORDS_PER),
+        *[wrap(slug, val, expected) for (_, val, expected) in combined]
     ]
 
 def count_page(slug):
@@ -61,6 +62,7 @@ def count_page(slug):
         return (
             len(list(regex.EXERCISE_HEADER.finditer(page))),
             len(list(regex.FIGURE.finditer(page))),
+            len(frontmatter.loads(page).get("syllabus", [])),
             len([x for x in page.split() if x]),
         )
 
@@ -127,8 +129,20 @@ def report(wrap, chapters):
     for slug in chapters.keys():
         row = create_row(slug, wrap, total)
         tbl.add_row(row)
-    total["title"] = "Total"
-    tbl.add_row([count for count in total.values()])
+    report_summary_rows(chapters, tbl, total)
+    print(tbl)
+
+
+def report_summary_rows(chapters, tbl, total):
+    tbl.add_row(["---"] * len(HEADINGS))
+    tbl.add_row([
+        "Target",
+        SLIDES_PER,
+        EXERCISES_PER,
+        FIGURES_PER,
+        SYLLABUS_PER,
+        WORDS_PER,
+    ])
     tbl.add_row([
         "Average",
         *[
@@ -138,7 +152,13 @@ def report(wrap, chapters):
         ],
         f"{total['words']//len(chapters)}",
     ])
-    print(tbl)
+    tbl.add_row([
+        "Total",
+        *[
+            count for (key, count) in total.items()
+            if key != "title"
+        ]
+    ])
 
 
 if __name__ == "__main__":
