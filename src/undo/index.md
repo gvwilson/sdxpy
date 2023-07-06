@@ -15,7 +15,7 @@ which will introduce another commonly-used software design pattern.
 
 ## Getting Started {: #undo-start}
 
-Our file fiewer has four classes ([%f undo-classes %]):
+Our file viewer has four classes ([%f undo-classes %]):
 
 -   A `Window` can draw lines and report its size.
 
@@ -239,7 +239,7 @@ we are appending the action to the history before doing the action,
 so we are essentially undoing our undo forever.
 The solution is to modify the base class `Action` to have a `.save` method
 that tells the application whether or not to save this action.
-The default implemenation returns `True`,
+The default implementation returns `True`,
 but we override it in `Undo` to return `False`:
 
 [% inc file="undoable.py" keep="Undo" %]

@@ -49,7 +49,7 @@ we create a `tests` directory with six files:
 
 | `a1.txt` | `a2.txt` | `a3.txt` | `b1.txt` | `b2.txt` | `c1.txt` |
 | ---- | ---- | ---- | ---- | ---- | ---- |
-| aaa | aaa | aaa | bb | bb | c |
+| `aaa` | `aaa` | `aaa` | `bb` | `bb` | `c` |
 
 We expect the three `a` files and the two `b` files to be reported as duplicates.
 There's no particular reason for these tests—we just have to start somewhere.
