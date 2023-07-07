@@ -196,19 +196,24 @@ def read_directives(dirname, section):
         return content.get(section, [])
 
 
-def read_glossary(filename):
+def read_glossary():
     """Load the glossary definitions."""
+    lang = ark.site.config.get("lang", None)
+    require(lang is not None, "No language specified")
+
     if CACHE["glossary"] is None:
+        filename = ark.site.config.get("glossary", None)
+        require(filename is not None, "No glossary specified")
         filename = Path(ark.site.home(), filename)
         with open(filename, "r") as reader:
             glossary = yaml.safe_load(reader) or []
-        lang = ark.site.config.get("lang", None)
-        if lang is not None:
-            for entry in glossary:
-                assert lang in entry, f"Bad glossary entry {entry}"
-                assert "def" in entry[lang], f"Bad glossary entry {entry}"
+
+        for entry in glossary:
+            assert lang in entry, f"Bad glossary entry {entry}"
+            assert "def" in entry[lang], f"Bad glossary entry {entry}"
         CACHE["glossary"] = glossary
-    return CACHE["glossary"]
+
+    return CACHE["glossary"], lang
 
 
 def read_links():

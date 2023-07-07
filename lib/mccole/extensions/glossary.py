@@ -35,15 +35,8 @@ def _parse(pargs, kwargs, data):
 
 def _cleanup(collected):
     """Translate glossary definitions into required form."""
-    filename = ark.site.config.get("glossary", None)
-    util.require(filename is not None, "No glossary specified")
-
-    lang = ark.site.config.get("lang", None)
-    util.require(lang is not None, "No language specified")
-
-    glossary = util.read_glossary(filename)
+    glossary, lang = util.read_glossary()
     glossary = {item["key"]: item[lang]["term"] for item in glossary}
-
     result = util.make_config("definitions")
     for slug, seen in collected.items():
         terms = [(key, glossary[key]) for key in glossary if key in seen]
@@ -74,14 +67,7 @@ def glossary(pargs, kwargs, node):
     util.require(
         (not pargs) and (not kwargs), f"Bad 'glossary' shortcode {pargs} and {kwargs}"
     )
-
-    filename = ark.site.config.get("glossary", None)
-    util.require(filename is not None, "No glossary specified")
-
-    lang = ark.site.config.get("lang", None)
-    util.require(lang is not None, "No language specified")
-
-    glossary = util.read_glossary(filename)
+    glossary, lang = util.read_glossary()
     try:
         glossary.sort(key=lambda x: x[lang]["term"].lower())
     except KeyError as exc:
@@ -95,13 +81,7 @@ def glossary(pargs, kwargs, node):
 @ark.events.register(ark.events.Event.EXIT)
 def check():
     """Check that glossary entries are defined and used."""
-    filename = ark.site.config.get("glossary", None)
-    util.require(filename is not None, "No glossary specified")
-
-    lang = ark.site.config.get("lang", None)
-    util.require(lang is not None, "No language defined for glossary")
-
-    glossary = util.read_glossary(filename)
+    glossary, lang = util.read_glossary()
     defined = {entry["key"] for entry in glossary}
 
     if (used := util.get_config("glossary")) is None:
