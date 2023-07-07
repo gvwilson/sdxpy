@@ -21,7 +21,8 @@ SHORTCODE = re.compile(r"\[%.+?%\]")
 # Markdown elements.
 MARKDOWN_CODE_BLOCK = re.compile("```.+?```", re.DOTALL)
 MARKDOWN_CODE_INLINE = re.compile("`.+?`")
-MARKDOWN_HEADING = re.compile(r"^##\s+(.+?)\s+\{:(.+?)\}\s+$", re.MULTILINE)
+MARKDOWN_H2 = re.compile(r"^##\s+(.+?)\s+\{:(.+?)\}\s+$", re.MULTILINE)
+MARKDOWN_H3 = re.compile(r"^###\s+(.+?)(\s+\{:(.+?)\}\s+)?$", re.MULTILINE)
 MARKDOWN_FOOTER_LINK = re.compile(r"\[.*?\]\[(.+?)\]", re.MULTILINE)
 
 # Styling.

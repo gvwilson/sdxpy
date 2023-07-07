@@ -12,7 +12,7 @@ def main():
     options = parse_args()
 
     text = read_text(options)
-    text = regex.MARKDOWN_HEADING.sub(lambda m: f"## {m.group(1)}\n", text)
+    text = regex.MARKDOWN_H2.sub(lambda m: f"## {m.group(1)}\n", text)
     text = regex.PARAGRAPH_CONTINUE.sub("", text)
 
     links = util.read_yaml(options.links)

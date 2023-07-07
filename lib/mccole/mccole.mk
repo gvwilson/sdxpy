@@ -84,11 +84,16 @@ pdf: ${ROOT}/docs/${STEM}.tex ${DOCS_PDF}
 
 ## lint: check project structure
 .PHONY: lint
-lint: clean build
+lint: ${DOCS_INDEX}
 	@python ${MCCOLE}/bin/lint.py \
 	--config ${ROOT}/config.py \
 	--dom ${MCCOLE}/dom.yml \
 	--pages ${DOCS_PAGES}
+
+## headings: show problematic headings (many false positives)
+.PHONY: headings
+headings:
+	@python ${MCCOLE}/bin/check_headings.py --config ${ROOT}/config.py
 
 ## inclusions: compare inclusions in prose and slides
 .PHONY: inclusions

@@ -217,19 +217,19 @@ then adds its own tests.
 
 ## Exercises {: #parse-exercises}
 
-### Escape characters {: .exercise}
+### Escape Characters {: .exercise}
 
 Modify the parser to handle escape characters,
 so that (for example) `\*` is interpreted as a literal '*' character
 and `\\` is interpreted as a literal backslash.
 
-### Character sets {: .exercise}
+### Character Sets {: .exercise}
 
 Modify the parser so that expressions like `[xyz]` are interpreted to mean
 "match any one of the characters 'x', 'y', or 'z'".
 (Note that this is a shorthand for `{x,y,z}`.)
 
-### Nested lists {: .exercise}
+### Nested Lists {: .exercise}
 
 Write a function that accepts a string representing nested lists containing numbers
 and returns the actual list.

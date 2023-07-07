@@ -331,7 +331,7 @@ get and set particular array elements by index.
 Look at the documentation for the [`ChainMap`][py_chainmap] class
 and modify the interpreter to use that to manage environments.
 
-### Better error handling {: .exercise}
+### Better Error Handling {: .exercise}
 
 Several of the instruction functions started with `assert` statements,
 which means that users get a stack trace of TLL itself

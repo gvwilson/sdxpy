@@ -40,14 +40,15 @@ and use different shapes interchangeably.
 
 This is called [%g polymorphism "polymorphism" %].
 It reduces [%i "cognitive load" %][%/i%]
-by allowing the people using a set of related things (in this case, objects)
+by allowing the people using a set of related things
+(in this case, [%i "object" %]objects[%/i%])
 to ignore their differences.
 
 But how does it work?
 To find out,
-let's use a dictionary to represent a square
+let's use a [%i "dictionary" %][%/i%] to represent a square
 and write some functions that to
-the same things as the methods in our earlier classes:
+the same things as the [%i "method" %]methods[%/i%] in our earlier classes:
 
 [% inc file="shapes_dict.py" keep="square" %]
 
@@ -65,7 +66,8 @@ the functions that know how to operate on squares ([%f oop-shapes-dict %]).
 Behind the scenes,
 this is (almost) how objects actually work.
 We can think of an object as a special kind of dictionary.
-A method is just a function that takes an object object of the right kind as its first parameter
+A method is just a function that takes an object object of the right kind
+as its first [%i "parameter" %][%/i%]
 (typically called `self` in Python).
 
 Here's how we call methods:
@@ -117,7 +119,7 @@ and ask whether two objects have the same class or not.
 ### Variable Arguments
 
 Like most modern programming languages,
-Python allows us to define functions that take a variable number of arguments,
+Python allows us to define functions that take a variable number of [%i "argument" %]arguments[%/i%],
 and to call functions by [%g spread "spreading" %] a list or dictionary:
 
 [% inc pat="varargs.*" fill="py out" %]
@@ -128,7 +130,8 @@ and to call functions by [%g spread "spreading" %] a list or dictionary:
 
 The last step in building our own object system is to implement [%i "inheritance" %][%/i%].
 First,
-we add a method to our original `Shape` class that uses methods defined in derived classes:
+we add a method to our original `Shape` class that uses methods defined
+in [%i "derived class" %]derived classes[%/i%]:
 
 [% inc file="inherit_original.py" keep="shape" %]
 
@@ -227,7 +230,7 @@ every time that method is called.
 An alternative is to add a [%g cache "cache" %] to each object
 to save the methods that have been looked up before.
 For example,
-each object could have a special field called `_cache` whose value is a dictionary.
+each object could have a special key called `_cache` whose value is a dictionary.
 The keys in that dictionary are the names of methods that have been called in the past,
 and the values are the functions that were found to implement those methods.
 Add this feature to our dictionary-based objects.

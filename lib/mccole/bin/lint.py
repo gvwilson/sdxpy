@@ -65,15 +65,15 @@ def main():
     config = get_config(options.config)
 
     for f in [
+        check_bib,
         check_glossary_internal,
-        check_glossary_refs,
         check_glossary_redef,
         check_glossary_ref_in_index,
+        check_glossary_refs,
         check_ids,
+        check_inclusions,
         check_index_refs,
         check_links,
-        check_inclusions,
-        check_bib,
         check_slides,
     ]:
         f(config)
@@ -195,7 +195,7 @@ def check_ids(config):
             expected = f"#{slug}-"
             headings = [
                 m.group(2)
-                for m in regex.MARKDOWN_HEADING.finditer(text)
+                for m in regex.MARKDOWN_H2.finditer(text)
                 if not m.group(2).strip().startswith(expected)
             ]
             problems = [*figures, *headings]

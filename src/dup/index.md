@@ -239,7 +239,7 @@ so the running time is as good as it possibly can be.
 
 Hashing is a tremendously powerful tool:
 Python's dictionaries hash their keys to make lookup fast,
-and version control systems use it to determine
+and [%i "version control system" %]version control systems[%/i%] use it to determine
 when two files or two revisions of a repository are the same or not
 ([%x archive %]).
 
@@ -277,18 +277,24 @@ What are the actual odds?
 
 ### Streaming I/O {: .exercise}
 
-[% fixme "streaming I/O exercise" %]
-[%g streaming_api "streaming API" %]
+A [%g streaming_api "streaming API" %] delivers data one piece at a time
+rather than all at once.
+Read the documentation for the `update` method of hashing objects
+in Python's [hashing library][py_hashlib]
+and rewrite the duplicate finder from this chapter
+to use it.
 
 ### Big Oh {: .exercise}
 
-[% fixme "big oh exercise" %]
+[%x intro %] said that as the number of components in a system grows,
+the complexity of the system increases rapidly.
+How fast is "rapidly" in big-oh terms?
 
 ###  The `hash` Function {: .exercise}
 
 -   Read the documentation for Python's built-in `hash` function
 
--   Why do `hash(123)` and `hash("123")` work but `hash([123])` raise an exception?
+-   Why do `hash(123)` and `hash("123")` work but `hash([123])` [%i "raise" %][%/i%] an exception?
 
 ### How Good Is SHA-256? {: .exercise}
 
