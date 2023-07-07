@@ -255,14 +255,14 @@ class Experiment(BasicRec):
 ## Packing
 
 ```py
-    @staticmethod
-    def pack(record):
-        assert isinstance(record, Experiment)
-        readings = "\0".join(str(r) for r in record._readings)
-        result = f"{record._name}\0{record._timestamp}\0{readings}"
-        if len(result) < Experiment.RECORD_LEN:
-            result += "\0" * (Experiment.RECORD_LEN - len(result))
-        return result
+@staticmethod
+def pack(record):
+    assert isinstance(record, Experiment)
+    readings = "\0".join(str(r) for r in record._readings)
+    result = f"{record._name}\0{record._timestamp}\0{readings}"
+    if len(result) < Experiment.RECORD_LEN:
+        result += "\0" * (Experiment.RECORD_LEN - len(result))
+    return result
 ```
 
 
@@ -275,14 +275,14 @@ class Experiment(BasicRec):
 ## Unpacking
 
 ```py
-    @staticmethod
-    def unpack(raw):
-        assert isinstance(raw, str)
-        parts = raw.split("\0")
-        name = parts[0]
-        timestamp = int(parts[1])
-        readings = [int(r) for r in parts[2:] if len(r)]
-        return Experiment(name, timestamp, readings)
+@staticmethod
+def unpack(raw):
+    assert isinstance(raw, str)
+    parts = raw.split("\0")
+    name = parts[0]
+    timestamp = int(parts[1])
+    readings = [int(r) for r in parts[2:] if len(r)]
+    return Experiment(name, timestamp, readings)
 ```
 
 
@@ -295,15 +295,15 @@ class Experiment(BasicRec):
 ## Multiple Records
 
 ```py
-    @staticmethod
-    def pack_multi(records):
-        return ''.join([Experiment.pack(r) for r in records])
+@staticmethod
+def pack_multi(records):
+    return ''.join([Experiment.pack(r) for r in records])
 
-    @staticmethod
-    def unpack_multi(raw):
-        size = Experiment.size()
-        split = [raw[i:i + size] for i in range(0, len(raw), size)]
-        return [Experiment.unpack(s) for s in split]
+@staticmethod
+def unpack_multi(raw):
+    size = Experiment.size()
+    split = [raw[i:i + size] for i in range(0, len(raw), size)]
+    return [Experiment.unpack(s) for s in split]
 ```
 
 
@@ -346,17 +346,17 @@ class FileBacked(Database):
 ## A File-Backed Database
 
 ```py
-    def _save(self):
-        packed = self._record_cls.pack_multi(self._data.values())
-        with open(self._filename, "w") as writer:
-            writer.write(packed)
+def _save(self):
+    packed = self._record_cls.pack_multi(self._data.values())
+    with open(self._filename, "w") as writer:
+        writer.write(packed)
 
-    def _load(self):
-        assert self._filename.exists()
-        with open(self._filename, "r") as reader:
-            raw = reader.read()
-        records = self._record_cls.unpack_multi(raw)
-        self._data = {self._record_cls.key(r): r for r in records}
+def _load(self):
+    assert self._filename.exists()
+    with open(self._filename, "r") as reader:
+        raw = reader.read()
+    records = self._record_cls.unpack_multi(raw)
+    self._data = {self._record_cls.key(r): r for r in records}
 ```
 
 
@@ -416,13 +416,13 @@ class Blocked(Database):
 ## Adding a Record
 
 ```py
-    def add(self, record):
-        key = self._record_cls.key(record)
-        seq_id = self._next_seq_id()
-        self._index[key] = seq_id
-        block_id = self._get_block_id(seq_id)
-        block = self._get_block(block_id)
-        block[seq_id] = record
+def add(self, record):
+    key = self._record_cls.key(record)
+    seq_id = self._next_seq_id()
+    self._index[key] = seq_id
+    block_id = self._get_block_id(seq_id)
+    block = self._get_block(block_id)
+    block[seq_id] = record
 ```
 
 
@@ -439,13 +439,13 @@ class Blocked(Database):
 ## Getting a Record
 
 ```py
-    def get(self, key):
-        if key not in self._index:
-            return None
-        seq_id = self._index[key]
-        block_id = self._get_block_id(seq_id)
-        block = self._get_block(block_id)
-        return block[seq_id]
+def get(self, key):
+    if key not in self._index:
+        return None
+    seq_id = self._index[key]
+    block_id = self._get_block_id(seq_id)
+    block = self._get_block(block_id)
+    return block[seq_id]
 ```
 
 
@@ -462,18 +462,18 @@ class Blocked(Database):
 ## Helper Methods
 
 ```py
-    def _next_seq_id(self):
-        seq_id = self._next
-        self._next += 1
-        return seq_id
+def _next_seq_id(self):
+    seq_id = self._next
+    self._next += 1
+    return seq_id
 
-    def _get_block_id(self, seq_id):
-        return seq_id // Blocked.RECORDS_PER_BLOCK
+def _get_block_id(self, seq_id):
+    return seq_id // Blocked.RECORDS_PER_BLOCK
 
-    def _get_block(self, block_id):
-        while block_id >= len(self._blocks):
-            self._blocks.append({})
-        return self._blocks[block_id]
+def _get_block(self, block_id):
+    while block_id >= len(self._blocks):
+        self._blocks.append({})
+    return self._blocks[block_id]
 ```
 
 
@@ -507,17 +507,17 @@ class BlockedFile(Blocked):
 ## Saving
 
 ```py
-    def _save(self, record):
-        key = self._record_cls.key(record)
-        seq_id = self._index[key]
-        block_id = self._get_block_id(seq_id)
+def _save(self, record):
+    key = self._record_cls.key(record)
+    seq_id = self._index[key]
+    block_id = self._get_block_id(seq_id)
 
-        block = self._get_block(block_id)
-        packed = self._record_cls.pack_multi(block.values())
+    block = self._get_block(block_id)
+    packed = self._record_cls.pack_multi(block.values())
 
-        filename = self._get_filename(block_id)
-        with open(filename, "w") as writer:
-            writer.write(''.join(packed))
+    filename = self._get_filename(block_id)
+    with open(filename, "w") as writer:
+        writer.write(''.join(packed))
 ```
 
 
@@ -528,21 +528,21 @@ class BlockedFile(Blocked):
 ## Loading
 
 ```py
-    def _load(self, key):
-        seq_id = self._index[key]
-        block_id = self._get_block_id(seq_id)
-        filename = self._get_filename(block_id)
-        self._load_block(block_id, filename)
+def _load(self, key):
+    seq_id = self._index[key]
+    block_id = self._get_block_id(seq_id)
+    filename = self._get_filename(block_id)
+    self._load_block(block_id, filename)
 
-    def _load_block(self, block_id, filename):
-        with open(filename, "r") as reader:
-            raw = reader.read()
+def _load_block(self, block_id, filename):
+    with open(filename, "r") as reader:
+        raw = reader.read()
 
-        records = self._record_cls.unpack_multi(raw)
-        base = self.size() * block_id
-        block = self._get_block(block_id)
-        for i, r in enumerate(records):
-            block[base + i] = r
+    records = self._record_cls.unpack_multi(raw)
+    base = self.size() * block_id
+    block = self._get_block(block_id)
+    for i, r in enumerate(records):
+        block[base + i] = r
 ```
 
 
@@ -555,16 +555,16 @@ class BlockedFile(Blocked):
 -   Need to initialize the in-memory index when restarting the database
 
 ```py
-    def _build_index(self):
-        seq_id = 0
-        for (block_id, filename) in enumerate(
-                sorted(self._db_dir.iterdir())
-        ):
-            self._load_block(block_id, filename)
-            for record in self._get_block(block_id).values():
-                key = self._record_cls.key(record)
-                self._index[key] = seq_id
-                seq_id += 1
+def _build_index(self):
+    seq_id = 0
+    for (block_id, filename) in enumerate(
+            sorted(self._db_dir.iterdir())
+    ):
+        self._load_block(block_id, filename)
+        for record in self._get_block(block_id).values():
+            key = self._record_cls.key(record)
+            self._index[key] = seq_id
+            seq_id += 1
 ```
 
 
@@ -577,26 +577,26 @@ class BlockedFile(Blocked):
 ## Cleanup
 
 ```py
-    def _cleanup(self):
-        new_seq = {
-            o: i for i, o in enumerate(self._index.values())
-        }
-        keep = {self._get_block_id(o) for o in new_seq}
+def _cleanup(self):
+    new_seq = {
+        o: i for i, o in enumerate(self._index.values())
+    }
+    keep = {self._get_block_id(o) for o in new_seq}
 
-        renaming = {o: i for i, o in enumerate(list(sorted(keep)))}
-        garbage_ids = {
-            i for i in range(len(self._blocks))
-            if i not in renaming
-        }
+    renaming = {o: i for i, o in enumerate(list(sorted(keep)))}
+    garbage_ids = {
+        i for i in range(len(self._blocks))
+        if i not in renaming
+    }
 
-        self._delete_blocks(garbage_ids)
-        self._rename_blocks(renaming)
+    self._delete_blocks(garbage_ids)
+    self._rename_blocks(renaming)
 
-        new_index = {
-            k: new_seq[self._index[k]] for k in self._index
-        }
-        self._index = new_index
-        self._next = len(self._index)
+    new_index = {
+        k: new_seq[self._index[k]] for k in self._index
+    }
+    self._index = new_index
+    self._next = len(self._index)
 ```
 
 

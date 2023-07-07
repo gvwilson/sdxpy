@@ -42,6 +42,7 @@ from pathlib import Path
 
 import ark
 import regex
+import textwrap
 import shortcodes
 import util
 
@@ -210,7 +211,7 @@ def _make_html(node, name, kind, lines):
     doesn't render in slides. The simplest thing for now is therefore
     to strip off the format entirely for `.out` inclusions.
     """
-    body = "\n".join(x.rstrip() for x in lines)
+    body = textwrap.dedent("\n".join(x.rstrip() for x in lines))
     if _is_slides(node) and (kind == "out"):
         kind = ""
     body = f"```{kind}\n{body}\n```\n"
