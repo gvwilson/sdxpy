@@ -1,20 +1,23 @@
-Most data scientists have taught themselves
-most of what they know about programming.
-As a result,
-many have gaps in their knowledge:
-they may be experts in some areas,
-but don't even know what they don't know about others.
+---
+syllabus:
+-   The complexity of a system increases more rapidly than the number of parts it contains.
+-   The best way to learn design is to study examples,
+    and the best programs to use as examples are the ones programmers use every day.
+-   These lessons assume readers already understand the basics of Python
+    and want to learn how to write larger programs,
+    or are looking for material to use in software design classes that they teach.
+-   All of the content is free to read and re-use under open licenses,
+    and all royalties from sales of this book will go to charity.
+---
 
-One of those other areas is software design.
-A large program is not just a dozen short programs stacked on top of each other;
-since *N* things can interact with each other in *N(N-1)/2* ways,
-doubling the size of a program more than doubles its complexity
-unless we reorganize its parts
+As the number of components in a system grows,
+the complexity of the system increases rapidly
 ([%f intro-complexity %]).
-Since our brains can only hold a small number of things at once [%b Hermans2021 %],
-making large programs comprehensible, testable, shareable, and maintainable
-requires more than using functions and sensible variable names:
-it requires design.
+However,
+the number of things we can hold in working memory at once is fixed (and fairly small) [%b Hermans2021 %].
+If we want to create large programs that are comprehensible, testable, shareable, and maintainable,
+we have to do more than use sensible variable names:
+we need to design them.
 
 [% figure
    slug="intro-complexity"
@@ -50,11 +53,12 @@ Like Maya, you should be able to:
 
 -   Write Python programs using lists, loops, conditionals, dictionaries, and functions.
 
--   Puzzle your way through Python programs that use classes and exceptions.
+-   Puzzle your way through Python programs that use [%i "class" %]classes[%/i%]
+    and [%i "exception" %]exceptions[%/i%].
 
 -   Run basic Unix shell commands like `ls` and `mkdir`.
 
--   Read and write a little bit of HTML.
+-   Read and write a little bit of [%i "HTML" %][%/i%].
 
 -   Use [Git][git] to save and share files.
     (It's OK not to know [the more obscure commands][git_man_page_generator].)
@@ -175,10 +179,12 @@ This book is a sequel to [%b Wilson2022b %],
 and like it,
 was inspired by [%b Kamin1990 Kernighan1979 Kernighan1981 Kernighan1983 Kernighan1988 Oram2007 %] and by:
 
--   the entries in the [*Architecture of Open Source Applications*][aosa] series [%b Brown2011 Brown2012 Armstrong2013 Brown2016 %];
+-   the entries in the [*Architecture of Open Source Applications*][aosa] series
+    [%b Brown2011 Brown2012 Armstrong2013 Brown2016 %];
 -   [Mary Rose Cook's][cook_mary_rose] [Gitlet][gitlet];
 -   [Matt Brubeck's][brubeck_matt] [browser engine tutorial][browser_engine_tutorial];
--   [Pavel Panchekha][panchekha_pavel] and [Chris Harrelson's][harrelson_chris] [*Web Browser Engineering*][browser_engineering]
+-   [*Web Browser Engineering*][browser_engineering]
+    by [Pavel Panchekha][panchekha_pavel] and [Chris Harrelson][harrelson_chris] 
 -   [Connor Stack's][stack_connor] [database tutorial][db_tutorial];
 -   [Maël Nison's][nison_mael] [package manager tutorial][package_manager_tutorial];
 -   [Paige Ruten's][ruten_paige] [kilo text editor][kilo_editor]
@@ -194,18 +200,40 @@ I am also grateful to the creators of
 [Glosario][glosario],
 [GNU Make][gnu_make],
 [isort][isort],
-[ivy][ivy],
+[ark][ark],
 [LaTeX][latex],
 [pip][pip],
 [Python][python],
-[SVG Screenshot][svg_screenshot],
 [WAVE][webaim_wave],
 and many other open source tools:
 if we all give a little,
 we all get a lot.
 
 <div class="center" markdown="1">
-  *This one's for Mike and Jon:*
+  *This one's for Mike and Jon: I'm glad you always found time to chat.*
   <br>
-  *I am glad you always found time to chat.*
+  *All royalties from sales of this book will go to support the [Red Door Family Shelter][red_door] in Toronto.*
 </div>
+
+## Exercises {: #intro-exercises}
+
+### Setting Up {: .exercise}
+
+1.  Use [pip][pip] to install [Black][black], [flake8][flake8], and [isort][isort]
+    on your computer.
+2.  Run them on a few programs you have already written.
+    What problems do they report?
+    Which of these reports do you disagree with?
+
+### Avoiding Potholes {: .exercise}
+
+> 1.  Every program contains at least one bug.
+> 2.  Every program can be made one line shorter.
+> 3.  Every program can therefore be reduced to a single statement,
+>     which is wrong.
+
+Go to [the GitHub repository][book_repo] for this book and look at the open issues.
+Which of them can you understand?
+What makes the others hard to understand?
+What could you add, leave out, or write differently
+when you report a problem that you have found?
