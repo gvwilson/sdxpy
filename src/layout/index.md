@@ -88,7 +88,7 @@ We can therefore represent our document as a tree
 and calculate the width and height of each cell every time we need it.
 This is simple but inefficient:
 we could calculate both width and height at the same time
-and [%g cache "cache" %] those values to avoid recalculation,
+and [%i "cache" %][%/i%] those values to avoid recalculation,
 but we called this "easy mode" for a reason.
 
 As simple as it is,

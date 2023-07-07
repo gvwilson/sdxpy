@@ -208,6 +208,28 @@ Does your implementation look methods up in the same order as Python would?
 
 ### Class Methods and Static Methods {: .exercise}
 
-Implement [%i "class method" %]class methods[%/i%]
-and [%i "static method" %]static methods[%/i%]
-and explain how they differ.
+1.  Explain the differences between [%i "class method" %]class methods[%/i%]
+    and [%i "static method" %]static methods[%/i%].
+
+2.  Implement both using dictionaries.
+
+### Reporting Type {: .exercise}
+
+Python `type` method reports the most specific type of an object,
+while `isinstance` determines whether an object inherits from a type
+either directly or indirectly.
+Add your own versions of both to dictionary-based objects and classes.
+
+### Method Caching {: .exercise}
+
+Our implementation searches for the implementation of a method
+every time that method is called.
+An alternative is to add a [%g cache "cache" %] to each object
+to save the methods that have been looked up before.
+For example,
+each object could have a special field called `_cache` whose value is a dictionary.
+The keys in that dictionary are the names of methods that have been called in the past,
+and the values are the functions that were found to implement those methods.
+Add this feature to our dictionary-based objects.
+How much more complex does it make the code?
+How much extra storage space does it need compared to repeated lookup?
