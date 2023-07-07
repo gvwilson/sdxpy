@@ -104,8 +104,8 @@ when we run the client and server in separate terminal windows.
 [% figure
    slug="ftp-interaction"
    img="interaction.svg"
-   alt="Client/server interaction"
-   caption="Steps and messages in client/server interaction."
+   alt="Client-server interaction"
+   caption="Steps and messages in client-server interaction."
 %]
 
 There's a *lot* going on here,

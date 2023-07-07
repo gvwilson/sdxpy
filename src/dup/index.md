@@ -193,7 +193,7 @@ other than generating random strings of bytes and hashing them.
 Cryptographic hash functions are hard to write—or rather,
 it's very hard to prove that a particular algorithm has the properties we require.
 We will therefore use a function from Python's [hashing library][py_hashlib]
-that implements the [%g sha256 "SHA256" %] algorithm.
+that implements the [%g sha256 "SHA-256" %] algorithm.
 Given some bytes as input,
 this function produces a 256-bit hash,
 which is normally written as a 64-character [%g hexadecimal "hexadecimal" %] string.
@@ -211,8 +211,8 @@ The odds that two people share a birthday are 1/365 (ignoring February 29).
 The odds that they *don't* are therefore 364/365.
 When we add a third person,
 the odds that they don't share a birthday
-with either of the preceding two people are 363/365,
-so the overall odds that nobody shares a birthday are (364/365)×(363/365).
+with either of the preceding two people are \\( 363/365 \\),
+so the overall odds that nobody shares a birthday are \\( (364/365)×(363/365) \\).
 If we keep going,
 there's a 50% chance of two people sharing a birthday in a group of just 23 people,
 and a 99.9% chance with 70 people.
@@ -220,7 +220,7 @@ and a 99.9% chance with 70 people.
 The same math can tell us how many files we need to hash
 before there's a 50% chance of a [%g hash_collision "collision" %] with a 256-bit hash.
 According to [Wikipedia][birthday_problem],
-the answer is approximately \\(4{\times}10^{38}\\) files.
+the answer is approximately \\( 4{\times}10^{38} \\) files.
 We're willing to take that risk…
 
 </div>
@@ -290,9 +290,9 @@ What are the actual odds?
 
 -   Why do `hash(123)` and `hash("123")` work but `hash([123])` raise an exception?
 
-### How Good Is SHA256? {: .exercise}
+### How Good Is SHA-256? {: .exercise}
 
--   Write a function that calculate the SHA256 hash code
+-   Write a function that calculate the SHA-256 hash code
     of each unique line of a text file.
 
 -   Convert the hex digests of those hash codes to integers.

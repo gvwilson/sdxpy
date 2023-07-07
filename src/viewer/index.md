@@ -1,6 +1,6 @@
 ---
 syllabus:
--   The `curses` library manages text terminals in a platform-independent way.
+-   The curses library manages text terminals in a platform-independent way.
 -   Write debugging information to a log file when the screen is not available.
 -   We can use a callable object in place of a function to satisfy an API's requirements.
 -   Test programs using synthetic data.

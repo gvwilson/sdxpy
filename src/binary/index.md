@@ -20,7 +20,7 @@ and shows how to work with binary data.
 
 Let's start by looking at how integers are stored.
 The natural way to do this with ones and zeroes uses base 2,
-so 1001 in binary is (1×8)+(0×4)+(0×2)+(1×1) or 9 base 10.
+so 1001 in binary is \\( (1×8)+(0×4)+(0×2)+(1×1) \\) or 9 base 10.
 We can handle negative numbers by reserving the top bit for the sign,
 so that 01001 is +9 and 11001 is -9.
 
@@ -71,7 +71,7 @@ Programmers usually write [%i "hexadecimal" %]hexadecimal[%/i%] instead:
 the digits 0–9 have the usual meaning,
 and the letters A-F (or a-f) are used to represent the digits 11–15.
 We signal that we're using hexadecimal with a `0x` prefix,
-so `0xF7` is (15×16)+7 or 247 base 10.
+so `0xF7` is \\( (15×16)+7 \\) or 247 base 10.
 Each hexadecimal digit corresponds to four bits ([%t binary-hex %]),
 which makes it easy to translate bits to digits and vice versa:
 for example,
@@ -118,7 +118,7 @@ putting it another way,
 Finally,
 `~` flips its argument: 1 becomes 0, and 0 becomes 1.
 
-When these operators are used on multibit values
+When these operators are used on multi-bit values
 they work on corresponding bits independently as shown in [%t binary-ops %].
 
 <div class="table" id="binary-ops" caption="Bitwise operations" markdown="1">
@@ -408,7 +408,7 @@ it prints a 2-digit [%g escape_sequence "escape sequence" %] in [%i "hexadecimal
 Python is therefore telling us that
 our string contains the eight bytes
 `['\x1f', '\x00', '\x00', '\x00', 'A', '\x00', '\x00', '\x00']`.
-`1F` in hex is \\((1×16^1)+(15×16^0)\\), or 31;
+`1F` in hex is \\( (1×16^1)+(15×16^0) \\), or 31;
 `'A'` is our 65,
 because the ASCII code for an upper-case letter A is the decimal value 65.
 All the other bytes are zeroes (`"\x00"`)

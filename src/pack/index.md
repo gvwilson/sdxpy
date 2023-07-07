@@ -107,7 +107,7 @@ whatever points are left when we're done represent legal combinations.
 %]
 
 How much work is it to check all of these possibilities?
-Our example has 3×3×2=18 combinations.
+Our example has \\( 3×3×2=18 \\) combinations.
 If we were to add another package to the mix with 2 versions,
 the [%g search_space "search space" %] would double;
 add another,

@@ -44,6 +44,9 @@ FIG_PDF := $(patsubst ${ROOT}/src/%.svg,${ROOT}/docs/%.pdf,${FIG_SVG})
 SRC_PDF := $(patsubst ${ROOT}/src/%.svg,${ROOT}/src/%.pdf,${SRC_SVG})
 DOCS_PDF := $(patsubst ${ROOT}/src/%.pdf,${ROOT}/docs/%.pdf,${SRC_PDF})
 
+# How to tell if the HTML build is up to date.
+DOCS_INDEX := ${ROOT}/docs/index.html
+
 # Keep the PDF versions of diagrams under the 'src' directory.
 .PRECIOUS: ${SRC_PDF}
 
@@ -59,8 +62,8 @@ commands:
 	| column -t -s ':'
 
 ## build: rebuild site without running server
-build: ${ROOT}/docs/index.html
-${ROOT}/docs/index.html: ${SRC} ${SRC_SVG} ${INFO_FILES} ${ARK} ${ROOT}/config.py
+build: ${DOCS_INDEX}
+${DOCS_INDEX}: ${SRC} ${SRC_SVG} ${INFO_FILES} ${ARK} ${ROOT}/config.py
 	ark build && touch $@
 
 ## serve: build site and run server
@@ -108,28 +111,19 @@ fonts:
 
 ## spelling: check spelling against known words
 .PHONY: spelling
-spelling:
-	@make wordlist \
-	| diff - ${ROOT}/info/wordlist.txt
-
-## wordlist: make a list of words
-.PHONY: wordlist
-wordlist: ${ROOT}/docs/index.html
-	@python ${MCCOLE}/bin/vocabulary.py --config ${ROOT}/config.py \
-	| aspell -H list \
-	| sort \
-	| uniq
+spelling: ${DOCS_INDEX}
+	@python ${MCCOLE}/bin/spelling.py --config ${ROOT}/config.py --extra info/wordlist.txt
 
 ## index: show all index entries
 .PHONY: index
-index: ${MCCOLE}/bin/show_index.py ${ROOT}/docs/index.html
+index: ${MCCOLE}/bin/show_index.py ${DOCS_INDEX}
 	@python ${MCCOLE}/bin/show_index.py --config ${CONFIG}
 
 ## ---: ---
 
 ## html: create single-page HTML
 html: ${ROOT}/docs/all.html
-${ROOT}/docs/all.html: ${ROOT}/docs/index.html ${HTML_COPY} ${MCCOLE}/bin/make_single_html.py
+${ROOT}/docs/all.html: ${DOCS_INDEX} ${HTML_COPY} ${MCCOLE}/bin/make_single_html.py
 	python ${MCCOLE}/bin/make_single_html.py \
 	--head ${ROOT}/info/head.html \
 	--foot ${ROOT}/info/foot.html \
@@ -233,7 +227,7 @@ clean:
 
 ## status: status of chapters
 .PHONY: status
-status:
+status: ${DOCS_INDEX}
 	@python ${MCCOLE}/bin/status.py --highlight ascii --config ${ROOT}/config.py
 
 ## valid: run html5validator on generated files

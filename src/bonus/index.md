@@ -219,12 +219,12 @@ with fractions like 1/3:
 in decimal, we have to round that to 0.3333 or 0.3334.
 
 But if this scheme has no representation for 9
-then 8+1 must be stored as either 8 or 10.
-What should 8+1+1 be?
+then \\( 8+1 \\) must be stored as either 8 or 10.
+What should \\( 8+1+1 \\) be?
 If we add from the left,
-(8+1)+1 is 8+1 is 8,
+\\( (8+1)+1 \\( is \\( 8+1 \\) is 8,
 but if we add from the right,
-8+(1+1) is 8+2 is 10.
+\\( 8+(1+1) \\) is \\( 8+2 \\) is 10.
 Changing the order of operations makes the difference between right and wrong.
 
 The authors of numerical libraries spend a lot of time worrying about things like this.
