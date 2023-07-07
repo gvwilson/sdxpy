@@ -8,15 +8,15 @@ import regex
 import util
 from prettytable import MARKDOWN, PrettyTable
 
-EXERCISES_PER = 5
-FIGURES_PER = 4
-SLIDES_PER = 18
-SYLLABUS_PER = 5
-WORDS_PER = 2200
-THRESHOLD_LOW = 80
-THRESHOLD_HIGH = 200
-SHORT_CHAPTERS = {"intro", "finale"}
 HEADINGS = "title slides exercises figures syllabus words".split()
+TARGETS = {
+    "slides": (15, 25),
+    "exercises": (4, 14),
+    "figures": (3, 8),
+    "syllabus": (4, 8),
+    "words": (1300, 2300),
+}
+SHORT_CHAPTERS = {"intro", "finale"}
 
 
 def main():
@@ -24,12 +24,6 @@ def main():
     options = parse_args()
     config = util.load_config(options.config)
     report(options.highlight, config.chapters)
-
-
-def build_format(chapters):
-    longest = max("title", *[len(s) for s in chapters.keys()])
-    fmt = f"{{:{longest}}}"
-    return fmt, "-" * longest
 
 
 def calculate_fraction(slug, actual, expected):
@@ -41,19 +35,19 @@ def calculate_fraction(slug, actual, expected):
 
 def create_row(slug, wrap, total):
     n_slides = count_slides(slug)
-    n_ex, n_fig, n_syll, n_words = count_page(slug)
+    n_exercises, n_figures, n_syllabus, n_words = count_page(slug)
     combined = (
-        ("slides", n_slides, SLIDES_PER),
-        ("exercises", n_ex, EXERCISES_PER),
-        ("figures", n_fig, FIGURES_PER),
-        ("syllabus", n_syll, SYLLABUS_PER),
-        ("words", n_words, WORDS_PER),
+        ("slides", n_slides),
+        ("exercises", n_exercises),
+        ("figures", n_figures),
+        ("syllabus", n_syllabus),
+        ("words", n_words),
     )
-    for (key, val, _) in combined:
+    for (key, val) in combined:
         total[key] += val
     return [
         slug,
-        *[wrap(slug, val, expected) for (_, val, expected) in combined]
+        *[wrap(slug, key, val) for (key, val) in combined]
     ]
 
 def count_page(slug):
@@ -74,23 +68,28 @@ def count_slides(slug):
         return lines.count("---") - 2
 
 
-def highlight_ascii(slug, actual, expected):
-    fraction = calculate_fraction(slug, actual, expected)
-    if fraction < THRESHOLD_LOW:
+def get_targets(slug, key):
+    low, high = TARGETS[key]
+    if slug in SHORT_CHAPTERS:
+        low, high = low/2, high
+    return low, high
+
+
+def highlight_ascii(slug, key, actual):
+    low, high = get_targets(slug, key)
+    if actual < low:
         return f"{util.RED}{actual}{util.ENDC}"
-    elif fraction > THRESHOLD_HIGH:
+    elif actual > high:
         return f"{util.BLUE}{actual}{util.ENDC}"
     else:
         return f"{util.GREEN}{actual}{util.ENDC}"
 
 
 def highlight_html(slug, actual, expected):
-    fraction = calculate_fraction(slug, actual, expected)
-    if slug in SHORT_CHAPTERS:
-        fraction *= 2
-    if fraction < 80:
+    low, high = get_targets(slug, key)
+    if actual < low:
         return f"**{actual}**"
-    elif fraction > 120:
+    elif actual > high:
         return f"*{actual}*"
     else:
         return f"{actual}"
@@ -137,11 +136,7 @@ def report_summary_rows(chapters, tbl, total):
     tbl.add_row(["---"] * len(HEADINGS))
     tbl.add_row([
         "Target",
-        SLIDES_PER,
-        EXERCISES_PER,
-        FIGURES_PER,
-        SYLLABUS_PER,
-        WORDS_PER,
+        *[f"{low}-{high}" for (low, high) in TARGETS.values()]
     ])
     tbl.add_row([
         "Average",
