@@ -4,6 +4,10 @@ syllabus:
 -   Use globs and regular expressions to match patterns in text.
 -   Use inheritance to make matchers composable and extensible.
 -   Simplify code by having objects delegate work to other objects.
+-   Use the Null Object pattern to eliminate special cases in code.
+-   Use standard refactorings to move code from one working state to another.
+-   Build and check the parts of your code you are least sure of first
+    to find out if your design will work.
 depends:
 ---
 
