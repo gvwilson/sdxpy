@@ -1,13 +1,20 @@
 ---
 syllabus:
--   Parsing in two or more passes is often simpler than parsing in a single pass.
--   Tokenize input text and then analyze the tokens.
+-   Parsing transforms text that's easy for people to read into objects that are easy for computers to work with.
+-   A grammar defines the textual patterns that a parser recognizes.
+-   Most parsers tokenize input text and then analyze the tokens.
+-   Most parsers need to implement some form of precedence to prioritize different patterns.
+-   Programs can use introspection and dynamic dispatch to inspect their own internals
+    and select operations while running.
+-   Operations like addition and function call work just like user-defined functions.
+-   Programs can overload built-in operators by defining specially-named methods
+    that are recognized by the compiler or interpreter.
 depends:
 -   glob
 ---
 
 We constructed objects to match patterns in [%x glob %],
-but an expression like `"2023-*{pdf,txt}"`
+but an [%i "expression" %][%/i%] like `"2023-*{pdf,txt}"`
 is a lot easier to read and write
 than `Lit("2023-", Any(Either("pdf", "txt")))`.
 If we want to use the former,
@@ -26,7 +33,7 @@ an [%g abstract_syntax_tree "abstract syntax tree" %] (AST).
    caption="Stages in parsing pipeline."
 %]
 
-[%t parse-grammar %] shows the grammar our parser will handle.
+[%t parse-grammar %] shows the [%g grammar "grammar" %] our parser will handle.
 
 <div class="table" id="parse-grammar" caption="Glob grammar." markdown="1">
 | Meaning                   | Character       |
@@ -195,7 +202,7 @@ this is another example of introspection.
 
 Since we're using [%i "inheritance" %][%/i%] to implement our matchers,
 we write the check for equality in two parts.
-The parent `Match` class performs the checks that all classes need to perform
+The [%i "parent class" %][%/i%] `Match` performs the checks that all classes need to perform
 (in this case,
 that the objects being compared have the same
 [%g concrete_class "concrete class" %]).
@@ -229,9 +236,24 @@ Modify the parser so that expressions like `[xyz]` are interpreted to mean
 "match any one of the characters 'x', 'y', or 'z'".
 (Note that this is a shorthand for `{x,y,z}`.)
 
+### Negation {: .exercise}
+
+Modify the parser so that `[!abc]` is interpreted as
+"none of the characters 'a', 'b', or 'c'".
+
 ### Nested Lists {: .exercise}
 
 Write a function that accepts a string representing nested lists containing numbers
 and returns the actual list.
 For example, the input `[1, [2, [3, 4], 5]]`
 should produce the corresponding Python list.
+
+### Simple Arithmetic {: .exercise}
+
+Write a function that accepts a string consisting of numbers
+and the basic arithmetic operations `+`, `-`, `*`, and `/`
+and produces a nested structure showing the operations
+in the correct order.
+For example,
+`1 + 2 * 3` should produce
+`["+", 1, ["*", 2, 3]]`.
