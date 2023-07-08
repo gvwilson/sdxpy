@@ -2,8 +2,9 @@
 
 import argparse
 from collections.abc import Iterable
-import frontmatter
 from pathlib import Path
+
+import frontmatter
 import regex
 import util
 from prettytable import MARKDOWN, PrettyTable
@@ -43,12 +44,10 @@ def create_row(slug, wrap, total):
         ("syllabus", n_syllabus),
         ("words", n_words),
     )
-    for (key, val) in combined:
+    for key, val in combined:
         total[key] += val
-    return [
-        slug,
-        *[wrap(slug, key, val) for (key, val) in combined]
-    ]
+    return [slug, *[wrap(slug, key, val) for (key, val) in combined]]
+
 
 def count_page(slug):
     with open(Path("src", slug, "index.md"), "r") as reader:
@@ -71,7 +70,7 @@ def count_slides(slug):
 def get_targets(slug, key):
     low, high = TARGETS[key]
     if slug in SHORT_CHAPTERS:
-        low, high = low/2, high
+        low, high = low / 2, high
     return low, high
 
 
@@ -134,26 +133,19 @@ def report(wrap, chapters):
 
 def report_summary_rows(chapters, tbl, total):
     tbl.add_row(["---"] * len(HEADINGS))
-    tbl.add_row([
-        "Target",
-        *[f"{low}-{high}" for (low, high) in TARGETS.values()]
-    ])
-    tbl.add_row([
-        "Average",
-        *[
-            f"{(val/len(chapters)):.1f}"
-            for (key, val) in total.items()
-            if key not in {"title", "words"}
-        ],
-        f"{total['words']//len(chapters)}",
-    ])
-    tbl.add_row([
-        "Total",
-        *[
-            count for (key, count) in total.items()
-            if key != "title"
+    tbl.add_row(["Target", *[f"{low}-{high}" for (low, high) in TARGETS.values()]])
+    tbl.add_row(
+        [
+            "Average",
+            *[
+                f"{(val/len(chapters)):.1f}"
+                for (key, val) in total.items()
+                if key not in {"title", "words"}
+            ],
+            f"{total['words']//len(chapters)}",
         ]
-    ])
+    )
+    tbl.add_row(["Total", *[count for (key, count) in total.items() if key != "title"]])
 
 
 if __name__ == "__main__":

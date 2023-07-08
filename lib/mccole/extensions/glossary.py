@@ -2,11 +2,11 @@
 
 import html
 import re
+
 import ark
 import regex
 import shortcodes
 import util
-
 
 UNMARKDOWN = [
     (regex.MULTISPACE, " "),
@@ -155,6 +155,6 @@ def _make_tooltip(key):
     util.require(key in glossary, f"Unknown glossary key {key}")
     entry = glossary[key]
     text = entry["def"].strip()
-    for (pat, sub) in UNMARKDOWN:
+    for pat, sub in UNMARKDOWN:
         text = pat.sub(sub, text)
     return html.escape(text)

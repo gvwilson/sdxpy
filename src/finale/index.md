@@ -53,7 +53,7 @@ Training in industrial design gives weight to all of these separately and togeth
 and gives students the tools they need to tell the good from the bad.
 
 In retrospect,
-I think this is what I was groping toward with [%b Oram2007 Brown2011 Brown2012 %].
+this is what [%b Oram2007 Brown2011 Brown2012 %] were groping toward.
 I think that if our community had decided fifty years ago to think of what we do as
 "industrial design for software"
 rather than "software engineering",
@@ -63,7 +63,6 @@ I hope this book will help us get there.
 I hope that we learn how to talk about the beauty of software as well,
 because it *is* beautiful,
 and we deserve to have ways to say that.
-
 I also hope that your journey won't stop here.
 If you would like to add a chapter to this book
 or translate it into another language,

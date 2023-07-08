@@ -6,14 +6,21 @@ import sys
 import regex
 import util
 
+CHANGES = [
+    (regex.MARKDOWN_H2, lambda m: f"## {m.group(1)}\n"),
+    (regex.PARAGRAPH_CONTINUE, ""),
+    (regex.GITHUB_ISSUE, lambda m: f"#{m.group(1)}"),
+    (regex.BIBLIOGRAPHY_REF, lambda m: f"[{m.group(1)}]"),
+]
+
 
 def main():
     """Main driver."""
     options = parse_args()
 
     text = read_text(options)
-    text = regex.MARKDOWN_H2.sub(lambda m: f"## {m.group(1)}\n", text)
-    text = regex.PARAGRAPH_CONTINUE.sub("", text)
+    for pat, sub in CHANGES:
+        text = pat.sub(sub, text)
 
     links = util.read_yaml(options.links)
     links = {ln["key"]: ln["url"] for ln in links}

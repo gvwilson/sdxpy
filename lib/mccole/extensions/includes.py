@@ -38,11 +38,11 @@ To make this work:
     does nothing; otehrwise, it dispatches to a case-specific handler.
 """
 
+import textwrap
 from pathlib import Path
 
 import ark
 import regex
-import textwrap
 import shortcodes
 import util
 

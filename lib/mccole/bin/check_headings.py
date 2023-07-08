@@ -2,6 +2,7 @@
 
 import argparse
 from pathlib import Path
+
 import regex
 import util
 
@@ -43,7 +44,7 @@ def parse_args():
 def strip_heading(heading):
     """Remove stop-words from heading."""
     heading = heading.split()
-    return ' '.join(h for h in heading if h not in STOP_WORDS)
+    return " ".join(h for h in heading if h not in STOP_WORDS)
 
 
 if __name__ == "__main__":

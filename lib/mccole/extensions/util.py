@@ -35,6 +35,7 @@ TRANSLATIONS = {
         "appendix": "Appendix",
         "chapter": "Chapter",
         "figure": "Figure",
+        "issue": "issue",
         "seealso": "See also",
         "section": "Section",
         "table": "Table",
@@ -43,6 +44,7 @@ TRANSLATIONS = {
         "appendix": "Anexo",
         "chapter": "Capítulo",
         "figure": "Figura",
+        "issue": "problema",
         "seealso": "Ver también",
         "section": "Sección",
         "table": "Tabla",
@@ -214,7 +216,9 @@ def read_glossary():
             assert lang in entry, f"Bad glossary entry {entry}"
             assert "def" in entry[lang], f"Bad glossary entry {entry}"
         CACHE["glossary"] = glossary
-        make_config("glossary_by_key", {entry["key"]:entry[lang] for entry in glossary})
+        make_config(
+            "glossary_by_key", {entry["key"]: entry[lang] for entry in glossary}
+        )
 
     return CACHE["glossary"], lang
 

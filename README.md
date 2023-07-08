@@ -1,4 +1,4 @@
-# Software Design for Data Scientists
+# Software Design by Example
 
 Most data scientists have taught themselves most of what they know
 about programming.  As a result, many have gaps in their knowledge:
@@ -20,34 +20,3 @@ most data scientists haven't encountered.  Finally, we hope that if
 you know how programming tools work, you'll be more likely to use them
 and better able to use them well.
 
-| Title    | Slides | Exercises | Figures |    Words |
-|:---------|-------:|----------:|--------:|---------:|
-| intro    |   *10* |     **0** |     *2* |   *1167* |
-| oop      |     17 |     **2** |       4 | **1019** |
-| dup      |     19 |         5 |     *5* | **1752** |
-| glob     |   *22* |       *8* |       4 |     1763 |
-| parse    |     15 |     **3** |   **3** | **1194** |
-| test     |     16 |       *7* |       4 |     1933 |
-| interp   |     16 |       *8* |   **2** |     1933 |
-| func     |     19 |         4 |   **3** | **1422** |
-| mock     |  **5** |     **2** |   **3** |     1842 |
-| archive  |     19 |       *7* |   **3** |     2132 |
-| check    |     20 |     **0** |   **3** | **1296** |
-| template |   *23* |      *10* |   **2** |     2240 |
-| lint     |     20 |       *7* |   **2** |     2183 |
-| layout   |     17 |      *10* |     *7* |     2277 |
-| perf     |   *26* |      *11* |     *8* |   *3239* |
-| persist  |     15 |      *10* |       4 |   *3237* |
-| binary   |   *25* |         6 |       4 |   *3896* |
-| db       |   *27* |     **3** |       4 |     2202 |
-| build    |     18 |       *8* |       4 |     1822 |
-| pack     |   *23* |       *8* |       4 |   *3001* |
-| ftp      |     19 |         4 |   **3** |     1814 |
-| http     |     18 |       *9* |   **3** |     2256 |
-| viewer   |   *32* |     **3** |   **2** |   *2955* |
-| undo     |     20 |     **0** |   **2** | **1241** |
-| vm       |     19 |      *10* |     *6* |     2242 |
-| debugger |     21 |      *10* |       4 |   *2808* |
-| finale   |  **3** |     **0** |       1 |      485 |
-| Total    |    504 |       155 |      96 |    55351 |
-| Average  |   18.7 |       5.7 |     3.6 |     2050 |

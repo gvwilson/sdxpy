@@ -2,6 +2,40 @@ Contributions are very welcome;
 please contact us by email or by filing an issue on this site.
 All contributors must abide by our Code of Conduct.
 
+## FAQ {: #contrib-faq}
+
+Why don't the examples connect with each other? For example, why don't they build toward a complete minimal IDE?
+
+:   It was tempting, but my attempts to do this in the past have never gone well.
+    First, it makes maintenance much more difficult
+    because a change in an early chapter may have knock-on effects on several subsequent chapters.
+    Second, it constraints what is taught and in what order:
+    if the examples are independent of each other,
+    instructors can pick and choose the pieces that are most relevant to their audience and goals.
+
+Can I contribute a chapter?
+
+:   Absolutely, and if enough people do that we will publish a second volume.
+    Some things I'd particularly like to see are:
+
+    -   An object-relational mapper to show people how tools like [SQLAlchemy][sqlalchemy] work
+        ([% issue 45 %]).
+    -   A discrete event simulator to show people how tools like [SimPy][simpy] work
+        and to explore co-operative concurrency using generators
+        ([% issue 56 %]).
+    -   An issue-tracking system, mostly to show how workflow management and authentication work
+        ([% issue 82 %]).
+    -   Another build system that uses publish/subscribe instead of the top-down approach of [%x build %]
+        ([% issue 83 %]).
+    -   A fuzz tester that uses some of the ideas from [%b Zeller2023 %]
+        ([% issue 84 %]).
+    -   A package installer to complement the package manager of [%x pack %]
+        ([% issue 121 %]).
+    -   A file compression tool like `zip`
+        ([% issue 144 %]).
+    -   A database that uses B-trees instead of a log for storage
+        ([% issue 151 %]).
+
 ## Making Decisions {: #contrib-decisions}
 
 This project uses [Martha's Rules][marthas_rules] for consensus decision making:

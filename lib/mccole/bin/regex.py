@@ -12,6 +12,7 @@ INCLUSION_PAT = re.compile(r'\[%\s*inc\b.+?pat="(.+?)"\s+fill="(.+?)".+?%\]')
 # Other markup elements.
 BIBLIOGRAPHY_REF = re.compile(r"\[%\s*b\s+(.+?)\s*%\]")
 FIGURE = re.compile(r'\[%\s*figure\b.+?slug="(.+?)".+?img="(.+?)".+?%\]', re.DOTALL)
+GITHUB_ISSUE = re.compile(r"\[%\s*issue\b\s+(\d+)\s*%\]")
 GLOSSARY_REF = re.compile(r'\[%\s*g\s+\b(.+?)\b\s+"(.+?)"\s*%\]')
 GLOSSARY_CROSSREF = re.compile(r"\[.+?\]\(\#(.+?)\)", re.DOTALL)
 IMG = re.compile(r'<img.+?src="(.+?)".+?>')

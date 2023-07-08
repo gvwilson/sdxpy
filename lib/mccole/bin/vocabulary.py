@@ -1,14 +1,14 @@
 """Produce or check consolidated vocabulary."""
 
 import argparse
-from markdown import markdown
-from pathlib import Path
 import re
 import string
 import sys
-from bs4 import BeautifulSoup
-import util
+from pathlib import Path
 
+import util
+from bs4 import BeautifulSoup
+from markdown import markdown
 
 # Words with punctuation.
 SPECIAL = {
@@ -68,6 +68,7 @@ ACCENTS = {
     "í": "i",
 }
 
+
 def main():
     """Main driver."""
     options = parse_args()
@@ -88,9 +89,9 @@ def extract_words(docs):
     words = set()
     for doc in docs:
         text = doc.text
-        for (pat, subst) in ((DASHES, " "), (MATH, "")):
+        for pat, subst in ((DASHES, " "), (MATH, "")):
             text = pat.sub(subst, text)
-        for (original, replacement) in CONTRACTIONS.items():
+        for original, replacement in CONTRACTIONS.items():
             text = text.replace(original, replacement)
         words |= {normalize(w) for w in text.split()}
     return words
@@ -101,11 +102,11 @@ def normalize(word):
     original = word
     if word in SPECIAL:
         return word
-    if (':' in word) or (word[0] not in string.ascii_letters):
+    if (":" in word) or (word[0] not in string.ascii_letters):
         return ""
     for pat in (POSSESSIVE, PUNC_START, PUNC_END, NUMBER):
         word = pat.sub("", word)
-    for (accented, plain) in ACCENTS.items():
+    for accented, plain in ACCENTS.items():
         word = word.replace(accented, plain)
     return word
 
@@ -114,7 +115,9 @@ def parse_args():
     """Parse arguments."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", required=True, help="Configuration file")
-    parser.add_argument("--slides", default=False, action="store_true", help="Process slides")
+    parser.add_argument(
+        "--slides", default=False, action="store_true", help="Process slides"
+    )
     return parser.parse_args()
 
 
@@ -125,7 +128,9 @@ def read_docs(options, config):
         result.append(_read_doc(Path(config.out_dir, slug, "index.html"), "main"))
     if options.slides:
         for slug in config.chapters:
-            result.append(_read_doc(Path(config.out_dir, slug, "slides", "index.html"), "body"))
+            result.append(
+                _read_doc(Path(config.out_dir, slug, "slides", "index.html"), "body")
+            )
     return result
 
 

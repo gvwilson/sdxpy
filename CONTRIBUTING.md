@@ -4,6 +4,40 @@ Contributions are very welcome;
 please contact us by email or by filing an issue on this site.
 All contributors must abide by our Code of Conduct.
 
+## FAQ
+
+Why don't the examples connect with each other? For example, why don't they build toward a complete minimal IDE?
+
+:   It was tempting, but my attempts to do this in the past have never gone well.
+    First, it makes maintenance much more difficult
+    because a change in an early chapter may have knock-on effects on several subsequent chapters.
+    Second, it constraints what is taught and in what order:
+    if the examples are independent of each other,
+    instructors can pick and choose the pieces that are most relevant to their audience and goals.
+
+Can I contribute a chapter?
+
+:   Absolutely, and if enough people do that we will publish a second volume.
+    Some things I'd particularly like to see are:
+
+    -   An object-relational mapper to show people how tools like [SQLAlchemy][sqlalchemy] work
+        (#45).
+    -   A discrete event simulator to show people how tools like [SimPy][simpy] work
+        and to explore co-operative concurrency using generators
+        (#56).
+    -   An issue-tracking system, mostly to show how workflow management and authentication work
+        (#82).
+    -   Another build system that uses publish/subscribe instead of the top-down approach of [%x build %]
+        (#83).
+    -   A fuzz tester that uses some of the ideas from [Zeller2023]
+        (#84).
+    -   A package installer to complement the package manager of [%x pack %]
+        (#121).
+    -   A file compression tool like `zip`
+        (#144).
+    -   A database that uses B-trees instead of a log for storage
+        (#151).
+
 ## Making Decisions
 
 This project uses [Martha's Rules][marthas_rules] for consensus decision making:
@@ -198,7 +232,7 @@ so we must do something a bit clumsy.
 1.  To cite bibliography entries write:
 
     ```markdown
-    [%b key1 key2 key3 %]
+    [key1 key2 key3]
     ```
 
 ### Glossary
@@ -296,5 +330,6 @@ you will need these packages with `tlmgr` in order to build the PDF:
 -   `tocbibind`
 
 [glosario]: https://glosario.carpentries.org/
-[ivy]: https://www.dmulholl.com/docs/ivy/main/
 [marthas_rules]: https://journals.sagepub.com/doi/10.1177/088610998600100206
+[simpy]: https://simpy.readthedocs.io/
+[sqlalchemy]: https://www.sqlalchemy.org/
