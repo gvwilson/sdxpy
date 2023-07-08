@@ -69,6 +69,21 @@ or translate it into another language,
 your help would be very welcome:
 please see [%x intro %] and [%x contrib %] for more information.
 
+Finally,
+experienced developers know that programming well isn't enough.
+If you work yourself to exhaustion,
+leave people out of important discussions,
+or base your opinions on TED talks,
+you may create a good implementation of the wrong thing.
+On a larger scale,
+programmers have enabled [%i "pervasive surveillance" %][%/i%],
+online [%i "harassment" %][%/i%] and [%i "radicalization" %][%/i%],
+and the [%i "algorithmic inequality" %]concentration of wealth and power[%/i%]
+in a few unaccountable hands.
+If we truly want to make the world a better place,
+we need to focus on making things that are good
+as well as making things well.
+
 <div class="center" markdown="1">
 Start where you are.<br/>
 Use what you have.<br/>
