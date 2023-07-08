@@ -235,7 +235,7 @@ fixture = [shared, shared]
    caption="Saving aliased data without respecting aliases."
 %]
 
-The problem is that the list `shared` is [%g alias "aliased" %],
+The problem is that the list `shared` is [%i "alias" %]aliased[%/i%],
 i.e.,
 there are two or more references to it.
 To reconstruct the original data correctly we need to:
