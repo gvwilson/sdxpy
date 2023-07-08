@@ -1,16 +1,52 @@
+"""Report suspicious fonts in diagrams."""
+
+import re
 import sys
+from xml.dom import minidom
 
-import regex
 
-PATTERNS = [
-    regex.FONT_FAMILY_1,
-    regex.FONT_FAMILY_2,
-]
+EXPECTED = "Verdana:12px"
+PAT = {
+    "font-family": re.compile(r'\bfont-family:\s*(.+?);'),
+    "font-size": re.compile(r'\bfont-size:\s*(.+?);'),
+}
 
-for filename in sys.argv[1:]:
-    text = open(filename, "r").read()
-    fonts = set()
-    for pat in PATTERNS:
-        fonts |= {m.group(1) for m in pat.finditer(text)}
-    if fonts and (fonts != {"Verdana"}):
-        print(f"{filename}: {', '.join(sorted(fonts))}")
+
+def main():
+    """Main driver."""
+    expected = {EXPECTED}
+    for filename in sys.argv[1:]:
+        seen = recurse(minidom.parse(filename).documentElement, set())
+        seen = {
+            f"{entry[0]}:{entry[1]}"
+            for entry in seen
+            if entry[0] is not None
+        }
+        seen -= expected
+        if seen:
+            print(filename, ", ".join(sorted(seen)))
+
+
+def get_attr(node, name):
+    """Get the font-size or font-family attribute."""
+    result = None
+    if node.hasAttribute(name):
+        result = node.getAttribute(name)
+    elif node.hasAttribute("style"):
+        if (m := PAT[name].match(node.getAttribute("style"))):
+            result = m.group(1)
+    return result
+
+
+def recurse(node, accum):
+    """Recurse through all nodes in SVG."""
+    if node.nodeType != node.ELEMENT_NODE:
+        return
+    accum.add((get_attr(node, "font-family"), get_attr(node, "font-size")))
+    for child in node.childNodes:
+        recurse(child, accum)
+    return accum
+
+
+if __name__ == "__main__":
+    main()
