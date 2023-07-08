@@ -19,7 +19,7 @@ to save a list of dictionaries as-is
 rather than flattering it into rows and columns.
 Python's [pickle][py_pickle] module does this in a Python-specific way,
 while the [json][py_json] module saves some kinds of objects as text
-formatted as [%g "json" JSON %],
+formatted as [%i "JSON" %][%/i%],
 which program written in other languages can read.
 
 The phrase "some kinds of objects" is the most important part of the preceding paragraph.
@@ -96,7 +96,8 @@ to decide how to handle the second:
 
 Saving a list is almost as easy:
 we save the number of items in the list,
-and then save each item with a [%g recursion "recursive" %] called to `save`.
+and then save each item
+with a [%i "recursion" %]recursive[%/i%] called to `save`.
 For example,
 the list `[55, True, 2.71]` is saved as shown in [%f persist-lists %].
 

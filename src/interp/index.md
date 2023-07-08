@@ -17,13 +17,16 @@ while [%x test %] showed how Python itself manages them.
 Similarly,
 the [%g compiler "compilers" %] and [%g interpreter "interpreters" %]
 that make programs run are just programs themselves.
-Instead of changing the characters in a [%i "block (of memory)" %]block[%/i%] of memory like text editors,
+Instead of changing the characters in
+a [%i "block (of memory)" %]block of memory[%/i%] like text editors,
 or calculating sums and averages like spreadsheets,
 compilers turn text into instructions for interpreters or hardware to run.
 
 Most real programming languages have two parts:
-a [%i "parser" %][%/i%] that translates the source code into a data structure in memory,
-and a [%g runtime "runtime" %] that executes the instructions in that data structure.
+a [%i "parser" %][%/i%] that translates the source code
+into a data structure in memory,
+and a [%g runtime "runtime" %] that executes
+the instructions in that data structure.
 [%x parse %] explored parsing;
 this chapter will build a runtime for a very simple interpreter,
 while [%x vm %] will look at compiling code for more efficient execution.
@@ -47,7 +50,8 @@ but saves those instructions in `.pyc` files to save time in future.
 
 ## Expressions {: #interp-expressions}
 
-Let's start by building something that can evaluate simple expressions
+Let's start by building something that can evaluate
+simple [%i "expression" %]expressions[%/i%]
 like `1+2` or `abs(-3.5)`.
 We represent each expression as a list
 with the name of the operation as the first item
@@ -125,7 +129,7 @@ and calculates a different return value:
 [% inc file="expr.py" keep="do_abs" %]
 
 Notice that `do_abs` and `do_add` have the same [%i "signature" %][%/i%].
-As with the unit testing functions in [%x test %],
+As with the [%i "unit test" %]unit testing[%/i%] functions in [%x test %],
 this allows us to call them interchangeably.
 
 So how does `do` work?
@@ -142,6 +146,22 @@ that we saw in [%x parse %].
 
 [% inc file="expr.py" keep="do" %]
 
+<div class="callout" markdown="1">
+### Recursion
+
+A [%g recursion "recursive function" %]
+is one that calls itself,
+either directly or indirectly.
+Recursion has a reputation for being hard to understand,
+but as our interpreter shows,
+it's a natural way to solve a wide range of problems.
+`do` calls functions like `do_add` to do things;
+those functions call `do` to get values for their arguments,
+and so on,
+with each recursive step handling a smaller part of the overall problem.
+
+</div>
+
 Finally,
 the main body of the program reads
 the file containing the instructions to execute,
@@ -151,7 +171,7 @@ and prints the result:
 [% inc file="expr.py" keep="main" %]
 
 Our program is a list of lists (of lists…)
-so we can read it as [%g "json" JSON %] using `json.load`
+so we can read it as [%i "JSON" %][%/i%] using `json.load`
 rather than writing our own parser.
 If our program file contains:
 
@@ -181,7 +201,8 @@ Doing arithmetic on constants is a start,
 but our programs will be easier to read with variables
 that let us give names to values.
 We can add them to our interpreter
-by passing around a dictionary containing all the variables seen so far.
+by passing around a [%i "dictionary" %][%/i%]
+containing all the variables seen so far.
 Such a dictionary is sometimes called an [%g environment "environment" %]
 because it is the setting in which expressions are evaluated;
 the dictionaries returned by the `globals` and `locals` functions
