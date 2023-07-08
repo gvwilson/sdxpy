@@ -260,9 +260,17 @@ is becoming unwieldy.
 can you see if any of the instruction names are accidentally duplicated?)
 We can replace this by using [%i "introspection" %][%/i%]
 to create a lookup table
-that stores every function whose name starts with `do_`:
+that stores every function whose name starts with `do_`
+([%f interp-lookup %]):
 
 [% inc file="vars_reflect.py" keep="lookup" %]
+
+[% figure
+   slug="interp-lookup"
+   img="lookup.svg"
+   alt="Function lookup table"
+   caption="Dynamically-generated function lookup table."
+%]
 
 Line by line:
 {: .continue}
