@@ -17,9 +17,10 @@ DIRECTIVES_FILE = ".mccole"
 # i.e., `"figures"` becomes `ark.site.config["mccole"]["figures"]`.
 CONFIGURATIONS = {
     "bibliography": set(),  # citations
-    "definitions": [],  # glossary definitions
     "figures": {},  # numbered figures
-    "glossary": set(),  # glossary keys
+    "glossary_by_key": {},  # glossary definitions by key for current language
+    "glossary_in_chapter": [],  # glossary definitions used per chapter
+    "glossary_keys_used": set(),  # glossary keys seen overall
     "headings": {},  # number chapter, section, and appendix headings
     "inclusions": {},  # included files
     "index": {},  # index entries
@@ -51,6 +52,7 @@ TRANSLATIONS = {
 # Cached values.
 CACHE = {
     "glossary": None,
+    "glossary_by_key": None,
     "links": None,
     "links_table": None,
     "major": None,
@@ -212,6 +214,7 @@ def read_glossary():
             assert lang in entry, f"Bad glossary entry {entry}"
             assert "def" in entry[lang], f"Bad glossary entry {entry}"
         CACHE["glossary"] = glossary
+        make_config("glossary_by_key", {entry["key"]:entry[lang] for entry in glossary})
 
     return CACHE["glossary"], lang
 

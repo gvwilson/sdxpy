@@ -177,7 +177,7 @@ def check_glossary_refs(config):
     """Check glossary references."""
     defined = {gl["key"] for gl in config["glossary_data"]}
     seen = config["glossary_refs"]
-    for text in config["prose"].values():
+    for text in [*config["prose"].values(), *config["slides"].values()]:
         seen |= {m.group(1) for m in regex.GLOSSARY_REF.finditer(text)}
     _diff("glossary", defined, seen)
 
@@ -363,17 +363,17 @@ def _dom_diff(actual, expected):
     """Show difference between two DOM structures."""
     for name in sorted(actual):
         if name not in expected:
-            _warn(f"{name} seen but not expected")
+            _warn(f"DOM {name} seen but not expected")
             continue
         for attr in sorted(actual[name]):
             if attr not in expected[name]:
-                _warn(f"{name}.{attr} seen but not expected")
+                _warn(f"DOM {name}.{attr} seen but not expected")
                 continue
             if expected[name][attr] == "any":
                 continue
             for value in sorted(actual[name][attr]):
                 if value not in expected[name][attr]:
-                    _warn(f"{name}.{attr} == '{value}' seen but not expected")
+                    _warn(f"DOM {name}.{attr} == '{value}' seen but not expected")
 
 
 def _dom_skip(node):

@@ -141,7 +141,7 @@ The second part of our backup tool
 keeps track of which files have and haven't been backed up already.
 It stores backups in a directory that contains files like `abcd1234.bck`
 (the hash followed by `.bck`)
-and creates a [%g manifest "manifests" %]
+and creates a [%g manifest "manifest" %]
 that describe the content of each snapshot.
 A real system would support remote storage as well
 so that losing one hard drive wouldn't mean losing all our work,
