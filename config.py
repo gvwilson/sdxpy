@@ -32,7 +32,7 @@ chapters = {
     "test": "Running Tests",
     "interp": "An Interpreter",
     "func": "Functions and Closures",
-    "mock": "Mocks, Protocols, and Decorators",
+    "reflect": "Reflection",
     "archive": "A File Archiver",
     "check": "An HTML Validator",
     "template": "A Template Expander",

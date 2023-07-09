@@ -9,7 +9,7 @@ syllabus:
 depends:
 -   dup
 -   glob
--   mock
+-   reflect
 ---
 
 We've written almost a thousand lines of Python so far.
@@ -98,7 +98,7 @@ as we back things up and restore them.
 To make sure early tests don't contaminate later ones
 we would have to re-create those files and directories after each test.
 
-As discussed in [%x mock %],
+As discussed in [%x reflect %],
 a better approach is to use a [%i "mock object" %][%/i%]
 instead of the real filesystem.
 The [pyfakefs][pyfakefs] module replaces key functions like `open`

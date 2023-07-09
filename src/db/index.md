@@ -8,7 +8,7 @@ syllabus:
 depends:
 -   persist
 -   binary
--   mock
+-   reflect
 ---
 
 Persisting objects ([%x persist %]) lets us save and restore program state,
@@ -55,7 +55,7 @@ Let's create a class to store experimental records:
 
 [% inc file="record_original.py" omit="omit" %]
 
-and use the `pytest.fixture` decorator from [%x mock %]
+and use the `pytest.fixture` decorator from [%x reflect %]
 to create a database and two records:
 {: .continue}
 

@@ -245,7 +245,7 @@ when two files or two revisions of a repository are the same or not
 
 But our duplicate file finder is just a beginning.
 [%x glob %] shows how we can find sets of files to compare;
-[%x test %] and [%x mock %] build tools to test programs like this,
+[%x test %] and [%x reflect %] build tools to test programs like this,
 while [%x lint %] explores ways of checking that our programs follow style guidelines.
 
 [% figure

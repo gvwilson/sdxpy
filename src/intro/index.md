@@ -13,7 +13,7 @@ syllabus:
 The best way to learn design in any field
 is to study examples [%b Schon1984 Petre2016 %].
 These lessons therefore build small versions
-of tools that programmers use every day
+of [tools that programmers use every day][programming_tools]
 to show how experienced software designers think.
 Along the way,
 they introduce some fundamental ideas in computer science
@@ -55,8 +55,6 @@ This book is also designed to help another persona:
 > This material will give them material they can use in class
 > and starting points for course projects.
 
-## The Big Ideas {: #intro-ideas}
-
 [% figure
    slug="intro-syllabus"
    img="syllabus_regular.svg"
@@ -64,19 +62,26 @@ This book is also designed to help another persona:
    caption="Lesson topics and dependencies."
 %]
 
-[%x glossary %] defines the terms these lessons introduce,
-which in turn define this book's big ideas [%f intro-syllabus %]:
+## The Big Ideas {: #intro-ideas}
 
--   As the number of components in a system grows,
+Our approach to design is based on two big ideas:
+
+1.  As the number of components in a system grows,
     the complexity of the system increases rapidly
     ([%f intro-complexity %]).
+    However,
+    the number of things we can hold in working memory at any time
+    is fixed and fairly small [%b Hermans2021 %].
+    If we want to build large programs that we can understand,
+    we therefore need to construct them out of pieces
+    that interact in a small number of ways.
 
--   However,
-    the number of things we can hold in working memory at once is fixed (and fairly small) [%b Hermans2021 %].
-
--   If we want to create large programs that are comprehensible, testable, shareable, and maintainable,
-    we have to do more than use sensible variable names:
-    we need to design them.
+2.  The source code of a program is just text,
+    which we can process like other text files.
+    Likewise,
+    a program in memory is just a data structure
+    that we can inspect and modify like any other.
+    Treating code like data simplifies many designs.
 
 [% figure
    slug="intro-complexity"

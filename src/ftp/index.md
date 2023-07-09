@@ -216,7 +216,7 @@ but automating it is difficult because
 there's no way to tell how long to wait before trying to talk to the server
 and no easy way to shut the server down.
 
-A partial solution is to use a [%i "mock object" %][%/i%] ([%x mock %])
+A partial solution is to use a [%i "mock object" %][%/i%] ([%x reflect %])
 in place of a real network connection
 so that we can test each part of the application independently.
 To start,

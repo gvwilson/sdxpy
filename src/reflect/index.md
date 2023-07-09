@@ -21,7 +21,7 @@ as in that book,
 the explanations below refer back to what we've already seen
 about how languages themselves work.
 
-## Mock Objects {: #mock-mock}
+## Mock Objects {: #reflect-mock}
 
 [%x func %] showed that functions are bound to names
 just like other values are bound to other variables.
@@ -75,12 +75,12 @@ and write a test for it:
 
 We then use `fixit` to replace the real `adder` function
 with a mock object that always returns 99
-([%f mock-timeline %]):
+([%f reflect-timeline %]):
 
 [% inc file="mock_object.py" keep="test_fixed" %]
 
 [% figure
-   slug="mock-timeline"
+   slug="reflect-timeline"
    img="timeline.svg"
    alt="Timeline of mock operation"
    caption="Timeline of mock operation."
@@ -96,7 +96,7 @@ the user can provide a function to calculate a return value:
 
 [% inc file="mock_object.py" keep="test_calc" %]
 
-## Protocols {: #mock-protocols}
+## Protocols {: #reflect-protocols}
 
 Mock objects are very useful,
 but the way we're using them is going to cause strange errors.
@@ -162,7 +162,7 @@ Here's a test to prove that our context manager works:
 
 [% inc file="mock_context.py" keep="test" %]
 
-## Decorators {: #mock-decorator}
+## Decorators {: #reflect-decorator}
 
 Python programs rely on several other protocols,
 each of which gives user-level code a way to interact with
@@ -184,10 +184,10 @@ but when we try to call `original` we wind up in an infinite loop.
 The wrapped version of our function refers to `original`,
 but Python looks that up at the time of call,
 which means it calls the wrapped function instead
-([%f mock-bad-wrapping %]).
+([%f reflect-bad-wrapping %]).
 
 [% figure
-   slug="mock-bad-wrapping"
+   slug="reflect-bad-wrapping"
    img="bad_wrapping.svg"
    alt="The wrong way to wrap a function"
    caption="Accidentally creating infinite recursion when wrapping a function."
@@ -245,7 +245,7 @@ decorators are much harder to learn and use than they could have been.
 
 </div>
 
-## Iterators {: #mock-iterator}
+## Iterators {: #reflect-iterator}
 
 As a last example of how protocols work,
 consider the `for` loop.
@@ -318,16 +318,16 @@ With this change in place,
 our test of nested loops pass.
 {: .continue}
 
-## Summary {: #mock-summary}
+## Summary {: #reflect-summary}
 
 [% figure
-   slug="mock-concept-map"
+   slug="reflect-concept-map"
    img="concept_map.svg"
    alt="Concept map of mocks, protocols, and iterators"
    caption="Concept map"
 %]
 
-## Exercises {: #mock-exercises}
+## Exercises {: #reflect-exercises}
 
 ### Timing Blocks {: .exercise}
 
