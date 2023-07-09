@@ -44,13 +44,19 @@ def main():
     check_chapters(chapters)
 
     dot = graphviz.Digraph(graph_attr=GRAPH_ATTRIBUTES, node_attr=NODE_ATTRIBUTES)
-
     make_nodes(dot, chapters)
     make_dependency_links(dot, chapters)
-    save_if_changed(dot, Path(options.outdir, "regular.dot"))
 
-    make_order_links(dot, chapters)
-    save_if_changed(dot, Path(options.outdir, "linear.dot"))
+    if options.kind == "regular":
+        save_if_changed(options.force, dot, options.output)
+
+    elif options.kind == "linear":
+        make_order_links(dot, chapters)
+        save_if_changed(options.force, dot, options.output)
+
+    else:
+        print(f"Unknown kind of output {options.kind}", file=sys.stderr)
+        sys.exit(1)
 
 
 def check_chapters(chapters):
@@ -138,21 +144,24 @@ def parse_args():
     """Parse command-line arguments."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", required=True, help="Configuration file")
-    parser.add_argument("--outdir", required=True, help="Output directory")
+    parser.add_argument("--force", default=False, action="store_true", help="Force regeneration")
+    parser.add_argument("--kind", required=True, choices=["regular", "linear"], help="")
+    parser.add_argument("--output", required=True, help="Output file")
     parser.add_argument("--skip", nargs="+", default=[], help="Slugs to skip")
     return parser.parse_args()
 
 
-def save_if_changed(graph, filepath):
+def save_if_changed(force, graph, filename):
     """Save graph if it has changed."""
+    filepath = Path(filename)
     save = True
-    if filepath.exists():
+    if (not force) and filepath.exists():
         with open(filepath, "r") as reader:
             old = set(reader.readlines())
         new = set(line for line in graph)
         save = new != old
     if save:
-        graph.save(str(filepath))
+        graph.save(filename)
 
 
 if __name__ == "__main__":

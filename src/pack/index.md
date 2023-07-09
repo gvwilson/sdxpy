@@ -8,6 +8,7 @@ syllabus:
 -   An automated theorem prover can determine if a set of logical propositions can be made consistent with each other.
 -   Most package managers use some kind of theorem prover to find compatible sets of packages to install.
 depends:
+-   dup
 ---
 
 There is no point building software if you can't install it.
@@ -111,8 +112,10 @@ Our example has \\( 3×3×2=18 \\) combinations.
 If we were to add another package to the mix with 2 versions,
 the [%g search_space "search space" %] would double;
 add another,
-and it would double again.
-This behavior is called
+and it would double again,
+which means that if \\( N \\) is the number of packages,
+the [%i "big-oh notation" %]work grows[%/i%] as \\( O(c^N) \\).
+This exponential behavior is called
 [%g combinatorial_explosion "combinatorial explosion" %],
 and it makes brute force solutions impractical even for small problems.
 We will implement it as a starting point

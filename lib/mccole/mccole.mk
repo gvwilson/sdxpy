@@ -155,16 +155,23 @@ pdf-once: ${ROOT}/docs/${STEM}.tex ${DOCS_PDF}
 	cd ${ROOT}/docs && pdflatex ${STEM}
 
 ifdef SYLLABUS_DIR
-## syllabus: remake syllabus diagram
-DOT_FILES := ${ROOT}/info/regular.dot ${ROOT}/info/linear.dot
+## syllabus: remake syllabus diagrams
+SYLLABUS_DEPS := ${CONFIG} $(patsubst %,${ROOT}/src/%/index.md,${CHAPTERS}) ${MCCOLE}/bin/make_dot.py
 SYLLABUS_FILES := $(patsubst %,${SYLLABUS_DIR}/syllabus%,_regular.pdf _regular.svg _linear.pdf _linear.svg)
+
 syllabus: ${SYLLABUS_FILES}
+
 ${SYLLABUS_DIR}/syllabus_%.pdf: ${ROOT}/info/%.dot
 	dot -Tpdf $< > $@
+
 ${SYLLABUS_DIR}/syllabus_%.svg: ${ROOT}/info/%.dot
 	dot -Tsvg $< > $@
-${DOT_FILES}: ${CONFIG} $(patsubst %,${ROOT}/src/%/index.md,${CHAPTERS}) ${MCCOLE}/bin/make_dot.py
-	python ${MCCOLE}/bin/make_dot.py --config ${CONFIG} --skip intro finale --outdir ${ROOT}/info
+
+${ROOT}/info/regular.dot: ${SYLLABUS_DEPS}
+	python ${MCCOLE}/bin/make_dot.py --config ${CONFIG} --kind regular --skip intro finale --output $@
+
+${ROOT}/info/linear.dot: ${SYLLABUS_DEPS}
+	python ${MCCOLE}/bin/make_dot.py --config ${CONFIG} --kind linear --skip intro finale --output $@
 endif
 
 ## diagrams: convert diagrams from SVG to PDF
