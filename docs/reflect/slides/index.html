@@ -44,7 +44,206 @@ class: slide-title
 ---
 
 
+## The Problem
+
+-   Want to use some more advanced features of Python in coming examples
+
+-   Can now explain them in terms of what we've seen in previous lessons
+
+---
+
+## Mock Objects
+
+```py
+import time
+
+def elapsed(since):
+    return time.time() - since
+
+def mock_time():
+    return 200
+
+def test_elapsed():
+    time.time = mock_time
+    assert elapsed(50) == 150
+```
+
+
+-   But this changes `time.time` for *everything*
+
+-   Want a reliable way to restore the original
+
+---
+
+## Callable
+
+-   If a function is just an object
+
+-   We can make an object that looks like a function
+
+```py
+class Adder:
+    def __init__(self, value):
+        self.value = value
+
+    def __call__(self, arg):
+        return arg + self.value
+
+add_3 = Adder(3)
+result = add_3(8)
+print(f"add_3(8): {result}")
+```
+
+
+```
+add_3(8): 11
+```
+
+
+---
+
+## A Generic Replacer
+
+```py
+class Fake:
+    def __init__(self, func=None, value=None):
+        self.calls = []
+        self.func = func
+        self.value = value
+
+    def __call__(self, *args, **kwargs):
+        self.calls.append([args, kwargs])
+        if self.func is not None:
+            return self.func(*args, **kwargs)
+        return self.value
+```
+
+
+```py
+def fixit(name, func=None, value=None):
+    assert name in globals()
+    fake = Fake(func, value)
+    globals()[name] = fake
+    return fake
+```
+
+
+---
+
+## Replacement in Action
+
+```py
+def adder(a, b):
+    return a + b
+
+def test_with_real_function():
+    assert adder(2, 3) == 5
+```
+
+
+```py
+def test_with_fixed_return_value():
+    fixit("adder", value=99)
+    assert adder(2, 3) == 99
+```
+
+
+-   Yes, we would usually do something more useful…
+
+---
+
+## Replacement in Action
+
+<figure>
+<img src="../timeline.svg" alt="Timeline of mock operation"/>
+</figure>
+
+
+---
+
+## But Wait, There's More
+
+-   Record arguments
+
+```py
+def test_fake_records_calls():
+    fake = fixit("adder", value=99)
+    assert adder(2, 3) == 99
+    assert adder(3, 4) == 99
+    assert adder.calls == [[(2, 3), {}], [(3, 4), {}]]
+```
+
+
+-   Return a user-defined value
+
+```py
+def test_fake_calculates_result():
+    fixit("adder", func=lambda left, right: 10 * left + right)
+    assert adder(2, 3) == 23
+```
+
+
+---
+
+## Protocols
+
+-   A <a class="gl-ref" href="../../glossary/#protocol" title="A set of rules that something promises to obey, i.e., the contract between that thing and its users." markdown="1">protocol</a> specifies
+    how programs can tell Python to do specific things at specific moments
+
+    -   `__init__` to build objects
+
+    -   `__call__` to emulate function call
+
+-   Define `__enter__` and `__exit__` to create a <a class="gl-ref" href="../../glossary/#context_manager" title="An object that automatically executes some operations at the start of a code block and some other operations at the end of the block." markdown="1">context manager</a>
+    that a `with` statement can use
+
+---
+
+## Operation
+
+```python
+with C(…args…) as name:
+    …do things…
+```
+
+1.  Call `C`'s constructor to create an object.
+2.  Call that object's `__enter__` method and assign the result to `name`.
+3.  Run the code inside the `with` block.
+4.  Call `name.__exit__()` when the block finishes.
+
+-   `__enter__` doesn't need extra arguments
+
+    -   Use the object's constructor
+
+-   Python calls `__exit__` with three values for error handling
+
+---
+
+## Mock With Context
+
+```py
+class ContextFake(Fake):
+    def __init__(self, name, func=None, value=None):
+        super().__init__(func, value)
+        self.name = name
+        self.original = None
+
+    def __enter__(self):
+        assert self.name in globals()
+        self.original = globals()[self.name]
+        globals()[self.name] = self
+        return self
+
+    def __exit__(self, exc_type, exc_value, exc_traceback):
+        globals()[self.name] = self.original
+```
+
+
+---
+
 ## Wrapping Functions
+
+-   Try writing a function that wraps another function
 
 ```py
 def original(value):
@@ -204,7 +403,75 @@ def double(x):           # equivalent to
 ```
 
 
--   Instead, we have to create a closure
+---
+
+## Iteration
+
+-   Python calls `thing.__iter__` at the start of a `for` loop
+    to get an <a class="gl-ref" href="../../glossary/#iterator" title="A function or object that produces each value from a collection in turn for processing." markdown="1">iterator</a>
+
+-   Calls `iterator.__next__` repeatedly to get loop items
+
+-   Stops when the iterator raises `StopIteration`
+
+-   (Almost) always create a separate object
+    so that we can run nested loops on the same target
+
+---
+
+## Loop Over a List of Strings
+
+```py
+class BetterIterator:
+    def __init__(self, text):
+        self._text = text[:]
+
+    def __iter__(self):
+        return BetterCursor(self._text)
+```
+
+
+```py
+class BetterCursor:
+    def __init__(self, text):
+        self._text = text
+        self._row = 0
+        self._col = -1
+
+    def __next__(self):
+        self._advance()
+        if self._row == len(self._text):
+            raise StopIteration
+        return self._text[self._row][self._col]
+
+```
+
+
+---
+
+## Iterator in Action
+
+```py
+def test_naive_buffer_nested_loop():
+    buffer = BetterIterator(["a", "b"])
+    result = ""
+    for _ in buffer:
+        for inner in buffer:
+            result += inner
+    assert result == "abab"
+```
+
+
+---
+
+class: summary
+
+## Summary
+
+<figure>
+<img src="../concept_map.svg" alt="Concept map of reflection"/>
+</figure>
+
 
 
 [academic_prototyping]: https://www.fuzzingbook.org/html/AcademicPrototyping.html

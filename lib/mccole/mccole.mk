@@ -168,10 +168,10 @@ ${SYLLABUS_DIR}/syllabus_%.svg: ${ROOT}/info/%.dot
 	dot -Tsvg $< > $@
 
 ${ROOT}/info/regular.dot: ${SYLLABUS_DEPS}
-	python ${MCCOLE}/bin/make_dot.py --config ${CONFIG} --kind regular --skip intro finale --output $@
+	@python ${MCCOLE}/bin/make_dot.py --config ${CONFIG} --kind regular --skip intro finale --output $@
 
 ${ROOT}/info/linear.dot: ${SYLLABUS_DEPS}
-	python ${MCCOLE}/bin/make_dot.py --config ${CONFIG} --kind linear --skip intro finale --output $@
+	@python ${MCCOLE}/bin/make_dot.py --config ${CONFIG} --kind linear --skip intro finale --output $@
 endif
 
 ## diagrams: convert diagrams from SVG to PDF

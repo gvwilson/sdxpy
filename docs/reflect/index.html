@@ -307,11 +307,17 @@
   
   <li markdown="1">Temporarily replacing functions with mock objects can simplify testing.</li>
   
+  <li markdown="1">Mock objects can record their calls and/or return variable results.</li>
+  
   <li markdown="1">Python defines protocols so that users' code can be triggered by keywords in the language.</li>
   
-  <li markdown="1">We can use decorators to wrap functions after defining them.</li>
+  <li markdown="1">Use the context manager protocol to ensure cleanup operations always execute.</li>
   
-  <li markdown="1">Defining a decorator that has parameters is much more complicated than defining one that doesn't.</li>
+  <li markdown="1">Use decorators to wrap functions after defining them.</li>
+  
+  <li markdown="1">Use closures to create decorators that take extra parameters.</li>
+  
+  <li markdown="1">Use the iterator protocol to make objects work with for loops.</li>
   
   </ul>
   
@@ -353,7 +359,7 @@
 
           
 <p class="definitions">
-  Terms defined: <a class="gl-ref" href="../glossary/#context_manager" markdown="1">context manager</a>, <a class="gl-ref" href="../glossary/#decorator" markdown="1">decorator</a>, <a class="gl-ref" href="../glossary/#iterator" markdown="1">iterator</a>, <a class="gl-ref" href="../glossary/#mock_object" markdown="1">mock object</a>, <a class="gl-ref" href="../glossary/#promise" markdown="1">promise</a>, <a class="gl-ref" href="../glossary/#protocol" markdown="1">protocol</a>
+  Terms defined: <a class="gl-ref" href="../glossary/#append_mode" markdown="1">append mode</a>, <a class="gl-ref" href="../glossary/#context_manager" markdown="1">context manager</a>, <a class="gl-ref" href="../glossary/#decorator" markdown="1">decorator</a>, <a class="gl-ref" href="../glossary/#iterator" markdown="1">iterator</a>, <a class="gl-ref" href="../glossary/#mock_object" markdown="1">mock object</a>, <a class="gl-ref" href="../glossary/#promise" markdown="1">promise</a>, <a class="gl-ref" href="../glossary/#protocol" markdown="1">protocol</a>
 </p>
 
 
@@ -398,7 +404,8 @@ that can be &ldquo;called&rdquo; just like functions.
 If an object <code>obj</code> has a <code>__call__</code> method,
 then <code>obj(…)</code> is automatically turned into <code>obj.__call__(…)</code>.
 For example,
-the code below defines a class <code>Adder</code> whose instances add a constant to their input:</p>
+the code below defines a class <code>Adder</code>
+whose instances add a constant to their input:</p>
 <div class="code-sample lang-py" title="callable.py">
 <div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Adder</span><span class="p">:</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
@@ -426,7 +433,8 @@ the code below defines a class <code>Adder</code> whose instances add a constant
     so that it can be called with any number of regular or keyword arguments;</p>
 </li>
 <li>
-<p>stores those arguments so we can see how the replaced function was called;
+<p>stores those <span class="ix-entry" ix-key="argument" markdown="1">arguments</span>
+    so we can see how the replaced function was called;
     and</p>
 </li>
 <li>
@@ -527,7 +535,8 @@ if a class has a method with that name,
 Python calls it automatically when constructing a new instance of that class.</p>
 <p>What we want for managing mock objects is
 a <a class="gl-ref" href="../glossary/#context_manager" title="An object that automatically executes some operations at the start of a code block and some other operations at the end of the block." markdown="1">context manager</a>
-that replaces the real function with our mock at the start of a block of code
+that replaces the real function with our mock
+at the start of a <span class="ix-entry" ix-key="block" markdown="1">block</span> of code
 and then puts the original back at the end.
 The protocol for this relies on two methods called <code>__enter__</code> and <code>__exit__</code>.
 If the class is called <code>C</code>,
@@ -535,14 +544,20 @@ then when Python executes a <code>with</code> block like this:</p>
 <div class="highlight"><pre><span></span><code><span class="k">with</span> <span class="n">C</span><span class="p">(</span><span class="err">…</span><span class="n">args</span><span class="err">…</span><span class="p">)</span> <span class="k">as</span> <span class="n">name</span><span class="p">:</span>
     <span class="err">…</span><span class="n">do</span> <span class="n">things</span><span class="err">…</span>
 </code></pre></div>
-<p class="continue">it does the following:</p>
+<p class="continue">it does the following (<a class="fig-ref" href="../reflect/#reflect-context-manager">Figure 9.2</a>)):</p>
 <ol>
-<li>Call <code>C</code>&lsquo;s constructor to create an object that it associates with the code block.</li>
+<li>Call <code>C</code>&lsquo;s <span class="ix-entry" ix-key="constructor" markdown="1">constructor</span>
+    to create an object that it associates with the code block.</li>
 <li>Call that object&rsquo;s <code>__enter__</code> method
     and assign the result to the variable <code>name</code>.</li>
 <li>Run the code inside the <code>with</code> block.</li>
 <li>Call <code>name.__exit__()</code> when the block finishes.</li>
 </ol>
+<figure id="reflect-context-manager">
+<img src="./context_manager.svg" alt="A context manager"/>
+<figcaption markdown="1">Figure 9.2: Operations performed by a context manager.</figcaption>
+</figure>
+
 <p>Here&rsquo;s a mock object that inherits all the capabilities of <code>Fake</code>
 and adds the two methods needed by <code>with</code>:</p>
 <div class="code-sample lang-py" title="mock_context.py">
@@ -566,7 +581,7 @@ and adds the two methods needed by <code>with</code>:</p>
 anything it needs should be provided to the constructor.
 On the other hand,
 <code>__exit__</code> will always be called with three values
-that tell it whether an exception occurred,
+that tell it whether an <span class="ix-entry" ix-key="exception" markdown="1">exception</span> occurred,
 and if so,
 what the exception was.</p>
 <p class="continue">Here&rsquo;s a test to prove that our context manager works:</p>
@@ -611,14 +626,9 @@ We could try to do it like this:</p>
 <p>but when we try to call <code>original</code> we wind up in an infinite loop.
 The wrapped version of our function refers to <code>original</code>,
 but Python looks that up at the time of call,
-which means it calls the wrapped function instead
-(<a class="fig-ref" href="../reflect/#reflect-bad-wrapping">Figure 9.2</a>).</p>
-<figure id="reflect-bad-wrapping">
-<img src="./bad_wrapping.svg" alt="The wrong way to wrap a function"/>
-<figcaption markdown="1">Figure 9.2: Accidentally creating infinite recursion when wrapping a function.</figcaption>
-</figure>
-
-<p>We can solve the problem of infinite recursion by creating a closure:</p>
+which means it calls the wrapped function instead.
+We can prevent this infinite <span class="ix-entry" ix-key="recursion" markdown="1">recursion</span>
+by creating a closure:</p>
 <div class="code-sample lang-py" title="wrap_capture.py">
 <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">original</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;original: </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
@@ -764,13 +774,13 @@ Python implements this using a two-part <a class="gl-ref" href="../glossary/#ite
 <p>That iterator object must have a <code>__next__</code> method,
     which must return a value each time it is called.
     When there are no more values to return,
-    it must raise a <code>StopIteration</code> exception.</p>
+    it must <span class="ix-entry" ix-key="raise" markdown="1">raise</span> a <code>StopIteration</code> exception.</p>
 </li>
 </ol>
 <p>For example,
 suppose we have a class that stores a list of strings
 and we want to return the characters from the strings in order.
-(We will use a <span class="ix-entry" ix-key="buffer" markdown="1">buffer</span> class like this
+(We will use a <span class="ix-entry" ix-key="buffer (of text)" markdown="1">buffer (of text)</span> class like this
 to store text for viewing in <a class="x-ref" href="../viewer/">Chapter 23</a>.)
 In our first attempt,
 each object is its own iterator,
@@ -883,6 +893,11 @@ our test of nested loops pass.</p>
 </figure>
 
 <h2 id="reflect-exercises">Section 9.6: Exercises</h2>
+<h3 class="exercise">Testing Exceptions</h3>
+<p>Create a context manager that works like <code>pytest.raises</code> from the <a href="https://docs.pytest.org/">pytest</a> library,
+i.e.,
+that does nothing if an expected exception is raised within its scope
+but fails with an assertion error if that kind of exception is <em>not</em> raised.</p>
 <h3 class="exercise">Timing Blocks</h3>
 <p>Create a context manager called <code>Timer</code> that reports how long it has been
 since a block of code started running:</p>
@@ -896,6 +911,12 @@ since a block of code started running:</p>
 <p>Modify the iterator example so that it handles empty strings correctly,
 i.e.,
 so that iterating over the list <code>["a", ""]</code> produces <code>["a"]</code>.</p>
+<h3 class="exercise">Logging to a File</h3>
+<p>Create a decorator that takes the name of a file as an extra parameter
+and appends a log message to that file
+each time a function is called.
+(Hint: open the file in <a class="gl-ref" href="../glossary/#append_mode" title="An option for writing to a file in which new data is appended to existing data rather than replacing it." markdown="1">append mode</a>
+each time it is needed.)</p>
         </main>
       </div>
     </div>
