@@ -154,6 +154,20 @@ ${ROOT}/docs/${STEM}.tex: ${ROOT}/docs/all.html ${MCCOLE}/bin/html_to_latex.py $
 pdf-once: ${ROOT}/docs/${STEM}.tex ${DOCS_PDF}
 	cd ${ROOT}/docs && pdflatex ${STEM}
 
+ifdef SYLLABUS_DIR
+## syllabus: remake syllabus diagram
+DOT_FILES := ${ROOT}/info/regular.dot ${ROOT}/info/linear.dot
+SYLLABUS_FILES := $(patsubst %,${SYLLABUS_DIR}/syllabus%,_regular.pdf _regular.svg _linear.pdf _linear.svg)
+syllabus: ${SYLLABUS_FILES}
+${SYLLABUS_DIR}/syllabus_%.pdf: ${ROOT}/info/%.dot
+	dot -Tpdf $< > $@
+${SYLLABUS_DIR}/syllabus_%.svg: ${ROOT}/info/%.dot
+	dot -Tsvg $< > $@
+${DOT_FILES}: ${CONFIG} $(patsubst %,${ROOT}/src/%/index.md,${CHAPTERS}) ${MCCOLE}/bin/make_dot.py
+	python ${MCCOLE}/bin/make_dot.py --config ${CONFIG} --skip intro finale --outdir ${ROOT}/info
+	touch ${DOT_FILES}
+endif
+
 ## diagrams: convert diagrams from SVG to PDF
 diagrams: ${DOCS_PDF}
 ${ROOT}/src/%.pdf: ${ROOT}/src/%.svg
@@ -162,15 +176,6 @@ ${ROOT}/docs/%.pdf: ${ROOT}/src/%.pdf
 	cp $< $@
 
 ## ---: ---
-
-ifdef SYLLABUS_DIR
-## syllabus: remake syllabus diagram
-SYLLABUS_IMG=${SYLLABUS_DIR}/syllabus_regular.pdf ${SYLLABUS_DIR}/syllabus_regular.svg ${SYLLABUS_DIR}/syllabus_regular.png ${SYLLABUS_DIR}/syllabus_linear.pdf ${SYLLABUS_DIR}/syllabus_linear.png ${SYLLABUS_DIR}/syllabus_linear.svg
-syllabus: ${SYLLABUS_IMG}
-${SYLLABUS_IMG}: ${CONFIG} $(patsubst %,${ROOT}/src/%/index.md,${CHAPTERS}) ${MCCOLE}/bin/make_dot.py
-	python ${MCCOLE}/bin/make_dot.py --config ${CONFIG} --skip intro finale --output ${SYLLABUS_DIR}/syllabus
-	rm -f ${SYLLABUS_DIR}/syllabus_*.gv
-endif
 
 ## github: make root pages for GitHub
 .PHONY: github

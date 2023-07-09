@@ -35,9 +35,6 @@ ORDER_ATTRIBUTES = {
 # Width of node labels.
 LABEL_WIDTH = 12
 
-# Output formats.
-FORMATS = ["pdf", "png", "svg"]
-
 
 def main():
     """Main driver."""
@@ -45,14 +42,15 @@ def main():
     config = util.load_config(options.config)
     chapters = make_chapters(options, config)
     check_chapters(chapters)
+
     dot = graphviz.Digraph(graph_attr=GRAPH_ATTRIBUTES, node_attr=NODE_ATTRIBUTES)
+
     make_nodes(dot, chapters)
     make_dependency_links(dot, chapters)
-    for fmt in FORMATS:
-        dot.render(format=fmt, outfile=f"{options.output}_regular.{fmt}")
+    save_if_changed(dot, Path(options.outdir, "regular.dot"))
+
     make_order_links(dot, chapters)
-    for fmt in FORMATS:
-        dot.render(format=fmt, outfile=f"{options.output}_linear.{fmt}")
+    save_if_changed(dot, Path(options.outdir, "linear.dot"))
 
 
 def check_chapters(chapters):
@@ -81,6 +79,7 @@ def check_chapters(chapters):
             good = False
 
     if not good:
+        print("make_dot failing", file=sys.stderr)
         sys.exit(1)
 
 
@@ -139,11 +138,21 @@ def parse_args():
     """Parse command-line arguments."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", required=True, help="Configuration file")
+    parser.add_argument("--outdir", required=True, help="Output directory")
     parser.add_argument("--skip", nargs="+", default=[], help="Slugs to skip")
-    parser.add_argument(
-        "--output", required=False, default=None, help="Output file (default stdout)"
-    )
     return parser.parse_args()
+
+
+def save_if_changed(graph, filepath):
+    """Save graph if it has changed."""
+    save = True
+    if filepath.exists():
+        with open(filepath, "r") as reader:
+            old = set(reader.readlines())
+        new = set(line for line in graph)
+        save = new != old
+    if save:
+        graph.save(str(filepath))
 
 
 if __name__ == "__main__":
