@@ -20,7 +20,7 @@ One way to evaluate the design of a piece of software is
 to ask how [%g extensibility "extensible" %] it is,
 i.e.,
 how easily we can add or change things [%b Wilson2022a %].
-The answer for the interpreter of [%x interp %] is, "Pretty easily,"
+The answer for the [%i "interpreter" %][%/i%] of [%x interp %] is, "Pretty easily,"
 but the answer for the little language it interprets is, "Not at all,"
 because there is currently no way for users to create new operations of their own.
 We need to give users a way to define and call functions.
@@ -31,7 +31,7 @@ how some more advanced features of modern programming languages work as well.
 
 ## Definition and Storage {: #func-defstore}
 
-Let's start by defining a function that takes a single parameter
+Let's start by defining a function that takes a single [%i "parameter" %][%/i%]
 and immediately returns it.
 In Python,
 this is:
@@ -41,7 +41,7 @@ this is:
 It has a name,
 a (possibly empty) list of parameter names,
 and a body,
-which in this case is a single statement.
+which in this case is a single [%i "statement" %][%/i%].
 {: .continue}
 
 Our little language does things differently.
@@ -83,14 +83,14 @@ we need to implement [%i "scope" %][%/i%]
 so that parameters and variables used in a function
 don't overwrite those defined outside it—in other words,
 to prevent [%g name_collision "name collision" %].
-When a function is called with one or more expressions as arguments,
+When a function is called with one or more expressions as [%i "argument" %]arguments[%/i%],
 we will:
 
 1.  Evaluate all of these expressions.
 
 2.  Look up the function.
 
-3.  Create a new environment whose keys are the parameters' names
+3.  Create a new [%i "environment" %][%/i%] whose keys are the parameters' names
     and whose values are the expressions' values.
 
 4.  Call `do` to run the function's action and captures the result.
