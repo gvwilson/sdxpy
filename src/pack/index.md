@@ -239,7 +239,7 @@ we would write a triply-nested loop to generate combinations,
 but if there were four,
 we would need a quadruply-nested loop,
 and so on.
-This [%g recursive_enumeration_pattern "Recursive Enumeration" %] design pattern
+This [%g recursive_enumeration_pattern "Recursive Enumeration" %] [%i "design pattern" %][%/i%]
 uses one recursive function call per loop
 so that we automatically get exactly as many loops as we need.
 

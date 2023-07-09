@@ -1,6 +1,10 @@
 ---
 syllabus:
--   FIXME
+-   HTML consists of text and of elements represented by tags with attributes.
+-   HTML is represented in memory as a Document Object Model (DOM) tree.
+-   Trees are usually processed using recursion.
+-   The Visitor design pattern is often used to perform an action for each member of a data structure.
+-   We can summarize and check the structure of an HTML page by visiting each node and recording what we find there.
 depends:
 -   parse
 ---
@@ -13,7 +17,7 @@ so that *everyone* can get information out of them.
 In short,
 we want the equivalent of unit tests for our output.
 
-This chapter builds a small tool to check the structure of HTML.
+This chapter builds a small tool to check the structure of HTML pages.
 Doing this prepares us for building a tool to generate pages ([%x template %])
 and another to check the structure and style of our code ([%x lint %]).
 
@@ -56,7 +60,7 @@ Beautiful Soup's DOM has two main classes:
 `NavigableString` for text and `Tag` for elements.
 To parse a document,
 we import what we need and call `BeautifulSoup` with
-the text to be parsed
+the text to be [%i "parser" %]parsed[%/i%]
 and a string specifying exactly what kind of parsing we want to do.
 (In practice, this is almost always `"html.parser"`.)
 
@@ -67,7 +71,7 @@ to tell us what element the tag represents
 and to give us access to the node's [%g child_tree "children" %],
 i.e.,
 the nodes below it in the tree.
-We can therefore write a short recursive function
+We can therefore write a short [%i "recursion" %]recursive[%/i%] function
 to show us everything in the DOM:
 
 [% inc file="parse.py" keep="display" %]
@@ -82,7 +86,7 @@ have been preserved as text nodes.
 {: .continue}
 
 Finally,
-each `Tag` node has a dictionary called `attrs`
+each `Tag` node has a [%i "dictionary" %][%/i%] called `attrs`
 that stores the attributes of that node.
 The values in this dictionary are either strings or lists of strings
 depending on whether the attribute has a single value or multiple values:
@@ -122,9 +126,9 @@ A good rule of software design is that if we have written something three times,
 we should turn what we've learned into something reusable
 so that we never have to write it again.
 In this case,
-we can use the [%g visitor_pattern "Visitor" %] design pattern.
-A visitor is a class that knows how to get to each element of a data structure
-and call a user-defined method when it gets there.
+we can use the [%g visitor_pattern "Visitor" %] [%i "design pattern" %][%/i%].
+A visitor is a [%i "class" %][%/i%] that knows how to get to each element of a data structure
+and call a user-defined [%i "method" %][%/i%] when it gets there.
 Our visitor will have three methods:
 one that it calls when it first encounters a node,
 one that it calls when it is finished with that node,
@@ -133,7 +137,7 @@ and one that it calls for text ([%f check-visitor %]):
 [% inc file="visitor.py" keep="visitor" %]
 
 Notice that we provide do-nothing implementations of these three methods
-rather than having them raise a `NotImplementedError`.
+rather than having them [%i "raise" %][%/i%] a `NotImplementedError`.
 A particular use of our `Visitor` class may not need some of these methods—for example,
 our catalog builder didn't need to do anything when leaving a node or for text nodes—and
 we shouldn't require people to implement things they don't need.
@@ -173,7 +177,7 @@ we shouldn't invent a syntax of our own:
 there are already too many in the world.
 {: .continue}
 
-Our `Check` class only needs a constructor to set everything up
+Our `Check` class only needs a [%i "constructor" %][%/i%] to set everything up
 and a `_tag_enter` method to handle nodes:
 
 [% inc file="check.py" keep="check" %]
@@ -205,14 +209,14 @@ to check that any HTML we generate conforms to our intended rules.
 
 ## Exercises {: #check-exercises}
 
-### Simplify the Logic
+### Simplify the Logic {: .exercise}
 
 1.  Trace the operation of `Check._tag_enter`
     and convince yourself that it does the right thing.
 
 2.  Rewrite it to make it easier to understand.
 
-### Detecting Empty Elements
+### Detecting Empty Elements {: .exercise}
 
 Write a visitor that builds a list of nodes
 that could be written as self-closing tags but aren't,
@@ -221,17 +225,17 @@ node that are written as `<a></a>`.
 The `Tag.sourceline` attribute may help you
 make your report more readable.
 
-### Eliminating Newlines
+### Eliminating Newlines {: .exercise}
 
 Write a visitor that deletes any text nodes from a document
 that only contain newline characters.
 Do you need to make any changes to `Visitor`,
 or can you implement this using the class as it is?
 
-### Linearize the Tree
+### Linearize the Tree {: .exercise}
 
 Write a visitor that returns a flat list containing
-all the nodes in a DOM tree
+all the nodes in a [%g dom_tree "DOM tree" %]
 in the order in which they would be traversed.
 When you are done,
 you should be able to write code like this:
@@ -240,3 +244,29 @@ you should be able to write code like this:
 for node in Flatten(doc.html).result():
     print(node)
 ```
+
+### Reporting Accessibility Violations {: .exercise}
+
+1.  Write a program that reads one or more HTML pages
+    and reports images in them that do *not* have an `alt` attribute.
+
+2.  Extend your program so that it also reports
+    any `figure` elements that do *not* contain exactly one `figcaption` element.
+
+3.  Extend your program again so that it warns about images with redundant text
+    (i.e., images in figures
+    whose `alt` attribute contains the same text
+    as the figure's caption).
+
+### Ordering Headings {: .exercise}
+
+Write a program that checks the ordering of headings in a page:
+
+1.  There should be exactly one `h1` element,
+    and it should be the first heading in the page.
+
+2.  Heading levels should never increase by more than 1,
+    i.e.,
+    an `h1` should only ever be followed by an `h2`,
+    an `h2` should never be followed directly by an `h4`,
+    and so on.

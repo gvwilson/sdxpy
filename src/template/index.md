@@ -138,7 +138,7 @@ If the variable can't be found,
 
 HTML pages have a nested structure,
 so we will process them using
-the [%i "Visitor pattern" %]Visitor[%/i%] design pattern.
+the [%i "Visitor pattern" %]Visitor[%/i%] [%i "design pattern" %][%/i%].
 `Visitor`'s constructor takes the root node of the DOM tree as an argument and saves it.
 When we call `Visitor.walk` without a value,
 it starts recursing from that saved root;

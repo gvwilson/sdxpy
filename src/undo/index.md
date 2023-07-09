@@ -175,7 +175,7 @@ And how are we going to interpret these log records?
 Will we need a second dispatch method with its own handlers?
 
 The common solution to these problems is to use
-the [%g command_pattern "Command" %] design pattern.
+the [%g command_pattern "Command" %] [%i "design pattern" %][%/i%].
 This pattern turns verbs into nouns,
 i.e.,
 each action is represented as an object
