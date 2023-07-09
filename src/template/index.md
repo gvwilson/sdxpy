@@ -1,10 +1,9 @@
 ---
 syllabus:
 -   Static site generators create HTML pages from templates, directives, and data.
--   A static site generator must have the same core features as a programming language.
--   Programs can use the Visitor pattern to separate traversal of a data structure from operations on its elements.
--   HTML documents are usually represented in memory as trees using the Document Object Model (DOM).
--   The style of code that programmers find easiest to read changes as they become more experienced.
+-   A static site generator has the same core features as a programming language.
+-   Special-purpose mini-languages quickly become as complex as mainstream languages.
+-   Static methods are a convenient way to group functions together.
 depends:
 -   interp
 -   check
@@ -25,7 +24,8 @@ and a language called [%i "PHP" %][PHP][php][%/i%] was created primarily for thi
 Most of these systems use one of three designs
 ([%f template-options %]):
 
-1.  Mix commands in an existing language such as JavaScript with the HTML or Markdown
+1.  Mix commands in an existing language such as JavaScript
+    with the [%i "HTML" %][%/i%] or [%i "Markdown" %][%/i%]
     using some kind of marker to indicate which parts are commands
     and which parts are to be taken as-is.
     This approach is taken by [%i "EJS" %][EJS][ejs][%/i%].
@@ -36,10 +36,10 @@ Most of these systems use one of three designs
     Again, some kind of marker must be used to show
     which parts of the page are code and which are ordinary text.
 
-3.  Put directives in specially-named attributes in the HTML.
+3.  Put directives in specially-named [%i "attribute" %]attributes[%/i%] in the HTML.
     This approach has been the least popular,
     but since pages are valid HTML,
-    it eliminates the need for a special parser.
+    it eliminates the need for a special [%i "parser" %][%/i%].
 
 [% figure
    slug="template-options"
@@ -50,7 +50,7 @@ Most of these systems use one of three designs
 
 This chapter builds a simple page templating system using the third strategy.
 We will process each page independently by parsing the HTML
-and walking the [%i "DOM" %][%/i%] to find nodes with special attributes.
+and walking the [%i "DOM" %][%/i%] to find [%i "node" %]nodes[%/i%] with special attributes.
 Our program will execute the instructions in those nodes
 to implement loops and if/else statements;
 other nodes will be copied as-is to create text.
@@ -113,9 +113,17 @@ These variables might come from a configuration file,
 from a YAML header in the file itself,
 or from some mix of the two;
 for the moment,
-we will just pass them into the expansion function as an object:
+we will just pass them into the expansion function as an object
+([%f template-api %]):
 
 [% inc file="example_call.py" %]
+
+[% figure
+   slug="template-api"
+   img="api.svg"
+   alt="Template API"
+   caption="Combining text and data in templating."
+%]
 
 ## Managing Variables {: #template-values}
 
@@ -124,10 +132,11 @@ We also need to maintain multiple sets of variables
 so that (for example) variables used inside a loop
 don't conflict with ones used outside it.
 As in [%x interp %],
-we will use a stack of environments,
+we will use a stack of [%i "environment" %]environments[%/i%],
 each of which is a dictionary.
 
-Our stack-handling class `Env` has methods  to push and pop new stack frames
+Our stack-handling class `Env` has methods
+to push and pop new [%i "stack frame" %]stack frames[%/i%]
 and find a variable given its name.
 If the variable can't be found,
 `Env.find` returns `None` instead of throwing an exception:
@@ -139,7 +148,8 @@ If the variable can't be found,
 HTML pages have a nested structure,
 so we will process them using
 the [%i "Visitor pattern" %]Visitor[%/i%] [%i "design pattern" %][%/i%].
-`Visitor`'s constructor takes the root node of the DOM tree as an argument and saves it.
+`Visitor`'s [%i "constructor" %][%/i%] takes the root node of the [%i "DOM tree" %][%/i%]
+as an argument and saves it.
 When we call `Visitor.walk` without a value,
 it starts recursing from that saved root;
 if `.walk` is given a value (as it is during recursive calls),
@@ -166,7 +176,7 @@ uses them to process each type of node:
 1.  If there is a handler for the node,
     call the handler's `open` or `close` method.
 
-1.  Otherwise, open or close a regular tag.
+1.  Otherwise, open or close a regular [%i "tag" %][%/i%].
 
 [% inc file="expander.py" omit="open" %]
 
@@ -202,7 +212,7 @@ Instead,
 it's just a way to manage a pair of related `open` and `close` functions,
 which we declare as [%i "static method" %]static methods[%/i%].
 When we enter a node like `<span z-num="123"/>`
-this handler asks the expander to show an opening tag
+this handler asks the expander to show an [%i "opening tag" %][%/i%]
 followed by the value of the `z-num` attribute.
 When we exit the node,
 the handler asks the expander to close the tag.
@@ -278,7 +288,8 @@ Let's test it:
 This implementation of `if` contains a subtle bug.
 The `open` and `close` functions both check the value of the control variable.
 If something inside the body of the `if` changes that value,
-the result could be an opening tag without a matching closing tag or vice versa.
+the result could be an opening tag
+without a matching [%i "closing tag" %][%/i%] or vice versa.
 We haven't implemented an assignment operator,
 so right now there's no way for that to happen,
 but it's a plausible thing for us to add later,
