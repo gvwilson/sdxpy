@@ -35,7 +35,7 @@ and to create code as well as check it.
 ## Machinery {: #lint-machinery}
 
 [%x check %] represented HTML as
-a [%i "DOM" "DOM tree" %]DOM tree[%/i%].
+a [%i "DOM tree" %]DOM tree[%/i%].
 Similarly,
 we can use Python's [ast][py_ast] module
 to parse Python programs and produce an [%i "abstract syntax tree" %][%/i%]
@@ -47,7 +47,7 @@ suppose we have this short program:
 
 [%f lint-ast-simple %] shows the main parts of
 this program's [%i "abstract syntax tree" %][%/i%].
-Each node represents one element of the program,
+Each [%i "node" %][%/i%] represents one element of the program,
 and each node's [%i "child (in a tree)" %]children[%/i%] are the element nested within it.
 {: .continue}
 
@@ -74,7 +74,8 @@ it has:
 {: .continue}
 
 -   a `name`;
--   an `arguments` node that stores information about the function's arguments;
+-   an `arguments` node that stores information
+    about the function's [%i "argument" %]arguments[%/i%];
 -   a `body` that holds a list of the statements making up the function; and
 -   a list of decorators applied to the function (which is empty).
 
@@ -88,10 +89,10 @@ that knew which fields of that node were worth exploring.
 Luckily for us,
 the [ast][py_ast] module comes with tools that can do this for us.
 The class `ast.NodeVisitor` uses
-the now-familiar [%i "Visitor pattern" %][%/i%]
+the now-familiar [%i "Visitor pattern" %]Visitor[%/i%] [%i "design pattern" %][%/i%]
 to recurse through an AST.
 Each time the visitor reaches a new node of type `Thing`,
-it looks for a method called `visit_Thing`;
+it looks for a [%i "method" %][%/i%] called `visit_Thing`;
 for example,
 when it reaches a `FunctionDef` node it looks for `visit_FunctionDef`.
 If that method has been defined,
@@ -105,7 +106,7 @@ defined in a program:
 A few things worth noting about this class are:
 {: .continue}
 
-1.  The constructor of `CollectNames` invokes
+1.  The [%i "constructor" %][%/i%] of `CollectNames` invokes
     the constructor of `NodeVisitor`
     using `super().__init__()`
     before doing anything else.
@@ -114,7 +115,8 @@ A few things worth noting about this class are:
     must call `self.generic_visit(node)` explicitly
     to recurse down through their children.
     By requiring this to be explicit,
-    `NodeVisitor` gives programmers control on whether and when recursion takes place.
+    `NodeVisitor` gives programmers control on
+    whether and when [%i "recursion" %][%/i%] takes place.
 
 1.  The method `position` relies on the fact that
     every node in the ATS keeps track of
@@ -154,7 +156,7 @@ Python could:
 4.  Concatenate the entries somehow.
 
 As the output below shows,
-Python chooses option 3,
+Python chooses the third option,
 even though code like this is probably not doing
 what its author thinks it's doing:
 {: .continue}
@@ -203,7 +205,8 @@ a variable defined in a function or method might have the same name
 as one defined elsewhere,
 but they are different variables.
 
-Let's start by defining a class that handles modules and functions.
+Let's start by defining a class
+that handles [%i "module" %]modules[%/i%] and functions.
 Since functions can be defined inside modules,
 and inside other functions,
 our class's constructor creates a list that we will use as a stack
@@ -269,9 +272,17 @@ One way around this is to [%g method_injection "inject" %] methods into classes
 after they have been defined.
 The code fragment below creates a new class called `BlankNodeVisitor`
 that doesn't add anything to `NodeVisitor`,
-then uses `setattr` to add a method to it after it has been defined:
+then uses `setattr` to add a method to it after it has been defined
+([%f lint-injection %]):
 
 [% inc file="injection.py" keep="attach" %]
+
+[% figure
+   slug="lint-injection"
+   img="injection.svg"
+   alt="Method injection"
+   caption="Adding methods to classes after their definition."
+%]
 
 This trick works because classes and objects are just specialized dictionaries
 (for some large value of "just").
