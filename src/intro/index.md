@@ -10,22 +10,6 @@ syllabus:
     and all royalties from sales of this book will go to charity.
 ---
 
-As the number of components in a system grows,
-the complexity of the system increases rapidly
-([%f intro-complexity %]).
-However,
-the number of things we can hold in working memory at once is fixed (and fairly small) [%b Hermans2021 %].
-If we want to create large programs that are comprehensible, testable, shareable, and maintainable,
-we have to do more than use sensible variable names:
-we need to design them.
-
-[% figure
-   slug="intro-complexity"
-   img="complexity.svg"
-   alt="Complexity and size"
-   caption="How complexity grows with size."
-%]
-
 The best way to learn design in any field
 is to study examples [%b Schon1984 Petre2016 %].
 These lessons therefore build small versions
@@ -33,7 +17,7 @@ of tools that programmers use every day
 to show how experienced software designers think.
 Along the way,
 they introduce some fundamental ideas in computer science
-that most data scientists haven't encountered.
+that many self-taught programmers haven't encountered.
 Finally,
 we hope that if you know how programming tools work,
 you'll be more likely to use them
@@ -73,27 +57,32 @@ This book is also designed to help another persona:
 
 ## The Big Ideas {: #intro-ideas}
 
-Programmers have invented [a lot of tools][programming_tools] over the years.
-This book focuses on those that people use while building code,
-but includes a few like databases and web servers
-that are primarily used in building general-purpose applications.
-
-[%x glossary %] defines the terms these lessons introduce,
-which in turn define this book's big ideas [%f intro-syllabus %]:
-
--   Source code is just text.
-
--   A program in memory is just a data structure.
-
--   We can control and inspect programs while they are running.
-
--   A week of hard work can sometimes save us an hour of thought.
-
 [% figure
    slug="intro-syllabus"
    img="syllabus_regular.svg"
    alt="Syllabus"
    caption="Lesson topics and dependencies."
+%]
+
+[%x glossary %] defines the terms these lessons introduce,
+which in turn define this book's big ideas [%f intro-syllabus %]:
+
+-   As the number of components in a system grows,
+    the complexity of the system increases rapidly
+    ([%f intro-complexity %]).
+
+-   However,
+    the number of things we can hold in working memory at once is fixed (and fairly small) [%b Hermans2021 %].
+
+-   If we want to create large programs that are comprehensible, testable, shareable, and maintainable,
+    we have to do more than use sensible variable names:
+    we need to design them.
+
+[% figure
+   slug="intro-complexity"
+   img="complexity.svg"
+   alt="Complexity and size"
+   caption="How complexity grows with size."
 %]
 
 ## Formatting {: #intro-layout}

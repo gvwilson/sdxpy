@@ -165,7 +165,6 @@ ${SYLLABUS_DIR}/syllabus_%.svg: ${ROOT}/info/%.dot
 	dot -Tsvg $< > $@
 ${DOT_FILES}: ${CONFIG} $(patsubst %,${ROOT}/src/%/index.md,${CHAPTERS}) ${MCCOLE}/bin/make_dot.py
 	python ${MCCOLE}/bin/make_dot.py --config ${CONFIG} --skip intro finale --outdir ${ROOT}/info
-	touch ${DOT_FILES}
 endif
 
 ## diagrams: convert diagrams from SVG to PDF
