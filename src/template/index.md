@@ -20,26 +20,26 @@ to create web pages from templates.
 At the heart of every static site generator is a page templating system.
 Thousands of these have been written in the last thirty years
 in every popular programming language,
-and a language called [%i "PHP" %][PHP][php][%/i%] was created primarily for this purpose.
+and a language called [%i "PHP" "PHP" url="php" %] was created primarily for this purpose.
 Most of these systems use one of three designs
 ([%f template-options %]):
 
 1.  Mix commands in an existing language such as JavaScript
-    with the [%i "HTML" %][%/i%] or [%i "Markdown" %][%/i%]
+    with the [%i "HTML" %] or [%i "Markdown" %]
     using some kind of marker to indicate which parts are commands
     and which parts are to be taken as-is.
-    This approach is taken by [%i "EJS" %][EJS][ejs][%/i%].
+    This approach is taken by [%i "EJS" "EJS" url="ejs" %].
 
-2.  Create a mini-language with its own commands like [%i "Jekyll" %][Jekyll][jekyll][%/i%].
+2.  Create a mini-language with its own commands like [%i "Jekyll" "Jekyll" url="jekyll" %].
     Mini-languages are appealing because they are smaller and safer than general-purpose languages,
     but eventually they acquire most of the features of a general-purpose language.
     Again, some kind of marker must be used to show
     which parts of the page are code and which are ordinary text.
 
-3.  Put directives in specially-named [%i "attribute" %]attributes[%/i%] in the HTML.
+3.  Put directives in specially-named [%i "attribute" "attributes" %] in the HTML.
     This approach has been the least popular,
     but since pages are valid HTML,
-    it eliminates the need for a special [%i "parser" %][%/i%].
+    it eliminates the need for a special [%i "parser" %].
 
 [% figure
    slug="template-options"
@@ -50,7 +50,7 @@ Most of these systems use one of three designs
 
 This chapter builds a simple page templating system using the third strategy.
 We will process each page independently by parsing the HTML
-and walking the [%i "DOM" %][%/i%] to find [%i "node" %]nodes[%/i%] with special attributes.
+and walking the [%i "DOM" %] to find [%i "node" "nodes" %] with special attributes.
 Our program will execute the instructions in those nodes
 to implement loops and if/else statements;
 other nodes will be copied as-is to create text.
@@ -94,7 +94,7 @@ We could instead use two attributes like this:
 but we have decided to save ourselves a little typing.
 And strictly speaking
 we should call our attributes `data-something` instead of `z-something`
-to conform with [%i "HTML5 specification" %][the HTML5 specification][html5_data_attributes][%/i%],
+to conform with the [%i "HTML5 specification" "HTML5 specification" url="html5_data_attributes" %],
 but by the time we're finished processing our templates,
 there shouldn't be any `z-*` attributes left to confuse a browser.
 {: .continue}
@@ -132,11 +132,11 @@ We also need to maintain multiple sets of variables
 so that (for example) variables used inside a loop
 don't conflict with ones used outside it.
 As in [%x interp %],
-we will use a stack of [%i "environment" %]environments[%/i%],
+we will use a stack of [%i "environment" "environments" %],
 each of which is a dictionary.
 
 Our stack-handling class `Env` has methods
-to push and pop new [%i "stack frame" %]stack frames[%/i%]
+to push and pop new [%i "stack frame" "stack frames" %]
 and find a variable given its name.
 If the variable can't be found,
 `Env.find` returns `None` instead of throwing an exception:
@@ -147,8 +147,8 @@ If the variable can't be found,
 
 HTML pages have a nested structure,
 so we will process them using
-the [%i "Visitor pattern" %]Visitor[%/i%] [%i "design pattern" %][%/i%].
-`Visitor`'s [%i "constructor" %][%/i%] takes the root node of the [%i "DOM tree" %][%/i%]
+the [%i "Visitor pattern" "Visitor" %] [%i "design pattern" %].
+`Visitor`'s [%i "constructor" %] takes the root node of the [%i "DOM tree" %]
 as an argument and saves it.
 When we call `Visitor.walk` without a value,
 it starts recursing from that saved root;
@@ -176,7 +176,7 @@ uses them to process each type of node:
 1.  If there is a handler for the node,
     call the handler's `open` or `close` method.
 
-1.  Otherwise, open or close a regular [%i "tag" %][%/i%].
+1.  Otherwise, open or close a regular [%i "tag" %].
 
 [% inc file="expander.py" omit="open" %]
 
@@ -210,9 +210,9 @@ The `z_num` expander is a class,
 but we don't plan to create instances of it.
 Instead,
 it's just a way to manage a pair of related `open` and `close` functions,
-which we declare as [%i "static method" %]static methods[%/i%].
+which we declare as [%i "static method" "static methods" %].
 When we enter a node like `<span z-num="123"/>`
-this handler asks the expander to show an [%i "opening tag" %][%/i%]
+this handler asks the expander to show an [%i "opening tag" %]
 followed by the value of the `z-num` attribute.
 When we exit the node,
 the handler asks the expander to close the tag.
@@ -289,7 +289,7 @@ This implementation of `if` contains a subtle bug.
 The `open` and `close` functions both check the value of the control variable.
 If something inside the body of the `if` changes that value,
 the result could be an opening tag
-without a matching [%i "closing tag" %][%/i%] or vice versa.
+without a matching [%i "closing tag" %] or vice versa.
 We haven't implemented an assignment operator,
 so right now there's no way for that to happen,
 but it's a plausible thing for us to add later,

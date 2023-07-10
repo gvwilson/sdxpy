@@ -12,7 +12,7 @@ depends:
 There was still a lot of magic in our interpreter in [%x interp %],
 so this chapter builds something that mimics real hardware more closely.
 If you want to dive deeper,
-have a look at the game [%i "Human Resource Machine" %][Human Resource Machine][human_resource_machine][%/i%].
+have a look at the game [%i "Human Resource Machine" "Human Resource Machine" url="human_resource_machine" %].
 
 ## Architecture {: #vm-arch}
 
@@ -32,7 +32,7 @@ simulates a computer with three parts ([%f vm-architecture %]):
     everything happens in or through registers.
 
 1.  256 [%g word_memory "words" %] of memory, each of which can store a single value.
-    Both the program and its data live in this single [%i "block (of memory)" %]block[%/i%] of memory;
+    Both the program and its data live in this single [%i "block (of memory)" "block" %] of memory;
     we chose the size 256 so that the address of each word will fit in a single byte.
 
 [% figure
@@ -112,7 +112,7 @@ we copy those numbers into memory and reset the instruction pointer and register
 To handle the next instruction,
 the VM gets the value in memory that the instruction pointer currently refers to
 and moves the instruction pointer on by one address.
-It then uses [%i "bitwise operation" %]bitwise operations[%/i%]
+It then uses [%i "bitwise operation" "bitwise operations" %]
 ([%x binary %])
 to extract the op code and operands from the instruction
 ([%f vm-unpacking %]).
@@ -155,7 +155,7 @@ This [%g conditional_jump "conditional jump" %] instruction is how we implement 
 We could write out numerical op codes by hand just as [early programmers][eniac_programmers] did.
 However,
 it is much easier to use an [%g assembler "assembler" %],
-which is just a small [%i "compiler" %][%/i%] for a language
+which is just a small [%i "compiler" %] for a language
 that very closely represents actual machine instructions.
 
 Each command in our assembly languages matches an instruction in the VM.
@@ -246,7 +246,7 @@ this program counts up to three:
 ## Arrays {: #vm-arrays}
 
 It's tedious to write programs when each value needs a unique name.
-We can do a lot more once we have [%i "array (implementation of)" %]arrays[%/i%],
+We can do a lot more once we have [%i "array (implementation of)" "arrays" %],
 so let's add those to our assembler.
 We don't have to make any changes to the virtual machine,
 which doesn't care if we think of a bunch of numbers as individuals or elements of an array,

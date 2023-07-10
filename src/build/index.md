@@ -51,7 +51,7 @@ and then builds what it needs to in that order
 ### A Bit of History
 
 Make was created to manage programs in [%g compiled_language "compiled languages" %]
-like [%i "C" %][%/i%] and [%i "Java" %][%/i%],
+like [%i "C" %] and [%i "Java" %],
 which have to be translated into lower-level forms before they can run.
 There are usually two stages to the translation:
 compiling each source file into some intermediate form,
@@ -75,7 +75,7 @@ some kind of debugger ([%x debugger %]),
 and so on.
 
 The other option is to use a pre-existing syntax
-such as [%i "JSON" %][%/i%],
+such as [%i "JSON" %],
 which gives us tooling for free.
 For example,
 this file describes two targets `A` and `B`
@@ -84,7 +84,7 @@ and states that the former depends on the latter:
 [% inc file="double_linear_dep.json" %]
 
 As in [%x archive %],
-we will use [%i "successive refinement" %][%/i%]
+we will use [%i "successive refinement" %]
 to create our first build manager.
 Our `BuildBase` class takes a configuration file as a constructor argument,
 loads it,
@@ -223,7 +223,7 @@ We can also extend it.
 For example,
 suppose we only want to update targets that are older than their dependencies.
 If the targets are files,
-we could their [%i "timestamp" %]timestamps[%/i%],
+we could their [%i "timestamp" "timestamps" %],
 but for testing purposes
 we would like to specify pretended times in the configuration:
 
@@ -243,8 +243,8 @@ each of which does one job:
 Our final design uses
 the [%g template_method_pattern "Template Method" %] pattern:
 a method in a parent class defines the overall order of operations,
-while [%i "child class" %][%/i%] implement those operations
-without changing the [%i "control flow" %][%/i%].
+while [%i "child class" %] implement those operations
+without changing the [%i "control flow" %].
 As you might suspect,
 we didn't know in advance exactly
 how to divide our code into methods.
@@ -257,7 +257,7 @@ the first two or three times we try to use or extend something,
 we discover changes that would make those tasks easier.
 We should do less of this as time goes by;
 putting it another way,
-if we are still doing large-scale [%i "refactor" %]refactoring[%/i%]
+if we are still doing large-scale [%i "refactor" "refactoring" %]
 the tenth or dozenth time we try to use something,
 we probably need to rethink our entire design.
 
@@ -339,4 +339,4 @@ users can mark targets as phony.
     one build file can import definitions and dependencies from another.
 
 1.  How does your system prevent
-    [%i "circular dependency" %]circular dependencies[%/i%]?
+    [%i "circular dependency" "circular dependencies" %]?

@@ -14,7 +14,7 @@ The function `dir` (short for "directory") returns a list of those attributes' n
 
 Most programmers never need to use most of these,
 but `__name__` holds the function's original name
-and `__doc__` holds its [%i "docstring" %]docstring[%/i%]:
+and `__doc__` holds its [%i "docstring" %]:
 
 [% inc file="func_attr.py" keep="print" %]
 [% inc file="func_attr.out" %]
@@ -68,7 +68,7 @@ our test runner becomes:
 
 *This material extends [%x interp %].*
 
-One way to evaluate a design is to ask how [%i "extensibility" %]extensible[%/i%] it is.
+One way to evaluate a design is to ask how [%i "extensibility" "extensible" %] it is.
 The answer for our interpreter is now, "Pretty easily."
 For example,
 we can add a `comment` "operation" that does nothing and returns `None`
@@ -85,8 +85,8 @@ it evaluates and returns its second argument (the "else" branch):
 [% inc file="stmt.py" keep="if" %]
 
 As we said in [%x func %],
-this is called [%i "lazy evaluation" %]lazy evaluation[%/i%]
-to distinguish it from the more usual [%i "eager evaluation" %]eager evaluation[%/i%]
+this is called [%i "lazy evaluation" %]
+to distinguish it from the more usual [%i "eager evaluation" %]
 that evaluates everything up front.
 `do_if` only evaluates what it absolutely needs to;
 most languages do this so that we can safely write things like:
@@ -191,8 +191,8 @@ please read [%b Goldberg1991 %] for more detail.
 Floating point numbers are represented by a sign,
 a [%g mantissa "mantissa" %],
 and an [%g exponent "exponent" %].
-In a 32-bit [%i "word (of memory)" %]word[%/i%]
-the [%i "IEEE 754 standard" %]IEEE 754[%/i%] standard calls for 1 bit of sign,
+In a 32-bit [%i "word (of memory)" "word" %]
+the [%i "IEEE 754 standard" "IEEE 754" %] standard calls for 1 bit of sign,
 23 bits for the mantissa,
 and 8 bits for the exponent.
 We will illustrate how it works using a much smaller representation:

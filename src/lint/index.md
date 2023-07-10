@@ -35,10 +35,10 @@ and to create code as well as check it.
 ## Machinery {: #lint-machinery}
 
 [%x check %] represented HTML as
-a [%i "DOM tree" %]DOM tree[%/i%].
+a [%i "DOM tree" %].
 Similarly,
 we can use Python's [ast][py_ast] module
-to parse Python programs and produce an [%i "abstract syntax tree" %][%/i%]
+to parse Python programs and produce an [%i "abstract syntax tree" %]
 that represents the structure of the code.
 For example,
 suppose we have this short program:
@@ -46,9 +46,9 @@ suppose we have this short program:
 [% inc file="simple.py" %]
 
 [%f lint-ast-simple %] shows the main parts of
-this program's [%i "abstract syntax tree" %][%/i%].
-Each [%i "node" %][%/i%] represents one element of the program,
-and each node's [%i "child (in a tree)" %]children[%/i%] are the element nested within it.
+this program's [%i "abstract syntax tree" %].
+Each [%i "node" %] represents one element of the program,
+and each node's [%i "child (in a tree)" "children" %] are the element nested within it.
 {: .continue}
 
 [% figure
@@ -75,7 +75,7 @@ it has:
 
 -   a `name`;
 -   an `arguments` node that stores information
-    about the function's [%i "argument" %]arguments[%/i%];
+    about the function's [%i "argument" "arguments" %];
 -   a `body` that holds a list of the statements making up the function; and
 -   a list of decorators applied to the function (which is empty).
 
@@ -89,10 +89,10 @@ that knew which fields of that node were worth exploring.
 Luckily for us,
 the [ast][py_ast] module comes with tools that can do this for us.
 The class `ast.NodeVisitor` uses
-the now-familiar [%i "Visitor pattern" %]Visitor[%/i%] [%i "design pattern" %][%/i%]
+the now-familiar [%i "Visitor pattern" "Visitor" %] [%i "design pattern" %]
 to recurse through an AST.
 Each time the visitor reaches a new node of type `Thing`,
-it looks for a [%i "method" %][%/i%] called `visit_Thing`;
+it looks for a [%i "method" %] called `visit_Thing`;
 for example,
 when it reaches a `FunctionDef` node it looks for `visit_FunctionDef`.
 If that method has been defined,
@@ -106,7 +106,7 @@ defined in a program:
 A few things worth noting about this class are:
 {: .continue}
 
-1.  The [%i "constructor" %][%/i%] of `CollectNames` invokes
+1.  The [%i "constructor" %] of `CollectNames` invokes
     the constructor of `NodeVisitor`
     using `super().__init__()`
     before doing anything else.
@@ -116,7 +116,7 @@ A few things worth noting about this class are:
     to recurse down through their children.
     By requiring this to be explicit,
     `NodeVisitor` gives programmers control on
-    whether and when [%i "recursion" %][%/i%] takes place.
+    whether and when [%i "recursion" %] takes place.
 
 1.  The method `position` relies on the fact that
     every node in the ATS keeps track of
@@ -200,13 +200,13 @@ tell us there aren't problems when there actually are.
 
 Finding unused variables—ones that are assigned values but never used—is
 more challenging than our previous examples.
-The problem is [%i "scope" %][%/i%]:
+The problem is [%i "scope" %]:
 a variable defined in a function or method might have the same name
 as one defined elsewhere,
 but they are different variables.
 
 Let's start by defining a class
-that handles [%i "module" %]modules[%/i%] and functions.
+that handles [%i "module" "modules" %] and functions.
 Since functions can be defined inside modules,
 and inside other functions,
 our class's constructor creates a list that we will use as a stack
@@ -334,7 +334,7 @@ and does whatever it's supposed to do:
 [% inc file="register.py" keep="handler" %]
 
 Setting up the visitor is a bit more complicated,
-since we have to create and [%i "register (in code)" %]register[%/i%] the handler:
+since we have to create and [%i "register (in code)" "register" %] the handler:
 
 [% inc file="register.py" keep="main" %]
 

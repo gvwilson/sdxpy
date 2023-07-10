@@ -18,12 +18,12 @@ Similarly,
 the [%g compiler "compilers" %] and [%g interpreter "interpreters" %]
 that make programs run are just programs themselves.
 Instead of changing the characters in
-a [%i "block (of memory)" %]block of memory[%/i%] like text editors,
+a [%i "block (of memory)" "block of memory" %] like text editors,
 or calculating sums and averages like spreadsheets,
 compilers turn text into instructions for interpreters or hardware to run.
 
 Most real programming languages have two parts:
-a [%i "parser" %][%/i%] that translates the source code
+a [%i "parser" %] that translates the source code
 into a data structure in memory,
 and a [%g runtime "runtime" %] that executes
 the instructions in that data structure.
@@ -51,7 +51,7 @@ but saves those instructions in `.pyc` files to save time in future.
 ## Expressions {: #interp-expressions}
 
 Let's start by building something that can evaluate
-simple [%i "expression" %]expressions[%/i%]
+simple [%i "expression" "expressions" %]
 like `1+2` or `abs(-3.5)`.
 We represent each expression as a list
 with the name of the operation as the first item
@@ -128,8 +128,8 @@ and calculates a different return value:
 
 [% inc file="expr.py" keep="do_abs" %]
 
-Notice that `do_abs` and `do_add` have the same [%i "signature" %][%/i%].
-As with the [%i "unit test" %]unit testing[%/i%] functions in [%x test %],
+Notice that `do_abs` and `do_add` have the same [%i "signature" %].
+As with the [%i "unit test" "unit testing" %] functions in [%x test %],
 this allows us to call them interchangeably.
 
 So how does `do` work?
@@ -141,7 +141,7 @@ Otherwise,
 `do` checks that its parameter is a list
 and then uses the first value in the list
 to decide what other function to call.
-This lookup-and-call process is the same [%i "dynamic dispatch" %][%/i%]
+This lookup-and-call process is the same [%i "dynamic dispatch" %]
 that we saw in [%x parse %].
 
 [% inc file="expr.py" keep="do" %]
@@ -171,7 +171,7 @@ and prints the result:
 [% inc file="expr.py" keep="main" %]
 
 Our program is a list of lists (of lists…)
-so we can read it as [%i "JSON" %][%/i%] using `json.load`
+so we can read it as [%i "JSON" %] using `json.load`
 rather than writing our own parser.
 If our program file contains:
 
@@ -201,7 +201,7 @@ Doing arithmetic on constants is a start,
 but our programs will be easier to read with variables
 that let us give names to values.
 We can add them to our interpreter
-by passing around a [%i "dictionary" %][%/i%]
+by passing around a [%i "dictionary" %]
 containing all the variables seen so far.
 Such a dictionary is sometimes called an [%g environment "environment" %]
 because it is the setting in which expressions are evaluated;
@@ -279,7 +279,7 @@ The sequence of `if` statements that decide what function to call
 is becoming unwieldy.
 (Quick:
 can you see if any of the instruction names are accidentally duplicated?)
-We can replace this by using [%i "introspection" %][%/i%]
+We can replace this by using [%i "introspection" %]
 to create a lookup table
 that stores every function whose name starts with `do_`
 ([%f interp-lookup %]):
@@ -311,7 +311,7 @@ the code to select and run an operation is:
 [% inc file="vars_reflect.py" keep="do" %]
 
 As with unit test functions in [%x test %],
-the `do_*` functions must have exactly the same [%i "signature" %][%/i%]
+the `do_*` functions must have exactly the same [%i "signature" %]
 so that we can call any of them with an environment and a list of arguments
 without knowing exactly which function we're calling.
 And as with finding tests,

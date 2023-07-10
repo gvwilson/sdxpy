@@ -37,12 +37,12 @@ Like Maya, you should be able to:
 
 -   Write Python programs using lists, loops, conditionals, dictionaries, and functions.
 
--   Puzzle your way through Python programs that use [%i "class" %]classes[%/i%]
-    and [%i "exception" %]exceptions[%/i%].
+-   Puzzle your way through Python programs that use [%i "class" "classes" %]
+    and [%i "exception" "exceptions" %].
 
 -   Run basic Unix shell commands like `ls` and `mkdir`.
 
--   Read and write a little bit of [%i "HTML" %][%/i%].
+-   Read and write a little bit of [%i "HTML" %].
 
 -   Use [Git][git] to save and share files.
     (It's OK not to know [the more obscure commands][git_man_page_generator].)

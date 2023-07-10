@@ -10,7 +10,7 @@ depends:
 -   template
 ---
 
-You might be reading this as [%i "HTML" %][%/i%] in your browser,
+You might be reading this as [%i "HTML" %] in your browser,
 as an e-book (which is basically the same thing),
 or on the printed page.
 In all three cases
@@ -18,26 +18,26 @@ a [%g layout_engine "layout engine" %] took some text and some layout instructio
 and decided where to put each character and image.
 To explore how they work,
 we will build a small layout engine
-based on [%i "Brubeck, Matt" %][Matt Brubeck's][brubeck_matt][%/i%] [tutorial][browser_engine_tutorial]
+based on [%i "Brubeck, Matt" "Matt Brubeck's" url="brubeck_matt" %] [tutorial][browser_engine_tutorial]
 and on [Pavel Panchekha][panchekha_pavel] and [Chris Harrelson's][harrelson_chris]
 [*Web Browser Engineering*][browser_engineering].
 Since our focus is layout rather than parsing,
 we will create objects in memory that represent
-[%i "DOM" %][%/i%] nodes
+[%i "DOM" %] nodes
 to test our ideas.
 
 <div class="callout" markdown="1">
 
 ### Upside Down
 
-The [%i "coordinate system" %]coordinate systems[%/i%] for screens
+The [%i "coordinate system" "coordinate systems" %] for screens
 puts (0, 0) in the upper left corner instead of the lower left.
 X increases to the right as usual,
 but Y increases as we go down, rather than up
 ([%f layout-coordinate-system %]).
 This convention is a holdover from the days of teletype terminals
 that printed lines on rolls of paper;
-as [%i "Hoye, Mike" %][Mike Hoye][hoye_mike][%/i%] has [observed][punching_holes],
+as [%i "Hoye, Mike" "Mike Hoye" url="hoye_mike" %] has [observed][punching_holes],
 the past is all around us.
 
 </div>
@@ -61,7 +61,7 @@ A block has a fixed width and height:
 
 A row arranges one or more cells horizontally;
 its width is the sum of the widths of its children,
-while its height is the height of its tallest [%i "child" %][%/i%]
+while its height is the height of its tallest [%i "child" %]
 ([%f layout-sizing %]):
 
 [% inc file="easy_mode.py" keep="row" %]
@@ -84,11 +84,11 @@ and its height is the sum of the heights of its children.
 Rows and columns nest inside one another:
 a row cannot span two or more columns,
 and a column cannot cross the boundary between two rows.
-We can therefore represent our document as a [%i "tree" %][%/i%]
+We can therefore represent our document as a [%i "tree" %]
 and calculate the width and height of each cell every time we need it.
 This is simple but inefficient:
 we could calculate both width and height at the same time
-and [%i "cache" %][%/i%] those values to avoid recalculation,
+and [%i "cache" %] those values to avoid recalculation,
 but we called this "easy mode" for a reason.
 
 As simple as it is,
@@ -152,7 +152,7 @@ We drew blocks on graph paper
 to figure out the expected answers for the tests shown above.
 We can do something similar in software by creating a "screen" of space characters
 and then having each block draw itself in the right place.
-If we do this starting at the [%i "root" %][%/i%] of the tree,
+If we do this starting at the [%i "root" %] of the tree,
 child blocks will overwrite the markings made by their parents,
 which will automatically produce the right appearance
 ([%f layout-draw-over %]).
@@ -181,8 +181,8 @@ while its children will be 'b', 'c', and so on.
 
 To teach each kind of cell how to render itself,
 we have to derive a new class from each of the ones we have
-and give the new class a `render` method with the same [%i "signature" %][%/i%].
-Since Python supports [%i "multiple inheritance" %][%/i%],
+and give the new class a `render` method with the same [%i "signature" %].
+Since Python supports [%i "multiple inheritance" %],
 we can do this with a [%g mixin_class "mixin class" %]
 ([%f layout-mixin %]):
 
@@ -311,7 +311,7 @@ Conversely,
 its output must be a subset of what the old code produced
 so that whatever is downstream from it won't be surprised.
 Thinking in these terms leads to the methodology called
-[%i "design by contract" %][%/i%] discussed in [%x oop %].
+[%i "design by contract" %] discussed in [%x oop %].
 
 </div>
 
@@ -330,7 +330,7 @@ Thinking in these terms leads to the methodology called
 
 Refactor the classes used to represent blocks, rows, and columns so that:
 
-1.  They all derive from a common [%i "parent class" %][%/i%].
+1.  They all derive from a common [%i "parent class" %].
 
 2.  All common behavior is defined in that parent (if only with placeholder methods).
 
@@ -386,7 +386,7 @@ allocate the extra space as equally as possible from left to right.
 
 Modify the existing code so that:
 
-1.  Authors can define a `padding` [%i "attribute" %][%/i%] for row and column elements.
+1.  Authors can define a `padding` [%i "attribute" %] for row and column elements.
 
 2.  When the node is rendered, that many blank spaces are added on all four sides of the contents.
 
@@ -406,7 +406,7 @@ where the lines show the outer border of the rendering.
 
 ### Properties {: .exercise}
 
-Look at the documentation for Python's [`@property`][py_property] [%i "decorator" %][%/i%]
+Look at the documentation for Python's [`@property`][py_property] [%i "decorator" %]
 and modify the block classes to replace the `get_width` and `get_height` methods
 with properties called `width` and `height`.
 

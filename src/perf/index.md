@@ -11,7 +11,7 @@ depends:
 One of the drawbacks of publishing a book online is obsessing over analytics.
 How many people visited the site today?
 Which pages did they look at, and for how long?
-Whether we use [%i "Excel" %][%/i%], [%i "SQL" %][%/i%], [%i "R" %][%/i%], or Python,
+Whether we use [%i "Excel" %], [%i "SQL" %], [%i "R" %], or Python,
 we will almost certainly be using tables
 that have named columns and multiple rows.
 Tables of this kind are called [%g dataframe "dataframes" %],
@@ -22,10 +22,10 @@ and then compares their performance.
 ## Options {: #perf-options}
 
 To start,
-let's create an [%i "abstract class" %][%/i%]
+let's create an [%i "abstract class" %]
 that defines the methods our dataframe classes will support.
 This class (unimaginatively called `DF`)
-requires [%i "concrete class" %]concrete classes[%/i%] to implement eight methods:
+requires [%i "concrete class" "concrete classes" %] to implement eight methods:
 
 -   `ncol`: report the number of columns.
 -   `nrow`: report the number of rows.
@@ -99,7 +99,7 @@ and saves them:
 
 [% inc file="df_row.py" keep="top" %]
 
-The [%i "helper function" %][%/i%] to check that a bunch of dictionaries
+The [%i "helper function" %] to check that a bunch of dictionaries
 all have the same keys and the same types of values associated with those keys is:
 
 [% inc file="util.py" keep="match" %]
@@ -129,10 +129,10 @@ and the same values in every column:
 
 Notice that we use `other.cols()` and `other.get()`
 rather than reaching into the other dataframe.
-We defined the [%i "abstract class" %][%/i%]
+We defined the [%i "abstract class" %]
 because we expect to implement dataframes in several different ways.
 Those other ways might not use the same data structures,
-so we can only rely on the interface defined in the [%i "base class" %][%/i%].
+so we can only rely on the interface defined in the [%i "base class" %].
 {: .continue}
 
 Our final operations are selection,
@@ -163,7 +163,7 @@ Rather than trying to anticipate every possible rule,
 we will let users define functions
 whose parameters match the names of the table's columns.
 For example,
-if we have this test [%i "fixture" %][%/i%]:
+if we have this test [%i "fixture" %]:
 
 [% inc file="test_df_row.py" keep="fixture" %]
 
@@ -172,10 +172,10 @@ then we should be able to write this test:
 
 [% inc file="test_df_row.py" keep="filter" %]
 
-We can implement this  by using `**` to [%i "spread" %][%/i%] the row
+We can implement this  by using `**` to [%i "spread" %] the row
 across the function's parameters.
 When `**` is used in the definition of a function,
-it means, "Capture all the [%i "named arguments" %][%/i%] that aren't otherwise accounted for."
+it means, "Capture all the [%i "named arguments" %] that aren't otherwise accounted for."
 When it is used in a call,
 it means,
 "Match the elements of this dictionary with the function's parameters."
@@ -216,7 +216,7 @@ all of the values in any column have the same types:
 
 ### One Allowable Difference
 
-Notice that `DfCol.__init__` does *not* have the same [%i "signature" %][%/i%]
+Notice that `DfCol.__init__` does *not* have the same [%i "signature" %]
 as the constructor for `DfRow`.
 At some point in our code we have to decide which of the two classes to construct.
 If we design our code well that decision will be made in exactly one place
@@ -273,7 +273,7 @@ we want to do this solely for the columns that the user's function needs.
 
 For now,
 we will solve this problem
-by requiring the user-defined filter function to define [%i "parameter" %]parameters[%/i%]
+by requiring the user-defined filter function to define [%i "parameter" "parameters" %]
 to match all of the dataframe's columns
 regardless of whether they are used for filtering or not.
 We will then build a temporary dictionary with all the values in a "row"
@@ -365,7 +365,7 @@ to see what fraction of rows filtering usually kept,
 and simulate that.
 Notice that `time_filter` doesn't know or care
 whether it's being given a `DfCol` or a `DfRow`.
-That's the whole point of deriving them from a [%i "base class" %][%/i%]:
+That's the whole point of deriving them from a [%i "base class" %]:
 we can use them interchangeably.
 {: .continue}
 
@@ -440,7 +440,7 @@ we're constructing a new dataframe for each `filter` and `select`,
 so removing that safety check would speed things up.
 
 Looking down a little further,
-the [%i "dictionary comprehension" %][%/i%] in `DfCol.filter` takes a lot of time as well.
+the [%i "dictionary comprehension" %] in `DfCol.filter` takes a lot of time as well.
 That isn't surprising:
 we're copying the values out of the columns into a temporary dictionary
 for every row when we filter,
@@ -500,7 +500,7 @@ Where and why might this be useful?
 
 ### Fixture Functions {: .exercise}
 
-Read the documentation for the `@fixture` [%i "decorator" %][%/i%] in [pytest][pytest]
+Read the documentation for the `@fixture` [%i "decorator" %] in [pytest][pytest]
 and modify the tests in this chapter to use it.
 
 ### Using Arrays {: .exercise}
@@ -542,7 +542,7 @@ and then filter by:
 
 ### Join Performance {: .exercise}
 
-A [%i "join" %][%/i%] combines data from two tables based on matching keys.
+A [%i "join" %] combines data from two tables based on matching keys.
 For example,
 if the two tables are:
 

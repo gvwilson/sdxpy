@@ -44,7 +44,7 @@ For now,
 The virtual machine we're starting from loads a program and runs it to completion,
 so it's either running or finished.
 We want to add a third state for single-step execution,
-so let's start by adding an [%i "enumeration" %][%/i%] to `architecture.py`:
+so let's start by adding an [%i "enumeration" %] to `architecture.py`:
 
 [% inc file="architecture.py" keep="state" %]
 
@@ -140,7 +140,7 @@ we have to give it input when it wants some
 and capture its output for later inspection.
 We had a similar problem when testing the web server of [%x ftp %],
 and our solution is the similar:
-we will replace `input` and `print` with [%i "mock object" %]mock objects[%/i%].
+we will replace `input` and `print` with [%i "mock object" "mock objects" %].
 
 As shown earlier,
 our VM uses an object with a `write` method to produce output.
@@ -225,7 +225,7 @@ reduce that complexity.
 
 We are going to add one more big feature to our debugger,
 but before we do,
-let's do some [%i "refactor" %]refactoring[%/i%].
+let's do some [%i "refactor" "refactoring" %].
 First,
 we move every interactive operation into a method of its own
 that does something
@@ -254,7 +254,7 @@ Finally,
 we extend the virtual machine's constructor
 to build the required lookup table.
 For convenience,
-we [%i "register (in code)" %]register[%/i%] the methods
+we [%i "register (in code)" "register" %] the methods
 under both single-letter keys
 and longer command names:
 
@@ -360,10 +360,10 @@ We also update `show` to display any breakpoints that have been set:
 Notice how the implementation first calls the parent's `show` method
 to display everything we've been displaying so far,
 then adds a few lines to display extra information.
-Extending methods by [%i "upcall" %]upcalling[%/i%] this way
+Extending methods by [%i "upcall" "upcalling" %] this way
 saves us typing,
 and ensures that changes in the parent class
-will automatically show up in the [%i "child class" %][%/i%].
+will automatically show up in the [%i "child class" %].
 
 The final step is to change the `run` method
 so that the VM actually stops at a breakpoint.
@@ -465,7 +465,7 @@ or at particular addresses in memory while the program is running.
 ### Displaying Source {: .exercise}
 
 1.  Modify the debugger so that when the debugger is displaying memory,
-    it shows the [%i "assembly code" %][%/i%] instructions
+    it shows the [%i "assembly code" %] instructions
     corresponding to particular addresses
     as well as the numeric codes.
 

@@ -19,11 +19,11 @@ to save a list of dictionaries as-is
 rather than flattering it into rows and columns.
 Python's [pickle][py_pickle] module does this in a Python-specific way,
 while the [json][py_json] module saves some kinds of objects as text
-formatted as [%i "JSON" %][%/i%],
+formatted as [%i "JSON" %],
 which program written in other languages can read.
 
 The phrase "some kinds of objects" is the most important part of the preceding paragraph.
-Since programs can define new [%i "class" %]classes[%/i%],
+Since programs can define new [%i "class" "classes" %],
 a [%g persistence "persistence framework" %]
 has to choose one of the following:
 
@@ -97,7 +97,7 @@ to decide how to handle the second:
 Saving a list is almost as easy:
 we save the number of items in the list,
 and then save each item
-with a [%i "recursion" %]recursive[%/i%] called to `save`.
+with a [%i "recursion" "recursive" %] called to `save`.
 For example,
 the list `[55, True, 2.71]` is saved as shown in [%f persist-lists %].
 
@@ -133,7 +133,7 @@ this approach handles nested lists without any extra work.
 Our functions handle sets in exactly the same way as lists;
 the only difference is using the keyword `set` instead of the keyword `list`
 in the opening line.
-To save a [%i "dictionary" %][%/i%],
+To save a [%i "dictionary" %],
 we save the number of entries
 and then save each key and value in turn:
 
@@ -154,7 +154,7 @@ We will use two tricks when doing this:
 1.  The `dedent` function from Python's [textwrap][py_textwrap] module
     removes leading indentation from the body of a string.
     As the example below shows,
-    `dedent` allows us to indent a [%i "fixture" %][%/i%]
+    `dedent` allows us to indent a [%i "fixture" %]
     the same way we indent our Python code,
     which makes the test easier to read.
 
@@ -180,7 +180,7 @@ the things we make learn how to do things better as we use them.
 
 In this case,
 we can follow the Open-Closed Principle by rewriting our functions as classes.
-We will also use [%i "dynamic dispatch" %][%/i%]
+We will also use [%i "dynamic dispatch" %]
 as we did in [%x interp %]
 to handle each item
 so that we don't have to modify a multi-way `if` statement
@@ -193,7 +193,7 @@ The core of our saving class is:
 because we are going to create several variations on it.)
 {: .continue}
 
-`SaveOop.save` figures out which [%i "method" %][%/i%] to call
+`SaveOop.save` figures out which [%i "method" %] to call
 to save a particular thing
 by constructing a name based on the thing's type,
 checking whether that method exists,
@@ -201,7 +201,7 @@ and then calling it.
 Again,
 as in [%x interp %],
 the methods that handle specific items
-must all have the same [%i "signature" %][%/i%]
+must all have the same [%i "signature" %]
 so that they can be called interchangeably.
 For example,
 the methods that write integers and strings are:
@@ -237,7 +237,7 @@ fixture = [shared, shared]
    caption="Saving aliased data without respecting aliases."
 %]
 
-The problem is that the list `shared` is [%i "alias" %]aliased[%/i%],
+The problem is that the list `shared` is [%i "alias" "aliased" %],
 i.e.,
 there are two or more references to it.
 To reconstruct the original data correctly we need to:
@@ -304,7 +304,7 @@ The first test of our new code is:
 
 [% inc file="test_aliasing_wrong.py" keep="no_aliasing" %]
 
-which uses this [%i "helper function" %][%/i%]:
+which uses this [%i "helper function" %]:
 {: .continue}
 
 [% inc file="test_aliasing_wrong.py" keep="roundtrip" %]
@@ -422,7 +422,7 @@ to make each piece easier to understand.
 So how does a class indicate that it can be saved and loaded by our framework?
 Our options are:
 
-1.  Require it to inherit from a [%i "base class" %][%/i%] that we provide
+1.  Require it to inherit from a [%i "base class" %] that we provide
     so that we can use `isinstance` to check if an object is persistable.
     This approach is used in strictly-typed languages like Java,
     but method #2 below is considered more [%g pythonic "Pythonic" %].
@@ -434,7 +434,7 @@ Our options are:
     Since option #1 would require users to write this method anyway,
     it's the one we'll choose.
 
-3.  Require users to [%i "register (in code)" %]register[%/i%]
+3.  Require users to [%i "register (in code)" "register" %]
     a [%g helper_class "helper class" %]
     that knows how to save and load objects of the class we're interested in.
     This approach is also commonly used in strictly-typed languages
@@ -456,7 +456,7 @@ of a particular class:
 
 Loading user-defined classes requires more work
 because we have to map class names back to actual classes.
-(We could also use [%i "introspection" %][%/i%]
+(We could also use [%i "introspection" %]
 to find *all* the classes in the program
 and build a lookup table of the ones with the right method;
 we'll explore that in the exercises.)
@@ -489,7 +489,7 @@ The method that handles extensions
 checks that the value on the line just read indicates an extension,
 then reads the dictionary containing the object's contents
 from the input stream
-and uses it to build an [%i "instance" %][%/i%] of the right class:
+and uses it to build an [%i "instance" %] of the right class:
 
 [% inc file="extend.py" keep="load_extension" %]
 

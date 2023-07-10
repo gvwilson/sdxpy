@@ -93,7 +93,7 @@ that update a line of text:
 Notice that we delete the character *under* the cursor,
 not the one to the left of the cursor:
 this is delete-in-place rather than backspace-delete.
-Notice also that we have done a little [%i "defensive programming" %][%/i%]
+Notice also that we have done a little [%i "defensive programming" %]
 by checking that the coordinates given for the operation make sense.
 {: .continue}
 
@@ -124,8 +124,8 @@ we look up the handler for the key's family:
 [% inc file="insert_delete.py" keep="dispatch" %]
 
 We're going to write a lot of tests for this application,
-so let's write a [%i "helper function" %][%/i%]
-to create a [%i "fixture" %][%/i%],
+so let's write a [%i "helper function" %]
+to create a [%i "fixture" %],
 run the application,
 and return it:
 
@@ -175,7 +175,7 @@ And how are we going to interpret these log records?
 Will we need a second dispatch method with its own handlers?
 
 The common solution to these problems is to use
-the [%g command_pattern "Command" %] [%i "design pattern" %][%/i%].
+the [%g command_pattern "Command" %] [%i "design pattern" %].
 This pattern turns verbs into nouns,
 i.e.,
 each action is represented as an object
@@ -188,7 +188,7 @@ Our base class is:
 
 [% inc file="action.py" keep="Action" %]
 
-The [%i "child class" %]child classes[%/i%] for insertion and deletion are:
+The [%i "child class" "child classes" %] for insertion and deletion are:
 
 [% inc file="action.py" keep="Insert" %]
 

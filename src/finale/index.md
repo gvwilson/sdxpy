@@ -76,9 +76,9 @@ leave people out of important discussions,
 or base your opinions on TED talks,
 you may create a good implementation of the wrong thing.
 On a larger scale,
-programmers have enabled [%i "pervasive surveillance" %][%/i%],
-online [%i "harassment" %][%/i%] and [%i "radicalization" %][%/i%],
-and the [%i "algorithmic inequality" %]concentration of wealth and power[%/i%]
+programmers have enabled [%i "pervasive surveillance" %],
+online [%i "harassment" %] and [%i "radicalization" %],
+and the [%i "algorithmic inequality" "concentration of wealth and power" %]
 in a few unaccountable hands.
 If we truly want to make the world a better place,
 we need to focus on making things that are good

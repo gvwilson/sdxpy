@@ -55,7 +55,7 @@ Let's create a reusable mock object class that:
 2.  declares the parameters of that method to be `*args*` and `**kwargs`
     so that it can be called with any number of regular or keyword arguments;
 
-3.  stores those [%i "argument" %]arguments[%/i%]
+3.  stores those [%i "argument" "arguments" %]
     so we can see how the replaced function was called;
     and
 
@@ -129,7 +129,7 @@ Python calls it automatically when constructing a new instance of that class.
 What we want for managing mock objects is
 a [%g context_manager "context manager" %]
 that replaces the real function with our mock
-at the start of a [%i "block" %][%/i%] of code
+at the start of a [%i "block" %] of code
 and then puts the original back at the end.
 The protocol for this relies on two methods called `__enter__` and `__exit__`.
 If the class is called `C`,
@@ -143,7 +143,7 @@ with C(…args…) as name:
 it does the following ([%f reflect-context-manager %])):
 {: .continue}
 
-1.  Call `C`'s [%i "constructor" %][%/i%]
+1.  Call `C`'s [%i "constructor" %]
     to create an object that it associates with the code block.
 2.  Call that object's `__enter__` method
     and assign the result to the variable `name`.
@@ -166,7 +166,7 @@ Notice that `__enter__` doesn't take any extra parameters:
 anything it needs should be provided to the constructor.
 On the other hand,
 `__exit__` will always be called with three values
-that tell it whether an [%i "exception" %][%/i%] occurred,
+that tell it whether an [%i "exception" %] occurred,
 and if so,
 what the exception was.
 
@@ -179,12 +179,12 @@ Here's a test to prove that our context manager works:
 
 Python programs rely on several other protocols,
 each of which gives user-level code a way to interact with
-some aspect of the Python [%i "interpreter" %][%/i%].
+some aspect of the Python [%i "interpreter" %].
 One of the most widely used is called a [%g decorator "decorator" %],
 which allows us to wrap one function with another.
 
 In order to understand how decorators work,
-we must take another look at [%i "closure" %]closures[%/i%],
+we must take another look at [%i "closure" "closures" %],
 which were introduced in [%x func %].
 Suppose we want to create a function called `logging`
 that prints a message before and after
@@ -197,7 +197,7 @@ but when we try to call `original` we wind up in an infinite loop.
 The wrapped version of our function refers to `original`,
 but Python looks that up at the time of call,
 which means it calls the wrapped function instead.
-We can prevent this infinite [%i "recursion" %][%/i%]
+We can prevent this infinite [%i "recursion" %]
 by creating a closure:
 
 [% inc pat="wrap_capture.*" fill="py out" %]
@@ -265,12 +265,12 @@ Python implements this using a two-part [%g iterator "iterator" %] protocol:
 2.  That iterator object must have a `__next__` method,
     which must return a value each time it is called.
     When there are no more values to return,
-    it must [%i "raise" %][%/i%] a `StopIteration` exception.
+    it must [%i "raise" %] a `StopIteration` exception.
 
 For example,
 suppose we have a class that stores a list of strings
 and we want to return the characters from the strings in order.
-(We will use a [%i "buffer (of text)" %][%/i%] class like this
+(We will use a [%i "buffer (of text)" %] class like this
 to store text for viewing in [%x viewer %].)
 In our first attempt,
 each object is its own iterator,
@@ -312,7 +312,7 @@ create a separate object for each loop to use:
 
 [% inc file="better_iterator.py" keep="buffer" %]
 
-Each [%i "cursor" %][%/i%] keeps track of the current location
+Each [%i "cursor" %] keeps track of the current location
 for a single loop
 using code identical to what we've already seen
 (including the same bug with empty strings):

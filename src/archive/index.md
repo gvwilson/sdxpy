@@ -19,7 +19,7 @@ We'd also like to be able to see what we've changed
 and to collaborate with other people.
 
 A [%g version_control_system "version control system" %]
-like [%i "Git" "version control system" %][Git][git][%/i%]
+like [%i "Git" "Git" url="git" %]
 solves all of these problems at once.
 It keeps track of changes to files
 so that we can see what we've changed,
@@ -39,8 +39,8 @@ is a way to archive files that:
 This chapter builds a tool that does both tasks.
 It won't create and merge branches;
 if you would like to see how that works,
-please see [%i "Cook, Mary Rose" %][Mary Rose Cook's][cook_mary_rose][%/i%] [Gitlet][gitlet]
-or [%i "Polge, Thibault" %]Thibault Polge's[%/i%] [Write yourself a Git][write_yourself_a_git].
+please see [%i "Cook, Mary Rose" "Mary Rose Cook's" url="cook_mary_rose" %] [Gitlet][gitlet]
+or [%i "Polge, Thibault" "Thibault Polge's" %] [Write yourself a Git][write_yourself_a_git].
 
 ## Saving Files {: #archive-files}
 
@@ -71,9 +71,9 @@ Let's use this to create a table of files and hashes:
 
 [% inc file="hash_all.py" keep="func" %]
 
-Notice that we're truncating the [%i "hash code" %][%/i%] of each file
-to just 16 [%i "hexadecimal" %][%/i%] digits.
-This greatly increases the odds of [%i "collision (in hashing)" %]collision[%/i%],
+Notice that we're truncating the [%i "hash code" %] of each file
+to just 16 [%i "hexadecimal" %] digits.
+This greatly increases the odds of [%i "collision (in hashing)" "collision" %],
 so real version control systems don't do this,
 but it makes our program's output easier to show on screen.
 For example,
@@ -91,7 +91,7 @@ then our program's output is:
 Before we go any further
 we need to figure out how we're going to test our code.
 The obvious approach is to create directories and sub-directories
-containing some files we can use as [%i "fixture" %]fixtures[%/i%].
+containing some files we can use as [%i "fixture" "fixtures" %].
 However,
 we are going to change or delete those files
 as we back things up and restore them.
@@ -99,7 +99,7 @@ To make sure early tests don't contaminate later ones
 we would have to re-create those files and directories after each test.
 
 As discussed in [%x reflect %],
-a better approach is to use a [%i "mock object" %][%/i%]
+a better approach is to use a [%i "mock object" %]
 instead of the real filesystem.
 The [pyfakefs][pyfakefs] module replaces key functions like `open`
 with functions that behave the same way
@@ -152,7 +152,7 @@ so that losing one hard drive wouldn't mean losing all our work,
 so we need to design our system with multiple back ends in mind.
 
 For now,
-we will store manifests in [%i "CSV" %][%/i%] files named `ssssssssss.csv`,
+we will store manifests in [%i "CSV" %] files named `ssssssssss.csv`,
 where `ssssssssss` is the [%g utc "UTC" %] [%g timestamp "timestamp" %]
 of the backup's creation.
 
@@ -256,12 +256,12 @@ and an example of a single test is:
 ## Refactoring {: #archive-refactor}
 
 Now that we have a better idea of what we're doing,
-we can [%i "refactor" %][%/i%] to create a [%g base_class "base class" %]
+we can [%i "refactor" %] to create a [%g base_class "base class" %]
 that prescribes the general steps in creating a backup:
 
 [% inc file="backup_oop.py" keep="base" %]
 
-We can then derive a [%i "child class" %][%/i%]
+We can then derive a [%i "child class" %]
 to archive things locally
 and fill in its methods by re-using code from the functions
 we have just written.
@@ -295,7 +295,7 @@ or anything else:
 
 [% inc file="backup_oop.py" keep="use" %]
 
-This example highlights one of the great strengths of [%i "object-oriented programming" %][%/i%].
+This example highlights one of the great strengths of [%i "object-oriented programming" %].
 It's easy to write programs in which new code uses old code;
 provided classes and objects are carefully designed,
 they allow old code to use new code without being changed.
@@ -320,7 +320,7 @@ Why doesn't this solve the time of check/time of use race condition mentioned ea
 
 ### JSON Manifests {: .exercise}
 
-1.  Modify `backup.py` so that it can save [%i "JSON" %][%/i%] manifests as well as CSV manifests
+1.  Modify `backup.py` so that it can save [%i "JSON" %] manifests as well as CSV manifests
     based on a command-line flag.
 
 2.  Write another program called `migrate.py` that converts a set of manifests

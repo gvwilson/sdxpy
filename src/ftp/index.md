@@ -145,7 +145,7 @@ our server will ignore it.
 This can result in [%g deadlock "deadlock" %] because
 the server is trying to send its reply
 while the client is still trying to send the rest of the message.
-Increasing the size of the [%i "buffer (in memory)" %]memory buffer[%/i%]
+Increasing the size of the [%i "buffer (in memory)" "memory buffer" %]
 used to store the incoming message
 won't make this problem go away:
 the client (or a malicious attacker) could always send more data than we have allowed for.
@@ -216,7 +216,7 @@ but automating it is difficult because
 there's no way to tell how long to wait before trying to talk to the server
 and no easy way to shut the server down.
 
-A partial solution is to use a [%i "mock object" %][%/i%] ([%x reflect %])
+A partial solution is to use a [%i "mock object" %] ([%x reflect %])
 in place of a real network connection
 so that we can test each part of the application independently.
 To start,
@@ -303,7 +303,7 @@ How useful is it in practice?
 
 ### Saving and Listing Files {: .exercise}
 
-1.  Modify the [%i "protocol" %][%/i%] used by this chapter's client and server
+1.  Modify the [%i "protocol" %] used by this chapter's client and server
     so that the client sends the file's name, a newline, and then the file's contents,
     and the server saves the file under that name.
 

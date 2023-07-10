@@ -12,7 +12,7 @@ depends:
 Uploading and downloading files ([%x ftp %]) is useful,
 but we want to do more.
 What we *don't* want to do is
-create a new [%i "protocol" %][%/i%] for every kind interaction.
+create a new [%i "protocol" %] for every kind interaction.
 Instead,
 we would like to use a single standardized protocol in a variety of ways.
 
@@ -20,12 +20,12 @@ The Hypertext Transfer Protocol,
 more commonly called [%g http "HTTP" %],
 specifies one way programs can exchange data over IP.
 HTTP is deliberately simple:
-the [%i "client" %][%/i%] sends a [%g http_request "request" %]
+the [%i "client" %] sends a [%g http_request "request" %]
 specifying what it wants over a socket connection,
 and the server sends a [%g http_response "response" %] containing some data.
 A server can construct responses however it wants;
 it can copy a file from disk,
-generated [%i "HTML" %][%/i%] dynamically,
+generated [%i "HTML" %] dynamically,
 or almost anything else.
 
 An HTTP request is that it's just text:
@@ -240,10 +240,10 @@ One thing the server is doing right is character encoding.
 The `send_content` method expects `content` to be a `bytes` object,
 not a string,
 because the HTTP protocol requires the content length to be the number of bytes.
-The server reads files in [%i "binary mode" %][%/i%]
+The server reads files in [%i "binary mode" %]
 by using `"rb"` instead of just `"r"` when it opens files in `handle_file`,
 converts the internally-generated error page from characters to bytes
-using the [%i "UTF-8" %][%/i%] encoding,
+using the [%i "UTF-8" %] encoding,
 and specifies `charset=utf-8` as part of the content type.
 
 ## Testing  {: #http-testing}

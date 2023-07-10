@@ -31,7 +31,7 @@ and introduces the single most important idea in this book:
 
 ## Storing and Running Tests {: #test-funcobj}
 
-The first thing we need to understand is that a function is an [%i "object" %][%/i%].
+The first thing we need to understand is that a function is an [%i "object" %].
 While the bytes in a string represent characters
 and the bytes in an image represent pixels,
 the bytes in a function are instructions
@@ -99,7 +99,7 @@ we can store them in a list just like numbers or strings
 
 However,
 we have to know how to call the functions in order for this trick to work,
-which means they must have the same [%i "signature" %][%/i%]:
+which means they must have the same [%i "signature" %]:
 {: .continue}
 
 [% inc pat="signature.*" fill="py out" %]
@@ -117,7 +117,7 @@ We can then call the function as `func()`
 just as we called `example` using `alias()`.
 In order for this to work,
 though,
-all of the functions in the list must have the same [%i "signature" %][%/i%],
+all of the functions in the list must have the same [%i "signature" %],
 i.e.,
 they must all take the same number of parameters
 in the same order
@@ -158,8 +158,8 @@ The outcome of each test is exactly one of:
 To implement this classification scheme
 we need to distinguish failing tests from broken ones.
 Our rule is that
-if a test [%g throw_exception "throws" %] an `AssertionError` [%i "exception" %][%/i%]
-then one of our checks is reporting a [%i "failure" %][%/i%],
+if a test [%g throw_exception "throws" %] an `AssertionError` [%i "exception" %]
+then one of our checks is reporting a [%i "failure" %],
 while any other kind of exception indicates that the test contains an error.
 
 Translating that rules into code gives us the function `run_tests`
@@ -194,7 +194,7 @@ sooner or later we'll add a function to `TESTS` twice
 or forget to add it at all.
 We'd therefore like our test runner to find tests for itself,
 which it can do by exploiting the fact that
-Python stores variables in a structure similar to a [%i "dictionary" %][%/i%].
+Python stores variables in a structure similar to a [%i "dictionary" %].
 
 Run the Python interpreter and call the `globals` function:
 
@@ -238,8 +238,8 @@ Notice that when we print a function,
 Python shows us its name and its address in memory.
 {: .continue}
 
-Having a program find things in itself like this at [%i "runtime" %][%/i%]
-is another example of [%i "introspection" %][%/i%]
+Having a program find things in itself like this at [%i "runtime" %]
+is another example of [%i "introspection" %]
 ([%x parse %]).
 Combining introspection with the pass-fail-error pattern of the previous section
 gives us something that finds test functions,
@@ -367,7 +367,7 @@ Add a similar way to [%g register_code "register" %] a `teardown` function.
 ### Module Names {: .exercise}
 
 Our last test runner generated names `m0`, `m1`, and so on
-so that each [%i "module" %][%/i%] would have a unique name.
+so that each [%i "module" %] would have a unique name.
 What happens if we don't do this?
 I.e.,
 what happens if we use the same constant string for all modules that we load?

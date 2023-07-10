@@ -12,7 +12,7 @@ depends:
 ---
 
 There is no point building software if you can't install it.
-Inspired by the [%i "Comprehensive TeX Archive Network" %][%/i%]
+Inspired by the [%i "Comprehensive TeX Archive Network" %]
 ([CTAN][ctan]),
 most languages have an online archive from which people can download packages.
 Each package typically has a name and one or more versions;
@@ -32,7 +32,7 @@ if A uses one version of C and B uses another in the same program,
 the results are going to be inconsistent at best.
 This chapter therefore explores how to find a workable installation or prove that there isn't one.
 It is based in part on [this tutorial][package_manager_tutorial]
-by [%i "Nison, Maël" %][Maël Nison][nison_mael][%/i%]
+by [%i "Nison, Maël" "Maël Nison" url="nison_mael" %]
 and on [Andreas Zeller's][zeller_andreas]
 lecture on [academic prototyping][academic_prototyping];
 interested readers might also enjoy
@@ -76,7 +76,7 @@ for working with the real thing.
 ## Exhaustive Search {: #pack-exhaustive}
 
 To avoid messing around with parsers,
-we store the [%i "manifest" %]manifest[%/i%]
+we store the [%i "manifest" %]
 of available packages as JSON:
 
 [% inc file="triple.json" %]
@@ -88,9 +88,9 @@ of available packages as JSON:
 If you ever design a data format,
 please include a standard way for people to add comments,
 because they will always want to.
-[%i "YAML" %][%/i%] has this,
-but [%i "JSON" %][%/i%]
-and [%i "CSV" %][%/i%] don't.
+[%i "YAML" %] has this,
+but [%i "JSON" %]
+and [%i "CSV" %] don't.
 
 </div>
 
@@ -114,7 +114,7 @@ the [%g search_space "search space" %] would double;
 add another,
 and it would double again,
 which means that if \\( N \\) is the number of packages,
-the [%i "big-oh notation" %]work grows[%/i%] as \\( O(c^N) \\).
+the [%i "big-oh notation" "work grows" %] as \\( O(c^N) \\).
 This exponential behavior is called
 [%g combinatorial_explosion "combinatorial explosion" %],
 and it makes brute force solutions impractical even for small problems.
@@ -239,7 +239,7 @@ we would write a triply-nested loop to generate combinations,
 but if there were four,
 we would need a quadruply-nested loop,
 and so on.
-This [%g recursive_enumeration_pattern "Recursive Enumeration" %] [%i "design pattern" %][%/i%]
+This [%g recursive_enumeration_pattern "Recursive Enumeration" %] [%i "design pattern" %]
 uses one recursive function call per loop
 so that we automatically get exactly as many loops as we need.
 
@@ -536,6 +536,6 @@ and generates the constraints needed by the Z3 theorem prover.
     and use the solution to find a legal build order.
 
 2.  Modify the constraints to introduce
-    a [%i "circular dependency" %][%/i%]
+    a [%i "circular dependency" %]
     and check that the solver correctly determines
     that there is no legal build order.

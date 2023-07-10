@@ -239,7 +239,7 @@ so the running time is as good as it possibly can be.
 
 Hashing is a tremendously powerful tool:
 Python's dictionaries hash their keys to make lookup fast,
-and [%i "version control system" %]version control systems[%/i%] use it to determine
+and [%i "version control system" "version control systems" %] use it to determine
 when two files or two revisions of a repository are the same or not
 ([%x archive %]).
 
@@ -294,7 +294,7 @@ How fast is "rapidly" in big-oh terms?
 
 -   Read the documentation for Python's built-in `hash` function
 
--   Why do `hash(123)` and `hash("123")` work but `hash([123])` [%i "raise" %][%/i%] an exception?
+-   Why do `hash(123)` and `hash("123")` work but `hash([123])` [%i "raise" %] an exception?
 
 ### How Good Is SHA-256? {: .exercise}
 

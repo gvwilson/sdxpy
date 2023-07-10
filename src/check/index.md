@@ -60,7 +60,7 @@ Beautiful Soup's DOM has two main classes:
 `NavigableString` for text and `Tag` for elements.
 To parse a document,
 we import what we need and call `BeautifulSoup` with
-the text to be [%i "parser" %]parsed[%/i%]
+the text to be [%i "parser" "parsed" %]
 and a string specifying exactly what kind of parsing we want to do.
 (In practice, this is almost always `"html.parser"`.)
 
@@ -71,7 +71,7 @@ to tell us what element the tag represents
 and to give us access to the node's [%g child_tree "children" %],
 i.e.,
 the nodes below it in the tree.
-We can therefore write a short [%i "recursion" %]recursive[%/i%] function
+We can therefore write a short [%i "recursion" "recursive" %] function
 to show us everything in the DOM:
 
 [% inc file="parse.py" keep="display" %]
@@ -86,7 +86,7 @@ have been preserved as text nodes.
 {: .continue}
 
 Finally,
-each `Tag` node has a [%i "dictionary" %][%/i%] called `attrs`
+each `Tag` node has a [%i "dictionary" %] called `attrs`
 that stores the attributes of that node.
 The values in this dictionary are either strings or lists of strings
 depending on whether the attribute has a single value or multiple values:
@@ -121,14 +121,14 @@ it produces this output
 [% inc file="contains.out" %]
 
 We have written several recursive functions already,
-all of which have more or less the same [%i "control flow" %][%/i%].
+all of which have more or less the same [%i "control flow" %].
 A good rule of software design is that if we have written something three times,
 we should turn what we've learned into something reusable
 so that we never have to write it again.
 In this case,
-we can use the [%g visitor_pattern "Visitor" %] [%i "design pattern" %][%/i%].
-A visitor is a [%i "class" %][%/i%] that knows how to get to each element of a data structure
-and call a user-defined [%i "method" %][%/i%] when it gets there.
+we can use the [%g visitor_pattern "Visitor" %] [%i "design pattern" %].
+A visitor is a [%i "class" %] that knows how to get to each element of a data structure
+and call a user-defined [%i "method" %] when it gets there.
 Our visitor will have three methods:
 one that it calls when it first encounters a node,
 one that it calls when it is finished with that node,
@@ -137,7 +137,7 @@ and one that it calls for text ([%f check-visitor %]):
 [% inc file="visitor.py" keep="visitor" %]
 
 Notice that we provide do-nothing implementations of these three methods
-rather than having them [%i "raise" %][%/i%] a `NotImplementedError`.
+rather than having them [%i "raise" %] a `NotImplementedError`.
 A particular use of our `Visitor` class may not need some of these methods—for example,
 our catalog builder didn't need to do anything when leaving a node or for text nodes—and
 we shouldn't require people to implement things they don't need.
@@ -163,21 +163,21 @@ the more helpful the Visitor pattern becomes.
 ## Checking Style {: #check-style}
 
 To wrap up our style checker,
-let's create a [%i "manifest" %][%/i%] that specifies
+let's create a [%i "manifest" %] that specifies
 which types of nodes can be children of which others:
 
 [% inc file="manifest.yml" %]
 
-We've chosen to use [%i "YAML" %][%/i%]
+We've chosen to use [%i "YAML" %]
 for the manifest
 because it's a relatively simple way to write nested rules.
-We could have used [%i "JSON" %][%/i%],
+We could have used [%i "JSON" %],
 but as we said in [%x parse %],
 we shouldn't invent a syntax of our own:
 there are already too many in the world.
 {: .continue}
 
-Our `Check` class only needs a [%i "constructor" %][%/i%] to set everything up
+Our `Check` class only needs a [%i "constructor" %] to set everything up
 and a `_tag_enter` method to handle nodes:
 
 [% inc file="check.py" keep="check" %]

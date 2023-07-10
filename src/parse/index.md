@@ -14,7 +14,7 @@ depends:
 ---
 
 We constructed objects to match patterns in [%x glob %],
-but an [%i "expression" %][%/i%] like `"2023-*{pdf,txt}"`
+but an [%i "expression" %] like `"2023-*{pdf,txt}"`
 is a lot easier to read and write
 than `Lit("2023-", Any(Either("pdf", "txt")))`.
 If we want to use the former,
@@ -68,7 +68,7 @@ rather than inventing something of your own.
 
 ## Tokenizing {: #parse-token}
 
-A [%i "token" %]token[%/i%] is a meaningful piece of text,
+A [%i "token" %] is a meaningful piece of text,
 such as the digits making up a number or the letters making up a variable name.
 Our grammar's tokens are the special characters `*`, `{`, `}`, and `,`;
 any sequence of one or more other characters is a single multi-letter token.
@@ -200,13 +200,13 @@ we can manipulates objects of those classes using familiar operations.
 And yes,
 this is another example of introspection.
 
-Since we're using [%i "inheritance" %][%/i%] to implement our matchers,
+Since we're using [%i "inheritance" %] to implement our matchers,
 we write the check for equality in two parts.
-The [%i "parent class" %][%/i%] `Match` performs the checks that all classes need to perform
+The [%i "parent class" %] `Match` performs the checks that all classes need to perform
 (in this case,
 that the objects being compared have the same
 [%g concrete_class "concrete class" %]).
-If the [%i "child class" %][%/i%] needs to do any more checking
+If the [%i "child class" %] needs to do any more checking
 (for example, that the characters in two `Lit` objects are the same)
 it calls up to the parent method first,
 then adds its own tests.

@@ -1,15 +1,13 @@
 """Create index and index references.
 
-Index entries are created using `[% i "some" "key" %]...text...[% /i %]`.  Keys
-can use `major!minor` notation to create subheadings (LaTeX-style).
+Index entries are created using one of two forms:
 
-    [% i "some" %]some text[% /i %]
+-   `[%i "text" %]` uses `text` as both the key and the visible text
 
-If an index entry has a single key and no text like this:
+-   `[%i "key" "text" %]` uses a separate key and text
 
-    [% i "thing" %][%/i%]
-
-then "thing" is used as the text as well as the index key.
+Either form can have an optional `url=link` field to wrap the visible text
+in a hyperlink.  `link` must be a key in the `info/links.yml` file.
 
 -   `index_ref` turns an index reference shortcode into text.
 
@@ -33,7 +31,7 @@ def collect():
 def _collect(node, major, collected):
     """Pull data from a single node."""
     parser = shortcodes.Parser(inherit_globals=False, ignore_unknown=True)
-    parser.register(_parse, "i", "/i")
+    parser.register(_parse, "i")
     temp = {"node": node, "index": collected}
     try:
         parser.parse(node.text, temp)
@@ -41,87 +39,81 @@ def _collect(node, major, collected):
         util.fail(f"%i shortcode parsing error in {node}: {exc}")
 
 
-def _parse(pargs, kwargs, extra, content):
+def _parse(pargs, kwargs, extra):
     """Gather information from a single index shortcode."""
     node = extra["node"]
     index = extra["index"]
-    util.require(pargs, f"Empty index key in {node}")
-    for entry in [key.strip() for key in pargs]:
-        entry = regex.MULTISPACE.sub(" ", entry)
-        entry = tuple(s.strip() for s in entry.split("!") if s.strip())
-        util.require(
-            1 <= len(entry) <= 2,
-            f"Badly-formatted index key {entry} in {node}",
-        )
-        index.setdefault(entry, set()).add(node.slug)
+    key, _, _ = _get_fields(node, pargs, kwargs)
+    index.setdefault(key, set()).add(node.slug)
+
+
+@shortcodes.register("i")
+def index_ref(pargs, kwargs, node):
+    """Format index shortcodes."""
+    key, text, url = _get_fields(node, pargs, kwargs)
+    cls = 'class="ix-entry"'
+    content = f"[{text}][{url}]" if url else text
+    return f'<span {cls} ix-key="{key}" markdown="1">{content}</span>'
+
+
+def _get_fields(node, pargs, kwargs):
+    """Extract key, text, and url from [%i ... %]."""
+    if len(pargs) == 1:
+        key = text = pargs[0]
+    elif len(pargs) == 2:
+        key, text = pargs
+    else:
+        util.fail(f"Badly-formatted index entry {pargs} in {node}")
+    url = kwargs.get("url", None)
+    return key, text, url
 
 
 # ----------------------------------------------------------------------
 
 
-@shortcodes.register("i", "/i")
-def index_ref(pargs, kwargs, node, content):
-    """Handle [%i "some" "key" %]...text...[% /i %] index shortcodes."""
-    util.require(pargs, f"'i' shortcode in {node} has no arguments")
-    if content:
-        pargs = ";".join(pargs)
-    else:
-        util.require(
-            len(pargs) == 1,
-            f"Badly-formatted empty 'i' shortcode {pargs} in {node}",
-        )
-        content = pargs[0].strip()
-        pargs = content
-    cls = 'class="ix-entry"'
-    return f'<span {cls} ix-key="{pargs}" markdown="1">{content}</span>'
-
-
 @shortcodes.register("index")
 def make_index(pargs, kwargs, node):
-    """Handle [%index %] using saved data."""
+    """Handle [% index %] using saved data."""
     # No entries.
     if not (content := util.get_config("index")):
         return ""
 
-    # Format multi-level list.
+    # Add glossary entries to index.
+    glossary_in_chapter = util.get_config("glossary_in_chapter")
+    for (slug, terms) in glossary_in_chapter:
+        for (_, term) in terms:
+            if term not in content:
+                content[term] = set()
+            content[term].add(slug)
+
+    # Calculate order for index links.
+    sequence = [
+        *[slug for slug in ark.site.config["chapters"]],
+        *[slug for slug in ark.site.config["appendices"]]
+    ]
+    ordering = {slug:i for (i, slug) in enumerate(sequence)}
+
+    # Format index list.
     result = ['<ul class="ix-list">']
-    previous = None
-    keys = list(content.keys())
-    keys.sort(key=lambda x: tuple(y.lower() for y in x))
-    for current in keys:
-        occurrences = content[current]
-        if len(current) == 1:
-            links = _make_links(current[0], occurrences)
-            result.append(f"<li>{current[0]}: {links}</li>")
-            previous = current[0]
-            continue
-
-        util.require(
-            len(current) == 2,
-            f"Internal error index key '{current}' in {occurrences} in {node}",
-        )
-
-        if current[0] != previous:
-            result.append(f"<li>{current[0]}</li>")
-        links = _make_links(current[1], occurrences)
-        result.append(f"<li>…{current[1]}: {links}</li>")
-
+    for text, occurrences in sorted(content.items()):
+        links = _make_links(text, occurrences, ordering)
+        result.append(f"<li>{text}: {links}</li>")
     result.append("</ul>")
     return "\n".join(result)
 
 
-def _make_links(term, slugs):
+def _make_links(term, slugs, ordering):
     """Turn a set of node slugs into links."""
     # Too early in cycle.
     if not (headings := util.get_config("headings")):
         return ""
 
     # Match headings to slugs and format.
-    paths = ["../" if not s else f"../{s}/" for s in slugs]
+    paths = ["@root/" if not s else f"@root/{s}/" for s in slugs]
     titles = [headings[s].title for s in slugs]
     triples = list(zip(slugs, paths, titles))
-    major = util.make_major_numbering()
-    triples.sort(key=lambda x: str(major[x[0]]))
+    triples.sort(key=lambda trip: ordering[trip[0]])
+
     result = ", ".join(
         f'<a class="ix-ref" ix-ref="{term}" href="{path}">{title}</a>'
         for (slug, path, title) in triples
