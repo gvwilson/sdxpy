@@ -4,7 +4,7 @@ from fnmatch import fnmatch
 from pathlib import Path
 
 import ark
-from util import read_directives
+import util
 
 
 @ark.filters.register(ark.filters.Filter.LOAD_NODE_FILE)
@@ -21,7 +21,7 @@ def keep_dir(value, dirpath):
 
 def _ignore(dirpath, path):
     """Check for pattern-based exclusion."""
-    directives = read_directives(dirpath, "exclude")
+    directives = util.read_directives(dirpath, "exclude")
     configured = ark.site.config.get("exclude", [])
     combined = directives + configured
     return any(fnmatch(path.name, pat) for pat in combined)

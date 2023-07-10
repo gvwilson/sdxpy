@@ -13,7 +13,7 @@ def bibliography_ref(pargs, kwargs, node):
     """Handle [%b key1 key2 %] biblography reference shortcodes."""
     util.require(
         (len(pargs) > 0) and (not kwargs),
-        f"Bad 'b' shortcode with {pargs} and {kwargs}",
+        f"Bad 'b' shortcode with {pargs} and {kwargs} in {node}",
     )
 
     used = util.make_config("bibliography")
@@ -30,7 +30,7 @@ def bibliography(pargs, kwargs, node):
     """Convert bibliography to HTML."""
     util.require(
         (not pargs) and (not kwargs),
-        f"Bad 'bibliography' shortcode {pargs} and {kwargs}",
+        f"Bad 'bibliography' shortcode {pargs} and {kwargs} in {node}",
     )
 
     filename = ark.site.config.get("bibliography", None)

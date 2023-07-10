@@ -1,8 +1,9 @@
 import re
 import sys
+
 import yaml
 
-CLEAN = re.compile(r'(.+)\(.+\)')
+CLEAN = re.compile(r"(.+)\(.+\)")
 
 
 def main():
@@ -15,6 +16,7 @@ def main():
         if make_pat(term).search(text):
             print(term)
 
+
 def cleanup(word):
     m = CLEAN.search(word)
     if m:
@@ -23,7 +25,7 @@ def cleanup(word):
 
 
 def make_pat(text):
-    return re.compile(r'\b' + text + r'\b')
+    return re.compile(r"\b" + text + r"\b")
 
 
 if __name__ == "__main__":

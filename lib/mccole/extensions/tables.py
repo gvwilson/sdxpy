@@ -65,7 +65,7 @@ class Table:
 @ark.events.register(ark.events.Event.INIT)
 def collect():
     """Collect information from pages."""
-    major = util.make_major()
+    major = util.make_major_numbering()
     collected = {}
     ark.nodes.root().walk(lambda node: _collect(node, major, collected))
     _cleanup(major, collected)
@@ -78,13 +78,13 @@ def _collect(node, major, collected):
         caption = regex.TABLE_CAPTION.search(match.group(0))
         util.require(
             caption is not None,
-            "Table div '{match.group(0)}' without caption in {node.filepath}",
+            "Table div '{match.group(0)}' without caption in {node}",
         )
 
         slug = regex.TABLE_ID.search(match.group(0))
         util.require(
             slug is not None,
-            f"Table div '{match.group(0)}' without ID in {node.filepath}",
+            f"Table div '{match.group(0)}' without ID in {node}",
         )
 
         collected[node.slug].append(
@@ -108,9 +108,7 @@ def _cleanup(major, collected):
 @shortcodes.register("t")
 def table_ref(pargs, kwargs, node):
     """Handle [%t slug %] table reference."""
-    util.require(
-        len(pargs) == 1, f"Badly-formatted 't' shortcode {pargs} in {node.filepath}"
-    )
+    util.require(len(pargs) == 1, f"Badly-formatted 't' shortcode {pargs} in {node}")
 
     # Too early in the processing cycle.
     if (tables := util.get_config("tables")) is None:
@@ -118,9 +116,7 @@ def table_ref(pargs, kwargs, node):
 
     # Fill in.
     slug = pargs[0]
-    util.require(
-        slug in tables, f"Unknown table reference slug {slug} in {node.filepath}"
-    )
+    util.require(slug in tables, f"Unknown table reference slug {slug} in {node}")
     table = tables[slug]
     label = util.make_label("table", table.number)
     cls = 'class="tbl-ref"'

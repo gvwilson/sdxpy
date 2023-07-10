@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import argparse
-from collections.abc import Iterable
 from pathlib import Path
 
 import frontmatter
@@ -84,7 +83,7 @@ def highlight_ascii(slug, key, actual):
         return f"{util.GREEN}{actual}{util.ENDC}"
 
 
-def highlight_html(slug, actual, expected):
+def highlight_html(slug, key, actual):
     low, high = get_targets(slug, key)
     if actual < low:
         return f"**{actual}**"

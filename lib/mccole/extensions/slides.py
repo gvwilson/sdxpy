@@ -18,7 +18,7 @@ def slide_list(pargs, kwargs, node):
     """Generate list of slides with links."""
     util.require(
         (not pargs) and (not kwargs),
-        f"Bad 'slides' shortcode {pargs} and {kwargs}",
+        f"Bad 'slides' shortcode {pargs} and {kwargs} in {node}",
     )
     titles = util.get_config("titles")
     result = ["<ol>"]

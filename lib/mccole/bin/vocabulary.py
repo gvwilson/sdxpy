@@ -3,7 +3,6 @@
 import argparse
 import re
 import string
-import sys
 from pathlib import Path
 
 import util
@@ -99,7 +98,6 @@ def extract_words(docs):
 
 def normalize(word):
     """Create normalized form of word."""
-    original = word
     if word in SPECIAL:
         return word
     if (":" in word) or (word[0] not in string.ascii_letters):

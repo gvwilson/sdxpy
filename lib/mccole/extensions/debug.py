@@ -7,9 +7,15 @@ import shortcodes
 
 @shortcodes.register("debug")
 def debug(pargs, kwargs, node):
-    """Insert credits."""
+    """Display debugging information."""
     print(
-        f"NODE {node} class_list {node.get_class_list()} slug {node.get_slug_list()} template {node.get_template_list()} meta {node.meta} slug {node.slug} stem {node.stem}",
+        f"NODE {node}"
+        f" class_list {node.get_class_list()}"
+        f" slug {node.get_slug_list()}"
+        f" template {node.get_template_list()}"
+        f" meta {node.meta}"
+        f" slug {node.slug}"
+        f" stem {node.stem}",
         file=sys.stderr,
     )
     print(f"PARGS {pargs}", file=sys.stderr)

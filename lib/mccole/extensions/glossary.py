@@ -16,8 +16,12 @@ UNMARKDOWN = [
 
 @ark.events.register(ark.events.Event.INIT)
 def collect():
-    """Collect information from pages."""
-    major = util.make_major()
+    """Collect information from pages.
+
+    This has to be done during initialization rather than incrementally
+    because we don't know when a cross-reference will be encountered.
+    """
+    major = util.make_major_numbering()
     collected = {}
     ark.nodes.root().walk(lambda node: _collect(node, major, collected))
     _cleanup(collected)
@@ -27,12 +31,11 @@ def _collect(node, major, collected):
     """Pull data from a single node."""
     parser = shortcodes.Parser(inherit_globals=False, ignore_unknown=True)
     parser.register(_parse, "g")
-    temp = set()
+    collected[node.slug] = set()
     try:
-        parser.parse(node.text, temp)
+        parser.parse(node.text, collected[node.slug])
     except shortcodes.ShortcodeSyntaxError as exc:
-        util.fail(f"%g shortcode parsing error in {node.filepath}: {exc}")
-    collected[node.slug] = temp
+        util.fail(f"%g shortcode parsing error in {node}: {exc}")
 
 
 def _parse(pargs, kwargs, data):
@@ -57,9 +60,10 @@ def _cleanup(collected):
 
 @shortcodes.register("g")
 def glossary_ref(pargs, kwargs, node):
-    """Handle [% g slug "text" %] glossary reference shortcodes."""
+    """Handle [% g key "text" %] glossary reference shortcode."""
     util.require(
-        (len(pargs) == 2) and (not kwargs), f"Bad 'g' shortcode {pargs} and {kwargs}"
+        (len(pargs) == 2) and (not kwargs),
+        f"Bad 'g' shortcode {pargs} and {kwargs} in {node}",
     )
     key, text = pargs
     used = util.make_config("glossary_keys_used")
@@ -71,7 +75,8 @@ def glossary_ref(pargs, kwargs, node):
 def glossary(pargs, kwargs, node):
     """Convert glossary to Markdown."""
     util.require(
-        (not pargs) and (not kwargs), f"Bad 'glossary' shortcode {pargs} and {kwargs}"
+        (not pargs) and (not kwargs),
+        f"Bad 'glossary' shortcode {pargs} and {kwargs} in {node}",
     )
     glossary, lang = util.read_glossary()
     try:

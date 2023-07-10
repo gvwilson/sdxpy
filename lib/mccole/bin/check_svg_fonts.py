@@ -4,11 +4,10 @@ import re
 import sys
 from xml.dom import minidom
 
-
 EXPECTED = "Verdana:12px"
 PAT = {
-    "font-family": re.compile(r'\bfont-family:\s*(.+?);'),
-    "font-size": re.compile(r'\bfont-size:\s*(.+?);'),
+    "font-family": re.compile(r"\bfont-family:\s*(.+?);"),
+    "font-size": re.compile(r"\bfont-size:\s*(.+?);"),
 }
 
 
@@ -17,11 +16,7 @@ def main():
     expected = {EXPECTED}
     for filename in sys.argv[1:]:
         seen = recurse(minidom.parse(filename).documentElement, set())
-        seen = {
-            f"{entry[0]}:{entry[1]}"
-            for entry in seen
-            if entry[0] is not None
-        }
+        seen = {f"{entry[0]}:{entry[1]}" for entry in seen if entry[0] is not None}
         seen -= expected
         if seen:
             print(filename, ", ".join(sorted(seen)))
@@ -33,7 +28,7 @@ def get_attr(node, name):
     if node.hasAttribute(name):
         result = node.getAttribute(name)
     elif node.hasAttribute("style"):
-        if (m := PAT[name].match(node.getAttribute("style"))):
+        if m := PAT[name].match(node.getAttribute("style")):
             result = m.group(1)
     return result
 

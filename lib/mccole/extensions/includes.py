@@ -59,7 +59,7 @@ def linecount(pargs, kwargs, node):
     """Count lines in an include file."""
     util.require(
         not kwargs,
-        f"Badly-formatted linecount shortcode with {kwargs} in {node.filepath}",
+        f"Badly-formatted linecount shortcode with {kwargs} in {node}",
     )
 
     inclusions = util.make_config("inclusions")
@@ -71,16 +71,14 @@ def linecount(pargs, kwargs, node):
 @shortcodes.register("inc")
 def include(pargs, kwargs, node):
     """Handle a file inclusion, possibly excerpting."""
-    util.require(
-        not pargs, f"Badly-formatted excerpt shortcode with {pargs} in {node.filepath}"
-    )
+    util.require(not pargs, f"Badly-formatted excerpt shortcode with {pargs} in {node}")
 
     # Handle by cases.
     inclusions = util.make_config("inclusions")
     if ("pat" in kwargs) and ("fill" in kwargs):
         return _multi(inclusions, node, **kwargs)
     elif "file" not in kwargs:
-        util.fail(f"Badly-formatted excerpt shortcode with {kwargs} in {node.filepath}")
+        util.fail(f"Badly-formatted excerpt shortcode with {kwargs} in {node}")
     elif ("keep" in kwargs) and ("omit" in kwargs):
         return _keep_omit(inclusions, node, **kwargs)
     elif "keep" in kwargs:
@@ -174,7 +172,7 @@ def _include_file(node, filepath, *filters):
                 lines = f(lines)
             return _make_html(node, Path(filepath).name, kind, lines)
     except OSError:
-        util.fail(f"Unable to read inclusion '{filepath}' in {node.filepath}.")
+        util.fail(f"Unable to read inclusion '{filepath}' in {node}.")
 
 
 def _is_slides(node):

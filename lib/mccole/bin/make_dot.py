@@ -144,7 +144,9 @@ def parse_args():
     """Parse command-line arguments."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", required=True, help="Configuration file")
-    parser.add_argument("--force", default=False, action="store_true", help="Force regeneration")
+    parser.add_argument(
+        "--force", default=False, action="store_true", help="Force regeneration"
+    )
     parser.add_argument("--kind", required=True, choices=["regular", "linear"], help="")
     parser.add_argument("--output", required=True, help="Output file")
     parser.add_argument("--skip", nargs="+", default=[], help="Slugs to skip")

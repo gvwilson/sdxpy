@@ -27,9 +27,12 @@ class Figure:
 
 @ark.events.register(ark.events.Event.INIT)
 def collect():
-    """Collect information from pages."""
-    # Gather data.
-    major = util.make_major()
+    """Collect information from pages for numbering.
+
+    This has to be done during initialization rather than incrementally
+    because we don't know when a cross-reference will be encountered.
+    """
+    major = util.make_major_numbering()
     collected = {}
     ark.nodes.root().walk(lambda node: _collect(node, major, collected))
     _cleanup(major, collected)
@@ -43,7 +46,7 @@ def _collect(node, major, collected):
     try:
         parser.parse(node.text, {"node": node, "values": collected[node.slug]})
     except shortcodes.ShortcodeSyntaxError as exc:
-        util.fail(f"%figure shortcode parsing error in {node.filepath}: {exc}")
+        util.fail(f"%figure shortcode parsing error in {node}: {exc}")
 
 
 def _cleanup(major, collected):
@@ -69,7 +72,7 @@ def _parse(pargs, kwargs, data):
 @shortcodes.register("f")
 def figure_ref(pargs, kwargs, node):
     """Handle [% f slug %] figure reference shortcodes."""
-    util.require((len(pargs) == 1) and (not kwargs), "Bad 'f' shortcode")
+    util.require((len(pargs) == 1) and (not kwargs), "Bad 'f' shortcode in {node}")
 
     # Haven't collected information yet.
     if (figures := util.get_config("figures")) is None:
@@ -77,7 +80,7 @@ def figure_ref(pargs, kwargs, node):
 
     # Create cross-reference.
     slug = pargs[0]
-    util.require(slug in figures, f"Unknown figure reference {slug} ({node.filepath})")
+    util.require(slug in figures, f"Unknown figure reference {slug} in {node}")
     figure = figures[slug]
     label = util.make_label("figure", figure.number)
     cls = 'class="fig-ref"'
@@ -91,7 +94,7 @@ def figure_def(pargs, kwargs, node):
     allowed = {"cls", "slug", "img", "alt", "caption"}
     util.require(
         (not pargs) and allowed.issuperset(kwargs.keys()),
-        f"Bad 'figure' shortcode {pargs} and {kwargs}",
+        f"Bad 'figure' shortcode {pargs} and {kwargs} in {node}",
     )
     cls = kwargs.get("cls", None)
     cls = f' class="{cls}"' if cls is not None else ""
@@ -126,7 +129,7 @@ def figure_def(pargs, kwargs, node):
 @shortcodes.register("figure_list")
 def figure_list(pargs, kwargs, node):
     """Display all figures."""
-    util.require(not pargs and not kwargs, "figure_list takes no arguments")
+    util.require(not pargs and not kwargs, "Bad 'figure_list' shortcode in {node}")
 
     # Haven't collected information yet.
     if (figures := util.get_config("figures")) is None:

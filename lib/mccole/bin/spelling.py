@@ -2,8 +2,6 @@
 
 import argparse
 import re
-import string
-import sys
 from pathlib import Path
 
 import util

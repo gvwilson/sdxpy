@@ -1,10 +1,9 @@
 """Headings and cross-references."""
 
-import sys
 from dataclasses import dataclass
 
 import ark
-import ibis
+import filters
 import regex
 import shortcodes
 import util
@@ -25,8 +24,7 @@ class Heading:
 @ark.events.register(ark.events.Event.INIT)
 def collect():
     """Collect information from pages."""
-    # Gather data.
-    major = util.make_major()
+    major = util.make_major_numbering()
     collected = {}
     ark.nodes.root().walk(lambda node: _collect(node, major, collected))
     _number(collected, major)
@@ -38,7 +36,7 @@ def collect():
 def _collect(node, major, collected):
     """Pull data from a single node."""
     # Home page is untitled.
-    if is_root(node):
+    if filters.is_root(node):
         return
 
     # Only collecting top-level chapters and appendices.
@@ -98,7 +96,7 @@ def _flatten(collected):
 def _modify(node):
     """Post-processing changes."""
     # Don't process root index file.
-    if is_root(node):
+    if filters.is_root(node):
         return
     node.text = regex.MARKDOWN_HEADING.sub(_patch, node.text)
     headings = util.get_config("headings")
@@ -142,45 +140,18 @@ def _titles():
 
 @shortcodes.register("x")
 def heading_ref(pargs, kwargs, node):
-    """Handle [%x slug %] section reference."""
+    """Handle [%x key %] chapter/appendix cross-reference."""
     util.require(
-        (len(pargs) == 1) and not kwargs, f"Bad 'x' shortcode {pargs} and {kwargs}"
+        (len(pargs) == 1) and not kwargs,
+        f"Bad 'x' shortcode {pargs} and {kwargs} in {node}",
     )
     headings = util.get_config("headings")
-    slug = pargs[0]
+    key = pargs[0]
     try:
-        heading = headings[slug]
+        heading = headings[key]
         label = util.make_label("part", heading.number)
-        anchor = f"#{slug}" if (len(heading.number) > 1) else ""
+        anchor = f"#{key}" if (len(heading.number) > 1) else ""
         cls = 'class="x-ref"'
         return f'<a {cls} href="@root/{heading.fileslug}/{anchor}">{label}</a>'
     except KeyError:
-        print(f"Unknown part cross-reference key {slug}", file=sys.stderr)
-        return "FIXME"
-
-
-@ibis.filters.register("is_root")
-def is_root(node):
-    """Is this the root node?"""
-    return len(node.path) == 0
-
-
-@ibis.filters.register("not_root")
-def not_root(node):
-    """Is this _not_ the root node?"""
-    return not is_root(node)
-
-
-@ibis.filters.register("part_name")
-def part_name(node):
-    """Insert chapter/appendix part name."""
-    headings = util.get_config("headings")
-    util.require(node.slug in headings, f"Unknown slug for part name {node.slug}")
-    entry = headings[node.slug]
-    return f'{util.make_label("part", entry.number)}'
-
-
-@ibis.filters.register("part_title")
-def part_title(node):
-    """Insert chapter/appendix title."""
-    return util.get_title(node)
+        util.fail(f"Unknown part cross-reference key {key} in {node}")

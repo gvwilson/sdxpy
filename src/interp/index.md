@@ -355,7 +355,7 @@ Implement fixed-size one-dimensional arrays:
 while other instructions that you design
 get and set particular array elements by index.
 
-### Chained maps {: .exercise}
+### Chained Maps {: .exercise}
 
 Look at the documentation for the [`ChainMap`][py_chainmap] class
 and modify the interpreter to use that to manage environments.

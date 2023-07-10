@@ -6,7 +6,7 @@ import util
 @ark.events.register(ark.events.Event.INIT)
 def collect():
     """Collect information from pages."""
-    major = util.make_major()
+    major = util.make_major_numbering()
     collected = {}
     ark.nodes.root().walk(lambda node: _collect(node, major, collected))
     _cleanup(collected)

@@ -7,9 +7,9 @@ import yaml
 
 
 @shortcodes.register("credits")
-def bibliography(pargs, kwargs, node):
+def credits(pargs, kwargs, node):
     """Insert credits."""
-    util.require((not pargs) and (not kwargs), "Bad 'credits' shortcode")
+    util.require((not pargs) and (not kwargs), "Bad 'credits' shortcode in {node}")
 
     filename = ark.site.config.get("credits", None)
     util.require(filename is not None, "No credits specified")

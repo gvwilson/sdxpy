@@ -153,7 +153,7 @@ def make_links_table():
     return CACHE["links_table"]
 
 
-def make_major():
+def make_major_numbering():
     """Construct major numbers/letters based on configuration.
 
     This function relies on the configuration containing `"chapters"`
@@ -249,7 +249,7 @@ def require_file(node, filename, kind):
     """Require that a file exists."""
     directory = Path(node.filepath).parent
     filepath = Path(directory, filename)
-    msg = f"Missing {kind} file {filename} from {node.filepath}"
+    msg = f"Missing {kind} file {filename} from {node}"
     require(filepath.exists(), msg)
 
 

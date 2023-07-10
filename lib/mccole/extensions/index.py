@@ -25,7 +25,7 @@ import util
 @ark.events.register(ark.events.Event.INIT)
 def collect():
     """Collect information from pages."""
-    major = util.make_major()
+    major = util.make_major_numbering()
     collected = util.make_config("index")
     ark.nodes.root().walk(lambda node: _collect(node, major, collected))
 
@@ -38,20 +38,20 @@ def _collect(node, major, collected):
     try:
         parser.parse(node.text, temp)
     except shortcodes.ShortcodeSyntaxError as exc:
-        util.fail(f"%i shortcode parsing error in {node.filepath}: {exc}")
+        util.fail(f"%i shortcode parsing error in {node}: {exc}")
 
 
 def _parse(pargs, kwargs, extra, content):
     """Gather information from a single index shortcode."""
     node = extra["node"]
     index = extra["index"]
-    util.require(pargs, f"Empty index key in {node.filepath}")
+    util.require(pargs, f"Empty index key in {node}")
     for entry in [key.strip() for key in pargs]:
         entry = regex.MULTISPACE.sub(" ", entry)
         entry = tuple(s.strip() for s in entry.split("!") if s.strip())
         util.require(
             1 <= len(entry) <= 2,
-            f"Badly-formatted index key {entry} in {node.filepath}",
+            f"Badly-formatted index key {entry} in {node}",
         )
         index.setdefault(entry, set()).add(node.slug)
 
@@ -62,13 +62,13 @@ def _parse(pargs, kwargs, extra, content):
 @shortcodes.register("i", "/i")
 def index_ref(pargs, kwargs, node, content):
     """Handle [%i "some" "key" %]...text...[% /i %] index shortcodes."""
-    util.require(pargs, f"'i' shortcode in {node.filepath} has no arguments")
+    util.require(pargs, f"'i' shortcode in {node} has no arguments")
     if content:
         pargs = ";".join(pargs)
     else:
         util.require(
             len(pargs) == 1,
-            f"Badly-formatted empty 'i' shortcode {pargs} in {node.filepath}",
+            f"Badly-formatted empty 'i' shortcode {pargs} in {node}",
         )
         content = pargs[0].strip()
         pargs = content
@@ -97,7 +97,8 @@ def make_index(pargs, kwargs, node):
             continue
 
         util.require(
-            len(current) == 2, f"Internal error index key '{current}' in {occurrences}"
+            len(current) == 2,
+            f"Internal error index key '{current}' in {occurrences} in {node}",
         )
 
         if current[0] != previous:
@@ -119,7 +120,7 @@ def _make_links(term, slugs):
     paths = ["../" if not s else f"../{s}/" for s in slugs]
     titles = [headings[s].title for s in slugs]
     triples = list(zip(slugs, paths, titles))
-    major = util.make_major()
+    major = util.make_major_numbering()
     triples.sort(key=lambda x: str(major[x[0]]))
     result = ", ".join(
         f'<a class="ix-ref" ix-ref="{term}" href="{path}">{title}</a>'
