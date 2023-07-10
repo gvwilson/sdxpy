@@ -1,7 +1,6 @@
 ---
 syllabus:
 -   Programs usually store integers using two's complement rather than sign and magnitude.
--   Floating-point numbers have a sign, a mantissa, and an exponent.
 -   Characters are usually encoded as bytes using either ASCII, UTF-8, or UTF-32.
 -   Programs can use bitwise operators to manipulate the bits representing data directly.
 -   Low-level compiled languages usually store raw values, while high-level interpreted languages use boxed values.
@@ -9,7 +8,6 @@ syllabus:
 depends:
 -   persist
 ---
-
 
 Python and other high-level languages shield programmers from low-level details,
 but sooner or later someone has to worry about bits and bytes.
@@ -67,7 +65,7 @@ for example,
 
 [% inc pat="binary_notation.*" fill="py out" %]
 
-Programmers usually write [%i "hexadecimal" %]hexadecimal[%/i%] instead:
+Programmers usually write [%i "hexadecimal" %][%/i%] instead:
 the digits 0–9 have the usual meaning,
 and the letters A-F (or a-f) are used to represent the digits 11–15.
 We signal that we're using hexadecimal with a `0x` prefix,
@@ -132,8 +130,8 @@ they work on corresponding bits independently as shown in [%t binary-ops %].
 | `12 >> 2`  | `1100 >> 2`   | `3` (`0011`)    |
 </div>
 
-We can set or clear individual bits with these operators.
-To set a particular bit,
+We can set individual bits to 0 or 1 with these operators.
+To set a particular bit to 1,
 create a value in which that bit is 1 and the rest are 0.
 When this is or'd with a value,
 the bit we set is guaranteed to come out 1;
@@ -397,7 +395,7 @@ and packs them into a `bytes` object.
 The inverse function,
 `unpack(format, string)`,
 takes some bytes and a format
-and returns a tuple containing the unpacked values.
+and returns a [%i "tuple" %][%/i%] containing the unpacked values.
 Here's an example:
 
 [% inc pat="pack_unpack.*" fill="py out" %]
@@ -484,7 +482,7 @@ then use it to figure out how big our string is:
 
 The unpacking function is analogous.
 We break the [%g buffer_memory "memory buffer" %]
-into a header that's exactly four bytes long
+into a [%i "header" %][%/i%] that's exactly four bytes long
 (i.e., the right size for an integer)
 and a body made up of whatever's left.
 We then unpack the header,
