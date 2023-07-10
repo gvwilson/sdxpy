@@ -218,8 +218,8 @@ def check_index_refs(config):
     """Check formatting of index references."""
     for slug, text in config["prose"].items():
         for match in regex.INDEX_REF.finditer(text):
-            keys = match.group(1).strip()
-            if not (keys.startswith('"') and keys.endswith('"')):
+            content = match.group(1).strip()
+            if not (content.startswith('"') and content.endswith('"')):
                 _warn(f"{slug} badly-formatted index reference {match.group(0)}")
 
 
@@ -228,6 +228,7 @@ def check_links(config):
     defined = {ln["key"] for ln in config["links_data"] if "direct" not in ln}
     seen = set()
     for text in [*config["prose"].values(), *config["slides"].values()]:
+        seen |= {m.group(1) for m in regex.INDEX_URL.finditer(text)}
         for scrub in [
             regex.MARKDOWN_CODE_BLOCK,
             regex.MARKDOWN_CODE_INLINE,

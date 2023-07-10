@@ -16,7 +16,8 @@ GITHUB_ISSUE = re.compile(r"\[%\s*issue\b\s+(\d+)\s*%\]")
 GLOSSARY_REF = re.compile(r'\[%\s*g\s+\b(.+?)\b\s+"(.+?)"\s*%\]')
 GLOSSARY_CROSSREF = re.compile(r"\[.+?\]\(\#(.+?)\)", re.DOTALL)
 IMG = re.compile(r'<img.+?src="(.+?)".+?>')
-INDEX_REF = re.compile(r"\[%\s*i\b(.+?)%\](.+?)\[%\s*/i\s*%\]")
+INDEX_REF = re.compile(r"\[%\s*i\b(.+?)\s*%\]")
+INDEX_URL = re.compile(r'\[%\s*i\b.+?url="(.+?)"\s*%\]')
 SHORTCODE = re.compile(r"\[%.+?%\]")
 
 # Markdown elements.
