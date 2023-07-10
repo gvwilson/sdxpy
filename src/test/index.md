@@ -362,7 +362,7 @@ e.g., to close database connections or delete temporary files.)
 Modify the testing tool in this chapter so that
 if a file of tests contains a function called `setup`
 then the tool calls it exactly once before running each test in the file.
-Add a similar way to register a `teardown` function.
+Add a similar way to [%g register_code "register" %] a `teardown` function.
 
 ### Module Names {: .exercise}
 

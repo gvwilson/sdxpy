@@ -254,7 +254,8 @@ Finally,
 we extend the virtual machine's constructor
 to build the required lookup table.
 For convenience,
-we register the methods under both single-letter keys
+we [%i "register (in code)" %]register[%/i%] the methods
+under both single-letter keys
 and longer command names:
 
 [% inc file="vm_extend.py" keep="init" %]

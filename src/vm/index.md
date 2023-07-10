@@ -26,7 +26,7 @@ simulates a computer with three parts ([%f vm-architecture %]):
     (This requirement is part of our VM's
     [%g abi "Application Binary Interface" %], or ABI.)
 
-1.  Four [%g register "registers" %] named R0 to R3
+1.  Four [%g register_hardware "registers" %] named R0 to R3
     that instructions can access directly.
     There are no memory-to-memory operations in our VM:
     everything happens in or through registers.

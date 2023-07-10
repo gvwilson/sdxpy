@@ -334,7 +334,7 @@ and does whatever it's supposed to do:
 [% inc file="register.py" keep="handler" %]
 
 Setting up the visitor is a bit more complicated,
-since we have to create and register the handler:
+since we have to create and [%i "register (in code)" %]register[%/i%] the handler:
 
 [% inc file="register.py" keep="main" %]
 

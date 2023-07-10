@@ -23,7 +23,7 @@ formatted as [%i "JSON" %][%/i%],
 which program written in other languages can read.
 
 The phrase "some kinds of objects" is the most important part of the preceding paragraph.
-Since programs can define new classes,
+Since programs can define new [%i "class" %]classes[%/i%],
 a [%g persistence "persistence framework" %]
 has to choose one of the following:
 
@@ -133,7 +133,7 @@ this approach handles nested lists without any extra work.
 Our functions handle sets in exactly the same way as lists;
 the only difference is using the keyword `set` instead of the keyword `list`
 in the opening line.
-To save a dictionary,
+To save a [%i "dictionary" %][%/i%],
 we save the number of entries
 and then save each key and value in turn:
 
@@ -193,7 +193,8 @@ The core of our saving class is:
 because we are going to create several variations on it.)
 {: .continue}
 
-`SaveOop.save` figures out which method to call to save a particular thing
+`SaveOop.save` figures out which [%i "method" %][%/i%] to call
+to save a particular thing
 by constructing a name based on the thing's type,
 checking whether that method exists,
 and then calling it.
@@ -303,7 +304,7 @@ The first test of our new code is:
 
 [% inc file="test_aliasing_wrong.py" keep="no_aliasing" %]
 
-which uses this helper function:
+which uses this [%i "helper function" %][%/i%]:
 {: .continue}
 
 [% inc file="test_aliasing_wrong.py" keep="roundtrip" %]
@@ -389,7 +390,8 @@ adds that list to the `seen` dictionary immediately,
 and *then* loads list items recursively.
 We have to pass it the ID of the list
 to use as the key in `seen`,
-and we have to use a loop rather than a [%g list_comprehension "list comprehension" %],
+and we have to use a loop rather than
+a [%g list_comprehension "list comprehension" %],
 but the changes to `_set` and `_dict` follow exactly the same pattern.
 
 [% inc file="save_aliasing.py" keep="save" %]
@@ -432,7 +434,8 @@ Our options are:
     Since option #1 would require users to write this method anyway,
     it's the one we'll choose.
 
-3.  Require users to register a [%g helper_class "helper class" %]
+3.  Require users to [%i "register (in code)" %]register[%/i%]
+    a [%g helper_class "helper class" %]
     that knows how to save and load objects of the class we're interested in.
     This approach is also commonly used in strictly-typed languages
     as a way of adding persistence after the fact
@@ -486,7 +489,7 @@ The method that handles extensions
 checks that the value on the line just read indicates an extension,
 then reads the dictionary containing the object's contents
 from the input stream
-and uses it to build an instance of the right class:
+and uses it to build an [%i "instance" %][%/i%] of the right class:
 
 [% inc file="extend.py" keep="load_extension" %]
 
