@@ -1,6 +1,6 @@
 ## Formatting {: #contrib-formatting}
 
-This material uses [Ivy][ivy] with some custom extensions;
+This material uses [Ark][ark] with some custom extensions;
 run `make` in the root directory to get a list of available commands.
 Some of these rely on scripts in the `./bin/` directory.
 
@@ -116,7 +116,7 @@ and makes it easier to create a table of external links.
 
 ### Tables
 
-The Markdown processor used by [Ivy][ivy] doesn't support attributes on tables,
+The Markdown processor used by [Ark][ark] doesn't support attributes on tables,
 so we must do something a bit clumsy.
 
 1.  To create a table write:

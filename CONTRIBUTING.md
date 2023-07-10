@@ -81,7 +81,7 @@ This project uses [Martha's Rules][marthas_rules] for consensus decision making:
 
 ## Formatting
 
-This material uses [Ivy][ivy] with some custom extensions;
+This material uses [Ark][ark] with some custom extensions;
 run `make` in the root directory to get a list of available commands.
 Some of these rely on scripts in the `./bin/` directory.
 
@@ -197,7 +197,7 @@ and makes it easier to create a table of external links.
 
 ### Tables
 
-The Markdown processor used by [Ivy][ivy] doesn't support attributes on tables,
+The Markdown processor used by [Ark][ark] doesn't support attributes on tables,
 so we must do something a bit clumsy.
 
 1.  To create a table write:
@@ -329,6 +329,7 @@ you will need these packages with `tlmgr` in order to build the PDF:
 -   `textgreek`
 -   `tocbibind`
 
+[ark]: https://www.dmulholl.com/docs/ark/main/
 [glosario]: https://glosario.carpentries.org/
 [marthas_rules]: https://journals.sagepub.com/doi/10.1177/088610998600100206
 [simpy]: https://simpy.readthedocs.io/
