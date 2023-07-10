@@ -227,7 +227,7 @@ def check_links(config):
     """Check external link references."""
     defined = {ln["key"] for ln in config["links_data"] if "direct" not in ln}
     seen = set()
-    for text in config["prose"].values():
+    for text in [*config["prose"].values(), *config["slides"].values()]:
         for scrub in [
             regex.MARKDOWN_CODE_BLOCK,
             regex.MARKDOWN_CODE_INLINE,

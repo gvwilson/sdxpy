@@ -95,7 +95,7 @@ def get_title(node):
             **ark.site.config["appendices"],
         }
     slug = get_chapter_slug(node)
-    require(slug in CACHE["titles"], f"Unknown slug {slug} for titles")
+    require(slug in CACHE["titles"], f"Unknown slug {slug} for titles in {node}")
     return CACHE["titles"][slug]
 
 
