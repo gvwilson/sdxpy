@@ -80,8 +80,8 @@ def make_index(pargs, kwargs, node):
 
     # Add glossary entries to index.
     glossary_in_chapter = util.get_config("glossary_in_chapter")
-    for (slug, terms) in glossary_in_chapter:
-        for (_, term) in terms:
+    for slug, terms in glossary_in_chapter:
+        for _, term in terms:
             if term not in content:
                 content[term] = set()
             content[term].add(slug)
@@ -89,9 +89,9 @@ def make_index(pargs, kwargs, node):
     # Calculate order for index links.
     sequence = [
         *[slug for slug in ark.site.config["chapters"]],
-        *[slug for slug in ark.site.config["appendices"]]
+        *[slug for slug in ark.site.config["appendices"]],
     ]
-    ordering = {slug:i for (i, slug) in enumerate(sequence)}
+    ordering = {slug: i for (i, slug) in enumerate(sequence)}
 
     # Format index list.
     result = ['<ul class="ix-list">']
