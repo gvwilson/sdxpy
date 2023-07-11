@@ -11,26 +11,17 @@ depends:
 -   dup
 ---
 
-There is no point building software if you can't install it.
-Inspired by the [%i "Comprehensive TeX Archive Network" %]
-([CTAN][ctan]),
+Inspired by the [%i "Comprehensive TeX Archive Network" %] ([CTAN][ctan]),
 most languages have an online archive from which people can download packages.
-Each package typically has a name and one or more versions;
-each version may have a list of dependencies,
-and the package may specify a version or range of versions for each dependency.
-Installing the files in a package
-is mostly a matter of copying them to the right places.
-Before then,
-though,
-we need to figure out exactly what versions of different packages to install
-in order to create a consistent setup.
-If A and B require different versions of C,
-it might not be possible to use A and B together.
+Each [%i "package" %] typically has a name,
+one or more versions,
+and a list of [%i "dependency" dependencies %] (which are also versioned).
+In order to install a package,
+we need to figure out exactly what versions of its dependencies to install:
+if A and B require different versions of C,
+we might not be able to use A and B together.
 
-Installing every package's dependencies separately isn't an option:
-if A uses one version of C and B uses another in the same program,
-the results are going to be inconsistent at best.
-This chapter therefore explores how to find a workable installation or prove that there isn't one.
+This chapter explores how to find a workable installation or prove that there isn't one.
 It is based in part on [this tutorial][package_manager_tutorial]
 by [%i "Nison, Maël" "Maël Nison" url="nison_mael" %]
 and on [Andreas Zeller's][zeller_andreas]
@@ -47,16 +38,12 @@ Each version is three integers X.Y.Z,
 where X is the major version,
 Y is the minor version,
 and Z is the [%g patch "patch" %].
-(The [full specification][semver_spec] allows for more fields,
-but we will ignore them in this tutorial.)
 
 A package's authors increment its major version number
 when a change to the package breaks
-[%g backward_compatible "backward compatibility" %].
-For example,
-if the new version adds a required parameter to a function,
-then code built for the old version will fail or behave unpredictably with the new one.
-The minor version number is incremented when new functionality won't break any existing code,
+[%g backward_compatible "backward compatibility" %],
+i.e., if code built for the old version will fail or behave unpredictably with the new one.
+The minor version number is incremented when changes won't break any existing code,
 and the patch number is changed for bug fixes that don't add any new features.
 
 The notation for specifying ranges of versions looks like arithmetic:
@@ -67,8 +54,9 @@ Note that version 2.1 is greater than version 1.99:
 no matter how large a minor version number becomes,
 it never spills over into the major version number.
 
-It isn't hard to write a few simple comparisons for semantic version identifiers,
-but getting all the cases right is almost as tricky as handling dates and times correctly.
+It isn't hard to compare simple semantic version identifiers,
+but handling [the whole standard][semver_spec]
+is almost as tricky as handling dates and times correctly.
 Our examples therefore number versions with plain integers;
 we recommend the [semantic-version][py_semver] package
 for working with the real thing.
@@ -209,7 +197,8 @@ The first half creates the same list of lists as before,
 where each sub-list is the available versions of a single package.
 It then creates an empty [%g accumulator "accumulator" %]
 to collect all the combinations
-and calls a recursive function called `_make_possible` to fill it in.
+and calls a [%i "recursion" "recursive function" %]
+called `_make_possible` to fill it in.
 {: .continue}
 
 Each call to `_make_possible` handles one package's worth of work
@@ -239,7 +228,8 @@ we would write a triply-nested loop to generate combinations,
 but if there were four,
 we would need a quadruply-nested loop,
 and so on.
-This [%g recursive_enumeration_pattern "Recursive Enumeration" %] [%i "design pattern" %]
+This [%g recursive_enumeration_pattern "Recursive Enumeration" %]
+[%i "design pattern" %]
 uses one recursive function call per loop
 so that we automatically get exactly as many loops as we need.
 
@@ -495,11 +485,11 @@ a function could measure the "distance" between two versions as:
 
 ### Regular Releases {: .exercise}
 
-Some packages release new versions on a regular cycle,
+Some packages release new versions regularly,
 e.g.,
-Version 2021.1 is released on March 1 of 2021,
-Version 2021.2 is released on September 1 of that year,
-version 2022.1 is released on March 1 of the following year,
+Version 2023.1 is released on March 1 of 2023,
+Version 2023.2 is released on September 1 of that year,
+version 2024.1 is released on March 1 of the following year,
 and so on.
 
 1.  How does this make package management easier?
