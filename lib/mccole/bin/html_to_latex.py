@@ -10,6 +10,8 @@ from bs4 import BeautifulSoup, NavigableString, Tag
 
 CROSSREFS = {"Appendix": "appref", "Chapter": "chapref", "Section": "secref"}
 
+GL_PREFIX = "gl:"
+
 PRINT_INDEX = r"""
 \cleardoublepage
 \makeatletter
@@ -146,6 +148,8 @@ def handle(node, state, accum, doEscape):
         children(node, state, accum, doEscape)
         accum.append("}")
         key = href_key(node)
+        if key.startswith(GL_PREFIX):
+            key = key[len(GL_PREFIX):]
         term = state["glossary"][key][state["language"]]["term"]
         accum.append(rf"\index{{{escape(term, True)}}}")
 

@@ -43,11 +43,11 @@ INFO_FILES := ${INFO_BIB} ${ROOT}/info/credits.yml ${INFO_GLOSSARY} ${INFO_LINKS
 # Calculated variables.
 DOCS := ${DOCS_PAGES} ${DOCS_SLIDES}
 DOCS_PAGES := $(patsubst ${ROOT}/src/%.md,${ROOT}/docs/%.html,$(SRC_PAGES))
+SRC_PDF := $(patsubst ${ROOT}/src/%.svg,${ROOT}/src/%.pdf,${SRC_SVG})
 DOCS_PDF := $(patsubst ${ROOT}/src/%.pdf,${ROOT}/docs/%.pdf,${SRC_PDF})
 DOCS_SLIDES := $(patsubst ${ROOT}/src/%/slides.html,${ROOT}/docs/%/slides/index.html,$(SRC_SLIDES))
 FIG_PDF := $(patsubst ${ROOT}/src/%.svg,${ROOT}/docs/%.pdf,${FIG_SVG})
 SRC := ${SRC_PAGES} ${SRC_SLIDES}
-SRC_PDF := $(patsubst ${ROOT}/src/%.svg,${ROOT}/src/%.pdf,${SRC_SVG})
 STEM := ${ABBREV}-${BUILD_DATE}
 
 # Keep the PDF versions of diagrams under the 'src' directory.
