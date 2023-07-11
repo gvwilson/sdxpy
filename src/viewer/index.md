@@ -1,6 +1,6 @@
 ---
 syllabus:
--   The curses library manages text terminals in a platform-independent way.
+-   The curses module manages text terminals in a platform-independent way.
 -   Write debugging information to a log file when the screen is not available.
 -   We can use a callable object in place of a function to satisfy an API's requirements.
 -   Test programs using synthetic data.
@@ -25,7 +25,7 @@ written by [Wasim Lorgat][lorgat_wasim].
 
 ## Curses {: #viewer-curses}
 
-Our starting point is the [curses][py_curses] library,
+Our starting point is the [curses][py_curses] module,
 which handles interaction with text terminals on several different operating systems
 in a uniform way.
 A very simple curses-based program looks like this:
@@ -86,7 +86,7 @@ First, as explained in [%x layout %],
 screens put (0, 0) in the upper left rather than the lower left,
 and increasing values of Y move down rather than up.
 What's more,
-the curses library uses (row, column) coordinates,
+the curses module uses (row, column) coordinates,
 so we have to remember to write them as (y, x) rather than (x, y).
 
 The other oddity in this function is that
@@ -273,7 +273,7 @@ instead of a long chain of `if`/`elif` statement:
 [% inc file="dispatch_keys.py" keep="interact" %]
 
 A little experimentation showed that
-while the curses library uses names like `"KEY_DOWN"` for arrow keys,
+while the curses module uses names like `"KEY_DOWN"` for arrow keys,
 it returns actual [%i "control code" "control codes" %]
 for key combinations like Ctrl-X.
 The `TRANSLATE` dictionary turns these into human-readable names

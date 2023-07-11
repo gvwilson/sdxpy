@@ -226,7 +226,7 @@ and report any problems:
 
 We could just use a list of three values to record information for each scope,
 but it's a little cleaner to use `namedtuple`
-from Python's standard library:
+from [%i "Python standard library" "Python's standard library" %]:
 
 [% inc file="find_unused_variables.py" keep="scope" %]
 
@@ -406,7 +406,8 @@ then reports any functions from the first file that it hasn't seen.
 ### Sorting Imports {: .exercise}
 
 [isort][isort] checks that the imports in a file are sorted correctly:
-modules from Python's standard library come first (in alphabetical order),
+modules from [%i "Python standard library" "Python's standard library" %]
+come first (in alphabetical order),
 then installed modules (also in alphabetical order)
 and finally local imports (ditto).
 Write a linter that reports violations of these rules.

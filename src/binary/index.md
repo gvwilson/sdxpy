@@ -502,7 +502,7 @@ There are pro's and con's to both, which we won't go into here.
 What you *do* need to know is that if you move data from one architecture to another,
 it's your responsibility to flip the bytes around,
 because the machine doesn't know what the bytes mean.
-This is such a pain that the `struct` library and other libraries like it 
+This is such a pain that the `struct` module and other libraries like it 
 will do things for you if you ask it to.
 If you're using `struct`,
 the first character of a format string optionally indicates the byte order
@@ -518,7 +518,7 @@ the first character of a format string optionally indicates the byte order
 | `!`       | network    | standard | none          |
 </div>
 
-You should also use the `struct` library's `calcsize` function,
+You should also use the `struct` module's `calcsize` function,
 which tells you how large (in bytes) the data produced or consumed by a format will be:
 
 [% inc pat="calcsize.*" fill="py out" %]

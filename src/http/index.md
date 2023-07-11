@@ -118,7 +118,7 @@ We're now ready to write a simple HTTP server that will:
 4.  reply with an HTML page.
 
 Steps 1, 2, and 4 are the same from one application to another,
-so the Python standard library has a module called `http.server`
+so the [%i "Python standard library" %] has a module called `http.server`
 that contains tools to do that for us.
 Here's the entire server:
 
@@ -256,7 +256,7 @@ simulate an HTTP GET request,
 and check that the status, headers, and content are correct.
 [%f http-inheritance %] shows the final inheritance hierarchy:
 
--   `BaseHTTPRequestHandler` comes from the Python standard library.
+-   `BaseHTTPRequestHandler` comes from the [%i "Python standard library" %].
 
 -   `MockRequestHandler` defines replacements for its method.
 

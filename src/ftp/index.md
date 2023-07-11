@@ -18,16 +18,17 @@ most web servers still handle the same kinds of messages in the same way.
 
 Pretty much every program on the web
 runs on a family of communication standards called
-[%g internet_protocol "Internet Protocol (IP)" %].
+[%g internet_protocol "Internet Protocol" %] (IP).
 The one that concerns us is the
-[%g tcp "Transmission Control Protocol (TCP/IP)" %],
+[%g tcp "Transmission Control Protocol" %] (TCP/IP),
 which makes communication between computers look like reading and writing files.
 
 Programs using IP communicate through [%g socket "sockets" %]
 ([%f ftp-sockets %]).
 Each socket is one end of a point-to-point communication channel,
 just like a phone is one end of a phone call.
-A socket consists of an [%g ip_address "IP address" %] that identifies a particular machine
+A socket consists of an [%g ip_address "IP address" %]
+that identifies a particular machine
 and a [%g port "port" %] on that machine.
 
 [% figure
@@ -39,7 +40,7 @@ and a [%g port "port" %] on that machine.
 
 The IP address consists of four 8-bit numbers,
 which are usually written as `93.184.216.34`;
-the [%g dns "Domain Name System (DNS)" %]
+the [%g dns "Domain Name System" %] (DNS)
 matches these numbers to symbolic names like `example.com`
 that are easier for human beings to remember.
 
@@ -77,7 +78,8 @@ From top to bottom, this code:
     consisting of a host identifier and a port.
     The string `"localhost"` means "the current machine".
 2.  We use `socket.socket` to create a new socket.
-    The values `AF_INET` and `SOCK_STREAM` specify the protocols we're using;
+    The values `AF_INET` and `SOCK_STREAM` specify
+    the [%i "protocol" "protocols" %] we're using;
     we'll always use those in our examples,
     so we won't go into details about them.
 3.  We connect to the server…
@@ -110,13 +112,14 @@ when we run the client and server in separate terminal windows.
 
 There's a *lot* going on here,
 so most people who have to program at this level
-use Python's `socketserver` library,
+use Python's `socketserver` module,
 which provides two things:
 a class called `TCPServer` that manages incoming connections
 and another class called `BaseRequestHandler`
 that does everything *except* process the incoming data.
 In order to do that,
-we derive a class of our own from `BaseRequestHandler` that provides a `handle` method.
+we derive a class of our own from `BaseRequestHandler`
+that provides a `handle` method.
 Every time `TCPServer` gets a new connection
 it creates a new object of our class
 and calls that object's `handle` method.
@@ -125,9 +128,9 @@ our server is:
 
 [% inc file="server_lib.py" %]
 
-These two library classes use a different design than what we've seen before.
+These two classes use a different design than what we've seen before.
 Instead of creating one class for programmers to extend,
-the `socketserver` library puts the low-level details in `TCPServer`,
+the `socketserver` module puts the low-level details in `TCPServer`,
 which can be used as-is,
 and asks users to create a plug-in class from `BaseRequestHandler`
 for the server to use.
@@ -138,7 +141,8 @@ they're just two more tools in a software designer's toolbox.
 
 ## Chunking {: #ftp-chunk}
 
-Our latest server reads data exactly once using `self.request.recv(CHUNK_SIZE)`
+Our latest server reads data exactly once
+using `self.request.recv(CHUNK_SIZE)`
 with `CHUNK_SIZE` set to 1024.
 If the client sends more than a kilobyte of data,
 our server will ignore it.
@@ -148,7 +152,8 @@ while the client is still trying to send the rest of the message.
 Increasing the size of the [%i "buffer (in memory)" "memory buffer" %]
 used to store the incoming message
 won't make this problem go away:
-the client (or a malicious attacker) could always send more data than we have allowed for.
+the client (or a malicious attacker) could always send more data
+than we have allowed for.
 
 Instead,
 we need to modify the server so that it keeps reading data
@@ -220,7 +225,7 @@ A partial solution is to use a [%i "mock object" %] ([%x reflect %])
 in place of a real network connection
 so that we can test each part of the application independently.
 To start,
-let's refactor our server's `handle` method
+let's [%i "refactor" %] our server's `handle` method
 so that it calls `self.debug` instead of printing directly:
 
 [% inc file="logging_handler.py" keep="class" omit="debug" %]
@@ -240,7 +245,7 @@ and overrides the `debug` method so that it doesn't print logging messages:
 
 [% inc file="test_server.py" keep="handler" %]
 
-Notice that we *don't* upcall the constructor of `LoggingHandler`
+Notice that we *don't* call the [%i "constructor" %] of `LoggingHandler`
 in the constructor of `MockHandler`.
 If we did,
 we would trigger a call to the constructor of `BaseRequestHandler`,

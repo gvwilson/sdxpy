@@ -192,7 +192,7 @@ other than generating random strings of bytes and hashing them.
 
 Cryptographic hash functions are hard to write—or rather,
 it's very hard to prove that a particular algorithm has the properties we require.
-We will therefore use a function from Python's [hashing library][py_hashlib]
+We will therefore use a function from Python's [hashing module][py_hashlib]
 that implements the [%g sha256 "SHA-256" %] algorithm.
 Given some bytes as input,
 this function produces a 256-bit hash,
@@ -280,7 +280,7 @@ What are the actual odds?
 A [%g streaming_api "streaming API" %] delivers data one piece at a time
 rather than all at once.
 Read the documentation for the `update` method of hashing objects
-in Python's [hashing library][py_hashlib]
+in Python's [hashing module][py_hashlib]
 and rewrite the duplicate finder from this chapter
 to use it.
 

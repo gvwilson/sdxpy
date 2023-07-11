@@ -52,7 +52,7 @@ which has two consequences:
 The objects that represent the nodes and text in an HTML tree
 are called the Document Object Model or [%g dom "DOM" %].
 Hundreds of tools have been written to convert HTML text to DOM;
-our favorite is a Python library called [Beautiful Soup][beautiful_soup],
+our favorite is a Python module called [Beautiful Soup][beautiful_soup],
 which can handle messy real-world documents
 as well as those that conform to every rule of the standard.
 

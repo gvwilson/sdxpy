@@ -227,7 +227,8 @@ We will look at ways to fix this in the exercises as well.
 
 Our `backup` function relies on a [%g helper_function "helper function" %]
 called `current_time`
-that does nothing but call `time.time` from Python's standard library:
+that does nothing but call `time.time` from
+[%i "Python standard library" "Python's standard library" %]:
 
 [% inc file="backup.py" keep="time" %]
 

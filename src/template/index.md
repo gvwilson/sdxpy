@@ -234,7 +234,7 @@ we use it as a key to look up a value.
 These two pairs of handlers look plausible, but do they work?
 To find out,
 we can build a program that loads variable definitions from a JSON file,
-reads an HTML template using the [Beautiful Soup][beautiful_soup] library,
+reads an HTML template using the [Beautiful Soup][beautiful_soup] module,
 and does the expansion:
 
 [% inc file="template.py" %]

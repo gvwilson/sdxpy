@@ -128,7 +128,7 @@ We have to implement the consistency checks for our build rules
 because JSON is a generic format
 that knows nothing about dependencies, rules, and required keys.
 There is a format called [JSON Schema][json_schema] for specifying these things
-and [a Python library][py_jsonschema] that implements its checks,
+and [a Python module][py_jsonschema] that implements its checks,
 but using it here would trade seven lines of code
 for ten minutes of explanation.
 We will explore its use in the exercises,
@@ -286,7 +286,7 @@ Explain why this makes it hard to test things that use sets.
 ### Checking Schema {: .exercise}
 
 Rewrite the configuration validator to use [JSON Schema][json_schema]
-via the associated [Python library][py_jsonschema].
+via the associated [Python module][py_jsonschema].
 
 ### Handling Failure {: .exercise}
 

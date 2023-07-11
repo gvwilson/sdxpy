@@ -21,7 +21,7 @@ The name was short for "global",
 and older programmers (like this author)
 still use the word [%g globbing "globbing" %]
 to mean "matching filenames against a pattern".
-The Python standard library includes a module called [`glob`][py_glob]
+The [%i "Python standard library" %] includes a module called [`glob`][py_glob]
 to match filenames in the same way.
 For example,
 `2023-*.{pdf,txt}` matches `2023-01.txt` and `2023-final.pdf` but not `draft-2023.docx`

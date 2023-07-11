@@ -336,7 +336,7 @@ our test of nested loops pass.
 
 ### Testing Exceptions {: .exercise}
 
-Create a context manager that works like `pytest.raises` from the [pytest][pytest] library,
+Create a context manager that works like `pytest.raises` from the [pytest][pytest] module,
 i.e.,
 that does nothing if an expected exception is raised within its scope
 but fails with an assertion error if that kind of exception is *not* raised.
