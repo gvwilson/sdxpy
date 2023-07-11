@@ -8,6 +8,10 @@ import regex
 import shortcodes
 import util
 
+# Prefix glossary keys to avoid collision with e.g. chapter heading keys.
+GL_PREFIX = "gl:"
+
+# Replacements in Markdown when creating tooltips for glossary mouseovers.
 UNMARKDOWN = [
     (regex.MULTISPACE, " "),
     (re.compile(r"\[(.+?)\]\(.+?\)"), lambda match: match.group(1)),
@@ -107,7 +111,7 @@ def check():
 def _as_markdown(entry, lang):
     """Convert a single glossary entry to Markdown."""
     cls = 'class="gl-key"'
-    first = f'<span {cls} id="{entry["key"]}">{entry[lang]["term"]}</span>'
+    first = f'<span {cls} id="{GL_PREFIX}{entry["key"]}">{entry[lang]["term"]}</span>'
 
     if "acronym" in entry[lang]:
         first += f" ({entry[lang]['acronym']})"
@@ -140,7 +144,7 @@ def _cross_references(glossary, lang):
 def _format_ref(key, text):
     """Format a glossary reference."""
     cls = 'class="gl-ref"'
-    href = f'href="@root/glossary/#{key}"'
+    href = f'href="@root/glossary/#{GL_PREFIX}{key}"'
     tooltip = f'title="{_make_tooltip(key)}"'
     return f'<a {cls} {href} {tooltip} markdown="1">{text}</a>'
 
