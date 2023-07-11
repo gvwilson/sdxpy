@@ -21,31 +21,34 @@ LANG := $(shell python ${CONFIG} --lang)
 TITLE := $(shell python ${CONFIG} --title)
 
 # Direct variables.
+ARK :=  $(wildcard ${MCCOLE}/extensions/*.py) $(wildcard ${MCCOLE}/resources/*.*) $(wildcard ${MCCOLE}/templates/*.*)
 BIN_PY := $(wildcard ${MCCOLE}/bin/*.py)
-LIB_PY := $(wildcard ${MCCOLE}/extensions/*.py)
+COMBINED_HTML := ${ROOT}/docs/all.html
+DOCS_INDEX := ${ROOT}/docs/index.html
 EXAMPLES := $(patsubst %/Makefile,%,$(wildcard ${ROOT}/src/*/Makefile))
 GITHUB_PAGES := ${ROOT}/CODE_OF_CONDUCT.md ${ROOT}/CONTRIBUTING.md ${ROOT}/LICENSE.md ${ROOT}/README.md
 HTML_COPY := ${ROOT}/info/head.html ${ROOT}/info/foot.html
-INFO_FILES := ${ROOT}/info/bibliography.bib ${ROOT}/info/credits.yml ${ROOT}/info/glossary.yml ${ROOT}/info/links.yml
-ARK :=  $(wildcard ${MCCOLE}/extensions/*.py) $(wildcard ${MCCOLE}/resources/*.*) $(wildcard ${MCCOLE}/templates/*.*)
-TEX_FILES := ${ROOT}/info/head.tex ${ROOT}/info/foot.tex
-TEX_COPY := ${ROOT}/info/krantz.cls ${ROOT}/info/dedication.tex
+LIB_PY := $(wildcard ${MCCOLE}/extensions/*.py)
 SRC_PAGES := $(wildcard ${ROOT}/src/*.md) $(wildcard ${ROOT}/src/*/index.md)
 SRC_SLIDES := $(wildcard ${ROOT}/src/*/slides.html)
 SRC_SVG := $(wildcard ${ROOT}/src/*/*.svg)
+TEX_COPY := ${ROOT}/info/krantz.cls ${ROOT}/info/dedication.tex
+TEX_FILES := ${ROOT}/info/head.tex ${ROOT}/info/foot.tex
+
+INFO_BIB := ${ROOT}/info/bibliography.bib
+INFO_GLOSSARY := ${ROOT}/info/glossary.yml
+INFO_LINKS := ${ROOT}/info/links.yml
+INFO_FILES := ${INFO_BIB} ${ROOT}/info/credits.yml ${INFO_GLOSSARY} ${INFO_LINKS}
 
 # Calculated variables.
-STEM := ${ABBREV}-${BUILD_DATE}
-SRC := ${SRC_PAGES} ${SRC_SLIDES}
-DOCS_PAGES := $(patsubst ${ROOT}/src/%.md,${ROOT}/docs/%.html,$(SRC_PAGES))
-DOCS_SLIDES := $(patsubst ${ROOT}/src/%/slides.html,${ROOT}/docs/%/slides/index.html,$(SRC_SLIDES))
 DOCS := ${DOCS_PAGES} ${DOCS_SLIDES}
-FIG_PDF := $(patsubst ${ROOT}/src/%.svg,${ROOT}/docs/%.pdf,${FIG_SVG})
-SRC_PDF := $(patsubst ${ROOT}/src/%.svg,${ROOT}/src/%.pdf,${SRC_SVG})
+DOCS_PAGES := $(patsubst ${ROOT}/src/%.md,${ROOT}/docs/%.html,$(SRC_PAGES))
 DOCS_PDF := $(patsubst ${ROOT}/src/%.pdf,${ROOT}/docs/%.pdf,${SRC_PDF})
-
-# How to tell if the HTML build is up to date.
-DOCS_INDEX := ${ROOT}/docs/index.html
+DOCS_SLIDES := $(patsubst ${ROOT}/src/%/slides.html,${ROOT}/docs/%/slides/index.html,$(SRC_SLIDES))
+FIG_PDF := $(patsubst ${ROOT}/src/%.svg,${ROOT}/docs/%.pdf,${FIG_SVG})
+SRC := ${SRC_PAGES} ${SRC_SLIDES}
+SRC_PDF := $(patsubst ${ROOT}/src/%.svg,${ROOT}/src/%.pdf,${SRC_SVG})
+STEM := ${ABBREV}-${BUILD_DATE}
 
 # Keep the PDF versions of diagrams under the 'src' directory.
 .PRECIOUS: ${SRC_PDF}
@@ -72,8 +75,8 @@ serve:
 	ark watch --port ${PORT}
 
 ## pdf: create PDF version of material
-pdf: ${ROOT}/docs/${STEM}.tex ${DOCS_PDF}
-	cp ${ROOT}/info/bibliography.bib ${ROOT}/docs
+pdf: ${ROOT}/docs/${STEM}.tex ${INFO_BIB} ${DOCS_PDF}
+	cp ${INFO_BIB} ${ROOT}/docs
 	cd ${ROOT}/docs && pdflatex ${STEM}
 	cd ${ROOT}/docs && biber ${STEM}
 	cd ${ROOT}/docs && makeindex ${STEM}
@@ -84,68 +87,76 @@ pdf: ${ROOT}/docs/${STEM}.tex ${DOCS_PDF}
 
 ## lint: check project structure
 .PHONY: lint
-lint: ${DOCS_INDEX}
-	@python ${MCCOLE}/bin/lint.py \
+BIN_LINT := ${MCCOLE}/bin/lint.py
+lint: ${DOCS_INDEX} ${BIN_LINT}
+	@python ${BIN_LINT} \
 	--config ${ROOT}/config.py \
 	--dom ${MCCOLE}/dom.yml \
 	--pages ${DOCS_PAGES}
 
 ## headings: show problematic headings (many false positives)
 .PHONY: headings
+BIN_CHECK_HEADINGS := ${MCCOLE}/bin/check_headings.py
 headings:
-	@python ${MCCOLE}/bin/check_headings.py --config ${ROOT}/config.py
+	@python ${BIN_CHECK_HEADINGS} --config ${ROOT}/config.py
 
 ## inclusions: compare inclusions in prose and slides
 .PHONY: inclusions
+BIN_COMPARE_INCLUSIONS := ${MCCOLE}/bin/compare_inclusions.py 
 inclusions:
-	@python ${MCCOLE}/bin/compare_inclusions.py --chapters ${CHAPTERS}
+	@python ${BIN_COMPARE_INCLUSIONS} --chapters ${CHAPTERS}
 
 ## examples: re-run examples
 .PHONY: examples
 examples:
 	@for d in ${EXAMPLES}; do echo ""; echo $$d; make -C $$d; done
 
-## check-make: check Makefiles
+## check-examples: check which examples would re-run
 check-make:
 	@for d in ${EXAMPLES}; do echo ""; echo $$d; make -C $$d --dry-run; done
 
 ## fonts: check fonts in diagrams
 .PHONY: fonts
+BIN_CHECK_FONTS := ${MCCOLE}/bin/check_svg_fonts.py
 fonts:
-	@python ${MCCOLE}/bin/check_svg_fonts.py $(SRC_SVG)
+	@python ${BIN_CHECK_FONTS} $(SRC_SVG)
 
 ## spelling: check spelling against known words
 .PHONY: spelling
-spelling: ${DOCS_INDEX}
-	@python ${MCCOLE}/bin/spelling.py --config ${ROOT}/config.py --extra info/wordlist.txt
+BIN_SPELLING := ${MCCOLE}/bin/spelling.py
+spelling: ${DOCS_INDEX} ${BIN_SPELLING}
+	@python ${BIN_SPELLING} --config ${ROOT}/config.py --extra info/wordlist.txt
 
 ## index: show all index entries
 .PHONY: index
-index: ${MCCOLE}/bin/show_index.py ${DOCS_INDEX}
-	@python ${MCCOLE}/bin/show_index.py --config ${CONFIG}
+BIN_SHOW_INDEX := ${MCCOLE}/bin/show_index.py 
+index: ${DOCS_INDEX} ${BIN_SHOW_INDEX}
+	@python ${BIN_SHOW_INDEX} --config ${CONFIG}
 
 ## ---: ---
 
 ## html: create single-page HTML
-html: ${ROOT}/docs/all.html
-${ROOT}/docs/all.html: ${DOCS_INDEX} ${HTML_COPY} ${MCCOLE}/bin/make_single_html.py
-	python ${MCCOLE}/bin/make_single_html.py \
+html: ${COMBINED_HTML}
+BIN_MAKE_SINGLE_HTML :=  ${MCCOLE}/bin/make_single_html.py
+${COMBINED_HTML}: ${DOCS_INDEX} ${HTML_COPY} ${BIN_MAKE_SINGLE_HTML}
+	python ${BIN_MAKE_SINGLE_HTML} \
 	--head ${ROOT}/info/head.html \
 	--foot ${ROOT}/info/foot.html \
 	--root ${ROOT}/docs \
 	--title "${TITLE}" \
 	--tagline "$$(python ${CONFIG} --tagline)" \
-	> ${ROOT}/docs/all.html
+	> ${COMBINED_HTML}
 
 ## latex: create LaTeX document
 latex: ${ROOT}/docs/${STEM}.tex
-${ROOT}/docs/${STEM}.tex: ${ROOT}/docs/all.html ${MCCOLE}/bin/html_to_latex.py ${TEX_FILES} ${TEX_COPY}
-	python ${MCCOLE}/bin/html_to_latex.py \
+BIN_HTML_TO_LATEX :=  ${MCCOLE}/bin/html_to_latex.py
+${ROOT}/docs/${STEM}.tex: ${COMBINED_HTML} ${TEX_FILES} ${TEX_COPY} ${INFO_GLOSSARY} ${BIN_HTML_TO_LATEX}
+	python ${BIN_HTML_TO_LATEX} \
 	--head ${ROOT}/info/head.tex \
 	--foot ${ROOT}/info/foot.tex \
-	--glossary ${ROOT}/info/glossary.yml \
+	--glossary ${INFO_GLOSSARY} \
 	--language ${LANG} \
-	< ${ROOT}/docs/all.html \
+	< ${COMBINED_HTML} \
 	> ${ROOT}/docs/${STEM}.tex
 	python ${CONFIG} --latex > ${ROOT}/docs/config.tex
 	cp ${TEX_COPY} ${ROOT}/docs
@@ -156,6 +167,7 @@ pdf-once: ${ROOT}/docs/${STEM}.tex ${DOCS_PDF}
 
 ifdef SYLLABUS_DIR
 ## syllabus: remake syllabus diagrams
+BIN_MAKE_DOT := ${MCCOLE}/bin/make_dot.py
 SYLLABUS_DEPS := ${CONFIG} $(patsubst %,${ROOT}/src/%/index.md,${CHAPTERS}) ${MCCOLE}/bin/make_dot.py
 SYLLABUS_FILES := $(patsubst %,${SYLLABUS_DIR}/syllabus%,_regular.pdf _regular.svg _linear.pdf _linear.svg)
 
@@ -167,17 +179,18 @@ ${SYLLABUS_DIR}/syllabus_%.pdf: ${ROOT}/info/%.dot
 ${SYLLABUS_DIR}/syllabus_%.svg: ${ROOT}/info/%.dot
 	dot -Tsvg $< > $@
 
-${ROOT}/info/regular.dot: ${SYLLABUS_DEPS}
-	@python ${MCCOLE}/bin/make_dot.py --config ${CONFIG} --kind regular --skip intro finale --output $@
+${ROOT}/info/regular.dot: ${SYLLABUS_DEPS} ${BIN_MAKE_DOT}
+	@python ${BIN_MAKE_DOT} --config ${CONFIG} --kind regular --skip intro finale --output $@
 
-${ROOT}/info/linear.dot: ${SYLLABUS_DEPS}
-	@python ${MCCOLE}/bin/make_dot.py --config ${CONFIG} --kind linear --skip intro finale --output $@
+${ROOT}/info/linear.dot: ${SYLLABUS_DEPS} ${BIN_MAKE_DOT}
+	@python ${BIN_MAKE_DOT} --config ${CONFIG} --kind linear --skip intro finale --output $@
 endif
 
 ## diagrams: convert diagrams from SVG to PDF
 diagrams: ${DOCS_PDF}
-${ROOT}/src/%.pdf: ${ROOT}/src/%.svg
-	${MCCOLE}/bin/convert_drawio.sh $< $@
+BIN_CONVERT_DRAWIO := ${MCCOLE}/bin/convert_drawio.sh
+${ROOT}/src/%.pdf: ${ROOT}/src/%.svg ${BIN_CONVERT_DRAWIO}
+	${BIN_CONVERT_DRAWIO} $< $@
 ${ROOT}/docs/%.pdf: ${ROOT}/src/%.pdf
 	cp $< $@
 
@@ -185,19 +198,20 @@ ${ROOT}/docs/%.pdf: ${ROOT}/src/%.pdf
 
 ## github: make root pages for GitHub
 .PHONY: github
+BIN_MAKE_GITHUB_PAGE := ${MCCOLE}/bin/make_github_page.py
 github: ${GITHUB_PAGES}
 
-${ROOT}/CODE_OF_CONDUCT.md: src/conduct/index.md ${MCCOLE}/bin/make_github_page.py
-	python ${MCCOLE}/bin/make_github_page.py --links ${ROOT}/info/links.yml --title "Code of Conduct" < $< > $@
+${ROOT}/CODE_OF_CONDUCT.md: src/conduct/index.md ${BIN_MAKE_GITHUB_PAGE}
+	python ${BIN_MAKE_GITHUB_PAGE} --links ${INFO_LINKS} --title "Code of Conduct" < $< > $@
 
-${ROOT}/CONTRIBUTING.md: src/contrib/index.md ${MCCOLE}/bin/make_github_page.py
-	python ${MCCOLE}/bin/make_github_page.py --append ${ROOT}/info/contrib.md --links ${ROOT}/info/links.yml --title "Contributing" < $< > $@
+${ROOT}/CONTRIBUTING.md: src/contrib/index.md ${ROOT}/info/contrib.md ${BIN_MAKE_GITHUB_PAGE}
+	python ${BIN_MAKE_GITHUB_PAGE} --append ${ROOT}/info/contrib.md --links ${INFO_LINKS} --title "Contributing" < $< > $@
 
-${ROOT}/LICENSE.md: src/license/index.md ${MCCOLE}/bin/make_github_page.py
-	python ${MCCOLE}/bin/make_github_page.py --links ${ROOT}/info/links.yml --title "License" < $< > $@
+${ROOT}/LICENSE.md: src/license/index.md ${BIN_MAKE_GITHUB_PAGE}
+	python ${BIN_MAKE_GITHUB_PAGE} --links ${INFO_LINKS} --title "License" < $< > $@
 
-${ROOT}/README.md: src/index.md ${MCCOLE}/bin/make_github_page.py
-	python ${MCCOLE}/bin/make_github_page.py --links ${ROOT}/info/links.yml --title "${TITLE}" < $< > $@
+${ROOT}/README.md: src/index.md ${BIN_MAKE_GITHUB_PAGE}
+	python ${BIN_MAKE_GITHUB_PAGE} --links ${INFO_LINKS} --title "${TITLE}" < $< > $@
 
 ## check: check source code
 .PHONY: check
@@ -214,8 +228,9 @@ fix:
 
 ## profile: profile compilation
 .PHONY: profile
+BIN_RUN_PROFILE := ${MCCOLE}/bin/run_profile.py
 profile:
-	python ${MCCOLE}/bin/run_profile.py
+	python ${BIN_RUN_PROFILE}
 
 ## clean: clean up stray files
 clean:
@@ -243,12 +258,13 @@ clean:
 
 ## status: status of chapters
 .PHONY: status
-status: ${DOCS_INDEX}
-	@python ${MCCOLE}/bin/status.py --highlight ascii --config ${ROOT}/config.py
+BIN_STATUS := ${MCCOLE}/bin/status.py
+status: ${DOCS_INDEX} ${BIN_STATUS}
+	@python ${BIN_STATUS} --highlight ascii --config ${ROOT}/config.py
 
 ## valid: run html5validator on generated files
 .PHONY: valid
-valid: ${ROOT}/docs/all.html
+valid: ${COMBINED_HTML}
 	@html5validator --root ${ROOT}/docs ${DOCS} \
 	--ignore \
 	'Attribute "ix-key" not allowed on element "span"' \

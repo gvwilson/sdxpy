@@ -1,18 +1,20 @@
 ## Formatting {: #contrib-formatting}
 
-This material uses [Ark][ark] with some custom extensions;
-run `make` in the root directory to get a list of available commands.
-Some of these rely on scripts in the `./bin/` directory.
+This material uses [Ark][ark] with some custom extensions in `./lib/mccole/extensions`.
+Please run `make` in the root directory to get a list of available commands,
+several of which on scripts in the `./lib/mccole/bin/` directory.
 
 ### Chapters and Appendices
 
 1.  Each chapter or appendix has a unique slug such as `topic`.
-    Its text lives in <code>./<em>lang</em>/src/<em>topic</em>/index.md</code>,
-    and there is an entry for it in the `chapters` or `appendices` list in `./config.py`
-    (which control ordering).
+    Its text lives in <code>./src/<em>topic</em>/index.md</code>,
+    and there is an entry for it in the `chapters` or `appendices` dictionary
+    in Ark's configuration file `./config.py`.
+    The order of entries in these two dictionaries
+    determines the order of the chapters and appendices.
 
-1.  Each `index.md` file starts with a YAML header in triple dashes.
-    This header must include the key `title:` with the page's title.
+1.  The `index.md` files do *not* have YAML headers;
+    their titles are taken from `./config.py`.
 
 1.  Each section within a page must use a heading like this:
 
@@ -21,8 +23,8 @@ Some of these rely on scripts in the `./bin/` directory.
     ```
 
     This creates an `h2`-level heading with the HTML ID `topic-sometitle`.
-    Use the page's slug instead of `topic` and a single unhyphenated work
-    in place of `sometitle`.
+    Use the page's slug instead of `topic`
+    and hyphenate the words in the ID.
 
 1.  To create a cross-reference to a chapter or appendix write:
 
@@ -34,6 +36,15 @@ Some of these rely on scripts in the `./bin/` directory.
     This shortcode is converted to `Chapter N` or `Appendix N`
     or the equivalent in other languages.
     Please only refer to chapters or appendices, not to sections.
+
+### Slides
+
+1.  Each chapter directory also has a `slides.html` file
+    containing slides formatted with [remark][remark].
+    Each `slides.html` file must have a YAML header
+    containing `template: slides` to specify the correct template.
+    While the `index.md` file becomes `./docs/topic/index.html`,
+    the `slides.html` file becomes `./docs/topic/slides/index.html`.
 
 ### External Links
 
@@ -76,6 +87,15 @@ and makes it easier to create a table of external links.
     # [/some_key]
     ```
 
+1.  To *omit* part of a file, use:
+
+    ```markdown
+    [% inc file="some_name.py" omit="some_key" %]
+    ```
+
+    If both the `keep` and `omit` keys are present, the former takes precedence,
+    i.e., the `keep` section is included and the `omit` section within it omitted.
+
 1.  To include several files (such as a program and its output) write:
 
     ```markdown
@@ -91,27 +111,31 @@ and makes it easier to create a table of external links.
 
     ```markdown
     [% figure
-       slug="topic-someword"
-       img="filename.svg"
+       slug="topic-some-key"
+       img="some_file.svg"
        caption="Short sentence-case caption."
        alt="Long text describing the figure for the benefit of visually impaired readers."
     %]
     ```
 
-    Please use underscores in filenames for consistency.
+    Please use underscores in filenames rather than hyphens:
+    Python source files' names have to be underscored so that they can be imported,
+    so all other filenames are also underscored for consistency.
+    (Internal keys are hyphenated to avoid problems with LaTeX during PDF generation.)
 
 1.  To refer to a figure write:
 
     ```markdown
-    [%f topic-someword %]
+    [%f topic-some-key %]
     ```
 
     This is converted to `Figure N.K`.
 
 1.  Use [diagrams.net][diagrams] to create SVG diagrams
-    using the "sketch" style and a 12-point Comic Sans font.
+    using the "sketch" style and a 12-point Verdana font for all text.
+    (`make fonts` will report diagrams that use other fonts.)
 
-1.  Avoid screenshots:
+1.  Please avoid screenshots or other pixellated images:
     making them display correctly in print is difficult.
 
 ### Tables
@@ -133,7 +157,7 @@ so we must do something a bit clumsy.
 1.  To refer to a table write:
 
     ```markdown
-    [%t topic-someword %]
+    [%t topic-some-key %]
     ```
 
     This is converted to `Table N.K`.
@@ -174,20 +198,25 @@ so we must do something a bit clumsy.
 1.  To create a simple index entry write:
 
     ```markdown
-    [%i "index text" %]body text[%/i%]
+    [%i "index text" %]
     ```
 
-1.  Separate multiple index entries with semi-colons:
+    This puts `index text` in both the document and the index.
+
+1.  If the indexing text and the body text are different, use:
 
     ```markdown
-    [%i "first; second; third" %]body text[%/i%]
+    [%i "index text" "body text" %]
     ```
 
-1.  Create sub-entries using `!`:
+1.  Finally, either kind of index entry may optionally include a `url` key
+    to wrap the body text in a hyperlink:
 
     ```markdown
-    [%i "major!minor" %]body text[%/i%]
+    [%i "index text" url=some_link %]
     ```
+
+    `some_link` must be a key in the `./info/links.yml` links file.
 
 ### Minor Formatting
 
@@ -200,43 +229,43 @@ so we must do something a bit clumsy.
     ```
 
     This has no effect on the appearance of the HTML,
-    but prevents an unwanted paragraph indent in the PDF version.
+    but prevents unwanted paragraph indentation in the PDF version.
 
 1.  To create a callout box, use:
 
     ```
     <div class="callout" markdown="1">
 
-    ### Title of callout
+    ### Title of Callout
 
     text of callout
 
     </div>
     ```
 
-    Use "Sentence case" for the callout's title,
-    and please put blank lines before and after the opening and closing `<div>` markers.
+    Use "Sentence Case" for the callout's title,
+    and put blank lines before and after the opening and closing `<div>` markers.
     You *must* include `markdown="1"` in the opening `<div>` tag
     to ensure that Markdown inside the callout is processed.
 
 ## Building the HTML
 
-1.  Pages use the template in `lib/mccole/templates/node.ibis`,
+1.  Pages use the template in `./lib/mccole/templates/node.ibis`,
     which includes snippets from the same directory.
 
-1.  Our CSS is in `lib/mccole/resources/mccole.css`.
-    We also use `lib/mccole/resources/tango.css` for styling code fragments.
+1.  Our CSS is in `./lib/mccole/resources/mccole.css`.
+    We also use `./lib/mccole/resources/tango.css` for styling code fragments.
     We do *not* rely on any JavaScript in our pages.
 
-1.  To produce HTML, run `make build` in <code>./<em>lang</em></code>
-    to update the files in <code>./<em>lang</em>/docs</code>.
-    You can also run `make serve` to preview files locally
-    or `make lint` to check for common errors.
+1.  To produce HTML, run `make build` in the root directory,
+    which updates the files in <code>./docs</code>.
+    You can also run `make serve` to preview files locally.
 
 ## Building the PDF
 
 We use LaTeX to build the PDF version of this book.
-you will need these packages with `tlmgr` in order to build the PDF:
+You will need to install these packages with `tlmgr`
+or some other LaTeX package manager:
 
 -   `babel-english`
 -   `babel-greek`
@@ -247,3 +276,41 @@ you will need these packages with `tlmgr` in order to build the PDF:
 -   `listings`
 -   `textgreek`
 -   `tocbibind`
+
+## Other Commands
+
+Use <code>make <em>target</em></code> to run a command.
+
+| command | action |
+| ------------- | ------ |
+| style | check source code style |
+| --- | --- |
+| commands | show available commands |
+| build | rebuild site without running server |
+| serve | build site and run server |
+| pdf | create PDF version of material |
+| --- | --- |
+| lint | check project structure |
+| headings | show problematic headings (many false positives) |
+| inclusions | compare inclusions in prose and slides |
+| examples | re-run examples |
+| check-examples | check which examples would re-run |
+| fonts | check fonts in diagrams |
+| spelling | check spelling against known words |
+| index | show all index entries |
+| --- | --- |
+| html | create single-page HTML |
+| latex | create LaTeX document |
+| pdf-once | create PDF document with a single compilation |
+| syllabus | remake syllabus diagrams |
+| diagrams | convert diagrams from SVG to PDF |
+| --- | --- |
+| github | make root pages for GitHub |
+| check | check source code |
+| fix | fix source code |
+| profile | profile compilation |
+| clean | clean up stray files |
+| --- | --- |
+| status | status of chapters |
+| valid | run html5validator on generated files |
+| vars | show variables |
