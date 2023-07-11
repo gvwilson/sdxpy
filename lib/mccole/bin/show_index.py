@@ -28,7 +28,7 @@ def main():
 def get_index(glossary, text):
     """Create set of all index keys in text."""
     parser = shortcodes.Parser(inherit_globals=False, ignore_unknown=True)
-    parser.register(_index_keys, "i", "/i")
+    parser.register(_index_keys, "i")
     parser.register(_glossary_keys, "g")
     temp = {"keys": set(), "glossary": glossary}
     try:
@@ -44,9 +44,9 @@ def _glossary_keys(pargs, kwargs, extra):
     extra["keys"].add((extra["glossary"][pargs[0]], True))
 
 
-def _index_keys(pargs, kwargs, extra, content):
+def _index_keys(pargs, kwargs, extra):
     """Get keys out of index entry."""
-    extra["keys"].update((key.strip(), False) for key in pargs)
+    extra["keys"].add((pargs[0], False))
 
 
 def parse_args():
