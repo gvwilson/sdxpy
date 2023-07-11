@@ -16,13 +16,12 @@ create a new [%i "protocol" %] for every kind interaction.
 Instead,
 we would like to use a single standardized protocol in a variety of ways.
 
-The Hypertext Transfer Protocol,
-more commonly called [%g http "HTTP" %],
+The [%g http "Hypertext Transfer Protocol" %] (HTTP)
 specifies one way programs can exchange data over IP.
 HTTP is deliberately simple:
 the [%i "client" %] sends a [%g http_request "request" %]
-specifying what it wants over a socket connection,
-and the server sends a [%g http_response "response" %] containing some data.
+specifying what it wants over a [%i "socket" %],
+and the [%i "server" %] sends a [%g http_response "response" %] containing some data.
 A server can construct responses however it wants;
 it can copy a file from disk,
 generated [%i "HTML" %] dynamically,
@@ -50,12 +49,12 @@ the differences between the two don't matter to us.
 
 Most real requests have a few extra lines called
 [%g http_header "headers" %],
-which are key value pairs like the three shown below:
+which are key-value pairs like the three shown below:
 
 [% inc file="http_request_headers.txt" %]
 
 Unlike the keys in hash tables,
-keys may appear any number of times in HTTP headers,
+[%i "key" "keys" %] may appear any number of times in HTTP headers,
 so that (for example)
 a request can specify that it's willing to accept several types of content.
 
@@ -81,7 +80,7 @@ and the body of the response:
 
 Constructing HTTP requests is tedious,
 so most people use a library to do most of the work.
-The most popular one in Python is called [requests][requests],
+The most popular one in Python is the [requests][requests] module,
 and works like this:
 
 [% inc pat="requests_example.*" fill="py out" %]
@@ -126,7 +125,7 @@ Here's the entire server:
 
 Let's start at the bottom and work our way up.
 
-1.  `server_address` specifies the server's host and port.
+1.  `server_address` specifies the [%i "hostname" %] and [%i "port" %] of the server.
 2.  The `HTTPServer` class takes care of parsing requests and sending back responses.
     When we construct it,
     we give it the server address and the name of the class we've written
@@ -236,7 +235,7 @@ and set the content type appropriately,
 e.g.,
 return `image/png` for a PNG-formatted image.
 
-One thing the server is doing right is character encoding.
+One thing the server is doing right is [%i "character encoding" %].
 The `send_content` method expects `content` to be a `bytes` object,
 not a string,
 because the HTTP protocol requires the content length to be the number of bytes.
@@ -254,7 +253,7 @@ to create a testable server.
 We would like to create a file,
 simulate an HTTP GET request,
 and check that the status, headers, and content are correct.
-[%f http-inheritance %] shows the final inheritance hierarchy:
+[%f http-inheritance %] shows the final [%i "inheritance" %] hierarchy:
 
 -   `BaseHTTPRequestHandler` comes from the [%i "Python standard library" %].
 
