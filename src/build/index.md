@@ -31,9 +31,9 @@ In order for this to be possible,
 targets and dependencies must form a [%g dag "directed acyclic graph" %],
 i.e.,
 there cannot be a [%g cycle "cycle" %] of links
-leading from a node back to itself.
+leading from a [%i "node" %] back to itself.
 The builder manager constructs
-a [%g topological_order "topological ordering" %] of that graph,
+a [%g topological_order "topological ordering" %] of that [%i "graph" %],
 i.e.,
 arranges nodes so that each one comes after everything it depends on,
 and then builds what it needs to in that order
@@ -67,10 +67,12 @@ when we are working with programs that contains thousands or tens of thousands o
 
 ## Initial Design {: #build-design}
 
-Our first step is to decide how we are going to represent build rules.
+Our first step is to decide how we are going to represent
+[%g build_rule "build rules" %].
 We could invent a special-purpose syntax to fit the problem,
 but then we would need to write a parser ([%x parse %]),
-and would also feel morally obliged to implement auto-completion for various editors,
+and would also feel morally obliged to implement
+auto-completion for various editors,
 some kind of debugger ([%x debugger %]),
 and so on.
 
@@ -242,7 +244,7 @@ each of which does one job:
 
 Our final design uses
 the [%g template_method_pattern "Template Method" %] pattern:
-a method in a parent class defines the overall order of operations,
+a method in a [%i "parent class" %] defines the overall order of operations,
 while [%i "child class" %] implement those operations
 without changing the [%i "control flow" %].
 As you might suspect,
