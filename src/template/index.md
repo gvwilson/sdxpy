@@ -20,7 +20,7 @@ to create web pages from templates.
 At the heart of every static site generator is a page templating system.
 Thousands of these have been written in the last thirty years
 in every popular programming language,
-and a language called [%i "PHP" "PHP" url="php" %] was created primarily for this purpose.
+and a language called [%i "PHP" url="php" %] was created primarily for this purpose.
 Most of these systems use one of three designs
 ([%f template-options %]):
 
@@ -28,9 +28,9 @@ Most of these systems use one of three designs
     with the [%i "HTML" %] or [%i "Markdown" %]
     using some kind of marker to indicate which parts are commands
     and which parts are to be taken as-is.
-    This approach is taken by [%i "EJS" "EJS" url="ejs" %].
+    This approach is taken by [%i "EJS" url="ejs" %].
 
-2.  Create a mini-language with its own commands like [%i "Jekyll" "Jekyll" url="jekyll" %].
+2.  Create a mini-language with its own commands like [%i "Jekyll" url="jekyll" %].
     Mini-languages are appealing because they are smaller and safer than general-purpose languages,
     but eventually they acquire most of the features of a general-purpose language.
     Again, some kind of marker must be used to show
@@ -94,7 +94,7 @@ We could instead use two attributes like this:
 but we have decided to save ourselves a little typing.
 And strictly speaking
 we should call our attributes `data-something` instead of `z-something`
-to conform with the [%i "HTML5 specification" "HTML5 specification" url="html5_data_attributes" %],
+to conform with the [%i "HTML5 specification" url="html5_data_attributes" %],
 but by the time we're finished processing our templates,
 there shouldn't be any `z-*` attributes left to confuse a browser.
 {: .continue}

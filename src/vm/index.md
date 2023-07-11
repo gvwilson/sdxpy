@@ -12,7 +12,7 @@ depends:
 There was still a lot of magic in our interpreter in [%x interp %],
 so this chapter builds something that mimics real hardware more closely.
 If you want to dive deeper,
-have a look at the game [%i "Human Resource Machine" "Human Resource Machine" url="human_resource_machine" %].
+have a look at the game [%i "Human Resource Machine" url="human_resource_machine" %].
 
 ## Architecture {: #vm-arch}
 

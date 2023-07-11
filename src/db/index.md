@@ -22,7 +22,7 @@ This chapter therefore builds a very simple
 [%g log_structured_db "log-structured database" %].
 The phrase "log-structured" means that records a log of operations,
 i.e.,
-every new record is appended to the end of the database.
+every new [%i "record" %] is appended to the end of the database.
 Programmers have invented many other ways to store large amounts of data,
 but this is one of the easiest to understand.
 
@@ -37,8 +37,9 @@ and returns its key:
 [% inc file="interface_original.py" %]
 
 If we just want to store things in memory,
-we can derive a class that uses a dictionary
-with the values returned by the user's key function for lookup
+we can derive a class that uses
+a dictionary with the values returned by
+the user's key function for lookup
 ([%f db-memory %]):
 
 [% inc file="just_dict_original.py" %]
@@ -55,7 +56,7 @@ Let's create a class to store experimental records:
 
 [% inc file="record_original.py" omit="omit" %]
 
-and use the `pytest.fixture` decorator from [%x reflect %]
+and use the `pytest.fixture` [%i "decorator" %] from [%x reflect %]
 to create a database and two records:
 {: .continue}
 
@@ -74,7 +75,8 @@ but if we do that,
 we will be asking records to do two things
 (the other being to generate a key).
 Rather than passing a second function to the database's constructor
-we will refactor the database to take the record class as a parameter:
+we will [%i "refactor" %] the database to take the record class
+as a [%i "parameter" %]:
 
 [% inc file="interface.py" %]
 
@@ -115,7 +117,7 @@ we can either set a maximum size and always save that much data
 or make our implementation more complicated (and probably slower)
 by saving each record's size
 and then scanning records in the same way that
-we scanned the bytes making up Unicode characters in [%x binary %].
+we scanned the bytes making up [%i "Unicode" %] characters in [%x binary %].
 The first choice spends space (i.e., memory and disk) to save time;
 the second spends time to save space.
 As [%b Bentley1982 %] pointed out over forty years ago,
@@ -210,7 +212,7 @@ the operating system actually reads a full page
 and then gives us just the byte we asked for.
 
 A more efficient strategy is therefore
-to group records together in [%g block_memory "blocks" %],
+to group records together in [%g block_memory "blocks of memory" %],
 each of which is the same size as a page,
 and an [%i "index (a database)" "index" %] in memory
 to tell us which records are in which blocks.
@@ -251,7 +253,8 @@ the record with a particular sequence ID.
 
 Let's create a new in-memory database
 using one dictionary for each block.
-The constructor creates `self._next` to store the sequence ID of the next record,
+The constructor creates `self._next`
+to store the sequence ID of the next record,
 `self._index` to map record IDs to sequence IDs,
 and a list `self._blocks` to store blocks:
 
@@ -309,7 +312,7 @@ Creating classes like the all-in-one-file database
 that we don't put into production
 may feel like a waste of time,
 but it usually saves us effort in the long run
-by reducing [%i "cognitive load" "cognitive load " %].
+by reducing [%i "cognitive load" %].
 
 </div>
 
@@ -336,7 +339,7 @@ An obvious extension to our design is to save the index
 in a separate file
 each time we add or modify a record.
 However,
-we should profile this change before putting it into production
+we should [%i "profiler" "profile" %] this change before putting it into production
 to see if it actually improves performance ([%x perf %]),
 since many small writes might cost more than one large multi-file read.
 We would also have to do something
@@ -369,7 +372,7 @@ The steps are:
 
 3.  Generate new block IDs for those blocks
     while also creating a set of IDs
-    of blocks we can delete because all of their records are stale.
+    of blocks we can delete because all of their records are out of date.
 
 4.  Delete and rename blocks.
 
@@ -413,3 +416,10 @@ a fixed-size binary record.
 Add a static method to the database that compacts blocks,
 i.e.,
 rewrites all of the blocks so that only live records are stored.
+
+### Save the Index Separately {: .exercise}
+
+1.  Modify the database so that it saves the entire index in single file.
+
+2.  Design and run an experiment to determine
+    if this change improves performance or not.

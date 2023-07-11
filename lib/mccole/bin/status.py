@@ -12,7 +12,7 @@ HEADINGS = (
     "title slides words sections exercises figures syllabus index glossary".split()
 )
 TARGETS = {
-    "slides": (15, 25),
+    "slides": (15, 26),
     "words": (1300, 2300),
     "sections": (2, 8),
     "exercises": (4, 14),
@@ -58,9 +58,7 @@ def count_slides(slug):
     """Count things in slides."""
     with open(Path("src", slug, "slides.html"), "r") as reader:
         text = reader.read()
-        lines = [s.strip() for s in text.split("\n")]
-        return lines.count("---") - 2
-
+        return len(list(regex.SLIDES_H2.finditer(text)))
 
 def format_target(low, high):
     """Format the target (handling the case of none)."""

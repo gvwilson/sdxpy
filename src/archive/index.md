@@ -19,7 +19,7 @@ We'd also like to be able to see what we've changed
 and to collaborate with other people.
 
 A [%g version_control_system "version control system" %]
-like [%i "Git" "Git" url="git" %]
+like [%i "Git" url="git" %]
 solves all of these problems at once.
 It keeps track of changes to files
 so that we can see what we've changed,

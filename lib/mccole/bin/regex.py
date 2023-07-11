@@ -16,7 +16,7 @@ GITHUB_ISSUE = re.compile(r"\[%\s*issue\b\s+(\d+)\s*%\]")
 GLOSSARY_REF = re.compile(r'\[%\s*g\s+\b(.+?)\b\s+"(.+?)"\s*%\]')
 GLOSSARY_CROSSREF = re.compile(r"\[.+?\]\(\#(.+?)\)", re.DOTALL)
 IMG = re.compile(r'<img.+?src="(.+?)".+?>')
-INDEX_REF = re.compile(r"\[%\s*i\b(.+?)\s*%\]")
+INDEX_REF = re.compile(r'\[%\s*i\s+("[^"]+")(\s+("[^"]+"))?(\s+url=("[^"]+"))?\s*%\]')
 INDEX_URL = re.compile(r'\[%\s*i\b.+?url="(.+?)"\s*%\]')
 SHORTCODE = re.compile(r"\[%.+?%\]")
 
@@ -26,6 +26,7 @@ MARKDOWN_CODE_INLINE = re.compile("`.+?`")
 MARKDOWN_H2 = re.compile(r"^##\s+(.+?)\s+\{:(.+?)\}\s+$", re.MULTILINE)
 MARKDOWN_H3 = re.compile(r"^###\s+(.+?)(\s+\{:(.+?)\}\s+)?$", re.MULTILINE)
 MARKDOWN_FOOTER_LINK = re.compile(r"\[.*?\]\[(.+?)\]", re.MULTILINE)
+SLIDES_H2 = re.compile(r"^##\s+", re.MULTILINE)
 
 # Styling.
 PARAGRAPH_CONTINUE = re.compile(r"^\{:\s+.continue\}\s*$", re.MULTILINE)

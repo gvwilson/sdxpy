@@ -218,9 +218,13 @@ def check_index_refs(config):
     """Check formatting of index references."""
     for slug, text in config["prose"].items():
         for match in regex.INDEX_REF.finditer(text):
-            content = match.group(1).strip()
-            if not (content.startswith('"') and content.endswith('"')):
-                _warn(f"{slug} badly-formatted index reference {match.group(0)}")
+            key = match.group(1)
+            text = match.group(3)
+            url = match.group(5)
+            if not key:
+                _warn(f"{slug} badly-formatted index reference {key}")
+            elif key == text:
+                _warn(f"{slug} redundant key and text {key}")
 
 
 def check_links(config):
