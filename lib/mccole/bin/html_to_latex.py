@@ -149,7 +149,7 @@ def handle(node, state, accum, doEscape):
         accum.append("}")
         key = href_key(node)
         if key.startswith(GL_PREFIX):
-            key = key[len(GL_PREFIX):]
+            key = key[len(GL_PREFIX) :]
         term = state["glossary"][key][state["language"]]["term"]
         accum.append(rf"\index{{{escape(term, True)}}}")
 

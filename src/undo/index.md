@@ -1,7 +1,11 @@
 ---
 syllabus:
--   FIXME
+-   Replace user interface components with mock objects to simplify testing.
+-   Record actions and state to check behavior these mock objects.
+-   Use objects to represent actions to record history and enable undo.
+-   Recording state is easier but more expensive than recording changes.
 depends:
+-   persist
 -   viewer
 ---
 
@@ -15,26 +19,20 @@ which will introduce another commonly-used software design pattern.
 
 ## Getting Started {: #undo-start}
 
-Our file viewer has four classes ([%f undo-classes %]):
+Our file viewer has four classes:
 
 -   A `Window` can draw lines and report its size.
 
 -   A `Buffer` stores lines of text,
-    keeps track of a viewport,
+    keeps track of a [%i "viewport" %],
     and transforms buffer coordinates to screen coordinates.
 
--   A `Cursor` knows its position in the buffer
+-   A `Cursor` knows its position in
+    the [%i "buffer (of text)" "buffer" %]
     and can move up, down, left, and right.
 
 -   The `App` makes a window, a buffer, and a cursor,
     then maps keys to actions.
-
-[% figure
-   slug="undo-classes"
-   img="classes.svg"
-   alt="Classes in file viewer"
-   caption="Relationships between classes in file viewer"
-%]
 
 To make unit testing simpler,
 we start by adding one more class:
@@ -258,3 +256,29 @@ and get back the screen we originally had:
    alt="Concept map of undo"
    caption="Concept map"
 %]
+
+## Exercises {: #undo-exercises}
+
+### Limiting History {: .exercise}
+
+Modify the application so that only the most recent hundred operations can be undone.
+
+### Combining Movement {: .exercise}
+
+Modify the application so that successive movement operations are combined
+into a single undo step.
+
+### Re-doing Operations {: .exercise}
+
+Implement a "redo" command that re-executes an operation that has been undone.
+
+### Repeating Operations {: .exercise}
+
+1.  Implement a command to repeat the most recent operation.
+
+2.  How should repeated operations be represented in the application's history?
+
+### Saving Operations {: .exercise}
+
+Use the ideas of [%x persist %] to save operations to a file and reload them
+so that users can resume editing sessions.

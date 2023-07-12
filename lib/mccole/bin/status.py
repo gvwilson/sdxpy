@@ -60,6 +60,7 @@ def count_slides(slug):
         text = reader.read()
         return len(list(regex.SLIDES_H2.finditer(text)))
 
+
 def format_target(low, high):
     """Format the target (handling the case of none)."""
     return "" if (low is None) else f"{low}-{high}"
