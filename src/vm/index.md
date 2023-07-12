@@ -23,8 +23,8 @@ simulates a computer with three parts ([%f vm-architecture %]):
     holds the memory address of the next instruction to execute.
     It is automatically initialized to point at address 0,
     so that is where every program must start.
-    (This requirement is part of our VM's
-    [%g abi "Application Binary Interface" %], or ABI.)
+    This requirement is part of our VM's
+    [%g abi "Application Binary Interface" %] (ABI).
 
 1.  Four [%g register_hardware "registers" %] named R0 to R3
     that instructions can access directly.
@@ -90,7 +90,7 @@ that can be loaded by other modules:
 
 [% inc file="architecture.py" %]
 
-There isn't a name for this design pattern,
+There isn't a name for this [%i "design pattern" %],
 but putting all the constants that define a system in one file
 instead of scattering them across multiple files
 makes them easier to find as well as ensuring consistency.
@@ -163,13 +163,13 @@ Here's an assembly language program to print the value stored in R1 and then hal
 
 [% inc file="print_r1.as" %]
 
-Its numeric representation (in hexadecimal) is:
+Its numeric representation (in [%i "hexadecimal" %]) is:
 {: .continue}
 
 [% inc file="print_r1.mx" %]
 
 One thing the assembly language has that the instruction set doesn't
-is [%g label_address "labels on addresses" %].
+is [%g label_address "labels" %] on addresses in memory.
 A label like `loop` doesn't take up any space;
 instead,
 it tells the assembler to give the address of the next instruction a name

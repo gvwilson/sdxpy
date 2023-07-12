@@ -15,7 +15,7 @@ Debuggers are as much a part of good programmers' lives as version control
 but are taught far less often
 (in part, we believe, because it's harder to create homework questions for them).
 This chapter builds a simple single-stepping debugger
-for the virtual machine in [%x vm %]
+for the [%i "virtual machine" %] of [%x vm %]
 and shows how we can test interactive applications.
 
 Before we start work,
@@ -159,7 +159,7 @@ but which returns strings from a list instead of waiting for the user:
 [% inc file="test_vm.py" keep="reader" %]
 
 With these in hand,
-we can write a helper function that compiles a program,
+we can write a [%i "helper function" %] that compiles a program,
 creates a virtual machine,
 and runs it with a mock reader and a mock writer:
 
