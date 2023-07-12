@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import argparse
+import html
 from pathlib import Path
 
 import frontmatter
@@ -28,7 +29,7 @@ def main():
     """Main driver."""
     options = parse_args()
     config = util.load_config(options.config)
-    report(options.highlight, config.chapters)
+    report(options, config.chapters)
 
 
 def create_row(slug, wrap, total):
@@ -77,24 +78,31 @@ def get_targets(slug, key):
 def highlight_ascii(slug, key, actual):
     """Highlight as screen ASCII."""
     low, high = get_targets(slug, key)
-    if low is None:
-        return f"{util.GREEN}{actual}{util.ENDC}"
-    elif actual < low:
-        return f"{util.RED}{actual}{util.ENDC}"
-    elif actual > high:
-        return f"{util.BLUE}{actual}{util.ENDC}"
+    if (low is not None) and (actual < low):
+        return f"{util.CHAR_RED}{actual}{util.CHAR_END}"
+    elif (high is not None) and (actual > high):
+        return f"{util.CHAR_BLUE}{actual}{util.CHAR_END}"
     else:
-        return f"{util.GREEN}{actual}{util.ENDC}"
+        return f"{util.CHAR_GREEN}{actual}{util.CHAR_END}"
+
+
+def highlight_html(slug, key, actual):
+    """Highlight as HTML."""
+    low, high = get_targets(slug, key)
+    if (low is not None) and (actual < low):
+        return f'<span style="color:red">{actual}</span>'
+    elif (high is not None) and (actual > high):
+        return f'<span style="color:blue">{actual}</span>'
+    else:
+        return f'<span style="color:green">{actual}</span>'
 
 
 def highlight_markdown(slug, key, actual):
     """Highlight as Markdown."""
     low, high = get_targets(slug, key)
-    if low is None:
-        return f"{actual}"
-    elif actual < low:
+    if (low is not None) and (actual < low):
         return f"**{actual}**"
-    elif actual > high:
+    elif (high is not None) and (actual > high):
         return f"*{actual}*"
     else:
         return f"{actual}"
@@ -116,29 +124,32 @@ def parse_args():
     parser.add_argument(
         "--highlight",
         default=None,
-        choices=["ascii", "markdown"],
+        choices=["ascii", "html", "markdown"],
         help="How to highlight",
     )
     parser.add_argument("--config", required=True, help="Configuration file")
     options = parser.parse_args()
-    if options.highlight == "ascii":
-        options.highlight = highlight_ascii
-    elif options.highlight == "markdown":
-        options.highlight = highlight_markdown
-    else:
-        options.highlight = lambda val: f"{val}%"
+    highlighting = {
+        "ascii": highlight_ascii,
+        "html": highlight_html,
+        "markdown": highlight_markdown,
+    }
+    options.highlight = highlighting.get(options.highlight, str)
     return options
 
 
-def report(wrap, chapters):
+def report(options, chapters):
     """Status of chapters."""
     tbl = make_table()
     total = {heading: 0 for heading in HEADINGS}
     for slug in chapters.keys():
-        row = create_row(slug, wrap, total)
+        row = create_row(slug, options.highlight, total)
         tbl.add_row(row)
     report_summary_rows(chapters, tbl, total)
-    print(tbl)
+    if options.highlight == highlight_html:
+        print(html.unescape(tbl.get_html_string()))
+    else:
+        print(tbl)
 
 
 def report_summary_rows(chapters, tbl, total):

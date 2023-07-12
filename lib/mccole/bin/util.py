@@ -49,10 +49,10 @@ YAML_CHARACTERS = {
 }
 
 # Color codes.
-RED = "\033[91m"
-GREEN = "\033[92m"
-BLUE = "\033[94m"
-ENDC = "\033[0m"
+CHAR_RED = "\033[91m"
+CHAR_GREEN = "\033[92m"
+CHAR_BLUE = "\033[94m"
+CHAR_END = "\033[0m"
 
 
 def cleanup_html(soup, bib=False):
