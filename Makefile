@@ -6,6 +6,22 @@ COLUMNS=72
 
 SRC_PY = $(wildcard src/*/*.py)
 
+## release: make a release
+.PHONY: release
+ifeq ($(origin SDXPY_RELEASE),undefined)
+release:
+	@echo "SDXPY_RELEASE not defined"
+else
+release:
+	rm -rf ${SDXPY_RELEASE}
+	mkdir ${SDXPY_RELEASE}
+	(cd docs && tar cf - $$(find . -name '*.css' -o -name '*.html' -o -name '*.ico' -o -name '*.jpg' -o -name '*.js' -o -name '*.png' -o -name '*.svg' -o -name '*.webp')) \
+	| (cd ${SDXPY_RELEASE} && tar xf -)
+	cd docs && zip -q -r ${SDXPY_RELEASE}/${ABBREV}-examples.zip . \
+	-i '*.ht' '*.json' '*.out' '*.py' '*.sh' '*.txt' '*.yml' \
+	-x '*.css' '*.html' '*.ico' '*.js' '*.svg' '*.webp'
+endif
+
 ## style: check source code style
 .PHONY: style
 style:

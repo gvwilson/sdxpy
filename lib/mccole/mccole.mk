@@ -213,26 +213,8 @@ ${ROOT}/LICENSE.md: src/license/index.md ${BIN_MAKE_GITHUB_PAGE}
 ${ROOT}/README.md: src/index.md ${BIN_MAKE_GITHUB_PAGE}
 	python ${BIN_MAKE_GITHUB_PAGE} --links ${INFO_LINKS} --title "${TITLE}" < $< > $@
 
-## check: check source code
-.PHONY: check
-check:
-	-@flake8 ${BIN_PY} ${LIB_PY}
-	-@isort --check ${BIN_PY} ${LIB_PY}
-	-@black --check ${BIN_PY} ${LIB_PY}
-
-## fix: fix source code
-.PHONY: fix
-fix:
-	@isort ${BIN_PY} ${LIB_PY}
-	@black ${BIN_PY} ${LIB_PY}
-
-## profile: profile compilation
-.PHONY: profile
-BIN_RUN_PROFILE := ${MCCOLE}/bin/run_profile.py
-profile:
-	python ${BIN_RUN_PROFILE}
-
 ## clean: clean up stray files
+.PHONY: clean
 clean:
 	@find ${ROOT} -name '*~' -exec rm {} \;
 	@find ${ROOT} -name '*.bkp' -exec rm {} \;
@@ -270,6 +252,25 @@ valid: ${COMBINED_HTML}
 	'Attribute "ix-key" not allowed on element "span"' \
 	'Attribute "ix-ref" not allowed on element "a"' \
 	'Attribute "markdown" not allowed on element'
+
+## check: check source code
+.PHONY: check
+check:
+	-@flake8 ${BIN_PY} ${LIB_PY}
+	-@isort --check ${BIN_PY} ${LIB_PY}
+	-@black --check ${BIN_PY} ${LIB_PY}
+
+## fix: fix source code
+.PHONY: fix
+fix:
+	@isort ${BIN_PY} ${LIB_PY}
+	@black ${BIN_PY} ${LIB_PY}
+
+## profile: profile compilation
+.PHONY: profile
+BIN_RUN_PROFILE := ${MCCOLE}/bin/run_profile.py
+profile:
+	python ${BIN_RUN_PROFILE}
 
 ## vars: show variables
 .PHONY: vars
