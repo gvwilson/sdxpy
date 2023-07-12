@@ -148,7 +148,7 @@ Our `main` function is then:
 
 Notice that `main` creates the window object.
 We can't create it earlier and pass it in as we do with `lines`
-because the constructor for `Window` needs the screen object,
+because the [%i "constructor" %] for `Window` needs the screen object,
 which doesn't exist until `curses.wrapper` calls `main`.
 This is an example of [%g delayed_construction "delayed construction" %],
 and is going to constrain the rest of our design.
@@ -298,7 +298,7 @@ since almost every handler method's result is going to be the same.
 
 ### Inheritance
 
-`DispatchApp` is derived from our first `MainApp`
+`DispatchApp` [%i "inheritance" "inherit" %] from our first `MainApp`
 so that we can recycle the initialization code we wrote for the latter.
 To make this happen,
 `DispatchApp.__init__` [%g upcall "upcalls" %] to `MainApp.__init__`
@@ -517,4 +517,8 @@ Modify the application to scroll horizontally as well as vertically.
 
 Replace the `ViewportCursor` class in the final version of the code
 with the earlier `ClipCursorFixed` class,
-then explain exactly what bug `ViewportCursor` was created to fix.
+then explain the bug `ViewportCursor` was created to fix.
+
+### Line Numbers {: .exercise}
+
+Modify the file viewer to show line numbers on the left side of the text.
