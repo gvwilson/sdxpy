@@ -13,6 +13,8 @@ release:
 	@echo "SDXPY_RELEASE not defined"
 else
 release:
+	rm -rf docs
+	make build
 	rm -rf ${SDXPY_RELEASE}
 	mkdir ${SDXPY_RELEASE}
 	(cd docs && tar cf - $$(find . -name '*.css' -o -name '*.html' -o -name '*.ico' -o -name '*.jpg' -o -name '*.js' -o -name '*.png' -o -name '*.svg' -o -name '*.webp')) \
