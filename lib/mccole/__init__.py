@@ -1,0 +1,1 @@
+"""McCole root directory."""

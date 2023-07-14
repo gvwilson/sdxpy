@@ -4,10 +4,11 @@ import argparse
 import re
 from pathlib import Path
 
-import util
 from bs4 import BeautifulSoup
 from markdown import markdown
 from spellchecker import SpellChecker
+
+from . import util
 
 PAT_DOC = [
     (re.compile(r"\\\(.+?\\\)"), " "),  # math

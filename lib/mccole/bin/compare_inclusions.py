@@ -5,7 +5,7 @@ import difflib
 from collections import Counter
 from pathlib import Path
 
-import regex
+from . import regex
 
 
 def main():

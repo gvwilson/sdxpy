@@ -3,8 +3,8 @@
 import argparse
 from pathlib import Path
 
-import regex
-import util
+from . import regex
+from . import util
 
 # Stop-words in headings.
 STOP_WORDS = {"a", "and", "as", "in", "of", "or", "to", "the"}

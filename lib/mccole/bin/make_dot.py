@@ -7,7 +7,8 @@ from pathlib import Path
 
 import frontmatter
 import graphviz
-import util
+
+from . import util
 
 # Colors to use for node types.
 COLORS = {

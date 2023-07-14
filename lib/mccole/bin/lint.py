@@ -5,11 +5,11 @@ import re
 import sys
 from fnmatch import fnmatch
 from pathlib import Path
-
 import frontmatter
-import regex
-import util
 from bs4 import BeautifulSoup, Tag
+
+from . import regex
+from . import util
 
 # Required keys in configuration and their types.
 CONFIG_REQUIRED = {

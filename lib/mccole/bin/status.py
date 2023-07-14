@@ -5,9 +5,10 @@ import html
 from pathlib import Path
 
 import frontmatter
-import regex
-import util
 from prettytable import MARKDOWN, PrettyTable
+
+from . import regex
+from . import util
 
 HEADINGS = (
     "title slides words sections exercises figures syllabus index glossary".split()

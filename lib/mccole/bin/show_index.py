@@ -5,7 +5,8 @@ import sys
 from pathlib import Path
 
 import shortcodes
-import util
+
+from . import util
 
 
 def main():
@@ -63,7 +64,7 @@ def reverse_dict(original):
         for value, in_glossary in value_pairs:
             if value not in result:
                 result[value] = []
-            formatted = f"{util.BLUE}+{slug}{util.ENDC}" if in_glossary else slug
+            formatted = f"{util.CHAR_BLUE}+{slug}{util.CHAR_END}" if in_glossary else slug
             result[value].append(formatted)
     return result
 

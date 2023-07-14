@@ -7,10 +7,14 @@
 
 # Get the absolute path to this file from wherever it is included.
 # See https://stackoverflow.com/questions/18136918/how-to-get-current-relative-directory-of-your-makefile
-MCCOLE:=$(patsubst %/,%,$(dir $(lastword $(MAKEFILE_LIST))))
+MCCOLE := $(patsubst %/,%,$(dir $(lastword $(MAKEFILE_LIST))))
+
+# Translate into Python module format.
+BIN_PATH := ${MCCOLE}/bin
+BIN_MOD := $(subst /,.,${BIN_PATH})
 
 # Define the project root as the directory this file is included from.
-ROOT:=.
+ROOT := .
 
 # Get local configuration from the Ark configuration file.
 CONFIG := ${ROOT}/config.py
@@ -22,7 +26,7 @@ TITLE := $(shell python ${CONFIG} --title)
 
 # Direct variables.
 ARK :=  $(wildcard ${MCCOLE}/extensions/*.py) $(wildcard ${MCCOLE}/resources/*.*) $(wildcard ${MCCOLE}/templates/*.*)
-BIN_PY := $(wildcard ${MCCOLE}/bin/*.py)
+BIN_PY := $(wildcard ${BIN_PATH}/*.py)
 COMBINED_HTML := ${ROOT}/docs/all.html
 DOCS_INDEX := ${ROOT}/docs/index.html
 EXAMPLES := $(patsubst %/Makefile,%,$(wildcard ${ROOT}/src/*/Makefile))
@@ -87,24 +91,21 @@ pdf: ${ROOT}/docs/${STEM}.tex ${INFO_BIB} ${DOCS_PDF}
 
 ## lint: check project structure
 .PHONY: lint
-BIN_LINT := ${MCCOLE}/bin/lint.py
-lint: ${DOCS_INDEX} ${BIN_LINT}
-	@python ${BIN_LINT} \
+lint: ${DOCS_INDEX} ${BIN_PATH}/lint.py
+	@python -m ${BIN_MOD}.lint \
 	--config ${ROOT}/config.py \
 	--dom ${MCCOLE}/dom.yml \
 	--pages ${DOCS_PAGES}
 
 ## headings: show problematic headings (many false positives)
 .PHONY: headings
-BIN_CHECK_HEADINGS := ${MCCOLE}/bin/check_headings.py
 headings:
-	@python ${BIN_CHECK_HEADINGS} --config ${ROOT}/config.py
+	@python -m ${BIN_MOD}.check_headings --config ${ROOT}/config.py
 
 ## inclusions: compare inclusions in prose and slides
 .PHONY: inclusions
-BIN_COMPARE_INCLUSIONS := ${MCCOLE}/bin/compare_inclusions.py 
 inclusions:
-	@python ${BIN_COMPARE_INCLUSIONS} --chapters ${CHAPTERS}
+	@python -m ${BIN_MOD}.compare_inclusions --chapters ${CHAPTERS}
 
 ## examples: re-run examples
 .PHONY: examples
@@ -117,29 +118,25 @@ check-make:
 
 ## fonts: check fonts in diagrams
 .PHONY: fonts
-BIN_CHECK_FONTS := ${MCCOLE}/bin/check_svg_fonts.py
 fonts:
-	@python ${BIN_CHECK_FONTS} $(SRC_SVG)
+	@python -m ${BIN_MOD}.check_svg_fonts ${BIN_CHECK_FONTS} $(SRC_SVG)
 
 ## spelling: check spelling against known words
 .PHONY: spelling
-BIN_SPELLING := ${MCCOLE}/bin/spelling.py
-spelling: ${DOCS_INDEX} ${BIN_SPELLING}
-	@python ${BIN_SPELLING} --config ${ROOT}/config.py --extra info/wordlist.txt
+spelling: ${DOCS_INDEX} ${BIN_PATH}/spelling.py
+	@python -m ${BIN_MOD}.spelling --config ${ROOT}/config.py --extra info/wordlist.txt
 
 ## index: show all index entries
 .PHONY: index
-BIN_SHOW_INDEX := ${MCCOLE}/bin/show_index.py 
-index: ${DOCS_INDEX} ${BIN_SHOW_INDEX}
-	@python ${BIN_SHOW_INDEX} --config ${CONFIG}
+index: ${DOCS_INDEX} ${BIN_PATH}/show_index.py
+	@python -m ${BIN_MOD}.show_index --config ${CONFIG}
 
 ## ---: ---
 
 ## html: create single-page HTML
 html: ${COMBINED_HTML}
-BIN_MAKE_SINGLE_HTML :=  ${MCCOLE}/bin/make_single_html.py
-${COMBINED_HTML}: ${DOCS_INDEX} ${HTML_COPY} ${BIN_MAKE_SINGLE_HTML}
-	python ${BIN_MAKE_SINGLE_HTML} \
+${COMBINED_HTML}: ${DOCS_INDEX} ${HTML_COPY} ${BIN_PATH}/make_single_html.py
+	python -m ${BIN_MOD}.make_single_html \
 	--head ${ROOT}/info/head.html \
 	--foot ${ROOT}/info/foot.html \
 	--root ${ROOT}/docs \
@@ -149,9 +146,8 @@ ${COMBINED_HTML}: ${DOCS_INDEX} ${HTML_COPY} ${BIN_MAKE_SINGLE_HTML}
 
 ## latex: create LaTeX document
 latex: ${ROOT}/docs/${STEM}.tex
-BIN_HTML_TO_LATEX :=  ${MCCOLE}/bin/html_to_latex.py
-${ROOT}/docs/${STEM}.tex: ${COMBINED_HTML} ${TEX_FILES} ${TEX_COPY} ${INFO_GLOSSARY} ${BIN_HTML_TO_LATEX}
-	python ${BIN_HTML_TO_LATEX} \
+${ROOT}/docs/${STEM}.tex: ${COMBINED_HTML} ${TEX_FILES} ${TEX_COPY} ${INFO_GLOSSARY} ${BIN_PATH}/html_to_latex.py
+	python -m ${BIN_MOD}.html_to_latex \
 	--head ${ROOT}/info/head.tex \
 	--foot ${ROOT}/info/foot.tex \
 	--glossary ${INFO_GLOSSARY} \
@@ -167,8 +163,7 @@ pdf-once: ${ROOT}/docs/${STEM}.tex ${DOCS_PDF}
 
 ifdef SYLLABUS_DIR
 ## syllabus: remake syllabus diagrams
-BIN_MAKE_DOT := ${MCCOLE}/bin/make_dot.py
-SYLLABUS_DEPS := ${CONFIG} $(patsubst %,${ROOT}/src/%/index.md,${CHAPTERS}) ${MCCOLE}/bin/make_dot.py
+SYLLABUS_DEPS := ${CONFIG} $(patsubst %,${ROOT}/src/%/index.md,${CHAPTERS}) ${BIN_PATH}/make_dot.py
 SYLLABUS_FILES := $(patsubst %,${SYLLABUS_DIR}/syllabus%,_regular.pdf _regular.svg _linear.pdf _linear.svg)
 
 syllabus: ${SYLLABUS_FILES}
@@ -179,18 +174,17 @@ ${SYLLABUS_DIR}/syllabus_%.pdf: ${ROOT}/info/%.dot
 ${SYLLABUS_DIR}/syllabus_%.svg: ${ROOT}/info/%.dot
 	dot -Tsvg $< > $@
 
-${ROOT}/info/regular.dot: ${SYLLABUS_DEPS} ${BIN_MAKE_DOT}
-	@python ${BIN_MAKE_DOT} --config ${CONFIG} --kind regular --skip intro finale --output $@
+${ROOT}/info/regular.dot: ${SYLLABUS_DEPS}
+	@python -m ${BIN_MOD}.make_dot --config ${CONFIG} --kind regular --skip intro finale --output $@
 
-${ROOT}/info/linear.dot: ${SYLLABUS_DEPS} ${BIN_MAKE_DOT}
-	@python ${BIN_MAKE_DOT} --config ${CONFIG} --kind linear --skip intro finale --output $@
+${ROOT}/info/linear.dot: ${SYLLABUS_DEPS}
+	@python -m ${BIN_MOD}.make_dot --config ${CONFIG} --kind linear --skip intro finale --output $@
 endif
 
 ## diagrams: convert diagrams from SVG to PDF
 diagrams: ${DOCS_PDF}
-BIN_CONVERT_DRAWIO := ${MCCOLE}/bin/convert_drawio.sh
-${ROOT}/src/%.pdf: ${ROOT}/src/%.svg ${BIN_CONVERT_DRAWIO}
-	${BIN_CONVERT_DRAWIO} $< $@
+${ROOT}/src/%.pdf: ${ROOT}/src/%.svg ${BIN_PATH}/convert_drawio.sh
+	${BIN_PATH}/convert_drawio.sh $< $@
 ${ROOT}/docs/%.pdf: ${ROOT}/src/%.pdf
 	cp $< $@
 
@@ -198,20 +192,19 @@ ${ROOT}/docs/%.pdf: ${ROOT}/src/%.pdf
 
 ## github: make root pages for GitHub
 .PHONY: github
-BIN_MAKE_GITHUB_PAGE := ${MCCOLE}/bin/make_github_page.py
 github: ${GITHUB_PAGES}
 
-${ROOT}/CODE_OF_CONDUCT.md: src/conduct/index.md ${BIN_MAKE_GITHUB_PAGE}
-	python ${BIN_MAKE_GITHUB_PAGE} --links ${INFO_LINKS} --title "Code of Conduct" < $< > $@
+${ROOT}/CODE_OF_CONDUCT.md: src/conduct/index.md ${BIN_PATH}/make_github_page.py
+	python -m ${BIN_MOD}.make_github_page --links ${INFO_LINKS} --title "Code of Conduct" < $< > $@
 
-${ROOT}/CONTRIBUTING.md: src/contrib/index.md ${ROOT}/info/contrib.md ${BIN_MAKE_GITHUB_PAGE}
-	python ${BIN_MAKE_GITHUB_PAGE} --append ${ROOT}/info/contrib.md --links ${INFO_LINKS} --title "Contributing" < $< > $@
+${ROOT}/CONTRIBUTING.md: src/contrib/index.md ${ROOT}/info/contrib.md ${BIN_PATH}/make_github_page.py
+	python -m ${BIN_MOD}.make_github_page --append ${ROOT}/info/contrib.md --links ${INFO_LINKS} --title "Contributing" < $< > $@
 
-${ROOT}/LICENSE.md: src/license/index.md ${BIN_MAKE_GITHUB_PAGE}
-	python ${BIN_MAKE_GITHUB_PAGE} --links ${INFO_LINKS} --title "License" < $< > $@
+${ROOT}/LICENSE.md: src/license/index.md ${BIN_PATH}/make_github_page.py
+	python -m ${BIN_MOD}.make_github_page --links ${INFO_LINKS} --title "License" < $< > $@
 
-${ROOT}/README.md: src/index.md ${BIN_MAKE_GITHUB_PAGE}
-	python ${BIN_MAKE_GITHUB_PAGE} --links ${INFO_LINKS} --title "${TITLE}" < $< > $@
+${ROOT}/README.md: src/index.md ${BIN_PATH}/make_github_page.py
+	python -m ${BIN_MOD}.make_github_page --links ${INFO_LINKS} --title "${TITLE}" < $< > $@
 
 ## clean: clean up stray files
 .PHONY: clean
@@ -240,9 +233,8 @@ clean:
 
 ## status: status of chapters
 .PHONY: status
-BIN_STATUS := ${MCCOLE}/bin/status.py
-status: ${DOCS_INDEX} ${BIN_STATUS}
-	@python ${BIN_STATUS} --highlight ascii --config ${ROOT}/config.py
+status: ${DOCS_INDEX} ${BIN_PATH}/status.py
+	@python -m ${BIN_MOD}.status --highlight ascii --config ${ROOT}/config.py
 
 ## valid: run html5validator on generated files
 .PHONY: valid
@@ -268,9 +260,8 @@ fix:
 
 ## profile: profile compilation
 .PHONY: profile
-BIN_RUN_PROFILE := ${MCCOLE}/bin/run_profile.py
 profile:
-	python ${BIN_RUN_PROFILE}
+	python -m ${BIN_MOD}.run_profile
 
 ## vars: show variables
 .PHONY: vars
@@ -285,6 +276,7 @@ vars:
 	@echo HTML_COPY: ${HTML_COPY}
 	@echo INFO_FILES: ${INFO_FILES}
 	@echo MCCOLE: ${MCCOLE}
+	@echo MCCOLE_PATH: ${MCCOLE_PATH}
 	@echo ROOT: ${ROOT}
 	@echo SRC: ${SRC}
 	@echo SRC_PAGES: ${SRC_PAGES}

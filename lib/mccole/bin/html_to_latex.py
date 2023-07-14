@@ -5,8 +5,9 @@
 import argparse
 import sys
 
-import util
 from bs4 import BeautifulSoup, NavigableString, Tag
+
+from . import util
 
 CROSSREFS = {"Appendix": "appref", "Chapter": "chapref", "Section": "secref"}
 

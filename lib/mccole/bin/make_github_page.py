@@ -3,8 +3,8 @@
 import argparse
 import sys
 
-import regex
-import util
+from . import regex
+from . import util
 
 CHANGES = [
     (regex.MARKDOWN_H2, lambda m: f"## {m.group(1)}\n"),
