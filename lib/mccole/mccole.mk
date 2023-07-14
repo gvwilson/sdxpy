@@ -194,6 +194,10 @@ ${ROOT}/src/%.pdf: ${ROOT}/src/%.svg ${BIN_CONVERT_DRAWIO}
 ${ROOT}/docs/%.pdf: ${ROOT}/src/%.pdf
 	cp $< $@
 
+## slides-pdf: generate PDFs of slides from website
+slides-pdf:
+	./lib/mccole/bin/make_slides_pdf.sh $$(python config.py --chapters)
+
 ## ---: ---
 
 ## github: make root pages for GitHub
