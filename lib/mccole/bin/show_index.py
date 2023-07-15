@@ -22,7 +22,9 @@ def main():
     }
     forward = {slug: get_index(glossary, text) for (slug, text) in prose.items()}
     for key, found in sorted(reverse_dict(forward).items()):
-        print(f"{key}: {', '.join(found)}")
+        formatted, problem = render(key, found)
+        if (not options.problems) or problem:
+            print(formatted)
 
 
 def get_index(glossary, text):
@@ -53,7 +55,20 @@ def parse_args():
     """Parse arguments."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", required=True, help="Configuration file")
+    parser.add_argument("--problems", action="store_true", default=False, help="Only show problems")
     return parser.parse_args()
+
+
+def render(key, found):
+    """Add color highlighting."""
+    problem = False
+    if not any(f.startswith("+") for f in found):
+        pass
+    elif not found[0].startswith("+"):
+        problem = True
+        key = f"{util.CHAR_RED}{key}{util.CHAR_END}"
+    found = [f"{util.CHAR_BLUE}{f}{util.CHAR_END}" if f.startswith("+") else f for f in found]
+    return f"{key}: {', '.join(found)}", problem
 
 
 def reverse_dict(original):
@@ -63,7 +78,7 @@ def reverse_dict(original):
         for value, in_glossary in value_pairs:
             if value not in result:
                 result[value] = []
-            formatted = f"{util.BLUE}+{slug}{util.ENDC}" if in_glossary else slug
+            formatted = f"+{slug}" if in_glossary else slug
             result[value].append(formatted)
     return result
 
