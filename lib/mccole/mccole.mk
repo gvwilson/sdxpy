@@ -115,11 +115,11 @@ examples:
 check-make:
 	@for d in ${EXAMPLES}; do echo ""; echo $$d; make -C $$d --dry-run; done
 
-## fonts: check fonts in diagrams
-.PHONY: fonts
-BIN_CHECK_FONTS := ${MCCOLE}/bin/check_svg_fonts.py
-fonts:
-	@python ${BIN_CHECK_FONTS} $(SRC_SVG)
+## svg: check SVG diagrams
+.PHONY: svg
+BIN_CHECK_SVG := ${MCCOLE}/bin/check_svg.py
+svg:
+	@python ${BIN_CHECK_SVG} --width 600 --files $(SRC_SVG)
 
 ## spelling: check spelling against known words
 .PHONY: spelling
