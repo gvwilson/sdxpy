@@ -17,3 +17,36 @@ way, they introduce some fundamental ideas in computer science that
 most data scientists haven't encountered.  Finally, we hope that if
 you know how programming tools work, you'll be more likely to use them
 and better able to use them well.
+
+## How You Can Help
+
+Everything is welcome, but what would help most is:
+
+1.  Fixes for mistakes in the code, the descriptions, or the formatting.
+    All of the examples run and all of the tests pass,
+    that doesn't guarantee they're correct.
+
+1.  Reports of continuity errors,
+    e.g.,
+    places where a concept is used before it is explained.
+
+1.  Suggestions for new diagrams, or for ways to improve existing ones.
+
+1.  New or clearer summary points for each chapter's syllabus.
+
+1.  More or better exercises.
+    "This is too hard" or "this is unclear" helps as well.
+
+Please see [%x contrib %] for more details.
+As of [% date %],
+the chapters that need the most work are:
+
+-   [%x func title=true %]
+-   [%x reflect title=true %]
+-   [%x binary title=true %]
+-   [%x db title=true %]
+-   [%x ftp title=true %]
+-   [%x http title=true %]
+-   [%x viewer title=true %]
+-   [%x undo title=true %]
+

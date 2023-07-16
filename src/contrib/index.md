@@ -10,10 +10,10 @@ What sort of feedback would be useful?
 
     1.  Fixes for mistakes in the code, the descriptions, or the formatting.
         All of the examples run and all of the tests pass,
-	but that doesn't guarantee they're correct.
+        but that doesn't guarantee they're correct.
     1.  Reports of continuity errors,
         e.g.,
-	places where a concept is used before it is explained.
+        places where a concept is used before it is explained.
     1.  Suggestions for new diagrams, or for ways to improve existing ones.
     1.  New or clearer summary points for each chapter's syllabus.
     1.  More or better exercises.

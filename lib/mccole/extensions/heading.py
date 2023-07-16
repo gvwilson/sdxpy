@@ -140,9 +140,9 @@ def _titles():
 
 @shortcodes.register("x")
 def heading_ref(pargs, kwargs, node):
-    """Handle [%x key %] chapter/appendix cross-reference."""
+    """Handle [%x key %] or [%x key title=true %] cross-reference."""
     util.require(
-        (len(pargs) == 1) and not kwargs,
+        len(pargs) == 1,
         f"Bad 'x' shortcode {pargs} and {kwargs} in {node}",
     )
     headings = util.get_config("headings")
@@ -152,6 +152,7 @@ def heading_ref(pargs, kwargs, node):
         label = util.make_label("part", heading.number)
         anchor = f"#{key}" if (len(heading.number) > 1) else ""
         cls = 'class="x-ref"'
-        return f'<a {cls} href="@root/{heading.fileslug}/{anchor}">{label}</a>'
+        title = f": {heading.title}" if kwargs.get("title", None) else ""
+        return f'<a {cls} href="@root/{heading.fileslug}/{anchor}">{label}{title}</a>'
     except KeyError:
         util.fail(f"Unknown part cross-reference key {key} in {node}")
