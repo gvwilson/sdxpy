@@ -7,48 +7,86 @@
 
 # Get the absolute path to this file from wherever it is included.
 # See https://stackoverflow.com/questions/18136918/how-to-get-current-relative-directory-of-your-makefile
-MCCOLE:=$(patsubst %/,%,$(dir $(lastword $(MAKEFILE_LIST))))
+MCCOLE := $(patsubst %/,%,$(dir $(lastword $(MAKEFILE_LIST))))
 
 # Define the project root as the directory this file is included from.
-ROOT:=.
+ROOT := .
 
 # Get local configuration from the Ark configuration file.
+# …configuration file
 CONFIG := ${ROOT}/config.py
+# …abbreviation for this book
 ABBREV := $(shell python ${CONFIG} --abbrev)
+# …ISO-formatted build date
 BUILD_DATE := $(shell date '+%Y-%m-%d')
+#… chapter slugs (not including appendices)
 CHAPTERS := $(shell python ${CONFIG} --chapters)
+# …human language code (e.g., "en")
 LANG := $(shell python ${CONFIG} --lang)
+# …book title
 TITLE := $(shell python ${CONFIG} --title)
 
 # Direct variables.
-ARK :=  $(wildcard ${MCCOLE}/extensions/*.py) $(wildcard ${MCCOLE}/resources/*.*) $(wildcard ${MCCOLE}/templates/*.*)
+
+# …Ark template files
+ARK := $(wildcard ${MCCOLE}/extensions/*.py) $(wildcard ${MCCOLE}/resources/*.*) $(wildcard ${MCCOLE}/templates/*.*)
+# …Ark extension Python files
+ARK_PY := $(wildcard ${MCCOLE}/extensions/*.py)
+# …extra tools used to check site and create PDF
 BIN_PY := $(wildcard ${MCCOLE}/bin/*.py)
-COMBINED_HTML := ${ROOT}/docs/all.html
-DOCS_INDEX := ${ROOT}/docs/index.html
-EXAMPLES := $(patsubst %/Makefile,%,$(wildcard ${ROOT}/src/*/Makefile))
-GITHUB_PAGES := ${ROOT}/CODE_OF_CONDUCT.md ${ROOT}/CONTRIBUTING.md ${ROOT}/LICENSE.md ${ROOT}/README.md
-HTML_COPY := ${ROOT}/info/head.html ${ROOT}/info/foot.html
-LIB_PY := $(wildcard ${MCCOLE}/extensions/*.py)
+
+# …all source Markdown pages
 SRC_PAGES := $(wildcard ${ROOT}/src/*.md) $(wildcard ${ROOT}/src/*/index.md)
+# …all source slides pages
 SRC_SLIDES := $(wildcard ${ROOT}/src/*/slides.html)
+# …all source SVG diagrams
 SRC_SVG := $(wildcard ${ROOT}/src/*/*.svg)
+
+# …standard GitHub pages (in root directory rather than website source directory)
+GITHUB_PAGES := ${ROOT}/CODE_OF_CONDUCT.md ${ROOT}/CONTRIBUTING.md ${ROOT}/LICENSE.md ${ROOT}/README.md
+# …Makefiles used to re-run examples for each chapter
+EXAMPLE_MAKEFILES := $(patsubst %/Makefile,%,$(wildcard ${ROOT}/src/*/Makefile))
+
+# …root page of website (used to check if website is out of date)
+DOCS_INDEX := ${ROOT}/docs/index.html
+# …all-in-one HTML page needed for conversion to LaTeX
+COMBINED_HTML := ${ROOT}/docs/all.html
+# …HTML fragments to copy into docs during PDF build
+HTML_COPY := ${ROOT}/info/head.html ${ROOT}/info/foot.html
+# …LaTeX fragments to copy into docs during PDF build
 TEX_COPY := ${ROOT}/info/krantz.cls ${ROOT}/info/dedication.tex
+# …other LaTeX fragments used during PDF build
 TEX_FILES := ${ROOT}/info/head.tex ${ROOT}/info/foot.tex
 
+# …maximum width of SVG diagrams in pixels
+SVG_WIDTH := 640
+
+# …information files
+# …bibliography
 INFO_BIB := ${ROOT}/info/bibliography.bib
+# …glossary
 INFO_GLOSSARY := ${ROOT}/info/glossary.yml
+# …links
 INFO_LINKS := ${ROOT}/info/links.yml
-INFO_FILES := ${INFO_BIB} ${ROOT}/info/credits.yml ${INFO_GLOSSARY} ${INFO_LINKS}
+INFO_FILES := ${INFO_BIB} ${INFO_GLOSSARY} ${INFO_LINKS} ${ROOT}/info/credits.yml
 
 # Calculated variables.
-DOCS := ${DOCS_PAGES} ${DOCS_SLIDES}
+
+# …source pages
+SRC := ${SRC_PAGES} ${SRC_SLIDES}
+
+# …generated HTML pages
+DOCS_SLIDES := $(patsubst ${ROOT}/src/%/slides.html,${ROOT}/docs/%/slides/index.html,$(SRC_SLIDES))
 DOCS_PAGES := $(patsubst ${ROOT}/src/%.md,${ROOT}/docs/%.html,$(SRC_PAGES))
+DOCS := ${DOCS_PAGES} ${DOCS_SLIDES}
+
+# …generated PDFs
 SRC_PDF := $(patsubst ${ROOT}/src/%.svg,${ROOT}/src/%.pdf,${SRC_SVG})
 DOCS_PDF := $(patsubst ${ROOT}/src/%.pdf,${ROOT}/docs/%.pdf,${SRC_PDF})
-DOCS_SLIDES := $(patsubst ${ROOT}/src/%/slides.html,${ROOT}/docs/%/slides/index.html,$(SRC_SLIDES))
 FIG_PDF := $(patsubst ${ROOT}/src/%.svg,${ROOT}/docs/%.pdf,${FIG_SVG})
-SRC := ${SRC_PAGES} ${SRC_SLIDES}
-STEM := ${ABBREV}-${BUILD_DATE}
+
+# …stem to use for PDF build
+STEM := $(strip ${ABBREV})-${BUILD_DATE}
 
 # Keep the PDF versions of diagrams under the 'src' directory.
 .PRECIOUS: ${SRC_PDF}
@@ -109,17 +147,17 @@ inclusions:
 ## examples: re-run examples
 .PHONY: examples
 examples:
-	@for d in ${EXAMPLES}; do echo ""; echo $$d; make -C $$d; done
+	@for d in ${EXAMPLE_MAKEFILES}; do echo ""; echo $$d; make -C $$d; done
 
 ## check-examples: check which examples would re-run
 check-make:
-	@for d in ${EXAMPLES}; do echo ""; echo $$d; make -C $$d --dry-run; done
+	@for d in ${EXAMPLE_MAKEFILES}; do echo ""; echo $$d; make -C $$d --dry-run; done
 
 ## svg: check SVG diagrams
 .PHONY: svg
 BIN_CHECK_SVG := ${MCCOLE}/bin/check_svg.py
 svg:
-	@python ${BIN_CHECK_SVG} --width 600 --files $(SRC_SVG)
+	@python ${BIN_CHECK_SVG} --width ${SVG_WIDTH} --files $(SRC_SVG)
 
 ## spelling: check spelling against known words
 .PHONY: spelling
@@ -260,15 +298,15 @@ valid: ${COMBINED_HTML}
 ## check: check source code
 .PHONY: check
 check:
-	-@flake8 ${BIN_PY} ${LIB_PY}
-	-@isort --check ${BIN_PY} ${LIB_PY}
-	-@black --check ${BIN_PY} ${LIB_PY}
+	-@flake8 ${BIN_PY} ${ARK_PY}
+	-@isort --check ${BIN_PY} ${ARK_PY}
+	-@black --check ${BIN_PY} ${ARK_PY}
 
 ## fix: fix source code
 .PHONY: fix
 fix:
-	@isort ${BIN_PY} ${LIB_PY}
-	@black ${BIN_PY} ${LIB_PY}
+	@isort ${BIN_PY} ${ARK_PY}
+	@black ${BIN_PY} ${ARK_PY}
 
 ## profile: profile compilation
 .PHONY: profile
@@ -284,7 +322,6 @@ vars:
 	@echo BUILD_DATE: ${BUILD_DATE}
 	@echo DOCS: ${DOCS}
 	@echo DOCS_PDF: ${DOCS_PDF}
-	@echo EXPORT_FILES: ${EXPORT_FILES}
 	@echo GITHUB_PAGES: ${GITHUB_PAGES}
 	@echo HTML_COPY: ${HTML_COPY}
 	@echo INFO_FILES: ${INFO_FILES}
@@ -296,7 +333,6 @@ vars:
 	@echo SRC_SVG: ${SRC_SVG}
 	@echo STEM: ${STEM}
 	@echo SYLLABUS_DIR: ${SYLLABUS_DIR}
-	@echo SYLLABUS_IMG: ${SYLLABUS_IMG}
 	@echo TEX_COPY: ${TEX_COPY}
 	@echo TEX_FILES: ${TEX_FILES}
 	@echo TITLE: ${TITLE}
