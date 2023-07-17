@@ -6,7 +6,6 @@ import textwrap
 from pathlib import Path
 
 import graphviz
-import shortcodes
 import util
 
 # Colors to use for node types.
@@ -45,11 +44,10 @@ def main():
     glossary = {key: glossary[key][config.lang]["term"] for key in glossary}
 
     prose = read_all_prose(config)
-    index = find_index_terms(glossary, prose)
+    index = util.find_index_terms(prose)
     inverted_index = invert_index(glossary, index)
 
-    if options.display != "none":
-        show_index(options.display, glossary, inverted_index)
+    show_index(options, glossary, index, inverted_index)
 
     if options.output is not None:
         chapter_slugs = choose_chapter_slugs(config, options)
@@ -103,24 +101,6 @@ def fail(msg):
     sys.exit(1)
 
 
-def find_index_terms(glossary, prose):
-    """Find all index terms by chapter/appendix slug."""
-
-    def _parse_to_set(parser, text):
-        temp = set()
-        parser.parse(text, temp)
-        return temp
-
-    parser = shortcodes.Parser(inherit_globals=False, ignore_unknown=True)
-    parser.register(lambda pargs, kwargs, keys: keys.add((pargs[0], True)), "g")
-    parser.register(lambda pargs, kwargs, keys: keys.add((pargs[0], False)), "i")
-
-    try:
-        return {slug: _parse_to_set(parser, text) for (slug, text) in prose.items()}
-    except shortcodes.ShortcodeSyntaxError as exc:
-        fail(f"%i shortcode parsing error: {exc}")
-
-
 def invert_index(glossary, index):
     """Convert slug:(word, in_glossary) to word:(slug, in_glossary)."""
     result = {}
@@ -170,7 +150,7 @@ def parse_args():
     parser.add_argument(
         "--display",
         default="none",
-        choices=["none", "plain", "problems"],
+        choices=["forward", "none", "plain", "problems"],
         help="How to print",
     )
     parser.add_argument("--output", default=None, help="Output file")
@@ -195,14 +175,28 @@ def select_syllabus_chapters(options, config):
     }
 
 
-def show_index(display, glossary, inverted_index):
+def show_index(options, glossary, index, inverted_index):
     """Display index terms."""
+    # No display.
+    if options.display == "none":
+        return
+
+    # Display slug-to-term.
+    if options.display == "forward":
+        for slug, terms in index.items():
+            if not terms:
+                continue
+            terms = [f"+{glossary[t[0]]}" if t[1] else t[0] for t in sorted(terms)]
+            print(f"{slug}: {', '.join(terms)}")
+        return
+
+    # Display locations of terms (or problems).
     for term, entries in sorted(inverted_index.items()):
         entries = [
             f"+{slug}" if in_glossary else slug for (slug, in_glossary) in entries
         ]
         line = f"{term}: {', '.join(entries)}"
-        if (display != "problems") or (("+" in line) and (": +" not in line)):
+        if (options.display != "problems") or (("+" in line) and (": +" not in line)):
             print(line)
 
 

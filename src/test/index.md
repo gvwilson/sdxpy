@@ -237,7 +237,7 @@ Notice that when we print a function,
 Python shows us its name and its address in memory.
 {: .continue}
 
-Having a program find things in itself like this at [%i "runtime" %]
+Having a running program find things in itself like this
 is another example of [%i "introspection" %]
 ([%x parse %]).
 Combining introspection with the pass-fail-error pattern of the previous section

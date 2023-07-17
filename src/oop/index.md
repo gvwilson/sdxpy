@@ -205,13 +205,12 @@ that contain references to properties, functions, and other dictionaries.
 
 ### Multiple Inheritance {: .exercise}
 
-Implement [%i "multiple inheritance" %] using dictionaries.
+Implement multiple inheritance using dictionaries.
 Does your implementation look methods up in the same order as Python would?
 
 ### Class Methods and Static Methods {: .exercise}
 
-1.  Explain the differences between [%i "class method" "class methods" %]
-    and [%i "static method" "static methods" %].
+1.  Explain the differences between class methods and static methods.
 
 2.  Implement both using dictionaries.
 

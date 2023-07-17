@@ -4,6 +4,7 @@ import importlib.util
 import re
 import sys
 
+import shortcodes
 import yaml
 from pybtex.database import parse_file
 
@@ -78,6 +79,24 @@ def cook_yaml(text, doublespace_keys=True):
     if doublespace_keys:
         text = text.replace("- key:", "\n- key:").lstrip()
     return text
+
+
+def find_index_terms(prose):
+    """Find all index terms by chapter/appendix slug."""
+
+    def _parse_to_set(parser, text):
+        temp = set()
+        parser.parse(text, temp)
+        return temp
+
+    parser = shortcodes.Parser(inherit_globals=False, ignore_unknown=True)
+    parser.register(lambda pargs, kwargs, keys: keys.add((pargs[0], True)), "g")
+    parser.register(lambda pargs, kwargs, keys: keys.add((pargs[0], False)), "i")
+
+    try:
+        return {slug: _parse_to_set(parser, text) for (slug, text) in prose.items()}
+    except shortcodes.ShortcodeSyntaxError as exc:
+        fail(f"%i shortcode parsing error: {exc}")
 
 
 def get_all_matches(pattern, filenames, group=1, scrub=True, no_duplicates=False):

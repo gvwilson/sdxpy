@@ -331,8 +331,7 @@ this extra data allows the language to do [%i "introspection" %] and much more.
 
 The same is true of collections.
 For example,
-Fortran stores the values in an array side by side
-in one big [%i "block (of memory)" "block" %] of memory
+Fortran stores all the values in an array side by side in memory
 ([%f binary-arrays %]).
 Writing this to disk is easy:
 if the array starts at location L in memory and has N values,

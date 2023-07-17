@@ -209,7 +209,7 @@ ifdef SYLLABUS_DIR
 ## syllabus: remake syllabus diagram
 SYLLABUS_DEPS := ${CONFIG} $(patsubst %,${ROOT}/src/%/index.md,${CHAPTERS}) ${BIN_DEPENDENCIES}
 
-syllabus: ${SYLLABUS_DIR}/syllabus.pdf ${SYLLABUS_DIR}/syllabus.png ${SYLLABUS_DIR}/syllabus.svg
+syllabus: $(patsubst %,${SYLLABUS_DIR}/syllabus.%,pdf png svg)
 
 ${SYLLABUS_DIR}/syllabus.pdf: ${SYLLABUS_DEPS}
 	python ${BIN_DEPENDENCIES} --config ${CONFIG} --skip intro finale bonus --output - \
@@ -335,6 +335,7 @@ vars:
 	@echo SRC_PDF: ${SRC_PDF}
 	@echo SRC_SVG: ${SRC_SVG}
 	@echo STEM: ${STEM}
+	@echo SYLLABUS_DEPS: ${SYLLABUS_DEPS}
 	@echo SYLLABUS_DIR: ${SYLLABUS_DIR}
 	@echo TEX_COPY: ${TEX_COPY}
 	@echo TEX_FILES: ${TEX_FILES}

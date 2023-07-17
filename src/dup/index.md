@@ -238,10 +238,8 @@ so the running time is as good as it possibly can be.
 
 Hashing is a tremendously powerful tool:
 Python's dictionaries hash their keys to make lookup fast,
-and [%i "version control system" "version control systems" %] use it to determine
-when two files or two revisions of a repository are the same or not
-([%x archive %]).
-
+and [%x archive %] will use it to determine
+when two files or two revisions of a repository are the same or not.
 But our duplicate file finder is just a beginning.
 [%x glob %] shows how we can find sets of files to compare;
 [%x test %] and [%x reflect %] build tools to test programs like this,

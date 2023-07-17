@@ -14,9 +14,7 @@ while [%x test %] showed how Python itself manages them.
 Similarly,
 the [%g compiler "compilers" %] and [%g interpreter "interpreters" %]
 that make programs run are just programs themselves.
-Instead of changing the characters in
-a [%i "block (of memory)" "block of memory" %] like text editors,
-or calculating sums and averages like spreadsheets,
+Instead of calculating sums or drawing characters on a screenb,
 compilers turn text into instructions for interpreters or hardware to run.
 
 Most real programming languages have two parts:
@@ -48,8 +46,8 @@ but saves those instructions in `.pyc` files to save time in future.
 ## Expressions {: #interp-expressions}
 
 Let's start by building something that can evaluate
-simple [%i "expression" "expressions" %]
-like `1+2` or `abs(-3.5)`.
+simple [%g "expression" "expressions" %] that produce values,
+such as `1+2` or `abs(-3.5)`.
 We represent each expression as a list
 with the name of the operation as the first item
 and the values to be operated on as the other items.
@@ -244,7 +242,8 @@ Our test program is:
 
 ### Everything Is An Expression
 
-Python distinguishes [%g expression "expressions" %] that produce values
+As we said above,
+Python distinguishes expressions that produce values
 from [%g statement "statements" %] that don't.
 But it doesn't have to, and many languages don't.
 For example,

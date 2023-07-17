@@ -71,8 +71,7 @@ but if we do that,
 we will be asking records to do two things
 (the other being to generate a key).
 Rather than passing a second function to the database's constructor
-we will [%i "refactor" %] the database to take the record class
-as a [%i "parameter" %]:
+we will [%i "refactor" %] the database to work with any record class:
 
 [% inc file="interface.py" %]
 

@@ -66,7 +66,7 @@ rather than inventing something of your own.
 
 ## Tokenizing {: #parse-token}
 
-A [%i "token" %] is a meaningful piece of text,
+A token is a meaningful piece of text,
 such as the digits making up a number or the letters making up a variable name.
 Our grammar's tokens are the special characters `*`, `{`, `}`, and `,`;
 any sequence of one or more other characters is a single multi-letter token.
