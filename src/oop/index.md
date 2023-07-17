@@ -65,7 +65,7 @@ the functions that know how to operate on squares ([%f oop-shapes-dict %]).
 Behind the scenes,
 this is (almost) how objects actually work.
 We can think of an object as a special kind of dictionary.
-A method is just a function that takes an object object of the right kind
+A method is just a function that takes an object of the right kind
 as its first [%i "parameter" %]
 (typically called `self` in Python).
 
