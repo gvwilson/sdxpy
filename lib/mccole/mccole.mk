@@ -209,12 +209,17 @@ ifdef SYLLABUS_DIR
 ## syllabus: remake syllabus diagram
 SYLLABUS_DEPS := ${CONFIG} $(patsubst %,${ROOT}/src/%/index.md,${CHAPTERS}) ${BIN_DEPENDENCIES}
 
-syllabus: ${SYLLABUS_DIR}/syllabus.pdf ${SYLLABUS_DIR}/syllabus.svg
+syllabus: ${SYLLABUS_DIR}/syllabus.pdf ${SYLLABUS_DIR}/syllabus.png ${SYLLABUS_DIR}/syllabus.svg
 
 ${SYLLABUS_DIR}/syllabus.pdf: ${SYLLABUS_DEPS}
 	python ${BIN_DEPENDENCIES} --config ${CONFIG} --skip intro finale bonus --output - \
 	| tred \
 	| dot -T pdf > $@
+
+${SYLLABUS_DIR}/syllabus.png: ${SYLLABUS_DEPS}
+	python ${BIN_DEPENDENCIES} --config ${CONFIG} --skip intro finale bonus --output - \
+	| tred \
+	| dot -T png > $@
 
 ${SYLLABUS_DIR}/syllabus.svg: ${SYLLABUS_DEPS}
 	python ${BIN_DEPENDENCIES} --config ${CONFIG} --skip intro finale bonus --output - \

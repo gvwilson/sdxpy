@@ -66,12 +66,12 @@ def main():
 
     for f in [
         check_bib,
+        check_file_references,
         check_glossary_internal,
         check_glossary_redef,
         check_glossary_ref_in_index,
         check_glossary_refs,
         check_ids,
-        check_inclusions,
         check_index_refs,
         check_links,
         check_slides,
@@ -104,6 +104,17 @@ def check_dom(dom_spec, html_files):
             text = reader.read()
         _dom_collect(seen, BeautifulSoup(text, "html.parser"))
     _dom_diff(seen, allowed)
+
+
+def check_file_references(config):
+    """Check file references."""
+    for slug in config["prose"]:
+        existing = get_files(config, slug)
+        referenced = set()
+        for text in (config["prose"][slug], config["slides"].get(slug, "")):
+            for f in (get_inc, get_figure, get_image):
+                referenced |= f(text)
+        _diff(f"{slug} inclusions", existing, referenced)
 
 
 def check_glossary_internal(config):
@@ -203,17 +214,6 @@ def check_ids(config):
                 _warn(f"Bad slugs in {slug}: {', '.join(problems)}")
 
 
-def check_inclusions(config):
-    """Check file inclusions."""
-    for slug in config["prose"]:
-        existing = get_files(config, slug)
-        referenced = set()
-        for text in (config["prose"][slug], config["slides"].get(slug, "")):
-            for f in (get_inc, get_fig, get_img):
-                referenced |= f(text)
-        _diff(f"{slug} inclusions", existing, referenced)
-
-
 def check_index_refs(config):
     """Check formatting of index references."""
     for slug, text in config["prose"].items():
@@ -282,7 +282,7 @@ def get_config(filepath):
     return config
 
 
-def get_fig(text):
+def get_figure(text):
     """Return all figures."""
     figures = {m.group(2) for m in regex.FIGURE.finditer(text)}
     pdfs = {f.replace(".svg", ".pdf") for f in figures if f.endswith(".svg")}
@@ -299,9 +299,9 @@ def get_files(config, slug):
     return result - EXPECTED_FILES
 
 
-def get_img(text):
+def get_image(text):
     """Find direct image references."""
-    return {m.group(1) for m in regex.IMG.finditer(text)}
+    return {m.group(1) for m in regex.IMAGE.finditer(text)}
 
 
 def get_inc(text):

@@ -15,7 +15,7 @@ FIGURE = re.compile(r'\[%\s*figure\b.+?slug="(.+?)".+?img="(.+?)".+?%\]', re.DOT
 GITHUB_ISSUE = re.compile(r"\[%\s*issue\b\s+(\d+)\s*%\]")
 GLOSSARY_REF = re.compile(r'\[%\s*g\s+\b(.+?)\b\s+"(.+?)"\s*%\]')
 GLOSSARY_CROSSREF = re.compile(r"\[.+?\]\(\#(.+?)\)", re.DOTALL)
-IMG = re.compile(r'<img.+?src="(.+?)".+?>')
+IMAGE = re.compile(r'\[%\s*image\s+src="(.+?)".+?%\]')
 INDEX_REF = re.compile(r'\[%\s*i\s+("[^"]+")(\s+("[^"]+"))?(\s+url=("[^"]+"))?\s*%\]')
 INDEX_URL = re.compile(r'\[%\s*i\b.+?url="(.+?)"\s*%\]')
 SHORTCODE = re.compile(r"\[%.+?%\]")
