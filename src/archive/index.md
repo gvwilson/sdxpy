@@ -6,10 +6,6 @@ syllabus:
 -   Operations involving multiple files may suffer from race conditions.
 -   Use a base class to specify what a component must be able to do
     and derive child classes to implement those operations.
-depends:
--   dup
--   glob
--   reflect
 ---
 
 We've written almost a thousand lines of Python so far.

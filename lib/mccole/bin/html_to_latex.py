@@ -28,7 +28,7 @@ LATEX_FIG_REGULAR = 0.8
 def main():
     """Convert HTML to LateX."""
     options = parse_args()
-    glossary = read_glossary(options.glossary)
+    glossary = util.read_glossary(options.glossary)
     text = sys.stdin.read()
     text = text.replace(r"\(", "<math>").replace(r"\)", "</math>")
     soup = BeautifulSoup(text, "html.parser")
@@ -484,12 +484,6 @@ def parse_args():
     parser.add_argument("--head", required=True, help="LaTeX head")
     parser.add_argument("--language", required=True, help="language code")
     return parser.parse_args()
-
-
-def read_glossary(filename):
-    """Read glossary and convert to dictionary."""
-    glossary = util.read_yaml(filename)
-    return {entry["key"]: entry for entry in glossary}
 
 
 def record_seen(node, state):

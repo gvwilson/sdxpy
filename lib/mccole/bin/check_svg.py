@@ -31,7 +31,7 @@ def main():
 
     for problem in font_problems:
         print(problem)
-        
+
 
 def find_fonts(filename, doc):
     """Find all fonts in document."""
@@ -68,7 +68,9 @@ def parse_args():
     """Parse arguments."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--files", nargs=argparse.REMAINDER, help="Files to check")
-    parser.add_argument("--width", type=int, default=0, help="Maximum width to allow in pixels")
+    parser.add_argument(
+        "--width", type=int, default=0, help="Maximum width to allow in pixels"
+    )
     return parser.parse_args()
 
 

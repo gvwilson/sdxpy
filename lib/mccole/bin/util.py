@@ -156,6 +156,12 @@ def read_file(filename, scrub=True):
         return text
 
 
+def read_glossary(filename):
+    """Read glossary and convert to dictionary."""
+    glossary = read_yaml(filename)
+    return {entry["key"]: entry for entry in glossary}
+
+
 def read_yaml(filename, allow_empty=False):
     """Load and return a YAML file."""
     try:

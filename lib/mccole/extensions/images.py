@@ -23,6 +23,4 @@ def figure_def(pargs, kwargs, node):
     src = f"../{src}" if util.is_slides(node) else src
     width = "" if (width is None) else f' width="{width}"'
 
-    return dedent(
-        f"""<img src="{src}" alt="{alt}"{width}/>"""
-    )
+    return dedent(f"""<img src="{src}" alt="{alt}"{width}/>""")

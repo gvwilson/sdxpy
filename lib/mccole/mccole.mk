@@ -88,6 +88,9 @@ FIG_PDF := $(patsubst ${ROOT}/src/%.svg,${ROOT}/docs/%.pdf,${FIG_SVG})
 # …stem to use for PDF build
 STEM := $(strip ${ABBREV})-${BUILD_DATE}
 
+# …tool used in several commands
+BIN_DEPENDENCIES := ${MCCOLE}/bin/dependencies.py 
+
 # Keep the PDF versions of diagrams under the 'src' directory.
 .PRECIOUS: ${SRC_PDF}
 
@@ -167,9 +170,8 @@ spelling: ${DOCS_INDEX} ${BIN_SPELLING}
 
 ## index: show all index entries
 .PHONY: index
-BIN_SHOW_INDEX := ${MCCOLE}/bin/show_index.py 
-index: ${DOCS_INDEX} ${BIN_SHOW_INDEX}
-	@python ${BIN_SHOW_INDEX} --config ${CONFIG}
+index: ${DOCS_INDEX} ${BIN_DEPENDENCIES}
+	@python ${BIN_DEPENDENCIES} --config ${CONFIG} --display plain
 
 ## ---: ---
 
@@ -204,24 +206,20 @@ pdf-once: ${ROOT}/docs/${STEM}.tex ${DOCS_PDF}
 	cd ${ROOT}/docs && pdflatex ${STEM}
 
 ifdef SYLLABUS_DIR
-## syllabus: remake syllabus diagrams
-BIN_MAKE_DOT := ${MCCOLE}/bin/make_dot.py
-SYLLABUS_DEPS := ${CONFIG} $(patsubst %,${ROOT}/src/%/index.md,${CHAPTERS}) ${MCCOLE}/bin/make_dot.py
-SYLLABUS_FILES := $(patsubst %,${SYLLABUS_DIR}/syllabus%,_regular.pdf _regular.svg _linear.pdf _linear.svg)
+## syllabus: remake syllabus diagram
+SYLLABUS_DEPS := ${CONFIG} $(patsubst %,${ROOT}/src/%/index.md,${CHAPTERS}) ${BIN_DEPENDENCIES}
 
-syllabus: ${SYLLABUS_FILES}
+syllabus: ${SYLLABUS_DIR}/syllabus.pdf ${SYLLABUS_DIR}/syllabus.svg
 
-${SYLLABUS_DIR}/syllabus_%.pdf: ${ROOT}/info/%.dot
-	dot -Tpdf $< > $@
+${SYLLABUS_DIR}/syllabus.pdf: ${SYLLABUS_DEPS}
+	python ${BIN_DEPENDENCIES} --config ${CONFIG} --skip intro finale bonus --output - \
+	| tred \
+	| dot -T pdf > $@
 
-${SYLLABUS_DIR}/syllabus_%.svg: ${ROOT}/info/%.dot
-	dot -Tsvg $< > $@
-
-${ROOT}/info/regular.dot: ${SYLLABUS_DEPS} ${BIN_MAKE_DOT}
-	@python ${BIN_MAKE_DOT} --config ${CONFIG} --kind regular --skip intro finale --output $@
-
-${ROOT}/info/linear.dot: ${SYLLABUS_DEPS} ${BIN_MAKE_DOT}
-	@python ${BIN_MAKE_DOT} --config ${CONFIG} --kind linear --skip intro finale --output $@
+${SYLLABUS_DIR}/syllabus.svg: ${SYLLABUS_DEPS}
+	python ${BIN_DEPENDENCIES} --config ${CONFIG} --skip intro finale bonus --output - \
+	| tred \
+	| dot -T svg > $@
 endif
 
 ## diagrams: convert diagrams from SVG to PDF

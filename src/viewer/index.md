@@ -7,7 +7,6 @@ syllabus:
 -   Using delayed construction and/or factory methods can make code easier to evolve.
 -   Refactor code before attempting to add new features.
 -   Separate the logic for managing data from the logic for displaying it.
-depends:
 ---
 
 Before they need version control tools or interpreters,

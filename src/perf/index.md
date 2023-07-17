@@ -4,8 +4,6 @@ syllabus:
 -   Store two-dimensional data as rows or as columns.
 -   Use reflection to match data to function parameters.
 -   Measure performance to evaluate engineering tradeoffs.
-depends:
--   reflect
 ---
 
 One of the drawbacks of publishing a book online is obsessing over analytics.

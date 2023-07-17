@@ -4,9 +4,6 @@ syllabus:
 -   Instructions are just numbers, but may be represented as assembly code.
 -   Instructions may refer to registers, memory, both, or neither.
 -   A processor usually executes instructions in order, but may jump to another location based on whether a conditional is true or false.
-depends:
--   interp
--   binary
 ---
 
 There was still a lot of magic in our interpreter in [%x interp %],

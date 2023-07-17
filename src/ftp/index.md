@@ -4,8 +4,6 @@ syllabus:
 -   The Domain Name System (DNS) translates human-readable names into IP addresses.
 -   The programs on each computer send and receive messages through numbered sockets.
 -   The program that receives a message must interpret the bytes in the message.
-depends:
--   archive
 ---
 
 The Internet is simpler than most people realize

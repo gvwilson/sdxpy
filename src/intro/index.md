@@ -57,7 +57,7 @@ This book is also designed to help another persona:
 
 [% figure
    slug="intro-syllabus"
-   img="syllabus_regular.svg"
+   img="syllabus.svg"
    alt="Syllabus"
    caption="Lesson topics and dependencies."
 %]
