@@ -4,6 +4,9 @@ syllabus:
 -   Record actions and state to check behavior these mock objects.
 -   Use objects to represent actions to record history and enable undo.
 -   Recording state is easier but more expensive than recording changes.
+depends:
+-   persist
+-   viewer
 ---
 
 Viewing text files is useful,

@@ -12,6 +12,8 @@ syllabus:
 -   When a function needs to look up variables,
     it looks in its own stack frame and the global frame.
 -   A closure stores the variables referenced in a particular scope.
+depends:
+-   interp
 ---
 
 One way to evaluate the design of a piece of software is

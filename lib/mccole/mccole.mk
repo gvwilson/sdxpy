@@ -206,25 +206,22 @@ pdf-once: ${ROOT}/docs/${STEM}.tex ${DOCS_PDF}
 	cd ${ROOT}/docs && pdflatex ${STEM}
 
 ifdef SYLLABUS_DIR
-## syllabus: remake syllabus diagram
-SYLLABUS_DEPS := ${CONFIG} $(patsubst %,${ROOT}/src/%/index.md,${CHAPTERS}) ${BIN_DEPENDENCIES}
+## syllabus: remake syllabus diagrams
+BIN_MAKE_DOT := ${MCCOLE}/bin/make_dot.py
+SYLLABUS_DEPS := ${CONFIG} $(patsubst %,${ROOT}/src/%/index.md,${CHAPTERS})
+SYLLABUS_SKIP := intro finale bonus
 
-syllabus: $(patsubst %,${SYLLABUS_DIR}/syllabus.%,pdf png svg)
+syllabus: $(patsubst %,${SYLLABUS_DIR}/syllabus.%,pdf png svg) $(patsubst %,${SYLLABUS_DIR}/empirical.%,pdf png svg)
 
-${SYLLABUS_DIR}/syllabus.pdf: ${SYLLABUS_DEPS}
-	python ${BIN_DEPENDENCIES} --config ${CONFIG} --skip intro finale bonus --output - \
+${SYLLABUS_DIR}/syllabus.%: ${SYLLABUS_DEPS} ${BIN_MAKE_DOT}
+	python ${BIN_MAKE_DOT} --config ${CONFIG} --skip ${SYLLABUS_SKIP} --output - \
 	| tred \
-	| dot -T pdf > $@
+	| dot -T $* > $@
 
-${SYLLABUS_DIR}/syllabus.png: ${SYLLABUS_DEPS}
-	python ${BIN_DEPENDENCIES} --config ${CONFIG} --skip intro finale bonus --output - \
+${SYLLABUS_DIR}/empirical.%: ${SYLLABUS_DEPS} ${BIN_DEPENDENCIES}
+	python ${BIN_DEPENDENCIES} --config ${CONFIG} --skip ${SYLLABUS_SKIP} --output - \
 	| tred \
-	| dot -T png > $@
-
-${SYLLABUS_DIR}/syllabus.svg: ${SYLLABUS_DEPS}
-	python ${BIN_DEPENDENCIES} --config ${CONFIG} --skip intro finale bonus --output - \
-	| tred \
-	| dot -T svg > $@
+	| dot -T $* > $@
 endif
 
 ## diagrams: convert diagrams from SVG to PDF

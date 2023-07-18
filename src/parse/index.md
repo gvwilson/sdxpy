@@ -9,6 +9,8 @@ syllabus:
 -   Operations like addition and function call work just like user-defined functions.
 -   Programs can overload built-in operators by defining specially-named methods
     that are recognized by the compiler or interpreter.
+depends:
+-   glob
 ---
 
 We constructed objects to match patterns in [%x glob %],
