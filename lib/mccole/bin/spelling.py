@@ -9,22 +9,32 @@ from bs4 import BeautifulSoup
 from markdown import markdown
 from spellchecker import SpellChecker
 
-PAT_DOC = [
-    (re.compile(r"\\\(.+?\\\)"), " "),  # math
-    (re.compile(r"[–—/]"), " "),  # em-dash, en-dash, and slash
-    (re.compile(r"e\.g\.", re.IGNORECASE), " "),  # special words
-    (re.compile(r"i\.e\.", re.IGNORECASE), " "),
-    (re.compile(r"vs\.", re.IGNORECASE), " "),
-    (re.compile(r"\(ab\)"), " "),  # (ab)using
-    (re.compile(r"\(s\)"), " "),  # file(s)
+SUB_DOC = [
+    (re.compile(r"\\\(.+?\\\)", re.MULTILINE), ""),
+    (re.compile(r"[“”]", re.MULTILINE), ""),
+    (re.compile(r"[–…—]"), " "),
 ]
-PAT_WORD = [
-    (re.compile(r"^[“”’‘…\(\)#]*"), ""),  # leading punctuation
-    (re.compile(r"[“”’‘…,\?!\.:;\(\)°%]*$"), ""),  # trailing punctuation
-    (re.compile(r"’s"), ""),  # possessive
-    (re.compile(r"^(0x)?[e\d\.×\+/–-]+$"), ""),  # number-ish things
-    (re.compile(r"^doi:.+"), ""),  # DOIs
-    (re.compile(r"’"), "'"),  # normalize apostrophe
+SUB_WORD = [
+    (re.compile(r"^e\.g\.$"), ""),  # e.g.
+    (re.compile(r"^i\.e\.$"), ""),  # e.g.
+    (re.compile(r"^vs\.$"), ""),  # e.g.
+    (re.compile(r"^etc\.$"), ""),  # e.g.
+    (re.compile(r"^[‘’]+"), ""),  # angled quotes
+    (
+        re.compile(r"^\((.*[^\)])$"),
+        lambda m: m.group(1),
+    ),  # open with paren but no closing paren
+    (
+        re.compile(r"^([^\(].*)\)$"),
+        lambda m: m.group(1),
+    ),  # close with paren but no opening paren
+    (re.compile(r"^\("), ""),  # leading punctuation
+    (re.compile(r"[\?\!\.’,:;%°\)]+$"), ""),  # trailing punctuation
+    (re.compile(r"’"), "'"),  # internal angled quote
+    (re.compile(r"'s$"), ""),  # possessive
+    (re.compile(r"^[\+\#\(\)\d\./-]+$"), ""),  # number-ish things
+    (re.compile(r"^doi:.+?$"), ""),  # DOIs
+    (re.compile(r"^0x.+$"), ""),  # hex numbers
 ]
 
 
@@ -41,12 +51,12 @@ def main():
         print(word)
 
 
-def extract_words(docs):
+def extract_words(pages):
     """Extract set of all words from documents."""
     words = set()
-    for doc in docs:
-        text = normalize(doc.text, PAT_DOC)
-        words |= {normalize(w, PAT_WORD) for w in text.split()}
+    for text in pages:
+        text = normalize(text, SUB_DOC)
+        words |= {normalize(w, SUB_WORD) for w in text.split()}
     return words
 
 
@@ -60,8 +70,8 @@ def get_extra_words(options):
 
 def normalize(text, patterns):
     """Create normalized form of text."""
-    for pat, replacement in patterns:
-        text = pat.sub(replacement, text)
+    for pat, sub in patterns:
+        text = pat.sub(sub, text)
     return text
 
 
@@ -69,7 +79,12 @@ def parse_args():
     """Parse arguments."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", required=True, help="Configuration file")
-    parser.add_argument("--extra", help="File containing list of extra known words")
+    parser.add_argument(
+        "--extra", required=False, help="File containing list of extra known words"
+    )
+    parser.add_argument(
+        "--only", nargs="+", default=[], help="Slugs of pages to process"
+    )
     parser.add_argument(
         "--slides", default=False, action="store_true", help="Process slides"
     )
@@ -78,24 +93,36 @@ def parse_args():
 
 def read_docs(options, config):
     """Read all HTML documents."""
-    result = [_read_doc(Path(config.out_dir, "index.html"), "main")]
-    for slug in [*config.chapters, *config.appendices]:
-        result.append(_read_doc(Path(config.out_dir, slug, "index.html"), "main"))
+    slugs = (
+        set(options.only)
+        if options.only
+        else set([*config.chapters, *config.appendices])
+    )
+    result = [read_html_file(Path(config.out_dir, "index.html"), "main")]
+    for slug in slugs:
+        result.append(read_html_file(Path(config.out_dir, slug, "index.html"), "main"))
     if options.slides:
         for slug in config.chapters:
+            if slug not in slugs:
+                continue
             result.append(
-                _read_doc(Path(config.out_dir, slug, "slides", "index.html"), "body")
+                read_html_file(
+                    Path(config.out_dir, slug, "slides", "index.html"), "body"
+                )
             )
     return result
 
 
-def _read_doc(filename, root):
-    """Read a single HTML document."""
+def read_html_file(filename, root):
+    """Read a single HTML document and extract root element."""
     with open(filename, "r") as reader:
         text = reader.read()
+        text = text.replace("<br>", " ").replace("<br/>", " ")  # for glossary
         text = markdown(text, extensions=["md_in_html"])
-        soup = BeautifulSoup(text, "html.parser").find(root)
-        return util.cleanup_html(soup, bib=True)
+        doc = BeautifulSoup(text, "html.parser")
+        doc = doc.find(root)
+        doc = util.cleanup_html(doc, bib=True)
+        return doc.text
 
 
 if __name__ == "__main__":

@@ -281,7 +281,7 @@ If a novice's comprehension curve looks like the lower one in [%f test-comprehen
 then an expert's looks like the upper one.
 Experts don't just understand more at all levels of abstraction;
 their *preferred* level has also shifted
-so they find \\(\sqrt{x^2 + y^2}\\) easier to read
+so they find \\( \sqrt{x^2 + y^2} \\) easier to read
 than the medieval expression
 "the side of the square whose area is the sum of the areas of the two squares
 whose sides are given by the first part and the second part".

@@ -2,7 +2,7 @@
 syllabus:
 -   Temporarily replacing functions with mock objects can simplify testing.
 -   Mock objects can record their calls and/or return variable results.
--   Python defines protocols so that users' code can be triggered by keywords in the language.
+-   Python defines protocols so that code can be triggered by keywords in the language.
 -   Use the context manager protocol to ensure cleanup operations always execute.
 -   Use decorators to wrap functions after defining them.
 -   Use closures to create decorators that take extra parameters.

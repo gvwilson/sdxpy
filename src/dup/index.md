@@ -208,7 +208,7 @@ so that (for example) `3D5` is \\((3×16^2)+(13×16^1)+(5×16^0)\\), or 981 in d
 ### The Birthday Problem
 
 The odds that two people share a birthday are 1/365 (ignoring February 29).
-The odds that they *don't* are therefore 364/365.
+The odds that they *don't* are therefore \\( 364/365 \\).
 When we add a third person,
 the odds that they don't share a birthday
 with either of the preceding two people are \\( 363/365 \\),
