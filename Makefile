@@ -1,5 +1,3 @@
-SYLLABUS_DIR=src/intro
-
 include lib/mccole/mccole.mk
 
 COLUMNS=72
