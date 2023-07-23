@@ -14,7 +14,7 @@ def build_date():
 
 
 @shortcodes.register("date")
-def thanks(pargs, kwargs, node):
+def date(pargs, kwargs, node):
     """Handle [% date %] shortcode."""
     util.require(
         (not pargs) and (not kwargs),

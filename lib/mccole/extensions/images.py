@@ -8,7 +8,7 @@ import util
 
 
 @shortcodes.register("image")
-def figure_def(pargs, kwargs, node):
+def image(pargs, kwargs, node):
     """Handle image."""
     allowed = {"src", "alt", "width"}
     util.require(

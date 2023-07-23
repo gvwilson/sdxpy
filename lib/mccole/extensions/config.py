@@ -4,7 +4,7 @@ import util
 
 
 @shortcodes.register("config")
-def glossary_ref(pargs, kwargs, node):
+def config(pargs, kwargs, node):
     """Handle [% config name %] references to configuration values."""
     util.require(
         (len(pargs) == 1) and (not kwargs),

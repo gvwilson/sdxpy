@@ -4,7 +4,7 @@ import shortcodes
 
 
 @shortcodes.register("fixme")
-def glossary_ref(pargs, kwargs, node):
+def fixme(pargs, kwargs, node):
     """Handle [% fixme ...args... %]."""
     pargs = " ".join(pargs)
     if pargs:
