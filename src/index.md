@@ -1,5 +1,3 @@
-\\( test \\)
-
 Most data scientists have taught themselves most of what they know
 about programming.  As a result, many have gaps in their knowledge:
 they may be experts in some areas, but don't even know what they don't

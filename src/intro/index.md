@@ -11,15 +11,16 @@ syllabus:
 ---
 
 The best way to learn design in any field
-is to study examples [%b Schon1984 Petre2016 %].
+is to study examples [%b Schon1984 Petre2016 %],
+and the most approachable examples are ones that readers are already familiar with.
 These lessons therefore build small versions
 of [tools that programmers use every day][programming_tools]
 to show how experienced software designers think.
 Along the way,
 they introduce some fundamental ideas in computer science
 that many self-taught programmers haven't encountered.
-Finally,
-we hope that if you know how programming tools work,
+We hope these lessons will help you design better software yourself,
+and that if you know how programming tools work,
 you'll be more likely to use them
 and better able to use them well.
 
@@ -27,13 +28,15 @@ and better able to use them well.
 
 This [learner persona][t3_personas] [%b Wilson2019 %] describes who this book is for:
 
-> Maya has a master's degree in genomics.
+> *Maya has a master's degree in genomics.
 > She knows enough Python to analyze data from her experiments,
 > but is struggling to write code that other people (including her future self) can use.
 > These lessons will teach her how to design, build, and test large programs
-> in less time and with less pain.
+> in less time and with less pain.*
+> {: .continue}
 
 Like Maya, you should be able to:
+{: .continue}
 
 -   Write Python programs using lists, loops, conditionals, dictionaries, and functions.
 
@@ -49,11 +52,12 @@ Like Maya, you should be able to:
 
 This book is also designed to help another persona:
 
-> Yim teaches two college courses on web programming.
+> *Yim teaches two college courses on web programming.
 > They are frustrated that so many books talk about details but not about design
 > and use examples that their students can't relate to.
 > This material will give them material they can use in class
-> and starting points for course projects.
+> and starting points for course projects.*
+> {: .continue}
 
 [% figure
    slug="intro-syllabus"
@@ -64,24 +68,19 @@ This book is also designed to help another persona:
 
 ## The Big Ideas {: #intro-ideas}
 
-Our approach to design is based on two big ideas:
-
-1.  As the number of components in a system grows,
-    the complexity of the system increases rapidly
-    ([%f intro-complexity %]).
-    However,
-    the number of things we can hold in working memory at any time
-    is fixed and fairly small [%b Hermans2021 %].
-    If we want to build large programs that we can understand,
-    we therefore need to construct them out of pieces
-    that interact in a small number of ways.
-
-2.  The source code of a program is just text,
-    which we can process like other text files.
-    Likewise,
-    a program in memory is just a data structure
-    that we can inspect and modify like any other.
-    Treating code like data simplifies many designs.
+Our approach to design is based on three big ideas.
+First,
+as the number of components in a system grows,
+the complexity of the system increases rapidly
+([%f intro-complexity %]).
+However,
+the number of things we can hold in working memory at any time
+is fixed and fairly small [%b Hermans2021 %].
+If we want to build large programs that we can understand,
+we therefore need to construct them out of pieces
+that interact in a small number of ways.
+Figuring out what those pieces and interactions should be
+is the core of what we call "design".
 
 [% figure
    slug="intro-complexity"
@@ -89,6 +88,49 @@ Our approach to design is based on two big ideas:
    alt="Complexity and size"
    caption="How complexity grows with size."
 %]
+
+Second,
+"making sense" depends on who we are.
+When we use a low-level language,
+we incur the [%g cognitive_load "cognitive load" %]
+of assembling micro-steps into something more meaningful.
+When we use a high-level language,
+on the other hand,
+we incur a similar load translating functions of functions of functions
+into actual operations on actual data.
+
+More experienced programmers are more capable at both ends of the curve,
+but that's not the only thing that changes.
+If a novice's comprehension curve looks like the lower one in [%f intro-comprehension %],
+then an expert's looks like the upper one.
+Experts don't just understand more at all levels of abstraction;
+their *preferred* level has also shifted
+so they find \\( \sqrt{x^2 + y^2} \\) easier to read
+than the Medieval equivalent
+"the side of the square whose area is the sum of the areas of the two squares
+whose sides are given by the first part and the second part".
+This curve means that for any given task,
+the code that is quickest for a novice to comprehend
+will almost certainly be different from the code that
+an expert can understand most quickly.
+
+[% figure
+   slug="intro-comprehension"
+   img="comprehension.svg"
+   alt="Comprehension curves"
+   caption="Novice and expert comprehension curves."
+%]
+
+The third big idea in this book is that programs are just another kind of data.
+Source code is just text,
+which we can process like other text files.
+Likewise,
+a program in memory is just a data structure
+that we can inspect and modify like any other.
+Treating code like data enables us to solve hard problems in elegant ways,
+but at the cost of increasing the level of abstraction in our programs.
+Once again,
+finding the balance is what we mean by "design".
 
 ## Formatting {: #intro-layout}
 
@@ -146,7 +188,7 @@ All contributors are required to abide by our Code of Conduct
 
 ## What People Are Saying {: #intro-praise}
 
-Here's what people said about [%b Wilson2022b %]:
+Here's what people said about the JavaScript version of this book [%b Wilson2022b %]:
 
 -   [Jessica Kerr][kerr_jessica]:
     *Software Design by Example* is the book I'll recommend to every new dev…
@@ -169,16 +211,15 @@ Here's what people said about [%b Wilson2022b %]:
 
 ## Acknowledgments {: #intro-acknowledgments}
 
-This book is a sequel to [%b Wilson2022b %],
-and like it,
-was inspired by [%b Kamin1990 Kernighan1979 Kernighan1981 Kernighan1983 Kernighan1988 Oram2007 %] and by:
+Like [%b Wilson2022b %],
+this book was inspired by [%b Kamin1990 Kernighan1979 Kernighan1981 Kernighan1983 Kernighan1988 Oram2007 Wirth1976 %] and by:
 
--   the entries in the [*Architecture of Open Source Applications*][aosa] series
+-   [*The Architecture of Open Source Applications*][aosa] series
     [%b Brown2011 Brown2012 Armstrong2013 Brown2016 %];
 -   [Mary Rose Cook's][cook_mary_rose] [Gitlet][gitlet];
 -   [Matt Brubeck's][brubeck_matt] [browser engine tutorial][browser_engine_tutorial];
 -   [*Web Browser Engineering*][browser_engineering]
-    by [Pavel Panchekha][panchekha_pavel] and [Chris Harrelson][harrelson_chris] 
+    by [Pavel Panchekha][panchekha_pavel] and [Chris Harrelson][harrelson_chris];
 -   [Connor Stack's][stack_connor] [database tutorial][db_tutorial];
 -   [Maël Nison's][nison_mael] [package manager tutorial][package_manager_tutorial];
 -   [Paige Ruten's][ruten_paige] [kilo text editor][kilo_editor]
@@ -206,9 +247,10 @@ we all get a lot.
 
 <div class="center" markdown="1">
   *This one's for Mike and Jon: I'm glad you always found time to chat.*
-  <br>
-  *All royalties from sales of this book will go to support the [Red Door Family Shelter][red_door] in Toronto.*
 </div>
+
+All royalties from sales of this book will go to support the [Red Door Family Shelter][red_door] in Toronto.
+{: .continue}
 
 ## Exercises {: #intro-exercises}
 
@@ -222,13 +264,13 @@ we all get a lot.
 
 ### Avoiding Potholes {: .exercise}
 
-> 1.  Every program contains at least one bug.
-> 2.  Every program can be made one line shorter.
-> 3.  Every program can therefore be reduced to a single statement,
->     which is wrong.
-
 Go to [the GitHub repository][book_repo] for this book and look at the open issues.
 Which of them can you understand?
 What makes the others hard to understand?
 What could you add, leave out, or write differently
 when you report a problem that you have found?
+
+1.  Every program contains at least one bug.
+2.  Every program can be made one line shorter.
+3.  Every program can therefore be reduced to a single statement,
+    which is wrong.

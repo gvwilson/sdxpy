@@ -266,43 +266,6 @@ we did what you are doing now:
 we read what other programmers had written
 and tried to make sense of the key ideas.
 
-The problem is that "making sense" depends on who we are.
-When we use a low-level language,
-we incur the [%g cognitive_load "cognitive load" %]
-of assembling micro-steps into something more meaningful.
-When we use a high-level language,
-on the other hand,
-we incur a similar load translating functions of functions of functions
-into actual operations on actual data.
-
-More experienced programmers are more capable at both ends of the curve,
-but that's not the only thing that changes.
-If a novice's comprehension curve looks like the lower one in [%f test-comprehension %],
-then an expert's looks like the upper one.
-Experts don't just understand more at all levels of abstraction;
-their *preferred* level has also shifted
-so they find \\( \sqrt{x^2 + y^2} \\) easier to read
-than the medieval expression
-"the side of the square whose area is the sum of the areas of the two squares
-whose sides are given by the first part and the second part".
-
-[% figure
-   slug="test-comprehension"
-   img="comprehension.svg"
-   alt="Comprehension curves"
-   caption="Novice and expert comprehension curves."
-%]
-
-This curve means that for any given task,
-the code that is quickest for a novice to comprehend
-will almost certainly be different from the code that
-an expert can understand most quickly.
-In an ideal world our tools would automatically re-represent programs at different levels
-just as we could change the colors used for syntax highlighting.
-But today's tools don't do that,
-and any IDE smart enough to translate between comprehension levels automatically
-would also be smart enough to write the code without our help.
-
 *Please see [%x bonus %] for extra material related to these ideas.*
 
 ## Summary {: #test-summary}
