@@ -226,6 +226,12 @@ def handle(node, state, accum, doEscape):
         children(node, state, accum, doEscape)
         accum.append("\\end{center}\n")
 
+    # <div class="chapterinfo"> => wrap in environment
+    elif node_match(node, "div", "chapterinfo"):
+        accum.append("\\begin{chapterinfo}\n")
+        children(node, state, accum, doEscape)
+        accum.append("\\end{chapterinfo}\n")
+
     # <div class="code-sample"> => pass through
     elif node_match(node, "div", "code-sample"):
         children(node, state, accum, doEscape)
@@ -337,6 +343,12 @@ def handle(node, state, accum, doEscape):
         accum.append("\\begin{enumerate}\n")
         children(node, state, accum, doEscape)
         accum.append("\\end{enumerate}\n")
+
+    # <p class="definitions"> => space above and no indent
+    elif node_match(node, "p", "definitions"):
+        accum.append("\n\\vspace{\\baselineskip}\n\\noindent")
+        children(node, state, accum, doEscape)
+        accum.append("\n")
 
     # <p> => paragraph
     elif node_match(node, "p"):
