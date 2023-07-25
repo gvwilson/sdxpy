@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Create PDF versions of slides
+OUTPUT_DIR=/tmp/sdxpy-slides
+mkdir -p ${OUTPUT_DIR}
 for slug in $*
 do
-    mkdir -p ./slides/${slug}
-    decktape remark https://third-bit.com/sdxpy/${slug}/slides/index.html /tmp/sdxpy-slides/${slug}/slides.pdf
+    decktape remark http://localhost:4000/${slug}/slides/index.html ${OUTPUT_DIR}/${slug}/slides.pdf
 done
