@@ -229,7 +229,8 @@ this book was inspired by [%b Kamin1990 Kernighan1979 Kernighan1981 Kernighan198
 -   the posts and [zines][evans_zines] created by [Julia Evans][evans_julia].
 
 I am grateful to [% thanks %] for feedback on early drafts of this material.
-I am also grateful to the creators of
+I am also grateful to Shashi Kumar for help with LaTeX
+and to the creators of
 [Black][black],
 [flake8][flake8],
 [Glosario][glosario],
