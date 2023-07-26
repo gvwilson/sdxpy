@@ -70,6 +70,11 @@ INFO_GLOSSARY := ${ROOT}/info/glossary.yml
 INFO_LINKS := ${ROOT}/info/links.yml
 INFO_FILES := ${INFO_BIB} ${INFO_GLOSSARY} ${INFO_LINKS} ${ROOT}/info/credits.yml
 
+# …LaTeX engines
+LATEX=lualatex
+BIBTEX=biber
+MAKEINDEX=makeindex
+
 # Calculated variables.
 
 # …source pages
@@ -118,11 +123,11 @@ serve:
 ## pdf: create PDF version of material
 pdf: ${ROOT}/docs/${STEM}.tex ${INFO_BIB} ${DOCS_PDF}
 	cp ${INFO_BIB} ${ROOT}/docs
-	cd ${ROOT}/docs && pdflatex ${STEM}
-	cd ${ROOT}/docs && biber ${STEM}
-	cd ${ROOT}/docs && makeindex ${STEM}
-	cd ${ROOT}/docs && pdflatex ${STEM}
-	cd ${ROOT}/docs && pdflatex ${STEM}
+	cd ${ROOT}/docs && ${LATEX} ${STEM}
+	cd ${ROOT}/docs && ${BIBTEX} ${STEM}
+	cd ${ROOT}/docs && ${MAKEINDEX} ${STEM}
+	cd ${ROOT}/docs && ${LATEX} ${STEM}
+	cd ${ROOT}/docs && ${LATEX} ${STEM}
 
 ## ---: ---
 
@@ -203,7 +208,7 @@ ${ROOT}/docs/${STEM}.tex: ${COMBINED_HTML} ${TEX_FILES} ${TEX_COPY} ${INFO_GLOSS
 
 ## pdf-once: create PDF document with a single compilation
 pdf-once: ${ROOT}/docs/${STEM}.tex ${DOCS_PDF}
-	cd ${ROOT}/docs && pdflatex ${STEM}
+	cd ${ROOT}/docs && ${LATEX} ${STEM}
 
 ## syllabus: remake automatic syllabus diagrams
 BIN_MAKE_DOT := ${MCCOLE}/bin/make_dot.py
@@ -319,12 +324,15 @@ profile:
 vars:
 	@echo ABBREV: ${ABBREV}
 	@echo ARK: ${ARK}
+	@echo BIBTEX: ${BIBTEX}
 	@echo BUILD_DATE: ${BUILD_DATE}
 	@echo DOCS: ${DOCS}
 	@echo DOCS_PDF: ${DOCS_PDF}
 	@echo GITHUB_PAGES: ${GITHUB_PAGES}
 	@echo HTML_COPY: ${HTML_COPY}
 	@echo INFO_FILES: ${INFO_FILES}
+	@echo LATEX: ${LATEX}
+	@echo MAKEINDEX: ${MAKEINDEX}
 	@echo MCCOLE: ${MCCOLE}
 	@echo ROOT: ${ROOT}
 	@echo SRC: ${SRC}
