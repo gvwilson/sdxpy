@@ -4,7 +4,7 @@
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="repo" content="https://github.com/gvwilson/sdxpy">
-  <meta name="build_date" content="2023-07-24">
+  <meta name="build_date" content="2023-07-26">
   <meta name="template" content="slides">
   <meta name="major" content="Chapter 2">
   
@@ -51,6 +51,41 @@ class: slide-title
 -   How can we organize code to make it easier to understand, test, and extend?
 
 -   Are these the same thing?
+
+---
+
+## The Big Idea
+
+<p class="shout">A program is just another data structure.</p>
+
+<figure>
+<img src="../func_obj.svg" alt="Bytes as characters, pixels, or instructions"/>
+</figure>
+
+
+---
+
+## Functions are Objects
+
+-   `def` defines a variable whose value is the function's instructions
+
+```py
+def example():
+    print("in example")
+```
+
+
+-   We can assign that value to another variable
+
+```py
+alias = example
+alias()
+```
+
+```
+in example
+```
+
 
 ---
 
@@ -106,12 +141,11 @@ class Circle(Shape):
 
 ```py
 examples = [Square("sq", 3), Circle("ci", 2)]
-for ex in examples:
-    n = ex.name
-    p = ex.perimeter()
-    a = ex.area()
-    c = ex.__class__.__name__
-    print(f"{n} is a {c} {p:.2f} {p:.2f}")
+for thing in examples:
+    n = thing.name
+    p = thing.perimeter()
+    a = thing.area()
+    print(f"{n} has perimeter {p:.2f} and area {a:.2f}")
 ```
 
 
@@ -145,6 +179,15 @@ def square_new(name, side):
 -   An object is just a (specialized) dictionary
 
 -   A method is just a function that takes the object as its first parameter
+
+---
+
+## Let's Make a Square
+
+<figure>
+<img src="../shapes_dict.svg" alt="Storing shapes as dictionaries"/>
+</figure>
+
 
 ---
 
@@ -221,6 +264,15 @@ for ex in examples:
 
 ---
 
+## Calling Methods
+
+<figure>
+<img src="../shapes_class.svg" alt="Separating properties from methods"/>
+</figure>
+
+
+---
+
 class: aside
 
 ## Variable Arguments
@@ -233,11 +285,6 @@ show_args("nothing")
 show_args("one unnamed argument", 1)
 show_args("one named argument", second="2")
 show_args("one of each", 3, fourth="4")
-
-a_list = [7, 8]
-a_dict = {"nine": 9, "ten": 10}
-show_args("direct", a_list, a_dict)
-show_args("spreading", *a_list, **a_dict)
 ```
 
 
@@ -248,6 +295,30 @@ one named argument args '()' and kwargs '{'second': '2'}'
 one of each args '(3,)' and kwargs '{'fourth': '4'}'
 direct args '([7, 8], {'nine': 9, 'ten': 10})' and kwargs '{}'
 spreading args '(7, 8)' and kwargs '{'nine': 9, 'ten': 10}'
+```
+
+
+---
+
+class: aside
+
+## Spreading
+
+```py
+def show_spread(left, middle, right):
+    print(f"left {left} middle {middle} right {right}")
+
+all_in_list = [1, 2, 3]
+show_spread(*all_in_list)
+
+all_in_dict = {"right": 30, "left": 10, "middle": 20}
+show_spread(**all_in_dict)
+```
+
+
+```
+left 1 middle 2 right 3
+left 10 middle 20 right 30
 ```
 
 
@@ -271,6 +342,15 @@ class Shape:
     def density(self, weight):
         return weight / self.area()
 ```
+
+
+---
+
+## Inheritance
+
+<figure>
+<img src="../inherit_class.svg" alt="Implementing inheritance"/>
+</figure>
 
 
 ---
@@ -304,12 +384,6 @@ Shape = {
     "_classname": "Shape",
     "_parent": None
 }
-
-def shape_new(name):
-    return {
-        "name": name,
-        "_class": Shape
-    }
 ```
 
 
@@ -323,11 +397,11 @@ def call(thing, method_name, *args):
     return method(thing, *args)
 
 def find(cls, method_name):
-    if cls is None:
-        raise NotImplementedError("method_name")
-    if method_name in cls:
-        return cls[method_name]
-    return find(cls["_parent"], method_name)
+    while cls is not None:
+        if method_name in cls:
+            return cls[method_name]
+        cls = cls["_parent"]
+    raise NotImplementedError("method_name")
 ```
 
 
@@ -354,17 +428,11 @@ ci: 0.40
 ## Constructors
 
 ```py
-def make(cls, *args):
-    return cls["_new"](*args)
-
 def shape_new(name):
     return {
         "name": name,
         "_class": Shape
     }
-
-def shape_density(thing, weight):
-    return weight / call(thing, "area")
 
 Shape = {
     "density": shape_density,
@@ -413,18 +481,6 @@ sq: 0.56
 ci: 0.40
 ```
 
-
----
-
-## The Other 90%
-
--   <a class="gl-ref" href="../../glossary/#gl:multiple_inheritance" title="Inheriting from two or more classes when creating a new class." markdown="1">Multiple inheritance</a>
-
--   <a class="gl-ref" href="../../glossary/#gl:class_method" title="A function defined inside a class that takes the class object as an input rather than an instance of the class." markdown="1">Class methods</a>
-
--   <a class="gl-ref" href="../../glossary/#gl:static_method" title="A function that is defined within a class but does not require either the class itself or an instance of the class as a parameter." markdown="1">Static methods</a>
-
--   <a class="gl-ref" href="../../glossary/#gl:monkey_patching" title="To replace methods in a class or object at run-time without modifying the original code." markdown="1">Monkey patching</a>
 
 
 [academic_prototyping]: https://www.fuzzingbook.org/html/AcademicPrototyping.html

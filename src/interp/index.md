@@ -147,10 +147,7 @@ that we saw in [%x parse %].
 <div class="callout" markdown="1">
 ### Recursion
 
-A [%g recursion "recursive function" %]
-is one that calls itself,
-either directly or indirectly.
-Recursion has a reputation for being hard to understand,
+[%i "recursion" "Recursion" %] has a reputation for being hard to understand,
 but as our interpreter shows,
 it's a natural way to solve a wide range of problems.
 `do` calls functions like `do_add` to do things;

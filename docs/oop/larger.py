@@ -1,22 +1,5 @@
 import math
 
-# [shape]
-def shape_density(thing, weight):
-    return weight / call(thing, "area")
-
-Shape = {
-    "density": shape_density,
-    "_classname": "Shape",
-    "_parent": None
-}
-# [/shape]
-
-def shape_new(name):
-    return {
-        "name": name,
-        "_class": Shape
-    }
-
 def square_perimeter(thing):
     return 4 * thing["side"]
 
@@ -24,11 +7,14 @@ def square_area(thing):
     return thing["side"] ** 2
 
 # [square]
+def square_larger(thing, size):
+    return call(thing, "area") > size
+
 Square = {
     "perimeter": square_perimeter,
     "area": square_area,
-    "_classname": "Square",
-    "_parent": Shape
+    "larger": square_larger,
+    "_classname": "Square"
 }
 # [/square]
 
@@ -45,11 +31,16 @@ def circle_perimeter(thing):
 def circle_area(thing):
     return math.pi * thing["radius"] ** 2
 
+# [circle]
+def circle_larger(thing, size):
+    return call(thing, "area") > size
+# [/circle]
+
 Circle = {
     "perimeter": circle_perimeter,
     "area": circle_area,
-    "_classname": "Circle",
-    "_parent": Shape
+    "larger": circle_larger,
+    "_classname": "Circle"
 }
 
 def circle_new(name, radius):
@@ -59,23 +50,14 @@ def circle_new(name, radius):
         "_class": Circle
     }
 
-# [search]
+# [call]
 def call(thing, method_name, *args):
-    method = find(thing["_class"], method_name)
-    return method(thing, *args)
+    return thing["_class"][method_name](thing, *args)
+# [/call]
 
-def find(cls, method_name):
-    while cls is not None:
-        if method_name in cls:
-            return cls[method_name]
-        cls = cls["_parent"]
-    raise NotImplementedError("method_name")
-# [/search]
-
-# [use]
+# [example]
 examples = [square_new("sq", 3), circle_new("ci", 2)]
 for ex in examples:
-    n = ex["name"]
-    d = call(ex, "density", 5)
-    print(f"{n}: {d:.2f}")
-# [/use]
+    result = call(ex, "larger", 10)
+    print(f"is {ex['name']} larger? {result}")
+# [/example]

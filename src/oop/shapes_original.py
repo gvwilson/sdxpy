@@ -38,10 +38,9 @@ class Circle(Shape):
 
 # [poly]
 examples = [Square("sq", 3), Circle("ci", 2)]
-for ex in examples:
-    n = ex.name
-    p = ex.perimeter()
-    a = ex.area()
-    c = ex.__class__.__name__
-    print(f"{n} is a {c} {p:.2f} {p:.2f}")
+for thing in examples:
+    n = thing.name
+    p = thing.perimeter()
+    a = thing.area()
+    print(f"{n} has perimeter {p:.2f} and area {a:.2f}")
 # [/poly]

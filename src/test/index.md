@@ -21,46 +21,16 @@ To make sure they work correctly,
 we're also going to write a lot of [%g unit_test "unit tests" %]
 [%b  Meszaros2007 Aniche2022 %].
 To make those tests easier to write (so that we actually write them)
-we use a unit testing framework that finds and run tests automatically.
-Our tool is inspired by [pytest][pytest],
-and introduces the single most important idea in this book:
-
-<div class="center" markdown="1">
-  *Programs are just another kind of data.*
-</div>
+we use a unit testing framework inspired by [pytest][pytest]
+that finds and run tests automatically.
 
 ## Storing and Running Tests {: #test-funcobj}
 
-The first thing we need to understand is that a function is an [%i "object" %].
-While the bytes in a string represent characters
-and the bytes in an image represent pixels,
-the bytes in a function are instructions
-([%f test-func-obj %]).
-When Python executes the code below,
-it creates an object in memory
-that contains the instructions to print a string
-and assigns that object to the variable `example`:
+[% fixme "re-print and re-check this chapter" %]
 
-[% inc file="func_obj.py" keep="def" %]
-
-[% figure
-   slug="test-func-obj"
-   img="func_obj.svg"
-   alt="Bytes as characters, pixels, or instructions"
-   caption="Bytes can be interpreted as text, images, instructions, and more."
-%]
-
-We can create an [%g alias "alias" %] for the function
-by assigning it to another variable,
-and then call the function by referencing that second variable:
-{: .continue}
-
-[% inc file="func_obj.py" keep="alias" %]
-[% inc file="func_obj.out" %]
-
-This doesn't alter or erase
-the connection between the function and the original name.
-{: .continue}
+As we said in [%x oop %],
+a function is just an object
+that we can assign to a variable.
 
 <div class="callout" markdown="1">
 

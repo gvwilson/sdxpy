@@ -1,17 +1,17 @@
 import math
 
-# [shape]
 def make(cls, *args):
     return cls["_new"](*args)
 
+def shape_density(thing, weight):
+    return weight / call(thing, "area")
+
+# [shape]
 def shape_new(name):
     return {
         "name": name,
         "_class": Shape
     }
-
-def shape_density(thing, weight):
-    return weight / call(thing, "area")
 
 Shape = {
     "density": shape_density,

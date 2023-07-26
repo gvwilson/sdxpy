@@ -11,9 +11,10 @@ syllabus:
 depends:
 ---
 
-We have created a lot of objects and classes in previous lessons.
+We are going to create a lot of [%i "object" "objects" %] and [%i "class" "classes" %] in these lessons,
+and they will be a lot easier to use if we understand how they are implemented.
 Historically,
-they were invented to solve two problems:
+[%g oop "object-oriented programming" %] was invented to solve two problems:
 
 1.  What is a natural way to represent real-world "things" in code?
 
@@ -21,40 +22,70 @@ they were invented to solve two problems:
 
 ## Objects {: #oop-objects}
 
-Let's start by defining the things a generic two-dimensional shape must be able to do:
+As a motivating problem,
+let's define some of the things a generic shape in a drawing package must be able to do:
 
 [% inc file="shapes_original.py" keep="shape" %]
 
 A specification like this is sometimes called
 a [%g design_by_contract "contract" %]
-because any particular shape must conform to it:
+because an object must satisfy it in order to be considered a shape,
+i.e.,
+must provide methods with these names that do what those names suggest.
+For example,
+we can [%g derived_class "derive" %] classes from `Shape`
+to represent squares and circles
 {: .continue}
 
 [% inc file="shapes_original.py" keep="concrete" %]
 
-More importantly,
-code that uses shapes can *rely* on the contract
-and use different shapes interchangeably.
+Since squares and circles have the same methods,
+we can use them interchangeably.
+This is called [%g polymorphism "polymorphism" %],
+and it reduces [%i "cognitive load" %]
+by allowing the people using related things to ignore their differences:
 
 [% inc file="shapes_original.py" keep="poly" %]
+[% inc file="shapes_original.out" %]
 
-This is called [%g polymorphism "polymorphism" %].
-It reduces [%i "cognitive load" %]
-by allowing the people using a set of related things
-(in this case, [%i "object" "objects" %])
-to ignore their differences.
+But how does polymorphism work?
 
-But how does it work?
-To find out,
-let's use a [%i "dictionary" %] to represent a square
-and write some functions that to
-the same things as the [%i "method" "methods" %] in our earlier classes:
+The first thing we need to understand is that a function is an [%i "object" %].
+While the bytes in a string represent characters
+and the bytes in an image represent pixels,
+the bytes in a function are instructions
+([%f oop-func-obj %]).
+When Python executes the code below,
+it creates an object in memory
+that contains the instructions to print a string
+and assigns that object to the variable `example`:
+
+[% inc file="func_obj.py" keep="def" %]
+
+[% figure
+   slug="oop-func-obj"
+   img="func_obj.svg"
+   alt="Bytes as characters, pixels, or instructions"
+   caption="Bytes can be interpreted as text, images, instructions, and more."
+%]
+
+We can create an [%g alias "alias" %] for the function
+by assigning it to another variable,
+and then call the function by referencing that second variable.
+Doing this doesn't alter or erase
+the connection between the function and the original name:
+{: .continue}
+
+[% inc file="func_obj.py" keep="alias" %]
+[% inc file="func_obj.out" %]
+
+We can also store function objects in data structures like
+lists and [%i "dictionary" "dictionaries" %].
+Let's write some functions that to
+the same things as the [%i "method" "methods" %] in our original Python
+and store them in a dictionary to represent a square ([%f oop-shapes-dict %]):
 
 [% inc file="shapes_dict.py" keep="square" %]
-
-Crucially,
-the square's dictionary stores references to
-the functions that know how to operate on squares ([%f oop-shapes-dict %]).
 
 [% figure
    slug="oop-shapes-dict"
@@ -63,36 +94,38 @@ the functions that know how to operate on squares ([%f oop-shapes-dict %]).
    caption="Using dictionaries to emulate objects."
 %]
 
+If we want to use one of the "methods" in this dictionary,
+we call it like this:
+
+[% inc file="shapes_dict.py" keep="call" %]
+
+The function `call` looks up the function stored in the dictionary,
+then calls that function with the dictionary as its first object;
+in other words,
+instead of using `obj.meth(arg)` we use `obj["meth"](obj, arg)`.
 Behind the scenes,
 this is (almost) how objects actually work.
 We can think of an object as a special kind of dictionary.
 A method is just a function that takes an object of the right kind
 as its first [%i "parameter" %]
 (typically called `self` in Python).
-
-Here's how we call methods:
-
-[% inc file="shapes_dict.py" keep="call" %]
-
-The function `call` looks up the function stored in the dictionary,
-then calls that function with the dictionary as its first object.
-In other words,
-instead of using `obj.meth(arg)` we use `obj["meth"](obj, arg)`,
-but the former is really just the latter in disguise.
+{: .continue}
 
 ## Classes {: #oop-classes}
 
 One problem with implementing objects as dictionaries is that
 it allows every single object to behave slightly differently.
 In practice,
-we want objects to have different properties
+we want objects to store different values
 (e.g., different squares to have different sizes)
 but the same behaviors
 (e.g., all squares should have the same methods).
 We can implement this by storing the methods in a dictionary called `Square`
 that corresponds to a class,
-and have each particular square contain a reference to that higher-level dictionary
-([%f oop-shapes-class %]):
+and have each individual square contain a reference to that higher-level dictionary
+([%f oop-shapes-class %]).
+In the code below,
+that special reference uses the key `"_class"`:
 
 [% inc file="shapes_class.py" keep="square" %]
 
@@ -111,43 +144,95 @@ but once again we call the "method" with the object as the first argument:
 
 As a bonus,
 we can now reliably identify objects' classes
-and ask whether two objects have the same class or not.
+and ask whether two objects are of the same class or not
+by checking what their `"_class"` keys refer to.
 {: .continue}
 
-<div class="callout" markdown="1">
+## Arguments {: #oop-args}
 
-### Variable Arguments
-
-Like most modern programming languages,
-Python allows us to define functions that take a variable number of [%i "argument" "arguments" %],
-and to call functions by [%g spread "spreading" %] a list or dictionary:
+The methods we have defined so far operate on
+the values stored in the object's dictionary,
+but none of them take any extra arguments as input.
+Implementing this is a little bit tricky
+because different methods might need different numbers of arguments.
+We could define functions `call_0`, `call_1`, `call_2` and so on
+to handle each case,
+but like most modern languages,
+Python gives us a better way.
+If we define a parameter in a function with a leading `*`,
+it captures any "extra" values passed to the function
+that don't line up with named parameters.
+Similarly,
+if we define a parameter with two leading stars `**`,
+it captures any extra named parameters:
 
 [% inc pat="varargs.*" fill="py out" %]
 
-</div>
+This mechanism is sometimes referred to as [%g varargs "varargs" %]
+(short for "variable arguments").
+A complementary mechanism called [%g spread "spreading" %]
+allows us to take a list or dictionary full of arguments
+and spread them out in a call to match a function's parameters:
+
+[% inc pat="spread.*" fill="py out" %]
+
+With these tools in hand,
+let's add a method to our `Square` class
+to tell us whether a square is larger than a user-specified size:
+
+[% inc file="larger.py" keep="square" %]
+
+The function that implements this check for circles
+looks exactly the same:
+{: .continue}
+
+[% inc file="larger.py" keep="circle" %]
+
+We then modify `call` to capture extra arguments in `*args`
+and spread them into the function being called:
+{: .continue}
+
+[% inc file="larger.py" keep="call" %]
+
+Our tests show that this works:
+
+[% inc file="larger.py" keep="example" %]
+[% inc file="larger.out" %]
+
+However,
+we now have two functions that do exactly the same thing—the
+only difference between them is their names.
+Anything in a program that is duplicated in several places
+will eventually be wrong in at least one,
+so we need to find some way to share this code.
+{: .continue}
 
 ## Inheritance {: #oop-inheritance}
 
-The last step in building our own object system is to implement [%i "inheritance" %].
-First,
-we add a method to our original `Shape` class that uses methods defined
-in [%i "derived class" "derived classes" %]:
+The tool we want is [%i "inheritance" %].
+To see how this works in Python,
+let's add a method called `density` to our original `Shape` class
+that uses other methods defined by the class
 
 [% inc file="inherit_original.py" keep="shape" %]
-
-and check that it works:
-{: .continue}
-
 [% inc file="inherit_original.py" keep="use" %]
 [% inc file="inherit_original.out" %]
 
 To enable our dictionary-based "classes" to do the same thing,
-we add a similar "method" to the dictionary representing a generic shape:
+we create a dictionary to represent a generic shape
+and give it a "method" to calculate density:
 
 [% inc file="inherit_class.py" keep="shape" %]
 
-and then modify the `call` function to look up the chain of inheritance
-to find the requested method ([%f oop-inherit-class %]):
+We then add another specially-named field to
+the dictionaries for "classes" like `Square`
+to keep track of their parents:
+
+[% inc file="inherit_class.py" keep="square" %]
+
+and modify the `call` function to search for
+the requested method ([%f oop-inherit-class %]):
+{: .continue}
 
 [% inc file="inherit_class.py" keep="search" %]
 
@@ -173,8 +258,8 @@ whose value is the function that builds something of that type:
 
 [% inc file="inherit_constructor.py" keep="shape" %]
 
-The constructor function for a square now calls
-the constructor function for a generic shape
+The constructor for a square now calls
+the constructor for a generic shape
 and then adds square-specific values by using `|` to combine two dictionaries:
 
 [% inc file="inherit_constructor.py" keep="square" %]
@@ -187,12 +272,13 @@ we're not done until we test it:
 
 ## Summary {: #oop-summary}
 
-We have only scratched the surface of what Python's object system provides.
+We have only scratched the surface of Python's object system.
 [%g multiple_inheritance "Multiple inheritance" %],
 [%g class_method "class methods" %],
 [%g static_method "static methods" %],
-and [%g monkey_patching "monkey patching" %] are all useful,
-but all can be understood in terms of dictionaries
+and [%g monkey_patching "monkey patching" %]
+are powerful tools,
+but they can all be understood in terms of dictionaries
 that contain references to properties, functions, and other dictionaries.
 
 [% figure
@@ -203,6 +289,13 @@ that contain references to properties, functions, and other dictionaries.
 %]
 
 ## Exercises {: #oop-exercises}
+
+### Handling Named Arguments {: .exercise}
+
+The final version of `call` declares a parameter called `*args`
+to capture all the positional parameters of the method being called
+and then spreads them in the actual call.
+Modify it to capture and spread named parameters as well.
 
 ### Multiple Inheritance {: .exercise}
 
@@ -221,6 +314,16 @@ Python `type` method reports the most specific type of an object,
 while `isinstance` determines whether an object inherits from a type
 either directly or indirectly.
 Add your own versions of both to dictionary-based objects and classes.
+
+### Using Recursion {: .exercise}
+
+A [%g recursion "recursive function" %]
+is one that calls itself,
+either directly or indirectly.
+Modify the `find` function that finds a method to call
+so that it uses recursion instead of a loop.
+Which version is easier to understand?
+Which version is more efficient?
 
 ### Method Caching {: .exercise}
 

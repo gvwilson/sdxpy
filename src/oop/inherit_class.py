@@ -9,13 +9,13 @@ Shape = {
     "_classname": "Shape",
     "_parent": None
 }
+# [/shape]
 
 def shape_new(name):
     return {
         "name": name,
         "_class": Shape
     }
-# [/shape]
 
 def square_perimeter(thing):
     return 4 * thing["side"]
@@ -23,12 +23,14 @@ def square_perimeter(thing):
 def square_area(thing):
     return thing["side"] ** 2
 
+# [square]
 Square = {
     "perimeter": square_perimeter,
     "area": square_area,
     "_classname": "Square",
     "_parent": Shape
 }
+# [/square]
 
 def square_new(name, side):
     return {
@@ -63,11 +65,11 @@ def call(thing, method_name, *args):
     return method(thing, *args)
 
 def find(cls, method_name):
-    if cls is None:
-        raise NotImplementedError("method_name")
-    if method_name in cls:
-        return cls[method_name]
-    return find(cls["_parent"], method_name)
+    while cls is not None:
+        if method_name in cls:
+            return cls[method_name]
+        cls = cls["_parent"]
+    raise NotImplementedError("method_name")
 # [/search]
 
 # [use]
