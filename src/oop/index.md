@@ -81,7 +81,7 @@ the connection between the function and the original name:
 
 We can also store function objects in data structures like
 lists and [%i "dictionary" "dictionaries" %].
-Let's write some functions that to
+Let's write some functions that do
 the same things as the [%i "method" "methods" %] in our original Python
 and store them in a dictionary to represent a square ([%f oop-shapes-dict %]):
 
