@@ -10,54 +10,72 @@ depends:
 
 Suppose we want to find duplicated files,
 such as extra copies of photos or data sets.
-We can't rely on the files' names;
-instead,
-we need to compare their contents,
-but this will be slow for large files.
+People often rename files,
+so we must compare their contents,
+but this will be slow if we have a lot of files.
 
-A better approach is to generate a shorter identifier for each file
+We can estimate how slow "slow" will be with a simple calculation.
+\\( N \\) objects can be paired in \\( N(N-1) \\) ways.
+If we remove duplicate pairings
+(i.e., if we count A-B and B-A as one pair)
+then there are \\( N(N-1)/2 = (N^2 - N)/2 \\) distinct pairs.
+As \\( N \\) gets large,
+this value is approximately proportional to \\( N^2 \\).
+A computer scientist would say that
+the [%g time_complexity "time complexity" %] of our algorithm is \\( O(N^2) \\),
+which is pronounced "[%g big_oh "big-oh" %] of N squared".
+In simpler terms,
+when the number of files doubles the running time roughly quadruples,
+which means means that the time per file increases as the number of files increases.
+
+Slowdown like this is often unavoidable,
+but in our case there's a better way.
+If we generate a shorter identifier for each file
 that depends only on the bytes it contains,
-then group files with the same identifier and compare those.
-This approach is faster because we only compare files that might be equal,
-and as we'll see,
-we can generate identifiers so that if two files have the same one,
-they're (almost) guaranteed to have the same content.
+we can group together the files that have the same identifier
+and only compare the files within a group.
+This approach is faster because we only do the expensive byte-by-byte comparison
+on files that *might* be equal.
+And as we'll see,
+if we are very clever about how we generate identifiers
+then we can avoid byte-by-byte comparisons entirely.
 
 ## Getting Started {: #dup-start}
 
-We'll start by implementing the brute force approach
-so that we can compare sophisticated designs to it.
+We'll start by implementing the inefficient \\( N^2 \\) approach
+so that we can compare our later designs to it.
 The short program below takes a list of filenames from the command line,
 finds duplicates,
 and prints the matches:
 
 [% inc file="brute_force_1.py" keep="main" %]
 
-The function `same_bytes` reads two files and compares them byte by byte:
+This program uses a function called `same_bytes`
+that reads two files and compares them byte by byte:
 
 [% inc file="brute_force_1.py" keep="bytes" %]
 
 Notice that the files are opened in [%g binary_mode "binary mode" %]
 using `"rb"` instead of the usual `"r"`.
 As we'll see in [%x binary %],
-this tells Python to read the bytes as they are
+this tells Python to read the bytes exactly as they are
 rather than trying to convert them to characters.
 {: .continue}
 
 To test this program and the others we're about to write,
 we create a `tests` directory with six files:
 
-| `a1.txt` | `a2.txt` | `a3.txt` | `b1.txt` | `b2.txt` | `c1.txt` |
-| ---- | ---- | ---- | ---- | ---- | ---- |
-| `aaa` | `aaa` | `aaa` | `bb` | `bb` | `c` |
+| Filename | `a1.txt` | `a2.txt` | `a3.txt` | `b1.txt` | `b2.txt` | `c1.txt` |
+| -------- | -------- | -------- | -------- | -------- | -------- | -------- |
+| Content  | `aaa`    | `aaa`    | `aaa`    | `bb`     | `bb`     | `c`      |
 
 We expect the three `a` files and the two `b` files to be reported as duplicates.
 There's no particular reason for these tests—we just have to start somewhere.
-We run our program like this:
+Our first test looks like this:
 
 [% inc pat="brute_force_1.*" fill="sh out" %]
 
-The output is correct but not useful:
+Our program's output is correct but not useful:
 every file is reported as being identical to itself,
 and every match of different files is reported twice.
 Let's fix the nested loop in `find_duplicates`
@@ -73,31 +91,23 @@ so that we only check potentially differing pairs once
    caption="Scoping the inner loop to produce unique combinations."
 %]
 
-How much work does our revised program do?
-\\( N \\) objects can be paired in \\( N(N-1)/2 \\) ways,
-so for large \\( N \\) the work is proportional to \\( N^2 \\).
-A computer scientist would say that
-the [%g time_complexity "time complexity" %] of our algorithm is \\( O(N^2) \\),
-which is pronounced "[%g big_oh "big-oh" %] of N squared".
-If the number of files doubles,
-the running time roughly quadruples,
-which means means that the time per file increases as the number of files increases.
-Slowdown like this is often unavoidable,
-but in this case there's a better way.
-
 ## Hashing Files {: #dup-group}
 
 Instead of comparing every file against every other,
 let's process each file once to produce a short identifier
-and only compare files with the same identifier
-([%f dup-hash-group %]).
-If there are \\( g \\) files in each group,
-the work will be roughly \\( O(g(N/g)^2) \\)
+that depends only on the file's contents
+and then only compare files that have the same identifier,
+i.e.,
+that *might* be equal.
+If files are evenly divided into \\( g \\) groups
+then each group will contain roughly \\( N/g \\) files,
+so the total work will be roughly \\( O(g(N/g)^2) \\)
 (i.e., \\( g \\) groups times \\( (N/g)^2 \\) comparisons within each group).
-As the number of groups gets larger,
-the number of files in each group will hopefully get smaller,
-and the overall running time will decrease
-*if* the files are evenly distributed between the groups.
+Simplifying,
+this is \\( N^2/g \\),
+so as the number of groups grows,
+and the overall running time should decrease
+([%f dup-hash-group %]).
 
 [% figure
    slug="dup-hash-group"
@@ -134,11 +144,18 @@ and plot the distribution ([%f dup-naive-dracula %]).
    caption="Distribution of hash codes per line in *Dracula*."
 %]
 
-Is the histogram's peak at zero a flaw of some kind in our hash function?
+Most of the [%g bucket "buckets" %] are approximately the same height,
+but why is there a peak at zero?
+Our big-oh estimate of how efficient our algorithm would be
+depended on files being distributed evenly between groups;
+if that's not the case,
+our code won't be as fast as we hoped.
+
 After a bit of digging,
-we realize that
-the text file we're processing uses a blank line to separate paragraphs,
-so the peak reflects a bias in our data.
+it turns out that
+the text file we're processing uses a blank line to separate paragraphs.
+These hash to zero,
+so the peak reflects an unequal distribution in our data.
 If we plot the distribution of hash codes of *unique* lines,
 the result is more even ([%f dup-naive-dracula-unique %]).
 
@@ -149,14 +166,20 @@ the result is more even ([%f dup-naive-dracula-unique %]).
    caption="Distribution of hash codes per unique line in *Dracula*."
 %]
 
+Hashing is a tremendously powerful tool:
+for example,
+Python's dictionaries hash their keys to make lookup fast.
 Now that we can hash files,
 we can build a dictionary with hash codes as keys
-and sets of files as values.
-We do this using a common pattern
-where if we haven't seen a particular key before,
-we add it with an empty value,
-then unilaterally add this file to that value
-(in this case, a set):
+and sets of filenames as values.
+The code that does this is shown below;
+each time it calculate a hash code,
+it checks to see if that value has been seen before.
+If not,
+it creates a new entry in the `groups` dictionary
+with the hash code as its key
+and an empty set as a value.
+It can then be sure that there's a set to add the filename to:
 
 [% inc file="grouped.py" keep="group" %]
 
@@ -168,32 +191,31 @@ to find duplicates within each group:
 
 ## Better Hashing {: #dup-hash}
 
-Let's go back to the formula \\( O(g(N/g)^2) \\)
+Let's go back to the formula \\( O(N^2/g) \\)
 that tells us how much work we have to do
 if we have divided \\( N \\) files between \\( g \\) groups.
-If \\( g \\) and \\( N \\) are equal—i.e.,
-if we have exactly as many groups as files—then
-the work to process \\( N \\) files would be \\( O(N) \\).
-We have to read each file at least once,
+If we have exactly as many groups as files—i.e.,
+if \\( g \\) is equal to \\( N \\)—then
+the work to process \\( N \\) files would be \\( O(N^2/N) = O(N) \\),
+which means that the work will be proportional to the number of files.
+We have to read each file at least once anyway,
 so we can't possibly do better than this,
 but how can we ensure that each unique file winds up in its own group?
 
 The answer is to use a
 [%g cryptographic_hash_function "cryptographic hash function" %].
-The output is completely deterministic:
+The output of such a function is completely deterministic:
 given the same bytes in the same order,
 it will always produce the same output.
 However,
-its output is distributed like a uniform random variable,
-and is unpredictable:
-given a hash code,
-there's no way to figure out what bytes would produce it
-other than generating random strings of bytes and hashing them.
+the output is distributed like a uniform random variable:
+each possible output is equally likely,
+which ensures that files will be evenly distributed between groups.
 
-Cryptographic hash functions are hard to write—or rather,
-it's very hard to prove that a particular algorithm has the properties we require.
+Cryptographic hash functions are hard to write,
+and it's very hard to prove that a particular algorithm has the properties we require.
 We will therefore use a function from Python's [hashing module][py_hashlib]
-that implements the [%g sha256 "SHA-256" %] algorithm.
+that implements the [%g sha256 "SHA-256" %] hashing algorithm.
 Given some bytes as input,
 this function produces a 256-bit hash,
 which is normally written as a 64-character [%g hexadecimal "hexadecimal" %] string.
@@ -225,7 +247,7 @@ We're willing to take that risk…
 
 </div>
 
-Using this function makes our duplicate file finder much shorter:
+Using this library function makes our duplicate file finder much shorter:
 
 [% inc pat="dup.*" fill="py sh out" %]
 
@@ -236,15 +258,6 @@ we only have to look at each file once,
 so the running time is as good as it possibly can be.
 
 ## Summary {: #dup-summary}
-
-Hashing is a tremendously powerful tool:
-Python's dictionaries hash their keys to make lookup fast,
-and [%x archive %] will use it to determine
-when two files or two revisions of a repository are the same or not.
-But our duplicate file finder is just a beginning.
-[%x glob %] shows how we can find sets of files to compare;
-[%x test %] and [%x reflect %] build tools to test programs like this,
-while [%x lint %] explores ways of checking that our programs follow style guidelines.
 
 [% figure
    slug="dup-concept-map"
@@ -272,6 +285,7 @@ assuming no previous collision are:
 A colleague of yours says this means that if we hash four files,
 there's only a 75% chance of any collision occurring.
 What are the actual odds?
+{: .continue}
 
 ### Streaming I/O {: .exercise}
 
@@ -290,18 +304,18 @@ How fast is "rapidly" in big-oh terms?
 
 ###  The `hash` Function {: .exercise}
 
--   Read the documentation for Python's built-in `hash` function
+1.  Read the documentation for Python's built-in `hash` function
 
--   Why do `hash(123)` and `hash("123")` work but `hash([123])` [%i "raise" %] an exception?
+1.  Why do `hash(123)` and `hash("123")` work but `hash([123])` [%i "raise" %] an exception?
 
 ### How Good Is SHA-256? {: .exercise}
 
--   Write a function that calculate the SHA-256 hash code
+1.  Write a function that calculate the SHA-256 hash code
     of each unique line of a text file.
 
--   Convert the hex digests of those hash codes to integers.
+1.  Convert the hex digests of those hash codes to integers.
 
--   Plot a histogram of those integer values with 20 bins.
+1.  Plot a histogram of those integer values with 20 bins.
 
--   How evenly distributed are the hash codes?
+1.  How evenly distributed are the hash codes?
     How does the distribution change as you process larger files?

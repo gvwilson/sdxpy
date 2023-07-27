@@ -1,5 +1,8 @@
 import pandas as pd
 import plotly.express as px
+import plotly.io as pio
+
+pio.kaleido.scope.mathjax = None
 
 df = pd.read_csv("timing.csv")
 df["ncell"] = df["nrow"] * df["ncol"]
@@ -24,6 +27,9 @@ fig = px.line(temp, x="percentage", y="ratio",
               labels={
                   "percentage": "percentage of filter operations (vs. select)",
                   "ratio": "ratio of column-wise time to row-wise time"
-              })
+              },
+              color_discrete_sequence=["gray"],
+              template="plotly_white")
+
 fig.write_image("analysis.pdf", width="800", height="400")
 fig.write_image("analysis.svg", width="800", height="400")

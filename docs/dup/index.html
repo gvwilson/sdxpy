@@ -4,7 +4,7 @@
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="repo" content="https://github.com/gvwilson/sdxpy">
-  <meta name="build_date" content="2023-07-26">
+  <meta name="build_date" content="2023-07-27">
   <meta name="template" content="default">
   <meta name="major" content="Chapter 3">
   <meta name="has_slides" content="true">
@@ -279,7 +279,7 @@
           
 <div class="draft notex">
   <p class="draft">
-    DRAFT 2023-07-26
+    DRAFT 2023-07-27
   </p>
   <p>
     <em>Please use section heading links to submit feedback.</em>
@@ -359,7 +359,7 @@
 
 
 <p class="definitions">
-  Terms defined: <a class="gl-ref" href="../glossary/#gl:big_oh" markdown="1">big-oh notation</a>, <a class="gl-ref" href="../glossary/#gl:binary_mode" markdown="1">binary mode</a>, <a class="gl-ref" href="../glossary/#gl:hash_collision" markdown="1">collision (in hashing)</a>, <a class="gl-ref" href="../glossary/#gl:cryptographic_hash_function" markdown="1">cryptographic hash function</a>, <a class="gl-ref" href="../glossary/#gl:hash_code" markdown="1">hash code</a>, <a class="gl-ref" href="../glossary/#gl:hash_function" markdown="1">hash function</a>, <a class="gl-ref" href="../glossary/#gl:hexadecimal" markdown="1">hexadecimal</a>, <a class="gl-ref" href="../glossary/#gl:sha256" markdown="1">SHA-256 (hash function)</a>, <a class="gl-ref" href="../glossary/#gl:streaming_api" markdown="1">streaming API</a>, <a class="gl-ref" href="../glossary/#gl:time_complexity" markdown="1">time complexity</a>
+  Terms defined: <a class="gl-ref" href="../glossary/#gl:big_oh" markdown="1">big-oh notation</a>, <a class="gl-ref" href="../glossary/#gl:binary_mode" markdown="1">binary mode</a>, <a class="gl-ref" href="../glossary/#gl:bucket" markdown="1">bucket</a>, <a class="gl-ref" href="../glossary/#gl:hash_collision" markdown="1">collision (in hashing)</a>, <a class="gl-ref" href="../glossary/#gl:cryptographic_hash_function" markdown="1">cryptographic hash function</a>, <a class="gl-ref" href="../glossary/#gl:hash_code" markdown="1">hash code</a>, <a class="gl-ref" href="../glossary/#gl:hash_function" markdown="1">hash function</a>, <a class="gl-ref" href="../glossary/#gl:hexadecimal" markdown="1">hexadecimal</a>, <a class="gl-ref" href="../glossary/#gl:sha256" markdown="1">SHA-256 (hash function)</a>, <a class="gl-ref" href="../glossary/#gl:streaming_api" markdown="1">streaming API</a>, <a class="gl-ref" href="../glossary/#gl:time_complexity" markdown="1">time complexity</a>
 </p>
 
 
@@ -369,20 +369,36 @@
           <div class="page-toc"></div>
           <p>Suppose we want to find duplicated files,
 such as extra copies of photos or data sets.
-We can&rsquo;t rely on the files&rsquo; names;
-instead,
-we need to compare their contents,
-but this will be slow for large files.</p>
-<p>A better approach is to generate a shorter identifier for each file
+People often rename files,
+so we must compare their contents,
+but this will be slow if we have a lot of files.</p>
+<p>We can estimate how slow &ldquo;slow&rdquo; will be with a simple calculation.
+\( N \) objects can be paired in \( N(N-1) \) ways.
+If we remove duplicate pairings
+(i.e., if we count A-B and B-A as one pair)
+then there are \( N(N-1)/2 = (N^2 - N)/2 \) distinct pairs.
+As \( N \) gets large,
+this value is approximately proportional to \( N^2 \).
+A computer scientist would say that
+the <a class="gl-ref" href="../glossary/#gl:time_complexity" title="The way the running time of an algorithm grows as a function of the problem size, usually expressed using big-oh notation." markdown="1">time complexity</a> of our algorithm is \( O(N^2) \),
+which is pronounced &ldquo;<a class="gl-ref" href="../glossary/#gl:big_oh" title="A way to express how the running time or memory requirements of an algorithm increase as the size of the problem increases." markdown="1">big-oh</a> of N squared&rdquo;.
+In simpler terms,
+when the number of files doubles the running time roughly quadruples,
+which means means that the time per file increases as the number of files increases.</p>
+<p>Slowdown like this is often unavoidable,
+but in our case there&rsquo;s a better way.
+If we generate a shorter identifier for each file
 that depends only on the bytes it contains,
-then group files with the same identifier and compare those.
-This approach is faster because we only compare files that might be equal,
-and as we&rsquo;ll see,
-we can generate identifiers so that if two files have the same one,
-they&rsquo;re (almost) guaranteed to have the same content.</p>
+we can group together the files that have the same identifier
+and only compare the files within a group.
+This approach is faster because we only do the expensive byte-by-byte comparison
+on files that <em>might</em> be equal.
+And as we&rsquo;ll see,
+if we are very clever about how we generate identifiers
+then we can avoid byte-by-byte comparisons entirely.</p>
 <h2 id="dup-start">Section 3.1: Getting Started</h2>
-<p>We&rsquo;ll start by implementing the brute force approach
-so that we can compare sophisticated designs to it.
+<p>We&rsquo;ll start by implementing the inefficient \( N^2 \) approach
+so that we can compare our later designs to it.
 The short program below takes a list of filenames from the command line,
 finds duplicates,
 and prints the matches:</p>
@@ -402,7 +418,8 @@ and prints the matches:</p>
         <span class="nb">print</span><span class="p">(</span><span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="p">)</span>
 </code></pre></div>
 </div>
-<p>The function <code>same_bytes</code> reads two files and compares them byte by byte:</p>
+<p>This program uses a function called <code>same_bytes</code>
+that reads two files and compares them byte by byte:</p>
 <div class="code-sample lang-py" title="brute_force_1.py">
 <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">same_bytes</span><span class="p">(</span><span class="n">left_name</span><span class="p">,</span> <span class="n">right_name</span><span class="p">):</span>
     <span class="n">left_bytes</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">left_name</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
@@ -413,13 +430,14 @@ and prints the matches:</p>
 <p class="continue">Notice that the files are opened in <a class="gl-ref" href="../glossary/#gl:binary_mode" title="An option for reading or writing files in which each byte is transferred literally. The term is used in contrast with text mode." markdown="1">binary mode</a>
 using <code>"rb"</code> instead of the usual <code>"r"</code>.
 As we&rsquo;ll see in <a class="x-ref" href="../binary/">Chapter 17</a>,
-this tells Python to read the bytes as they are
+this tells Python to read the bytes exactly as they are
 rather than trying to convert them to characters.</p>
 <p>To test this program and the others we&rsquo;re about to write,
 we create a <code>tests</code> directory with six files:</p>
 <table>
 <thead>
 <tr>
+<th>Filename</th>
 <th><code>a1.txt</code></th>
 <th><code>a2.txt</code></th>
 <th><code>a3.txt</code></th>
@@ -430,6 +448,7 @@ we create a <code>tests</code> directory with six files:</p>
 </thead>
 <tbody>
 <tr>
+<td>Content</td>
 <td><code>aaa</code></td>
 <td><code>aaa</code></td>
 <td><code>aaa</code></td>
@@ -441,7 +460,7 @@ we create a <code>tests</code> directory with six files:</p>
 </table>
 <p>We expect the three <code>a</code> files and the two <code>b</code> files to be reported as duplicates.
 There&rsquo;s no particular reason for these tests—we just have to start somewhere.
-We run our program like this:</p>
+Our first test looks like this:</p>
 <div class="code-sample lang-sh" title="brute_force_1.sh">
 <div class="highlight"><pre><span></span><code>python<span class="w"> </span>brute_force_1.py<span class="w"> </span>tests/*.txt
 </code></pre></div>
@@ -463,7 +482,7 @@ tests/b2.txt tests/b2.txt
 tests/c1.txt tests/c1.txt
 </code></pre></div>
 </div>
-<p>The output is correct but not useful:
+<p>Our program&rsquo;s output is correct but not useful:
 every file is reported as being identical to itself,
 and every match of different files is reported twice.
 Let&rsquo;s fix the nested loop in <code>find_duplicates</code>
@@ -486,29 +505,22 @@ so that we only check potentially differing pairs once
 <figcaption markdown="1">Figure 3.1: Scoping the inner loop to produce unique combinations.</figcaption>
 </figure>
 
-<p>How much work does our revised program do?
-\( N \) objects can be paired in \( N(N-1)/2 \) ways,
-so for large \( N \) the work is proportional to \( N^2 \).
-A computer scientist would say that
-the <a class="gl-ref" href="../glossary/#gl:time_complexity" title="The way the running time of an algorithm grows as a function of the problem size, usually expressed using big-oh notation." markdown="1">time complexity</a> of our algorithm is \( O(N^2) \),
-which is pronounced &ldquo;<a class="gl-ref" href="../glossary/#gl:big_oh" title="A way to express how the running time or memory requirements of an algorithm increase as the size of the problem increases." markdown="1">big-oh</a> of N squared&rdquo;.
-If the number of files doubles,
-the running time roughly quadruples,
-which means means that the time per file increases as the number of files increases.
-Slowdown like this is often unavoidable,
-but in this case there&rsquo;s a better way.</p>
 <h2 id="dup-group">Section 3.2: Hashing Files</h2>
 <p>Instead of comparing every file against every other,
 let&rsquo;s process each file once to produce a short identifier
-and only compare files with the same identifier
-(<a class="fig-ref" href="../dup/#dup-hash-group">Figure 3.2</a>).
-If there are \( g \) files in each group,
-the work will be roughly \( O(g(N/g)^2) \)
+that depends only on the file&rsquo;s contents
+and then only compare files that have the same identifier,
+i.e.,
+that <em>might</em> be equal.
+If files are evenly divided into \( g \) groups
+then each group will contain roughly \( N/g \) files,
+so the total work will be roughly \( O(g(N/g)^2) \)
 (i.e., \( g \) groups times \( (N/g)^2 \) comparisons within each group).
-As the number of groups gets larger,
-the number of files in each group will hopefully get smaller,
-and the overall running time will decrease
-<em>if</em> the files are evenly distributed between the groups.</p>
+Simplifying,
+this is \( N^2/g \),
+so as the number of groups grows,
+and the overall running time should decrease
+(<a class="fig-ref" href="../dup/#dup-hash-group">Figure 3.2</a>).</p>
 <figure id="dup-hash-group">
 <img src="./hash_group.svg" alt="Grouping by hash code"/>
 <figcaption markdown="1">Figure 3.2: Grouping by hash code reduces comparisons from 15 to 4.</figcaption>
@@ -555,11 +567,17 @@ and plot the distribution (<a class="fig-ref" href="../dup/#dup-naive-dracula">F
 <figcaption markdown="1">Figure 3.3: Distribution of hash codes per line in <em>Dracula</em>.</figcaption>
 </figure>
 
-<p>Is the histogram&rsquo;s peak at zero a flaw of some kind in our hash function?
-After a bit of digging,
-we realize that
-the text file we&rsquo;re processing uses a blank line to separate paragraphs,
-so the peak reflects a bias in our data.
+<p>Most of the <a class="gl-ref" href="../glossary/#gl:bucket" title="A subset of values from a dataset, typically represented by a single bar in a histogram." markdown="1">buckets</a> are approximately the same height,
+but why is there a peak at zero?
+Our big-oh estimate of how efficient our algorithm would be
+depended on files being distributed evenly between groups;
+if that&rsquo;s not the case,
+our code won&rsquo;t be as fast as we hoped.</p>
+<p>After a bit of digging,
+it turns out that
+the text file we&rsquo;re processing uses a blank line to separate paragraphs.
+These hash to zero,
+so the peak reflects an unequal distribution in our data.
 If we plot the distribution of hash codes of <em>unique</em> lines,
 the result is more even (<a class="fig-ref" href="../dup/#dup-naive-dracula-unique">Figure 3.4</a>).</p>
 <figure id="dup-naive-dracula-unique">
@@ -567,14 +585,20 @@ the result is more even (<a class="fig-ref" href="../dup/#dup-naive-dracula-uniq
 <figcaption markdown="1">Figure 3.4: Distribution of hash codes per unique line in <em>Dracula</em>.</figcaption>
 </figure>
 
-<p>Now that we can hash files,
+<p>Hashing is a tremendously powerful tool:
+for example,
+Python&rsquo;s dictionaries hash their keys to make lookup fast.
+Now that we can hash files,
 we can build a dictionary with hash codes as keys
-and sets of files as values.
-We do this using a common pattern
-where if we haven&rsquo;t seen a particular key before,
-we add it with an empty value,
-then unilaterally add this file to that value
-(in this case, a set):</p>
+and sets of filenames as values.
+The code that does this is shown below;
+each time it calculate a hash code,
+it checks to see if that value has been seen before.
+If not,
+it creates a new entry in the <code>groups</code> dictionary
+with the hash code as its key
+and an empty set as a value.
+It can then be sure that there&rsquo;s a set to add the filename to:</p>
 <div class="code-sample lang-py" title="grouped.py">
 <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">find_groups</span><span class="p">(</span><span class="n">filenames</span><span class="p">):</span>
     <span class="n">groups</span> <span class="o">=</span> <span class="p">{}</span>
@@ -605,30 +629,29 @@ tests/b2.txt tests/b1.txt
 </code></pre></div>
 </div>
 <h2 id="dup-hash">Section 3.3: Better Hashing</h2>
-<p>Let&rsquo;s go back to the formula \( O(g(N/g)^2) \)
+<p>Let&rsquo;s go back to the formula \( O(N^2/g) \)
 that tells us how much work we have to do
 if we have divided \( N \) files between \( g \) groups.
-If \( g \) and \( N \) are equal—i.e.,
-if we have exactly as many groups as files—then
-the work to process \( N \) files would be \( O(N) \).
-We have to read each file at least once,
+If we have exactly as many groups as files—i.e.,
+if \( g \) is equal to \( N \)—then
+the work to process \( N \) files would be \( O(N^2/N) = O(N) \),
+which means that the work will be proportional to the number of files.
+We have to read each file at least once anyway,
 so we can&rsquo;t possibly do better than this,
 but how can we ensure that each unique file winds up in its own group?</p>
 <p>The answer is to use a
 <a class="gl-ref" href="../glossary/#gl:cryptographic_hash_function" title="A hash function that produces an apparently-random value for any input." markdown="1">cryptographic hash function</a>.
-The output is completely deterministic:
+The output of such a function is completely deterministic:
 given the same bytes in the same order,
 it will always produce the same output.
 However,
-its output is distributed like a uniform random variable,
-and is unpredictable:
-given a hash code,
-there&rsquo;s no way to figure out what bytes would produce it
-other than generating random strings of bytes and hashing them.</p>
-<p>Cryptographic hash functions are hard to write—or rather,
-it&rsquo;s very hard to prove that a particular algorithm has the properties we require.
+the output is distributed like a uniform random variable:
+each possible output is equally likely,
+which ensures that files will be evenly distributed between groups.</p>
+<p>Cryptographic hash functions are hard to write,
+and it&rsquo;s very hard to prove that a particular algorithm has the properties we require.
 We will therefore use a function from Python&rsquo;s <a href="https://docs.python.org/3/library/hashlib.html">hashing module</a>
-that implements the <a class="gl-ref" href="../glossary/#gl:sha256" title="A cryptographic hash function that produces a 256-bit output." markdown="1">SHA-256</a> algorithm.
+that implements the <a class="gl-ref" href="../glossary/#gl:sha256" title="A cryptographic hash function that produces a 256-bit output." markdown="1">SHA-256</a> hashing algorithm.
 Given some bytes as input,
 this function produces a 256-bit hash,
 which is normally written as a 64-character <a class="gl-ref" href="../glossary/#gl:hexadecimal" title="A base-16 numerical representation that uses the letters A-F (or a-f) to represent the values from 10 to 15." markdown="1">hexadecimal</a> string.
@@ -670,7 +693,7 @@ According to <a href="https://en.wikipedia.org/wiki/Birthday_problem">Wikipedia<
 the answer is approximately \( 4{\times}10^{38} \) files.
 We&rsquo;re willing to take that risk…</p>
 </div>
-<p>Using this function makes our duplicate file finder much shorter:</p>
+<p>Using this library function makes our duplicate file finder much shorter:</p>
 <div class="code-sample lang-py" title="dup.py">
 <div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">from</span> <span class="nn">hashlib</span> <span class="kn">import</span> <span class="n">sha256</span>
@@ -708,14 +731,6 @@ as explained above,
 we only have to look at each file once,
 so the running time is as good as it possibly can be.</p>
 <h2 id="dup-summary">Section 3.4: Summary</h2>
-<p>Hashing is a tremendously powerful tool:
-Python&rsquo;s dictionaries hash their keys to make lookup fast,
-and <a class="x-ref" href="../archive/">Chapter 10</a> will use it to determine
-when two files or two revisions of a repository are the same or not.
-But our duplicate file finder is just a beginning.
-<a class="x-ref" href="../glob/">Chapter 4</a> shows how we can find sets of files to compare;
-<a class="x-ref" href="../test/">Chapter 6</a> and <a class="x-ref" href="../reflect/">Chapter 9</a> build tools to test programs like this,
-while <a class="x-ref" href="../lint/">Chapter 13</a> explores ways of checking that our programs follow style guidelines.</p>
 <figure id="dup-concept-map">
 <img src="./concept_map.svg" alt="Concept map for finding duplicate files"/>
 <figcaption markdown="1">Figure 3.5: Concept map for duplicate file detection with hashing.</figcaption>
@@ -756,7 +771,7 @@ assuming no previous collision are:</p>
 </tr>
 </tbody>
 </table>
-<p>A colleague of yours says this means that if we hash four files,
+<p class="continue">A colleague of yours says this means that if we hash four files,
 there&rsquo;s only a 75% chance of any collision occurring.
 What are the actual odds?</p>
 <h3 class="exercise">Streaming I/O</h3>
@@ -771,16 +786,16 @@ to use it.</p>
 the complexity of the system increases rapidly.
 How fast is &ldquo;rapidly&rdquo; in big-oh terms?</p>
 <h3 class="exercise">The <code>hash</code> Function</h3>
-<ul>
+<ol>
 <li>
 <p>Read the documentation for Python&rsquo;s built-in <code>hash</code> function</p>
 </li>
 <li>
 <p>Why do <code>hash(123)</code> and <code>hash("123")</code> work but <code>hash([123])</code> <span class="ix-entry" ix-key="raise" markdown="1">raise</span> an exception?</p>
 </li>
-</ul>
+</ol>
 <h3 class="exercise">How Good Is SHA-256?</h3>
-<ul>
+<ol>
 <li>
 <p>Write a function that calculate the SHA-256 hash code
     of each unique line of a text file.</p>
@@ -795,7 +810,7 @@ How fast is &ldquo;rapidly&rdquo; in big-oh terms?</p>
 <p>How evenly distributed are the hash codes?
     How does the distribution change as you process larger files?</p>
 </li>
-</ul>
+</ol>
         </main>
       </div>
     </div>
