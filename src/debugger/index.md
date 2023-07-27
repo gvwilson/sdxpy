@@ -4,6 +4,7 @@ syllabus:
 -   Testing interactive programs is easier if their inputs and outputs can easily be replaced with mock objects.
 -   Debuggers usually implement breakpoints by temporarily replacing actual instructions with special ones.
 -   Using lookup tables for function or method dispatch makes programs easier to extend.
+status: "awaiting revision"
 depends:
 -   vm
 -   viewer

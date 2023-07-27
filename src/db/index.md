@@ -5,6 +5,7 @@ syllabus:
 -   Classes are data structures that can be saved like any other data.
 -   The filesystem saves data in fixed-size pages.
 -   We can improve the efficiency of a database by saving records in blocks.
+status: "awaiting revision"
 depends:
 -   persist
 -   binary

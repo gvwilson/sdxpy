@@ -4,6 +4,7 @@ syllabus:
 -   Store two-dimensional data as rows or as columns.
 -   Use reflection to match data to function parameters.
 -   Measure performance to evaluate engineering tradeoffs.
+status: "awaiting revision"
 depends:
 -   reflect
 ---

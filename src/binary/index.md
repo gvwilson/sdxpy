@@ -5,6 +5,7 @@ syllabus:
 -   Programs can use bitwise operators to manipulate the bits representing data directly.
 -   Low-level compiled languages usually store raw values, while high-level interpreted languages use boxed values.
 -   Sets of values can be packed into contiguous byte arrays for efficient transmission and storage.
+status: "awaiting revision"
 depends:
 -   persist
 ---

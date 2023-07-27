@@ -8,6 +8,7 @@ syllabus:
 -   Use standard refactorings to move code from one working state to another.
 -   Build and check the parts of your code you are least sure of first
     to find out if your design will work.
+status: "awaiting revision"
 depends:
 ---
 

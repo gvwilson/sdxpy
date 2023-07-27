@@ -1,3 +1,7 @@
+---
+status: "awaiting revision"
+---
+
 Each of the chapters in this book has been designed to fit into an hour (and a bit).
 This appendix presents material that extends core ideas
 but would bust that [%g attention_budget "attention budget" %].

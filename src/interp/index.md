@@ -7,6 +7,7 @@ syllabus:
     to functions that implement low-level details.
 -   Programs store variables in stacked dictionaries called environments.
 -   One way to evaluate a program's design is to ask how extensible it is.
+status: "awaiting revision"
 depends:
 -   oop
 -   test

@@ -7,6 +7,7 @@ syllabus:
 depends:
 -   interp
 -   binary
+status: "awaiting revision"
 ---
 
 There was still a lot of magic in our interpreter in [%x interp %],
