@@ -33,6 +33,8 @@ def collect():
 
 def _collect(node, major, collected):
     """Pull data from a single node."""
+    if util.is_slides(node):
+        return
     parser = shortcodes.Parser(inherit_globals=False, ignore_unknown=True)
     parser.register(_parse, "g")
     collected[node.slug] = set()

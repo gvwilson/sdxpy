@@ -58,7 +58,6 @@ appendices = {
     "bib": "Bibliography",
     "bonus": "Bonus Material",
     "syllabus": "Syllabus",
-    "slides": "Slides",
     "license": "License",
     "conduct": "Code of Conduct",
     "contrib": "Contributing",
