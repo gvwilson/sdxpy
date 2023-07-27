@@ -39,7 +39,6 @@ def syllabus(pargs, kwargs, node):
     result = ["<ul>"]
     for slug, title, syllabus in syllabi:
         major = f'<li><a href="@root/{slug}" markdown="1">{title}</a>'
-        major += f' (<a href="@root/{slug}/slides/">slides</a>)'
         result.append(major)
         if syllabus:
             result.append("<ul>")
