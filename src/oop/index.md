@@ -259,9 +259,18 @@ whose value is the function that builds something of that type:
 
 [% inc file="inherit_constructor.py" keep="shape" %]
 
-The constructor for a square now calls
-the constructor for a generic shape
-and then adds square-specific values by using `|` to combine two dictionaries:
+In order to make an object,
+we call the function associated with its `_new` key:
+{: .continue}
+
+[% inc file="inherit_constructor.py" keep="make" %]
+
+That function is responsible for [%g upcall "upcalling" %]
+the constructor of its parent.
+For example,
+the constructor for a square calls the constructor for a generic shape
+and adds square-specific values using `|` to combine two dictionaries:
+{: .continue}
 
 [% inc file="inherit_constructor.py" keep="square" %]
 

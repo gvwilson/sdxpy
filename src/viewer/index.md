@@ -302,7 +302,7 @@ since almost every handler method's result is going to be the same.
 `DispatchApp` [%i "inheritance" "inherit" %] from our first `MainApp`
 so that we can recycle the initialization code we wrote for the latter.
 To make this happen,
-`DispatchApp.__init__` [%g upcall "upcalls" %] to `MainApp.__init__`
+`DispatchApp.__init__` [%i upcall "upcalls" %] to `MainApp.__init__`
 using `super().__init__`.
 We probably wouldn't create multiple classes in a real program,
 but doing this simplifies exposition when teaching.

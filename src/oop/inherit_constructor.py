@@ -1,8 +1,5 @@
 import math
 
-def make(cls, *args):
-    return cls["_new"](*args)
-
 def shape_density(thing, weight):
     return weight / call(thing, "area")
 
@@ -20,6 +17,11 @@ Shape = {
     "_new": shape_new
 }
 # [/shape]
+
+# [make]
+def make(cls, *args):
+    return cls["_new"](*args)
+# [/make]
 
 def square_perimeter(thing):
     return 4 * thing["side"]
