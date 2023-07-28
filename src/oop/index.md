@@ -296,6 +296,7 @@ that contain references to properties, functions, and other dictionaries.
    img="concept_map.svg"
    alt="Concept map for objects and classes"
    caption="Concept map for implementing objects and classes."
+   cls="here"
 %]
 
 ## Exercises {: #oop-exercises}

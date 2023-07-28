@@ -309,6 +309,7 @@ and as the exercises will show we can easily add matchers for other kinds of pat
    img="concept_map.svg"
    alt="Concept map for regular expression matching"
    caption="Regular expression matching concept map."
+   cls="here"
 %]
 
 ## Exercises {: #glob-exercises}

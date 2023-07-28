@@ -91,13 +91,17 @@ def figure_ref(pargs, kwargs, node):
 @shortcodes.register("figure")
 def figure_def(pargs, kwargs, node):
     """Handle figure definition."""
-    allowed = {"cls", "slug", "img", "alt", "caption"}
+    allowed = {"cls", "scale", "slug", "img", "alt", "caption"}
     util.require(
         (not pargs) and allowed.issuperset(kwargs.keys()),
         f"Bad 'figure' shortcode {pargs} and {kwargs} in {node}",
     )
     cls = kwargs.get("cls", None)
     cls = f' class="{cls}"' if cls is not None else ""
+
+    scale = kwargs.get("scale", None)
+    scale = f' scale="{scale}"' if scale is not None else ""
+
     slug = kwargs["slug"]
     img = kwargs["img"]
     alt = util.markdownify(kwargs["alt"])
@@ -108,7 +112,7 @@ def figure_def(pargs, kwargs, node):
     if util.is_slides(node):
         return dedent(
             f"""\
-            <figure{cls}>
+            <figure{cls}{scale}>
             <img src="../{img}" alt="{alt}"/>
             </figure>
             """

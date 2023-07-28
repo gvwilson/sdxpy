@@ -21,8 +21,7 @@ PRINT_INDEX = r"""
 \printindex
 """
 
-LATEX_FIG_SMALL = 0.6
-LATEX_FIG_REGULAR = 0.8
+LATEX_FIG_SCALE = 0.8
 
 
 def main():
@@ -108,16 +107,12 @@ def figure(node, state, accum, doEscape):
     """Convert a figure."""
     assert node.name == "figure", "Not a figure"
     label = node["id"]
-
-    if node.has_attr("class") and "figure-here" in node["class"]:
-        command = "figpdfhere"
-    else:
-        command = "figpdf"
-
-    if node.has_attr("class") and "latex-small" in node["class"]:
-        scale = LATEX_FIG_SMALL
-    else:
-        scale = LATEX_FIG_REGULAR
+    command = (
+        "figpdfhere"
+        if (node.has_attr("class") and "here" in node["class"])
+        else "figpdf"
+    )
+    scale = node["scale"] if node.has_attr("scale") else LATEX_FIG_SCALE
 
     path = node.img["src"].replace(".svg", ".pdf")
     caption = "".join(children(node.figcaption, state, [], True))

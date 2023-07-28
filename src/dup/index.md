@@ -265,6 +265,7 @@ so the running time is as good as it possibly can be.
    img="concept_map.svg"
    alt="Concept map for finding duplicate files"
    caption="Concept map for duplicate file detection with hashing."
+   cls="here"
 %]
 
 ## Exercises {: #dup-exercises}
