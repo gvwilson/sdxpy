@@ -1,4 +1,4 @@
-from glob_return import Any, Either, Lit
+from glob_null import Any, Either, Lit
 
 def test_literal_match_entire_string():
     # /abc/ matches "abc"

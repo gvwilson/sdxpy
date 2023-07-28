@@ -10,7 +10,7 @@ class Match:
 
 # [null]
 class Null(Match):
-    def __init__(self, rest=None):
+    def __init__(self):
         self.rest = None
 
     def _match(self, text, start):
@@ -23,7 +23,7 @@ class Any(Match):
         super().__init__(rest)
 
     def _match(self, text, start):
-        for i in range(len(text) + 1):
+        for i in range(start, len(text) + 1):
             end = self.rest._match(text, i)
             if end == len(text):
                 return end

@@ -75,7 +75,7 @@ Our grammar's tokens are the special characters `*`, `{`, `}`, and `,`;
 any sequence of one or more other characters is a single multi-letter token.
 This classification guides the design of our parser:
 
-1.  If it is a [%g literal "literal" %] then
+1.  If it is a [%i "literal" %] then
     combine it with the current literal (if there is one)
     or start a new literal (if there isn't).
 
@@ -145,7 +145,7 @@ and figures out which method handles tokens of that kind:
 
 <div class="callout" markdown="1">
 
-## Introspection and Dispatch
+### Introspection and Dispatch
 
 Having a program look up a function or method inside itself
 while it is running
@@ -190,7 +190,7 @@ so we add a `__eq__` method to our classes:
 
 <div class="callout" markdown="1">
 
-## They're Just Methods
+### They're Just Methods
 
 [%g operator_overloading "Operator overloading" %]
 relies on the fact that when Python sees `a == b` it calls `a.__eq__(b)`.

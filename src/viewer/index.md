@@ -492,7 +492,7 @@ Again,
    caption="Class definitions and inheritance in lesson"
 %]
 
-## Summary
+## Summary {: #viewer-summary}
 
 [% figure
    slug="viewer-concept-map"
