@@ -5,6 +5,7 @@ syllabus:
 -   A complete HTTP request may also have headers and a body.
 -   An HTTP response has a status code, a status phrase, and optionally some headers and a body.
 -   "HTTP is a stateless protocol: the application is responsible for remembering things between requests."
+status: "awaiting revision"
 depends:
 -   ftp
 ---

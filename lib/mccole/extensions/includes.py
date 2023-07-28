@@ -175,11 +175,6 @@ def _include_file(node, filepath, *filters):
         util.fail(f"Unable to read inclusion '{filepath}' in {node}.")
 
 
-def _is_slides(node):
-    """Is this a slides file?"""
-    return node.meta.get("template", None) == "slides"
-
-
 def _keep_head(filepath, lines, num):
     """Keep first N lines."""
     return lines[:num]
@@ -210,10 +205,10 @@ def _make_html(node, name, kind, lines):
     to strip off the format entirely for `.out` inclusions.
     """
     body = textwrap.dedent("\n".join(x.rstrip() for x in lines))
-    if _is_slides(node) and (kind == "out"):
+    if util.is_slides(node) and (kind == "out"):
         kind = ""
     body = f"```{kind}\n{body}\n```\n"
-    if _is_slides(node):
+    if util.is_slides(node):
         return body
     else:
         cls = f'class="code-sample lang-{kind}"'

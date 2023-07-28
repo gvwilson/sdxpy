@@ -1,3 +1,7 @@
+---
+status: "awaiting revision"
+---
+
 [% figure
    slug="finale-bicycle"
    img="derosa.jpg"

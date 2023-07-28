@@ -4,6 +4,7 @@ syllabus:
 -   Linters typically use the Visitor design pattern to find nodes of interest in an abstract syntax tree.
 -   Programs can modify a program's AST and then unparse it to create modified versions of the original program.
 -   Dynamic code modification is very powerful, but the technique can produce insecure and unmaintainable code.
+status: "awaiting revision"
 depends:
 -   check
 ---
