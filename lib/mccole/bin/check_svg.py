@@ -5,7 +5,7 @@ import re
 import sys
 from xml.dom import minidom
 
-EXPECTED = "Verdana:12px"
+EXPECTED = "Helvetica:12px"
 PAT = {
     "font-family": re.compile(r"\bfont-family:\s*(.+?);"),
     "font-size": re.compile(r"\bfont-size:\s*(.+?);"),
