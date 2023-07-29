@@ -71,7 +71,7 @@ INFO_LINKS := ${ROOT}/info/links.yml
 INFO_FILES := ${INFO_BIB} ${INFO_GLOSSARY} ${INFO_LINKS} ${ROOT}/info/credits.yml
 
 # …LaTeX engines
-LATEX=lualatex
+LATEX=xelatex
 BIBTEX=biber
 MAKEINDEX=makeindex
 
