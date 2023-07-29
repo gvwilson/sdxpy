@@ -140,10 +140,12 @@ Otherwise,
 `do` checks that its parameter is a list
 and then uses the first value in the list
 to decide what other function to call.
-This lookup-and-call process is the same [%i "dynamic dispatch" %]
-that we saw in [%x parse %].
 
 [% inc file="expr.py" keep="do" %]
+
+This lookup-and-call process is called [%g dynamic_dispatch "dynamic dispatch" %],
+since the program decides who to give work to on the fly.
+{: .continue}
 
 <div class="callout" markdown="1">
 ### Recursion
@@ -155,7 +157,6 @@ it's a natural way to solve a wide range of problems.
 those functions call `do` to get values for their arguments,
 and so on,
 with each recursive step handling a smaller part of the overall problem.
-
 </div>
 
 Finally,
@@ -263,7 +264,7 @@ result =
 
 </div>
 
-## Introspection Again {: #interp-introspection}
+## Introspection {: #interp-introspection}
 
 Now that we have evaluation, function lookup, and environments
 we can write small programs.
@@ -276,7 +277,7 @@ The sequence of `if` statements that decide what function to call
 is becoming unwieldy.
 (Quick:
 can you see if any of the instruction names are accidentally duplicated?)
-We can replace this by using [%i "introspection" %]
+We can replace this by using [%g introspection "introspection" %]
 to create a lookup table
 that stores every function whose name starts with `do_`
 ([%f interp-lookup %]):

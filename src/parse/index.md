@@ -17,24 +17,18 @@ depends:
 We constructed objects to match patterns in [%x glob %],
 but an [%i "expression" %] like `"2023-*{pdf,txt}"`
 is a lot easier to read and write
-than `Lit("2023-", Any(Either("pdf", "txt")))`.
+than code like `Lit("2023-", Any(Either("pdf", "txt")))`.
 If we want to use the former,
 we need a [%g parser "parser" %]
-to convert those strings to objects.
-
-Most parsers are written in two parts ([%f parse-pipeline %]).
-The first groups characters into atoms of text called "[%g token "tokens" %]".
-The second assembles those tokens to create
-an [%g abstract_syntax_tree "abstract syntax tree" %] (AST).
-
-[% figure
-   slug="parse-pipeline"
-   img="pipeline.svg"
-   alt="Parsing pipeline"
-   caption="Stages in parsing pipeline."
-%]
+to convert those human-readable strings into machine-comprehensible objects.
 
 [%t parse-grammar %] shows the [%g grammar "grammar" %] our parser will handle.
+When we are done,
+our parser should be able to recognize that `2023-*.{pdf,txt}` means
+the [%i "literal" %] `2023-`,
+any characters,
+a literal `.`,
+and then either a literal `pdf` or a literal `txt`.
 
 <div class="table" id="parse-grammar" caption="Glob grammar." markdown="1">
 | Meaning                   | Character       |
@@ -43,13 +37,6 @@ an [%g abstract_syntax_tree "abstract syntax tree" %] (AST).
 | Zero or more characters   | `*`             |
 | Alternatives              | `{`*x*`,`*y*`}` |
 </div>
-
-When we are done,
-our parser should be able to recognize that `2023-*.{pdf,txt}` means,
-a literal `2023-`,
-any characters,
-literal `.`,
-and then either a literal `pdf` or a literal `txt`.
 
 <div class="callout" markdown="1">
 
@@ -69,27 +56,43 @@ rather than inventing something of your own.
 
 ## Tokenizing {: #parse-token}
 
-A token is a meaningful piece of text,
-such as the digits making up a number or the letters making up a variable name.
-Our grammar's tokens are the special characters `*`, `{`, `}`, and `,`;
-any sequence of one or more other characters is a single multi-letter token.
-This classification guides the design of our parser:
+Most parsers are written in two parts ([%f parse-pipeline %]).
+The first stage groups characters into atoms of text called "[%g token "tokens" %]",
+which are meaningful pieces of text
+like the digits making up a number or the letters making up a variable name.
+Our grammar's tokens are the special characters `,`, `{`, `}`, and `*`.
+Any sequence of one or more other characters is a single multi-letter token.
+This classification determines the design of our [%g tokenizer "tokenizer" %]:
 
-1.  If it is a [%i "literal" %] then
-    combine it with the current literal (if there is one)
+1.  If a character is not special then
+    append it to the current literal (if there is one)
     or start a new literal (if there isn't).
 
-1.  If a character is special,
+1.  If a character *is* special then
     close the existing literal (if there is one)
-    and then create a token for the special character.
+    and create a token for the special character.
     Note that the `,` character closes a literal but doesn't produce a token.
 
+[% figure
+   slug="parse-pipeline"
+   img="pipeline.svg"
+   alt="Parsing pipeline"
+   caption="Stages in parsing pipeline."
+%]
+
 The result of tokenization is a flat list of tokens.
-We could pass around a list and append to it,
-but we also need to know the characters in each `Lit`
-and the options in each `Either`.
-We will therefore create a class with state
-rather than writing a function and passing state around explicitly.
+The second stage of parsing assembles tokens to create
+an [%g abstract_syntax_tree "abstract syntax tree" %] (AST)
+that represents the structure of what was parsed.
+We will re-use the classes defined in [%x glob %] for this purpose.
+
+Before we start writing our tokenizer
+we have to decide whether to implement it as a set of functions
+or as one or more classes.
+Based on previous experience we choose the latter:
+this tokenizer is simple enough that we'll only need a handful of functions,
+but one capable of handling a language like Python would be much larger,
+and classes are a handy way to group related functions together.
 
 The main method of our tokenizer looks like this:
 
@@ -124,6 +127,25 @@ and to define the set of characters that make up literals:
 
 [% inc file="tokenizer.py" keep="class" %]
 
+<div class="callout" markdown="1">
+
+### A Simple Constant
+
+The code fragment above defines `CHARS` to be
+a set containing ASCII letters and digits.
+We use a set for speed:
+if we used a list,
+Python would have to search through it each time we wanted to check a character,
+but finding something in a set is much faster.
+[%x binary %] will explain why the word "ASCII" appears in
+`string` library's definition of characters,
+but using it and `string.digits` greatly reduces the chances of us
+typing `"abcdeghi…yz"` rather than `"abcdefghi…yz"`.
+(The fact that it took you a moment to spot the missing letter 'f'
+proves this point.)
+
+</div>
+
 We can now write a few tests to check that
 the tokenizer is producing a list of lists
 in which each sub-list represents a single token:
@@ -136,47 +158,33 @@ We now need to turn the list of tokens into a tree.
 Just as we used a class for tokenizing,
 we will create one for parsing
 and give it a `_parse` method to start things off.
-This method doesn't do any conversion.
+This method doesn't do any conversion itself.
 Instead,
 it takes a token off the front of the list
 and figures out which method handles tokens of that kind:
 
 [% inc file="parser.py" keep="parse" %]
 
-<div class="callout" markdown="1">
-
-### Introspection and Dispatch
-
-Having a program look up a function or method inside itself
-while it is running
-is an example of [%g introspection "introspection" %].
-Using this to decide what to do next
-rather than having a long chain of `if` statements
-is often called [%g dynamic_dispatch "dynamic dispatch" %],
-since the code doing the lookup
-(in this case, the `_parse` method)
-decides who to give work to on the fly.
-Introspection and dispatch are powerful techniques;
-we will see a lot of them in chapters to come.
-
-</div>
-
-The handlers for `Any` and `Lit` are straightforward—the
-hardest part is actually to make sure we name them properly
-so that `_parse` can look them up:
+The handlers for `Any` and `Lit` are straightforward:
 
 [% inc file="parser.py" keep="simple" %]
 
 `Either` is a little messier.
 We didn't save the commas,
-so we'll just pull two tokens and store those:
+so we'll just pull two tokens and store them
+after checking to make sure that we actually *have* two tokens:
 
 [% inc file="parser.py" keep="either" %]
 
-However,
-a better approach is to take tokens from the list until we see an `EitherEnd`:
+An alternative approach is to take tokens from the list
+until we see an `EitherEnd` marker:
 
 [% inc file="better_parser.py" keep="either" %]
+
+This achieves the same thing in the two-token case,
+but allows us to write alternatives with more options
+without changing the code.
+{: .continue}
 
 Time for some tests:
 
@@ -187,19 +195,6 @@ just as we would compare numbers or strings.
 so we add a `__eq__` method to our classes:
 
 [% inc file="match.py" keep="equal" %]
-
-<div class="callout" markdown="1">
-
-### They're Just Methods
-
-[%g operator_overloading "Operator overloading" %]
-relies on the fact that when Python sees `a == b` it calls `a.__eq__(b)`.
-Similarly,
-`a + b` is "just" a called to `a.__add__(b)`, and so on,
-so if we give our classes methods with the right names,
-we can manipulates objects of those classes using familiar operations.
-And yes,
-this is another example of introspection.
 
 Since we're using [%i "inheritance" %] to implement our matchers,
 we write the check for equality in two parts.
@@ -212,6 +207,15 @@ If the [%i "child class" %] needs to do any more checking
 it calls up to the parent method first,
 then adds its own tests.
 
+<div class="callout" markdown="1">
+### They're Just Methods
+
+[%g operator_overloading "Operator overloading" %]
+relies on the fact that when Python sees `a == b` it calls `a.__eq__(b)`.
+Similarly,
+`a + b` is "just" a called to `a.__add__(b)`, and so on,
+so if we give our classes methods with the right names,
+we can manipulates objects of those classes using familiar operations.
 </div>
 
 ## Summary {: #parse-summary}
@@ -221,6 +225,7 @@ then adds its own tests.
    img="concept_map.svg"
    alt="Concept map for parser"
    caption="Parser concept map."
+   cls="here"
 %]
 
 ## Exercises {: #parse-exercises}

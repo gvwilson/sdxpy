@@ -22,11 +22,12 @@ class Parser:
             return Null()
 
         front, back = tokens[0], tokens[1:]
-        handler_name = f"_parse_{front[0]}"
-        if not hasattr(self, handler_name):
-            raise NotImplementedError(f"what is '{front}'")
+        if front[0] == "Any": handler = self._parse_Any
+        elif front[0] == "EitherStart": handler = self._parse_EitherStart
+        elif front[0] == "Lit": handler = self._parse_Lit
+        else:
+            assert False, f"Unknown token type {front}"
 
-        handler = getattr(self, handler_name)
         return handler(front[1:], back)
     # [/parse]
 
