@@ -246,6 +246,7 @@ and tried to make sense of the key ideas.
    img="concept_map.svg"
    alt="Concept map of test runner"
    caption="Concept map"
+   cls="here"
 %]
 
 ## Exercises {: #test-exercises}

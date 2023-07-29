@@ -353,6 +353,7 @@ for each kind of node.
    img="concept_map.svg"
    alt="Concept map for code manipulation"
    caption="Concepts for code manipulation."
+   cls="here"
 %]
 
 ## Exercises {: #lint-exercises}

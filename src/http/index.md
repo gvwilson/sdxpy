@@ -316,6 +316,7 @@ create a server with mocked methods:
    img="concept_map.svg"
    alt="HTTP concept map"
    caption="HTTP concept map."
+   cls="here"
 %]
 
 ## Exercises {: #http-exercises}

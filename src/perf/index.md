@@ -468,6 +468,7 @@ A few simple experiments like these can save weeks or months of misguided effort
    img="concept_map.svg"
    alt="Concept map for dataframes"
    caption="Concepts for dataframes."
+   cls="here"
 %]
 
 ## Exercises {: #perf-exercises}

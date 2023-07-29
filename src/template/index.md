@@ -339,6 +339,7 @@ unless they had no other choice—but the basic design is there.
    img="concept_map.svg"
    alt="Concept map for HTML templating"
    caption="HTML templating concept map."
+   cls="here"
 %]
 
 ## Exercises {: #template-exercises}

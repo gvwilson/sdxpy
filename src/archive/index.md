@@ -309,6 +309,7 @@ they allow old code to use new code without being changed.
    img="concept_map.svg"
    alt="Concept map of file backup"
    caption="Concept map for hashing-based file backup."
+   cls="here"
 %]
 
 ## Exercises {: #archive-exercises}

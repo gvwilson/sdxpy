@@ -540,6 +540,7 @@ You shouldn't worry about 1's and 0's unless you really have to.
    img="concept_map.svg"
    alt="Concept map for binary data"
    caption="Concepts for binary data."
+   cls="here"
 %]
 
 ## Exercises {: #binary-exercises}

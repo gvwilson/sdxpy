@@ -206,6 +206,7 @@ to check that any HTML we generate conforms to our intended rules.
    img="concept_map.svg"
    alt="Concept map for checking HTML"
    caption="Concept map for checking HTML using the Visitor pattern."
+   cls="here"
 %]
 
 ## Exercises {: #check-exercises}

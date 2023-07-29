@@ -248,6 +248,7 @@ but nothing else in the program has access to that dictionary
    img="concept_map.svg"
    alt="Concept map of functions and closures"
    caption="Concept map"
+   cls="here"
 %]
 
 ## Exercises {: #func-exercises}

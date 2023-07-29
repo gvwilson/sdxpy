@@ -531,6 +531,7 @@ so everything goes as it should.
    img="concept_map.svg"
    alt="Concept map for persistence"
    caption="Concepts for persistence."
+   cls="here"
 %]
 
 ## Exercises {: #persist-exercises}

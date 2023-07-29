@@ -290,6 +290,7 @@ let's fill an array with the numbers from 0 to 3:
    img="concept_map.svg"
    alt="Concept map for virtual machine and assembler"
    caption="Concept map for virtual machine and assembler."
+   cls="here"
 %]
 
 ## Exercises {: #vm-exercises}

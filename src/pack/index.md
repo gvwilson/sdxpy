@@ -445,6 +445,7 @@ until the problem becomes unsolvable:
    img="concept_map.svg"
    alt="Concept map for package manager."
    caption="Concepts for package manager."
+   cls="here"
 %]
 
 ## Exercises {: #pack-exercises}

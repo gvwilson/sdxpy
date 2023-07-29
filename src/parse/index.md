@@ -208,6 +208,7 @@ it calls up to the parent method first,
 then adds its own tests.
 
 <div class="callout" markdown="1">
+
 ### They're Just Methods
 
 [%g operator_overloading "Operator overloading" %]
@@ -216,6 +217,7 @@ Similarly,
 `a + b` is "just" a called to `a.__add__(b)`, and so on,
 so if we give our classes methods with the right names,
 we can manipulates objects of those classes using familiar operations.
+
 </div>
 
 ## Summary {: #parse-summary}

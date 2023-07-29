@@ -283,6 +283,7 @@ but in cases like this it makes sense to sacrifice a little fidelity for testabi
    img="concept_map.svg"
    alt="File transfer concept map"
    caption="File transfer concept map."
+   cls="here"
 %]
 
 ## Exercises {: #ftp-exercises}

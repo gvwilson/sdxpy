@@ -393,6 +393,7 @@ we will explore this idea in the exercises.
    img="concept_map.svg"
    alt="Concept map for database"
    caption="Concept map for a log-structured database."
+   cls="here"
 %]
 
 ## Exercises {: #db-exercises}

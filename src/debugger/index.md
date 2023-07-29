@@ -400,6 +400,7 @@ We will explore this in the exercises.
    img="concept_map.svg"
    alt="Concept map for debugger"
    caption="Concepts for debugger."
+   cls="here"
 %]
 
 ## Exercises {: #debugger-exercises}

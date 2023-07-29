@@ -148,6 +148,7 @@ since the program decides who to give work to on the fly.
 {: .continue}
 
 <div class="callout" markdown="1">
+
 ### Recursion
 
 [%i "recursion" "Recursion" %] has a reputation for being hard to understand,
@@ -157,6 +158,7 @@ it's a natural way to solve a wide range of problems.
 those functions call `do` to get values for their arguments,
 and so on,
 with each recursive step handling a smaller part of the overall problem.
+
 </div>
 
 Finally,
@@ -335,6 +337,7 @@ to find all the available operations.
    img="concept_map.svg"
    alt="Concept map of interpreter"
    caption="Interpreter concept map."
+   cls="here"
 %]
 
 ## Exercises {: #interp-exercises}

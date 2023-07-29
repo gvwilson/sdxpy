@@ -53,6 +53,7 @@ the classes we already have.
 {: .continue}
 
 <div class="callout" markdown="1">
+
 ### Clean Exit
 
 Notice that when the screen runs out of simulated keystrokes
@@ -256,6 +257,7 @@ and get back the screen we originally had:
    img="concept_map.svg"
    alt="Concept map of undo"
    caption="Concept map"
+   cls="here"
 %]
 
 ## Exercises {: #undo-exercises}

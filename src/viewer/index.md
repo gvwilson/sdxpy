@@ -499,6 +499,7 @@ Again,
    img="concept_map.svg"
    alt="Concept map of file viewer"
    caption="Concept map"
+   cls="here"
 %]
 
 ## Exercises {: #viewer-exercises}

@@ -331,6 +331,7 @@ our test of nested loops pass.
    img="concept_map.svg"
    alt="Concept map of mocks, protocols, and iterators"
    caption="Concept map"
+   cls="here"
 %]
 
 ## Exercises {: #reflect-exercises}

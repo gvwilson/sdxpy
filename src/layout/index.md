@@ -323,6 +323,7 @@ Thinking in these terms leads to the methodology called
    img="concept_map.svg"
    alt="Concept map for page layout"
    caption="Page layout concept map."
+   cls="here"
 %]
 
 ## Exercises {: #layout-exercises}

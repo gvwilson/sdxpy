@@ -273,6 +273,7 @@ we probably need to rethink our entire design.
    img="concept_map.svg"
    alt="Concept map of build manager"
    caption="Concept map"
+   cls="here"
 %]
 
 ## Exercises {: #build-exercises}
