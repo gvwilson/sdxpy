@@ -149,6 +149,21 @@ and ask whether two objects are of the same class or not
 by checking what their `"_class"` keys refer to.
 {: .continue}
 
+<div class="callout" markdown="1">
+
+### Arguments vs. Parameters
+
+Many programmers use the words [%g argument "argument" %]
+and [%g parameter "parameter" %] interchangeably,
+but to make our meaning clear,
+we call the values passed into a function its arguments
+and the names the function uses to refer to them as its parameters.
+Put it another way,
+parameters are part of the definition
+and arguments are given when the function is called.
+
+</div>
+
 ## Arguments {: #oop-args}
 
 The methods we have defined so far operate on

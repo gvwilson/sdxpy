@@ -7,28 +7,26 @@ syllabus:
     to functions that implement low-level details.
 -   Programs store variables in stacked dictionaries called environments.
 -   One way to evaluate a program's design is to ask how extensible it is.
-status: "awaiting revision"
+status: "revisions completed 2023-07-30"
 depends:
 -   oop
 -   test
 ---
 
-[%x oop %] introduced the idea that functions, objects, and classes are just data,
-while [%x test %] showed how Python itself manages them.
-Similarly,
-the [%g compiler "compilers" %] and [%g interpreter "interpreters" %]
-that make programs run are just programs themselves.
-Instead of calculating sums or drawing characters on a screenb,
+[%x oop %] and [%x test %] introduced the idea that programs are just data.
+[%g compiler "Compilers" %] and [%g interpreter "interpreters" %]
+are just programs too.
+Instead of calculating sums or drawing characters on a screen,
 compilers turn text into instructions for interpreters or hardware to run.
 
 Most real programming languages have two parts:
-a [%i "parser" %] that translates the source code
-into a data structure in memory,
+a [%i "parser" %] that translates the source code into a data structure,
 and a [%g runtime "runtime" %] that executes
 the instructions in that data structure.
 [%x parse %] explored parsing;
 this chapter will build a runtime for a very simple interpreter,
-while [%x vm %] will look at compiling code for more efficient execution.
+while [%x vm %] will look at how we can compile code
+so that it runs more efficiently.
 
 <div class="callout" markdown="1">
 
@@ -38,19 +36,18 @@ A compiler translates a program into runnable instructions
 before the program runs,
 while an interpreter generates instructions on the fly
 as the program is running.
-In practice,
-the difference between the two are blurry:
-when Python runs a program,
+The differences between the two are blurry in practice:
 for example,
-it translates the source code into instructions as it loads files,
-but saves those instructions in `.pyc` files to save time in future.
+Python translates the instructions in a program into instructions as it loads files,
+but saves those instructions in `.pyc` files to save itself work
+the next time it runs the program.
 
 </div>
 
 ## Expressions {: #interp-expressions}
 
 Let's start by building something that can evaluate
-simple [%g "expression" "expressions" %] that produce values,
+simple [%g "expression" "expressions" %]
 such as `1+2` or `abs(-3.5)`.
 We represent each expression as a list
 with the name of the operation as the first item
@@ -66,8 +63,8 @@ we use nested lists:
 
 We use [%g infix_notation "infix notation" %] like `1+2` for historical reasons
 in everyday life,
-but our programs use [%g prefix_notation "prefix notation" %]—i.e.,
-they always put the operations' names first—to make the operations easier to find.
+but our interpreter uses [%g prefix_notation "prefix notation" %]—i.e.,
+always puts the operations' names first—to make the operations easier to find.
 Similarly,
 we have special symbols for addition, subtraction, and so on for historical reasons,
 but our list representation doesn't distinguish between things like `+` and `abs`
@@ -94,34 +91,10 @@ to evaluate those sub-expressions.
 (We've called the function `do` instead of `eval`
 because Python already has a function called `eval`.)
 Once `do_add` has two actual values,
-it adds them and returns the result
-([%f interp-recursive-evaluation %])
+it adds them and returns the result.
 {: .continue}
 
-[% figure
-   slug="interp-recursive-evaluation"
-   img="recursive_evaluation.svg"
-   alt="Recursive evaluation of an expression tree"
-   caption="Recursively evaluating the expression `abs(1+2)`."
-%]
-
-<div class="callout" markdown="1">
-
-### Arguments vs. Parameters
-
-Many programmers use the words [%g argument "argument" %]
-and [%g parameter "parameter" %] interchangeably,
-but to make our meaning clear,
-we call the values passed into a function its arguments
-and the names the function uses to refer to them as its parameters.
-Put it another way,
-parameters are part of the definition
-and arguments are given when the function is called.
-
-</div>
-
-`do_abs`, which calculates absolute value,
-works the same way.
+`do_abs` implements absolute values the same way.
 The only differences are that it expects one value instead of two
 and calculates a different return value:
 
@@ -130,6 +103,7 @@ and calculates a different return value:
 Notice that `do_abs` and `do_add` have the same [%i "signature" %].
 As with the [%i "unit test" "unit testing" %] functions in [%x test %],
 this allows us to call them interchangeably.
+{: .continue}
 
 So how does `do` work?
 It starts by checking if its input is an integer.
@@ -145,34 +119,39 @@ to decide what other function to call.
 
 This lookup-and-call process is called [%g dynamic_dispatch "dynamic dispatch" %],
 since the program decides who to give work to on the fly.
-{: .continue}
+As [%f interp-recursive-evaluation %] shows,
+it leads to a situation where `do` calls a function like `do_add`,
+which in turn calls `do`,
+which may then call `do_add` (or something other function)
+and so on.
+Having a function call itself either directly or indirectly is called [%i "recursion" %],
+and has a reputation for being hard to understand.
+As our interpreter shows,
+though,
+it's a natural way to solve a wide range of problems:
+each recursive step handles a smaller part of the overall problem
+until we reach an integer or some other value that doesn't require any further work.
 
-<div class="callout" markdown="1">
+[% figure
+   slug="interp-recursive-evaluation"
+   img="recursive_evaluation.svg"
+   alt="Recursive evaluation of an expression tree"
+   caption="Recursively evaluating the expression `abs(1+2)`."
+%]
 
-### Recursion
-
-[%i "recursion" "Recursion" %] has a reputation for being hard to understand,
-but as our interpreter shows,
-it's a natural way to solve a wide range of problems.
-`do` calls functions like `do_add` to do things;
-those functions call `do` to get values for their arguments,
-and so on,
-with each recursive step handling a smaller part of the overall problem.
-
-</div>
-
-Finally,
-the main body of the program reads
+With all of this code in place,
+the main body of the program can read
 the file containing the instructions to execute,
-calls `do`,
-and prints the result:
+call `do`,
+and print the result:
 
 [% inc file="expr.py" keep="main" %]
 
-Our program is a list of lists (of lists…)
+The program we want to interpret is a list of lists of lists,
 so we can read it as [%i "JSON" %] using `json.load`
 rather than writing our own parser.
-If our program file contains:
+For example,
+if our program file contains:
 
 [% inc file="expr.tll" %]
 
@@ -183,23 +162,24 @@ then our little interpreter prints:
 
 This is a lot of code to do something that Python already does,
 but it shows what Python (and other languages) do themselves.
-Suppose we run our little interpreter with:
+When we run:
 
 [% inc file="expr.sh" %]
 
 Python reads `expr.py`,
 turns it into a data structure with operation identifiers and constants,
-then uses those operation identifiers to decide what functions to call.
-Those functions are written in C
+and uses those operation identifiers to decide what functions to call.
+The functions inside Python are written in C
 and have been compiled to machine instructions,
-but the cycle of lookup and call is exactly the same.
+but the cycle of lookup and call is exactly the same as it is
+in our little interpreter.
 
 ## Variables {: #interp-variables}
 
 Doing arithmetic on constants is a start,
-but our programs will be easier to read with variables
-that let us give names to values.
-We can add them to our interpreter
+but our programs will be easier to read
+if we can define variables that give names to values.
+We can add variables to our interpreter
 by passing around a [%i "dictionary" %]
 containing all the variables seen so far.
 Such a dictionary is sometimes called an [%g environment "environment" %]
@@ -316,21 +296,20 @@ so that we can call any of them with an environment and a list of arguments
 without knowing exactly which function we're calling.
 And as with finding tests,
 introspection is more reliable than a hand-written lookup table,
-but it isn't necessarily easier to understand.
+but is harder to understand.
 If we write out the lookup table explicitly like this:
 
 [% inc file="vars_table.py" keep="lookup" %]
 
-then it's easy to see exactly what operations are available
+then we can see exactly what operations are available
 and what their names are.
 If we use introspection,
 we have to search through the source file (or possibly several files)
-to find all the available operations.
+to find all the available operations,
+but we can write `do` once and never worry about it again.
 {: .continue}
 
 ## Summary {: #interp-summary}
-
-*Please see [%x bonus %] for extra material related to these ideas.*
 
 [% figure
    slug="interp-concept-map"
@@ -339,6 +318,8 @@ to find all the available operations.
    caption="Interpreter concept map."
    cls="here"
 %]
+
+*Please see [%x bonus %] for extra material related to these ideas.*
 
 ## Exercises {: #interp-exercises}
 
