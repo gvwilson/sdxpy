@@ -4,8 +4,6 @@ syllabus:
 -   A grammar defines the textual patterns that a parser recognizes.
 -   Most parsers tokenize input text and then analyze the tokens.
 -   Most parsers need to implement some form of precedence to prioritize different patterns.
--   Programs can use introspection and dynamic dispatch to inspect their own internals
-    and select operations while running.
 -   Operations like addition and function call work just like user-defined functions.
 -   Programs can overload built-in operators by defining specially-named methods
     that are recognized by the compiler or interpreter.

@@ -475,7 +475,7 @@ we loop over the methods that handle these cases.
 If a method decides that it can handle the incoming data
 it returns a result;
 if it can't,
-it throws a `KeyError`,
+it raises a `KeyError` exception,
 and if none of the methods handle a case
 we fail:
 

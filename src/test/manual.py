@@ -20,15 +20,6 @@ def test_sign_error():
     assert sgn(1) == 1
 # [/tests]
 
-# [save]
-TESTS = [
-    test_sign_negative,
-    test_sign_positive,
-    test_sign_zero,
-    test_sign_error
-]
-# [/save]
-
 # [run]
 def run_tests(all_tests):
     results = {"pass": 0, "fail": 0, "error": 0}
@@ -43,6 +34,15 @@ def run_tests(all_tests):
     print(f"pass {results['pass']}")
     print(f"fail {results['fail']}")
     print(f"error {results['error']}")
+# [/run]
+
+# [use]
+TESTS = [
+    test_sign_negative,
+    test_sign_positive,
+    test_sign_zero,
+    test_sign_error
+]
 
 run_tests(TESTS)
-# [/run]
+# [/use]

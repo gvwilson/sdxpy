@@ -3,77 +3,32 @@ syllabus:
 -   Functions are objects you can save in data structures or pass to other functions.
 -   Python stores local and global variables in dictionary-like structures.
 -   A unit test function performs an operation on a fixture and passes, fails, or produces an error.
--   A program can introspect to find functions and other objects at runtime.
-status: "awaiting revision"
+-   A program can use introspection to find functions and other objects at runtime.
+status: "revisions completed 2023-07-30"
 depends:
 ---
 
 Not all software needs rigorous testing:
-the best way to check a one-off data analysis script,
 for example,
-is to build it incrementally,
-looking at the output of each new stage as it's added.
+it's OK to check a one-off data analysis script
+by looking at the output of each stage as we add it.
 But we should all be grateful that
-98% of the code in the [SQLite][sqlite] database
-is there to make the other 2% always does the right thing.
+98% of the lines of code in the [SQLite][sqlite] database
+are there to make the other 2% always do the right thing.
 
-We're going to write a lot of programs in this book.
-To make sure they work correctly,
-we're also going to write a lot of [%g unit_test "unit tests" %]
-[%b  Meszaros2007 Aniche2022 %].
-To make those tests easier to write (so that we actually write them)
-we use a unit testing framework inspired by [pytest][pytest]
-that finds and run tests automatically.
+The examples in this book lie somewhere between these two extremes.
+Together,
+they are over 7000 lines long;
+to make sure they work correctly,
+we wrote several hundred [%g unit_test "unit tests" %] using [pytest][pytest].
+We used this framework because it makes tests easier to write,
+and because it runs them in a reliable, repeatable way
+[%b Meszaros2007 Aniche2022 %].
+Understanding how tools like this work will help you use them more effectively,
+and will reinforce one of the big ideas of this book:
+programs are just another kind of data.
 
 ## Storing and Running Tests {: #test-funcobj}
-
-[% fixme "re-print and re-check this chapter" %]
-
-As we said in [%x oop %],
-a function is just an object
-that we can assign to a variable.
-
-<div class="callout" markdown="1">
-
-### Checking Types
-
-Python is a [%g dynamic_typing "dynamically typed" %] language,
-which means that it checks the types of values as the program is running.
-We can do this ourselves using its built-in `type` function,
-which will tell us that `3` is an integer:
-
-[% inc pat="type_int.*" fill="py out" %]
-
-or that a function is a function:
-{: .continue}
-
-[% inc pat="type_func.*" fill="py out" %]
-
-However,
-built-in functions have a different type:
-{: .continue}
-
-[% inc pat="type_len.*" fill="py out" %]
-
-so it's safer to use `callable` to check if something can be called:
-{: .continue}
-
-[% inc pat="callable.*" fill="py out" %]
-
-</div>
-
-Since functions are objects,
-we can store them in a list just like numbers or strings
-([%f test-func-list %]):
-
-[% inc pat="func_list.*" fill="py out" %]
-
-However,
-we have to know how to call the functions in order for this trick to work,
-which means they must have the same [%i "signature" %]:
-{: .continue}
-
-[% inc pat="signature.*" fill="py out" %]
 
 [% figure
    slug="test-func-list"
@@ -82,17 +37,21 @@ which means they must have the same [%i "signature" %]:
    caption="A list of functions."
 %]
 
-When we loop over the list `everything`,
-Python assigns each function to the variable `func` in turn.
-We can then call the function as `func()`
-just as we called `example` using `alias()`.
-In order for this to work,
-though,
-all of the functions in the list must have the same [%i "signature" %],
-i.e.,
-they must all take the same number of parameters
-in the same order
-so that we can call them interchangeably.
+As we said in [%x oop %],
+a function is just an object
+that we can assign to a variable.
+We can also store them in lists just like numbers or strings
+([%f test-func-list %]):
+
+[% inc pat="func_list.*" fill="py out" %]
+
+However,
+we have to be able to call the functions in the same way
+in order for this trick to work,
+which means they must have the same [%i "signature" %]:
+{: .continue}
+
+[% inc pat="signature.*" fill="py out" %]
 
 Now suppose we have a function we want to test:
 
@@ -104,16 +63,12 @@ and some functions that test it
 
 [% inc file="manual.py" keep="tests" %]
 
-We can put all the test functions in a list:
-
-[% inc file="manual.py" keep="save" %]
-
 Each test does something to a [%g fixture "fixture" %]
 (such as the number -3)
 and uses [%g assertion "assertions" %]
 to compare the [%g actual_result "actual result" %]
 against the [%g expected_result "expected result" %].
-The outcome of each test is exactly one of:
+The outcome of each test can be:
 
 -   [%g pass_test "Pass" %]:
     the test subject works as expected.
@@ -126,23 +81,34 @@ The outcome of each test is exactly one of:
     which means we don't know if
     the thing we're testing is working properly or not.
 
-To implement this classification scheme
-we need to distinguish failing tests from broken ones.
-Our rule is that
-if a test [%g throw_exception "throws" %] an `AssertionError` [%i "exception" %]
-then one of our checks is reporting a [%i "failure" %],
-while any other kind of exception indicates that the test contains an error.
+We can implement this classification scheme as follows:
 
-Translating that rules into code gives us the function `run_tests`
+1.  If a test function completes without [%g raise_exception "raising" %]
+    any kind of [%g exception "exception" %],
+    it passes.
+    (We don't care if it returns something,
+    but by convention tests don't return a value.)
+
+2.  If the function raises an `AssertionError` exception
+    then the test has failed.
+    Python's `assert` statement does this automatically
+    when the condition it is checking is false,
+    so almost all tests use `assert` for checks.
+
+3.  If the function raises any other kind of exception
+    then we assume the test itself is broken
+    and count it as an error.
+
+Translating these rules into code gives us the function `run_tests`
 that runs every test in a list
 and counts how many outcomes of each kind it sees:
 
 [% inc file="manual.py" keep="run" %]
 
-If a test completes without an exception, it passes.
-If any of the assertions inside it raises an `AssertionError` the test fails,
-and if it raises any other exception it's an error.
-{: .continue}
+We use `run_tests` by putting all of our test functions into a list
+and passing that to the test runner:
+
+[% inc file="manual.py" keep="use" %]
 
 [% inc file="manual.out" %]
 
@@ -167,15 +133,18 @@ We'd therefore like our test runner to find tests for itself,
 which it can do by exploiting the fact that
 Python stores variables in a structure similar to a [%i "dictionary" %].
 
-Run the Python interpreter and call the `globals` function:
+Let's run the Python interpreter and call the `globals` function.
+To make its output easier to read,
+we will [%g pretty_print "pretty-print" %] it
+using Python's [pprint][py_pprint] module:
 
 [% inc pat="globals.*" fill="py out" %]
 
 As the output shows,
 `globals` is a dictionary containing
-all the variables at the top (global) level of the program.
+all the variables in the program's [%g "global" global %] [%g scope "scope" %].
 Since we just started the interpreter,
-we see the variables that Python defines automatically.
+all we see are the variables that Python defines automatically.
 (By convention,
 Python uses double underscores for names that mean something special to it.)
 {: .continue}
@@ -188,15 +157,6 @@ Sure enough,
 `my_variable` is now in the dictionary.
 {: .continue}
 
-<div class="callout" markdown="1">
-
-### Local Variables
-
-Another function called `locals` returns
-all the variables defined in the current (local) [%g scope "scope" %].
-
-</div>
-
 If function names are just variables
 and a program's variables are stored in a dictionary,
 we can loop over that dictionary
@@ -205,13 +165,15 @@ to find all the functions whose names start with `test_`:
 [% inc file="find_test_funcs.py" keep="main" %]
 [% inc file="find_test_funcs.out" %]
 
-Notice that when we print a function,
-Python shows us its name and its address in memory.
+The [%i "hexadecimal" %] numbers in the output show
+where each function object is stored in memory,
+which isn't particularly useful unless we're extending the language,
+but at least it doesn't take up much space on the screen…
 {: .continue}
 
 Having a running program find things in itself like this
-is another example of [%i "introspection" %]
-([%x parse %]).
+is called [%i "introspection" %],
+and is the key to many of the designs in upcoming chapters.
 Combining introspection with the pass-fail-error pattern of the previous section
 gives us something that finds test functions,
 runs them,
@@ -220,24 +182,27 @@ and summarizes their results:
 [% inc file="runner.py" keep="run" %]
 [% inc file="runner.out" %]
 
-## Origins {: #test-origins}
+We could add many more features to this
+(and [pytest][pytest] does),
+but almost every modern test runner uses this design.
+{: .continue}
 
-[Clarke's Third Law][clarkes_laws] is that
+<div class="callout" markdown="1">
+
+### Magic
+
+[Clarke's Third Law][clarkes_laws] states that
 any sufficiently advanced technology is indistinguishable from magic.
-The same is true of technologies that we encounter
-before we have the background knowledge they depend on.
-The code that finds tests dynamically seems reasonable
-(and possibly even a little dull)
-to an expert who understands how programming languages work,
-but is incomprehensible magic to a novice.
+The same is true of programming tricks like introspection:
+The code that finds tests dynamically seems transparent
+to an expert who understands that code is data,
+but can be incomprehensible to a novice.
+As we said in the discussion of comprehension curves in [%x intro %],
+no piece of software can be optimal for both audiences;
+the only solution to this problem is education,
+which is why books like this one exist.
 
-We didn't invent any of the ideas we just presented.
-Instead,
-we did what you are doing now:
-we read what other programmers had written
-and tried to make sense of the key ideas.
-
-*Please see [%x bonus %] for extra material related to these ideas.*
+</div>
 
 ## Summary {: #test-summary}
 
@@ -248,6 +213,8 @@ and tried to make sense of the key ideas.
    caption="Concept map"
    cls="here"
 %]
+
+*Please see [%x bonus %] for extra material related to these ideas.*
 
 ## Exercises {: #test-exercises}
 
@@ -277,7 +244,7 @@ for name in globals():
 
 Why?
 
-### Counting Results {: .exercise}
+### Individual Results {: .exercise}
 
 1.  Modify the test framework so that it reports which tests passed, failed, or had errors
     and also reports a summary of how many tests produced each result.
@@ -299,14 +266,6 @@ if a file of tests contains a function called `setup`
 then the tool calls it exactly once before running each test in the file.
 Add a similar way to [%g register_code "register" %] a `teardown` function.
 
-### Module Names {: .exercise}
-
-Our last test runner generated names `m0`, `m1`, and so on
-so that each [%i "module" %] would have a unique name.
-What happens if we don't do this?
-I.e.,
-what happens if we use the same constant string for all modules that we load?
-
 ### Timing Tests {: .exercise}
 
 Modify the testing tool so that it records how long it takes to run each test.
@@ -315,4 +274,49 @@ Modify the testing tool so that it records how long it takes to run each test.
 ### Selecting Tests {: .exercise}
 
 Modify the testing tool so that if a user provides `-s pattern` or `--select pattern`
-then it only runs tests that contain the string `pattern` in their name.
+on the command line
+then the tool only runs tests that contain the string `pattern` in their name.
+
+### Finding Functions {: .exercise}
+
+Python is a [%g dynamic_typing "dynamically typed" %] language,
+which means that it checks the types of values as the program is running.
+We can do this ourselves using its built-in `type` function,
+which will tell us that `3` is an integer:
+
+[% inc pat="type_int.*" fill="py out" %]
+
+or that a function is a function:
+{: .continue}
+
+[% inc pat="type_func.*" fill="py out" %]
+
+However,
+built-in functions have a different type:
+{: .continue}
+
+[% inc pat="type_len.*" fill="py out" %]
+
+so it's safer to use `callable` to check if something can be called:
+{: .continue}
+
+[% inc pat="callable.*" fill="py out" %]
+
+1.  Modify the test runner in this chapter so that
+    it *doesn't* try to call things whose names start with `test_`
+    but which aren't actually functions.
+
+2.  Should the test runner report these cases as errors?
+
+### Local Variables {: .exercise}
+
+Python has a function called `locals`
+that returns all the variables defined in the current [%g local "local" %] scope.
+
+1.  Predict what the code below will print *before* running it.
+    When does the variable `i` first appear
+    and is it still there in the final line of output?
+
+2.  Run the code and compare your prediction with its behavior.
+
+[% inc file="locals.py" %]

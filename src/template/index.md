@@ -140,7 +140,7 @@ Our stack-handling class `Env` has methods
 to push and pop new [%i "stack frame" "stack frames" %]
 and find a variable given its name.
 If the variable can't be found,
-`Env.find` returns `None` instead of throwing an exception:
+`Env.find` returns `None` instead of raising an exception:
 
 [% inc file="env.py" %]
 

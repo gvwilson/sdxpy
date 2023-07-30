@@ -392,5 +392,5 @@ Write a program `compare-manifests.py` that reads two manifest files and reports
 Modify `backup.py` to load and run a function called `pre_commit` from a file called `pre_commit.py`
 stored in the root directory of the files being backed up.
 If `pre_commit` returns `True`, the backup proceeds;
-if it returns `False` or throws an exception,
+if it returns `False` or raises an exception,
 no backup is created.
