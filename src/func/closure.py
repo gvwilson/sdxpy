@@ -3,5 +3,5 @@ def make_hidden(thing):
         return thing
     return _inner
 
-m = make_hidden("example")
-print("hidden thing is", m())
+has_secret = make_hidden(1 + 2)
+print("hidden thing is", has_secret())

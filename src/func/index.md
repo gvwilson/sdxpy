@@ -12,7 +12,7 @@ syllabus:
 -   When a function needs to look up variables,
     it looks in its own stack frame and the global frame.
 -   A closure stores the variables referenced in a particular scope.
-status: "awaiting revision"
+status: "revisions completed 2023-07-31"
 depends:
 -   interp
 ---
@@ -21,14 +21,14 @@ One way to evaluate the design of a piece of software is
 to ask how [%g extensibility "extensible" %] it is,
 i.e.,
 how easily we can add or change things [%b Wilson2022a %].
-The answer for the [%i "interpreter" %] of [%x interp %] is, "Pretty easily,"
-but the answer for the little language it interprets is, "Not at all,"
-because there is currently no way for users to create new operations of their own.
-We need to give users a way to define and call functions.
+The answer for the [%i "interpreter" %] of [%x interp %] is pretty easily"
+but the answer for the little language it interprets is "not at all"
+because users cannot define new operations in the little language itself.
+We need to give them a way to define and call functions.
 Doing this will take less than 60 lines of code,
 and once we understand how definition works,
 we will be able to understand
-how some more advanced features of modern programming languages work as well.
+how an advanced feature of most modern programming languages works as well.
 
 ## Definition and Storage {: #func-defstore}
 
@@ -40,7 +40,7 @@ this is:
 [% inc file="example_def.py" keep="python" %]
 
 It has a name,
-a (possibly empty) list of parameter names,
+a (possibly empty) list of parameters,
 and a body,
 which in this case is a single [%i "statement" %].
 {: .continue}
@@ -54,6 +54,7 @@ we can define it on its own without naming it:
 To save the function for later use,
 we simply assign it to a name
 as we would assign any other value:
+{: .continue}
 
 [% inc file="example_def.py" keep="save" %]
 
@@ -79,11 +80,11 @@ so we write the call as:
 
 [% inc file="example_def.py" keep="call" %]
 
-To make `"call"` work,
+To make `"call"` work the way most programmers expect,
 we need to implement [%i "scope" %]
 so that parameters and variables used in a function
-don't overwrite those defined outside it—in other words,
-to prevent [%g name_collision "name collision" %].
+aren't confused with defined outside it—in other words,
+we need to prevent [%g name_collision "name collision" %].
 When a function is called with one or more expressions as [%i "argument" "arguments" %],
 we will:
 
@@ -138,6 +139,11 @@ is called is [%g dynamic_scoping "dynamic scoping" %].
 In contrast,
 most programming languages used [%g lexical_scoping "lexical scoping" %],
 which figures out what a variable name refers to based on the structure of the program text.
+The former is easier to implement (which is why we've chosen it);
+the latter is easier to understand,
+particularly in large programs.
+[%b Nystrom2021 %] has an excellent step-by-step explanation
+of how to build lexical scoping.
 
 </div>
 
@@ -156,39 +162,42 @@ Our test program and its output are:
 [% inc pat="func.*" fill="tll out" %]
 
 Once again,
-Python and other languages work exactly as shown here.
-The interpreter
-(or the CPU, if we're running code [%g compile "compiled" %] to machine instructions)
-reads an instruction,
-figures out what operation it corresponds to,
-and executes that operation.
+Python and other languages do more or less that we've done here.
+When we define a function,
+the interpreter saves the instructions in a lookup table.
+When we call a function at runtime,
+the interpreter finds the function in the table,
+creates a new stack frame,
+executes the instructions in the function,
+and pops the frame off the stack.
 
 ## Closures {: #func-closures}
 
 We normally define functions at the top level of our program,
 but Python and most other modern languages
 allow us to define functions within functions.
-And since functions are just another kind of data,
-we can return that inner function:
+Those inner functions have access to
+the variables defined in the enclosing function,
+just as the functions we've seen in earlier examples
+have access to things defined at the [%i "global" %] level of the program:
+
+[% inc pat="inner.*" fill="py out" %]
+
+But since functions are just another kind of data,
+the outer function can return the inner function it defined as its result:
 
 [% inc pat="closure.*" fill="py out" %]
 
-The inner function [%g variable_capture "captures" %]
+The inner function still has access to the value of `thing`,
+but nothing else in the program does.
+A computer scientist would say that the inner function [%g variable_capture "captures" %]
 the variables in the enclosing function
-to create a [%g closure "closure" %].
+to create a [%g closure "closure" %]
+([%f func-closure %]).
 Doing this is a way to make data private:
 once `make_hidden` returns `_inner` and we assign it to `m` in the example above,
 nothing else in our program can access
 the value that was passed to `make_hidden` as `thing`.
-
-Here's a more useful example of this technique:
-
-[% inc pat="adder.*" fill="py out" %]
-
-As [%f func-closure %] shows,
-we have essentially created a way to build functions *now*
-that remember the values they're supposed to add *later*.
-{: .continue}
 
 [% figure
    slug="func-closure"
@@ -197,41 +206,33 @@ that remember the values they're supposed to add *later*.
    caption="Closures"
 %]
 
+[% inc pat="adder.*" fill="py out" %]
+
 One common use of closures is
 to turn a function that needs many arguments
-into one that needs fewer.
-For example,
-Python's built-in `map` function
-applies a user-defined function to each value in a list:
-
-[% inc pat="map_double.*" fill="py out" %]
-
-It's annoying to have to define a one-line function
-each time we want to use this,
-so we can instead use a function to define the function we want
-and rely on closures to remember the extra parameters:
-
-[% inc file="map_closure.py" keep="keep" %]
-[% inc file="map_closure.out" %]
-
-In practice,
-most programmers would use `lambda` to wrap a function this way:
-
-[% inc file="map_lambda.py" keep="keep" %]
-[% inc file="map_lambda.out" %]
-
-We can also use closures to implement objects with truly private data.
+into one that needs fewer,
+i.e.,
+to create a function *now*
+that remembers some values it's supposed to use *later*;
+we will explore this in [%x reflect %].
+Closures are also another way to implement objects.
+Instead of building a dictionary ourselves as we did in [%x oop %],
+we use the one that Python creates behind the scenes to implement a closure.
 In the code below,
 for example,
 the function `make_object` creates a dictionary
-that exposes two functions:
+containing two functions:
 
 [% inc pat="oop.*" fill="py out" %]
 
 These functions both refer to a dictionary called `private`,
-through which they can share data,
-but nothing else in the program has access to that dictionary
-([%f func-objects %]).
+which is another way of saying that
+they both have reference to the dictionary Python created to represent the closure
+that has a key `"private"` ([%f func-objects %]).
+They share the data in this dictionary,
+but nothing else in the program has access to it.
+We could add more keys to this dictionary to create more complex objects,
+and build an entire system of objects and classes this way.
 {: .continue}
 
 [% figure
@@ -278,6 +279,17 @@ without requiring a separate `"set"` instruction.
 2.  Why might this be a good idea?
     What does it make more difficult?
 
+### What Can Change? {: .exercise}
+
+Explain why this program doesn't work:
+
+[% inc file="counter_fail.py" %]
+
+Explain why this one does:
+{: .continue}
+
+[% inc file="counter_succeed.py" %]
+
 ### How Private Are Closures? {: .exercise}
 
 If the data in a closure is private,
@@ -285,3 +297,22 @@ explain why lines 1 and 2 are the same in the output of this program
 but lines 3 and 4 are different.
 
 [% inc pat="closure_list.*" fill="py out" %]
+
+### Generalizing Closure-Based Objects {: .exercise}
+
+Modify the `getter`/`setter` example so that:
+
+1.  `make_object` accepts any number of named parameters
+    and copies them into the `private` dictionary.
+
+2.  `getter` takes a name as a parameter
+    and returns the corresponding value from the dictionary.
+
+3.  `setter` takes a name and a new value as parameters
+    and updates the dictionary.
+
+What does your implementation of `getter` do
+if the name isn't already in the `private` dictionary?
+What does your `setter` do
+if the name isn't already there?
+What does it do if the update value has a different type than the current value?

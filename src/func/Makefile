@@ -4,10 +4,8 @@ TARGETS=\
   closure_list.out \
   dynamic.out \
   func.out \
-  oop.out \
-  map_closure.out \
-  map_double.out \
-  map_lambda.out
+  inner.out \
+  oop.out
 
 include ../../examples.mk
 

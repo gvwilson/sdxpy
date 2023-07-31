@@ -1,15 +1,15 @@
-def make_object(**kwarg):
-    private = kwarg.copy()
+def make_object(initial_value):
+    private = {"value": initial_value}
 
-    def getter(name):
-        return private[name]
+    def getter():
+        return private["value"]
 
-    def setter(name, value):
-        private[name] = value
+    def setter(new_value):
+        private["value"] = new_value
 
     return {"get": getter, "set": setter}
 
-obj = make_object(thing=0)
-print("initial value", obj["get"]("thing"))
-obj["set"]("thing", 99)
-print("obj['thing'] is now", obj["get"]("thing"))
+object = make_object(00)
+print("initial value", object["get"]())
+object["set"](99)
+print("object now contains", object["get"]())
