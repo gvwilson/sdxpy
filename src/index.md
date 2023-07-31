@@ -42,7 +42,7 @@ As of [% date %],
 the chapters that need the most work are:
 
 -   [%x func title=true %]
--   [%x reflect title=true %]
+-   [%x protocols title=true %]
 -   [%x binary title=true %]
 -   [%x db title=true %]
 -   [%x ftp title=true %]

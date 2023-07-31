@@ -57,7 +57,7 @@ Let's create a class to store experimental records:
 
 [% inc file="record_original.py" omit="omit" %]
 
-and use the `pytest.fixture` [%i "decorator" %] from [%x reflect %]
+and use the `pytest.fixture` [%i "decorator" %] ([%x protocols %])
 to create a database and two records:
 {: .continue}
 

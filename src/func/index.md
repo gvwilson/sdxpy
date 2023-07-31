@@ -214,7 +214,7 @@ into one that needs fewer,
 i.e.,
 to create a function *now*
 that remembers some values it's supposed to use *later*;
-we will explore this in [%x reflect %].
+we will explore this in [%x protocols %].
 Closures are also another way to implement objects.
 Instead of building a dictionary ourselves as we did in [%x oop %],
 we use the one that Python creates behind the scenes to implement a closure.

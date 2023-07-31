@@ -6,7 +6,7 @@
   <meta name="repo" content="https://github.com/gvwilson/sdxpy">
   <meta name="build_date" content="2023-07-31">
   <meta name="template" content="default">
-  <meta name="major" content="reflect">
+  <meta name="major" content="protocols">
   <meta name="has_slides" content="true">
   <link rel="icon" type="image/x-icon" href="../favicon.ico">
   <link rel="stylesheet" href="../mccole.css">
@@ -25,7 +25,7 @@
     async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
   </script>
   <script defer src="../mccole.js"></script>
-  <title>Software Design by Example: Reflection</title>
+  <title>Software Design by Example: Protocols</title>
 </head>
 
   <body>
@@ -88,8 +88,8 @@
   </li>
   
   <li>
-    <a href="../reflect/">
-      <strong>Reflection</strong>
+    <a href="../protocols/">
+      <strong>Protocols</strong>
     </a>
   </li>
   
@@ -267,7 +267,7 @@
       <div id="printable" class="contents bordered">
         <main>
           
-  <h1>Chapter 9: Reflection</h1>
+  <h1>Chapter 9: Protocols</h1>
 
 
           
@@ -276,7 +276,7 @@
     DRAFT 2023-07-31
   </p>
   <p>
-    awaiting revision<br>
+    revisions completed 2023-07-31<br>
     Please use section heading links to submit feedback.
   </p>
 </div>
@@ -358,7 +358,7 @@
 
 
 <p class="definitions">
-  Terms defined: <a class="gl-ref" href="../glossary/#gl:append_mode" markdown="1">append mode</a>, <a class="gl-ref" href="../glossary/#gl:context_manager" markdown="1">context manager</a>, <a class="gl-ref" href="../glossary/#gl:decorator" markdown="1">decorator</a>, <a class="gl-ref" href="../glossary/#gl:iterator" markdown="1">iterator</a>, <a class="gl-ref" href="../glossary/#gl:mock_object" markdown="1">mock object</a>, <a class="gl-ref" href="../glossary/#gl:promise" markdown="1">promise</a>, <a class="gl-ref" href="../glossary/#gl:protocol" markdown="1">protocol</a>
+  Terms defined: <a class="gl-ref" href="../glossary/#gl:append_mode" markdown="1">append mode</a>, <a class="gl-ref" href="../glossary/#gl:context_manager" markdown="1">context manager</a>, <a class="gl-ref" href="../glossary/#gl:decorator" markdown="1">decorator</a>, <a class="gl-ref" href="../glossary/#gl:infinite_recursion" markdown="1">infinite recursion</a>, <a class="gl-ref" href="../glossary/#gl:iterator" markdown="1">iterator</a>, <a class="gl-ref" href="../glossary/#gl:iterator_pattern" markdown="1">Iterator pattern</a>, <a class="gl-ref" href="../glossary/#gl:mock_object" markdown="1">mock object</a>, <a class="gl-ref" href="../glossary/#gl:protocol" markdown="1">protocol</a>
 </p>
 
 
@@ -368,23 +368,20 @@
           <div class="page-toc"></div>
           <p>This book is supposed to teach software design
 by implementing small versions of real-world tools,
-but we have reached a point where we have to learn a little more about Python
+but we have reached a point where we need to learn a little more about Python itself
 in order to proceed.
-The same thing happened in <span class="bib-ref">[<a class="bib-ref" href="../bib/#Wilson2022b">Wilson2022b</a>]</span>,
-which had to explain how <a class="gl-ref" href="../glossary/#gl:promise" title="A placeholder representing the eventual result of an asynchronous computation." markdown="1">promises</a> work
-to make later examples approachable;
-as in that book,
-the explanations below refer back to what we&rsquo;ve already seen
-about how languages themselves work.</p>
-<h2 id="reflect-mock">Section 9.1: Mock Objects</h2>
-<p><a class="x-ref" href="../func/">Chapter 8</a> showed that functions are bound to names
-just like other values are bound to other variables.
+Our discussion of closures in <a class="x-ref" href="../func/">Chapter 8</a> was the first step;
+in this chapter,
+we will look at how Python allows users to tell it to do things at specific moments.</p>
+<h2 id="protocols-mock">Section 9.1: Mock Objects</h2>
+<p>We have already seen that functions are objects referred to by variable names
+just like other values.
 We can use this fact to change functions at runtime to make testing easier.
 For example,
 if the function we want to test uses the time of day,
 we can temporarily replace the real <code>time.time</code> function
 with one that returns a specific value
-so we know what result to expect:</p>
+so we know what result to expect in our test:</p>
 <div class="code-sample lang-py" title="mock_time.py">
 <div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">time</span>
 
@@ -404,7 +401,8 @@ because we usually use objects even if the thing we&rsquo;re replacing is a func
 We can do this because Python lets us create objects
 that can be &ldquo;called&rdquo; just like functions.
 If an object <code>obj</code> has a <code>__call__</code> method,
-then <code>obj(…)</code> is automatically turned into <code>obj.__call__(…)</code>.
+then <code>obj(…)</code> is automatically turned into <code>obj.__call__(…)</code>
+just as <code>a == b</code> is automatically turned into <code>a.__eq__(b)</code> (<a class="x-ref" href="../parse/">Chapter 5</a>).
 For example,
 the code below defines a class <code>Adder</code>
 whose instances add a constant to their input:</p>
@@ -431,7 +429,7 @@ whose instances add a constant to their input:</p>
 <p>defines a <code>__call__</code> method so that instances can be called like functions;</p>
 </li>
 <li>
-<p>declares the parameters of that method to be <code>*args*</code> and <code>**kwargs</code>
+<p>declares the parameters of that method to be <code>*args</code> and <code>**kwargs</code>
     so that it can be called with any number of regular or keyword arguments;</p>
 </li>
 <li>
@@ -482,14 +480,14 @@ and write a test for it:</p>
 </div>
 <p>We then use <code>fixit</code> to replace the real <code>adder</code> function
 with a mock object that always returns 99
-(<a class="fig-ref" href="../reflect/#reflect-timeline">Figure 9.1</a>):</p>
+(<a class="fig-ref" href="../protocols/#protocols-timeline">Figure 9.1</a>):</p>
 <div class="code-sample lang-py" title="mock_object.py">
 <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">test_with_fixed_return_value</span><span class="p">():</span>
     <span class="n">fixit</span><span class="p">(</span><span class="s2">&quot;adder&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mi">99</span><span class="p">)</span>
     <span class="k">assert</span> <span class="n">adder</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span> <span class="o">==</span> <span class="mi">99</span>
 </code></pre></div>
 </div>
-<figure id="reflect-timeline">
+<figure id="protocols-timeline">
 <img src="./timeline.svg" alt="Timeline of mock operation"/>
 <figcaption markdown="1">Figure 9.1: Timeline of mock operation.</figcaption>
 </figure>
@@ -512,16 +510,15 @@ the user can provide a function to calculate a return value:</p>
     <span class="k">assert</span> <span class="n">adder</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span> <span class="o">==</span> <span class="mi">23</span>
 </code></pre></div>
 </div>
-<h2 id="reflect-protocols">Section 9.2: Protocols</h2>
+<h2 id="protocols-protocols">Section 9.2: Protocols</h2>
 <p>Mock objects are very useful,
 but the way we&rsquo;re using them is going to cause strange errors.
 The problem is that
-every test except the first one replaces <code>adder</code> with a mock object
-that does something different.
+each test replaces <code>adder</code> with a mock object that does something different.
 As a result,
-any test that <em>doesn&rsquo;t</em> replace <code>adder</code> will run with
+any test that <em>doesn&rsquo;t</em> replace <code>adder</code> will use
 whatever mock object was last put in place
-rather than with the original <code>adder</code> function.</p>
+rather than the original <code>adder</code> function.</p>
 <p>We could tell users it&rsquo;s their job to put everything back after each test,
 but people are forgetful.
 It would be better if Python did this automatically;
@@ -546,7 +543,7 @@ then when Python executes a <code>with</code> block like this:</p>
 <div class="highlight"><pre><span></span><code><span class="k">with</span> <span class="n">C</span><span class="p">(</span><span class="err">…</span><span class="n">args</span><span class="err">…</span><span class="p">)</span> <span class="k">as</span> <span class="n">name</span><span class="p">:</span>
     <span class="err">…</span><span class="n">do</span> <span class="n">things</span><span class="err">…</span>
 </code></pre></div>
-<p class="continue">it does the following (<a class="fig-ref" href="../reflect/#reflect-context-manager">Figure 9.2</a>)):</p>
+<p class="continue">it does the following (<a class="fig-ref" href="../protocols/#protocols-context-manager">Figure 9.2</a>)):</p>
 <ol>
 <li>Call <code>C</code>&lsquo;s <span class="ix-entry" ix-key="constructor" markdown="1">constructor</span>
     to create an object that it associates with the code block.</li>
@@ -555,7 +552,7 @@ then when Python executes a <code>with</code> block like this:</p>
 <li>Run the code inside the <code>with</code> block.</li>
 <li>Call <code>name.__exit__()</code> when the block finishes.</li>
 </ol>
-<figure id="reflect-context-manager">
+<figure id="protocols-context-manager">
 <img src="./context_manager.svg" alt="A context manager"/>
 <figcaption markdown="1">Figure 9.2: Operations performed by a context manager.</figcaption>
 </figure>
@@ -580,13 +577,13 @@ and adds the two methods needed by <code>with</code>:</p>
 </code></pre></div>
 </div>
 <p>Notice that <code>__enter__</code> doesn&rsquo;t take any extra parameters:
-anything it needs should be provided to the constructor.
+anything it needs must be provided via the object&rsquo;s constructor.
 On the other hand,
 <code>__exit__</code> will always be called with three values
 that tell it whether an <span class="ix-entry" ix-key="exception" markdown="1">exception</span> occurred,
 and if so,
-what the exception was.</p>
-<p class="continue">Here&rsquo;s a test to prove that our context manager works:</p>
+what the exception was.
+This test shows that our context manager is doing what it&rsquo;s supposed to:</p>
 <div class="code-sample lang-py" title="mock_context.py">
 <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">subber</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">a</span> <span class="o">-</span> <span class="n">b</span>
@@ -599,15 +596,20 @@ what the exception was.</p>
     <span class="k">assert</span> <span class="n">subber</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span>
 </code></pre></div>
 </div>
-<h2 id="reflect-decorator">Section 9.3: Decorators</h2>
+<p>Context managers can&rsquo;t prevent people from making mistakes,
+but they make it easier for people to do the right thing.
+They are also an example of how programming languages often evolve:
+eventually,
+if enough people are doing something the same way in enough places,
+support for that way of doing things is added to the language.</p>
+<h2 id="protocols-decorator">Section 9.3: Decorators</h2>
 <p>Python programs rely on several other protocols,
 each of which gives user-level code a way to interact with
 some aspect of the Python <span class="ix-entry" ix-key="interpreter" markdown="1">interpreter</span>.
 One of the most widely used is called a <a class="gl-ref" href="../glossary/#gl:decorator" title="A function A that can be applied to another function B when function B is being defined to change its behavior in some way." markdown="1">decorator</a>,
 which allows us to wrap one function with another.</p>
 <p>In order to understand how decorators work,
-we must take another look at <span class="ix-entry" ix-key="closure" markdown="1">closures</span>,
-which were introduced in <a class="x-ref" href="../func/">Chapter 8</a>.
+we must take another look at <span class="ix-entry" ix-key="closure" markdown="1">closures</span> (<a class="x-ref" href="../func/">Chapter 8</a>).
 Suppose we want to create a function called <code>logging</code>
 that prints a message before and after
 each call to some other arbitrary function.
@@ -625,12 +627,14 @@ We could try to do it like this:</p>
 <span class="n">original</span><span class="p">(</span><span class="s2">&quot;example&quot;</span><span class="p">)</span>
 </code></pre></div>
 </div>
-<p>but when we try to call <code>original</code> we wind up in an infinite loop.
+<p class="continue">but when we try to call <code>original</code> we wind up in an infinite loop.
 The wrapped version of our function refers to <code>original</code>,
-but Python looks that up at the time of call,
-which means it calls the wrapped function instead.
-We can prevent this infinite <span class="ix-entry" ix-key="recursion" markdown="1">recursion</span>
-by creating a closure:</p>
+but Python looks up the function associated with that name <em>at the time of call</em>,
+which means it finds our wrapper function instead of the original function
+(<a class="fig-ref" href="../protocols/#protocols-recursion">Figure 9.3</a>).
+We can prevent this <a class="gl-ref" href="../glossary/#gl:infinite_recursion" title="Recursion that never stops because it never reaches a case that doesn&#x27;t require further evaluation; the recursive equivalent of an infinite loop." markdown="1">infinite recursion</a>
+by creating a closure to <span class="ix-entry" ix-key="variable_capture" markdown="1">capture</span>
+the original function for later use:</p>
 <div class="code-sample lang-py" title="wrap_capture.py">
 <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">original</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;original: </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
@@ -652,7 +656,12 @@ original: example
 after call
 </code></pre></div>
 </div>
-<p>Doing this also gives us a way to pass extra arguments
+<figure id="protocols-recursion">
+<img src="./recursion.svg" alt="Infinite recursion with a wrapped function"/>
+<figcaption markdown="1">Figure 9.3: Infinite recursion caused by careless use of a wrapped function.</figcaption>
+</figure>
+
+<p>Using a closure also gives us a way to pass extra arguments
 when we create the wrapped function:</p>
 <div class="code-sample lang-py" title="wrap_param.py">
 <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">original</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
@@ -703,21 +712,18 @@ after call
 </div>
 <p>If we want to pass parameters at the time we apply the decorator,
 though,
-it seems like we&rsquo;re stuck,
-because a Python decorator must take exactly one argument,
-which must be the function we want to decorate.</p>
-<p>If we want to pass extra parameters,
-we need to call a function that returns a function of one parameter
-that we can then use as a decorator.
-This means that we need to define a function inside a function <em>inside another function</em>
+it seems like we&rsquo;re stuck:
+a Python decorator must take exactly one argument,
+which must be the function we want to decorate.
+The solution is to define a function inside a function <em>inside yet another function</em>
 to create a closure that captures the parameters:</p>
 <div class="code-sample lang-py" title="decorator_param.py">
 <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">wrap</span><span class="p">(</span><span class="n">label</span><span class="p">):</span>                  <span class="c1"># function returning a decorator</span>
-    <span class="k">def</span> <span class="nf">_decorate</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>          <span class="c1"># the actual decorator</span>
+    <span class="k">def</span> <span class="nf">_decorate</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>          <span class="c1"># the decorator Python will apply</span>
         <span class="k">def</span> <span class="nf">_inner</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>        <span class="c1"># the wrapped function</span>
             <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;++ </span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>  <span class="c1"># &#39;label&#39; is visible because</span>
-            <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>           <span class="c1"># it&#39;s captured in the closure</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;-- </span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>  <span class="c1"># of &#39;_decorate&#39;</span>
+            <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>           <span class="c1"># …it&#39;s captured in the closure</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;-- </span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>  <span class="c1"># …of &#39;_decorate&#39;</span>
         <span class="k">return</span> <span class="n">_inner</span>
     <span class="k">return</span> <span class="n">_decorate</span>
 
@@ -734,8 +740,6 @@ original: example
 -- wrapping
 </code></pre></div>
 </div>
-<div class="callout">
-<h3>Design Flaw</h3>
 <p>Decorators didn&rsquo;t need to be this complicated.
 In order to define a method that takes \( N \) parameters in Python,
 we have to write a function of \( N+1 \) parameters,
@@ -756,17 +760,16 @@ and have <code>@</code> fill in the first automatically:</p>
     <span class="k">return</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">x</span>         <span class="c1"># double = decorator(double, &quot;message&quot;)</span>
 </code></pre></div>
 </div>
-<p>But this isn&rsquo;t the path Python took,
+<p class="continue">But this isn&rsquo;t the path Python took,
 and as a result,
-decorators are much harder to learn and use than they could have been.</p>
-</div>
-<h2 id="reflect-iterator">Section 9.4: Iterators</h2>
+decorators are harder to learn and use than they could have been.</p>
+<h2 id="protocols-iterator">Section 9.4: Iterators</h2>
 <p>As a last example of how protocols work,
 consider the <code>for</code> loop.
-A statement like <code>for thing in collection</code>
-assigns each item in <code>collection</code> to the variable <code>thing</code> one at a time,
-possibly in a predetermined order.
-Python implements this using a two-part <a class="gl-ref" href="../glossary/#gl:iterator" title="A function or object that produces each value from a collection in turn for processing." markdown="1">iterator</a> protocol:</p>
+The statement <code>for thing in collection</code>
+assigns items from <code>collection</code> to the variable <code>thing</code> one at a time.
+Python implements <code>for</code> this using a two-part <a class="gl-ref" href="../glossary/#gl:iterator" title="A function or object that produces each value from a collection in turn for processing." markdown="1">iterator</a> protocol,
+which is a version of the <a class="gl-ref" href="../glossary/#gl:iterator_pattern" title="A design pattern that uses iterators to hide the differences between different kinds of data structures so that everything can be processed using loops." markdown="1">Iterator</a> <span class="ix-entry" ix-key="design pattern" markdown="1">design pattern</span>:</p>
 <ol>
 <li>
 <p>If an object has an <code>__iter__</code> method,
@@ -782,8 +785,7 @@ Python implements this using a two-part <a class="gl-ref" href="../glossary/#gl:
 <p>For example,
 suppose we have a class that stores a list of strings
 and we want to return the characters from the strings in order.
-(We will use a <span class="ix-entry" ix-key="buffer (of text)" markdown="1">buffer (of text)</span> class like this
-to store text for viewing in <a class="x-ref" href="../viewer/">Chapter 23</a>.)
+(We will use a class like this to store lines of text in <a class="x-ref" href="../viewer/">Chapter 23</a>.)
 In our first attempt,
 each object is its own iterator,
 i.e.,
@@ -804,9 +806,10 @@ each object keeps track of what value to return next when looping:</p>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_text</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_row</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">_col</span><span class="p">]</span>
 </code></pre></div>
 </div>
-<p>The <code>advance</code> method moves the column marker forward within the current row,
-advancing the row and resetting the column to 0 when it reaches
-the end of the current line:</p>
+<p>If we think of the text in terms of rows and columns,
+the <code>advance</code> method moves the column marker forward within the current row.
+When we reach the end of a row,
+we reset the column to 0 and advance the row index by one:</p>
 <div class="code-sample lang-py" title="naive_iterator.py">
 <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">_advance</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_row</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_text</span><span class="p">):</span>
@@ -888,13 +891,13 @@ using code identical to what we&rsquo;ve already seen
 </div>
 <p class="continue">With this change in place,
 our test of nested loops pass.</p>
-<h2 id="reflect-summary">Section 9.5: Summary</h2>
-<figure id="reflect-concept-map" class="here">
+<h2 id="protocols-summary">Section 9.5: Summary</h2>
+<figure id="protocols-concept-map" class="here">
 <img src="./concept_map.svg" alt="Concept map of mocks, protocols, and iterators"/>
-<figcaption markdown="1">Figure 9.3: Concept map</figcaption>
+<figcaption markdown="1">Figure 9.4: Concept map</figcaption>
 </figure>
 
-<h2 id="reflect-exercises">Section 9.6: Exercises</h2>
+<h2 id="protocols-exercises">Section 9.6: Exercises</h2>
 <h3 class="exercise">Testing Exceptions</h3>
 <p>Create a context manager that works like <code>pytest.raises</code> from the <a href="https://docs.pytest.org/">pytest</a> module,
 i.e.,

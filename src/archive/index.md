@@ -99,7 +99,7 @@ as we back things up and restore them.
 To make sure early tests don't contaminate later ones
 we would have to re-create those files and directories after each test.
 
-As discussed in [%x reflect %],
+As discussed in [%x protocols %],
 a better approach is to use a [%i "mock object" %]
 instead of the real filesystem.
 The [pyfakefs][pyfakefs] module replaces key functions like `open`
