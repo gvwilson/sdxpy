@@ -18,9 +18,7 @@ most data scientists haven't encountered.  Finally, we hope that if
 you know how programming tools work, you'll be more likely to use them
 and better able to use them well.
 
-## How You Can Help
-
-Everything is welcome, but what would help most is:
+Help of all kinds is welcome—we are very grateful for the following:
 
 1.  Fixes for mistakes in the code, the descriptions, or the formatting.
     All of the examples run and all of the tests pass,
