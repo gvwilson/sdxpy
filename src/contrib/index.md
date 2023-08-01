@@ -2,6 +2,31 @@ Contributions are very welcome;
 please contact us by email or by filing an issue on this site.
 All contributors must abide by our Code of Conduct.
 
+## Making a Quick Fix {: #contrib-quick}
+
+1.  Clone the GitHub repository at [%config repo %].
+
+1.  Create a new Python virtual environment.
+
+1.  `pip install -r lib/mccole/requirements.txt`.
+
+1.  `pip install -r ./requirements.txt`.
+
+1.  `make` will show a list of available commands.
+
+1.  `make build` to regenerate HTML from Markdown.
+    -   The generated HTML can be found in `./docs`.
+    -   You must have [draw.io][draw_io] installed and on your path to regenerate diagrams.
+
+1.  `make serve` to regenerate HTML and preview it locally.
+    -   The preview appears at `http://localhost:4000/`.
+    -   [Ark][ark] will regenerate the HTML as the Markdown files are edited and saved.
+
+1.  To change a code example and its output:
+    1.  `cd ./src/chapter`.
+    1.  Edit the Python file(s) you wish to change.
+    1.  Run `make` in the chapter directory to rebuild the corresponding output files.
+
 ## FAQ {: #contrib-faq}
 
 What sort of feedback would be useful?
@@ -19,8 +44,7 @@ What sort of feedback would be useful?
     1.  More or better exercises.
         "This is too hard" or "this is unclear" helps as well.
 
-Why don't the examples connect with each other?
-For example, why don't they build toward a complete minimal IDE?
+Why don't the examples connect with each other? For example, why don't they build toward a complete minimal IDE?
 
 :   It was tempting, but attempts to do this in the past have not gone well.
     First, it makes maintenance much more difficult
@@ -56,9 +80,7 @@ Do you need any programming assistance?
 
 :   Yes—please see the [issue tracker][book_issues].
 
-Why did you build your own production pipeline instead of using
-[GitBook][gitbook], [Quarto][quarto], [Jupyter Book][jupybook],
-or some other existing tool?
+Why did you build your own production pipeline instead of using [GitBook][gitbook], [Quarto][quarto], [Jupyter Book][jupybook], or some other existing tool?
 
 :   I've written or edited books with those tools and others like them,
     and found them more frustrating than helpful.
@@ -73,7 +95,7 @@ or some other existing tool?
 Why is this book free to read online?
 
 :   Because I would rather be able to fix errata
-    than have people torrenting out-of-date pirated PDFs.
+    than have people pirating out-of-date PDFs.
 
 Why are the royalties going to charity?
 

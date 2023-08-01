@@ -15,4 +15,8 @@ def config(pargs, kwargs, node):
         assert key in ark.site.config, "No email address in configuration"
         email = ark.site.config["email"]
         return f'<a href="mailto:{email}" class="email">{email}</a>'
+    elif key == "repo":
+        assert key in ark.site.config, "No GitHub repository in configuration"
+        repo = ark.site.config["repo"]
+        return f'<a href="{repo}">{repo}</a>'
     assert False, f"Unknown 'config' key {key}"
