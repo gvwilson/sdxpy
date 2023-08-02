@@ -20,6 +20,7 @@ release:
 	cd docs && zip -q -r ${SDXPY_RELEASE}/${ABBREV}-examples.zip . \
 	-i '*.ht' '*.json' '*.out' '*.py' '*.sh' '*.txt' '*.yml' \
 	-x '*.css' '*.html' '*.ico' '*.js' '*.svg' '*.webp'
+	cd ${SDXPY_RELEASE} && unzip -q ${ABBREV}-examples.zip
 endif
 
 ## style: check source code style
