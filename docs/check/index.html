@@ -4,7 +4,7 @@
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="repo" content="https://github.com/gvwilson/sdxpy">
-  <meta name="build_date" content="2023-08-01">
+  <meta name="build_date" content="2023-08-03">
   <meta name="template" content="default">
   <meta name="major" content="check">
   <meta name="has_slides" content="true">
@@ -273,10 +273,10 @@
           
 <div class="draft notex">
   <p class="draft">
-    DRAFT 2023-08-01
+    DRAFT 2023-08-03
   </p>
   <p>
-    awaiting revision<br>
+    revisions completed 2023-08-03<br>
     Please use section heading links to submit feedback
     or go to <a href="https://github.com/gvwilson/sdxpy">https://github.com/gvwilson/sdxpy</a>.
   </p>
@@ -363,15 +363,13 @@
 
 
           <div class="page-toc"></div>
-          <p>Suppose we want to generate summaries of experiments as web pages.
-We want to be sure the generated pages have the right structure
-so that people can get information out of them reliably.
-We also want to make sure that they meet accessibility standards
-so that <em>everyone</em> can get information out of them.
-In short,
-we want the equivalent of unit tests for our output.</p>
-<p>This chapter builds a small tool to check the structure of HTML pages.
-Doing this prepares us for building a tool to generate pages (<a class="x-ref" href="../template/">Chapter 12</a>)
+          <p>Suppose we want to generate web pages to show the results of data analyses.
+We want to check that these pages all have the same structure
+so that people can find things in them,
+and that they meet accessibility standards
+so that <em>everyone</em> can find things in them.
+This chapter builds a small tool to do this checking,
+which introduces ideas we will use in building a page generator (<a class="x-ref" href="../template/">Chapter 12</a>)
 and another to check the structure and style of our code (<a class="x-ref" href="../lint/">Chapter 13</a>).</p>
 <h2 id="check-htmldom">Section 11.1: HTML and the DOM</h2>
 <p>An <a class="gl-ref" href="../glossary/#gl:html" title="The standard markup language used for web pages. HTML is represented in memory using DOM (Digital Object Model)." markdown="1">HTML</a> document is made up of <a class="gl-ref" href="../glossary/#gl:element" title="A named component in an HTML or XML document. Elements are usually written <code>&amp;lt;name&amp;gt;</code>…<code>&amp;lt;/name&amp;gt;</code>, where &quot;…&quot; represents the content of the element. Elements often have attributes." markdown="1">elements</a> and text.
@@ -382,19 +380,21 @@ while a <a class="gl-ref" href="../glossary/#gl:tag_closing" title="The textual 
 If the element is empty,
 we can use a <a class="gl-ref" href="../glossary/#gl:tag_self_closing" title="A textual marker representing an element in an HTML document that has no content, written <code>&amp;amp;lt;tag/&amp;amp;gt;</code>. A self-closing tag may contain attributes." markdown="1">self-closing tag</a> like <code>&lt;br/&gt;</code>
 to save some typing.
-Opening and self-closing tags can have <a class="gl-ref" href="../glossary/#gl:attribute" title="A name-value pair associated with an object, used to store metadata about the object such as an array&#x27;s dimensions." markdown="1">attributes</a>,
-which are written as <code>key="value"</code>.</p>
-<p>Tags must be properly nested,
-which has two consequences:</p>
-<ol>
-<li>
-<p>Something like <code>&lt;a&gt;&lt;b&gt;&lt;/a&gt;&lt;/b&gt;</code> is illegal.</p>
-</li>
-<li>
-<p>A document&rsquo;s elements form a <a class="gl-ref" href="../glossary/#gl:tree" title="A graph in which every node except the root has exactly one parent." markdown="1">tree</a> of <a class="gl-ref" href="../glossary/#gl:node" title="An element of a graph that is connected to other nodes by edges. Nodes typically have data associated with them, such as names or weights." markdown="1">nodes</a> and text
-    like the one shown in <a class="fig-ref" href="../check/#check-dom-tree">Figure 11.1</a>.</p>
-</li>
-</ol>
+Tags must be properly nested,
+i.e.,
+they must be closed in the reverse of the order in which they were opened.
+This rule means that things like <code>&lt;a&gt;&lt;b&gt;&lt;/a&gt;&lt;/b&gt;</code> are not allowed;
+it also means that
+a document&rsquo;s elements form a <a class="gl-ref" href="../glossary/#gl:tree" title="A graph in which every node except the root has exactly one parent." markdown="1">tree</a> of <a class="gl-ref" href="../glossary/#gl:node" title="An element of a graph that is connected to other nodes by edges. Nodes typically have data associated with them, such as names or weights." markdown="1">nodes</a> and text
+like the one shown in <a class="fig-ref" href="../check/#check-dom-tree">Figure 11.1</a>.</p>
+<p>This figure also shows that
+opening and self-closing tags can have <a class="gl-ref" href="../glossary/#gl:attribute" title="A name-value pair associated with an object, used to store metadata about the object such as an array&#x27;s dimensions." markdown="1">attributes</a>,
+which are written as <code>key="value"</code>.
+For example,
+if we want to put an image in an HTML page
+we specify the image file&rsquo;s name using the <code>src</code> attribute of the <code>img</code> tag:</p>
+<div class="highlight"><pre><span></span><code>&lt;img src=&quot;banner.png&quot; /&gt;
+</code></pre></div>
 <figure id="check-dom-tree">
 <img src="./dom_tree.svg" alt="DOM tree"/>
 <figcaption markdown="1">Figure 11.1: Representing HTML elements as a DOM tree.</figcaption>
@@ -432,13 +432,13 @@ to show us everything in the DOM:</p>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">NavigableString</span><span class="p">):</span>
         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;string: </span><span class="si">{</span><span class="nb">repr</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">string</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="k">return</span>
-
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;node: </span><span class="si">{</span><span class="n">node</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">node</span><span class="p">:</span>
-        <span class="n">display</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;node: </span><span class="si">{</span><span class="n">node</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">node</span><span class="p">:</span>
+            <span class="n">display</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
 </code></pre></div>
 </div>
-<p>We can test this with a short example:</p>
+<p>We can test this function with a short example:</p>
 <div class="code-sample lang-py" title="parse.py">
 <div class="highlight"><pre><span></span><code><span class="n">text</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;&lt;html&gt;</span>
 <span class="s2">&lt;body&gt;</span>
@@ -463,11 +463,16 @@ string: &#39;\n&#39;
 string: &#39;\n&#39;
 </code></pre></div>
 </div>
-<p class="continue">Notice that all of the newlines in our document
-have been preserved as text nodes.</p>
-<p>Finally,
-each <code>Tag</code> node has a <span class="ix-entry" ix-key="dictionary" markdown="1">dictionary</span> called <code>attrs</code>
-that stores the attributes of that node.
+<p class="continue">In order to keep everything in one file,
+we have written the HTML &ldquo;page&rdquo; as a multi-line Python string;
+we will do this frequency when writing unit tests
+so that the HTML <span class="ix-entry" ix-key="fixture" markdown="1">fixture</span> is right beside the test code.
+Notice in the output that the line breaks in the HTML
+have been turned into text nodes containing only a newline character `&rdquo;\n&rdquo;&rsquo;.
+It&rsquo;s easy to forget about these when writing code that processes pages.</p>
+<p>The last bit of the DOM that we need is its representation of attributes.
+Each <code>Tag</code> node has a <span class="ix-entry" ix-key="dictionary" markdown="1">dictionary</span> called <code>attrs</code>
+that stores the node&rsquo;s attributes.
 The values in this dictionary are either strings or lists of strings
 depending on whether the attribute has a single value or multiple values:</p>
 <div class="code-sample lang-py" title="attrs.py">
@@ -502,8 +507,8 @@ the current node and a dictionary
 whose keys are node names and whose values are sets
 containing the names of those nodes&rsquo; children.
 Each time it encounters a node,
-the function adds its children&rsquo;s names to the appropriate set
-and then calls itself:</p>
+the function adds the names of the child nodes to the appropriate set
+and then calls itself once for each child to collect their children:</p>
 <div class="code-sample lang-py" title="contains.py">
 <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">recurse</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">catalog</span><span class="p">):</span>
     <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">Tag</span><span class="p">)</span>
@@ -523,7 +528,7 @@ and then calls itself:</p>
 <div class="code-sample lang-html" title="page.html">
 <div class="highlight"><pre><span></span><code><span class="p">&lt;</span><span class="nt">html</span><span class="p">&gt;</span>
   <span class="p">&lt;</span><span class="nt">head</span><span class="p">&gt;</span>
-    <span class="p">&lt;</span><span class="nt">title</span><span class="p">&gt;</span>Software Design for Data Scientists<span class="p">&lt;/</span><span class="nt">title</span><span class="p">&gt;</span>
+    <span class="p">&lt;</span><span class="nt">title</span><span class="p">&gt;</span>Software Design by Example<span class="p">&lt;/</span><span class="nt">title</span><span class="p">&gt;</span>
   <span class="p">&lt;/</span><span class="nt">head</span><span class="p">&gt;</span>
   <span class="p">&lt;</span><span class="nt">body</span><span class="p">&gt;</span>
     <span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;</span>Main Title<span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
@@ -550,14 +555,14 @@ title:
 ul: li
 </code></pre></div>
 </div>
-<p>We have written several recursive functions already,
-all of which have more or less the same <span class="ix-entry" ix-key="control flow" markdown="1">control flow</span>.
-A good rule of software design is that if we have written something three times,
-we should turn what we&rsquo;ve learned into something reusable
+<p>At this point have written several recursive functions
+that have almost exactly the same <span class="ix-entry" ix-key="control flow" markdown="1">control flow</span>.
+A good rule of software design is that if we have built something three times
+we should make what we&rsquo;ve learned reusable
 so that we never have to write it again.
 In this case,
-we can use the <a class="gl-ref" href="../glossary/#gl:visitor_pattern" title="A design pattern in which the operation to be done is taken to each element of a data structure in turn. It is usually implemented by having a generator &quot;visitor&quot; that knows how to reach the structure&#x27;s elements, which is given a function or method to call for each in turn, and that carries out the specific operation." markdown="1">Visitor</a> <span class="ix-entry" ix-key="design pattern" markdown="1">design pattern</span>.
-A visitor is a <span class="ix-entry" ix-key="class" markdown="1">class</span> that knows how to get to each element of a data structure
+we will rewrite our code to use the <a class="gl-ref" href="../glossary/#gl:visitor_pattern" title="A design pattern in which the operation to be done is taken to each element of a data structure in turn. It is usually implemented by having a generator &quot;visitor&quot; that knows how to reach the structure&#x27;s elements, which is given a function or method to call for each in turn, and that carries out the specific operation." markdown="1">Visitor</a> <span class="ix-entry" ix-key="design pattern" markdown="1">design pattern</span>.</p>
+<p>A visitor is a <span class="ix-entry" ix-key="class" markdown="1">class</span> that knows how to get to each element of a data structure
 and call a user-defined <span class="ix-entry" ix-key="method" markdown="1">method</span> when it gets there.
 Our visitor will have three methods:
 one that it calls when it first encounters a node,
@@ -581,11 +586,12 @@ and one that it calls for text (<a class="fig-ref" href="../check/#check-visitor
     <span class="k">def</span> <span class="nf">_text</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span> <span class="k">pass</span>
 </code></pre></div>
 </div>
-<p class="continue">Notice that we provide do-nothing implementations of these three methods
-rather than having them <span class="ix-entry" ix-key="raise" markdown="1">raise</span> a <code>NotImplementedError</code>.
-A particular use of our <code>Visitor</code> class may not need some of these methods—for example,
-our catalog builder didn&rsquo;t need to do anything when leaving a node or for text nodes—and
-we shouldn&rsquo;t require people to implement things they don&rsquo;t need.</p>
+<p class="continue">We provide do-nothing implementations of the three action methods
+rather than having them <span class="ix-entry" ix-key="raise" markdown="1">raise</span> a <code>NotImplementedError</code>
+because a particular use of our <code>Visitor</code> class may not need some of these methods.
+For example,
+our catalog builder didn&rsquo;t need to do anything when leaving a node or for text nodes,
+and we shouldn&rsquo;t require people to implement things they don&rsquo;t need.</p>
 <figure id="check-visitor">
 <img src="./visitor.svg" alt="Visitor pattern order of operations"/>
 <figcaption markdown="1">Figure 11.2: Visitor checking each node in depth-first order.</figcaption>
@@ -646,11 +652,11 @@ ul:
 <p class="continue">We&rsquo;ve chosen to use <span class="ix-entry" ix-key="YAML" markdown="1">YAML</span>
 for the manifest
 because it&rsquo;s a relatively simple way to write nested rules.
-We could have used <span class="ix-entry" ix-key="JSON" markdown="1">JSON</span>,
+<span class="ix-entry" ix-key="JSON" markdown="1">JSON</span> would have worked just as well,
 but as we said in <a class="x-ref" href="../parse/">Chapter 5</a>,
 we shouldn&rsquo;t invent a syntax of our own:
 there are already too many in the world.</p>
-<p>Our <code>Check</code> class only needs a <span class="ix-entry" ix-key="constructor" markdown="1">constructor</span> to set everything up
+<p>Our <code>Check</code> class needs a <span class="ix-entry" ix-key="constructor" markdown="1">constructor</span> to set everything up
 and a <code>_tag_enter</code> method to handle nodes:</p>
 <div class="code-sample lang-py" title="check.py">
 <div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Check</span><span class="p">(</span><span class="n">Visitor</span><span class="p">):</span>
@@ -701,7 +707,10 @@ not directly inside the <code>body</code>,
 and that we&rsquo;re not supposed to <em>emphasize</em> words in lists.
 Other users&rsquo; rules may be different,
 but we now have the tool we need
-to check that any HTML we generate conforms to our intended rules.</p>
+to check that any HTML we generate conforms to our intended rules.
+More imoprtantly,
+we have a general pattern for building recursive code
+that we can use in upcoming chapters.</p>
 <h2 id="check-summary">Section 11.4: Summary</h2>
 <figure id="check-concept-map" class="here">
 <img src="./concept_map.svg" alt="Concept map for checking HTML"/>

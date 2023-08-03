@@ -3,10 +3,10 @@ def display(node):
     if isinstance(node, NavigableString):
         print(f"string: {repr(node.string)}")
         return
-
-    print(f"node: {node.name}")
-    for child in node:
-        display(child)
+    else:
+        print(f"node: {node.name}")
+        for child in node:
+            display(child)
 # [/display]
 
 # [text]

@@ -5,21 +5,18 @@ syllabus:
 -   Trees are usually processed using recursion.
 -   The Visitor design pattern is often used to perform an action for each member of a data structure.
 -   We can summarize and check the structure of an HTML page by visiting each node and recording what we find there.
-status: "awaiting revision"
+status: "revisions completed 2023-08-03"
 depends:
 -   parse
 ---
 
-Suppose we want to generate summaries of experiments as web pages.
-We want to be sure the generated pages have the right structure
-so that people can get information out of them reliably.
-We also want to make sure that they meet accessibility standards
-so that *everyone* can get information out of them.
-In short,
-we want the equivalent of unit tests for our output.
-
-This chapter builds a small tool to check the structure of HTML pages.
-Doing this prepares us for building a tool to generate pages ([%x template %])
+Suppose we want to generate web pages to show the results of data analyses.
+We want to check that these pages all have the same structure
+so that people can find things in them,
+and that they meet accessibility standards
+so that *everyone* can find things in them.
+This chapter builds a small tool to do this checking,
+which introduces ideas we will use in building a page generator ([%x template %])
 and another to check the structure and style of our code ([%x lint %]).
 
 ## HTML and the DOM {: #check-htmldom}
@@ -32,16 +29,24 @@ while a [%g tag_closing "closing tag" %] like `</p>` ends it.
 If the element is empty,
 we can use a [%g tag_self_closing "self-closing tag" %] like `<br/>`
 to save some typing.
-Opening and self-closing tags can have [%g attribute "attributes" %],
-which are written as `key="value"`.
-
 Tags must be properly nested,
-which has two consequences:
+i.e.,
+they must be closed in the reverse of the order in which they were opened.
+This rule means that things like `<a><b></a></b>` are not allowed;
+it also means that
+a document's elements form a [%g tree "tree" %] of [%g node "nodes" %] and text
+like the one shown in [%f check-dom-tree %].
 
-1.  Something like `<a><b></a></b>` is illegal.
+This figure also shows that
+opening and self-closing tags can have [%g attribute "attributes" %],
+which are written as `key="value"`.
+For example,
+if we want to put an image in an HTML page
+we specify the image file's name using the `src` attribute of the `img` tag:
 
-2.  A document's elements form a [%g tree "tree" %] of [%g node "nodes" %] and text
-    like the one shown in [%f check-dom-tree %].
+```
+<img src="banner.png" />
+```
 
 [% figure
    slug="check-dom-tree"
@@ -77,18 +82,23 @@ to show us everything in the DOM:
 
 [% inc file="parse.py" keep="display" %]
 
-We can test this with a short example:
+We can test this function with a short example:
 
 [% inc file="parse.py" keep="text" %]
 [% inc file="parse.out" %]
 
-Notice that all of the newlines in our document
-have been preserved as text nodes.
+In order to keep everything in one file,
+we have written the HTML "page" as a multi-line Python string;
+we will do this frequency when writing unit tests
+so that the HTML [%i "fixture" %] is right beside the test code.
+Notice in the output that the line breaks in the HTML
+have been turned into text nodes containing only a newline character `"\n"'.
+It's easy to forget about these when writing code that processes pages.
 {: .continue}
 
-Finally,
-each `Tag` node has a [%i "dictionary" %] called `attrs`
-that stores the attributes of that node.
+The last bit of the DOM that we need is its representation of attributes.
+Each `Tag` node has a [%i "dictionary" %] called `attrs`
+that stores the node's attributes.
 The values in this dictionary are either strings or lists of strings
 depending on whether the attribute has a single value or multiple values:
 
@@ -106,8 +116,8 @@ the current node and a dictionary
 whose keys are node names and whose values are sets
 containing the names of those nodes' children.
 Each time it encounters a node,
-the function adds its children's names to the appropriate set
-and then calls itself:
+the function adds the names of the child nodes to the appropriate set
+and then calls itself once for each child to collect their children:
 
 [% inc file="contains.py" keep="recurse" %]
 
@@ -121,13 +131,14 @@ it produces this output
 
 [% inc file="contains.out" %]
 
-We have written several recursive functions already,
-all of which have more or less the same [%i "control flow" %].
-A good rule of software design is that if we have written something three times,
-we should turn what we've learned into something reusable
+At this point have written several recursive functions
+that have almost exactly the same [%i "control flow" %].
+A good rule of software design is that if we have built something three times
+we should make what we've learned reusable
 so that we never have to write it again.
 In this case,
-we can use the [%g visitor_pattern "Visitor" %] [%i "design pattern" %].
+we will rewrite our code to use the [%g visitor_pattern "Visitor" %] [%i "design pattern" %].
+
 A visitor is a [%i "class" %] that knows how to get to each element of a data structure
 and call a user-defined [%i "method" %] when it gets there.
 Our visitor will have three methods:
@@ -137,11 +148,12 @@ and one that it calls for text ([%f check-visitor %]):
 
 [% inc file="visitor.py" keep="visitor" %]
 
-Notice that we provide do-nothing implementations of these three methods
-rather than having them [%i "raise" %] a `NotImplementedError`.
-A particular use of our `Visitor` class may not need some of these methods—for example,
-our catalog builder didn't need to do anything when leaving a node or for text nodes—and
-we shouldn't require people to implement things they don't need.
+We provide do-nothing implementations of the three action methods
+rather than having them [%i "raise" %] a `NotImplementedError`
+because a particular use of our `Visitor` class may not need some of these methods.
+For example,
+our catalog builder didn't need to do anything when leaving a node or for text nodes,
+and we shouldn't require people to implement things they don't need.
 {: .continue}
 
 [% figure
@@ -172,13 +184,13 @@ which types of nodes can be children of which others:
 We've chosen to use [%i "YAML" %]
 for the manifest
 because it's a relatively simple way to write nested rules.
-We could have used [%i "JSON" %],
+[%i "JSON" %] would have worked just as well,
 but as we said in [%x parse %],
 we shouldn't invent a syntax of our own:
 there are already too many in the world.
 {: .continue}
 
-Our `Check` class only needs a [%i "constructor" %] to set everything up
+Our `Check` class needs a [%i "constructor" %] to set everything up
 and a `_tag_enter` method to handle nodes:
 
 [% inc file="check.py" keep="check" %]
@@ -198,6 +210,9 @@ and that we're not supposed to *emphasize* words in lists.
 Other users' rules may be different,
 but we now have the tool we need
 to check that any HTML we generate conforms to our intended rules.
+More imoprtantly,
+we have a general pattern for building recursive code
+that we can use in upcoming chapters.
 
 ## Summary {: #check-summary}
 
