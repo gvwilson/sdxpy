@@ -29,6 +29,22 @@ All contributors must abide by our Code of Conduct.
 
 ## FAQ {: #contrib-faq}
 
+Why is this book free to read online?
+
+:   Because only a tiny minority of technical books make enough money
+    to pay back the time required to create them,
+    and because I would rather be able to fix errata
+    than have people pirating out-of-date PDFs.
+
+Why are the royalties going to charity?
+
+:   The [Red Door Family Shelter][red_door] and places like it
+    have always been short of money and resources,
+    and the COVID-19 pandemic only made matters worse.
+    They do more good on the average Tuesday than most of us do in a year
+    (or a lifetime);
+    I'm glad to be able to help however I can.
+
 What sort of feedback would be useful?
 
 :   Everything is welcome, but what would help most is:
@@ -53,9 +69,17 @@ Why don't the examples connect with each other? For example, why don't they buil
     if the examples are independent of each other,
     instructors can pick and choose the pieces that are most relevant to their audience and goals.
 
-Can I contribute a chapter?
+How did you settle on these particular topics?
 
-:   Absolutely, and if enough people do that we will publish a second volume.
+:   I started with a list of tools programmers use that can be implemented in the small
+    (like version control systems and debuggers).
+    I added a few things that programmers rely on (like page layout and object persistence),
+    then went back and filled in gaps,
+    which is why there are chapters on functions and closures, protocols, and binary data.
+
+Will there be a sequel?
+
+:   If enough people want to write chapters I would be happy to organize and edit a second volume.
     Some things I'd particularly like to see are:
 
     -   An object-relational mapper to show people how tools like [SQLAlchemy][sqlalchemy] work
@@ -76,10 +100,6 @@ Can I contribute a chapter?
     -   A database that uses B-trees instead of a log for storage
         ([% issue 151 %]).
 
-Do you need any programming assistance?
-
-:   Yes—please see the [issue tracker][book_issues].
-
 Why did you build your own production pipeline instead of using [GitBook][gitbook], [Quarto][quarto], [Jupyter Book][jupybook], or some other existing tool?
 
 :   I've written or edited books with those tools and others like them,
@@ -87,24 +107,10 @@ Why did you build your own production pipeline instead of using [GitBook][gitboo
     For example,
     the code samples in this book often show one or two methods from a class
     rather than the whole class;
-    there is no easy way to do this with tools built on computational notebooks.
+    there is no straightforward way to achieve that with tools built on computational notebooks.
     That said,
-    I'm sure other people will find this book's tooling frustrating,
-    and suggestions for improving it are welcome.
-
-Why is this book free to read online?
-
-:   Because I would rather be able to fix errata
-    than have people pirating out-of-date PDFs.
-
-Why are the royalties going to charity?
-
-:   The [Red Door Family Shelter][red_door] and places like it
-    have always been short of money and resources,
-    and the COVID-19 pandemic only made matters worse.
-    They do more good on the average Tuesday than most of us do in a year
-    (or a lifetime);
-    I'm glad to be able to help however I can.
+    I'm sure the authors of those systems would find this book's tooling
+    just as frustrating and I find theirs.
 
 ## Making Decisions {: #contrib-decisions}
 
