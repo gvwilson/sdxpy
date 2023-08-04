@@ -108,6 +108,7 @@ Module(
                     arg(arg='x')],
                 kwonlyargs=[],
                 kw_defaults=[],
+…
 ```
 
 
@@ -344,103 +345,6 @@ def check(self, scope):
 
 ---
 
-## Extension
-
--   Tedious to write a new visitor for each rule
-
-    -   And inefficient
-
--   Multiple inheritance is the wrong tool for this
-
-    -   What if several people write `visit_FuncDef`?
-
--   Use <a class="gl-ref" href="../../glossary/#gl:method_injection" title="To add methods to an existing class after its definition." markdown="1">method injection</a>
-    to add methods to classes after they have been defined
-
----
-
-## Filling In
-
-```py
-class BlankNodeVisitor(ast.NodeVisitor):
-    pass
-
-def print_name(self, node):
-    print(node.id)
-
-setattr(BlankNodeVisitor, "visit_Name", print_name)
-```
-
-
--   A class is just a specialized dictionary (kind of)
-
----
-
-## Filling In
-
-```py
-with open(sys.argv[1], "r") as reader:
-    source = reader.read()
-tree = ast.parse(source)
-finder = BlankNodeVisitor()
-finder.visit(tree)
-```
-
-
--   But still have the problem of <a class="gl-ref" href="../../glossary/#gl:name_collision" title="A situation in which two or more things are trying to use the same name at the same time or in the same scope." markdown="1">name collision</a>
-
----
-
-## Registration
-
--   Add handlers to a set of lists
-
-```py
-Handler = namedtuple("Handler", ["func", "data"])
-
-class RegisterNodeVisitor(ast.NodeVisitor):
-    def __init__(self):
-        super().__init__()
-        self.handlers = {}
-
-    def add_handler(self, nodeType, func, data=None):
-        handler = Handler(func, data)
-        if nodeType not in self.handlers:
-            self.handlers[nodeType] = []
-        self.handlers[nodeType].append(handler)
-
-    def visit_Name(self, node):
-        for handler in self.handlers.get(ast.Name, []):
-            handler.func(node, handler.data)
-```
-
-
----
-
-## Here's How It Works
-
-```py
-def count_names(node, counter):
-    counter[node.id] += 1
-```
-
-
-```py
-with open(sys.argv[1], "r") as reader:
-    source = reader.read()
-tree = ast.parse(source)
-
-finder = RegisterNodeVisitor()
-counter = Counter()
-finder.add_handler(ast.Name, count_names, counter)
-
-finder.visit(tree)
-print(counter)
-```
-
-
----
-
 class: summary
 
 ## Summary
@@ -522,6 +426,7 @@ class: summary
 [py_array]: https://docs.python.org/3/library/array.html
 [py_ast]: https://docs.python.org/3/library/ast.html
 [py_chainmap]: https://docs.python.org/3/library/collections.html#collections.ChainMap
+[py_collections]: https://docs.python.org/3/library/collections.html
 [py_cprofile]: https://docs.python.org/3/library/profile.html
 [py_curses]: https://docs.python.org/3/library/curses.html
 [py_fractions]: https://docs.python.org/3/library/fractions.html

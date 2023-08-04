@@ -177,7 +177,7 @@ def _include_file(node, filepath, *filters):
 
 def _keep_head(filepath, lines, num):
     """Keep first N lines."""
-    return lines[:num]
+    return [*lines[:num], "…"]
 
 
 def _keep_lines(filepath, lines, key):

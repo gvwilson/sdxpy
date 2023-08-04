@@ -120,6 +120,92 @@ and `reference.part` if it isn't.
 
 [% fixme "Explain how to load modules dynamically given a list of names." %]
 
+## Extension {: #bonus-extension}
+
+It's easy to check a single style rule by extending `NodeVisitor`,
+but what if we want to check dozens of rules?
+Traversing the AST dozens of times would be inefficient.
+And what if we want people to be able to add their own rules?
+Inheritance is the wrong tool for this:
+if several people each create their own `NodeVisitor` with a `visit_Name` method,
+we'd have to inherit from all those classes
+and then have the new class's `visit_Name` call up to all of its parents' equivalent methods.
+
+One way around this is to [%g method_injection "inject" %] methods into classes
+after they have been defined.
+The code fragment below creates a new class called `BlankNodeVisitor`
+that doesn't add anything to `NodeVisitor`,
+then uses `setattr` to add a method to it after it has been defined
+([%f bonus-injection %]):
+
+[% inc file="injection.py" keep="attach" %]
+
+[% figure
+   slug="bonus-injection"
+   img="injection.svg"
+   alt="Method injection"
+   caption="Adding methods to classes after their definition."
+%]
+
+This trick works because classes and objects are just specialized dictionaries
+(for some large value of "just").
+If we create an object of `BlankNodeVisitor` and call its `visit` method:
+
+[% inc file="injection.py" keep="main" %]
+
+then the inherited `generic_visit` method does what it always does.
+When it encounters a `Name` node,
+it looks in the object for something called `visit_Name`.
+Since it doesn't find anything,
+it looks in the object's class for something with that name,
+finds our injected method,
+and calls it.
+
+With a bit more work we could have our injected method save and then call
+whatever `visit_Name` method was there when it was added to the class,
+but we would quickly run into a problem.
+As we've seen in earlier examples,
+the methods that handle nodes are responsible for deciding
+whether and when to recurse into those nodes' children.
+If we pile method on top of one another,
+then either each one is going to trigger recursion
+(so we recurse many times)
+or there will have to be some way for each one to signal
+whether it did that
+so that other methods don't.
+
+To avoid this complication,
+most systems use a different approach.
+Consider this class:
+
+[% inc file="register.py" keep="class" %]
+
+The `add_handler` method takes three parameters:
+the type of node a callback function is meant to handle,
+the function itself,
+and an optional extra piece of data to pass to the function
+along with an AST node.
+It saves the handler function and the data in a lookup table
+indexed by the type of node the function is meant to handle.
+Each of the methods inherited from `NodeVisitor`
+then looks up handlers for its node type and runs them.
+
+So what do handlers look like?
+Each one is a function that takes a node and some data as input
+and does whatever it's supposed to do:
+
+[% inc file="register.py" keep="handler" %]
+
+Setting up the visitor is a bit more complicated,
+since we have to create and [%i "register (in code)" "register" %] the handler:
+
+[% inc file="register.py" keep="main" %]
+
+However,
+we can now register as many handlers as we want
+for each kind of node.
+{: .continue}
+
 ## Tracing Inheritance {: #bonus-inheritance}
 
 *This material extends [%x lint %].*
