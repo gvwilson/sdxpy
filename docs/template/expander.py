@@ -1,12 +1,20 @@
 from bs4 import NavigableString
 from env import Env
 from visitor import Visitor
+
+# [import]
 import z_if
 import z_loop
 import z_num
 import z_var
 
-HANDLERS = {"z-if": z_if, "z-loop": z_loop, "z-num": z_num, "z-var": z_var}
+HANDLERS = {
+    "z-if": z_if,
+    "z-loop": z_loop,
+    "z-num": z_num,
+    "z-var": z_var
+}
+# [/import]
 
 
 # [construct]

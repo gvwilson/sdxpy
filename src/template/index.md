@@ -4,24 +4,22 @@ syllabus:
 -   A static site generator has the same core features as a programming language.
 -   Special-purpose mini-languages quickly become as complex as mainstream languages.
 -   Static methods are a convenient way to group functions together.
-status: "awaiting revision"
+status: "revisions completed 2023-08-04"
 depends:
 -   interp
 -   check
 ---
 
-Every program needs documentation in order to be usable,
-and the best place to put that documentation is on the web.
-Writing and updating pages by hand is time-consuming and error-prone,
+Every program needs documentation,
+and the best place to put documentation is on the web.
+Writing and updating HTML pages by hand is time-consuming and error-prone,
 particularly when many parts are the same,
-so most documentation sites use some kind of
-[%g static_site_generator "static site generator" %]
-to create web pages from templates.
+so most modern websites use some kind of
+[%g static_site_generator "static site generator" %] (SSG)
+to create pages from templates.
 
-At the heart of every static site generator is a page templating system.
-Thousands of these have been written in the last thirty years
-in every popular programming language,
-and a language called [%i "PHP" url="php" %] was created primarily for this purpose.
+[Hundreds of SSGs][jamstack_ssg] have been written in every popular programming language,
+and languages like [%i "PHP" url="php" %] have been invented primarily for this purpose.
 Most of these systems use one of three designs
 ([%f template-options %]):
 
@@ -38,9 +36,8 @@ Most of these systems use one of three designs
     which parts of the page are code and which are ordinary text.
 
 3.  Put directives in specially-named [%i "attribute" "attributes" %] in the HTML.
-    This approach has been the least popular,
-    but since pages are valid HTML,
-    it eliminates the need for a special [%i "parser" %].
+    This approach is the least popular,
+    but it eliminates the need for a special [%i "parser" %].
 
 [% figure
    slug="template-options"
@@ -60,7 +57,7 @@ other nodes will be copied as-is to create text.
 
 Let's start by deciding what "done" looks like.
 Suppose we want to turn an array of strings into an HTML list.
-Our page will look like this:
+Our template will look like this:
 
 [% inc file="loop.ht" %]
 
@@ -103,18 +100,15 @@ there shouldn't be any `z-*` attributes left to confuse a browser.
 </div>
 
 The next step is to define the [%g api "Application Programming Interface" %] (API)
-for filling in templates,
-which is just a fancy way of saying that
-we need to specify what function or functions a program calls
-to use our code.
+for filling in templates.
 Our tool needs the template itself,
 somewhere to write its output,
-and some variables to use in the expansion.
-These variables might come from a configuration file,
-from a YAML header in the file itself,
-or from some mix of the two;
-for the moment,
-we will just pass them into the expansion function as an object
+and the set of variables to use in the expansion.
+Those variables might come from a configuration file
+from a header in the file itself,
+or from somewhere else entirely,
+so we will assume the calling program has gotten them somehow
+and have it pass them into the expansion function as an dictionary
 ([%f template-api %]):
 
 [% inc file="example_call.py" %]
@@ -142,76 +136,96 @@ and find a variable given its name.
 If the variable can't be found,
 `Env.find` returns `None` instead of raising an exception:
 
-[% inc file="env.py" %]
+[% inc file="env.py" keep="body" %]
 
 ## Visiting Nodes {: #template-nodes}
 
-HTML pages have a nested structure,
-so we will process them using
-the [%i "Visitor pattern" "Visitor" %] [%i "design pattern" %].
-`Visitor`'s [%i "constructor" %] takes the root node of the [%i "DOM tree" %]
+As [%x check %] explained,
+HTML pages are usually stored in memory as trees
+and processed using the [%i "Visitor pattern" "Visitor" %] [%i "design pattern" "pattern" %].
+We therefore create a `Visitor` class
+whose [%i "constructor" %] takes the root node of the [%i "DOM tree" %]
 as an argument and saves it.
-When we call `Visitor.walk` without a value,
-it starts recursing from that saved root;
-if `.walk` is given a value (as it is during recursive calls),
+Calling `Visitor.walk` without a value starts [%i "recursion" %] from that saved root;
+when `.walk` is given a value (as it is during recursive calls),
 it uses that instead.
 
 [% inc file="visitor.py" %]
 
 `Visitor` defines two [%g abstract_method "abstract methods" %] `open` and `close`
 that are called when we first arrive at a node and when we are finished with it.
-We cannot use `Visitor` itself—it is an [%g abstract_class "abstract class" %].
-Instead,
-we must derive a class from `Visitor` that defines these two methods.
+These methods are called "abstract" because we can't actually use them:
+any attempt to do so will [%i "raise" %] an [%i "exception" %],
+which means [%i "child class" "child classes" %] *must* override them.
+(In object-oriented terminology, this means that `Visitor` is an [%g abstract_class "abstract class" %].)
 This approach is different from that of the visitor in [%x check %],
 where we defined do-nothing methods so that derived classes could override
 only the ones they needed.
 
 The `Expander` class is specialization of `Visitor`
 that uses an `Env` to keep track of variables.
-It imports handlers for each type of special node—we will write those in a moment—and
-uses them to process each type of node:
+It imports handlers for each type of special node—we will explore those in a moment—and
+saves them along with a newly-created environment and a list of strings
+making up the output:
 
-1.  If the node is plain text, copy it to the output.
+[% inc file="expander.py" keep="construct" %]
+
+When recursion encounters a new node it calls `open` to do one of three things:
+
+1.  If the node is plain text,
+    copy it to the output.
 
 1.  If there is a handler for the node,
     call the handler's `open` or `close` method.
 
-1.  Otherwise, open or close a regular [%i "tag" %].
+1.  Otherwise, open a regular [%i "tag" %].
 
-[% inc file="expander.py" omit="open" %]
+[% inc file="expander.py" keep="open" %]
 
-To check if there is a handler for a particular node
-and get it if there is
-we just look at the node's attributes:
+`Expander.close` works much the same way.
+Both methods find handlers by comparing the DOM node's attributes
+to the keys in the dictionary of handlers built during construction:
+{: .continue}
 
 [% inc file="expander.py" keep="handlers" %]
 
 Finally, we need a few helper methods to show tags and generate output:
+{: .continue}
 
 [% inc file="expander.py" keep="helpers" %]
 
-Notice that this class adds strings to an array and joins them all right at the end
+Notice that `Expander` adds strings to an array
+and joins them all right at the end
 rather than concatenating strings repeatedly.
 Doing this is more efficient;
 it also helps with debugging,
 since each string in the array corresponds to a single method call.
-{: .continue}
 
 ## Implementing Handlers {: #template-handlers}
 
-At this point
-we have built a lot of infrastructure but haven't actually processed any special nodes.
-To do that,
-let's write a handler that copies a constant number into the output:
+Our last task is to implement the handlers for filling in variables' values,
+looping,
+and so on.
+We could define an [%i "abstract class" %] with `open` and `close` methods,
+derive one class for each of the template expander's capabilities,
+and then construct one instance of each class for `Expander` to use,
+but there's a simpler way.
+When Python executes the statement `import something`
+it executes the file `something.py`,
+saves the result in a specialized dictionary-like object,
+and assigns that object to the variable `something`.
+That object can also be saved in data structures like lists and dictionaries
+or passed as an argument to a function
+just like numbers, functions, and classes—remember,
+programs are just data.
+
+Let's write a pair of functions
+that each take an expander and a node as inputs
+and expand a DOM node with a `z-num` attribute
+to insert a number into the output:
 
 [% inc file="z_num.py" %]
 
-The `z_num` expander is a class,
-but we don't plan to create instances of it.
-Instead,
-it's just a way to manage a pair of related `open` and `close` functions,
-which we declare as [%i "static method" "static methods" %].
 When we enter a node like `<span z-num="123"/>`
 this handler asks the expander to show an [%i "opening tag" %]
 followed by the value of the `z-num` attribute.
@@ -221,8 +235,20 @@ The handler doesn't know whether things are printed immediately,
 added to an output list,
 or something else;
 it just knows that whoever called it implements the low-level operations it needs.
+{: .continue}
 
-So much for constants; what about variables?
+Here's how we connect this handler (and others we're going to write in a second)
+to the expander:
+
+[% inc file="expander.py" keep="import" %]
+
+The `HANDLERS` dictionary maps the names of special attributes in the HTML to modules,
+each of which defines `open` and `close` functions for the expander to call.
+In other words,
+we are using modules to prevent [%i "name collision" %]
+just as we would use classes or functions.
+
+The handlers for variables are:
 
 [% inc file="z_var.py" %]
 
@@ -247,47 +273,81 @@ here's the entire set:
 
 [% inc file="vars.json" %]
 
-Our first test:
-is static text copied over as-is?
+Our first test checks whether static text is copied over as-is:
 
-[% inc pat="static_text.*" fill="ht out" %]
+<table class="twocol">
+  <tbody>
+    <tr>
+      <td markdown="1">[% inc file="static_text.ht" %]</td>
+      <td markdown="1">[% inc file="static_text.out" %]</td>
+    </tr>
+  </tbody>
+</table>
 
 Good.
 Now, does the expander handle constants?
 
-[% inc pat="single_constant.*" fill="ht out" %]
+<table class="twocol">
+  <tbody>
+    <tr>
+      <td markdown="1">[% inc file="single_constant.ht" %]</td>
+      <td markdown="1">[% inc file="single_constant.out" %]</td>
+    </tr>
+  </tbody>
+</table>
 
 What about a single variable?
 {: .continue}
 
-[% inc pat="single_variable.*" fill="ht out" %]
+<table class="twocol">
+  <tbody>
+    <tr>
+      <td markdown="1">[% inc file="single_variable.ht" %]</td>
+      <td markdown="1">[% inc file="single_variable.out" %]</td>
+    </tr>
+  </tbody>
+</table>
 
 What about a page containing multiple variables?
 There's no reason it should fail if the single-variable case works,
 but we should still check—again,
 software isn't done until it has been tested.
 
-[% inc pat="multiple_variables.*" fill="ht out" %]
+<table class="twocol">
+  <tbody>
+    <tr>
+      <td markdown="1">[% inc file="multiple_variables.ht" %]</td>
+      <td markdown="1">[% inc file="multiple_variables.out" %]</td>
+    </tr>
+  </tbody>
+</table>
 
 ## Control Flow {: #template-flow}
 
 Our tool supports conditional expressions and loops.
-Since it doesn't handle [%g boolean_expression "Boolean expressions" %] like `and` and `or`,
-implementing a conditional is as simple as looking up a variable
-and then expanding the node if Python thinks the value is [%g truthy "truthy" %]:
+Since we're not implementing [%g boolean_expression "Boolean expressions" %] like `and` and `or`,
+all we have to do for a condition is look up a variable
+and then expand the node if Python thinks the variable's value is [%g truthy "truthy" %]:
 
 [% inc file="z_if.py" %]
 
 Let's test it:
 
-[% inc pat="conditional.*" fill="ht out" %]
+<table class="twocol">
+  <tbody>
+      <tr>
+        <td markdown="1">[% inc file="conditional.ht" %]</td>
+        <td markdown="1">[% inc file="conditional.out" %]</td>
+      </tr>
+  </tbody>
+</table>
 
 <div class="callout" markdown="1">
 
 ### Spot the Bug
 
 This implementation of `if` contains a subtle bug.
-The `open` and `close` functions both check the value of the control variable.
+`open` and `close` both check the value of the control variable;
 If something inside the body of the `if` changes that value,
 the result could be an opening tag
 without a matching [%i "closing tag" %] or vice versa.
@@ -302,8 +362,7 @@ is always a headache.
 Finally we have loops.
 For these,
 we need to get the array we're looping over from the environment
-and do something for each of its elements.
-That "something" is:
+and do the following for each item it contains:
 
 1.  Create a new stack frame holding the current value of the loop variable.
 
@@ -316,21 +375,20 @@ That "something" is:
 Once again,
 it's not done until we test it:
 
-[% inc pat="loop.*" fill="ht out" %]
+<table class="twocol">
+  <tbody>
+      <tr>
+        <td markdown="1">[% inc file="loop.ht" %]</td>
+        <td markdown="1">[% inc file="loop.out" %]</td>
+      </tr>
+  </tbody>
+</table>
 
-We have just implemented another simple programming language.
-It can't do arithmetic,
-but if we wanted to add tags like:
-
-```js
-<span z-math="+"><span z-var="width"/><span z-num="1"//>
-```
-
-we could.
-It's unlikely anyone would use the result—typing all of that
-is so much clumsier than typing `width+1` that people wouldn't use it
-unless they had no other choice—but the basic design is there.
-{: .continue}
+We have just implemented another simple programming language
+like the one in [%x interp %].
+It's unlikely that anyone would want to use it as-is,
+but adding a new feature is now as simple as writing a matching pair
+of `open` and `close` functions.
 
 ## Summary {: #template-summary}
 
@@ -341,6 +399,8 @@ unless they had no other choice—but the basic design is there.
    caption="HTML templating concept map."
    cls="here"
 %]
+
+*Please see [%x bonus %] for extra material related to these ideas.*
 
 ## Exercises {: #template-exercises}
 

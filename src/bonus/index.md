@@ -114,6 +114,12 @@ will produce `None` if `thing` is `None`
 and `reference.part` if it isn't.
 {: .continue}
 
+## Dynamic Loading {: #bonus-load}
+
+*This material extends [%x template %].*
+
+[% fixme "Explain how to load modules dynamically given a list of names." %]
+
 ## Tracing Inheritance {: #bonus-inheritance}
 
 *This material extends [%x lint %].*
