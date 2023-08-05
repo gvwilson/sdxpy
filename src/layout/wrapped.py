@@ -19,6 +19,7 @@ class WrappedRow(PlacedRow):
 
     def get_width(self):
         return self.width
+# [/row]
 
     # [wrap]
     def wrap(self):
@@ -48,4 +49,3 @@ class WrappedRow(PlacedRow):
 
         return result
     # [/bucket]
-# [/row]

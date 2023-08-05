@@ -18,12 +18,14 @@ def test_renders_a_row_of_two_blocks():
     fixture.place(0, 0)
     assert render(fixture) == "\n".join(["acc", "acc", "acc", "bcc"])
 
+# [col2]
 def test_renders_a_column_of_two_blocks():
     fixture = Col(Block(1, 1), Block(2, 4))
     fixture.place(0, 0)
-    assert render(fixture) == "\n".join(["ba", "cc", "cc", "cc", "cc"])
+    expected = "\n".join(["ba", "cc", "cc", "cc", "cc"])
+    assert render(fixture) == expected
+# [/col2]
 
-# [large]
 def test_renders_a_grid_of_rows_of_columns():
     fixture = Col(
         Row(Block(1, 2), Block(3, 4)), Row(Block(1, 2), Col(Block(3, 4), Block(2, 3)))
@@ -44,4 +46,3 @@ def test_renders_a_grid_of_rows_of_columns():
             "fiig",
         ]
     )
-# [/large]

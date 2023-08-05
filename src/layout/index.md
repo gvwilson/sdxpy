@@ -5,7 +5,7 @@ syllabus:
 -   The layout engine calculates the position of each block based on its size and the position of its parent.
 -   Drawing blocks on top of each other from top to bottom is an easy way to render them.
 -   Use multiple inheritance and mixin classes to inject methods into classes without modifying their parent class.
-status: "awaiting revision"
+status: "revisions completed 2023-08-05"
 depends:
 -   check
 -   template
@@ -20,35 +20,11 @@ and decided where to put each character and image.
 To explore how they work,
 we will build a small layout engine
 based on [%i "Brubeck, Matt" "Matt Brubeck's" url="brubeck_matt" %] [tutorial][browser_engine_tutorial]
-and on [Pavel Panchekha][panchekha_pavel] and [Chris Harrelson's][harrelson_chris]
+and on [Pavel Panchekha][panchekha_pavel] and [Chris Harrelson's][harrelson_chris] book
 [*Web Browser Engineering*][browser_engineering].
-Since our focus is layout rather than parsing,
-we will create objects in memory that represent
-[%i "DOM" %] nodes
-to test our ideas.
-
-<div class="callout" markdown="1">
-
-### Upside Down
-
-The [%i "coordinate system" "coordinate systems" %] for screens
-puts (0, 0) in the upper left corner instead of the lower left.
-X increases to the right as usual,
-but Y increases as we go down, rather than up
-([%f layout-coordinate-system %]).
-This convention is a holdover from the days of teletype terminals
-that printed lines on rolls of paper;
-as [%i "Hoye, Mike" "Mike Hoye" url="hoye_mike" %] has [observed][punching_holes],
-the past is all around us.
-
-</div>
-
-[% figure
-   slug="layout-coordinate-system"
-   img="coordinate_system.svg"
-   alt="Coordinate system"
-   caption="Coordinate system with (0, 0) in the upper left corner."
-%]
+Since our focus is layout
+we will create objects ourselves to represent [%i "DOM" %] nodes
+rather than parsing HTML.
 
 ## Sizing {: #layout-size}
 
@@ -82,6 +58,29 @@ and its height is the sum of the heights of its children.
 
 [% inc file="easy_mode.py" keep="col" %]
 
+<div class="callout" markdown="1">
+
+### Upside Down
+
+The [%i "coordinate system" "coordinate systems" %] for screens
+puts (0, 0) in the upper left corner instead of the lower left.
+X increases to the right as usual,
+but Y increases as we go down, rather than up
+([%f layout-coordinate-system %]).
+This convention is a holdover from the days of teletype terminals
+that printed lines on rolls of paper;
+as [%i "Hoye, Mike" "Mike Hoye" url="hoye_mike" %] has [observed][punching_holes],
+the past is all around us.
+
+</div>
+
+[% figure
+   slug="layout-coordinate-system"
+   img="coordinate_system.svg"
+   alt="Coordinate system"
+   caption="Coordinate system with (0, 0) in the upper left corner."
+%]
+
 Rows and columns nest inside one another:
 a row cannot span two or more columns,
 and a column cannot cross the boundary between two rows.
@@ -94,10 +93,11 @@ but we called this "easy mode" for a reason.
 
 As simple as it is,
 this code could still contain errors (and did during development),
-so we write some tests to check that it works as desired
-before trying to build anything more complicated:
+so we write some tests to check that it works properly
+before trying to build anything more complicated.
+One such test is:
 
-[% inc pat="test_easy_mode.*" fill="py out" %]
+[% inc file="test_easy_mode.py" keep="example" %]
 
 ## Positioning {: #layout-position}
 
@@ -127,25 +127,26 @@ and so on.
 
 To save ourselves some work we will derive the classes that know how to do layout
 from the classes we wrote before.
-Our blocks are:
+Basic blocks are:
 
 [% inc file="placed.py" keep="block" %]
 
-while our columns are:
+The constructor and reporting method for the `PlacedCol` class looks much the same.
+Its placement method is:
 {: .continue}
 
-[% inc file="placed.py" keep="col" %]
+[% inc file="placed.py" keep="colplace" %]
 
-and our rows are:
+while the placement method for rows is:
 {: .continue}
 
-[% inc file="placed.py" keep="row" %]
+[% inc file="placed.py" keep="rowplace" %]
 
 Once again,
-we write and run some tests to check that everything is doing what it's supposed to:
+we write and run some tests to check that everything is doing what it's supposed to.
+One such test is:
 
-[% inc file="test_placed.py" omit="large" %]
-[% inc file="test_placed.out" %]
+[% inc file="test_placed.py" keep="col2" %]
 
 ## Rendering {: #layout-render}
 
@@ -158,8 +159,9 @@ child blocks will overwrite the markings made by their parents,
 which will automatically produce the right appearance
 ([%f layout-draw-over %]).
 (A more sophisticated version of this called [%g z_buffering "z-buffering" %]
+used in 3D graphics
 keeps track of the visual depth of each pixel
-in order to draw things in three dimensions.)
+in order to draw objects correctly regardless of their order.)
 
 [% figure
    slug="layout-draw-over"
@@ -168,7 +170,10 @@ in order to draw things in three dimensions.)
    caption="Render blocks by drawing child nodes on top of parent nodes."
 %]
 
-Our pretended screen is just an array of arrays of characters:
+Our pretended screen is a list of lists of characters,
+with each inner list representing a row on the screen.
+We use lists for this rather than strings
+so that we can overwrite characters in place:
 
 [% inc file="render.py" keep="make_screen" %]
 
@@ -180,14 +185,20 @@ while its children will be 'b', 'c', and so on.
 
 [% inc file="render.py" keep="draw" %]
 
-To teach each kind of cell how to render itself,
-we have to derive a new class from each of the ones we have
-and give the new class a `render` method with the same [%i "signature" %].
+To teach each kind of cell to render itself,
+we derive new classes from the ones we have
+and give each of those new classes a `render` method with the same [%i "signature" %].
 Since Python supports [%i "multiple inheritance" %],
 we can do this with a [%g mixin_class "mixin class" %]
-([%f layout-mixin %]):
+([%f layout-mixin %]).
+The `Renderable` mixin is:
 
-[% inc file="rendered.py" %]
+[% inc file="rendered.py" keep="render" %]
+
+Using it,
+the new cell classes are simply:
+
+[% inc file="rendered.py" keep="derive" %]
 
 [% figure
    slug="layout-mixin"
@@ -201,25 +212,28 @@ we can do this with a [%g mixin_class "mixin class" %]
 ### (Not) The Right Way to Do It
 
 If we were building a real layout engine,
-a cleaner solution would be to go back and create
-a class called `Cell` with this `render` method,
+we would go back and create a class called `Cell` with this `render` method,
 then derive our `Block`, `Row`, and `Col` classes from that.
 In general,
 if two or more classes need to be able to do something,
-we should add a method to do that to their lowest common ancestor.
+we should add the required method to their lowest common ancestor.
+We've chosen not to do that in this case both
+to show when and why mixin classes are sometimes useful,
+and so that we can build and test code incrementally.
 
 </div>
 
-Our simpler tests are a little easier to read using rendering,
-though we still had to draw things on paper to figure out our complex ones:
+Simple tests are a little easier to read using rendering,
+though we still had to draw things on paper
+to figure out what to expect:
 
-[% inc file="test_rendered.py" keep="large" %]
+[% inc file="test_rendered.py" keep="col2" %]
 
 The fact that our tests are difficult to understand
-is a sign that we should do more testing
+is a sign that we should do more testing.
 It would be very easy for us to get a wrong result
-and convince ourselves that it was actually correct;
-[%g confirmation_bias "confirmation bias" %] of this kind
+and convince ourselves that it was correct;
+this kind of [%g confirmation_bias "confirmation bias" %]
 is very common in software development.
 {: .continue}
 
@@ -230,8 +244,8 @@ is that the text in the browser wraps automatically as the window is resized.
 (The other, these days, is that the printed page doesn't spy on us,
 though someone is undoubtedly working on that.)
 
-To add wrapping to our layout engine,
-suppose we fix the width of a row.
+The first step in adding wrapping to our layout engine
+is to fix the width of a row.
 If the total width of the children is greater than the row's width,
 the layout engine needs to wrap the children around.
 This assumes that columns can be made as tall as they need to be,
@@ -249,6 +263,11 @@ but since they have children that might need to wrap,
 the class representing columns needs a new method:
 
 [% inc file="wrapped.py" keep="blockcol" %]
+
+(The `*` in front of the list being pacced to `PlacedCol`
+in the last line of the code above
+is another use of the [%i "spreading" %] introduced in [%x oop %].)
+{: .continue}
 
 Rows do all the hard work.
 Each original row is replaced with a new row
@@ -269,7 +288,7 @@ we will look at making this more efficient in the exercises.
 Our new wrappable row's constructor takes a fixed width followed by the children
 and returns that fixed width when asked for its size:
 
-[% inc file="wrapped.py" keep="row" omit="wrap" %]
+[% inc file="wrapped.py" keep="row" %]
 
 Wrapping puts the row's children into buckets,
 then converts the buckets to a row of a column of rows:
@@ -277,23 +296,28 @@ then converts the buckets to a row of a column of rows:
 
 [% inc file="wrapped.py" keep="wrap" %]
 
+To bucket the children
+we add them one at a time to a temporary list.
+If adding another node would make the total width of the nodes in that list too large,
+we use that node to start a new temporary list:
+
+[% inc file="wrapped.py" keep="bucket" %]
+
 Once again we bring forward all the previous tests
 and write some new ones to test the functionality we've added:
 
 [% inc file="test_wrapped.py" keep="example" %]
-[% inc file="test_wrapped.out" %]
 
-Note that we could have had columns handle resizing rather than rows,
+We could have had columns handle resizing rather than rows,
 but we (probably) don't need to make both resizeable.
 This is an example of [%g intrinsic_complexity "intrinsic complexity" %]:
 the problem really is this hard,
-so something, somewhere, has to deal with it.
-(Programs often contain [%g accidental_complexity "accidental complexity" %]
+so something has to deal with it somewhere.
+Programs often contain [%g accidental_complexity "accidental complexity" %]
 as well,
-which can be fixed if people are willing to accept that it is unnecessary
-and are willing to change.
+which can be removed if people are willing to accept change.
 In practice,
-these requirements usually mean that it isn't ever fixed.)
+that often means that it sticks around longer than it should…
 
 <div class="callout" markdown="1">
 

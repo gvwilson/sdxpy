@@ -1,13 +1,14 @@
 from placed import PlacedBlock, PlacedCol, PlacedRow
 
+# [render]
 class Renderable:
-    # [render]
     def render(self, screen, fill):
         for ix in range(self.get_width()):
             for iy in range(self.get_height()):
                 screen[self.y0 + iy][self.x0 + ix] = fill
-    # [/render]
+# [/render]
 
+# [derive]
 class RenderedBlock(PlacedBlock, Renderable):
     pass
 
@@ -16,3 +17,4 @@ class RenderedCol(PlacedCol, Renderable):
 
 class RenderedRow(PlacedRow, Renderable):
     pass
+# [/derive]

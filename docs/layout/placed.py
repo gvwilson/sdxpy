@@ -12,10 +12,13 @@ class PlacedBlock(Block):
         self.y0 = y0
 
     def report(self):
-        return ["block", self.x0, self.y0, self.x0 + self.width, self.y0 + self.height]
+        return [
+            "block",
+            self.x0, self.y0,
+            self.x0 + self.width, self.y0 + self.height
+        ]
 # [/block]
 
-# [col]
 class PlacedCol(Col):
     def __init__(self, *children):
         super().__init__(*children)
@@ -23,6 +26,7 @@ class PlacedCol(Col):
         self.x0 = None
         self.y1 = None
 
+    # [colplace]
     def place(self, x0, y0):
         self.x0 = x0
         self.y0 = y0
@@ -30,18 +34,15 @@ class PlacedCol(Col):
         for child in self.children:
             child.place(x0, y_current)
             y_current += child.get_height()
+    # [/colplace]
 
     def report(self):
         return [
             "col",
-            self.x0,
-            self.y0,
-            self.x0 + self.get_width(),
-            self.y0 + self.get_height(),
+            self.x0, self.y0,
+            self.x0 + self.get_width(), self.y0 + self.get_height(),
         ] + [c.report() for c in self.children]
-# [/col]
 
-# [row]
 class PlacedRow(Row):
     def __init__(self, *children):
         super().__init__(*children)
@@ -49,7 +50,7 @@ class PlacedRow(Row):
         self.x0 = None
         self.y0 = None
 
-    # [place_row]
+    # [rowplace]
     def place(self, x0, y0):
         self.x0 = x0
         self.y0 = y0
@@ -59,7 +60,7 @@ class PlacedRow(Row):
             child_y = y1 - child.get_height()
             child.place(x_current, child_y)
             x_current += child.get_width()
-    # [/place_row]
+    # [/rowplace]
 
     def report(self):
         return [
@@ -69,4 +70,3 @@ class PlacedRow(Row):
             self.x0 + self.get_width(),
             self.y0 + self.get_height(),
         ] + [c.report() for c in self.children]
-# [/row]
