@@ -120,13 +120,14 @@ def _as_markdown(entry, lang):
     elif "full" in entry[lang]:
         first += f" ({entry[lang]['full']})"
 
-    body = regex.MULTISPACE.sub(entry[lang]["def"], " ").rstrip()
+    body = regex.MULTISPACE.sub(" ", entry[lang]["def"]).rstrip()
+    body = regex.GLOSSARY_INTERNAL_REF.sub(lambda m: f"](#gl:{m.group(1)})", body)
 
     if "ref" in entry:
         glossary = util.get_config("glossary_by_key")
         seealso = util.TRANSLATIONS[lang]["seealso"]
         try:
-            refs = [f"[{glossary[r]['term']}](#{r})" for r in entry["ref"]]
+            refs = [f"[{glossary[r]['term']}](#gl:{r})" for r in entry["ref"]]
         except KeyError as exc:
             util.fail(f"Unknown glossary cross-ref in {entry['key']}: {exc}")
         body += f"<br/>{seealso}: {', '.join(refs)}."
