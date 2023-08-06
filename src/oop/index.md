@@ -8,7 +8,7 @@ syllabus:
 -   Most programming languages allow functions and methods to take a variable number of arguments.
 -   Inheritance can be implemented in several ways
     that differ in the order in which objects and classes are searched for methods.
-status: "revisions completed 2023-07-27"
+status: "revised 2023-07-27"
 depends:
 ---
 

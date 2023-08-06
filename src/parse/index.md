@@ -7,7 +7,7 @@ syllabus:
 -   Operations like addition and function call work just like user-defined functions.
 -   Programs can overload built-in operators by defining specially-named methods
     that are recognized by the compiler or interpreter.
-status: "revisions completed 2023-07-29"
+status: "revised 2023-07-29"
 depends:
 -   glob
 ---

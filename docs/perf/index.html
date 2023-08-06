@@ -276,7 +276,7 @@
     DRAFT 2023-08-06
   </p>
   <p>
-    awaiting revision<br>
+    revised 2023-08-06<br>
     Please use section heading links to submit feedback
     or go to <a href="https://github.com/gvwilson/sdxpy">https://github.com/gvwilson/sdxpy</a>.
   </p>
@@ -368,25 +368,15 @@ Whether we use <span class="ix-entry" ix-key="Excel" markdown="1">Excel</span>, 
 we will almost certainly be using tables
 that have named columns and multiple rows.
 Tables of this kind are called <a class="gl-ref" href="../glossary/#gl:dataframe" title="A two-dimensional data structure for storing tabular data in memory. Rows represent records and columns represent fields." markdown="1">dataframes</a>,
-and to explore how we should implement them,
-this chapter builds them two different ways
-and then compares their performance.</p>
+and their performance is important when we are working with large datasets.
+This chapter therefore implements a basic dataframe in two different ways
+and then shows how to compare those implementations&rsquo; performance systematically.</p>
 <h2 id="perf-options">Section 15.1: Options</h2>
 <p>To start,
 let&rsquo;s create an <span class="ix-entry" ix-key="abstract class" markdown="1">abstract class</span>
 that defines the methods our dataframe classes will support.
-This class (unimaginatively called <code>DF</code>)
-requires <span class="ix-entry" ix-key="concrete class" markdown="1">concrete classes</span> to implement eight methods:</p>
-<ul>
-<li><code>ncol</code>: report the number of columns.</li>
-<li><code>nrow</code>: report the number of rows.</li>
-<li><code>cols</code>: return the set of column names.</li>
-<li><code>eq</code>: check whether this dataframe is equal to another.</li>
-<li><code>get</code>: get a scalar value from a specified column and row.</li>
-<li><code>set</code>: set the scalar value in a specified column and row.</li>
-<li><code>select</code>: create a new dataframe containing some or all of the original&rsquo;s columns.</li>
-<li><code>filter</code>: create a new dataframe containing some or all of the original&rsquo;s rows.</li>
-</ul>
+This class requires <span class="ix-entry" ix-key="concrete class" markdown="1">concrete classes</span>
+to implement the eight methods shown below:</p>
 <div class="code-sample lang-py" title="df_base.py">
 <div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">DataFrame</span><span class="p">:</span>
     <span class="k">def</span> <span class="nf">ncol</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -399,16 +389,16 @@ requires <span class="ix-entry" ix-key="concrete class" markdown="1">concrete cl
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the set of column names.&quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">eq</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check equality of two dataframes.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check equality with another dataframe.&quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">col</span><span class="p">,</span> <span class="n">row</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get a scalar value.&quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">select</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">names</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Select a subset of columns.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Select a named subset of columns.&quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">filter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Select a subset of rows.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Select a subset of rows by testing values.&quot;&quot;&quot;</span>
 </code></pre></div>
 </div>
 <div class="callout">
@@ -427,7 +417,7 @@ we will derive a class <code>DfRow</code> that uses
 The dataframe is stored as a list of dictionaries,
 each of which represents a row.
 All of the dictionaries must have the same keys
-(so that it&rsquo;s meaningful to talk about columns),
+so that the concept of &ldquo;column&rdquo; is meaningful,
 and the values associated with a particular key must all have the same type.</p>
 <figure id="perf-row-storage">
 <img src="./row_storage.svg" alt="Row-wise storage"/>
@@ -442,16 +432,15 @@ Each column is stored as a list of values,
 all of which are of the same type.
 The dataframe itself is a dictionary of such lists,
 all of which have the same length
-so that there are no holes in any of the rows:</p>
+so that there are no holes in any of the rows.
+How we store the data determines which methods are easy to implement
+and which are hard,
+and which are fast or slow.</p>
 <figure id="perf-col-storage">
 <img src="./col_storage.svg" alt="Column-wise storage"/>
 <figcaption markdown="1">Figure 15.2: Storing a dataframe&rsquo;s data in columns.</figcaption>
 </figure>
 
-<p>As we shall see,
-how we store the data determines which of our required methods
-are easy to implement
-and which are hard.</p>
 <h2 id="perf-row">Section 15.2: Row-Wise Storage</h2>
 <p>We start by deriving <code>DfRow</code> from <code>DataFrame</code> and writing its constructor,
 which takes a list of dictionaries as an argument,
@@ -477,18 +466,17 @@ all have the same keys and the same types of values associated with those keys i
     <span class="k">return</span> <span class="nb">all</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="n">k</span><span class="p">])</span> <span class="o">==</span> <span class="nb">type</span><span class="p">(</span><span class="n">prototype</span><span class="p">[</span><span class="n">k</span><span class="p">])</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">d</span><span class="p">)</span>
 </code></pre></div>
 </div>
-<p class="continue">Notice that <code>DfRow.__init__</code> compares all of the rows against the first row.
+<p class="continue">Notice that <code>DfRow</code>&lsquo;s constructor compares all of the rows against the first row.
 Doing this means that we can&rsquo;t create an empty dataframe,
 i.e.,
 one that has no rows.
-We&rsquo;ll look at ways around this in the exercises,
-but the important point for now is that
-this restriction wasn&rsquo;t part of our original design:
-it&rsquo;s an accident of implementation that might surprise our users.</p>
+This restriction wasn&rsquo;t part of our original design:
+it&rsquo;s an accident of implementation that might surprise our users.
+It&rsquo;s OK not to fix this while we&rsquo;re prototyping,
+but we will look at ways to address it in the exercises.</p>
 <p>Four of the methods required by <code>DataFrame</code> are easy to implement
 on top of row-wise storage,
-though once again our implementation assumes that
-there is at least one row:</p>
+though once again our implementation assumes there is at least one row:</p>
 <div class="code-sample lang-py" title="df_row.py">
 <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">ncol</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
@@ -522,10 +510,11 @@ and the same values in every column:</p>
 </div>
 <p class="continue">Notice that we use <code>other.cols()</code> and <code>other.get()</code>
 rather than reaching into the other dataframe.
-We defined the <span class="ix-entry" ix-key="abstract class" markdown="1">abstract class</span>
-because we expect to implement dataframes in several different ways.
-Those other ways might not use the same data structures,
-so we can only rely on the interface defined in the <span class="ix-entry" ix-key="base class" markdown="1">base class</span>.</p>
+We are planning to implement dataframes in several different ways,
+and we might want to compare instances of those different implementations.
+Since they might have different internal data structures,
+the only safe way to do this is
+to rely on the interface defined in the <span class="ix-entry" ix-key="base class" markdown="1">base class</span>.</p>
 <p>Our final operations are selection,
 which returns a subset of the original dataframe&rsquo;s columns,
 and filtering,
@@ -553,7 +542,7 @@ Typical filtering conditions include,
 &ldquo;Keep rows where <code>red</code> is greater than <code>green</code>,&rdquo;
 and, &ldquo;Keep rows where <code>red+green</code> is within 10% of <code>blue</code>.&rdquo;
 Rather than trying to anticipate every possible rule,
-we will let users define functions
+we require users to define functions
 whose parameters match the names of the table&rsquo;s columns.
 For example,
 if we have this test <span class="ix-entry" ix-key="fixture" markdown="1">fixture</span>:</p>
@@ -573,25 +562,13 @@ if we have this test <span class="ix-entry" ix-key="fixture" markdown="1">fixtur
 </code></pre></div>
 </div>
 <p>We can implement this  by using <code>**</code> to <span class="ix-entry" ix-key="spread" markdown="1">spread</span> the row
-across the function&rsquo;s parameters.
-When <code>**</code> is used in the definition of a function,
-it means, &ldquo;Capture all the <span class="ix-entry" ix-key="named arguments" markdown="1">named arguments</span> that aren&rsquo;t otherwise accounted for.&rdquo;
-When it is used in a call,
-it means,
-&ldquo;Match the elements of this dictionary with the function&rsquo;s parameters.&rdquo;</p>
-<div class="code-sample lang-py" title="spread.py">
-<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">example</span><span class="p">(</span><span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="p">):</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="p">)</span>
-
-<span class="n">args</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;right&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;left&quot;</span><span class="p">:</span> <span class="mi">5</span><span class="p">}</span>
-<span class="n">example</span><span class="p">(</span><span class="o">**</span><span class="n">args</span><span class="p">)</span>
-</code></pre></div>
-</div>
-<div class="code-sample lang-out" title="spread.out">
-<div class="highlight"><pre><span></span><code>5 3
-</code></pre></div>
-</div>
-<p>The implementation of <code>DfRow.filter</code> is then just:</p>
+across the function&rsquo;s parameters (<a class="x-ref" href="../oop/">Chapter 2</a>).
+If there are keys in the row that don&rsquo;t match parameters in the function
+or vice versa,
+Python will throw an exception,
+but that&rsquo;s probably what we want.
+Using this,
+the implementation of <code>DfRow.filter</code> is:</p>
 <div class="code-sample lang-py" title="df_row.py">
 <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">filter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">):</span>
     <span class="n">result</span> <span class="o">=</span> <span class="p">[</span><span class="n">r</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="k">if</span> <span class="n">func</span><span class="p">(</span><span class="o">**</span><span class="n">r</span><span class="p">)]</span>
@@ -600,9 +577,12 @@ it means,
 </div>
 <p>Notice that the dataframe created by <code>filter</code>
 re-uses the rows of the original dataframe (<a class="fig-ref" href="../perf/#perf-row-filter">Figure 15.4</a>).
-This is safe and efficient so long as columns are <a class="gl-ref" href="../glossary/#gl:immutable" title="Data that cannot be changed after being created. Immutable data is easier to think about, particularly if data structures are shared between several tasks, but may result in higher memory requirements." markdown="1">immutable</a>,
+This is safe and efficient so long as dataframes are <a class="gl-ref" href="../glossary/#gl:immutable" title="Data that cannot be changed after being created. Immutable data is easier to think about, particularly if data structures are shared between several tasks, but may result in higher memory requirements." markdown="1">immutable</a>,
 i.e.,
-so long as their contents are never changed in place.</p>
+so long as their contents are never changed in place.
+Most dataframe libraries work this way:
+while recycling memory can save a little time,
+it usually also makes bugs much harder to track down.</p>
 <figure id="perf-row-filter">
 <img src="./row_filter.svg" alt="Row-wise filtering"/>
 <figcaption markdown="1">Figure 15.4: Filtering data stored as rows.</figcaption>
@@ -611,7 +591,7 @@ so long as their contents are never changed in place.</p>
 <h2 id="perf-col">Section 15.3: Column-Wise Storage</h2>
 <p>Having done all of this thinking,
 our column-wise dataframe class is somewhat easier to write.
-We start as before with the class definition and constructor:</p>
+We start as before with its constructor:</p>
 <div class="code-sample lang-py" title="df_col.py">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">df_base</span> <span class="kn">import</span> <span class="n">DataFrame</span>
 <span class="kn">from</span> <span class="nn">util</span> <span class="kn">import</span> <span class="n">all_eq</span>
@@ -625,7 +605,7 @@ We start as before with the class definition and constructor:</p>
         <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">=</span> <span class="n">kwargs</span>
 </code></pre></div>
 </div>
-<p>and use a helper function <code>all_eq</code> to check that
+<p class="continue">and use a helper function <code>all_eq</code> to check that
 all of the values in any column have the same types:</p>
 <div class="code-sample lang-py" title="util.py">
 <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">all_eq</span><span class="p">(</span><span class="o">*</span><span class="n">values</span><span class="p">):</span>
@@ -634,8 +614,8 @@ all of the values in any column have the same types:</p>
 </div>
 <div class="callout">
 <h3>One Allowable Difference</h3>
-<p>Notice that <code>DfCol.__init__</code> does <em>not</em> have the same <span class="ix-entry" ix-key="signature" markdown="1">signature</span>
-as the constructor for <code>DfRow</code>.
+<p>Notice that <code>DfCol</code>&lsquo;s constructor does <em>not</em> have the same <span class="ix-entry" ix-key="signature" markdown="1">signature</span>
+as <code>DfRow</code>&lsquo;s.
 At some point in our code we have to decide which of the two classes to construct.
 If we design our code well that decision will be made in exactly one place
 and everything else will rely solely on the common interface defined by <code>DataFrame</code>.
@@ -644,7 +624,7 @@ it&rsquo;s OK for the constructors to be different.</p>
 </div>
 <p>The four methods that were simple to write for <code>DfRow</code>
 are equally simple to write for <code>DfCol</code>,
-though once again our implementation has accidentally disallowed empty dataframes:</p>
+though once again our prototype implementation accidentally disallows empty dataframes:</p>
 <div class="code-sample lang-py" title="df_col.py">
 <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">ncol</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">)</span>
@@ -662,8 +642,8 @@ though once again our implementation has accidentally disallowed empty dataframe
     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">[</span><span class="n">col</span><span class="p">][</span><span class="n">row</span><span class="p">]</span>
 </code></pre></div>
 </div>
-<p>Checking for equality is also straightforward—as with <code>DfRow</code>,
-the method relies on implementation details of its own class
+<p>As with <code>DfRow</code>,
+the method that checks equality relies on the internal details of its own class
 but uses the interface defined by <code>DataFrame</code> to access the other object:</p>
 <div class="code-sample lang-py" title="df_col.py">
 <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">eq</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
@@ -678,11 +658,10 @@ but uses the interface defined by <code>DataFrame</code> to access the other obj
 </code></pre></div>
 </div>
 <p>To select columns,
-we can just pick the ones named by the caller
+we pick the ones named by the caller
 and use them to create a new dataframe.
 Again,
-this recycles the existing storage,
-which is safe to do as long as we never modify a dataframe in place:</p>
+this recycles the existing storage:</p>
 <div class="code-sample lang-py" title="df_col.py">
 <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">select</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">names</span><span class="p">):</span>
     <span class="k">assert</span> <span class="nb">all</span><span class="p">(</span><span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">names</span><span class="p">)</span>
@@ -716,7 +695,8 @@ regardless of whether they are used for filtering or not.
 We will then build a temporary dictionary with all the values in a &ldquo;row&rdquo;
 (i.e.,
 the corresponding values across all columns)
-and use <code>**</code> to spread it across the filter function:</p>
+and use <code>**</code> to spread it across the filter function.
+<a class="x-ref" href="../bonus/">Appendix B</a> looks at a safer, but more complex, way to do this.</p>
 <div class="code-sample lang-py" title="df_col.py">
 <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">filter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">):</span>
     <span class="n">result</span> <span class="o">=</span> <span class="p">{</span><span class="n">n</span><span class="p">:</span> <span class="p">[]</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">}</span>
@@ -727,39 +707,6 @@ and use <code>**</code> to spread it across the filter function:</p>
                 <span class="n">result</span><span class="p">[</span><span class="n">n</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="n">i</span><span class="p">])</span>
     <span class="k">return</span> <span class="n">DfCol</span><span class="p">(</span><span class="o">**</span><span class="n">result</span><span class="p">)</span>
 </code></pre></div>
-</div>
-<div class="callout">
-<h3>Inspection</h3>
-<p>A better implementation of filtering would make use of the fact that
-Python&rsquo;s <a href="https://docs.python.org/3/library/inspect.html">inspect</a> module lets us examine objects in memory.
-In particular, <code>inspect.signature</code> can tell us what parameters a function takes:</p>
-<div class="code-sample lang-py" title="inspect_func.py">
-<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">inspect</span>
-
-<span class="k">def</span> <span class="nf">example</span><span class="p">(</span><span class="n">first</span><span class="p">,</span> <span class="n">second</span><span class="p">):</span>
-    <span class="k">pass</span>
-
-<span class="n">sig</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">example</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;signature:&quot;</span><span class="p">,</span> <span class="n">sig</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;type:&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">sig</span><span class="p">))</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;names:&quot;</span><span class="p">,</span> <span class="n">sig</span><span class="o">.</span><span class="n">parameters</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;parameters:&quot;</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="n">sig</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
-</code></pre></div>
-</div>
-<div class="code-sample lang-out" title="inspect_func.out">
-<div class="highlight"><pre><span></span><code>signature: (first, second)
-type: &lt;class &#39;inspect.Signature&#39;&gt;
-names: OrderedDict([(&#39;first&#39;, &lt;Parameter &quot;first&quot;&gt;), (&#39;second&#39;, \
-&lt;Parameter &quot;second&quot;&gt;)])
-parameters: [&#39;first&#39;, &#39;second&#39;]
-</code></pre></div>
-</div>
-<p class="continue">If, for example,
-the user wants to compare the <code>red</code> and <code>blue</code> columns of a dataframe,
-they can give us a function that has two parameters called <code>red</code> and <code>blue</code>.
-We can then use those parameter names to figure out
-which columns we need from the dataframe.
-We will explore this in the exercises.</p>
 </div>
 <p>Time to write some tests.
 This one checks that we can construct a dataframe with some values:</p>
@@ -784,9 +731,7 @@ This one checks that we can construct a dataframe with some values:</p>
 </div>
 <h2 id="perf-performance">Section 15.4: Performance</h2>
 <p>Our two implementations of dataframes have identical interfaces,
-so how can we choose which to use?
-Performance is one consideration,
-particularly if we&rsquo;re expecting to work with large datasets.</p>
+so how can we choose which to use?</p>
 <div class="callout">
 <h3>Transactions vs. Analysis</h3>
 <p>Regardless of data volumes,
@@ -811,8 +756,8 @@ To keep things simple
 we will create dataframes whose columns are called <code>label_1</code>, <code>label_2</code>, and so on,
 and whose values are all integers in the range 0–9.
 A thorough set of <a class="gl-ref" href="../glossary/#gl:benchmark" title="A program or set of programs used to measure the performance of a computer system." markdown="1">benchmarks</a>
-would create columns of other kinds as well,
-but this is enough to illustrate the technique.</p>
+would create columns with other datatypes as well,
+but this example is enough to illustrate the technique.</p>
 <div class="code-sample lang-py" title="timing.py">
 <div class="highlight"><pre><span></span><code><span class="n">RANGE</span> <span class="o">=</span> <span class="mi">10</span>
 
@@ -851,10 +796,9 @@ if we were doing this for real
 we would look at some actual programs
 to see what fraction of rows filtering usually kept,
 and simulate that.
-Notice that <code>time_filter</code> doesn&rsquo;t know or care
-whether it&rsquo;s being given a <code>DfCol</code> or a <code>DfRow</code>.
-That&rsquo;s the whole point of deriving them from a <span class="ix-entry" ix-key="base class" markdown="1">base class</span>:
-we can use them interchangeably.</p>
+And since <code>DfCol</code> and <code>DfRow</code> are derived from the same base class,
+<code>time_filter</code> doesn&rsquo;t know or care
+whether it&rsquo;s being given one or the other.</p>
 <p>Timing <code>select</code> is similar to timing <code>filter</code>.
 Again,
 we make an arbitrary decision about how many columns to keep
@@ -874,7 +818,10 @@ we make an arbitrary decision about how many columns to keep
 we write a function that takes a list of strings like <code>3x3</code> or <code>100x20</code>,
 creates dataframes of each size,
 times operations,
-and reports the results:</p>
+and reports the results.
+We call this function <code>sweep</code> because
+executing code multiple times with different parameters to measure performance
+is called <a class="gl-ref" href="../glossary/#gl:parameter_sweeping" title="To execute a program multiple times with different parameters to find out how its behavior or performance depends on those parameters." markdown="1">parameter sweeping</a>:</p>
 <div class="code-sample lang-py" title="timing.py">
 <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">sweep</span><span class="p">(</span><span class="n">sizes</span><span class="p">):</span>
     <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
@@ -891,11 +838,8 @@ and reports the results:</p>
     <span class="k">return</span> <span class="n">result</span>
 </code></pre></div>
 </div>
-<p class="continue">This function is called <code>sweep</code> because
-executing code multiple times with different parameters to measure performance
-is called <a class="gl-ref" href="../glossary/#gl:parameter_sweeping" title="To execute a program multiple times with different parameters to find out how its behavior or performance depends on those parameters." markdown="1">parameter sweeping</a>.</p>
 <p>The results are shown in <a class="tbl-ref" href="../perf/#perf-timing">Table 15.1</a> and <a class="fig-ref" href="../perf/#perf-analysis">Figure 15.7</a>.
-For a 1000 by 1000 dataframe
+For a \( 1000 \times 1000 \) dataframe
 selection is over 250 times faster with column-wise storage than with row-wise,
 while filtering is 1.8 times slower.</p>
 <div class="table"><table id="perf-timing"><caption>Table 15.1: Dataframe timings</caption>
@@ -974,30 +918,17 @@ and reports the result:</p>
 …
 </code></pre></div>
 </div>
-<p>Ignoring the first two lines (which are the output of our program),
-the table tells us:</p>
-<ul>
-<li>
-<p>the number of times each function or method was called;</p>
-</li>
-<li>
-<p>the total time spent in those calls (which is what we care about most);</p>
-</li>
-<li>
-<p>the time spent per call; and</p>
-</li>
-<li>
-<p>the cumulative time spent in that call and all the things it calls,
-    both per call and in total.</p>
-</li>
-</ul>
-<p>Right away we can see that the <code>dict_match</code> function
+<p>The profiler&rsquo;s output tells us
+the number of times each function or method was called,
+the total time spent in those calls (which is what we care about most),
+the time spent per call,
+and the cumulative time spent in that call and all the things it calls.
+Right away we can see that the <code>dict_match</code> function
 that checks the consistency of the rows in a row-oriented dataframe
 is eating up a lot of time.
 It&rsquo;s only called in the constructor,
-but on the other hand,
-we&rsquo;re constructing a new dataframe for each <code>filter</code> and <code>select</code>,
-so removing that safety check would speed things up.</p>
+but since we&rsquo;re constructing a new dataframe for each <code>filter</code> and <code>select</code>,
+removing that safety check would speed things up.</p>
 <p>Looking down a little further,
 the <span class="ix-entry" ix-key="dictionary comprehension" markdown="1">dictionary comprehension</span> in <code>DfCol.filter</code> takes a lot of time as well.
 That isn&rsquo;t surprising:
