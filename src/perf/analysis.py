@@ -31,5 +31,6 @@ fig = px.line(temp, x="percentage", y="ratio",
               color_discrete_sequence=["gray"],
               template="plotly_white")
 
-fig.write_image("analysis.pdf", width="800", height="400")
-fig.write_image("analysis.svg", width="800", height="400")
+fig.update_layout(margin={"l": 0, "r": 0, "t": 0, "b": 0})
+fig.write_image("analysis.pdf", width="620", height="400")
+fig.write_image("analysis.svg", width="620", height="400")

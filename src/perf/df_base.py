@@ -9,13 +9,13 @@ class DataFrame:
         """Return the set of column names."""
 
     def eq(self, other):
-        """Check equality of two dataframes."""
+        """Check equality with another dataframe."""
 
     def get(self, col, row):
         """Get a scalar value."""
 
     def select(self, *names):
-        """Select a subset of columns."""
+        """Select a named subset of columns."""
 
     def filter(self, func):
-        """Select a subset of rows."""
+        """Select a subset of rows by testing values."""

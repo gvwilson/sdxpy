@@ -5,7 +5,7 @@ syllabus:
 -   The layout engine calculates the position of each block based on its size and the position of its parent.
 -   Drawing blocks on top of each other from top to bottom is an easy way to render them.
 -   Use multiple inheritance and mixin classes to inject methods into classes without modifying their parent class.
-status: "revisions completed 2023-08-05"
+status: "revised 2023-08-05"
 depends:
 -   check
 -   template

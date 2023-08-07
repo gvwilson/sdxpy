@@ -122,6 +122,8 @@ and `reference.part` if it isn't.
 
 ## Extension {: #bonus-extension}
 
+*This material extends [%x lint %].*
+
 It's easy to check a single style rule by extending `NodeVisitor`,
 but what if we want to check dozens of rules?
 Traversing the AST dozens of times would be inefficient.
@@ -263,6 +265,24 @@ none of that requires us to inspect the AST.
 | orange | X |   |   |
 | red | X |   | X | X
 </div>
+
+## Inspecting Functions {: #bonus-inspect}
+
+*This material extends [%x perf %].*
+
+A better implementation of filtering would make use of the fact that
+Python's [inspect][py_inspect] module lets us examine objects in memory.
+In particular, `inspect.signature` can tell us what parameters a function takes:
+
+[% inc pat="inspect_func.*" fill="py out" %]
+
+If, for example,
+the user wants to compare the `red` and `blue` columns of a dataframe,
+they can give us a function that has two parameters called `red` and `blue`.
+We can then use those parameter names to figure out
+which columns we need from the dataframe.
+We will explore this in the exercises.
+{: .continue}
 
 ## Floating Point Numbers {: #bonus-float}
 

@@ -5,7 +5,7 @@ syllabus:
 -   Trees are usually processed using recursion.
 -   The Visitor design pattern is often used to perform an action for each member of a data structure.
 -   We can summarize and check the structure of an HTML page by visiting each node and recording what we find there.
-status: "revisions completed 2023-08-03"
+status: "revised 2023-08-03"
 depends:
 -   parse
 ---
