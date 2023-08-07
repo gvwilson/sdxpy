@@ -276,7 +276,7 @@
     DRAFT 2023-08-07
   </p>
   <p>
-    awaiting revision<br>
+    revised 2023-08-07<br>
     Please use section heading links to submit feedback
     or go to <a href="https://github.com/gvwilson/sdxpy">https://github.com/gvwilson/sdxpy</a>.
   </p>
@@ -355,7 +355,7 @@
 
 
 <p class="definitions">
-  Terms defined: <a class="gl-ref" href="../glossary/#gl:atomic_value" markdown="1">atomic value</a>, <a class="gl-ref" href="../glossary/#gl:duck_typing" markdown="1">duck typing</a>, <a class="gl-ref" href="../glossary/#gl:helper_class" markdown="1">helper class</a>, <a class="gl-ref" href="../glossary/#gl:list_comprehension" markdown="1">list comprehension</a>, <a class="gl-ref" href="../glossary/#gl:open_closed_principle" markdown="1">Open-Closed Principle</a>, <a class="gl-ref" href="../glossary/#gl:persistence" markdown="1">persistence</a>, <a class="gl-ref" href="../glossary/#gl:pythonic" markdown="1">Pythonic</a>
+  Terms defined: <a class="gl-ref" href="../glossary/#gl:atomic_value" markdown="1">atomic value</a>, <a class="gl-ref" href="../glossary/#gl:list_comprehension" markdown="1">list comprehension</a>, <a class="gl-ref" href="../glossary/#gl:open_closed_principle" markdown="1">Open-Closed Principle</a>, <a class="gl-ref" href="../glossary/#gl:persistence" markdown="1">persistence</a>
 </p>
 
 
@@ -363,8 +363,8 @@
 
 
           <div class="page-toc"></div>
-          <p>Version control systems can manage our files for us,
-but what should we put in those files?
+          <p>Version control can keep track of our files,
+but what should we put in them?
 Plain text is one option
 (in fact, the only option that most version control systems fully support),
 but another is to store objects,
@@ -372,10 +372,10 @@ i.e.,
 to save a list of dictionaries as-is
 rather than flattering it into rows and columns.
 Python&rsquo;s <a href="https://docs.python.org/3/library/pickle.html">pickle</a> module does this in a Python-specific way,
-while the <a href="https://docs.python.org/3/library/json.html">json</a> module saves some kinds of objects as text
-formatted as <span class="ix-entry" ix-key="JSON" markdown="1">JSON</span>,
-which program written in other languages can read.</p>
-<p>The phrase &ldquo;some kinds of objects&rdquo; is the most important part of the preceding paragraph.
+while the <a href="https://docs.python.org/3/library/json.html">json</a> module saves some kinds of data as text formatted like JavaScript objects.
+As odd as it may seem,
+this has become a cross-language standard.</p>
+<p>The phrase &ldquo;some kinds of data&rdquo; is the most important part of the preceding paragraph.
 Since programs can define new <span class="ix-entry" ix-key="class" markdown="1">classes</span>,
 a <a class="gl-ref" href="../glossary/#gl:persistence" title="The act of saving and restoring data, particularly heterogeneous data with irregular structure." markdown="1">persistence framework</a>
 has to choose one of the following:</p>
@@ -394,7 +394,7 @@ has to choose one of the following:</p>
     but can lead to some information being lost.
     For example,
     if instances of a program&rsquo;s <code>User</code> class are saved as dictionaries,
-    the program that reads data will wind up with dictionaries instead of users.</p>
+    the program that reads data may wind up with dictionaries instead of users.</p>
 </li>
 <li>
 <p>Save class definitions as well as objects&rsquo; values
@@ -405,21 +405,21 @@ has to choose one of the following:</p>
     but it is also the hardest to implement,
     particularly across languages.
     It is also the riskiest:
-    if a program is reading and then running saved methods,
-    it has to trust that those methods aren&rsquo;t doing anything malicious.</p>
+    if a program is running third-party code in order to restore objects,
+    it has to trust that code not to do anything malicious.</p>
 </li>
 </ol>
 <p>This chapter starts by implementing the first option (built-in types only),
-then extends it to handle shared objects
-(which JSON does not),
-and finally adds ways to convert user-defined types to storable data.
+then extends it to handle objects that the data structure refers to in several places
+(which JSON does not).
 To keep parsing and testing simple
 our framework will store everything as text with one value per line;
-we will look at non-text options in <a class="x-ref" href="../binary/">Chapter 17</a>.</p>
+we will look at non-text options in <a class="x-ref" href="../binary/">Chapter 17</a>,
+and at how to handle user-defined types in <a class="x-ref" href="../bonus/">Appendix B</a>.</p>
 <h2 id="persist-builtin">Section 16.1: Built-in Types</h2>
 <p>The first thing we need to do is specify our data format.
 We will store each <a class="gl-ref" href="../glossary/#gl:atomic_value" title="A value that cannot be broken down into smaller parts, such as a Boolean or integer." markdown="1">atomic value</a> on a line of its own
-with the type&rsquo;s name first and the value second like this:</p>
+with a type name and a value separated by a colon:</p>
 <div class="code-sample lang-txt" title="format.txt">
 <div class="highlight"><pre><span></span><code>bool:True
 int:123
@@ -464,8 +464,8 @@ two lines
 </div>
 <p>The function that loads data starts by reading a single line,
 stripping off the newline at the end
-(which is added automatically by the <code>print</code> in <code>save</code>),
-and then splitting the line on the colon.
+(which is added automatically by the <code>print</code> statement in <code>save</code>),
+and then splitting the line on colons.
 After checking that there are two fields,
 it uses the type name in the first field
 to decide how to handle the second:</p>
@@ -497,13 +497,8 @@ we save the number of items in the list,
 and then save each item
 with a <span class="ix-entry" ix-key="recursion" markdown="1">recursive</span> called to <code>save</code>.
 For example,
-the list <code>[55, True, 2.71]</code> is saved as shown in <a class="fig-ref" href="../persist/#persist-lists">Figure 16.1</a>.</p>
-<figure id="persist-lists">
-<img src="./lists.svg" alt="Saving lists"/>
-<figcaption markdown="1">Figure 16.1: Saving nested data structures.</figcaption>
-</figure>
-
-<p>The code to do this is:</p>
+the list <code>[55, True, 2.71]</code> is saved as shown in <a class="fig-ref" href="../persist/#persist-lists">Figure 16.1</a>.
+The code to do this is:</p>
 <div class="code-sample lang-py" title="builtin.py">
 <div class="highlight"><pre><span></span><code><span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">thing</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;list:</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">thing</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">writer</span><span class="p">)</span>
@@ -511,7 +506,40 @@ the list <code>[55, True, 2.71]</code> is saved as shown in <a class="fig-ref" h
         <span class="n">save</span><span class="p">(</span><span class="n">writer</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span>
 </code></pre></div>
 </div>
-<p class="continue">and we use this function like this:</p>
+<p class="continue">and to load a list we just read the specified number of items:</p>
+<div class="code-sample lang-py" title="builtin.py">
+<div class="highlight"><pre><span></span><code><span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">&quot;list&quot;</span><span class="p">:</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">load</span><span class="p">(</span><span class="n">reader</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">value</span><span class="p">))]</span>
+</code></pre></div>
+</div>
+<figure id="persist-lists">
+<img src="./lists.svg" alt="Saving lists"/>
+<figcaption markdown="1">Figure 16.1: Saving nested data structures.</figcaption>
+</figure>
+
+<p>Notice that <code>save</code> and <code>load</code> don&rsquo;t need to know
+what kinds of values are in the list.
+Each recursive call advances the input or output stream
+by precisely as many lines as it needs to.
+As a result,
+this approach should handle nested lists without any extra work.</p>
+<p>Our functions handle sets in exactly the same way as lists;
+the only difference is using the keyword <code>set</code> instead of the keyword <code>list</code>
+in the opening line.
+To save a <span class="ix-entry" ix-key="dictionary" markdown="1">dictionary</span>,
+we save the number of entries
+and then save each key and value in turn:</p>
+<div class="code-sample lang-py" title="builtin.py">
+<div class="highlight"><pre><span></span><code><span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">thing</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;dict:</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">thing</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">writer</span><span class="p">)</span>
+    <span class="k">for</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span> <span class="ow">in</span> <span class="n">thing</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">save</span><span class="p">(</span><span class="n">writer</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
+        <span class="n">save</span><span class="p">(</span><span class="n">writer</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<p>The code to load a dictionary is analogous.
+With this machinery in place,
+we can save our first data structure:</p>
 <div class="code-sample lang-py" title="save_builtin.py">
 <div class="highlight"><pre><span></span><code><span class="n">save</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="p">,</span> <span class="p">[</span><span class="kc">False</span><span class="p">,</span> <span class="mf">3.14</span><span class="p">,</span> <span class="s2">&quot;hello&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;left&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;right&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]}])</span>
 </code></pre></div>
@@ -533,34 +561,6 @@ int:2
 int:3
 </code></pre></div>
 </div>
-<p>To load a list we just read the specified number of items:</p>
-<div class="code-sample lang-py" title="builtin.py">
-<div class="highlight"><pre><span></span><code><span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">&quot;list&quot;</span><span class="p">:</span>
-    <span class="k">return</span> <span class="p">[</span><span class="n">load</span><span class="p">(</span><span class="n">reader</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">value</span><span class="p">))]</span>
-</code></pre></div>
-</div>
-<p>Notice that these two functions don&rsquo;t need to know
-what kinds of values are in the list:
-each recursive call to <code>save</code> or <code>load</code>
-advances the input or output stream
-by precisely as many lines as it needs to.
-In particular,
-this approach handles nested lists without any extra work.</p>
-<p>Our functions handle sets in exactly the same way as lists;
-the only difference is using the keyword <code>set</code> instead of the keyword <code>list</code>
-in the opening line.
-To save a <span class="ix-entry" ix-key="dictionary" markdown="1">dictionary</span>,
-we save the number of entries
-and then save each key and value in turn:</p>
-<div class="code-sample lang-py" title="builtin.py">
-<div class="highlight"><pre><span></span><code><span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">thing</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;dict:</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">thing</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">writer</span><span class="p">)</span>
-    <span class="k">for</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span> <span class="ow">in</span> <span class="n">thing</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-        <span class="n">save</span><span class="p">(</span><span class="n">writer</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
-        <span class="n">save</span><span class="p">(</span><span class="n">writer</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
-</code></pre></div>
-</div>
-<p class="continue">The code to load a dictionary is analogous.</p>
 <p>We now need to write some unit tests.
 We will use two tricks when doing this:</p>
 <ol>
@@ -583,13 +583,11 @@ We will use two tricks when doing this:</p>
 <div class="code-sample lang-py" title="test_builtin.py">
 <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">test_save_list_flat</span><span class="p">():</span>
     <span class="n">fixture</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="kc">False</span><span class="p">]</span>
-    <span class="n">expected</span> <span class="o">=</span> <span class="n">dedent</span><span class="p">(</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;\</span>
-<span class="sd">    list:2</span>
-<span class="sd">    int:0</span>
-<span class="sd">    bool:False</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="p">)</span>
+    <span class="n">expected</span> <span class="o">=</span> <span class="n">dedent</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span><span class="se">\</span>
+<span class="s2">    list:2</span>
+<span class="s2">    int:0</span>
+<span class="s2">    bool:False</span>
+<span class="s2">    &quot;&quot;&quot;</span><span class="p">)</span>
     <span class="n">output</span> <span class="o">=</span> <span class="n">StringIO</span><span class="p">()</span>
     <span class="n">save</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">fixture</span><span class="p">)</span>
     <span class="k">assert</span> <span class="n">output</span><span class="o">.</span><span class="n">getvalue</span><span class="p">()</span> <span class="o">==</span> <span class="n">expected</span>
@@ -611,13 +609,41 @@ it is normal to have to revise a design the first two or three times we try to e
 As <span class="bib-ref">[<a class="bib-ref" href="../bib/#Brand1995">Brand1995</a>]</span> said of buildings,
 the things we make learn how to do things better as we use them.</p>
 <p>In this case,
-we can follow the Open-Closed Principle by rewriting our functions as classes.
-We will also use <span class="ix-entry" ix-key="dynamic dispatch" markdown="1">dynamic dispatch</span>
-as we did in <a class="x-ref" href="../interp/">Chapter 7</a>
-to handle each item
+we can follow the Open-Closed Principle by rewriting our functions as classes
+and by using yet another form of <span class="ix-entry" ix-key="dynamic dispatch" markdown="1">dynamic dispatch</span> to handle each item
 so that we don&rsquo;t have to modify a multi-way <code>if</code> statement
 each time we add a new capability.
-The core of our saving class is:</p>
+If we have an object <code>obj</code>,
+then <code>hasattr(obj, "name")</code> tells us whether that object has an attribute called <code>"name"</code>.
+If it does,
+<code>getattr(obj, "name")</code> returns that attribute&rsquo;s value;
+if that attribute happens to be a method,
+we can then call it like a function:</p>
+<div class="code-sample lang-py" title="attr.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Example</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">label</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">label</span> <span class="o">=</span> <span class="n">label</span>
+
+    <span class="k">def</span> <span class="nf">get_size</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="p">)</span>
+
+<span class="n">ex</span> <span class="o">=</span> <span class="n">Example</span><span class="p">(</span><span class="s2">&quot;thing&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ex has missing&quot;</span><span class="p">,</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ex</span><span class="p">,</span> <span class="s2">&quot;missing&quot;</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ex has label&quot;</span><span class="p">,</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ex</span><span class="p">,</span> <span class="s2">&quot;label&quot;</span><span class="p">),</span> <span class="s2">&quot;with value&quot;</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">ex</span><span class="p">,</span> <span class="s2">&quot;label&quot;</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ex has get_size&quot;</span><span class="p">,</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ex</span><span class="p">,</span> <span class="s2">&quot;get_size&quot;</span><span class="p">))</span>
+<span class="n">method</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">ex</span><span class="p">,</span> <span class="s2">&quot;get_size&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;result of calling method&quot;</span><span class="p">,</span> <span class="n">method</span><span class="p">())</span>
+</code></pre></div>
+</div>
+<div class="code-sample lang-out" title="attr.out">
+<div class="highlight"><pre><span></span><code>ex has missing False
+ex has label True with value thing
+ex has get_size True
+result of calling method 5
+</code></pre></div>
+</div>
+<p>Using this,
+the core of our saving class is:</p>
 <div class="code-sample lang-py" title="oop.py">
 <div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">SaveOop</span><span class="p">:</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">writer</span><span class="p">):</span>
@@ -625,31 +651,30 @@ The core of our saving class is:</p>
 
     <span class="k">def</span> <span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">thing</span><span class="p">):</span>
         <span class="n">typename</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">thing</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span>
-        <span class="n">method</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;_</span><span class="si">{</span><span class="n">typename</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">method</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;save_</span><span class="si">{</span><span class="n">typename</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="k">assert</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">),</span> \
             <span class="sa">f</span><span class="s2">&quot;Unknown object type </span><span class="si">{</span><span class="n">typename</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">)(</span><span class="n">thing</span><span class="p">)</span>
 </code></pre></div>
 </div>
-<p class="continue">(We have called it <code>SaveOop</code> instead of just <code>Save</code>
-because we are going to create several variations on it.)</p>
-<p><code>SaveOop.save</code> figures out which <span class="ix-entry" ix-key="method" markdown="1">method</span> to call
+<p>We have called it <code>SaveOop</code> instead of just <code>Save</code>
+because we are going to create other variations on it.
+<code>SaveOop.save</code> figures out which <span class="ix-entry" ix-key="method" markdown="1">method</span> to call
 to save a particular thing
 by constructing a name based on the thing&rsquo;s type,
 checking whether that method exists,
 and then calling it.
-Again,
-as in <a class="x-ref" href="../interp/">Chapter 7</a>,
+As in previous example of dynamic dispatch,
 the methods that handle specific items
 must all have the same <span class="ix-entry" ix-key="signature" markdown="1">signature</span>
 so that they can be called interchangeably.
 For example,
 the methods that write integers and strings are:</p>
 <div class="code-sample lang-py" title="oop.py">
-<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">_int</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">thing</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">save_int</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">thing</span><span class="p">):</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_write</span><span class="p">(</span><span class="s2">&quot;int&quot;</span><span class="p">,</span> <span class="n">thing</span><span class="p">)</span>
 
-<span class="k">def</span> <span class="nf">_str</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">thing</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">save_str</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">thing</span><span class="p">):</span>
     <span class="n">lines</span> <span class="o">=</span> <span class="n">thing</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_write</span><span class="p">(</span><span class="s2">&quot;str&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">lines</span><span class="p">))</span>
     <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">:</span>
@@ -669,14 +694,16 @@ the string handling of our original <code>load</code> function:</p>
         <span class="n">fields</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">,</span> <span class="n">maxsplit</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
         <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">fields</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Badly-formed line </span><span class="si">{</span><span class="n">line</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="o">=</span> <span class="n">fields</span>
-        <span class="n">method</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">method</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;load_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="k">assert</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;Unknown object type </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">)(</span><span class="n">value</span><span class="p">)</span>
 </code></pre></div>
 </div>
-<p>The methods that load individual items are even simpler:</p>
+<p>The methods that load individual items are even simpler.
+For example,
+we load a floating-point number like this:</p>
 <div class="code-sample lang-py" title="oop.py">
-<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">_float</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">load_float</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
     <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
 </code></pre></div>
 </div>
@@ -685,8 +712,13 @@ the string handling of our original <code>load</code> function:</p>
 which created the data structure shown in <a class="fig-ref" href="../persist/#persist-shared">Figure 16.2</a>.
 If we save this structure and then reload it
 using what we have built so far
-we will wind up duplicating the string <code>"shared"</code>.</p>
-<div class="highlight"><pre><span></span><code><span class="n">shared</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;shared&quot;</span><span class="p">]</span>
+we will wind up with two copies of the list containing the string <code>"content"</code>
+instead of one.
+This won&rsquo;t be a problem if we only ever read the reloaded data,
+but if we modify the new copy of <code>fixture[0]</code>,
+we won&rsquo;t see that change reflected in <code>fixture[1]</code>,
+where we <em>would</em> have seen the change in the original data structure:</p>
+<div class="highlight"><pre><span></span><code><span class="n">shared</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;content&quot;</span><span class="p">]</span>
 <span class="n">fixture</span> <span class="o">=</span> <span class="p">[</span><span class="n">shared</span><span class="p">,</span> <span class="n">shared</span><span class="p">]</span>
 </code></pre></div>
 <figure id="persist-shared">
@@ -711,10 +743,10 @@ To reconstruct the original data correctly we need to:</p>
 <p>reverse this process when loading data.</p>
 </li>
 </ol>
-<p>Luckily,
-Python has a built-in function <code>id</code>
-that returns a unique ID for every object in the program.
-Even if two lists or dictionaries contain the same data,
+<p>We can keep track of the things we have saved
+using Python&rsquo;s built-in <code>id</code> function.
+This function returns a unique ID for every object in the program;
+even if two lists or dictionaries contain the same data,
 <code>id</code> will report different IDs
 because they&rsquo;re stored in different locations in memory.
 We can use this to:</p>
@@ -755,9 +787,10 @@ has been saved before,
 it writes a line like this:</p>
 <div class="highlight"><pre><span></span><code>alias:12345678:
 </code></pre></div>
-<p>where <code>12345678</code> is the object&rsquo;s ID.
-Otherwise,
-it saves the object&rsquo;s type,
+<p class="continue">where <code>12345678</code> is the object&rsquo;s ID.
+(The exercises will ask why the trailing colon needs to be there.)
+If the object hasn&rsquo;t been seen before,
+<code>SaveAlias</code> saves the object&rsquo;s type,
 its ID,
 and either its value or its length:</p>
 <div class="code-sample lang-py" title="aliasing_wrong.py">
@@ -770,13 +803,10 @@ and either its value or its length:</p>
 <p><code>SaveAlias._list</code> is a little different from <code>SaveOop._list</code>
 because it has to save each object&rsquo;s identifier
 along with its type and its value or length.
-Our <code>LoadAlias</code> class,
-on the other hand,
-can recycle all the loading methods for particular datatypes
-from <code>LoadOop</code>.
-All that has to change is the <code>load</code> method itself,
-which looks to see if we&rsquo;re restoring aliased data
-or loading something new:</p>
+Our <code>LoadAlias</code> class needs a similar change compared to <code>LoadOop</code>.
+The first version is shown below;
+as we will see,
+it contains a subtle bug:</p>
 <div class="code-sample lang-py" title="aliasing_wrong.py">
 <div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">LoadAlias</span><span class="p">(</span><span class="n">LoadOop</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reader</span><span class="p">):</span>
@@ -795,7 +825,7 @@ or loading something new:</p>
             <span class="k">assert</span> <span class="n">ident</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">seen</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">seen</span><span class="p">[</span><span class="n">ident</span><span class="p">]</span>
 
-        <span class="n">method</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">method</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;load_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="k">assert</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;Unknown object type </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="n">result</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">)(</span><span class="n">value</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">seen</span><span class="p">[</span><span class="n">ident</span><span class="p">]</span> <span class="o">=</span> <span class="n">result</span>
@@ -821,11 +851,11 @@ or loading something new:</p>
 <p class="continue">There isn&rsquo;t any aliasing in the test case,
 but that&rsquo;s deliberate:
 we want to make sure we haven&rsquo;t broken code that was working
-before we move on.</p>
-<p>Here&rsquo;s a test that actually includes some aliasing:</p>
+before we move on.
+Here&rsquo;s a test that actually includes some aliasing:</p>
 <div class="code-sample lang-py" title="test_aliasing_wrong.py">
 <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">test_aliasing_shared_child</span><span class="p">():</span>
-    <span class="n">shared</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;shared&quot;</span><span class="p">]</span>
+    <span class="n">shared</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;content&quot;</span><span class="p">]</span>
     <span class="n">fixture</span> <span class="o">=</span> <span class="p">[</span><span class="n">shared</span><span class="p">,</span> <span class="n">shared</span><span class="p">]</span>
     <span class="n">result</span> <span class="o">=</span> <span class="n">roundtrip</span><span class="p">(</span><span class="n">fixture</span><span class="p">)</span>
     <span class="k">assert</span> <span class="n">result</span> <span class="o">==</span> <span class="n">fixture</span>
@@ -861,7 +891,7 @@ but then says it can&rsquo;t find the object being referred to.</p>
 marked as containing a bug,
 in combination with these lines inherited from <code>LoadOop</code>:</p>
 <div class="code-sample lang-py" title="oop.py">
-<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">_list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">load_list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
     <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">load</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">value</span><span class="p">))]</span>
 </code></pre></div>
 </div>
@@ -891,7 +921,7 @@ which unfortunately means writing new versions
 of all the methods defined in <code>LoadOop</code>.
 The new implementation of <code>_list</code> is:</p>
 <div class="code-sample lang-py" title="aliasing.py">
-<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">_list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ident</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">load_list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ident</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
     <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">seen</span><span class="p">[</span><span class="n">ident</span><span class="p">]</span> <span class="o">=</span> <span class="n">result</span>
     <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">value</span><span class="p">)):</span>
@@ -906,7 +936,7 @@ We have to pass it the ID of the list
 to use as the key in <code>seen</code>,
 and we have to use a loop rather than
 a <a class="gl-ref" href="../glossary/#gl:list_comprehension" title="A single expression that constructs a list by looping over its items." markdown="1">list comprehension</a>,
-but the changes to <code>_set</code> and <code>_dict</code> follow exactly the same pattern.</p>
+but the changes to <code>save_set</code> and <code>save_dict</code> follow exactly the same pattern.</p>
 <div class="code-sample lang-py" title="save_aliasing.py">
 <div class="highlight"><pre><span></span><code><span class="n">word</span> <span class="o">=</span> <span class="s2">&quot;word&quot;</span>
 <span class="n">child</span> <span class="o">=</span> <span class="p">[</span><span class="n">word</span><span class="p">,</span> <span class="n">word</span><span class="p">]</span>
@@ -927,208 +957,14 @@ word
 alias:4498771824:
 </code></pre></div>
 </div>
-<h2 id="persist-extend">Section 16.4: User-Defined Classes</h2>
-<p>It&rsquo;s time to extend our framework to handle user-defined classes.
-We&rsquo;ll start by refactoring our code so that the <code>save</code> method doesn&rsquo;t get any larger:</p>
-<div class="code-sample lang-py" title="extend.py">
-<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">SaveExtend</span><span class="p">(</span><span class="n">SaveAlias</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">writer</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">writer</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">thing</span><span class="p">):</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_aliased</span><span class="p">(</span><span class="n">thing</span><span class="p">):</span>
-            <span class="k">return</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_builtin</span><span class="p">(</span><span class="n">thing</span><span class="p">):</span>
-            <span class="k">return</span>
-        <span class="k">assert</span> <span class="kc">False</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Don&#39;t know how to handle </span><span class="si">{</span><span class="n">thing</span><span class="si">}</span><span class="s2">&quot;</span>
-</code></pre></div>
-</div>
-<p class="continue">The method to handle built-in types is:</p>
-<div class="code-sample lang-py" title="extend.py">
-<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">_builtin</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">thing</span><span class="p">):</span>
-    <span class="n">typename</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">thing</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span>
-    <span class="n">method</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;_</span><span class="si">{</span><span class="n">typename</span><span class="si">}</span><span class="s2">&quot;</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">):</span>
-        <span class="k">return</span> <span class="kc">False</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">seen</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="nb">id</span><span class="p">(</span><span class="n">thing</span><span class="p">))</span>
-    <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">)(</span><span class="n">thing</span><span class="p">)</span>
-    <span class="k">return</span> <span class="kc">True</span>
-</code></pre></div>
-</div>
-<p class="continue">and the one that handles aliases is:</p>
-<div class="code-sample lang-py" title="extend.py">
-<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">_aliased</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">thing</span><span class="p">):</span>
-    <span class="n">thing_id</span> <span class="o">=</span> <span class="nb">id</span><span class="p">(</span><span class="n">thing</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">thing_id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">seen</span><span class="p">:</span>
-        <span class="k">return</span> <span class="kc">False</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">_write</span><span class="p">(</span><span class="s2">&quot;alias&quot;</span><span class="p">,</span> <span class="n">thing_id</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
-    <span class="k">return</span> <span class="kc">True</span>
-</code></pre></div>
-</div>
-<p class="continue">None of this code is new:
-we&rsquo;ve just moved things into methods
-to make each piece easier to understand.</p>
-<p>So how does a class indicate that it can be saved and loaded by our framework?
-Our options are:</p>
-<ol>
-<li>
-<p>Require it to inherit from a <span class="ix-entry" ix-key="base class" markdown="1">base class</span> that we provide
-    so that we can use <code>isinstance</code> to check if an object is persistable.
-    This approach is used in strictly-typed languages like Java,
-    but method #2 below is considered more <a class="gl-ref" href="../glossary/#gl:pythonic" title="Conforming to common Python programming style and practices." markdown="1">Pythonic</a>.</p>
-</li>
-<li>
-<p>Require it to implement a method with a specific name and signature
-    without deriving from a particular base class.
-    This approach is called <a class="gl-ref" href="../glossary/#gl:duck_typing" title="A programming style in which the methods an object happens to have determines how it can be used, rather than what classes it inherits from." markdown="1">duck typing</a>:
-    if it walks like a duck and quacks like a duck, it&rsquo;s a duck.
-    Since option #1 would require users to write this method anyway,
-    it&rsquo;s the one we&rsquo;ll choose.</p>
-</li>
-<li>
-<p>Require users to <span class="ix-entry" ix-key="register (in code)" markdown="1">register</span>
-    a <a class="gl-ref" href="../glossary/#gl:helper_class" title="A class created to support another class that has no other purpose on its own." markdown="1">helper class</a>
-    that knows how to save and load objects of the class we&rsquo;re interested in.
-    This approach is also commonly used in strictly-typed languages
-    as a way of adding persistence after the fact
-    without disrupting the class hierarchy;
-    we&rsquo;ll explore it in the exercises.</p>
-</li>
-</ol>
-<p>To implement option #2,
-we specify that if a class has a method called <code>to_dict</code>,
-we&rsquo;ll call that to get its contents as a dictionary
-and then persist the dictionary.
-Before doing that,
-though,
-we will save a line indicating that
-this dictionary should be used to reconstruct an object
-of a particular class:</p>
-<div class="code-sample lang-py" title="extend.py">
-<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">_extension</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">thing</span><span class="p">):</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">thing</span><span class="p">,</span> <span class="s2">&quot;to_dict&quot;</span><span class="p">):</span>
-        <span class="k">return</span> <span class="kc">False</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">_write</span><span class="p">(</span><span class="s2">&quot;@extension&quot;</span><span class="p">,</span> <span class="nb">id</span><span class="p">(</span><span class="n">thing</span><span class="p">),</span> <span class="n">thing</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">thing</span><span class="o">.</span><span class="n">to_dict</span><span class="p">())</span>
-    <span class="k">return</span> <span class="kc">True</span>
-</code></pre></div>
-</div>
-<p>Loading user-defined classes requires more work
-because we have to map class names back to actual classes.
-(We could also use <span class="ix-entry" ix-key="introspection" markdown="1">introspection</span>
-to find <em>all</em> the classes in the program
-and build a lookup table of the ones with the right method;
-we&rsquo;ll explore that in the exercises.)
-We start by modifying the loader&rsquo;s constructor
-to take zero or more extension classes as arguments
-and then build a name-to-class lookup table from them:</p>
-<div class="code-sample lang-py" title="extend.py">
-<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">LoadExtend</span><span class="p">(</span><span class="n">LoadAlias</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reader</span><span class="p">,</span> <span class="o">*</span><span class="n">extensions</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">reader</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">seen</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">extensions</span> <span class="o">=</span> <span class="p">{</span><span class="n">e</span><span class="o">.</span><span class="vm">__name__</span><span class="p">:</span> <span class="n">e</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">extensions</span><span class="p">}</span>
-</code></pre></div>
-</div>
-<p>The <code>load</code> method then looks for aliases,
-built-in types,
-and extensions in that order.
-Instead of using a chain of <code>if</code> statements
-we loop over the methods that handle these cases.
-If a method decides that it can handle the incoming data
-it returns a result;
-if it can&rsquo;t,
-it raises a <code>KeyError</code> exception,
-and if none of the methods handle a case
-we fail:</p>
-<div class="code-sample lang-py" title="extend.py">
-<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-    <span class="n">key</span><span class="p">,</span> <span class="n">ident</span><span class="p">,</span> <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_next</span><span class="p">()</span>
-    <span class="k">for</span> <span class="n">method</span> <span class="ow">in</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_aliased</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_builtin</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_extension</span><span class="p">):</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">method</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">ident</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
-        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-            <span class="k">pass</span>
-    <span class="k">assert</span> <span class="kc">False</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Don&#39;t know how to handle </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">ident</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">&quot;</span>
-</code></pre></div>
-</div>
-<p>The code to handle built-ins and aliases is copied from our previous work
-and modified to raise <code>KeyError</code>:</p>
-<div class="code-sample lang-py" title="extend.py">
-<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">_aliased</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">ident</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-    <span class="k">if</span> <span class="n">key</span> <span class="o">!=</span> <span class="s2">&quot;alias&quot;</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">()</span>
-    <span class="k">assert</span> <span class="n">ident</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">seen</span>
-    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">seen</span><span class="p">[</span><span class="n">ident</span><span class="p">]</span>
-
-<span class="k">def</span> <span class="nf">_builtin</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">ident</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-    <span class="n">method</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">()</span>
-    <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">)(</span><span class="n">ident</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
-</code></pre></div>
-</div>
-<p>The method that handles extensions
-checks that the value on the line just read indicates an extension,
-then reads the dictionary containing the object&rsquo;s contents
-from the input stream
-and uses it to build an <span class="ix-entry" ix-key="instance" markdown="1">instance</span> of the right class:</p>
-<div class="code-sample lang-py" title="extend.py">
-<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">_extension</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">ident</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-    <span class="k">if</span> <span class="p">(</span><span class="n">key</span> <span class="o">!=</span> <span class="s2">&quot;@extension&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">value</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">extensions</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">()</span>
-    <span class="bp">cls</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">extensions</span><span class="p">[</span><span class="n">value</span><span class="p">]</span>
-    <span class="n">contents</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">load</span><span class="p">()</span>
-    <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="o">**</span><span class="n">contents</span><span class="p">)</span>
-</code></pre></div>
-</div>
-<p>Here&rsquo;s a class that defines the required method:</p>
-<div class="code-sample lang-py" title="user_classes.py">
-<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Parent</span><span class="p">:</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
-
-    <span class="k">def</span> <span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">}</span>
-</code></pre></div>
-</div>
-<p>and here&rsquo;s a test to make sure everything works:</p>
-<div class="code-sample lang-py" title="test_extend.py">
-<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">test_extend_extension_class</span><span class="p">():</span>
-    <span class="n">fixture</span> <span class="o">=</span> <span class="n">Parent</span><span class="p">(</span><span class="s2">&quot;subject&quot;</span><span class="p">)</span>
-    <span class="n">writer</span> <span class="o">=</span> <span class="n">StringIO</span><span class="p">()</span>
-    <span class="n">Save</span><span class="p">(</span><span class="n">writer</span><span class="p">)</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">fixture</span><span class="p">)</span>
-    <span class="n">reader</span> <span class="o">=</span> <span class="n">StringIO</span><span class="p">(</span><span class="n">writer</span><span class="o">.</span><span class="n">getvalue</span><span class="p">())</span>
-    <span class="n">result</span> <span class="o">=</span> <span class="n">Load</span><span class="p">(</span><span class="n">reader</span><span class="p">,</span> <span class="n">Parent</span><span class="p">)</span><span class="o">.</span><span class="n">load</span><span class="p">()</span>
-    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">Parent</span><span class="p">)</span>
-    <span class="k">assert</span> <span class="n">result</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="n">fixture</span><span class="o">.</span><span class="n">name</span>
-</code></pre></div>
-</div>
-<div class="callout">
-<h3>What&rsquo;s in a Name?</h3>
-<p>The first version of these classes used the word <code>"extension"</code>
-rather than <code>"@extension"</code>.
-That led to the most confusing bug in this whole chapter.
-When <code>load</code> reads a line,
-it runs <code>self._builtin</code> before running <code>self._extension</code>.
-If the first word on the line is <code>"extension"</code> (without the <code>@</code>)
-then <code>self._builtin</code> constructs the method name <code>_extension</code>,
-finds that method,
-and calls it
-as if we were loading an object of a built-in type:
-which we&rsquo;re not.
-Using <code>@extension</code> as the leading indicator
-leads to <code>self._builtin</code> checking for <code>"_@extension"</code> in the loader&rsquo;s attributes,
-which doesn&rsquo;t exist,
-so everything goes as it should.</p>
-</div>
-<h2 id="persist-summary">Section 16.5: Summary</h2>
+<h2 id="persist-summary">Section 16.4: Summary</h2>
 <figure id="persist-concept-map" class="here">
 <img src="./concept_map.svg" alt="Concept map for persistence"/>
 <figcaption markdown="1">Figure 16.4: Concepts for persistence.</figcaption>
 </figure>
 
-<h2 id="persist-exercises">Section 16.6: Exercises</h2>
+<p><em>Please see <a class="x-ref" href="../bonus/">Appendix B</a> for extra material related to these ideas.</em></p>
+<h2 id="persist-exercises">Section 16.5: Exercises</h2>
 <h3 class="exercise">Reset</h3>
 <p><code>SaveAlias</code>, <code>SaveExtend</code>, and their loading counterparts
 don&rsquo;t re-set the tables of objects seen so far between runs.</p>
@@ -1168,44 +1004,6 @@ instead of being split across several lines.</p>
 <h3 class="exercise">Who Calculates?</h3>
 <p>Why doesn&rsquo;t <code>LoadAlias.load</code> calculate object IDs?
 Why does it use the IDs saved in the archive instead?</p>
-<h3 class="exercise">Fallback</h3>
-<ol>
-<li>
-<p>Modify <code>LoadExtend</code> so that
-    if the user didn&rsquo;t provide the class needed to reconstruct some archived data,
-    the <code>load</code> method returns a simple dictionary instead.</p>
-</li>
-<li>
-<p>Why is this a bad idea?</p>
-</li>
-</ol>
-<h3 class="exercise">Removing Exceptions</h3>
-<p>Rewrite <code>LoadExtend</code> so that it doesn&rsquo;t use exceptions
-when <code>_aliased</code>, <code>_builtin</code>, and <code>extension</code> decide
-they aren&rsquo;t the right method to handle a particular case.
-Is the result simpler or more complex than the exception-based approach?</p>
-<h3 class="exercise">Helper Classes</h3>
-<p>Modify the framework so that
-if a user wants to save and load instances of a class <code>X</code>,
-they must register a class <code>Persist_X</code> with the framework
-that does the saving and loading for <code>X</code>.</p>
-<h3 class="exercise">Self-Referential Objects</h3>
-<p>Suppose an object contains a reference to itself:</p>
-<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Example</span><span class="p">:</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ref</span> <span class="o">=</span> <span class="kc">None</span>
-
-<span class="n">ex</span> <span class="o">=</span> <span class="n">Example</span><span class="p">()</span>
-<span class="n">ex</span><span class="o">.</span><span class="n">ref</span> <span class="o">=</span> <span class="n">ex</span>
-</code></pre></div>
-<ol>
-<li>
-<p>Why can&rsquo;t <code>SaveExtend</code> and <code>LoadExtend</code> handle this correctly?</p>
-</li>
-<li>
-<p>How would they have to be changed to handle this?</p>
-</li>
-</ol>
 <h3 class="exercise">Using Globals</h3>
 <p>The lesson on unit testing introduced the function <code>globals</code>,
 which can be used to look up everything defined at the top level of a program.</p>

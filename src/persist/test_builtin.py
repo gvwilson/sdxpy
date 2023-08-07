@@ -18,8 +18,7 @@ def test_save_dict_empty():
 
 def test_save_dict_flat():
     fixture = {"alpha": "beta", 1: 2}
-    expected = dedent(
-        """\
+    expected = dedent("""\
     dict:2
     str:1
     alpha
@@ -27,8 +26,7 @@ def test_save_dict_flat():
     beta
     int:1
     int:2
-    """
-    )
+    """)
     output = StringIO()
     save(output, fixture)
     assert output.getvalue() == expected
@@ -49,13 +47,11 @@ def test_save_int_single():
 # [test_save_list_flat]
 def test_save_list_flat():
     fixture = [0, False]
-    expected = dedent(
-        """\
+    expected = dedent("""\
     list:2
     int:0
     bool:False
-    """
-    )
+    """)
     output = StringIO()
     save(output, fixture)
     assert output.getvalue() == expected
@@ -63,22 +59,18 @@ def test_save_list_flat():
 
 
 def test_save_str_single():
-    fixture = dedent(
-        """\
+    fixture = dedent("""\
     a
     b
     c
-    """
-    )
-    expected = dedent(
-        """\
+    """)
+    expected = dedent("""\
     str:4
     a
     b
     c
 
-    """
-    )
+    """)
     output = StringIO()
     save(output, fixture)
     assert output.getvalue() == expected
@@ -86,16 +78,14 @@ def test_save_str_single():
 
 def test_save_set_flat():
     fixture = {1, "a"}
-    first = dedent(
-        """\
+    first = dedent("""\
     set:2
     int:1
     str:1
     a
     """
     )
-    second = dedent(
-        """\
+    second = dedent("""\
     set:2
     str:1
     a
@@ -120,17 +110,15 @@ def test_load_dict_empty():
 
 def test_load_dict_flat():
     fixture = StringIO(
-        dedent(
-            """\
-    dict:2
-    str:1
-    alpha
-    str:1
-    beta
-    int:1
-    int:2
-    """
-        )
+        dedent("""\
+        dict:2
+        str:1
+        alpha
+        str:1
+        beta
+        int:1
+        int:2
+        """)
     )
     assert load(fixture) == {"alpha": "beta", 1: 2}
 

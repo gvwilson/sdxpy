@@ -5,13 +5,13 @@ syllabus:
 -   Users should be able to extend persistence to handle objects of their own types.
 -   Software designs should be open for extension but closed for modification.
 -   Extensibility can be implemented using multiple inheritance, duck typing, or helper classes.
-status: "awaiting revision"
+status: "revised 2023-08-07"
 depends:
 -   interp
 ---
 
-Version control systems can manage our files for us,
-but what should we put in those files?
+Version control can keep track of our files,
+but what should we put in them?
 Plain text is one option
 (in fact, the only option that most version control systems fully support),
 but another is to store objects,
@@ -19,11 +19,11 @@ i.e.,
 to save a list of dictionaries as-is
 rather than flattering it into rows and columns.
 Python's [pickle][py_pickle] module does this in a Python-specific way,
-while the [json][py_json] module saves some kinds of objects as text
-formatted as [%i "JSON" %],
-which program written in other languages can read.
+while the [json][py_json] module saves some kinds of data as text formatted like JavaScript objects.
+As odd as it may seem,
+this has become a cross-language standard.
 
-The phrase "some kinds of objects" is the most important part of the preceding paragraph.
+The phrase "some kinds of data" is the most important part of the preceding paragraph.
 Since programs can define new [%i "class" "classes" %],
 a [%g persistence "persistence framework" %]
 has to choose one of the following:
@@ -40,7 +40,7 @@ has to choose one of the following:
     but can lead to some information being lost.
     For example,
     if instances of a program's `User` class are saved as dictionaries,
-    the program that reads data will wind up with dictionaries instead of users.
+    the program that reads data may wind up with dictionaries instead of users.
 
 1.  Save class definitions as well as objects' values
     so that when a program reads saved data
@@ -50,22 +50,22 @@ has to choose one of the following:
     but it is also the hardest to implement,
     particularly across languages.
     It is also the riskiest:
-    if a program is reading and then running saved methods,
-    it has to trust that those methods aren't doing anything malicious.
+    if a program is running third-party code in order to restore objects,
+    it has to trust that code not to do anything malicious.
 
 This chapter starts by implementing the first option (built-in types only),
-then extends it to handle shared objects
-(which JSON does not),
-and finally adds ways to convert user-defined types to storable data.
+then extends it to handle objects that the data structure refers to in several places
+(which JSON does not).
 To keep parsing and testing simple
 our framework will store everything as text with one value per line;
-we will look at non-text options in [%x binary %].
+we will look at non-text options in [%x binary %],
+and at how to handle user-defined types in [%x bonus %].
 
 ## Built-in Types {: #persist-builtin}
 
 The first thing we need to do is specify our data format.
 We will store each [%g atomic_value "atomic value" %] on a line of its own
-with the type's name first and the value second like this:
+with a type name and a value separated by a colon:
 
 [% inc file="format.txt" %]
 
@@ -87,8 +87,8 @@ The function `save` handles three of Python's built-in types to start with:
 
 The function that loads data starts by reading a single line,
 stripping off the newline at the end
-(which is added automatically by the `print` in `save`),
-and then splitting the line on the colon.
+(which is added automatically by the `print` statement in `save`),
+and then splitting the line on colons.
 After checking that there are two fields,
 it uses the type name in the first field
 to decide how to handle the second:
@@ -101,6 +101,14 @@ and then save each item
 with a [%i "recursion" "recursive" %] called to `save`.
 For example,
 the list `[55, True, 2.71]` is saved as shown in [%f persist-lists %].
+The code to do this is:
+
+[% inc file="builtin.py" keep="save_list" %]
+
+and to load a list we just read the specified number of items:
+{: .continue}
+
+[% inc file="builtin.py" keep="load_list" %]
 
 [% figure
    slug="persist-lists"
@@ -109,27 +117,12 @@ the list `[55, True, 2.71]` is saved as shown in [%f persist-lists %].
    caption="Saving nested data structures."
 %]
 
-The code to do this is:
-
-[% inc file="builtin.py" keep="save_list" %]
-
-and we use this function like this:
-{: .continue}
-
-[% inc file="save_builtin.py" keep="save" %]
-[% inc file="save_builtin.out" %]
-
-To load a list we just read the specified number of items:
-
-[% inc file="builtin.py" keep="load_list" %]
-
-Notice that these two functions don't need to know
-what kinds of values are in the list:
-each recursive call to `save` or `load`
-advances the input or output stream
+Notice that `save` and `load` don't need to know
+what kinds of values are in the list.
+Each recursive call advances the input or output stream
 by precisely as many lines as it needs to.
-In particular,
-this approach handles nested lists without any extra work.
+As a result,
+this approach should handle nested lists without any extra work.
 
 Our functions handle sets in exactly the same way as lists;
 the only difference is using the keyword `set` instead of the keyword `list`
@@ -141,7 +134,11 @@ and then save each key and value in turn:
 [% inc file="builtin.py" keep="save_dict" %]
 
 The code to load a dictionary is analogous.
-{: .continue}
+With this machinery in place,
+we can save our first data structure:
+
+[% inc file="save_builtin.py" keep="save" %]
+[% inc file="save_builtin.out" %]
 
 We now need to write some unit tests.
 We will use two tricks when doing this:
@@ -180,27 +177,32 @@ As [%b Brand1995 %] said of buildings,
 the things we make learn how to do things better as we use them.
 
 In this case,
-we can follow the Open-Closed Principle by rewriting our functions as classes.
-We will also use [%i "dynamic dispatch" %]
-as we did in [%x interp %]
-to handle each item
+we can follow the Open-Closed Principle by rewriting our functions as classes
+and by using yet another form of [%i "dynamic dispatch" %] to handle each item
 so that we don't have to modify a multi-way `if` statement
 each time we add a new capability.
-The core of our saving class is:
+If we have an object `obj`,
+then `hasattr(obj, "name")` tells us whether that object has an attribute called `"name"`.
+If it does,
+`getattr(obj, "name")` returns that attribute's value;
+if that attribute happens to be a method,
+we can then call it like a function:
+
+[% inc pat="attr.*" fill="py out" %]
+
+Using this,
+the core of our saving class is:
 
 [% inc file="oop.py" keep="save" %]
 
-(We have called it `SaveOop` instead of just `Save`
-because we are going to create several variations on it.)
-{: .continue}
-
+We have called it `SaveOop` instead of just `Save`
+because we are going to create other variations on it.
 `SaveOop.save` figures out which [%i "method" %] to call
 to save a particular thing
 by constructing a name based on the thing's type,
 checking whether that method exists,
 and then calling it.
-Again,
-as in [%x interp %],
+As in previous example of dynamic dispatch,
 the methods that handle specific items
 must all have the same [%i "signature" %]
 so that they can be called interchangeably.
@@ -214,7 +216,9 @@ the string handling of our original `load` function:
 
 [% inc file="oop.py" keep="load" %]
 
-The methods that load individual items are even simpler:
+The methods that load individual items are even simpler.
+For example,
+we load a floating-point number like this:
 
 [% inc file="oop.py" keep="load_float" %]
 
@@ -224,10 +228,15 @@ Consider the two lines of code below,
 which created the data structure shown in [%f persist-shared %].
 If we save this structure and then reload it
 using what we have built so far
-we will wind up duplicating the string `"shared"`.
+we will wind up with two copies of the list containing the string `"content"`
+instead of one.
+This won't be a problem if we only ever read the reloaded data,
+but if we modify the new copy of `fixture[0]`,
+we won't see that change reflected in `fixture[1]`,
+where we *would* have seen the change in the original data structure:
 
 ```python
-shared = ["shared"]
+shared = ["content"]
 fixture = [shared, shared]
 ```
 
@@ -251,10 +260,10 @@ To reconstruct the original data correctly we need to:
 
 1.  reverse this process when loading data.
 
-Luckily,
-Python has a built-in function `id`
-that returns a unique ID for every object in the program.
-Even if two lists or dictionaries contain the same data,
+We can keep track of the things we have saved
+using Python's built-in `id` function.
+This function returns a unique ID for every object in the program;
+even if two lists or dictionaries contain the same data,
 `id` will report different IDs
 because they're stored in different locations in memory.
 We can use this to:
@@ -281,23 +290,22 @@ alias:12345678:
 ```
 
 where `12345678` is the object's ID.
-Otherwise,
-it saves the object's type,
+(The exercises will ask why the trailing colon needs to be there.)
+If the object hasn't been seen before,
+`SaveAlias` saves the object's type,
 its ID,
 and either its value or its length:
+{: .continue}
 
 [% inc file="aliasing_wrong.py" keep="save_list" %]
 
 `SaveAlias._list` is a little different from `SaveOop._list`
 because it has to save each object's identifier
 along with its type and its value or length.
-Our `LoadAlias` class,
-on the other hand,
-can recycle all the loading methods for particular datatypes
-from `LoadOop`.
-All that has to change is the `load` method itself,
-which looks to see if we're restoring aliased data
-or loading something new:
+Our `LoadAlias` class needs a similar change compared to `LoadOop`.
+The first version is shown below;
+as we will see,
+it contains a subtle bug:
 
 [% inc file="aliasing_wrong.py" keep="load" %]
 
@@ -314,9 +322,8 @@ There isn't any aliasing in the test case,
 but that's deliberate:
 we want to make sure we haven't broken code that was working
 before we move on.
-{: .continue}
-
 Here's a test that actually includes some aliasing:
+{: .continue}
 
 [% inc file="test_aliasing_wrong.py" keep="shared" %]
 
@@ -393,136 +400,10 @@ We have to pass it the ID of the list
 to use as the key in `seen`,
 and we have to use a loop rather than
 a [%g list_comprehension "list comprehension" %],
-but the changes to `_set` and `_dict` follow exactly the same pattern.
+but the changes to `save_set` and `save_dict` follow exactly the same pattern.
 
 [% inc file="save_aliasing.py" keep="save" %]
 [% inc file="save_aliasing.out" %]
-
-## User-Defined Classes {: #persist-extend}
-
-It's time to extend our framework to handle user-defined classes.
-We'll start by refactoring our code so that the `save` method doesn't get any larger:
-
-[% inc file="extend.py" keep="save_base" omit="omit_extension" %]
-
-The method to handle built-in types is:
-{: .continue}
-
-[% inc file="extend.py" keep="save_builtin" %]
-
-and the one that handles aliases is:
-{: .continue}
-
-[% inc file="extend.py" keep="save_aliased" %]
-
-None of this code is new:
-we've just moved things into methods
-to make each piece easier to understand.
-{: .continue}
-
-So how does a class indicate that it can be saved and loaded by our framework?
-Our options are:
-
-1.  Require it to inherit from a [%i "base class" %] that we provide
-    so that we can use `isinstance` to check if an object is persistable.
-    This approach is used in strictly-typed languages like Java,
-    but method #2 below is considered more [%g pythonic "Pythonic" %].
-
-2.  Require it to implement a method with a specific name and signature
-    without deriving from a particular base class.
-    This approach is called [%g duck_typing "duck typing" %]:
-    if it walks like a duck and quacks like a duck, it's a duck.
-    Since option #1 would require users to write this method anyway,
-    it's the one we'll choose.
-
-3.  Require users to [%i "register (in code)" "register" %]
-    a [%g helper_class "helper class" %]
-    that knows how to save and load objects of the class we're interested in.
-    This approach is also commonly used in strictly-typed languages
-    as a way of adding persistence after the fact
-    without disrupting the class hierarchy;
-    we'll explore it in the exercises.
-
-To implement option #2,
-we specify that if a class has a method called `to_dict`,
-we'll call that to get its contents as a dictionary
-and then persist the dictionary.
-Before doing that,
-though,
-we will save a line indicating that
-this dictionary should be used to reconstruct an object
-of a particular class:
-
-[% inc file="extend.py" keep="save_extension" %]
-
-Loading user-defined classes requires more work
-because we have to map class names back to actual classes.
-(We could also use [%i "introspection" %]
-to find *all* the classes in the program
-and build a lookup table of the ones with the right method;
-we'll explore that in the exercises.)
-We start by modifying the loader's constructor
-to take zero or more extension classes as arguments
-and then build a name-to-class lookup table from them:
-
-[% inc file="extend.py" keep="load_constructor" %]
-
-The `load` method then looks for aliases,
-built-in types,
-and extensions in that order.
-Instead of using a chain of `if` statements
-we loop over the methods that handle these cases.
-If a method decides that it can handle the incoming data
-it returns a result;
-if it can't,
-it raises a `KeyError` exception,
-and if none of the methods handle a case
-we fail:
-
-[% inc file="extend.py" keep="load_load" %]
-
-The code to handle built-ins and aliases is copied from our previous work
-and modified to raise `KeyError`:
-
-[% inc file="extend.py" keep="inherited" %]
-
-The method that handles extensions
-checks that the value on the line just read indicates an extension,
-then reads the dictionary containing the object's contents
-from the input stream
-and uses it to build an [%i "instance" %] of the right class:
-
-[% inc file="extend.py" keep="load_extension" %]
-
-Here's a class that defines the required method:
-
-[% inc file="user_classes.py" keep="parent" %]
-
-and here's a test to make sure everything works:
-
-[% inc file="test_extend.py" keep="test_parent" %]
-
-<div class="callout" markdown="1">
-
-### What's in a Name?
-
-The first version of these classes used the word `"extension"`
-rather than `"@extension"`.
-That led to the most confusing bug in this whole chapter.
-When `load` reads a line,
-it runs `self._builtin` before running `self._extension`.
-If the first word on the line is `"extension"` (without the `@`)
-then `self._builtin` constructs the method name `_extension`,
-finds that method,
-and calls it
-as if we were loading an object of a built-in type:
-which we're not.
-Using `@extension` as the leading indicator
-leads to `self._builtin` checking for `"_@extension"` in the loader's attributes,
-which doesn't exist,
-so everything goes as it should.
-
-</div>
 
 ## Summary {: #persist-summary}
 
@@ -533,6 +414,8 @@ so everything goes as it should.
    caption="Concepts for persistence."
    cls="here"
 %]
+
+*Please see [%x bonus %] for extra material related to these ideas.*
 
 ## Exercises {: #persist-exercises}
 
@@ -579,45 +462,6 @@ instead of being split across several lines.
 
 Why doesn't `LoadAlias.load` calculate object IDs?
 Why does it use the IDs saved in the archive instead?
-
-### Fallback {: .exercise}
-
-1.  Modify `LoadExtend` so that
-    if the user didn't provide the class needed to reconstruct some archived data,
-    the `load` method returns a simple dictionary instead.
-
-1.  Why is this a bad idea?
-
-### Removing Exceptions {: .exercise}
-
-Rewrite `LoadExtend` so that it doesn't use exceptions
-when `_aliased`, `_builtin`, and `extension` decide
-they aren't the right method to handle a particular case.
-Is the result simpler or more complex than the exception-based approach?
-
-### Helper Classes {: .exercise}
-
-Modify the framework so that
-if a user wants to save and load instances of a class `X`,
-they must register a class `Persist_X` with the framework
-that does the saving and loading for `X`.
-
-### Self-Referential Objects {: .exercise}
-
-Suppose an object contains a reference to itself:
-
-```python
-class Example:
-    def __init__(self):
-        self.ref = None
-
-ex = Example()
-ex.ref = ex
-```
-
-1.  Why can't `SaveExtend` and `LoadExtend` handle this correctly?
-
-1.  How would they have to be changed to handle this?
 
 ### Using Globals {: .exercise}
 

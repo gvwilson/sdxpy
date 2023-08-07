@@ -72,7 +72,7 @@ class LoadAlias(LoadOop):
             assert ident in self.seen
             return self.seen[ident]
 
-        method = f"_{key}"
+        method = f"load_{key}"
         assert hasattr(self, method), f"Unknown object type {key}"
         result = getattr(self, method)(value)
         self.seen[ident] = result

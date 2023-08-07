@@ -284,6 +284,134 @@ which columns we need from the dataframe.
 We will explore this in the exercises.
 {: .continue}
 
+## User-Defined Classes {: #bonus-extend}
+
+*This material extends [%x persist %].*
+
+It's time to extend our framework to handle user-defined classes.
+We'll start by refactoring our code so that the `save` method doesn't get any larger:
+
+[% inc file="extend.py" keep="save_base" omit="omit_extension" %]
+
+The method to handle built-in types is:
+{: .continue}
+
+[% inc file="extend.py" keep="save_builtin" %]
+
+and the one that handles aliases is:
+{: .continue}
+
+[% inc file="extend.py" keep="save_aliased" %]
+
+None of this code is new:
+we've just moved things into methods
+to make each piece easier to understand.
+{: .continue}
+
+So how does a class indicate that it can be saved and loaded by our framework?
+Our options are:
+
+1.  Require it to inherit from a [%i "base class" %] that we provide
+    so that we can use `isinstance` to check if an object is persistable.
+    This approach is used in strictly-typed languages like Java,
+    but method #2 below is considered more [%g pythonic "Pythonic" %].
+
+2.  Require it to implement a method with a specific name and signature
+    without deriving from a particular base class.
+    This approach is called [%g duck_typing "duck typing" %]:
+    if it walks like a duck and quacks like a duck, it's a duck.
+    Since option #1 would require users to write this method anyway,
+    it's the one we'll choose.
+
+3.  Require users to [%i "register (in code)" "register" %]
+    a [%g helper_class "helper class" %]
+    that knows how to save and load objects of the class we're interested in.
+    This approach is also commonly used in strictly-typed languages
+    as a way of adding persistence after the fact
+    without disrupting the class hierarchy;
+    we'll explore it in the exercises.
+
+To implement option #2,
+we specify that if a class has a method called `to_dict`,
+we'll call that to get its contents as a dictionary
+and then persist the dictionary.
+Before doing that,
+though,
+we will save a line indicating that
+this dictionary should be used to reconstruct an object
+of a particular class:
+
+[% inc file="extend.py" keep="save_extension" %]
+
+Loading user-defined classes requires more work
+because we have to map class names back to actual classes.
+(We could also use [%i "introspection" %]
+to find *all* the classes in the program
+and build a lookup table of the ones with the right method;
+we'll explore that in the exercises.)
+We start by modifying the loader's constructor
+to take zero or more extension classes as arguments
+and then build a name-to-class lookup table from them:
+
+[% inc file="extend.py" keep="load_constructor" %]
+
+The `load` method then looks for aliases,
+built-in types,
+and extensions in that order.
+Instead of using a chain of `if` statements
+we loop over the methods that handle these cases.
+If a method decides that it can handle the incoming data
+it returns a result;
+if it can't,
+it raises a `KeyError` exception,
+and if none of the methods handle a case
+we fail:
+
+[% inc file="extend.py" keep="load_load" %]
+
+The code to handle built-ins and aliases is copied from our previous work
+and modified to raise `KeyError`:
+
+[% inc file="extend.py" keep="inherited" %]
+
+The method that handles extensions
+checks that the value on the line just read indicates an extension,
+then reads the dictionary containing the object's contents
+from the input stream
+and uses it to build an [%i "instance" %] of the right class:
+
+[% inc file="extend.py" keep="load_extension" %]
+
+Here's a class that defines the required method:
+
+[% inc file="user_classes.py" keep="parent" %]
+
+and here's a test to make sure everything works:
+
+[% inc file="test_extend.py" keep="test_parent" %]
+
+<div class="callout" markdown="1">
+
+### What's in a Name?
+
+The first version of these classes used the word `"extension"`
+rather than `"@extension"`.
+That led to the most confusing bug in this whole chapter.
+When `load` reads a line,
+it runs `self._builtin` before running `self._extension`.
+If the first word on the line is `"extension"` (without the `@`)
+then `self._builtin` constructs the method name `_extension`,
+finds that method,
+and calls it
+as if we were loading an object of a built-in type:
+which we're not.
+Using `@extension` as the leading indicator
+leads to `self._builtin` checking for `"_@extension"` in the loader's attributes,
+which doesn't exist,
+so everything goes as it should.
+
+</div>
+
 ## Floating Point Numbers {: #bonus-float}
 
 *This material extends [%x binary %].*
@@ -404,3 +532,42 @@ to avoid some precision issues.
     (which should be identical).
 1.  Repeat the exercise using the `Fraction` class
     from the [fractions][py_fractions] module.
+
+### Fallback {: .exercise}
+
+1.  Modify `LoadExtend` so that
+    if the user didn't provide the class needed to reconstruct some archived data,
+    the `load` method returns a simple dictionary instead.
+
+1.  Why is this a bad idea?
+
+### Removing Exceptions {: .exercise}
+
+Rewrite `LoadExtend` so that it doesn't use exceptions
+when `_aliased`, `_builtin`, and `extension` decide
+they aren't the right method to handle a particular case.
+Is the result simpler or more complex than the exception-based approach?
+
+### Helper Classes {: .exercise}
+
+Modify the framework so that
+if a user wants to save and load instances of a class `X`,
+they must register a class `Persist_X` with the framework
+that does the saving and loading for `X`.
+
+### Self-Referential Objects {: .exercise}
+
+Suppose an object contains a reference to itself:
+
+```python
+class Example:
+    def __init__(self):
+        self.ref = None
+
+ex = Example()
+ex.ref = ex
+```
+
+1.  Why can't `SaveExtend` and `LoadExtend` handle this correctly?
+
+1.  How would they have to be changed to handle this?

@@ -21,7 +21,7 @@ def test_aliasing_no_aliasing():
 
 # [shared]
 def test_aliasing_shared_child():
-    shared = ["shared"]
+    shared = ["content"]
     fixture = [shared, shared]
     result = roundtrip(fixture)
     assert result == fixture
