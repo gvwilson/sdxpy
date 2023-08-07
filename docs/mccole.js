@@ -1,3 +1,8 @@
+// Construct table of contents for page.
+// - Find <div class="page-toc">. (Do not build ToC if this element is not present.)
+// - Find all <h2>.
+// - Create list of links, removing the word "Section" from titles.
+// - If page has <meta name="has_slides">, add unnumbered link to slides.
 const constructTableOfContents = () => {
     const toc = document.querySelector("div.page-toc")
     if (!toc) {
@@ -16,7 +21,7 @@ const constructTableOfContents = () => {
         list.appendChild(link)
     }
 
-    if (!document.querySelector("meta[name='has_slides']")) {
+    if (! document.querySelector("meta[name='has_slides']")) {
         return
     }
     const slides = document.createElement("li")
@@ -25,6 +30,9 @@ const constructTableOfContents = () => {
     slides.innerHTML = '<a href="./slides/">slides</a>'
 }
 
+// Insert links to code/output samples.
+// - Find all <div class="code-sample"> with "title" attribute.
+// - Append <p class="code-sample-title"> with value of div's "title" attribute.
 const insertCodeSampleTitles = () => {
     for (const node of [...document.querySelectorAll("div.code-sample")]) {
         if (node.hasAttribute("title")) {
@@ -37,6 +45,9 @@ const insertCodeSampleTitles = () => {
     }
 }
 
+// Convert section headings to links for filing GitHub issues.
+// - Find <meta> attributes for repo, major heading, page template, and build date.
+// - If all are present, find all <h2> and wrap with link to GitHub repo issue submission.
 const enableFeedback = () => {
     const repo_meta = document.querySelector("meta[name='repo']")
     const major_meta = document.querySelector("meta[name='major']")
@@ -63,35 +74,55 @@ const enableFeedback = () => {
     }
 }
 
+// Load all images referenced in page.
+// - Construct array of promises for loading images.
+// - Wait for all promises to resolve.
 const loadImages = async (imageArray) => {
-    const promiseArray = []; // create an array for promises
-
+    const promiseArray = []
     for (let img of imageArray) {
         promiseArray.push(new Promise(resolve => {
-            img.onload = () =>
-                resolve();
-            if (img.complete)
-                resolve();
-        }));
+            img.onload = () => resolve()
+            if (img.complete) {
+                resolve()
+            }
+        }))
     }
-
-    await Promise.all(promiseArray); // wait for all the images to be loaded
+    await Promise.all(promiseArray)
 }
 
-const showSlideSizes = () => {
+// Conditionally report size of slide.
+const reportSlideSize = (reportSizes, slide, content) => {
+    if (reportSizes) {
+        console.log(
+            `[1] ` +
+            `${slide.offsetWidth} x ${slide.offsetHeight} ` +
+            `| ${content.offsetWidth} x ${content.offsetHeight}`
+        )
+    }
+}
+
+
+// Report sizes of slides.
+// - Get dimensions of first (title) slide.
+// - For each other slide:
+//   - Wait until images have loaded.
+//   - Compare size to that of first slide and report differences.
+//   - Report if slide overflows.
+const reportSlideOverflow = (reportSizes) => {
     const allNodes = [...document.querySelectorAll("div.remark-slide-container")]
-    const firstNode = allNodes[0]
-    const elFirstSlide = firstNode.querySelector("div.remark-slide")
-    const firstSlide = {
-        offsetWidth: elFirstSlide.offsetWidth,
-        offsetHeight: elFirstSlide.offsetHeight
+    const node0 = allNodes[0]
+    const elSlide0 = node0.querySelector("div.remark-slide")
+    const slide0 = {
+        offsetWidth: elSlide0.offsetWidth,
+        offsetHeight: elSlide0.offsetHeight
     }
-    const elFirstContent = elFirstSlide.querySelector("div.remark-slide-content")
-    const firstContent = {
-        offsetWidth: elFirstContent.offsetWidth,
-        offsetHeight: elFirstContent.offsetHeight
+    const elContent0 = elSlide0.querySelector("div.remark-slide-content")
+    const content0 = {
+        offsetWidth: elContent0.offsetWidth,
+        offsetHeight: elContent0.offsetHeight
     }
-    console.log(`[1] ${firstSlide.offsetWidth} x ${firstSlide.offsetHeight} | ${firstContent.offsetWidth} x ${firstContent.offsetHeight}`)
+    reportSlideSize(reportSizes, slide0, content0)
+
     for (const i in allNodes) {
         const node = allNodes[i]
         node.style.display = "block";
@@ -101,26 +132,25 @@ const showSlideSizes = () => {
             const scaler = node.querySelector("div.remark-slide-scaler")
             if ((content.offsetHeight) > scaler.offsetHeight ||
                 (content.offsetWidth) > scaler.offsetWidth) {
-                console.warn(`Content of slide ${parseInt(i) + 1} is too big for the slide!`)
+                console.warn(`Slide ${parseInt(i) + 1} too large`)
             }
-            if ((slide.offsetWidth !== firstSlide.offsetWidth) ||
-                (slide.offsetHeight !== firstSlide.offsetHeight) ||
-                (content.offsetWidth !== firstContent.offsetWidth) ||
-                (content.offsetHeight !== firstContent.offsetHeight)) {
-                console.log(`(${parseInt(i) + 1}) ${slide.offsetWidth} x ${slide.offsetHeight} | ${content.offsetWidth} x ${content.offsetHeight}`)
+            if ((slide.offsetWidth !== slide0.offsetWidth) ||
+                (slide.offsetHeight !== slide0.offsetHeight) ||
+                (content.offsetWidth !== content0.offsetWidth) ||
+                (content.offsetHeight !== content0.offsetHeight)) {
+                    reportSlideSize(reportSizes, slide, content)
             }
             node.style.display = ""
         })
     }
-    firstNode.classList.add("remark-visible")
+    node0.classList.add("remark-visible")
 }
-
 
 const mccole = () => {
     constructTableOfContents()
     insertCodeSampleTitles()
     enableFeedback()
-    showSlideSizes()
+    reportSlideOverflow(false)
 }
 
 mccole()
