@@ -5,15 +5,16 @@ syllabus:
 -   Programs can use bitwise operators to manipulate the bits representing data directly.
 -   Low-level compiled languages usually store raw values, while high-level interpreted languages use boxed values.
 -   Sets of values can be packed into contiguous byte arrays for efficient transmission and storage.
-status: "awaiting revision"
+status: "revised 2023-08-07"
 depends:
 -   persist
 ---
 
-Python and other high-level languages shield programmers from low-level details,
+Python and other high-level languages shield programmers from the low-level details
+of how computers actually store and manipulate data,
 but sooner or later someone has to worry about bits and bytes.
 This chapter explores how computers represent numbers and text
-and shows how to work with binary data.
+and shows how to work with data at this level.
 
 ## Integers {: #binary-int}
 
@@ -24,9 +25,9 @@ We can handle negative numbers by reserving the top bit for the sign,
 so that 01001 is +9 and 11001 is -9.
 
 This representation has two drawbacks.
-The minor one is that it gives us two zeroes,
+The less important one is that it gives us two zeroes,
 one positive and one negative.
-More importantly,
+The larger one is that
 the hardware needed to do arithmetic
 on this [%g sign_magnitude "sign and magnitude" %] representation
 is more complicated than the hardware needed for another scheme
@@ -51,7 +52,7 @@ with three-bit integers we get the values in [%t binary-3bit %].
 
 We can still tell whether a number is positive or negative
 by looking at the first bit:
-negative numbers have a 1, positives have a 0.
+negative numbers have 1, positive numbers have 0.
 However,
 two's complement is asymmetric:
 since 0 counts as a positive number,
@@ -66,7 +67,8 @@ for example,
 
 [% inc pat="binary_notation.*" fill="py out" %]
 
-Programmers usually write [%i "hexadecimal" %] instead:
+As noted in [%x dup %],
+programmers usually use [%i "hexadecimal" %] instead:
 the digits 0–9 have the usual meaning,
 and the letters A-F (or a-f) are used to represent the digits 11–15.
 We signal that we're using hexadecimal with a `0x` prefix,
@@ -75,28 +77,20 @@ Each hexadecimal digit corresponds to four bits ([%t binary-hex %]),
 which makes it easy to translate bits to digits and vice versa:
 for example,
 `0xF7` is `0b11110111`.
-As a bonus,
+One advantage of this representation is that
 two hexadecimal digits is exactly one byte.
 
 <div class="table" id="binary-hex" caption="Hexadecimal digits" markdown="1">
-| Decimal | Hexadecimal | Bits |
-| ------- | ----------- | ---- |
-| 0       | 0           | 0000 |
-| 1       | 1           | 0001 |
-| 2       | 2           | 0010 |
-| 3       | 3           | 0011 |
-| 4       | 4           | 0100 |
-| 5       | 5           | 0101 |
-| 6       | 6           | 0110 |
-| 7       | 7           | 0111 |
-| 8       | 8           | 1000 |
-| 9       | 9           | 1001 |
-| 10      | A           | 1010 |
-| 11      | B           | 1011 |
-| 12      | C           | 1100 |
-| 13      | D           | 1101 |
-| 14      | E           | 1110 |
-| 15      | F           | 1111 |
+| Decimal | Hexadecimal | Bits | Decimal | Hexadecimal | Bits |
+| ------- | ----------- | ---- | ------- | ----------- | ---- |
+| 0       | 0           | 0000 | 8       | 8           | 1000 |
+| 1       | 1           | 0001 | 9       | 9           | 1001 |
+| 2       | 2           | 0010 | 10      | A           | 1010 |
+| 3       | 3           | 0011 | 11      | B           | 1011 |
+| 4       | 4           | 0100 | 12      | C           | 1100 |
+| 5       | 5           | 0101 | 13      | D           | 1101 |
+| 6       | 6           | 0110 | 14      | E           | 1110 |
+| 7       | 7           | 0111 | 15      | F           | 1111 |
 </div>
 
 ## Bitwise Operations {: #binary-bitops}
@@ -111,24 +105,23 @@ for working directly with 1's and 0's in memory:
 `&` yields a 1 only if both its inputs are 1's,
 while `|` yields 1 if either or both are 1.
 `^`, called [%g exclusive_or "exclusive or" %] or "xor" (pronounced "ex-or"),
-produces 1 if either but *not* both of its arguments are 1;
-putting it another way,
-`^` produces 0 if its inputs are the same and 1 if they are different.
+produces 1 if the bits are different,
+i.e.,
+it produces 1 if either input bit is 1 but not both.
 Finally,
 `~` flips its argument: 1 becomes 0, and 0 becomes 1.
-
-When these operators are used on multi-bit values
+When these operators are applied on multi-bit values
 they work on corresponding bits independently as shown in [%t binary-ops %].
 
 <div class="table" id="binary-ops" caption="Bitwise operations" markdown="1">
-| Expression | Bitwise       | Result          |
-| ---------- | ------------- | --------------- |
-| `12 & 6`   | `1100 & 0110` | `4` (`0100`)    |
-| `12 | 6`   | `1100 | 0110` | `14` (`1110`)   |
-| `12 ^ 6`   | `1100 ^ 0110` | `10` (`1010`)   |
-| `~ 6`      | `~ 0110`      | `9` (`1001`)    |
-| `12 << 2`  | `1100 << 2`   | `48` (`110000`) |
-| `12 >> 2`  | `1100 >> 2`   | `3` (`0011`)    |
+| Expression | Bitwise       | Result (bits)   | Result (decimal) |
+| ---------- | ------------- | --------------- | ---------------- |
+| `12 & 6`   | `1100 & 0110` | `0100`          | `4`              |
+| `12 | 6`   | `1100 | 0110` | `1110`          | `14`             |
+| `12 ^ 6`   | `1100 ^ 0110` | `1010`          | `10`             |
+| `~ 6`      | `~ 0110`      | `1001`          | `9`              |
+| `12 << 2`  | `1100 << 2`   | `110000`        | `48`             |
+| `12 >> 2`  | `1100 >> 2`   | `0011`          | `3`              |
 </div>
 
 We can set individual bits to 0 or 1 with these operators.
@@ -148,7 +141,8 @@ and then use `&`:
 
 [% inc file="bit_mask.py" %]
 
-Python also has [%g bit_shift "bit shifting" %] operators
+Finally,
+Python has [%g bit_shift "bit shifting" %] operators
 that move bits left or right.
 Shifting the bits `0110` left by one place produces `1100`,
 while shifting it right by one place produces `0011`.
@@ -227,7 +221,7 @@ just as it was in the original ASCII standard.
 If the top bit in the byte is 1,
 on the other hand,
 the number of 1's after the high bit but before the first 0
-tells UTF-8 how many more bytes that character is using.
+tells UTF-8 how many more bytes are used by that character's representation.
 For example,
 if the first byte of the character is `11101101` then:
 
@@ -247,7 +241,7 @@ or the continuation of a character.
 Thus,
 if we want to represent a character whose code point is 1789:
 
--   We convert to binary 11011111101.
+-   We convert decimal 1789 to binary 11011111101.
 -   We count and realize that we'll need two bytes:
     the first storing the high 5 bits of the character,
     the second storing the low 6 bits.
@@ -260,18 +254,18 @@ if we want to represent a character whose code point is 1789:
 ## And Now, Persistence {: #binary-binary}
 
 [%x persist %] showed how to store data as human-readable text.
-There are generally four reasons to store it in formats that people can't easily read:
+There are generally three reasons to store it in formats that people can't easily read:
 
-Size
-:   The string `"10239472"` is 8 bytes long,
+1.  Size.
+    The string `"10239472"` is 8 bytes long,
     but the 32-bit integer it represents only needs 4 bytes in memory.
     This doesn't matter for small data sets,
     but it does for large ones,
     and it definitely does when data has to move between disk and memory
     or between different computers.
 
-Speed
-:   Adding the integers 34 and 56 is a single machine operation.
+2.  Speed.
+    Adding the integers 34 and 56 is a single machine operation.
     Adding the values represented by the strings `"34"` and `"56"` is dozens;
     we'll explore this in the exercises.
     Most programs that read and write text files
@@ -280,14 +274,17 @@ Speed
     but if we're going to process the data many times,
     it makes sense to avoid paying the conversion cost over and over.
 
-Hardware
-:   Someone, somewhere, has to convert the signal from the thermocouple to a number,
-    and that signal probably arrives as a stream of 1's and 0's.
-    
-Lack of anything better
-:   It's possible to represent images as ASCII art, but sound?
+3.  Lack of anything better.
+    It's possible to represent images as ASCII art, but sound?
     Or video?
     It would be possible, but it would hardly be sensible.
+
+Finally,
+no matter how values are eventually stored,
+someone, somewhere, has to convert the signals from a digital thermometer to numbers.
+Those signals almost certainly arrive as a stream of 1's and 0's,
+and the bitwise operations shown above are almost certainly used to do the conversion.
+{: .continue}
 
 The first step toward saving and loading binary data
 is to write it and read it correctly.
@@ -295,26 +292,33 @@ If we open a file for reading using `open("filename", "r")`
 then Python assumes we want to read character strings from the file.
 It therefore:
 
--   uses our system's default encoding (which is probably UTF-8)
-    to convert bytes to characters, and
+-   ask the operating system for the default character encoding
+    (which is almost always UTF-8);
 
--   converts Windows line endings (which are the two characters `"\r\n"`)
-    into their Unix equivalents (the single character `"\n"`)
-    so that our program only has to deal with the latter.
+-   uses this to convert bytes to characters;
+    and
+
+-   converts Windows end-of-line markers to the Unix standard if necessary.
+    For historical reasons,
+    Windows uses both a carriage return `"\r"` and a newline `"\n"` to mark the end of a line,
+    while Unix uses only the latter.
+    Python converts from Windows to Unix on the way in
+    and vice versa on the way out
+    so that programs (usually) don't have to worry about the difference.
 
 These translations are handy when we're working with text,
 but they mess up binary data:
 we probably don't want the pixels in our PNG image translated in these ways.
-If we use `open("filename", "rb")` with a lower-case 'b' after the 'r',
-on the other hand,
+As mentioned in [%x dup %],
+if we open a file in [%i "binary mode" %] using `open(filename, "rb")` with a lower-case 'b' after the 'r',
 Python gives us back the file's contents as a `bytes` object
 instead of as character strings.
-In this case we will almost always use `file.read(N)`
-to read `N` bytes at a time
-rather than using the file in a `for` loop
-(which reads up to the next line ending).
+In this case we will almost always get data
+using `reader.read(N)` to read `N` bytes at a time
+rather than `for line in reader`
+because there aren't actually lines of text in the file.
 
-What about the values we actually store?
+But what values should we actually store?
 C and Fortran manipulate "naked" values:
 programs use what the hardware provides directly.
 Python and other dynamic languages,
@@ -322,8 +326,8 @@ on the other hand,
 put each value in a data structure
 that keeps track of its type along with a bit of extra administrative information
 ([%f binary-boxing %]).
-Something stored this way is called a [%g boxed_value "boxed value" %];
-this extra data allows the language to do [%i "introspection" %] and much more.
+Something stored this way is called a [%g boxed_value "boxed value" %],
+and this extra information is what allows the interpreter to do [%i "introspection" %] at runtime.
 
 [% figure
    slug="binary-boxing"
@@ -339,7 +343,7 @@ Fortran stores all the values in an array side by side in memory
 Writing this to disk is easy:
 if the array starts at location L in memory and has N values,
 each of which is B bytes long,
-we just copy the bytes from L to L+NB-1 to the file.
+we just copy the bytes from \\( L \\) to \\( L+NB-1 \\) to the file.
 
 [% figure
    slug="binary-arrays"
@@ -359,8 +363,8 @@ when reading from a file,
 we can either grab the values one by one
 or read a larger block and then unpack it in memory.
 
-Packing data is a lot like formatting values for textual output.
-The format specifies what types of data are being packed,
+Packing data is a lot like formatting strings using Python's `str.format` method.
+The [%g format_string "format string" %] specifies what types of data are being packed,
 how big they are (e.g., is this a 32-bit or 64-bit floating point number?),
 and how many values there are,
 which in turn exactly determines how much memory is required by the packed representation.
@@ -401,8 +405,8 @@ Here's an example:
 [% inc pat="pack_unpack.*" fill="py out" %]
 
 What is `\x1f` and why is it in our data?
-If Python finds a character in a string that doesn't have a printable representation,
-it prints a 2-digit [%g escape_sequence "escape sequence" %] in [%i "hexadecimal" %].
+If Python finds a byte in a string that doesn't correspond to a printable character,
+it prints a 2-digit [%g escape_sequence "escape sequence" %] in hexadecimal.
 Python is therefore telling us that
 our string contains the eight bytes
 `['\x1f', '\x00', '\x00', '\x00', 'A', '\x00', '\x00', '\x00']`.
@@ -414,22 +418,21 @@ because each of our integers is 32 bits long
 and the significant digits only fill one byte's worth of each.
 
 <div class="table" id="binary-formats" caption="`struct` package formats" markdown="1">
-| Format | Meaning                                     |
-|------- | ------------------------------------------- |
-| `"c"`  | Single character (i.e., string of length 1) |
-| `"B"`  | Unsigned 8-bit integer                      |
-| `"h"`  | Short (16-bit) integer                      |
-| `"i"`  | 32-bit integer                              |
-| `"f"`  | 32-bit float                                |
-| `"d"`  | Double-precision (64-bit) float             |
+| Format | Meaning                                               |
+|------- | ----------------------------------------------------- |
+| `"c"`  | Single character (i.e., string of length 1)           |
+| `"B"`  | Unsigned 8-bit integer with all 8 bits used for value |
+| `"h"`  | 16-bit integer                                        |
+| `"i"`  | 32-bit integer                                        |
+| `"d"`  | 64-bit float                                          |
 </div>
 
 The `struct` module offers a lot of different formats,
 some of which are shown in [%t binary-formats %].
-The `"B"`, `"h"`, and `"2"` formats deserve some explanation.
-`"B"` takes the least significant 8 bits out of an integer and packs those;
-`"h"` takes the least significant 16 bits and does likewise.
-They're needed because binary data formats often store only as much data as they need to,
+Some of the formats, like `"c"` for a single character, are self-explanatory.
+The `"B"` format packs or unpacks the least significant 8 bits of an integer;
+the `"h"` format takes the least significant 16 bits and does likewise.
+They are needed because binary data formats often store only as much data as they need to,
 so we need a way to get 8- and 16-bit values out of files.
 (Many audio formats,
 for example,
@@ -456,11 +459,13 @@ format = f"{len(str)}s"
 
 If `str` contains the string `"example"`,
 the expression above will assign `"7s"` to `format`,
-which just happens to be exactly the right format to use to pack it.
+which just happens to be exactly the right format to use to pack it
+*provided all the characters can be represented in a single byte each*.
+We will explore packing and unpacking strings with other characters in the exercises.
 {: .continue}
 
-That's fine when we're writing,
-but how do we know how much data to get if we're reading?
+Saving the format when we are writing solves half of the problem,
+but how do we know how much data to get when we're reading?
 For example, suppose we have the two strings "hello" and "Python".
 We can pack them like this:
 
@@ -495,31 +500,9 @@ and then unpack the string and return it.
 [% inc file="variable_unpacking.py" keep="main" %]
 [% inc file="variable_unpacking.out" %]
 
-This is called [%g little_endian "little-endian" %] and is used by all Intel processors.
-Some other processors put the most significant byte first,
-which is called [%g big_endian "big-endian" %].
-There are pro's and con's to both, which we won't go into here.
-What you *do* need to know is that if you move data from one architecture to another,
-it's your responsibility to flip the bytes around,
-because the machine doesn't know what the bytes mean.
-This is such a pain that the `struct` module and other libraries like it 
-will do things for you if you ask it to.
-If you're using `struct`,
-the first character of a format string optionally indicates the byte order
-([%t binary-endian %]).
-
-<div class="table" id="binary-endian" caption="`struct` package endian indicators" markdown="1">
-| Character | Byte order | Size     | Alignment     |
-| --------- | ---------- | -------- | ------------- |
-| `@`       | native     | native   | native        |
-| `=`       | native     | standard | none          |
-| `<`       | little     | endian   | standard none |
-| `>`       | big        | endian   | standard none |
-| `!`       | network    | standard | none          |
-</div>
-
-You should also use the `struct` module's `calcsize` function,
-which tells you how large (in bytes) the data produced or consumed by a format will be:
+In practice,
+programmers use the `struct` module's `calcsize` function
+to figure out how large (in bytes) the data represented by a format is:
 
 [% inc pat="calcsize.*" fill="py out" %]
 

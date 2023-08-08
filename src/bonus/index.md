@@ -412,6 +412,31 @@ so everything goes as it should.
 
 </div>
 
+## Big and Little Endian {: #bonus-endian}
+
+This is called [%g little_endian "little-endian" %] and is used by all Intel processors.
+Some other processors put the most significant byte first,
+which is called [%g big_endian "big-endian" %].
+There are pro's and con's to both, which we won't go into here.
+What you *do* need to know is that if you move data from one architecture to another,
+it's your responsibility to flip the bytes around,
+because the machine doesn't know what the bytes mean.
+This is such a pain that the `struct` module and other libraries like it 
+will do things for you if you ask it to.
+If you're using `struct`,
+the first character of a format string optionally indicates the byte order
+([%t bonus-endian-formats %]).
+
+<div class="table" id="bonus-endian-formats" caption="`struct` package endian indicators" markdown="1">
+| Character | Byte order | Size     | Alignment     |
+| --------- | ---------- | -------- | ------------- |
+| `@`       | native     | native   | native        |
+| `=`       | native     | standard | none          |
+| `<`       | little     | endian   | standard none |
+| `>`       | big        | endian   | standard none |
+| `!`       | network    | standard | none          |
+</div>
+
 ## Floating Point Numbers {: #bonus-float}
 
 *This material extends [%x binary %].*
