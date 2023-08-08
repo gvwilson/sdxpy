@@ -5,7 +5,7 @@ syllabus:
 -   Classes are data structures that can be saved like any other data.
 -   The filesystem saves data in fixed-size pages.
 -   We can improve the efficiency of a database by saving records in blocks.
-status: "awaiting revision"
+status: "revised 2023-08-08"
 depends:
 -   persist
 -   binary
@@ -32,14 +32,16 @@ but this is one of the easiest to understand.
 Our starting point is
 a simple [%g key_value_store "key-value store" %]
 that lets us save records and look them up later.
-The user must provide a function that takes a record
-and returns its key:
+To use it,
+we have to provide a function that takes a record
+and returns its key.
+We store that function in the `Database` object for later use:
 
 [% inc file="interface_original.py" %]
 
-If we just want to store things in memory,
-we can derive a class that uses
-a dictionary with the values returned by
+If we want a dictionary that only stores things in memory,
+we can derive a class from `Database`
+that uses a dictionary with the values returned by
 the user's key function for lookup
 ([%f db-memory %]):
 
@@ -71,63 +73,30 @@ Our first few tests are then:
 Our next step is to save the user's records in the database
 without tying the database to a particular type of record.
 The cleanest way to solve this problem is
-to have the records convert themselves into something storable,
-but if we do that,
-we will be asking records to do two things
-(the other being to generate a key).
+to require records to know how to convert themselves into something storable.
 Rather than passing a second function to the database's constructor
-we will [%i "refactor" %] the database to work with any record class:
+we will [%i "refactor" %] the database
+so that we pass in the object that represents the record class:
 
 [% inc file="interface.py" %]
 
-Once again we are making use of the fact that
-code is just another kind of data.
-Saving a class is no different from saving a function,
-which in turn is no different from saving a string or a list.
-The proof is that we can refactor
-the dictionary-based implementation of our database
-to use a [%i "static method" %] of the record class
+We can now refactor our database
+to use a [%i "static method" %] of the record class provided to its constructor
 when it needs a key:
 
 [% inc file="just_dict_refactored.py" %]
 
-and our tests (after a corresponding bit of refactoring)
-work as before.
+After a bit of refactoring,
+our tests work as before.
 {: .continue}
 
 ## Saving Records {: #db-save}
 
-The next step in building our database is to save records.
-As mentioned above,
-we don't want the database tied to any particular kind of record,
-so we need our records to know how to pack and unpack themselves
-([%x binary %]).
-We start by giving our experiment record class a static method
-that calculates the size of a single record:
-
-[% inc file="record.py" keep="base" %]
-
-<div class="callout" markdown="1">
-
-### Tradeoffs
-
-We're assuming that every record is the same size.
-If we want to save records with variable-length fields such as strings,
-we can either set a maximum size and always save that much data
-or make our implementation more complicated (and probably slower)
-by saving each record's size
-and then scanning records in the same way that
-we scanned the bytes making up [%i "Unicode" %] characters in [%x binary %].
-The first choice spends space (i.e., memory and disk) to save time;
-the second spends time to save space.
-As [%b Bentley1982 %] pointed out over forty years ago,
-a lot of performance optimizations in programming
-come down to trading space for time or vice versa.
-
-</div>
-
-We could have records pack themselves as binary data
-using the techniques of [%x binary %],
+The next step in building a usable database is to have it store records
+rather than just refer to the user's objects.
+Since we don't want the database tied to any particular kind of record,
+records must know how to pack and unpack themselves.
+We could have use the techniques of [%x binary %],
 but to make our test and sample output a little more readable,
 we will pack numbers as strings
 with a [%g null_byte "null byte" %] `\0` between each string:
@@ -155,21 +124,46 @@ but is instead an accident of implementation.
 We will look at ways around it in the exercises.
 {: .continue}
 
-Finally,
-we can write methods to pack and unpack multiple records at once
+To finish off,
+we write methods to pack and unpack multiple records at once
 by joining and splitting single-record data:
 
 [% inc file="record.py" keep="multi" %]
 
+and give our record class a static method
+that calculates the size of a single record:
+{: .continue}
+
+[% inc file="record.py" keep="base" %]
+
+<div class="callout" markdown="1">
+
+### Tradeoffs
+
+We're assuming that every record is the same size.
+If we want to save records with variable-length fields such as strings,
+we can either set a maximum size and always save that much data
+or make our implementation more complicated (and probably slower)
+by saving each record's size
+and then scanning records in the same way that
+we scanned the bytes making up [%i "Unicode" %] characters in [%x binary %].
+The first choice spends space (i.e., memory and disk) to save time;
+the second spends time to save space.
+As [%b Bentley1982 %] pointed out over forty years ago,
+a lot of performance optimizations in programming
+come down to trading space for time or vice versa.
+
+</div>
+
 ## A File-Backed Database {: #db-file}
 
-We are now ready to extend our dictionary-based implementation
+We now have what we need to extend our dictionary-based implementation
 to write records to a file and load them as needed:
 
 [% inc file="file_backed.py" keep="core" %]
 
 This implementation stores everything in a single file,
-whose name must be provided to the constructor
+whose name must be provided to the database's constructor
 ([%f db-single-file %]).
 If that file doesn't exist when the database object is created,
 we use `Path.touch` to create an empty file;
@@ -196,7 +190,7 @@ The two helper methods we need to make this work are:
 It isn't very efficient—we are
 loading the entire database the first time we want a single record,
 and saving the entire database every time we add a record—but
-we are getting closer to our ultimate goal.
+we are getting closer to something we might actually use.
 
 ## Playing With Blocks {: #db-block}
 
@@ -207,24 +201,24 @@ However,
 this strategy won't give us as much of a performance boost as we'd like.
 The reason is that computers do file I/O in [%g page "pages" %]
 that are typically two or four kilobytes in size.
-If we want to read a single byte,
-the operating system actually reads a full page
+Even when we want to read a single byte,
+the operating system always reads a full page
 and then gives us just the byte we asked for.
 
-A more efficient strategy is therefore
+A more efficient strategy is
 to group records together in [%g block_memory "blocks of memory" %],
 each of which is the same size as a page,
-and an [%i "index (a database)" "index" %] in memory
+and create an [%i "index (a database)" "index" %] in memory
 to tell us which records are in which blocks.
 When we add a record,
 we only write its block to disk;
 similarly,
 when we need a record whose block isn't already in memory,
-we only need to read that block.
+we only read that block.
 
 At this point we need to address an issue we should have tackled earlier.
 How do we handle updates to records?
-I.e.,
+For example,
 suppose we already have a record with the ID 12345;
 what do we do when we get another record with the same ID?
 If we are storing the entire database in a single dictionary,
@@ -359,12 +353,7 @@ Python and most other modern languages do it automatically
 to recycle unused memory,
 but it's our responsibility to do it for the files our database creates.
 
-The implementation of cleanup is mostly a matter of bookkeeping:
-
-[% inc file="cleanup.py" keep="cleanup" %]
-
-The steps are:
-{: .continue}
+The steps in cleanup are:
 
 1.  Calculate a new sequence ID for each record.
 
@@ -377,6 +366,11 @@ The steps are:
 4.  Delete and rename blocks.
 
 5.  Generate a new in-memory index.
+
+The implementation of these steps is mostly a matter of bookeeping:
+{: .continue}
+
+[% inc file="cleanup.py" keep="cleanup" %]
 
 This method doesn't [%g compact "compact" %] storage,
 i.e.,
