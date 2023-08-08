@@ -14,7 +14,7 @@ def thanks(pargs, kwargs, node):
     details = util.read_thanks()
     if not details:
         return ""
-    details = [f"{d['personal']} {d['family']}" for d in details]
+    details = [_format_name(d) for d in details]
     if len(details) == 1:
         return details[0]
     elif len(details) == 2:
@@ -22,3 +22,13 @@ def thanks(pargs, kwargs, node):
     else:
         details[-1] = f"and {details[-1]}"
         return ", ".join(details)
+
+
+def _format_name(detail):
+    """Handle family-personal and personal-family naming."""
+    order = detail.get("order", None)
+    if order == "pf":
+        return f"{detail['personal']} {detail['family']}"
+    elif order == "fp":
+        return f"{detail['family']} {detail['personal']}"
+    util.fail(f"Unknown order {order} in {detail}")

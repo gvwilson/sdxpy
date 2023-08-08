@@ -4,9 +4,9 @@ class Match:
         self.rest = rest if rest else Null()
 
     def __eq__(self, other):
-        return (other is not None) and (
-            self.__class__ == other.__class__
-        )
+        return (other is not None and 
+                self.__class__ == other.__class__ and 
+                self.rest == other.rest)
 
 class Lit(Match):
     def __init__(self, chars, rest=None):
