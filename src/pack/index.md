@@ -7,13 +7,14 @@ syllabus:
 -   Eliminating partially-formed combinations of packages can reduce the work required to find a compatible set.
 -   An automated theorem prover can determine if a set of logical propositions can be made consistent with each other.
 -   Most package managers use some kind of theorem prover to find compatible sets of packages to install.
-status: "awaiting revision"
+status: "revised 2023-08-11"
 depends:
 -   dup
 ---
 
 Inspired by the [%i "Comprehensive TeX Archive Network" %] ([CTAN][ctan]),
-most languages have an online archive from which people can download packages.
+most languages have an online archive from which people can download packages,
+such as Python's [PyPI][pypi].
 Each [%i "package" %] typically has a name,
 one or more versions,
 and a list of [%i "dependency" dependencies %] (which are also versioned).
@@ -74,9 +75,9 @@ of available packages as JSON:
 
 ### Comments
 
-If you ever design a data format,
-please include a standard way for people to add comments,
-because they will always want to.
+We have been telling you since [%x parse %] not to design your own data format,
+but if you do,
+please include a single standard way for people to add comments.
 [%i "YAML" %] has this,
 but [%i "JSON" %]
 and [%i "CSV" %] don't.
@@ -84,10 +85,10 @@ and [%i "CSV" %] don't.
 </div>
 
 Imagine that each package we need is an axis on a multi-dimensional grid
-([%f pack-allowable %]).
-Each point on the grid is a possible combination of package versions.
+([%f pack-allowable %]),
+so Each point on the grid is a possible combination of package versions.
 We can exclude regions of this grid using the constraints on the package versions;
-whatever points are left when we're done represent legal combinations.
+the points that are left represent legal combinations.
 
 [% figure
    slug="pack-allowable"
@@ -102,7 +103,8 @@ If we were to add another package to the mix with 2 versions,
 the [%g search_space "search space" %] would double;
 add another,
 and it would double again,
-which means that if \\( N \\) is the number of packages,
+which means that if each package has approximately \\( c \\) version
+and there are \\( N \\) packages,
 the [%i "big-oh notation" "work grows" %] as \\( O(c^N) \\).
 This exponential behavior is called
 [%g combinatorial_explosion "combinatorial explosion" %],
@@ -238,7 +240,7 @@ so that we automatically get exactly as many loops as we need.
 
 Generating an exponentiality of combinations
 and then throwing most of them away
-is not an efficient way to search.
+is inefficient.
 Instead,
 we can modify the recursive generator
 to stop if a partially-generated combination of packages isn't legal.
@@ -256,9 +258,10 @@ because we're going to be checking those as we go:
 
 [% inc file="incremental.py" keep="main" %]
 
-Notice that if the user provides a command-line argument,
-we reverse the list of packages before starting our search.
-Doing this will allow us to see how ordering affects efficiency.
+Notice that
+we reverse the list of packages before starting our search
+if the user provides an extra command-line argument.
+We'll use this to see how ordering affects efficiency.
 {: .continue}
 
 Our `find` function now has five parameters:
@@ -310,16 +313,20 @@ we only generate half as many candidates as before:
 Cutting the amount of work we have to do is good:
 can we do better?
 The answer is yes,
-but the algorithms involved quickly become complicated,
-and the jargon impenetrable.
+but the algorithms involved are complicated and the jargon almost impenetrable.
 To show how real package managers tackle this,
 we will solve our example problem using the [Z3 theorem prover][z3].
 
 Installing packages and proving theorems
 may not seem to have a lot to do with each other,
 but an automated theorem prover's purpose is
-to determine if a set of logical propositions can be consistent with each other,
-and that's exactly what we need.
+to determine how to make a set of logical propositions consistent with each other,
+or to prove that doing so is impossible.
+If we frame our problem as,
+"Is there a choice of package versions
+that satisfies all the inter-package dependencies at once?"
+then a theorem prover is exactly what we need.
+
 To start,
 let's import a few things from the `z3` module
 and then create three [%g boolean_value "Boolean variables" %]:
@@ -333,19 +340,21 @@ each one represent all the possible states a Boolean could be in.
 If we had asked `z3` to create one of its special integers,
 it would have given us something that initially encompassed
 all possible integer values.
+{: .continue}
 
 Instead of assigning values to `A`, `B`, and `C`,
-we can specify constraints on them,
+we specify constraints on them,
 then ask `z3` whether it's possible to find a set of values,
 or [%g model "model" %],
 that satisfies all those constraints at once.
-In the example below,
-we're asking whether it's possible for `A` to equal `B`
+For example,
+we can ask whether it's possible for `A` to equal `B`
 and `B` to equal `C` at the same time.
 The answer is "yes",
 and the solution the solver finds is to make them all `False`:
 
-[% inc pat="z3_equal.*" fill="py out" %]
+[% inc file="z3_equal.py" keep="solve" %]
+[% inc file="z3_equal.out" %]
 
 What if we say that `A` and `B` must be equal,
 but `B` and `C` must be unequal?
@@ -366,46 +375,18 @@ and the solver duly tells us that:
 [% inc file="z3_unequal.py" keep="solve" %]
 [% inc file="z3_unequal.out" %]
 
-Theorem provers like Z3 and [PicoSAT][picosat]
-are far more powerful than most programmers realize.
-We can,
-for example,
-use them to generate test cases.
-Suppose we have a function that classifies triangles as equilateral,
-scalene,
-or isosceles.
-We can set up some integer variables:
-
-[% inc file="equilateral.py" keep="setup" %]
-
-and then ask it to create an equilateral triangle
-based solely on the definition:
-{: .continue}
-
-[% inc file="equilateral.py" keep="equilateral" %]
-[% inc file="equilateral.out" %]
-
-The same technique can generate a test case for scalene triangles:
-
-[% inc file="scalene.py" keep="scalene" %]
-[% inc file="scalene.out" %]
-
-and isosceles triangles:
-{: .continue}
-
-[% inc file="isosceles.py" keep="isosceles" %]
-[% inc file="isosceles.out" %]
-
-Let's return to package management.
-We can represent the package versions from our running example like this:
+Returning to package management,
+we can represent the versions from our running example like this:
 
 [% inc file="z3_triple.py" keep="setup" %]
 
 We then tell the solver that we want one of the available version of package A:
+{: .continue}
 
 [% inc file="z3_triple.py" keep="top" %]
 
-We also tell it that the three version of package A are mutually exclusive:
+and that the three version of package A are mutually exclusive:
+{: .continue}
 
 [% inc file="z3_triple.py" keep="exclusive" %]
 

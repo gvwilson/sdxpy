@@ -4,7 +4,7 @@
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="repo" content="https://github.com/gvwilson/sdxpy">
-  <meta name="build_date" content="2023-08-11">
+  <meta name="build_date" content="2023-08-12">
   <meta name="template" content="default">
   <meta name="major" content="bonus">
   
@@ -273,7 +273,7 @@
           
 <div class="draft notex">
   <p class="draft">
-    DRAFT 2023-08-11
+    DRAFT 2023-08-12
   </p>
   <p>
     awaiting revision<br>
@@ -1165,7 +1165,67 @@ the <a href="https://docs.python.org/3/library/fractions.html">fractions</a> mod
 which (as its name suggests) uses numerators and denominators
 to avoid some precision issues.
 <a href="https://www.textualize.io/blog/posts/7-things-about-terminals">This post</a> describes one clever use of the module.</p>
-<h2 id="bonus-exercises">Section B.10: Exercises</h2>
+<h2 id="bonus-theorem">Section B.10: Generating Test Cases</h2>
+<p>Theorem provers like Z3 and <a href="http://fmv.jku.at/picosat/">PicoSAT</a>
+are far more powerful than most programmers realize.
+Borrowing an example from <a href="https://andreas-zeller.info/">Andreas Zeller&rsquo;s</a>,
+we can use theorem provers to generate test cases.
+Suppose we have a function that classifies triangles as equilateral,
+scalene,
+or isosceles.
+We can set up some integer variables:</p>
+<div class="code-sample lang-py" title="equilateral.py">
+<div class="highlight"><pre><span></span><code><span class="n">A</span> <span class="o">=</span> <span class="n">Int</span><span class="p">(</span><span class="s2">&quot;A&quot;</span><span class="p">)</span>
+<span class="n">B</span> <span class="o">=</span> <span class="n">Int</span><span class="p">(</span><span class="s2">&quot;B&quot;</span><span class="p">)</span>
+<span class="n">C</span> <span class="o">=</span> <span class="n">Int</span><span class="p">(</span><span class="s2">&quot;C&quot;</span><span class="p">)</span>
+<span class="n">lengths</span> <span class="o">=</span> <span class="p">(</span><span class="n">A</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="n">B</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="n">C</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<p class="continue">and then ask it to create an equilateral triangle
+based solely on the definition:</p>
+<div class="code-sample lang-py" title="equilateral.py">
+<div class="highlight"><pre><span></span><code><span class="n">equilateral</span> <span class="o">=</span> <span class="n">And</span><span class="p">(</span><span class="n">A</span> <span class="o">==</span> <span class="n">B</span><span class="p">,</span> <span class="n">B</span> <span class="o">==</span> <span class="n">C</span><span class="p">,</span> <span class="n">C</span> <span class="o">==</span> <span class="n">A</span><span class="p">)</span>
+<span class="n">solver</span> <span class="o">=</span> <span class="n">Solver</span><span class="p">()</span>
+<span class="n">solver</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">lengths</span><span class="p">)</span>
+<span class="n">solver</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">equilateral</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;equilateral&quot;</span><span class="p">,</span> <span class="n">solver</span><span class="o">.</span><span class="n">check</span><span class="p">(),</span> <span class="n">solver</span><span class="o">.</span><span class="n">model</span><span class="p">())</span>
+</code></pre></div>
+</div>
+<div class="code-sample lang-out" title="equilateral.out">
+<div class="highlight"><pre><span></span><code>equilateral sat [C = 1, B = 1, A = 1]
+</code></pre></div>
+</div>
+<p>The same technique can generate a test case for scalene triangles:</p>
+<div class="code-sample lang-py" title="scalene.py">
+<div class="highlight"><pre><span></span><code><span class="n">scalene</span> <span class="o">=</span> <span class="n">And</span><span class="p">(</span><span class="n">A</span> <span class="o">!=</span> <span class="n">B</span><span class="p">,</span> <span class="n">B</span> <span class="o">!=</span> <span class="n">C</span><span class="p">,</span> <span class="n">C</span> <span class="o">!=</span> <span class="n">A</span><span class="p">)</span>
+<span class="n">solver</span> <span class="o">=</span> <span class="n">Solver</span><span class="p">()</span>
+<span class="n">solver</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">lengths</span><span class="p">)</span>
+<span class="n">solver</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">scalene</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;scalene&quot;</span><span class="p">,</span> <span class="n">solver</span><span class="o">.</span><span class="n">check</span><span class="p">(),</span> <span class="n">solver</span><span class="o">.</span><span class="n">model</span><span class="p">())</span>
+</code></pre></div>
+</div>
+<div class="code-sample lang-out" title="scalene.out">
+<div class="highlight"><pre><span></span><code>scalene sat [C = 3, A = 1, B = 2]
+</code></pre></div>
+</div>
+<p class="continue">and isosceles triangles:</p>
+<div class="code-sample lang-py" title="isosceles.py">
+<div class="highlight"><pre><span></span><code><span class="n">isosceles</span> <span class="o">=</span> <span class="n">Or</span><span class="p">(</span>
+    <span class="n">And</span><span class="p">(</span><span class="n">A</span> <span class="o">==</span> <span class="n">B</span><span class="p">,</span> <span class="n">C</span> <span class="o">!=</span> <span class="n">A</span><span class="p">),</span>
+    <span class="n">And</span><span class="p">(</span><span class="n">A</span> <span class="o">==</span> <span class="n">B</span><span class="p">,</span> <span class="n">B</span> <span class="o">!=</span> <span class="n">C</span><span class="p">),</span>
+    <span class="n">And</span><span class="p">(</span><span class="n">A</span> <span class="o">!=</span> <span class="n">B</span><span class="p">,</span> <span class="n">B</span> <span class="o">==</span> <span class="n">C</span><span class="p">)</span>
+<span class="p">)</span>
+<span class="n">solver</span> <span class="o">=</span> <span class="n">Solver</span><span class="p">()</span>
+<span class="n">solver</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">lengths</span><span class="p">)</span>
+<span class="n">solver</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">isosceles</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;isosceles&quot;</span><span class="p">,</span> <span class="n">solver</span><span class="o">.</span><span class="n">check</span><span class="p">(),</span> <span class="n">solver</span><span class="o">.</span><span class="n">model</span><span class="p">())</span>
+</code></pre></div>
+</div>
+<div class="code-sample lang-out" title="isosceles.out">
+<div class="highlight"><pre><span></span><code>isosceles sat [C = 2, A = 1, B = 2]
+</code></pre></div>
+</div>
+<h2 id="bonus-exercises">Section B.11: Exercises</h2>
 <h3 class="exercise">Roundoff</h3>
 <ol>
 <li>Write a program that loops over the integers from 1 to 9

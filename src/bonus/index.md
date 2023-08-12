@@ -544,6 +544,37 @@ which (as its name suggests) uses numerators and denominators
 to avoid some precision issues.
 [This post][textualize_fraction] describes one clever use of the module.
 
+## Generating Test Cases {: #bonus-theorem}
+
+Theorem provers like Z3 and [PicoSAT][picosat]
+are far more powerful than most programmers realize.
+Borrowing an example from [Andreas Zeller's][zeller_andreas],
+we can use theorem provers to generate test cases.
+Suppose we have a function that classifies triangles as equilateral,
+scalene,
+or isosceles.
+We can set up some integer variables:
+
+[% inc file="equilateral.py" keep="setup" %]
+
+and then ask it to create an equilateral triangle
+based solely on the definition:
+{: .continue}
+
+[% inc file="equilateral.py" keep="equilateral" %]
+[% inc file="equilateral.out" %]
+
+The same technique can generate a test case for scalene triangles:
+
+[% inc file="scalene.py" keep="scalene" %]
+[% inc file="scalene.out" %]
+
+and isosceles triangles:
+{: .continue}
+
+[% inc file="isosceles.py" keep="isosceles" %]
+[% inc file="isosceles.out" %]
+
 ## Exercises {: #bonus-exercises}
 
 ### Roundoff {: .exercise}
