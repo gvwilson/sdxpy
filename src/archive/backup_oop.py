@@ -19,9 +19,9 @@ class Archive:
 # [/base]
 
 
-class ArchiveLocal(Archive)
+class ArchiveLocal(Archive):
     def __init__(self, source_dir, backup_dir):
-        super().__init__()
+        super().__init__(source_dir)
         self._backup_dir = backup_dir
 
     def _copy_files(self, manifest):
@@ -36,7 +36,7 @@ class ArchiveLocal(Archive)
         backup_dir = Path(self._backup_dir)
         if not backup_dir.exists():
             backup_dir.mkdir()
-        manifest_file = Path(backup_dir, f"{timestamp}.csv")
+        manifest_file = Path(backup_dir, f"{t}.csv")
         with open(manifest_file, "w") as raw:
             writer = csv.writer(raw)
             writer.writerow(["filename", "hash"])
@@ -45,11 +45,21 @@ class ArchiveLocal(Archive)
     def _timestamp(self):
         return f"{time.time()}".split(".")[0]
 
+def read_data(options):
+    pass
+
+def analyze_data(data):
+    pass
+
+def save_everything(result):
+    pass
+
 # [use]
+
 def analyze_and_save(options, archiver):
     data = read_data(options)
     results = analyze_data(data)
-    save_everything(result)
+    save_everything(results)
     archiver.backup()
 # [/use]
 
