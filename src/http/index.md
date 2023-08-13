@@ -5,33 +5,41 @@ syllabus:
 -   A complete HTTP request may also have headers and a body.
 -   An HTTP response has a status code, a status phrase, and optionally some headers and a body.
 -   "HTTP is a stateless protocol: the application is responsible for remembering things between requests."
-status: "awaiting revision"
+status: "revised 2023-08-13"
 depends:
 -   ftp
 ---
 
-Uploading and downloading files ([%x ftp %]) is useful,
+Copying files from one machine to another is useful ([%x ftp %]),
 but we want to do more.
 What we *don't* want to do is
-create a new [%i "protocol" %] for every kind interaction.
-Instead,
-we would like to use a single standardized protocol in a variety of ways.
+create a new [%i "protocol" %] for every application,
+any more than we create new file formats ([%x parse %]).
 
 The [%g http "Hypertext Transfer Protocol" %] (HTTP)
-specifies one way programs can exchange data over IP.
-HTTP is deliberately simple:
+defines a way for programs to exchange data over the web.
+It is deliberately simple:
 the [%i "client" %] sends a [%g http_request "request" %]
 specifying what it wants over a [%i "socket" %],
 and the [%i "server" %] sends a [%g http_response "response" %] containing some data.
-A server can construct responses however it wants;
-it can copy a file from disk,
+Servers can construct responses however they want:
+they can copy files from disk,
 generated [%i "HTML" %] dynamically,
-or almost anything else.
+or anything else a programmer can think of.
 
-An HTTP request is that it's just text:
+This chapter shows how to build a simple web server
+that understands the basics of HTTP
+and how to test programs of this kind.
+What we will build is much simpler than [Apache][apache], [nginx][nginx],
+or other industrial-strength servers,
+but all the key ideas will be there.
+
+## Protocol {: #http-protocol}
+
+An HTTP request is just text:
 any program that wants to can create one or parse one.
 An absolutely minimal HTTP request has just
-a [%g http_method "method" %],
+the name of a [%g http_method "method" %],
 a [%g url "URL" %],
 and a [%g http_protocol_version "protocol version" %]
 on a single line separated by spaces:
@@ -50,7 +58,7 @@ the differences between the two don't matter to us.
 
 Most real requests have a few extra lines called
 [%g http_header "headers" %],
-which are key-value pairs like the three shown below:
+which are key-value pairs like the ones shown below:
 
 [% inc file="http_request_headers.txt" %]
 
@@ -66,21 +74,21 @@ There must be a blank line between the last header and the start of the body
 to signal the end of the headers,
 and if there is a body,
 the request must have a header called `Content-Length`
-that tells the server how many bytes to read.
+that tells the server how many bytes are in the body.
 
 An HTTP response is formatted like an HTTP request.
-Its first line has the protocol,
-a [%g http_status_code "status code" %]
-like 200 for "OK" or 404 for "Not Found",
-and a status phrase (e.g., the word "OK").
-There are then some headers,
+Its first line has the protocol
+followed by a [%g http_status_code "status code" %] and a status phrase,
+such as "200 OK" or "404 Not Found".
+There are then some headers
+(including `Content-Length` if the reply has a body),
 a blank line,
-and the body of the response:
+and the body:
 
 [% inc file="http_response.txt" %]
 
 Constructing HTTP requests is tedious,
-so most people use a library to do most of the work.
+so most people use a library to do the repetitive work.
 The most popular one in Python is the [requests][requests] module,
 and works like this:
 
@@ -92,6 +100,12 @@ That object's `status_code` member is the response's status code;
 its `content_length` member  is the number of bytes in the response data,
 and `text` is the actual data—in this case, an HTML page
 that we can analyze or render.
+Keep in mind that `requests` isn't doing anything magical:
+it is just formatting some text,
+opening a socket connection ([%x ftp %]),
+sending that text through the connection,
+and then reading a response.
+We will implement some of this ourselves in the exercises.
 
 [% figure
    slug="http-lifecycle"
@@ -99,14 +113,6 @@ that we can analyze or render.
    alt="HTTP request/response lifecycle"
    caption="Lifecycle of an HTTP request and response."
 %]
-
-Keep in mind that `requests` isn't doing anything magical.
-Instead,
-it is formatting a piece of text,
-opening a socket connection ([%x ftp %]),
-sending that text through the connection,
-and then reading a response.
-We will implement some of this ourselves in the exercises.
 
 ## Hello, Web {: #http-static}
 
@@ -119,7 +125,7 @@ We're now ready to write a simple HTTP server that will:
 
 Steps 1, 2, and 4 are the same from one application to another,
 so the [%i "Python standard library" %] has a module called `http.server`
-that contains tools to do that for us.
+to do most of the work.
 Here's the entire server:
 
 [% inc file="basic_server.py" %]
@@ -183,17 +189,19 @@ The basic logic looks like this:
 
 [% inc file="file_server.py" keep="do_get" %]
 
-We first turn the path in the URL into a local file path.
-(We assume that all paths are [%g path_resolution "resolved" %]
-relative to the directory that the server is running in.)
-If that path corresponds to a file, we send it back to the client.
-If nothing is there,
-or if what's there is not a file,
-we send an error message.
-{: .continue}
+We first turn the path in the URL into a local file path
+by removing the leading `/`.
+Translating filenames this way is called [%g path_resolution "path resolution" %],
+and in doing it,
+we assume that all the files we're supposed to serve
+live in or below the directory in which the server is running.
+If the resolved path corresponds to a file,
+we send it back to the client;
+if not,
+we generate and send an error message.
 
 It might seem simpler to rewrite `do_GET` to use `if`/`else` instead of `try`/`except`,
-but the latter has an advantage:
+but doing the latter has an advantage:
 we can handle errors that occur inside methods we're calling (like `handle_file`)
 in the same place and in the same way as we handle errors that occur here.
 This approach is sometimes called [%g throw_low_catch_high "throw low, catch high" %],
@@ -205,7 +213,9 @@ The method that handles files is an example of this:
 
 If there's an error at any point in the processing cycle
 we send a page with an error message
-*and* an error status code:
+*and* an error status code.
+The former gives human users something to read,
+while the latter gives software a meaningful value in a predictable place:
 
 [% inc file="file_server.py" keep="handle_error" %]
 

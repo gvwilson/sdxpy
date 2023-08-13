@@ -276,7 +276,7 @@
     DRAFT 2023-08-13
   </p>
   <p>
-    awaiting revision<br>
+    revised 2023-08-13<br>
     Please use section heading links to submit feedback
     or go to <a href="https://github.com/gvwilson/sdxpy">https://github.com/gvwilson/sdxpy</a>.
   </p>
@@ -363,26 +363,32 @@
 
 
           <div class="page-toc"></div>
-          <p>Uploading and downloading files (<a class="x-ref" href="../ftp/">Chapter 21</a>) is useful,
+          <p>Copying files from one machine to another is useful (<a class="x-ref" href="../ftp/">Chapter 21</a>),
 but we want to do more.
 What we <em>don&rsquo;t</em> want to do is
-create a new <span class="ix-entry" ix-key="protocol" markdown="1">protocol</span> for every kind interaction.
-Instead,
-we would like to use a single standardized protocol in a variety of ways.</p>
+create a new <span class="ix-entry" ix-key="protocol" markdown="1">protocol</span> for every application,
+any more than we create new file formats (<a class="x-ref" href="../parse/">Chapter 5</a>).</p>
 <p>The <a class="gl-ref" href="../glossary/#gl:http" title="The protocol used to exchange information between browsers and websites, and more generally between other clients and servers. Communication consists of requests and responses." markdown="1">Hypertext Transfer Protocol</a> (HTTP)
-specifies one way programs can exchange data over IP.
-HTTP is deliberately simple:
+defines a way for programs to exchange data over the web.
+It is deliberately simple:
 the <span class="ix-entry" ix-key="client" markdown="1">client</span> sends a <a class="gl-ref" href="../glossary/#gl:http_request" title="A precisely-formatted block of text sent from a client such as a browser to a server that specifies what resource is being requested, what data formats the client will accept, etc." markdown="1">request</a>
 specifying what it wants over a <span class="ix-entry" ix-key="socket" markdown="1">socket</span>,
 and the <span class="ix-entry" ix-key="server" markdown="1">server</span> sends a <a class="gl-ref" href="../glossary/#gl:http_response" title="A precisely-formatted block of text sent from a server back to a client in reply to a request." markdown="1">response</a> containing some data.
-A server can construct responses however it wants;
-it can copy a file from disk,
+Servers can construct responses however they want:
+they can copy files from disk,
 generated <span class="ix-entry" ix-key="HTML" markdown="1">HTML</span> dynamically,
-or almost anything else.</p>
-<p>An HTTP request is that it&rsquo;s just text:
+or anything else a programmer can think of.</p>
+<p>This chapter shows how to build a simple web server
+that understands the basics of HTTP
+and how to test programs of this kind.
+What we will build is much simpler than <a href="https://httpd.apache.org/">Apache</a>, <a href="https://nginx.org/">nginx</a>,
+or other industrial-strength servers,
+but all the key ideas will be there.</p>
+<h2 id="http-protocol">Section 22.1: Protocol</h2>
+<p>An HTTP request is just text:
 any program that wants to can create one or parse one.
 An absolutely minimal HTTP request has just
-a <a class="gl-ref" href="../glossary/#gl:http_method" title="The verb in an HTTP request that defines what the client wants to do. Common methods are <code>GET</code> (to get data) and <code>POST</code> (to submit data)." markdown="1">method</a>,
+the name of a <a class="gl-ref" href="../glossary/#gl:http_method" title="The verb in an HTTP request that defines what the client wants to do. Common methods are <code>GET</code> (to get data) and <code>POST</code> (to submit data)." markdown="1">method</a>,
 a <a class="gl-ref" href="../glossary/#gl:url" title="A multi-part identifier that specifies something on a computer network. A URL may contain a protocol (such as <code>http</code>), a hostname such as <code>example.com</code>, a port (such as 80), a path (such as <code>/homepage.html</code>), and various other things." markdown="1">URL</a>,
 and a <a class="gl-ref" href="../glossary/#gl:http_protocol_version" title="Specifies the version of HTTP being used, which in turn defines what headers can appear, how they are to be interpreted, etc." markdown="1">protocol version</a>
 on a single line separated by spaces:</p>
@@ -401,7 +407,7 @@ The HTTP version is usually &ldquo;HTTP/1.0&rdquo; or &ldquo;HTTP/1.1&rdquo;;
 the differences between the two don&rsquo;t matter to us.</p>
 <p>Most real requests have a few extra lines called
 <a class="gl-ref" href="../glossary/#gl:http_header" title="A name-value pair at the start of an HTTP request or response. Headers are used to specify what data formats the sender can handle, the date and time the message was sent, and so on." markdown="1">headers</a>,
-which are key-value pairs like the three shown below:</p>
+which are key-value pairs like the ones shown below:</p>
 <div class="code-sample lang-txt" title="http_request_headers.txt">
 <div class="highlight"><pre><span></span><code>GET /index.html HTTP/1.1
 Accept: text/html
@@ -420,15 +426,15 @@ There must be a blank line between the last header and the start of the body
 to signal the end of the headers,
 and if there is a body,
 the request must have a header called <code>Content-Length</code>
-that tells the server how many bytes to read.</p>
+that tells the server how many bytes are in the body.</p>
 <p>An HTTP response is formatted like an HTTP request.
-Its first line has the protocol,
-a <a class="gl-ref" href="../glossary/#gl:http_status_code" title="A numerical code that indicates what happened when an HTTP request was processed, such as 200 (OK), 404 (not found), or 500 (internal server error)." markdown="1">status code</a>
-like 200 for &ldquo;OK&rdquo; or 404 for &ldquo;Not Found&rdquo;,
-and a status phrase (e.g., the word &ldquo;OK&rdquo;).
-There are then some headers,
+Its first line has the protocol
+followed by a <a class="gl-ref" href="../glossary/#gl:http_status_code" title="A numerical code that indicates what happened when an HTTP request was processed, such as 200 (OK), 404 (not found), or 500 (internal server error)." markdown="1">status code</a> and a status phrase,
+such as &ldquo;200 OK&rdquo; or &ldquo;404 Not Found&rdquo;.
+There are then some headers
+(including <code>Content-Length</code> if the reply has a body),
 a blank line,
-and the body of the response:</p>
+and the body:</p>
 <div class="code-sample lang-txt" title="http_response.txt">
 <div class="highlight"><pre><span></span><code>HTTP/1.1 200 OK
 Date: Thu, 16 June 2023 12:28:53 GMT
@@ -443,7 +449,7 @@ Content-Length: 53
 </code></pre></div>
 </div>
 <p>Constructing HTTP requests is tedious,
-so most people use a library to do most of the work.
+so most people use a library to do the repetitive work.
 The most popular one in Python is the <a href="https://requests.readthedocs.io/">requests</a> module,
 and works like this:</p>
 <div class="code-sample lang-py" title="requests_example.py">
@@ -473,20 +479,19 @@ and returns an object containing the response (<a class="fig-ref" href="../http/
 That object&rsquo;s <code>status_code</code> member is the response&rsquo;s status code;
 its <code>content_length</code> member  is the number of bytes in the response data,
 and <code>text</code> is the actual data—in this case, an HTML page
-that we can analyze or render.</p>
+that we can analyze or render.
+Keep in mind that <code>requests</code> isn&rsquo;t doing anything magical:
+it is just formatting some text,
+opening a socket connection (<a class="x-ref" href="../ftp/">Chapter 21</a>),
+sending that text through the connection,
+and then reading a response.
+We will implement some of this ourselves in the exercises.</p>
 <figure id="http-lifecycle">
 <img src="./http_lifecycle.svg" alt="HTTP request/response lifecycle"/>
 <figcaption markdown="1">Figure 22.1: Lifecycle of an HTTP request and response.</figcaption>
 </figure>
 
-<p>Keep in mind that <code>requests</code> isn&rsquo;t doing anything magical.
-Instead,
-it is formatting a piece of text,
-opening a socket connection (<a class="x-ref" href="../ftp/">Chapter 21</a>),
-sending that text through the connection,
-and then reading a response.
-We will implement some of this ourselves in the exercises.</p>
-<h2 id="http-static">Section 22.1: Hello, Web</h2>
+<h2 id="http-static">Section 22.2: Hello, Web</h2>
 <p>We&rsquo;re now ready to write a simple HTTP server that will:</p>
 <ol>
 <li>wait for someone to connect and send an HTTP request;</li>
@@ -496,7 +501,7 @@ We will implement some of this ourselves in the exercises.</p>
 </ol>
 <p>Steps 1, 2, and 4 are the same from one application to another,
 so the <span class="ix-entry" ix-key="Python standard library" markdown="1">Python standard library</span> has a module called <code>http.server</code>
-that contains tools to do that for us.
+to do most of the work.
 Here&rsquo;s the entire server:</p>
 <div class="code-sample lang-py" title="basic_server.py">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">http.server</span> <span class="kn">import</span> <span class="n">BaseHTTPRequestHandler</span><span class="p">,</span> <span class="n">HTTPServer</span>
@@ -570,7 +575,7 @@ The second line appears because
 our browser automatically sends a second request
 for an image file called <code>/favicon.ico</code>,
 which it will display as an icon in the address bar if it exists.</p>
-<h2 id="http-files">Section 22.2: Serving Files</h2>
+<h2 id="http-files">Section 22.3: Serving Files</h2>
 <p>Serving the same page for every request isn&rsquo;t particularly useful,
 so let&rsquo;s rewrite our simple server to return files.
 The basic logic looks like this:</p>
@@ -590,15 +595,18 @@ The basic logic looks like this:</p>
             <span class="bp">self</span><span class="o">.</span><span class="n">handle_error</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
 </code></pre></div>
 </div>
-<p class="continue">We first turn the path in the URL into a local file path.
-(We assume that all paths are <a class="gl-ref" href="../glossary/#gl:path_resolution" title="The process of converting filename portion of a URL into a specific file on disk." markdown="1">resolved</a>
-relative to the directory that the server is running in.)
-If that path corresponds to a file, we send it back to the client.
-If nothing is there,
-or if what&rsquo;s there is not a file,
-we send an error message.</p>
+<p>We first turn the path in the URL into a local file path
+by removing the leading <code>/</code>.
+Translating filenames this way is called <a class="gl-ref" href="../glossary/#gl:path_resolution" title="The process of converting filename portion of a URL into a specific file on disk." markdown="1">path resolution</a>,
+and in doing it,
+we assume that all the files we&rsquo;re supposed to serve
+live in or below the directory in which the server is running.
+If the resolved path corresponds to a file,
+we send it back to the client;
+if not,
+we generate and send an error message.</p>
 <p>It might seem simpler to rewrite <code>do_GET</code> to use <code>if</code>/<code>else</code> instead of <code>try</code>/<code>except</code>,
-but the latter has an advantage:
+but doing the latter has an advantage:
 we can handle errors that occur inside methods we&rsquo;re calling (like <code>handle_file</code>)
 in the same place and in the same way as we handle errors that occur here.
 This approach is sometimes called <a class="gl-ref" href="../glossary/#gl:throw_low_catch_high" title="A widely-used pattern for managing exceptions whereby they are raised in many places at low levels of a program but caught in a few high-level places where corrective action can be taken." markdown="1">throw low, catch high</a>,
@@ -617,7 +625,9 @@ The method that handles files is an example of this:</p>
 </div>
 <p>If there&rsquo;s an error at any point in the processing cycle
 we send a page with an error message
-<em>and</em> an error status code:</p>
+<em>and</em> an error status code.
+The former gives human users something to read,
+while the latter gives software a meaningful value in a predictable place:</p>
 <div class="code-sample lang-py" title="file_server.py">
 <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">handle_error</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">):</span>
     <span class="n">content</span> <span class="o">=</span> <span class="n">ERROR_PAGE</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">msg</span><span class="o">=</span><span class="n">msg</span><span class="p">)</span>
@@ -672,7 +682,7 @@ by using <code>"rb"</code> instead of just <code>"r"</code> when it opens files 
 converts the internally-generated error page from characters to bytes
 using the <span class="ix-entry" ix-key="UTF-8" markdown="1">UTF-8</span> encoding,
 and specifies <code>charset=utf-8</code> as part of the content type.</p>
-<h2 id="http-testing">Section 22.3: Testing</h2>
+<h2 id="http-testing">Section 22.4: Testing</h2>
 <p>As with the server in <a class="x-ref" href="../ftp/">Chapter 21</a>,
 we can work backward from a test we want to be able to write
 to create a testable server.
@@ -797,13 +807,13 @@ create a server with mocked methods:</p>
     <span class="k">pass</span>
 </code></pre></div>
 </div>
-<h2 id="http-summary">Section 22.4: Summary</h2>
+<h2 id="http-summary">Section 22.5: Summary</h2>
 <figure id="http-concept-map" class="here">
 <img src="./concept_map.svg" alt="HTTP concept map"/>
 <figcaption markdown="1">Figure 22.3: HTTP concept map.</figcaption>
 </figure>
 
-<h2 id="http-exercises">Section 22.5: Exercises</h2>
+<h2 id="http-exercises">Section 22.6: Exercises</h2>
 <h3 class="exercise">Parsing HTTP Requests</h3>
 <p>Write a function that takes a list of lines of text as input
 and parses them as if they were an HTTP request.
