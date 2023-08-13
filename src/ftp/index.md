@@ -2,9 +2,10 @@
 syllabus:
 -   Every computer on a network has a unique IP address.
 -   The Domain Name System (DNS) translates human-readable names into IP addresses.
--   The programs on each computer send and receive messages through numbered sockets.
--   The program that receives a message must interpret the bytes in the message.
-status: "awaiting revision"
+-   Programs send and receive messages through numbered sockets.
+-   The program that receives a message is responsible for interpreting the bytes in the message.
+-   To test a program that uses the network, replace the network with a mock object.
+status: "revised 2023-08-13"
 depends:
 -   archive
 ---
@@ -15,15 +16,34 @@ Most systems still follow the rules they did thirty years ago;
 in particular,
 most web servers still handle the same kinds of messages in the same way.
 
+A typical web application is made up of [%g client "clients" %]
+and [%g server "servers" %].
+A client program initiates communication by sending a message and waiting for a response;
+a server,
+on the other hand,
+waits for requests and the replies to them.
+There are typically many more clients than servers:
+for example,
+there may be hundreds or thousands of browsers
+fetching pages from this book's website right now,
+but there is only one server handling those requests.
+
+This chapter shows how to build a simple low-level network program
+to move files from one machine to another.
+[%x http %] will extend this to show
+how to build programs that communicate using HTTP.
+A central concern in both chapters is how to test such programs;
+while who sends what messages when changes from application to application,
+the testing techniques largely remain the same.
+
 ## Using TCP/IP {: #ftp-tcpip}
 
-Pretty much every program on the web
-runs on a family of communication standards called
+Almost every program on the web
+uses a family of communication standards called
 [%g internet_protocol "Internet Protocol" %] (IP).
 The one that concerns us is the
 [%g tcp "Transmission Control Protocol" %] (TCP/IP),
 which makes communication between computers look like reading and writing files.
-
 Programs using IP communicate through [%g socket "sockets" %]
 ([%f ftp-sockets %]).
 Each socket is one end of a point-to-point communication channel,
@@ -44,7 +64,6 @@ which are usually written as `93.184.216.34`;
 the [%g dns "Domain Name System" %] (DNS)
 matches these numbers to symbolic names like `example.com`
 that are easier for human beings to remember.
-
 A port is a number in the range 0-65535
 that uniquely identifies the socket on the host machine.
 (If an IP address is like a company's phone number,
@@ -54,49 +73,40 @@ custom applications should use the remaining ports
 (and should allow users to decide *which* port,
 since there's always the chance that two different people will pick 1234 or 6789).
 
-Most web applications consists of [%g client "clients" %]
-and [%g server "servers" %].
-A client program initiates communication by sending a message and waiting for a response;
-a server,
-on the other hand,
-waits for requests and the replies to them.
-There are typically many more clients than servers:
-for example,
-there may be hundreds or thousands of browsers
-fetching pages from this book's website right now,
-but there is only one server handling those requests.
-
-Here's a basic socket client:
+A basic socket client looks like this:
 
 [% inc file="client_all.py" %]
 
 We call it "basic" rather than "simple" because there's a lot going on here.
-From top to bottom, this code:
+From top to bottom:
 {: .continue}
 
-1.  Imports some modules and defines some constants.
-    The most interesting of these is `SERVER_ADDRESS`
-    consisting of a host identifier and a port.
-    The string `"localhost"` means "the current machine".
+1.  We import some modules and defines two constants.
+    The first, `SERVER_ADDRESS`,
+    consists of a host identifier and a port.
+    (The string `"localhost"` means "the current machine".)
+    The second,
+    `CHUNK_SIZE`,
+    will determine the maximum number of bytes in the messages we send and receive.
 2.  We use `socket.socket` to create a new socket.
     The values `AF_INET` and `SOCK_STREAM` specify
     the [%i "protocol" "protocols" %] we're using;
     we'll always use those in our examples,
-    so we won't go into details about them.
-3.  We connect to the server…
-4.  …send our message as a bunch of bytes with `sock.sendall`…
-5.  …and print a message saying the data's been sent.
-6.  We then read up to a kilobyte from the socket with `sock.recv`.
+    so we won't go into detail about alternatives.
+3.  We connect to the server,
+    send our message as a bunch of bytes with `sock.sendall`,
+    and print a message saying the data's been sent.
+4.  We then read up to a kilobyte from the socket with `sock.recv`.
     If we were expecting longer messages,
     we'd keep reading from the socket until there was no more data.
-7.  Finally, we print another message.
+5.  Finally, we print another message.
 
 The corresponding server has just as much low-level detail:
 
 [% inc file="server_raw.py" omit="main" %]
 
 This code claims a socket,
-listens until it receives a connection request,
+listens until it receives a single connection request,
 reads up to a kilobyte of data,
 prints a message,
 and replies to the client.
@@ -120,11 +130,20 @@ and another class called `BaseRequestHandler`
 that does everything *except* process the incoming data.
 In order to do that,
 we derive a class of our own from `BaseRequestHandler`
-that provides a `handle` method.
+that provides a `handle` method
+([%f ftp-inheritance %]).
 Every time `TCPServer` gets a new connection
 it creates a new object of our class
 and calls that object's `handle` method.
-Using these,
+
+[% figure
+   slug="ftp-inheritance"
+   img="inheritance.svg"
+   alt="Classes in a TCP server"
+   caption="Classes used in a basic TCP server."
+%]
+
+Using `TCPServer` and `BaseRequestHandler` as starting points,
 our server is:
 
 [% inc file="server_lib.py" %]
@@ -147,9 +166,11 @@ using `self.request.recv(CHUNK_SIZE)`
 with `CHUNK_SIZE` set to 1024.
 If the client sends more than a kilobyte of data,
 our server will ignore it.
-This can result in [%g deadlock "deadlock" %] because
-the server is trying to send its reply
-while the client is still trying to send the rest of the message.
+This can result in [%g deadlock "deadlock" %]:
+the server is trying to send a reply
+while the client is a trying to send the rest of the message,
+and since neither is listening,
+neither can move forward.
 Increasing the size of the [%i "buffer (in memory)" "memory buffer" %]
 used to store the incoming message
 won't make this problem go away:

@@ -4,7 +4,7 @@
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="repo" content="https://github.com/gvwilson/sdxpy">
-  <meta name="build_date" content="2023-08-12">
+  <meta name="build_date" content="2023-08-13">
   <meta name="template" content="default">
   <meta name="major" content="ftp">
   <meta name="has_slides" content="true">
@@ -273,10 +273,10 @@
           
 <div class="draft notex">
   <p class="draft">
-    DRAFT 2023-08-12
+    DRAFT 2023-08-13
   </p>
   <p>
-    awaiting revision<br>
+    revised 2023-08-13<br>
     Please use section heading links to submit feedback
     or go to <a href="https://github.com/gvwilson/sdxpy">https://github.com/gvwilson/sdxpy</a>.
   </p>
@@ -333,9 +333,11 @@
   
   <li markdown="1">The Domain Name System (DNS) translates human-readable names into IP addresses.</li>
   
-  <li markdown="1">The programs on each computer send and receive messages through numbered sockets.</li>
+  <li markdown="1">Programs send and receive messages through numbered sockets.</li>
   
-  <li markdown="1">The program that receives a message must interpret the bytes in the message.</li>
+  <li markdown="1">The program that receives a message is responsible for interpreting the bytes in the message.</li>
+  
+  <li markdown="1">To test a program that uses the network, replace the network with a mock object.</li>
   
   </ul>
   
@@ -366,14 +368,32 @@
 Most systems still follow the rules they did thirty years ago;
 in particular,
 most web servers still handle the same kinds of messages in the same way.</p>
+<p>A typical web application is made up of <a class="gl-ref" href="../glossary/#gl:client" title="A program such as a browser that sends requests to a server and does something with the response." markdown="1">clients</a>
+and <a class="gl-ref" href="../glossary/#gl:server" title="A program that waits for requests from clients and sends them data in response." markdown="1">servers</a>.
+A client program initiates communication by sending a message and waiting for a response;
+a server,
+on the other hand,
+waits for requests and the replies to them.
+There are typically many more clients than servers:
+for example,
+there may be hundreds or thousands of browsers
+fetching pages from this book&rsquo;s website right now,
+but there is only one server handling those requests.</p>
+<p>This chapter shows how to build a simple low-level network program
+to move files from one machine to another.
+<a class="x-ref" href="../http/">Chapter 22</a> will extend this to show
+how to build programs that communicate using HTTP.
+A central concern in both chapters is how to test such programs;
+while who sends what messages when changes from application to application,
+the testing techniques largely remain the same.</p>
 <h2 id="ftp-tcpip">Section 21.1: Using TCP/IP</h2>
-<p>Pretty much every program on the web
-runs on a family of communication standards called
+<p>Almost every program on the web
+uses a family of communication standards called
 <a class="gl-ref" href="../glossary/#gl:internet_protocol" title="A set of specifications for ways computers can communicate. TCP/IP is the most widely used." markdown="1">Internet Protocol</a> (IP).
 The one that concerns us is the
 <a class="gl-ref" href="../glossary/#gl:tcp" title="The most popular member of the IP family of protocols. TCP/IP tries to deliver messages reliably and in order so that programs can communicate as if they were reading and writing files." markdown="1">Transmission Control Protocol</a> (TCP/IP),
-which makes communication between computers look like reading and writing files.</p>
-<p>Programs using IP communicate through <a class="gl-ref" href="../glossary/#gl:socket" title="A communication channel between two computers that provides an interface similar to reading and writing files." markdown="1">sockets</a>
+which makes communication between computers look like reading and writing files.
+Programs using IP communicate through <a class="gl-ref" href="../glossary/#gl:socket" title="A communication channel between two computers that provides an interface similar to reading and writing files." markdown="1">sockets</a>
 (<a class="fig-ref" href="../ftp/#ftp-sockets">Figure 21.1</a>).
 Each socket is one end of a point-to-point communication channel,
 just like a phone is one end of a phone call.
@@ -389,8 +409,8 @@ and a <a class="gl-ref" href="../glossary/#gl:port" title="A logical endpoint fo
 which are usually written as <code>93.184.216.34</code>;
 the <a class="gl-ref" href="../glossary/#gl:dns" title="A decentralized naming system for computers that translates hostnames into the IP address of particular computers." markdown="1">Domain Name System</a> (DNS)
 matches these numbers to symbolic names like <code>example.com</code>
-that are easier for human beings to remember.</p>
-<p>A port is a number in the range 0-65535
+that are easier for human beings to remember.
+A port is a number in the range 0-65535
 that uniquely identifies the socket on the host machine.
 (If an IP address is like a company&rsquo;s phone number,
 then a port number is like an extension.)
@@ -398,18 +418,7 @@ Ports 0-1023 are reserved for well-known TCP/IP applications like web servers;
 custom applications should use the remaining ports
 (and should allow users to decide <em>which</em> port,
 since there&rsquo;s always the chance that two different people will pick 1234 or 6789).</p>
-<p>Most web applications consists of <a class="gl-ref" href="../glossary/#gl:client" title="A program such as a browser that sends requests to a server and does something with the response." markdown="1">clients</a>
-and <a class="gl-ref" href="../glossary/#gl:server" title="A program that waits for requests from clients and sends them data in response." markdown="1">servers</a>.
-A client program initiates communication by sending a message and waiting for a response;
-a server,
-on the other hand,
-waits for requests and the replies to them.
-There are typically many more clients than servers:
-for example,
-there may be hundreds or thousands of browsers
-fetching pages from this book&rsquo;s website right now,
-but there is only one server handling those requests.</p>
-<p>Here&rsquo;s a basic socket client:</p>
+<p>A basic socket client looks like this:</p>
 <div class="code-sample lang-py" title="client_all.py">
 <div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">socket</span>
 
@@ -429,20 +438,23 @@ but there is only one server handling those requests.</p>
 </code></pre></div>
 </div>
 <p class="continue">We call it &ldquo;basic&rdquo; rather than &ldquo;simple&rdquo; because there&rsquo;s a lot going on here.
-From top to bottom, this code:</p>
+From top to bottom:</p>
 <ol>
-<li>Imports some modules and defines some constants.
-    The most interesting of these is <code>SERVER_ADDRESS</code>
-    consisting of a host identifier and a port.
-    The string <code>"localhost"</code> means &ldquo;the current machine&rdquo;.</li>
+<li>We import some modules and defines two constants.
+    The first, <code>SERVER_ADDRESS</code>,
+    consists of a host identifier and a port.
+    (The string <code>"localhost"</code> means &ldquo;the current machine&rdquo;.)
+    The second,
+    <code>CHUNK_SIZE</code>,
+    will determine the maximum number of bytes in the messages we send and receive.</li>
 <li>We use <code>socket.socket</code> to create a new socket.
     The values <code>AF_INET</code> and <code>SOCK_STREAM</code> specify
     the <span class="ix-entry" ix-key="protocol" markdown="1">protocols</span> we&rsquo;re using;
     we&rsquo;ll always use those in our examples,
-    so we won&rsquo;t go into details about them.</li>
-<li>We connect to the server…</li>
-<li>…send our message as a bunch of bytes with <code>sock.sendall</code>…</li>
-<li>…and print a message saying the data&rsquo;s been sent.</li>
+    so we won&rsquo;t go into detail about alternatives.</li>
+<li>We connect to the server,
+    send our message as a bunch of bytes with <code>sock.sendall</code>,
+    and print a message saying the data&rsquo;s been sent.</li>
 <li>We then read up to a kilobyte from the socket with <code>sock.recv</code>.
     If we were expecting longer messages,
     we&rsquo;d keep reading from the socket until there was no more data.</li>
@@ -472,7 +484,7 @@ From top to bottom, this code:</p>
 </code></pre></div>
 </div>
 <p class="continue">This code claims a socket,
-listens until it receives a connection request,
+listens until it receives a single connection request,
 reads up to a kilobyte of data,
 prints a message,
 and replies to the client.
@@ -492,11 +504,17 @@ and another class called <code>BaseRequestHandler</code>
 that does everything <em>except</em> process the incoming data.
 In order to do that,
 we derive a class of our own from <code>BaseRequestHandler</code>
-that provides a <code>handle</code> method.
+that provides a <code>handle</code> method
+(<a class="fig-ref" href="../ftp/#ftp-inheritance">Figure 21.3</a>).
 Every time <code>TCPServer</code> gets a new connection
 it creates a new object of our class
-and calls that object&rsquo;s <code>handle</code> method.
-Using these,
+and calls that object&rsquo;s <code>handle</code> method.</p>
+<figure id="ftp-inheritance">
+<img src="./inheritance.svg" alt="Classes in a TCP server"/>
+<figcaption markdown="1">Figure 21.3: Classes used in a basic TCP server.</figcaption>
+</figure>
+
+<p>Using <code>TCPServer</code> and <code>BaseRequestHandler</code> as starting points,
 our server is:</p>
 <div class="code-sample lang-py" title="server_lib.py">
 <div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">socketserver</span>
@@ -532,9 +550,11 @@ using <code>self.request.recv(CHUNK_SIZE)</code>
 with <code>CHUNK_SIZE</code> set to 1024.
 If the client sends more than a kilobyte of data,
 our server will ignore it.
-This can result in <a class="gl-ref" href="../glossary/#gl:deadlock" title="A situation in which no-one can proceed because everyone is blocked on someone else." markdown="1">deadlock</a> because
-the server is trying to send its reply
-while the client is still trying to send the rest of the message.
+This can result in <a class="gl-ref" href="../glossary/#gl:deadlock" title="A situation in which no-one can proceed because everyone is blocked on someone else." markdown="1">deadlock</a>:
+the server is trying to send a reply
+while the client is a trying to send the rest of the message,
+and since neither is listening,
+neither can move forward.
 Increasing the size of the <span class="ix-entry" ix-key="buffer (in memory)" markdown="1">memory buffer</span>
 used to store the incoming message
 won&rsquo;t make this problem go away:
@@ -750,7 +770,7 @@ but in cases like this it makes sense to sacrifice a little fidelity for testabi
 <h2 id="ftp-summary">Section 21.4: Summary</h2>
 <figure id="ftp-concept-map" class="here">
 <img src="./concept_map.svg" alt="File transfer concept map"/>
-<figcaption markdown="1">Figure 21.3: File transfer concept map.</figcaption>
+<figcaption markdown="1">Figure 21.4: File transfer concept map.</figcaption>
 </figure>
 
 <h2 id="ftp-exercises">Section 21.5: Exercises</h2>
