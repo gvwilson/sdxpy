@@ -12,12 +12,11 @@ depends:
 ---
 
 Before they need version control tools or interpreters,
-programmers need a way to edit code.
-Even simple editors like Notepad and [Nano][nano]
-have to do a lot of things to be useful,
-such as opening files,
+programmers need a way to edit text files.
+Even simple editors like Notepad and [Nano][nano] do a lot of things:
 moving a cursor,
-and inserting or deleting characters.
+inserting and deleting characters,
+and more.
 This is too much to fit into one lesson,
 so this chapter builds a tool for viewing files,
 which [%x undo %] extends to create an editor with undo and redo.
@@ -37,11 +36,12 @@ A very simple curses-based program looks like this:
 does some setup,
 and then calls that function with an object
 that acts as an interface to the screen.
-(It is called `stdscr` by analogy with `stdin` and `stdout`.)
+(It is called `stdscr`, for "standard screen",
+by analogy with standard input `stdin` and standard output `stdout`.)
 Our function `main` is just an infinite loop that consumes keystrokes
 but does nothing with them.
-When run,
-it clears the screen and then sits there until the user types Ctrl-C to interrupt it.
+When we run the program,
+it clears the screen and waits for the user to interrupt it by typing Ctrl-C.
 
 We'd like to see what the user is typing,
 but since the program has taken over the screen,
@@ -86,9 +86,9 @@ Two things about this function need to be kept in mind.
 First, as explained in [%x layout %],
 screens put (0, 0) in the upper left rather than the lower left,
 and increasing values of Y move down rather than up.
-What's more,
-the curses module uses (row, column) coordinates,
-so we have to remember to write them as (y, x) rather than (x, y).
+To make things even more confusing,
+curses uses (row, column) coordinates,
+so we have to remember to write (y, x) instead of (x, y).
 
 The other oddity in this function is that
 it erases the entire screen each time the user presses a key.
@@ -126,6 +126,8 @@ the pattern is:
 These lines are a very (very) simple example of [%g synthetic_data "synthetic data" %],
 i.e.,
 data that is made up for testing purposes.
+If the viewer doesn't work for this text it probably won't work on actual files,
+and the patterns in the synthetic data will help us spot mistakes in the display.
 {: .continue}
 
 ## Windowing {: #viewer-window}
@@ -148,11 +150,19 @@ Our `main` function is then:
 [% inc file="use_window.py" keep="main" %]
 
 Notice that `main` creates the window object.
-We can't create it earlier and pass it in as we do with `lines`
+We can't create it earlier and pass it into `main` as we do with `lines`
 because the [%i "constructor" %] for `Window` needs the screen object,
 which doesn't exist until `curses.wrapper` calls `main`.
 This is an example of [%g delayed_construction "delayed construction" %],
-and is going to constrain the rest of our design.
+and is going to constrain the rest of our design
+([%f viewer-delayed %]).
+
+[% figure
+   slug="viewer-delayed"
+   img="delayed.svg"
+   alt="Delayed construction"
+   caption="Order of operations in delayed construction"
+%]
 
 Nothing says we have to make our window exactly the same size as
 the terminal that is displaying it.
@@ -169,20 +179,19 @@ or a (rows, columns) pair specifying the size we want:
 We're going to have a lot of two-dimensional (row, column) coordinates
 in this program,
 so let's define a pair constants `ROW` and `COL`
-to be more readable than 0 and 1 (or `R` and `C`):
+to be more readable than 0 and 1 or `R` and `C`.
+(We should really create an [%g enumeration "enumeration" %],
+but a pair of constants is good enough for now.)
 
 [% inc file="util.py" keep="coord" %]
-[% inc file="coord_const.py" keep="window" %]
-
-We should really create an [%g enumeration "enumeration" %],
-but a pair of constants is good enough for now.
-{: .continue}
+[% inc file="coord_const.py" keep="window" omit="omit" %]
 
 ## Moving {: #viewer-move}
 
 Our program no longer crashes when given large input to display,
 but we can't see any of the text outside the window.
 To fix that,
+we need to teach the application to scroll.
 let's create another class to keep track of
 the position of a cursor:
 
@@ -209,7 +218,7 @@ As this code shows,
 the screen's `getkey` method returns the names of the arrow keys.
 And since `stdscr.move` takes two arguments
 but `cursor.pos` returns a two-element tuple,
-we [%i "spread" %] the latter position to satisfy the former.
+we [%i "spread" %] the latter with `*` to satisfy the former.
 
 When we run this program and start pressing the arrow keys,
 the cursor does indeed move.
@@ -227,8 +236,8 @@ the text doesn't scroll down when we go to the bottom.
 We need to constrain the cursor's movement
 so that it stays inside the text (not just the window),
 while simultaneously moving the text up or down when appropriate.
-Rather than tackling those problems immediately,
-we will do some [%i "refactor" "refactoring" %]
+Before tackling those problems,
+we will reorganize the code
 to give ourselves a better starting point.
 
 ## Refactoring {: #viewer-refactor}
@@ -237,15 +246,15 @@ Our first change is to write a class to represent
 the application as a whole;
 our program will then create one instance of this class,
 which will own the window and cursor.
-The trick to making this work is to take advantage of the fact that
+The trick to making this work is to take advantage of
+one of the [%i "protocol" "protocols" %] introduced in [%x protocols %]:
 if an object has a method named `__call__`,
 that method will be invoked when the object is "called" as if it were a function:
 
 [% inc pat="call_example.*" fill="py out" %]
 
-Since the `MainApp` class below defines this method,
-we can fool `curses.wrapper` into believing that we have given it
-the single-argument function it needs:
+Since the `MainApp` class below defines `__call__`,
+`curses.wrapper` believes we have given it the single-argument function it needs:
 
 [% inc file="main_app.py" keep="main" %]
 
@@ -257,10 +266,10 @@ The latter is:
 [% inc file="main_app.py" keep="run" %]
 
 Finally,
-we pull the startup code into a function `setup`
+we pull the startup code into a function `start`
 so that we can use it in future versions of this code:
 
-[% inc file="util.py" keep="setup" %]
+[% inc file="util.py" keep="start" %]
 
 and then launch our application like this:
 {: .continue}
@@ -279,8 +288,11 @@ it returns actual [%i "control code" "control codes" %]
 for key combinations like Ctrl-X.
 The `TRANSLATE` dictionary turns these into human-readable names
 that we can glue together with `_do_` to make a method name;
-we got the value by logging keystrokes to a file
+we got the hexadecimal value `"\x18"` by logging keystrokes to a file
 and the looking at its contents.
+We could probably have found this value in the curses' module's documentation
+if we had looked hard enough,
+but a ten-second experiment seemed simpler.
 
 With `_interact` in place,
 we can re-write `_run` to be just five lines long:
@@ -299,7 +311,7 @@ since almost every handler method's result is going to be the same.
 
 ### Inheritance
 
-`DispatchApp` [%i "inheritance" "inherit" %] from our first `MainApp`
+`DispatchApp` [%i "inheritance" "inherits" %] from our first `MainApp`
 so that we can recycle the initialization code we wrote for the latter.
 To make this happen,
 `DispatchApp.__init__` [%i upcall "upcalls" %] to `MainApp.__init__`
@@ -423,7 +435,7 @@ A full-featured editor would introduce another class,
 often called a [%g viewport "viewport" %],
 to track the currently-visible portion of the buffer.
 To keep things simple,
-we will add two member variables to the buffer
+we will add two member variables to the buffer instead
 to keep track of the top-most visible line
 and the height of the window:
 
@@ -472,7 +484,9 @@ in the same way as vertical movement:
 [% inc file="viewport.py" keep="cursor" %]
 
 [%f viewer-inheritance %] shows the classes we have created
-at each stage of this tutorial.
+at each stage of this tutorial,
+and [%f viewer-relations %] shows how they communicate
+in the final version of the code.
 As we have said several times above,
 if we were developing a file viewer for real use
 we would probably have added features to classes
@@ -490,6 +504,13 @@ Again,
    img="inheritance.svg"
    alt="Inheritance in lesson"
    caption="Class definitions and inheritance in lesson"
+%]
+
+[% figure
+   slug="viewer-relations"
+   img="relations.svg"
+   alt="Class relations in file viewer"
+   caption="Relationships between classes in the final version of the file viewer."
 %]
 
 ## Summary {: #viewer-summary}

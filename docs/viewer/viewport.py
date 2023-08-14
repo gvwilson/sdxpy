@@ -1,7 +1,7 @@
 import curses
 import sys
 
-from util import ROW, COL, setup
+from util import ROW, COL, start
 from clip_cursor import ClipBuffer
 from clip_fixed import ClipCursorFixed, ClipAppFixed
 
@@ -79,6 +79,6 @@ class ViewportApp(ClipAppFixed):
 # [/app]
 
 if __name__ == "__main__":
-    size, lines = setup()
+    size, lines = start()
     app = ViewportApp(size, lines)
     curses.wrapper(app)

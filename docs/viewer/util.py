@@ -27,8 +27,8 @@ def make_lines(num_lines):
     return result
 # [/lines]
 
-# [setup]
-def setup():
+# [start]
+def start():
     num_lines, logfile = int(sys.argv[1]), sys.argv[2]
     size = None
     if len(sys.argv) > 3:
@@ -36,4 +36,4 @@ def setup():
     lines = make_lines(num_lines)
     open_log(logfile)
     return size, lines
-# [/setup]
+# [/start]

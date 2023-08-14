@@ -1,7 +1,7 @@
 import curses
 import sys
 
-from util import COL, ROW, setup
+from util import COL, ROW, start
 from cursor_const import Window
 from move_cursor import Cursor
 
@@ -37,7 +37,7 @@ class MainApp:
 
 # [launch]
 if __name__ == "__main__":
-    size, lines = setup()
+    size, lines = start()
     app = MainApp(size, lines)
     curses.wrapper(app)
 # [/launch]

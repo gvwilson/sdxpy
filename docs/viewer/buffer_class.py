@@ -1,7 +1,7 @@
 import curses
 import sys
 
-from util import setup
+from util import start
 from cursor_const import Window
 from dispatch_keys import DispatchApp
 from move_cursor import Cursor
@@ -43,6 +43,6 @@ class BufferApp(DispatchApp):
             self._interact()
 
 if __name__ == "__main__":
-    size, lines = setup()
+    size, lines = start()
     app = BufferApp(size, lines)
     curses.wrapper(app)

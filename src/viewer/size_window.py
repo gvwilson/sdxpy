@@ -1,7 +1,7 @@
 import curses
 import sys
 
-from util import open_log, log, make_lines, setup
+from util import open_log, log, make_lines, start
 
 # [window]
 class Window:
@@ -29,5 +29,5 @@ def main(stdscr, size, lines):
             return
 
 if __name__ == "__main__":
-    size, lines = setup()
+    size, lines = start()
     curses.wrapper(lambda stdscr: main(stdscr, size, lines))

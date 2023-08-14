@@ -1,7 +1,7 @@
 import curses
 import sys
 
-from util import COL, ROW, setup
+from util import COL, ROW, start
 from move_cursor import Cursor
 from buffer_class import Buffer, BufferApp
 
@@ -44,6 +44,6 @@ class ClipApp(BufferApp):
 # [/other]
 
 if __name__ == "__main__":
-    size, lines = setup()
+    size, lines = start()
     app = ClipApp(size, lines)
     curses.wrapper(app)

@@ -1,7 +1,7 @@
 import curses
 import sys
 
-from util import COL, ROW, setup
+from util import COL, ROW, start
 from clip_cursor import ClipCursor, ClipApp
 
 # [cursor]
@@ -25,6 +25,6 @@ class ClipAppFixed(ClipApp):
         self._cursor = ClipCursorFixed(self._buffer)
 
 if __name__ == "__main__":
-    size, lines = setup()
+    size, lines = start()
     app = ClipAppFixed(size, lines)
     curses.wrapper(app)

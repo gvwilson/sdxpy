@@ -16,7 +16,7 @@ This chapter therefore modifies the file viewer of [%x viewer %]
 so that we can add and delete text.
 And since people make mistakes,
 we will also implement undo,
-which will introduce another commonly-used software design pattern.
+which will introduce another commonly-used design pattern.
 
 ## Getting Started {: #undo-start}
 
@@ -38,7 +38,8 @@ Our file viewer has four classes:
 To make unit testing simpler,
 we start by adding one more class:
 a replacement for the screen object provided by the [curses][py_curses] module.
-This class stores the current state of the display in a rectangular grid for checking.
+This class stores the current state of the display in a rectangular grid
+so that our tests can check it easily.
 It also takes a list of keystrokes as input
 to simulate interaction with the user:
 
@@ -147,6 +148,7 @@ when the buffer is empty:
 
 Our focus is implementing undo,
 so we will leave fixing this for an exercise.
+{: .continue}
 
 </div>
 
@@ -180,11 +182,9 @@ This pattern turns verbs into nouns,
 i.e.,
 each action is represented as an object
 with methods to go forward and backward.
-
-Actions are all derived from
-an [%g abstract_base_class "abstract base class" %]
+Our actions all derive from an [%g abstract_base_class "abstract base class" %]
 so that they can be used interchangeably.
-Our base class is:
+That base class is:
 
 [% inc file="action.py" keep="Action" %]
 
@@ -208,11 +208,20 @@ and to move to a particular location:
 
 Our application's `_interact` method changes too.
 Instead of relying on keystroke handler methods to do things,
-it expects them to create action objects.
+it expects them to create action objects
+([%f undo-verbs %]).
 These objects are appended to the application's history,
 and then asked to do whatever they do:
 
 [% inc file="action.py" keep="interact" %]
+
+[% figure
+   slug="undo-verbs"
+   img="verbs.svg"
+   alt="Nouns as verbs in the Command pattern"
+   caption="Representing actions as objects in the Command design pattern"
+   cls="here"
+%]
 
 Note that we have modified all the handler methods
 to take the keystroke as an input parameter
