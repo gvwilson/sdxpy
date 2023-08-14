@@ -7,7 +7,7 @@ syllabus:
 -   Using delayed construction and/or factory methods can make code easier to evolve.
 -   Refactor code before attempting to add new features.
 -   Separate the logic for managing data from the logic for displaying it.
-status: "awaiting revision"
+status: "revised 2023-08-14"
 depends:
 ---
 
@@ -484,9 +484,7 @@ in the same way as vertical movement:
 [% inc file="viewport.py" keep="cursor" %]
 
 [%f viewer-inheritance %] shows the classes we have created
-at each stage of this tutorial,
-and [%f viewer-relations %] shows how they communicate
-in the final version of the code.
+at each stage of this tutorial.
 As we have said several times above,
 if we were developing a file viewer for real use
 we would probably have added features to classes
@@ -504,13 +502,6 @@ Again,
    img="inheritance.svg"
    alt="Inheritance in lesson"
    caption="Class definitions and inheritance in lesson"
-%]
-
-[% figure
-   slug="viewer-relations"
-   img="relations.svg"
-   alt="Class relations in file viewer"
-   caption="Relationships between classes in the final version of the file viewer."
 %]
 
 ## Summary {: #viewer-summary}
