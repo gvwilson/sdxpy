@@ -377,7 +377,7 @@ while filtering is 1.8 times slower.
 %]
 
 We can get much more insight by [%g profiling "profiling" %] our code
-using Python [cProfile][py_cprofile] module.
+using Python [`cProfile`][py_cprofile] module.
 This tool runs a program for us,
 collects detailed information on how long functions ran,
 and reports the result:
@@ -465,7 +465,7 @@ and modify the tests in this chapter to use it.
 ### Using Arrays {: .exercise}
 
 Derive another dataframe class from `DF`
-that uses Python's [array][py_array] module for column-wise storage.
+that uses Python's [`array`][py_array] module for column-wise storage.
 How does it performance compared to other implementations?
 
 ### Crossover {: .exercise}
@@ -580,6 +580,6 @@ How does the answer depend on the number of keys and the fraction that match?
 
 ### Inspection {: .exercise}
 
-Rewrite `DfCol.filter` using Python's `inspect` module
+Rewrite `DfCol.filter` using Python's [`inspect`][py_inspect] module
 so that users' filtering functions
 only need to define parameters for the columns of interest.

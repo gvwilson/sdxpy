@@ -60,7 +60,7 @@ It isn't hard to compare simple semantic version identifiers,
 but handling [the whole standard][semver_spec]
 is almost as tricky as handling dates and times correctly.
 Our examples therefore number versions with plain integers;
-we recommend the [semantic-version][py_semver] package
+we recommend the [`semantic-version`][py_semver] package
 for working with the real thing.
 
 ## Exhaustive Search {: #pack-exhaustive}
@@ -140,7 +140,7 @@ with a few `print` statements to show the results:
 
 To generate the possibilities,
 we create a list of the available versions of each package,
-then use Python's [itertools][py_itertools] module
+then use Python's [`itertools`][py_itertools] module
 to generate the [%g cross_product "cross product" %]
 that contains all possible combinations of items
 ([%f pack-product %]):

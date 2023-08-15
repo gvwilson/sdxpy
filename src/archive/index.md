@@ -67,7 +67,7 @@ we will copy the `.bck` files back to their original locations
 The first step is to find all the files in or below a given directory
 that we need to save.
 As described in [%x glob %],
-Python's [glob][py_glob] module can do this for us.
+Python's [`glob`][py_glob] module can do this for us.
 Let's use this to create a table of files and hashes:
 
 [% inc file="hash_all.py" keep="func" %]
@@ -102,7 +102,7 @@ we would have to re-create those files and directories after each test.
 As discussed in [%x protocols %],
 a better approach is to use a [%i "mock object" %]
 instead of the real filesystem.
-The [pyfakefs][pyfakefs] module replaces key functions like `open`
+The [`pyfakefs`][pyfakefs] module replaces key functions like `open`
 with functions that behave the same way
 but act on "files" stored in memory
 ([%f archive-mock-fs %]).

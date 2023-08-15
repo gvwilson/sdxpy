@@ -37,7 +37,7 @@ Our file viewer has four classes:
 
 To make unit testing simpler,
 we start by adding one more class:
-a replacement for the screen object provided by the [curses][py_curses] module.
+a replacement for the screen object provided by the [`curses`][py_curses] module.
 This class stores the current state of the display in a rectangular grid
 so that our tests can check it easily.
 It also takes a list of keystrokes as input

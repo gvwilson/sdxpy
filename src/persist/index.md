@@ -18,8 +18,8 @@ but another is to store objects,
 i.e.,
 to save a list of dictionaries as-is
 rather than flattering it into rows and columns.
-Python's [pickle][py_pickle] module does this in a Python-specific way,
-while the [json][py_json] module saves some kinds of data as text formatted like JavaScript objects.
+Python's [`pickle`][py_pickle] module does this in a Python-specific way,
+while the [`json`][py_json] module saves some kinds of data as text formatted like JavaScript objects.
 As odd as it may seem,
 this has become a cross-language standard.
 
@@ -143,13 +143,13 @@ we can save our first data structure:
 We now need to write some unit tests.
 We will use two tricks when doing this:
 
-1.  The `StringIO` class from Python's [io][py_io] module
+1.  The `StringIO` class from Python's [`io`][py_io] module
     allows us to read from strings and write to them
     using the functions we normally use to read and write files.
     Using this lets us run our tests
     without creating lots of little files as a side effect.
 
-1.  The `dedent` function from Python's [textwrap][py_textwrap] module
+1.  The `dedent` function from Python's [`textwrap`][py_textwrap] module
     removes leading indentation from the body of a string.
     As the example below shows,
     `dedent` allows us to indent a [%i "fixture" %]

@@ -25,7 +25,7 @@ written by [Wasim Lorgat][lorgat_wasim].
 
 ## Curses {: #viewer-curses}
 
-Our starting point is the [curses][py_curses] module,
+Our starting point is the [`curses`][py_curses] module,
 which handles interaction with text terminals on several different operating systems
 in a uniform way.
 A very simple curses-based program looks like this:
@@ -87,7 +87,7 @@ First, as explained in [%x layout %],
 screens put (0, 0) in the upper left rather than the lower left,
 and increasing values of Y move down rather than up.
 To make things even more confusing,
-curses uses (row, column) coordinates,
+`curses` uses (row, column) coordinates,
 so we have to remember to write (y, x) instead of (x, y).
 
 The other oddity in this function is that
@@ -209,7 +209,7 @@ in difficult-to-debug ways.
 {: .continue}
 
 Now that we have a way to keep track of where the cursor is,
-we can tell curses to draw the cursor in the right location
+we can tell `curses` to draw the cursor in the right location
 each time it renders the screen:
 
 [% inc file="move_cursor.py" keep="main" %]
@@ -283,14 +283,14 @@ instead of a long chain of `if`/`elif` statement:
 [% inc file="dispatch_keys.py" keep="interact" %]
 
 A little experimentation showed that
-while the curses module uses names like `"KEY_DOWN"` for arrow keys,
+while the `curses` module uses names like `"KEY_DOWN"` for arrow keys,
 it returns actual [%i "control code" "control codes" %]
 for key combinations like Ctrl-X.
 The `TRANSLATE` dictionary turns these into human-readable names
 that we can glue together with `_do_` to make a method name;
 we got the hexadecimal value `"\x18"` by logging keystrokes to a file
 and the looking at its contents.
-We could probably have found this value in the curses' module's documentation
+We could probably have found this value in some documentation somewhere
 if we had looked hard enough,
 but a ten-second experiment seemed simpler.
 

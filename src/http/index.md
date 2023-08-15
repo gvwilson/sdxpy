@@ -89,7 +89,7 @@ and the body:
 
 Constructing HTTP requests is tedious,
 so most people use a library to do the repetitive work.
-The most popular one in Python is the [requests][requests] module,
+The most popular one in Python is the [`requests`][requests] module,
 and works like this:
 
 [% inc pat="requests_example.*" fill="py out" %]
@@ -124,7 +124,7 @@ We're now ready to write a simple HTTP server that will:
 4.  reply with an HTML page.
 
 Steps 1, 2, and 4 are the same from one application to another,
-so the [%i "Python standard library" %] has a module called `http.server`
+so the [%i "Python standard library" %] has a module called [`http.server`][py_http_server]
 to do most of the work.
 Here's the entire server:
 
@@ -343,7 +343,7 @@ and headers.
 ### Query Parameters {: .exercise}
 
 A URL can contain [%g query_parameter "query parameters" %].
-Read the documentation for the [urlparse][py_urlparse] module
+Read the documentation for the [`urlparse`][py_urlparse] module
 and then modify the file server example so that
 a URL containing a query parameter `bytes=N`
 (for a positive integer N)
@@ -363,7 +363,7 @@ Modify the file server so that:
 
 ### Better Content Types {: .exercise}
 
-Read the documentation for the [mimetypes][py_mimetypes] module
+Read the documentation for the [`mimetypes`][py_mimetypes] module
 and then modify the file server to return the correct content type
 for files that aren't HTML (such as images).
 
@@ -397,7 +397,7 @@ What status code should the server return to the client in each case?
     if the path portion of the URL identifies a directory,
     the server returns a plain text list of the directory's contents.
 
-2.  Write tests for this using the [pyfakefs][pyfakefs] module.
+2.  Write tests for this using the [`pyfakefs`][pyfakefs] module.
 
 ### Dynamic Results {: .exercise}
 

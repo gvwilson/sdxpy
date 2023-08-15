@@ -210,7 +210,7 @@ this test will warn us if it does.
 Our `Reader` and `Writer` aren't good for much beyond testing our VM,
 but there are other tools that can simulate input and output
 for a wider range of applications.
-[Expect][expect] (which can be used through Python's [pexpect][pexpect] module)
+[Expect][expect] (which can be used through Python's [`pexpect`][pexpect] module)
 is often used to script command-line applications
 as well as to test them.
 [Selenium][selenium] and [Cypress][cypress] do the same for browser-based applications:

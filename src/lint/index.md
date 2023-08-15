@@ -13,7 +13,7 @@ This book relies on about 1800 lines of Python to turn Markdown into HTML,
 fill in cross-references,
 and so on.
 To keep that code readable,
-we use [black][black], [flake8][flake8], and [isort][isort]
+we use [`black`][black], [`flake8`][flake8], and [`isort`][isort]
 to check that lines aren't too long,
 that classes and functions have consistent names,
 that modules are imported in a consistent order,
@@ -40,7 +40,7 @@ variables,
 array indexing operations,
 and so on.
 
-Python's [ast][py_ast] module will parse Python source code
+Python's [`ast`][py_ast] module will parse Python source code
 and produce an AST for us.
 For example,
 [%f lint-ast-simple %] shows key parts of the AST
@@ -82,7 +82,7 @@ Since each node's structure is a little different,
 we would have to write one function for each type of node
 that knew which fields of that node were worth exploring.
 
-Luckily for us the ast module has tools to do this for us.
+Luckily for us the `ast` module has tools to do this for us.
 The class `ast.NodeVisitor` uses
 the now-familiar [%i "Visitor pattern" "Visitor" %] [%i "design pattern" %]
 to recurse through a structure like the one in [%f lint-ast-simple %].
@@ -154,7 +154,7 @@ it chooses the third option:
 
 We can built a linter that finds dictionaries like `has_duplicates`
 with just a few lines of code
-and the `Counter` class from Python's [collections][py_collections] module
+and the `Counter` class from Python's [`collections`][py_collections] module
 (which implements a specialized dictionary that counts
 how many times a key has been seen).
 We define a `visit_Dict` method for `NodeVisitor` 
@@ -216,7 +216,7 @@ and report any problems:
 
 We could just use a list of three values to record information for each scope,
 but it's a little cleaner to use `namedtuple`
-(which also comes from Python's collections module):
+(which also comes from Python's `collections` module):
 
 [% inc file="find_unused_variables.py" keep="scope" %]
 
@@ -310,7 +310,7 @@ then reports any functions from the first file that it hasn't seen.
 
 ### Sorting Imports {: .exercise}
 
-[isort][isort] checks that the imports in a file are sorted correctly:
+[`isort`][isort] checks that the imports in a file are sorted correctly:
 modules from [%i "Python standard library" "Python's standard library" %]
 come first (in alphabetical order),
 then installed modules (also in alphabetical order)

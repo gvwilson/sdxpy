@@ -136,7 +136,7 @@ Python stores variables in a structure similar to a [%i "dictionary" %].
 Let's run the Python interpreter and call the `globals` function.
 To make its output easier to read,
 we will [%g pretty_print "pretty-print" %] it
-using Python's [pprint][py_pprint] module:
+using Python's [`pprint`][py_pprint] module:
 
 [% inc pat="globals.*" fill="py out" %]
 

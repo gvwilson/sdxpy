@@ -392,7 +392,7 @@ when they're down there on disk.
    caption="Packing and unpacking binary values."
 %]
 
-Python's [struct][py_struct] module packs and unpacks data for us.
+Python's [`struct`][py_struct] module packs and unpacks data for us.
 The function `pack(format, val_1, val_2, …)`
 takes a format string and a bunch of values as arguments
 and packs them into a `bytes` object.
@@ -564,7 +564,7 @@ Write another function that converts a string of 1's and 0's into an integer
 
 ### Storing Arrays {: .exercise}
 
-Python's [array][py_array] module manages a block of basic values
+Python's [`array`][py_array] module manages a block of basic values
 (characters, integers, or floating-point numbers).
 Write a function that takes a list as input,
 checks that all values in the list are of the same basic type,
@@ -573,7 +573,7 @@ packs them into an array and then uses the `struct` module to pack that.
 
 ### Performance {: .exercise}
 
-Getting a single value out of an array created with the [array][py_array] module takes time,
+Getting a single value out of an array created with the `array` module takes time,
 since the value must be boxed before it can be used.
 Write some tests to see how much slower working with values in arrays is
 compared to working with values in lists.

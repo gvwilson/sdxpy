@@ -123,7 +123,7 @@ when we run the client and server in separate terminal windows.
 
 There's a *lot* going on here,
 so most people who have to program at this level
-use Python's `socketserver` module,
+use Python's [`socketserver`][py_socketserver] module,
 which provides two things:
 a class called `TCPServer` that manages incoming connections
 and another class called `BaseRequestHandler`
