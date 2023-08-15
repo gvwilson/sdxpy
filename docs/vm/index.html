@@ -4,7 +4,7 @@
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="repo" content="https://github.com/gvwilson/sdxpy">
-  <meta name="build_date" content="2023-08-14">
+  <meta name="build_date" content="2023-08-15">
   <meta name="template" content="default">
   <meta name="major" content="vm">
   <meta name="has_slides" content="true">
@@ -273,10 +273,10 @@
           
 <div class="draft notex">
   <p class="draft">
-    DRAFT 2023-08-14
+    DRAFT 2023-08-15
   </p>
   <p>
-    awaiting revision<br>
+    revised 2023-08-15<br>
     Please use section heading links to submit feedback
     or go to <a href="https://github.com/gvwilson/sdxpy">https://github.com/gvwilson/sdxpy</a>.
   </p>
@@ -361,9 +361,17 @@
 
 
           <div class="page-toc"></div>
-          <p>There was still a lot of magic in our interpreter in <a class="x-ref" href="../interp/">Chapter 7</a>,
-so this chapter builds something that mimics real hardware more closely.
-If you want to dive deeper,
+          <p>The interpreter in <a class="x-ref" href="../interp/">Chapter 7</a> relied on Python to do
+most of the actual work.
+The standard version of Python is implemented in C,
+and relies on C&rsquo;s operators to add numbers, index arrays, and so on,
+but C is compiled to instructions for a particular processor.
+Each operation in the little language of <a class="x-ref" href="../interp/">Chapter 7</a>
+is therefore expanded by several layers of software
+to become something that hardware can actually run.
+To show how that lower layer works,
+this chapter builds a simulator of a small computer.
+If you want to dive deeper into programming at this level,
 have a look at the game <span class="ix-entry" ix-key="Human Resource Machine" markdown="1"><a href="https://tomorrowcorporation.com/humanresourcemachine">Human Resource Machine</a></span>.</p>
 <h2 id="vm-arch">Section 25.1: Architecture</h2>
 <p>Our <a class="gl-ref" href="../glossary/#gl:virtual_machine" title="A program that pretends to be a computer. This may seem a bit redundant, but VMs are quick to create and start up, and changes made inside the virtual machine are contained within that VM so we can install new packages or run a completely different operating system without affecting the underlying computer." markdown="1">virtual machine</a>
@@ -403,13 +411,13 @@ that gives those number human-readable names.</p>
 <p>The instructions for our VM are 3 bytes long.
 The <a class="gl-ref" href="../glossary/#gl:op_code" title="The numerical operation code for an instruction that a processor can execute." markdown="1">op code</a> fits in one byte,
 and each instruction may include zero, one, or two single-byte operands.
-(Instructions are often called <a class="gl-ref" href="../glossary/#gl:bytecode" title="A set of instructions designed to be executed efficiently by an interpreter." markdown="1">bytecode</a>,
+(Instructions are sometimes called <a class="gl-ref" href="../glossary/#gl:bytecode" title="A set of instructions designed to be executed efficiently by an interpreter." markdown="1">bytecode</a>,
 since they&rsquo;re packed into bytes,
-but so is everything else in a computer…)</p>
+but so is everything else in a computer.)</p>
 <p>Each operand is a register identifier,
 a constant,
-or an address
-(which is just a constant that identifies a location in memory).
+or an address,
+which is just a constant that identifies a location in memory.
 Since constants have to fit in one byte,
 this means that the largest number we can represent directly is 256.
 <a class="tbl-ref" href="../vm/#vm-op-codes">Table 25.1</a> uses the letters <code>r</code>, <code>c</code>, and <code>a</code>
@@ -420,102 +428,102 @@ and <code>a</code> indicates an address.</p>
 <div class="table"><table id="vm-op-codes"><caption>Table 25.1: Virtual machine op codes</caption>
 <thead>
 <tr>
-<th>Instruction</th>
-<th>Code</th>
-<th>Format</th>
-<th>Action</th>
-<th>Example</th>
-<th>Equivalent</th>
+<th style="text-align: left;">Name</th>
+<th style="text-align: right;">Code</th>
+<th style="text-align: left;">Format</th>
+<th style="text-align: left;">Action</th>
+<th style="text-align: left;">Example</th>
+<th style="text-align: left;">Equivalent</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>hlt</code></td>
-<td>1</td>
-<td><code>--</code></td>
-<td>Halt program</td>
-<td><code>hlt</code></td>
-<td><code>process.exit(0)</code></td>
+<td style="text-align: left;"><code>hlt</code></td>
+<td style="text-align: right;">1</td>
+<td style="text-align: left;"><code>--</code></td>
+<td style="text-align: left;">Halt program</td>
+<td style="text-align: left;"><code>hlt</code></td>
+<td style="text-align: left;"><code>sys.exit(0)</code></td>
 </tr>
 <tr>
-<td><code>ldc</code></td>
-<td>2</td>
-<td><code>rc</code></td>
-<td>Load constant</td>
-<td><code>ldc R0 123</code></td>
-<td><code>R0 := 123</code></td>
+<td style="text-align: left;"><code>ldc</code></td>
+<td style="text-align: right;">2</td>
+<td style="text-align: left;"><code>rc</code></td>
+<td style="text-align: left;">Load constant</td>
+<td style="text-align: left;"><code>ldc R0 99</code></td>
+<td style="text-align: left;"><code>R0 = 99</code></td>
 </tr>
 <tr>
-<td><code>ldr</code></td>
-<td>3</td>
-<td><code>rr</code></td>
-<td>Load register</td>
-<td><code>ldr R0 R1</code></td>
-<td><code>R0 := memory[R1]</code></td>
+<td style="text-align: left;"><code>ldr</code></td>
+<td style="text-align: right;">3</td>
+<td style="text-align: left;"><code>rr</code></td>
+<td style="text-align: left;">Load register</td>
+<td style="text-align: left;"><code>ldr R0 R1</code></td>
+<td style="text-align: left;"><code>R0 = memory[R1]</code></td>
 </tr>
 <tr>
-<td><code>cpy</code></td>
-<td>4</td>
-<td><code>rr</code></td>
-<td>Copy register</td>
-<td><code>cpy R0 R1</code></td>
-<td><code>R0 := R1</code></td>
+<td style="text-align: left;"><code>cpy</code></td>
+<td style="text-align: right;">4</td>
+<td style="text-align: left;"><code>rr</code></td>
+<td style="text-align: left;">Copy register</td>
+<td style="text-align: left;"><code>cpy R0 R1</code></td>
+<td style="text-align: left;"><code>R0 = R1</code></td>
 </tr>
 <tr>
-<td><code>str</code></td>
-<td>5</td>
-<td><code>rr</code></td>
-<td>Store register</td>
-<td><code>str R0 R1</code></td>
-<td><code>memory[R1] := R0</code></td>
+<td style="text-align: left;"><code>str</code></td>
+<td style="text-align: right;">5</td>
+<td style="text-align: left;"><code>rr</code></td>
+<td style="text-align: left;">Store register</td>
+<td style="text-align: left;"><code>str R0 R1</code></td>
+<td style="text-align: left;"><code>memory[R1] = R0</code></td>
 </tr>
 <tr>
-<td><code>add</code></td>
-<td>6</td>
-<td><code>rr</code></td>
-<td>Add</td>
-<td><code>add R0 R1</code></td>
-<td><code>R0 := R0 + R1</code></td>
+<td style="text-align: left;"><code>add</code></td>
+<td style="text-align: right;">6</td>
+<td style="text-align: left;"><code>rr</code></td>
+<td style="text-align: left;">Add</td>
+<td style="text-align: left;"><code>add R0 R1</code></td>
+<td style="text-align: left;"><code>R0 = R0 + R1</code></td>
 </tr>
 <tr>
-<td><code>sub</code></td>
-<td>7</td>
-<td><code>rr</code></td>
-<td>Subtract</td>
-<td><code>sub R0 R1</code></td>
-<td><code>R0 := R0 - R1</code></td>
+<td style="text-align: left;"><code>sub</code></td>
+<td style="text-align: right;">7</td>
+<td style="text-align: left;"><code>rr</code></td>
+<td style="text-align: left;">Subtract</td>
+<td style="text-align: left;"><code>sub R0 R1</code></td>
+<td style="text-align: left;"><code>R0 = R0 - R1</code></td>
 </tr>
 <tr>
-<td><code>beq</code></td>
-<td>8</td>
-<td><code>ra</code></td>
-<td>Branch if equal</td>
-<td><code>beq R0 123</code></td>
-<td><code>if (R0 === 0) PC := 123</code></td>
+<td style="text-align: left;"><code>beq</code></td>
+<td style="text-align: right;">8</td>
+<td style="text-align: left;"><code>ra</code></td>
+<td style="text-align: left;">Branch if equal</td>
+<td style="text-align: left;"><code>beq R0 99</code></td>
+<td style="text-align: left;"><code>if (R0==0) PC = 99</code></td>
 </tr>
 <tr>
-<td><code>bne</code></td>
-<td>9</td>
-<td><code>ra</code></td>
-<td>Branch if not equal</td>
-<td><code>bne R0 123</code></td>
-<td><code>if (R0 !== 0) PC := 123</code></td>
+<td style="text-align: left;"><code>bne</code></td>
+<td style="text-align: right;">9</td>
+<td style="text-align: left;"><code>ra</code></td>
+<td style="text-align: left;">Branch if not equal</td>
+<td style="text-align: left;"><code>bne R0 99</code></td>
+<td style="text-align: left;"><code>if (R0!=0) PC = 99</code></td>
 </tr>
 <tr>
-<td><code>prr</code></td>
-<td>10</td>
-<td><code>r-</code></td>
-<td>Print register</td>
-<td><code>prr R0</code></td>
-<td><code>console.log(R0)</code></td>
+<td style="text-align: left;"><code>prr</code></td>
+<td style="text-align: right;">10</td>
+<td style="text-align: left;"><code>r-</code></td>
+<td style="text-align: left;">Print register</td>
+<td style="text-align: left;"><code>prr R0</code></td>
+<td style="text-align: left;"><code>print(R0)</code></td>
 </tr>
 <tr>
-<td><code>prm</code></td>
-<td>11</td>
-<td><code>r-</code></td>
-<td>Print memory</td>
-<td><code>prm R0</code></td>
-<td><code>console.log(memory[R0])</code></td>
+<td style="text-align: left;"><code>prm</code></td>
+<td style="text-align: right;">11</td>
+<td style="text-align: left;"><code>r-</code></td>
+<td style="text-align: left;">Print memory</td>
+<td style="text-align: left;"><code>prm R0</code></td>
+<td style="text-align: left;"><code>print(memory[R0])</code></td>
 </tr>
 </tbody>
 </table>
@@ -574,7 +582,7 @@ we copy those numbers into memory and reset the instruction pointer and register
     <span class="bp">self</span><span class="o">.</span><span class="n">reg</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">NUM_REG</span>
 </code></pre></div>
 </div>
-<p>To handle the next instruction,
+<p>To execute the next instruction,
 the VM gets the value in memory that the instruction pointer currently refers to
 and moves the instruction pointer on by one address.
 It then uses <span class="ix-entry" ix-key="bitwise operation" markdown="1">bitwise operations</span>
@@ -599,7 +607,17 @@ to extract the op code and operands from the instruction
 </figure>
 
 <p class="continue">We always unpack two operands regardless of whether the instructions has them or not,
-since this is what a hardware implementation would be.</p>
+since this is what most hardware implementations would do.</p>
+<div class="callout">
+<h3>Processor Design</h3>
+<p>Some processor do have variable-length instructions,
+but they make the hardware more complicated and therefore slower.
+To decide whether these costs are worth paying,
+engineers rely on simulation and profiling (<a class="x-ref" href="../perf/">Chapter 15</a>).
+Backward compatibility is also an issue:
+if earlier processors supported variable-length instructions,
+later ones must somehow do so as well in order to run old programs.</p>
+</div>
 <p>The next step is to add a <code>run</code> method to our VM
 that fetches instructions and executes them until told to stop:</p>
 <div class="code-sample lang-py" title="vm.py">
@@ -899,9 +917,8 @@ we need to figure out where each allocation lies and create a label accordingly:
         <span class="n">lbl</span><span class="p">,</span> <span class="n">num_words_text</span> <span class="o">=</span> <span class="n">fields</span>
         <span class="k">assert</span> <span class="n">lbl</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">labels</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Duplicate label &#39;</span><span class="si">{</span><span class="n">lbl</span><span class="si">}</span><span class="s2">&#39; in allocation&quot;</span>
         <span class="n">num_words</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">num_words_text</span><span class="p">)</span>
-        <span class="k">assert</span> <span class="p">(</span>
-            <span class="n">base_of_data</span> <span class="o">+</span> <span class="n">num_words</span>
-        <span class="p">)</span> <span class="o">&lt;</span> <span class="n">RAM_LEN</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Allocation &#39;</span><span class="si">{</span><span class="n">lbl</span><span class="si">}</span><span class="s2">&#39; requires too much memory&quot;</span>
+        <span class="k">assert</span> <span class="p">(</span><span class="n">base_of_data</span> <span class="o">+</span> <span class="n">num_words</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">RAM_LEN</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">&quot;Allocation &#39;</span><span class="si">{</span><span class="n">lbl</span><span class="si">}</span><span class="s2">&#39; requires too much memory&quot;</span>
         <span class="n">labels</span><span class="p">[</span><span class="n">lbl</span><span class="p">]</span> <span class="o">=</span> <span class="n">base_of_data</span>
         <span class="n">base_of_data</span> <span class="o">+=</span> <span class="n">num_words</span>
 </code></pre></div>

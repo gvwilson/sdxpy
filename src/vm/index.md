@@ -7,12 +7,20 @@ syllabus:
 depends:
 -   interp
 -   binary
-status: "awaiting revision"
+status: "revised 2023-08-15"
 ---
 
-There was still a lot of magic in our interpreter in [%x interp %],
-so this chapter builds something that mimics real hardware more closely.
-If you want to dive deeper,
+The interpreter in [%x interp %] relied on Python to do
+most of the actual work.
+The standard version of Python is implemented in C,
+and relies on C's operators to add numbers, index arrays, and so on,
+but C is compiled to instructions for a particular processor.
+Each operation in the little language of [%x interp %]
+is therefore expanded by several layers of software
+to become something that hardware can actually run.
+To show how that lower layer works,
+this chapter builds a simulator of a small computer.
+If you want to dive deeper into programming at this level,
 have a look at the game [%i "Human Resource Machine" url="human_resource_machine" %].
 
 ## Architecture {: #vm-arch}
@@ -53,14 +61,14 @@ that gives those number human-readable names.
 The instructions for our VM are 3 bytes long.
 The [%g op_code "op code" %] fits in one byte,
 and each instruction may include zero, one, or two single-byte operands.
-(Instructions are often called [%g bytecode "bytecode" %],
+(Instructions are sometimes called [%g bytecode "bytecode" %],
 since they're packed into bytes,
-but so is everything else in a computer…)
+but so is everything else in a computer.)
 
 Each operand is a register identifier,
 a constant,
-or an address
-(which is just a constant that identifies a location in memory).
+or an address,
+which is just a constant that identifies a location in memory.
 Since constants have to fit in one byte,
 this means that the largest number we can represent directly is 256.
 [% t vm-op-codes %] uses the letters `r`, `c`, and `a`
@@ -70,19 +78,19 @@ where `r` indicates a register identifier,
 and `a` indicates an address.
 
 <div class="table" id="vm-op-codes" caption="Virtual machine op codes" markdown="1">
-| Instruction | Code | Format | Action              | Example      | Equivalent                |
-| ----------- | ---- | ------ | ------------------- | ------------ | ------------------------- |
-|  `hlt`      |    1 | `--`   | Halt program        | `hlt`        | `process.exit(0)`         |
-|  `ldc`      |    2 | `rc`   | Load constant       | `ldc R0 123` | `R0 := 123`               |
-|  `ldr`      |    3 | `rr`   | Load register       | `ldr R0 R1`  | `R0 := memory[R1]`        |
-|  `cpy`      |    4 | `rr`   | Copy register       | `cpy R0 R1`  | `R0 := R1`                |
-|  `str`      |    5 | `rr`   | Store register      | `str R0 R1`  | `memory[R1] := R0`        |
-|  `add`      |    6 | `rr`   | Add                 | `add R0 R1`  | `R0 := R0 + R1`           |
-|  `sub`      |    7 | `rr`   | Subtract            | `sub R0 R1`  | `R0 := R0 - R1`           |
-|  `beq`      |    8 | `ra`   | Branch if equal     | `beq R0 123` | `if (R0 === 0) PC := 123` |
-|  `bne`      |    9 | `ra`   | Branch if not equal | `bne R0 123` | `if (R0 !== 0) PC := 123` |
-|  `prr`      |   10 | `r-`   | Print register      | `prr R0`     | `console.log(R0)`         |
-|  `prm`      |   11 | `r-`   | Print memory        | `prm R0`     | `console.log(memory[R0])` |
+| Name  | Code | Format | Action              | Example     | Equivalent           |
+| :---- | ---: | :----- | :------------------ | :---------- | :------------------- |
+| `hlt` |    1 | `--`   | Halt program        | `hlt`       | `sys.exit(0)`        |
+| `ldc` |    2 | `rc`   | Load constant       | `ldc R0 99` | `R0 = 99`            |
+| `ldr` |    3 | `rr`   | Load register       | `ldr R0 R1` | `R0 = memory[R1]`    |
+| `cpy` |    4 | `rr`   | Copy register       | `cpy R0 R1` | `R0 = R1`            |
+| `str` |    5 | `rr`   | Store register      | `str R0 R1` | `memory[R1] = R0`    |
+| `add` |    6 | `rr`   | Add                 | `add R0 R1` | `R0 = R0 + R1`       |
+| `sub` |    7 | `rr`   | Subtract            | `sub R0 R1` | `R0 = R0 - R1`       |
+| `beq` |    8 | `ra`   | Branch if equal     | `beq R0 99` | `if (R0==0) PC = 99` |
+| `bne` |    9 | `ra`   | Branch if not equal | `bne R0 99` | `if (R0!=0) PC = 99` |
+| `prr` |   10 | `r-`   | Print register      | `prr R0`    | `print(R0)`          |
+| `prm` |   11 | `r-`   | Print memory        | `prm R0`    | `print(memory[R0])`  |
 </div>
 
 To start building our virtual machine,
@@ -110,7 +118,7 @@ we copy those numbers into memory and reset the instruction pointer and register
 
 [% inc file="vm.py" keep="init" %]
 
-To handle the next instruction,
+To execute the next instruction,
 the VM gets the value in memory that the instruction pointer currently refers to
 and moves the instruction pointer on by one address.
 It then uses [%i "bitwise operation" "bitwise operations" %]
@@ -128,8 +136,20 @@ to extract the op code and operands from the instruction
 %]
 
 We always unpack two operands regardless of whether the instructions has them or not,
-since this is what a hardware implementation would be.
+since this is what most hardware implementations would do.
 {: .continue}
+
+<div class="callout" markdown="1">
+### Processor Design
+
+Some processor do have variable-length instructions,
+but they make the hardware more complicated and therefore slower.
+To decide whether these costs are worth paying,
+engineers rely on simulation and profiling ([%x perf %]).
+Backward compatibility is also an issue:
+if earlier processors supported variable-length instructions,
+later ones must somehow do so as well in order to run old programs.
+</div>
 
 The next step is to add a `run` method to our VM
 that fetches instructions and executes them until told to stop:
