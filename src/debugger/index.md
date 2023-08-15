@@ -4,10 +4,10 @@ syllabus:
 -   Testing interactive programs is easier if their inputs and outputs can easily be replaced with mock objects.
 -   Debuggers usually implement breakpoints by temporarily replacing actual instructions with special ones.
 -   Using lookup tables for function or method dispatch makes programs easier to extend.
-status: "awaiting revision"
 depends:
 -   vm
 -   viewer
+status: "revised 2023-08-15"
 ---
 
 We have finally come to another of the questions that sparked this book:
@@ -18,6 +18,8 @@ but are taught far less often
 This chapter builds a simple single-stepping debugger
 for the [%i "virtual machine" %] of [%x vm %]
 and shows how we can test interactive applications.
+
+## One Step at a Time {: #debugger-step}
 
 Before we start work,
 let's consolidate and reorganize the code in our virtual machine.
@@ -40,9 +42,7 @@ For now,
 
 [% inc file="vm_base.py" keep="write" %]
 
-## One Step at a Time {: #debugger-step}
-
-The virtual machine we're starting from loads a program and runs it to completion,
+Our virtual machine now loads a program and runs it to completion,
 so it's either running or finished.
 We want to add a third state for single-step execution,
 so let's start by adding an [%i "enumeration" %] to `architecture.py`:
@@ -96,12 +96,13 @@ to create a printable representation of an instruction and its operands:
 
 We build the reverse lookup table from the `OPS` table in `architecture.py`
 so that it's always in sync with the table we're using to construct operations
-([%f debugger-table %]).
-If we wrote the reverse lookup table ourselves,
-sooner or later we'd forget to update it when updating the forward lookup table:
-{: .continue}
+([%f debugger-table %]):
 
 [% inc file="vm_step.py" keep="lookup" %]
+
+If we wrote the reverse lookup table ourselves,
+sooner or later we'd forget to update it when updating the forward lookup table.
+{: .continue}
 
 [% figure
    slug="debugger-table"
@@ -139,7 +140,8 @@ which expect the function being tested to run to completion after being launched
 To make our single-stepping VM testable,
 we have to give it input when it wants some
 and capture its output for later inspection.
-We had a similar problem when testing the web server of [%x ftp %],
+We had a similar problem when testing
+the web server of [%x ftp %] and the editor of [%x undo %],
 and our solution is the similar:
 we will replace `input` and `print` with [%i "mock object" "mock objects" %].
 
@@ -248,6 +250,7 @@ we modify `interact` to choose operations from a lookup table
 called `self.handlers`.
 Its keys are the commands typed by the user
 and its values are the operation methods we just created:
+{: .continue}
 
 [% inc file="vm_extend.py" keep="interact" %]
 
@@ -301,8 +304,7 @@ and stop if it was at one of those addresses
    caption="Storing breakpoints beside the program."
 %]
 
-Instead of doing this,
-we will add a new instruction to our architecture called `brk`.
+An alternative design is to add a new instruction to our architecture called `brk`.
 When the user sets a breakpoint at some address,
 we replace the instruction at that address with a breakpoint instruction
 and store the original instruction in a lookup table.

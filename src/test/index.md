@@ -4,8 +4,8 @@ syllabus:
 -   Python stores local and global variables in dictionary-like structures.
 -   A unit test function performs an operation on a fixture and passes, fails, or produces an error.
 -   A program can use introspection to find functions and other objects at runtime.
-status: "revised 2023-07-30"
 depends:
+status: "revised 2023-07-30"
 ---
 
 Not all software needs rigorous testing:

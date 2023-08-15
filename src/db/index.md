@@ -5,11 +5,11 @@ syllabus:
 -   Classes are data structures that can be saved like any other data.
 -   The filesystem saves data in fixed-size pages.
 -   We can improve the efficiency of a database by saving records in blocks.
-status: "revised 2023-08-08"
 depends:
 -   persist
 -   binary
 -   reflect
+status: "revised 2023-08-08"
 ---
 
 Persisting objects ([%x persist %]) lets us save and restore program state,

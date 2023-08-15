@@ -6,11 +6,11 @@ syllabus:
 -   Operations involving multiple files may suffer from race conditions.
 -   Use a base class to specify what a component must be able to do
     and derive child classes to implement those operations.
-status: "awaiting revision"
 depends:
 -   dup
 -   glob
 -   reflect
+status: "awaiting revision"
 ---
 
 We've written almost a thousand lines of Python so far.

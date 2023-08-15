@@ -5,9 +5,9 @@ syllabus:
 -   Programs can use bitwise operators to manipulate the bits representing data directly.
 -   Low-level compiled languages usually store raw values, while high-level interpreted languages use boxed values.
 -   Sets of values can be packed into contiguous byte arrays for efficient transmission and storage.
-status: "revised 2023-08-07"
 depends:
 -   persist
+status: "revised 2023-08-07"
 ---
 
 Python and other high-level languages shield programmers from the low-level details

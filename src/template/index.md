@@ -4,10 +4,10 @@ syllabus:
 -   A static site generator has the same core features as a programming language.
 -   Special-purpose mini-languages quickly become as complex as mainstream languages.
 -   Static methods are a convenient way to group functions together.
-status: "revised 2023-08-04"
 depends:
 -   interp
 -   check
+status: "revised 2023-08-04"
 ---
 
 Every program needs documentation,

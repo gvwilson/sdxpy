@@ -5,9 +5,9 @@ syllabus:
 -   Build rules form a directed graph which must not contain cycles.
 -   Pattern rules describe the dependencies and recipes for sets of similar files.
 -   Pattern rules can use automatic variables to specify targets and dependencies in recipes.
-status: "revised 2023-08-10"
 depends:
 -   persist
+status: "revised 2023-08-10"
 ---
 
 Suppose that `plot.py` produces `result.svg` from `collated.csv`,

@@ -5,9 +5,9 @@ syllabus:
 -   Programs send and receive messages through numbered sockets.
 -   The program that receives a message is responsible for interpreting the bytes in the message.
 -   To test a program that uses the network, replace the network with a mock object.
-status: "revised 2023-08-13"
 depends:
 -   archive
+status: "revised 2023-08-13"
 ---
 
 The Internet is simpler than most people realize

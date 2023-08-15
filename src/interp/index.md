@@ -7,10 +7,10 @@ syllabus:
     to functions that implement low-level details.
 -   Programs store variables in stacked dictionaries called environments.
 -   One way to evaluate a program's design is to ask how extensible it is.
-status: "revised 2023-07-30"
 depends:
 -   oop
 -   test
+status: "revised 2023-07-30"
 ---
 
 [%x oop %] and [%x test %] introduced the idea that programs are just data.

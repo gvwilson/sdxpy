@@ -4,10 +4,10 @@ syllabus:
 -   Record actions and state to check behavior these mock objects.
 -   Use objects to represent actions to record history and enable undo.
 -   Recording state is easier but more expensive than recording changes.
-status: "revised 2023-08-14"
 depends:
 -   persist
 -   viewer
+status: "revised 2023-08-14"
 ---
 
 Viewing text files is useful,

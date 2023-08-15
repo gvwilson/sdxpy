@@ -8,8 +8,8 @@ syllabus:
 -   Use standard refactorings to move code from one working state to another.
 -   Build and check the parts of your code you are least sure of first
     to find out if your design will work.
-status: "revised 2023-07-28"
 depends:
+status: "revised 2023-07-28"
 ---
 
 We used `*.txt` to tell the duplicate file finder of [%x dup %] which files to compare.

@@ -5,8 +5,8 @@ syllabus:
 -   The output of a hash function is deterministic but not predictable.
 -   A good hash function's output is evenly distributed.
 -   A cryptographic hash function generates a unique identifier for a file's contents.
-status: "revised 2023-07-27"
 depends:
+status: "revised 2023-07-27"
 ---
 
 Suppose we want to find duplicated files,

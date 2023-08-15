@@ -5,9 +5,9 @@ syllabus:
 -   Users should be able to extend persistence to handle objects of their own types.
 -   Software designs should be open for extension but closed for modification.
 -   Extensibility can be implemented using multiple inheritance, duck typing, or helper classes.
-status: "revised 2023-08-07"
 depends:
 -   interp
+status: "revised 2023-08-07"
 ---
 
 Version control can keep track of our files,

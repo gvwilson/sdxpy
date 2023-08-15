@@ -7,10 +7,10 @@ syllabus:
 -   Use decorators to wrap functions after defining them.
 -   Use closures to create decorators that take extra parameters.
 -   Use the iterator protocol to make objects work with for loops.
-status: "revised 2023-07-31"
 depends:
 -   func
 -   oop
+status: "revised 2023-07-31"
 ---
 
 This book is supposed to teach software design
