@@ -1,5 +1,5 @@
 ---
-status: "awaiting revision"
+status: "revised 2023-08-15"
 ---
 
 [% figure
@@ -24,7 +24,7 @@ Architecture and typography have deep roots,
 and starting in the early 20th Century,
 people like [Christopher Dresser][dresser_christopher],
 [Jo Sinel][sinel_joseph],
-and above all [Raymond Loewy][loewy_raymond]
+and [Raymond Loewy][loewy_raymond]
 established industrial design around the idea that
 mass-produced artifacts were worthy of serious analysis
 from an aesthetic as well as a utilitarian point of view.
@@ -42,13 +42,14 @@ What's missing is the third leg of the industrial design tripod:
 - Did its design facilitate its manufacture and maintenance?
 
 At a deeper level,
-what's *really* missing is the combination of an agreed vocabulary and a suite of canonical examples
-that would allow us to critique software
-in the way that we can critique a couch or a train.
+what's *really* missing is a shared vocabulary
+and a suite of canonical examples
+that would give us a basis for critiquing software
+in the way that we can a train or a sofa.
 We use words like "elegant" when referring to Unix's pipe-and-filter model,
 but when asked to explain,
 we run out of meaning long before any reasonably intelligent industrial designer
-runs out of ways to think about the design of a new blender.
+runs out of things to say about the design of a toenail clipper.
 Will the materials hold up under constant use?
 Can it be assembled at a reasonable cost?
 Will people understand how to use it without having to wade through a manual?
@@ -58,35 +59,18 @@ and gives students the tools they need to tell the good from the bad.
 
 In retrospect,
 this is what [%b Oram2007 Brown2011 Brown2012 %] were groping toward.
-I think that if our community had decided fifty years ago to think of what we do as
-"industrial design for software"
+If we had decided fifty years ago to call programming "industrial design for software"
 rather than "software engineering",
 our conversations would be intellectually richer today.
-
 I hope this book will help us get there.
-I hope that we learn how to talk about the beauty of software as well,
-because it *is* beautiful,
-and we deserve to have ways to say that.
+I hope that some day we'll be able to talk to each other about the beauty of software
+because it *is* beautiful and we deserve to have ways to say that.
+
 I also hope that your journey won't stop here.
 If you would like to add a chapter to this book
 or translate it into another language,
-your help would be very welcome:
-please see [%x intro %] and [%x contrib %] for more information.
-
-Finally,
-experienced developers know that programming well isn't enough.
-If you work yourself to exhaustion,
-leave people out of important discussions,
-or base your opinions on TED talks,
-you may create a good implementation of the wrong thing.
-On a larger scale,
-programmers have enabled [%i "pervasive surveillance" %],
-online [%i "harassment" %] and [%i "radicalization" %],
-and the [%i "algorithmic inequality" "concentration of wealth and power" %]
-in a few unaccountable hands.
-If we truly want to make the world a better place,
-we need to focus on making things that are good
-as well as making things well.
+please see [%x intro %] and [%x contrib %].
+Until then:
 
 <div class="center" markdown="1">
 Start where you are.<br/>
