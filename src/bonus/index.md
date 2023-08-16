@@ -1,10 +1,10 @@
 ---
-status: "awaiting revision"
+status: "revised 2023-08-16"
 ---
 
-Each of the chapters in this book has been designed to fit into an hour (and a bit).
+Each chapter in this book is designed to be teachable in one classroom hour.
 This appendix presents material that extends core ideas
-but would bust that [%g attention_budget "attention budget" %].
+but would break that [%g attention_budget "attention budget" %].
 
 ## Using Function Attributes {: #bonus-attributes}
 
@@ -23,8 +23,8 @@ and `__doc__` holds its [%i "docstring" %]:
 [% inc file="func_attr.py" keep="print" %]
 [% inc file="func_attr.out" %]
 
-We can modify our test runner to use this for reporting tests' results
-using the function's `__name__` attribute
+We can modify the test runner of [%x test %]
+to use the function's `__name__` attribute in reports
 instead of the key in the `globals` dictionary:
 
 [% inc file="with_name.py" keep="run" %]
@@ -48,7 +48,7 @@ The output is now:
 [% inc file="docstring.out" %]
 
 Instead of (ab)using docstrings like this,
-we can add attributes of our own to test functions.
+we can instead add our own attributes to functions.
 Let's say that if a function has an attribute called `skip` with the value `True`
 then the function is to be skipped,
 while if it has an attribute called `fail` whose value is `True`
@@ -113,12 +113,6 @@ thing and thing.part
 will produce `None` if `thing` is `None`
 and `reference.part` if it isn't.
 {: .continue}
-
-## Dynamic Loading {: #bonus-load}
-
-*This material extends [%x template %].*
-
-[% fixme "Explain how to load modules dynamically given a list of names." %]
 
 ## Extension {: #bonus-extension}
 
@@ -212,16 +206,15 @@ for each kind of node.
 
 *This material extends [%x lint %].*
 
-For our last example of finding things,
-let's build a tool that tells us which methods are defined in which classes.
-(We used a tool like this when writing this book
-to keep track of examples that evolved step by step.)
-Here's a test file that defines four classes,
+In order to keep track of the code we wrote for this book,
+we built a tool that reports which methods are defined or redefined in which classes.
+To show how it works,
+this file that defines four classes,
 each of which defines or redefines some methods:
 
 [% inc file="inheritance_example.py" %]
 
-As before,
+As in [%x lint %],
 our class's constructor creates a stack to keep track of where we are.
 It also creates a couple of dictionaries to keep track of
 how classes inherit from each other
@@ -258,18 +251,19 @@ and display methods in the order in which they were first defined—but
 none of that requires us to inspect the AST.
 
 <div class="table" id="linter-inheritance" caption="Inheritance and methods" markdown="1">
-| | GrandChild | LeftChild | Parent | RightChild |
+| | `GrandChild` | `LeftChild` | `Parent` | `RightChild` |
 | --- | --- | --- | --- | --- |
-| blue | X | X |   | X
-| green |   | X | X |
-| orange | X |   |   |
-| red | X |   | X | X
+| `blue` | X | X |   | X
+| `green` |   | X | X |
+| `orange` | X |   |   |
+| `red` | X |   | X | X
 </div>
 
 ## Inspecting Functions {: #bonus-inspect}
 
 *This material extends [%x perf %].*
 
+The implementation of dataframe filtering in [%x perf %] was somewhat brittle.
 A better implementation of filtering would make use of the fact that
 Python's [`inspect`][py_inspect] module lets us examine objects in memory.
 In particular, `inspect.signature` can tell us what parameters a function takes:
@@ -281,15 +275,16 @@ the user wants to compare the `red` and `blue` columns of a dataframe,
 they can give us a function that has two parameters called `red` and `blue`.
 We can then use those parameter names to figure out
 which columns we need from the dataframe.
-We will explore this in the exercises.
 {: .continue}
 
 ## User-Defined Classes {: #bonus-extend}
 
 *This material extends [%x persist %].*
 
-It's time to extend our framework to handle user-defined classes.
-We'll start by refactoring our code so that the `save` method doesn't get any larger:
+The persistence framework of [%x persist %] only handles built-in data types,
+but can easily be extended to handle user-defined classes as well.
+To start,
+we refactor the code so that the `save` method doesn't get any larger:
 
 [% inc file="extend.py" keep="save_base" omit="omit_extension" %]
 
@@ -414,14 +409,30 @@ so everything goes as it should.
 
 ## Big and Little Endian {: #bonus-endian}
 
-This is called [%g little_endian "little-endian" %] and is used by all Intel processors.
-Some other processors put the most significant byte first,
-which is called [%g big_endian "big-endian" %].
+*This material extends [%x binary %].*
+
+Suppose we want to store a 32-bit integer in memory.
+As [%f bonus-big-little %] shows,
+we can order its four bytes in two different ways.
+[%g little_endian "Little-endian" %] order
+stores the least significant bits of integer at the first (lowest) address in memory,
+while [%g big_endian "big-endian" %] order stores the most significant bits first.
+
+[% figure
+   slug="bonus-big-little"
+   img="big_little_endian.svg"
+   alt="Endian order"
+   caption="Big-endian and little-endian byte order."
+%]
+
+Modern Intel processors use little-endian order,
+but as [this article][big_little_endian] explains,
+some other processors (and most network protocols) use big-endian order.
 There are pro's and con's to both, which we won't go into here.
 What you *do* need to know is that if you move data from one architecture to another,
 it's your responsibility to flip the bytes around,
 because the machine doesn't know what the bytes mean.
-This is such a pain that the `struct` module and other libraries like it 
+This is such a pain that the [`struct`][py_struct] module and other libraries like it 
 will do things for you if you ask it to.
 If you're using `struct`,
 the first character of a format string optionally indicates the byte order
@@ -447,15 +458,8 @@ we cannot represent an infinite number of real values
 with a finite set of bit patterns.
 And no matter what values we represent,
 there will be an infinite number of values between each of them that we can't.
-
-<div class="callout" markdown="1">
-
-### Go To the Source
-
 The explanation that follows is simplified to keep it manageable;
 please read [%b Goldberg1991 %] for more detail.
-
-</div>
 
 Floating point numbers are represented by a sign,
 a [%g mantissa "mantissa" %],
@@ -546,6 +550,8 @@ to avoid some precision issues.
 
 ## Generating Test Cases {: #bonus-theorem}
 
+*This material extends [%x pack %].*
+
 Theorem provers like Z3 and [PicoSAT][picosat]
 are far more powerful than most programmers realize.
 Borrowing an example from [Andreas Zeller's][zeller_andreas],
@@ -574,56 +580,3 @@ and isosceles triangles:
 
 [% inc file="isosceles.py" keep="isosceles" %]
 [% inc file="isosceles.out" %]
-
-## Exercises {: #bonus-exercises}
-
-### Roundoff {: .exercise}
-
-1.  Write a program that loops over the integers from 1 to 9
-    and uses them to create the values 0.9, 0.09, and so on.
-1.  Calculate the same values by subtracting 0.1 from 1,
-    then subtracting 0.01,
-    and so on.
-1.  Calculate the absolute and relative differences between corresponding values
-    (which should be identical).
-1.  Repeat the exercise using the `Fraction` class
-    from the [`fractions`][py_fractions] module.
-
-### Fallback {: .exercise}
-
-1.  Modify `LoadExtend` so that
-    if the user didn't provide the class needed to reconstruct some archived data,
-    the `load` method returns a simple dictionary instead.
-
-1.  Why is this a bad idea?
-
-### Removing Exceptions {: .exercise}
-
-Rewrite `LoadExtend` so that it doesn't use exceptions
-when `_aliased`, `_builtin`, and `extension` decide
-they aren't the right method to handle a particular case.
-Is the result simpler or more complex than the exception-based approach?
-
-### Helper Classes {: .exercise}
-
-Modify the framework so that
-if a user wants to save and load instances of a class `X`,
-they must register a class `Persist_X` with the framework
-that does the saving and loading for `X`.
-
-### Self-Referential Objects {: .exercise}
-
-Suppose an object contains a reference to itself:
-
-```python
-class Example:
-    def __init__(self):
-        self.ref = None
-
-ex = Example()
-ex.ref = ex
-```
-
-1.  Why can't `SaveExtend` and `LoadExtend` handle this correctly?
-
-1.  How would they have to be changed to handle this?
