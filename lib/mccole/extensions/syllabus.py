@@ -31,6 +31,10 @@ def _cleanup(collected):
 
 # ----------------------------------------------------------------------
 
+MAJOR = """<li>
+<a href="@root/{slug}" markdown="1">{title}</a>
+<span class="notex">(<a href="@root/{slug}/slides/">slides</a>)</span>
+"""
 
 @shortcodes.register("syllabus")
 def syllabus(pargs, kwargs, node):
@@ -38,8 +42,7 @@ def syllabus(pargs, kwargs, node):
     syllabi = util.get_config("syllabus")
     result = ["<ul>"]
     for slug, title, syllabus in syllabi:
-        major = f'<li><a href="@root/{slug}" markdown="1">{title}</a>'
-        result.append(major)
+        result.append(MAJOR.format(slug=slug, title=title))
         if syllabus:
             result.append("<ul>")
             for item in syllabus:

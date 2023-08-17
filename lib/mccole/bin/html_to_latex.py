@@ -403,6 +403,10 @@ def handle(node, state, accum, doEscape):
         children(node, state, accum, doEscape)
         index_entry(node, state, accum, doEscape)
 
+    # <span class="notex"> => skip
+    elif node_match(node, "span", "notex"):
+        pass
+
     # <span> => ignore
     elif node_match(node, "span"):
         children(node, state, accum, doEscape)
