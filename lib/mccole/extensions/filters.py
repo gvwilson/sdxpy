@@ -4,6 +4,12 @@ import ibis
 import util
 
 
+@ibis.filters.register("get_slug")
+def is_slug(node):
+    """Get the effective slug from the node (for slides as well)."""
+    return util.get_chapter_slug(node)
+
+
 @ibis.filters.register("is_root")
 def is_root(node):
     """Is this the root node?"""

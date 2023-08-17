@@ -1,8 +1,4 @@
 // Construct table of contents for page.
-// - Find <div class="page-toc">. (Do not build ToC if this element is not present.)
-// - Find all <h2>.
-// - Create list of links, removing the word "Section" from titles.
-// - If page has <meta name="has_slides">, add unnumbered link to slides.
 const constructTableOfContents = () => {
     const toc = document.querySelector("div.page-toc")
     if (!toc) {
@@ -31,8 +27,6 @@ const constructTableOfContents = () => {
 }
 
 // Insert links to code/output samples.
-// - Find all <div class="code-sample"> with "title" attribute.
-// - Append <p class="code-sample-title"> with value of div's "title" attribute.
 const insertCodeSampleTitles = () => {
     for (const node of [...document.querySelectorAll("div.code-sample")]) {
         if (node.hasAttribute("title")) {
@@ -45,25 +39,32 @@ const insertCodeSampleTitles = () => {
     }
 }
 
-// Convert section headings to links for filing GitHub issues.
-// - Find <meta> attributes for repo, major heading, page template, and build date.
-// - If all are present, find all <h2> and wrap with link to GitHub repo issue submission.
-const enableFeedback = () => {
+// Get metadata from top of page.
+const getMetadata = () => {
+    let repo = undefined, major = undefined, slides = undefined, build_date = undefined
+
     const repo_meta = document.querySelector("meta[name='repo']")
     const major_meta = document.querySelector("meta[name='major']")
     const template_meta = document.querySelector("meta[name='template']")
     const build_date_meta = document.querySelector("meta[name='build_date']")
-    if (!(repo_meta && major_meta && template_meta && build_date_meta)) {
-        return
+
+    if (repo_meta && major_meta && template_meta && build_date_meta) {
+	repo = repo_meta.getAttribute("content")
+	major = major_meta.getAttribute("content")
+	slides = (template_meta && template_meta.getAttribute("content") == "slides") ? " slides" : ""
+	build_date = build_date_meta.getAttribute('content')
     }
 
-    const repo = repo_meta.getAttribute("content")
-    const major = major_meta.getAttribute("content")
-    const slides = (template_meta && template_meta.getAttribute("content") == "slides") ? " slides" : ""
-    const build_date = build_date_meta.getAttribute('content')
+    return {repo, major, slides, build_date}
+}
 
+// Convert section headings to links for filing GitHub issues.
+const enableFeedback = () => {
+    const {repo, major, slides, build_date} = getMetadata()
+    if (!repo) {
+	return
+    }
     const issues_url = `${repo}/issues/new`
-
     for (const heading of [...document.querySelectorAll("h2")]) {
         const title_text = `/${major}${slides} - ${heading.textContent} (${build_date})`
         const url = `${issues_url}?title=${encodeURI(title_text)}`
@@ -75,8 +76,6 @@ const enableFeedback = () => {
 }
 
 // Load all images referenced in page.
-// - Construct array of promises for loading images.
-// - Wait for all promises to resolve.
 const loadImages = async (imageArray) => {
     const promiseArray = []
     for (let img of imageArray) {
@@ -91,24 +90,16 @@ const loadImages = async (imageArray) => {
 }
 
 // Conditionally report size of slide.
-const reportSlideSize = (reportSizes, slide, content) => {
-    if (reportSizes) {
-        console.log(
-            `[1] ` +
-            `${slide.offsetWidth} x ${slide.offsetHeight} ` +
-            `| ${content.offsetWidth} x ${content.offsetHeight}`
-        )
-    }
+const reportSlideSize = (slide, content) => {
+    console.log(
+        `[1] ` +
+        `${slide.offsetWidth} x ${slide.offsetHeight} ` +
+        `| ${content.offsetWidth} x ${content.offsetHeight}`
+    )
 }
 
-
-// Report sizes of slides.
-// - Get dimensions of first (title) slide.
-// - For each other slide:
-//   - Wait until images have loaded.
-//   - Compare size to that of first slide and report differences.
-//   - Report if slide overflows.
-const reportSlideOverflow = (reportSizes) => {
+// Get initial elements for reporting slides sizes.
+const startSlideOverflow = () => {
     const allNodes = [...document.querySelectorAll("div.remark-slide-container")]
     const node0 = allNodes[0]
     const elSlide0 = node0.querySelector("div.remark-slide")
@@ -121,8 +112,11 @@ const reportSlideOverflow = (reportSizes) => {
         offsetWidth: elContent0.offsetWidth,
         offsetHeight: elContent0.offsetHeight
     }
-    reportSlideSize(reportSizes, slide0, content0)
+    return {allNodes, node0, slide0, content0}
+}
 
+// Find and report slides that are too large.
+const findAndReportSlideOverflow = (reportSizes, allNodes, slide0, content0) => {
     for (const i in allNodes) {
         const node = allNodes[i]
         node.style.display = "block";
@@ -138,11 +132,19 @@ const reportSlideOverflow = (reportSizes) => {
                 (slide.offsetHeight !== slide0.offsetHeight) ||
                 (content.offsetWidth !== content0.offsetWidth) ||
                 (content.offsetHeight !== content0.offsetHeight)) {
-                    reportSlideSize(reportSizes, slide, content)
+                    if (reportSizes) {
+                        reportSlideSize(slide, content)
+		    }
             }
             node.style.display = ""
         })
     }
+}
+
+// Report sizes of slides.
+const checkSlideOverflow = (reportSizes) => {
+    const {allNodes, node0, slide0, content0} = startSlideOverflow()
+    const problems = findAndReportSlideOverflow(reportSizes, allNodes, slide0, content0)
     node0.classList.add("remark-visible")
 }
 
@@ -150,7 +152,7 @@ const mccole = () => {
     constructTableOfContents()
     insertCodeSampleTitles()
     enableFeedback()
-    reportSlideOverflow(false)
+    checkSlideOverflow(false)
 }
 
 mccole()

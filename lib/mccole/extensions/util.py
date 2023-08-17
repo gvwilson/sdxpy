@@ -84,7 +84,9 @@ def get_chapter_slug(node):
     if is_slides(node):
         require(len(node.path) > 1, f"Bad path {node.path} for slides")
         return node.path[-2]
-    return node.path[-1]
+    if len(node.path) > 0:
+        return node.path[-1]
+    return "@root"
 
 
 def get_title(node):
