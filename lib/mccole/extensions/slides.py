@@ -9,7 +9,7 @@ import util
 def add_markdown_link_list(text, meta_dict):
     """Add all Markdown links to slides for conversion to HTML."""
     if meta_dict.get("template", None) == "slides":
-        text += "\n\n" + util.make_links_table()
+        text += "\n\n" + util.make_links_table(text)
     return text
 
 

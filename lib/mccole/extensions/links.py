@@ -13,11 +13,9 @@ def links_append():
     if "links" not in ark.site.config:
         return
 
-    links = util.make_links_table()
-
     def visitor(node):
         if node.ext == "md":
-            node.text += "\n\n" + links
+            node.text += "\n\n" + util.make_links_table(node.text)
 
     ark.nodes.root().walk(visitor)
 

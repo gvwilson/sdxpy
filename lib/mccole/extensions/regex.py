@@ -11,6 +11,10 @@ FLAKE8_TRAILING = re.compile(r"\s*#\s*noqa.+$")
 # Internal cross-reference in body of glossary definition.
 GLOSSARY_INTERNAL_REF = re.compile(r"\]\(#(.+?)\)")
 
+# Match a reference to a footer link or a URL ref in an index entry.
+MARKDOWN_FOOTER_LINK = re.compile(r"\[.*?\]\[(.+?)\]", re.MULTILINE)
+INDEX_URL_REF = re.compile(r'\[%\s*i\s+("[^"]+")(\s+("[^"]+"))?(\s+url=("[^"]+"))?\s*%\]')
+
 # Match a Markdown heading with optional attributes.
 MARKDOWN_HEADING = re.compile(r"^(#+)\s*(.+?)(\{:\s*#(.+\b)\})?$", re.MULTILINE)
 

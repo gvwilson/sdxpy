@@ -9,6 +9,8 @@ import markdown
 import yaml
 from pybtex.database import parse_file
 
+import regex
+
 # File containing things to ignore.
 DIRECTIVES_FILE = ".mccole"
 
@@ -147,12 +149,19 @@ def make_label(kind, number):
     return f"{name} {number}"
 
 
-def make_links_table():
+def make_links_table(text):
     """Make a table of links for inclusion in Markdown."""
     if CACHE["links_table"] is None:
         links = read_links()
-        CACHE["links_table"] = "\n".join([f"[{x['key']}]: {x['url']}" for x in links])
-    return CACHE["links_table"]
+        CACHE["links_table"] = {x["key"]: x for x in links}
+    table = CACHE["links_table"]
+    direct = {m.group(1) for m in regex.MARKDOWN_FOOTER_LINK.finditer(text)}
+    in_index = {m.group(5).strip('"') for m in regex.INDEX_URL_REF.finditer(text) if m.group(5)}
+    used = direct | in_index
+    return "\n".join([
+        f"[{key}]: {table[key]['url']}" for key in table
+        if key in used
+    ])
 
 
 def make_major_numbering():
