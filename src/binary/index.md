@@ -74,11 +74,10 @@ and the letters A-F (or a-f) are used to represent the digits 11–15.
 We signal that we're using hexadecimal with a `0x` prefix,
 so `0xF7` is \\( (15×16)+7 \\) or 247 base 10.
 Each hexadecimal digit corresponds to four bits ([%t binary-hex %]),
+so two hexadecimal digits are exactly one byte,
 which makes it easy to translate bits to digits and vice versa:
 for example,
 `0xF7` is `0b11110111`.
-One advantage of this representation is that
-two hexadecimal digits is exactly one byte.
 
 <div class="table" id="binary-hex" caption="Hexadecimal digits" markdown="1">
 | Decimal | Hexadecimal | Bits | Decimal | Hexadecimal | Bits |
