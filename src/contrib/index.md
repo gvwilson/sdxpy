@@ -2,7 +2,7 @@ Contributions are very welcome;
 please contact us by email or by filing an issue on this site.
 All contributors must abide by our Code of Conduct.
 
-## Making a Quick Fix {: #contrib-quick}
+## Editing Content {: #contrib-edit}
 
 1.  Clone the GitHub repository at [%config repo %].
 
@@ -26,6 +26,9 @@ All contributors must abide by our Code of Conduct.
     1.  `cd ./src/chapter`.
     1.  Edit the Python file(s) you wish to change.
     1.  Run `make` in the chapter directory to rebuild the corresponding output files.
+
+Please see `CONTRIBUTING.md` in the root directory of [our GitHub repository][book_repo]
+for a complete description of our formatting rules.
 
 ## FAQ {: #contrib-faq}
 
