@@ -18,6 +18,8 @@ but are taught far less often
 This chapter builds a simple single-stepping debugger
 for the [%i "virtual machine" %] of [%x vm %]
 and shows how we can test interactive applications.
+If you would like to go further and (much) deeper,
+please have a look at [%i "Brand, Sy" "Sy Brand's" url="brand_sy" %] [tutorial][debugger_tutorial].
 
 ## One Step at a Time {: #debugger-step}
 
