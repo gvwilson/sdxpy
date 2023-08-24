@@ -89,7 +89,7 @@ We can test this function with a short example:
 
 In order to keep everything in one file,
 we have written the HTML "page" as a multi-line Python string;
-we will do this frequency when writing unit tests
+we will do this frequently when writing unit tests
 so that the HTML [%i "fixture" %] is right beside the test code.
 Notice in the output that the line breaks in the HTML
 have been turned into text nodes containing only a newline character `"\n"'.
