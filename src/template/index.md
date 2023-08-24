@@ -322,6 +322,22 @@ software isn't done until it has been tested.
   </tbody>
 </table>
 
+<div class="callout" markdown="1">
+### Generating Element IDs
+
+It's often handy to have a unique identifier for every element in a page,
+so some templating engines automatically generate `id` attributes
+for elements that don't specify IDs explicitly.
+If you do this,
+please do not generate random numbers,
+because then Git and other version control systems will think a regenerated page has changed
+when it actually hasn't.
+Generating sequential IDs is equally problematic:
+if you add an item to a list at the top of the page,
+for example,
+that might change the IDs for all of the items in subsequent (unrelated) lists.
+</div>
+
 ## Control Flow {: #template-flow}
 
 Our tool supports conditional expressions and loops.
@@ -491,3 +507,12 @@ putting the current iteration index in `indexName`.
 ### Boolean Expression {: .exercise}
 
 Design and implement a way to express the Boolean operators `and` and `or`.
+
+### Element IDs {: .exercise}
+
+The callout earlier said that
+templating systems should not generate random or sequential IDs for elements.
+A colleague of yours has proposed generating the IDs
+by hashing the element's content,
+since this will stay the same as long as the content does.
+What are the pros and cons of doing this?
