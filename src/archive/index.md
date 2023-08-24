@@ -52,7 +52,7 @@ so instead we will copy each unique file to something like `abcd1234.bck`,
 where `abcd1234` is the hash of the file's contents ([%x dup %]).
 We will then record the filenames and hash keys in each snapshot:
 The hash keys tell us which unique files existed at the time of the snapshot,
-while the filenames tell us what each file was called when the snapshot was made.
+while the filenames tell us what the file's contents were named when the snapshot was made.
 To restore a particular snapshot,
 we will copy the `.bck` files back to their original locations
 ([%f archive-storage %]).
