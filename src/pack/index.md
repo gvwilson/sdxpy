@@ -314,7 +314,7 @@ Cutting the amount of work we have to do is good:
 can we do better?
 The answer is yes,
 but the algorithms involved are complicated and the jargon almost impenetrable.
-To show how real package managers tackle this,
+To give you a taste of how they work,
 we will solve our example problem using the [Z3 theorem prover][z3].
 
 Installing packages and proving theorems
