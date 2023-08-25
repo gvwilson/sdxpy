@@ -71,6 +71,22 @@ of available packages as JSON:
 
 [% inc file="triple.json" %]
 
+The keys in the main dictionary identify packages
+(which we've called `A`, `B`, and `C` for simplicity).
+Each package has a dictionary whose keys are version numbers,
+and each version has a dictionary showing
+which versions of which other packages are dependencies
+([%f pack-manifest %]).
+It's a complex data structure,
+but all of the detail is necessary.
+
+[% figure
+   slug="pack-manifest"
+   img="manifest.svg"
+   alt="Manifest structure"
+   caption="Structure of version dependency manifest."
+%]
+
 <div class="callout" markdown="1">
 
 ### Comments
