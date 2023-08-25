@@ -163,7 +163,9 @@ then look for keys that have been seen more than once:
 
 [% inc file="find_duplicate_keys.py" keep="class" %]
 
-Its output for the file containing our two example dictionaries is:
+When we parse `has_duplicate_keys.py`
+and pass the AST to `FindDuplicateKeys`,
+we get:
 {: .continue}
 
 [% inc file="find_duplicate_keys.out" %]
@@ -184,6 +186,7 @@ The possibility of [%g false_negative "false negatives" %] doesn't mean that
 linting is useless, though:
 every problem that linting catches
 gives programmers more time to check for things that linters can't find.
+{: .continue}
 
 </div>
 
