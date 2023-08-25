@@ -218,8 +218,8 @@ and report any problems:
 [% inc file="find_unused_variables.py" keep="search" %]
 
 We could just use a list of three values to record information for each scope,
-but it's a little cleaner to use `namedtuple`
-(which also comes from Python's `collections` module):
+but `namedtuple` (which also comes from Python's `collections` module)
+tells readers explicitly what each scope consists of:
 
 [% inc file="find_unused_variables.py" keep="scope" %]
 
