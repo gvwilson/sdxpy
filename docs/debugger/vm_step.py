@@ -7,7 +7,9 @@ from vm_base import VirtualMachineBase
 OPS_LOOKUP = {value["code"]: key for key, value in OPS.items()}
 # [/lookup]
 
+# [derive]
 class VirtualMachineStep(VirtualMachineBase):
+# [/derive]
     # [init]
     def __init__(self, reader=input, writer=sys.stdout):
         super().__init__(writer)

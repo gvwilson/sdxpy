@@ -57,6 +57,18 @@ and having them spelled out makes it easier for the next person
 to find out what they can be.
 {: .continue}
 
+We are now in a better position to move forward,
+so we derive a new class from our refactored VM:
+
+[% inc file="vm_step.py" keep="derive" %]
+
+(Again,
+if we were writing this code under normal circumstances
+we would enhance the existing class,
+but since we want to keep several versions around for teaching,
+we derive and extend.)
+{: .continue}
+
 The old `run` method kept going until the program finished.
 The new `run` method is necessarily more complicated.
 The VM is initially in the `STEPPING` state
