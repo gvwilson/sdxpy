@@ -323,6 +323,7 @@ software isn't done until it has been tested.
 </table>
 
 <div class="callout" markdown="1">
+
 ### Generating Element IDs
 
 It's often handy to have a unique identifier for every element in a page,
@@ -336,6 +337,7 @@ Generating sequential IDs is equally problematic:
 if you add an item to a list at the top of the page,
 for example,
 that might change the IDs for all of the items in subsequent (unrelated) lists.
+
 </div>
 
 ## Control Flow {: #template-flow}

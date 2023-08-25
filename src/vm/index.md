@@ -148,6 +148,7 @@ since this is what most hardware implementations would do.
 {: .continue}
 
 <div class="callout" markdown="1">
+
 ### Processor Design
 
 Some processor do have variable-length instructions,
@@ -157,6 +158,7 @@ engineers rely on simulation and profiling ([%x perf %]).
 Backward compatibility is also an issue:
 if earlier processors supported variable-length instructions,
 later ones must somehow do so as well in order to run old programs.
+
 </div>
 
 The next step is to add a `run` method to our VM
