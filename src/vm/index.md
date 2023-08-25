@@ -110,13 +110,21 @@ makes them easier to find as well as ensuring consistency.
 We start by defining a class with an instruction pointer, some registers, and some memory
 along with a prompt for output:
 
-[% inc file="vm.py" keep="class" %]
+[% inc file="vm.py" keep="init" %]
 
 A program is just an array of numbers representing instructions.
-To load one,
+To load a program into our VM,
 we copy those numbers into memory and reset the instruction pointer and registers:
 
 [% inc file="vm.py" keep="init" %]
+
+Notice that the VM's constructor calls `initialize` with an empty array
+(i.e., a program with no instructions)
+to do initial setup.
+If an object has a method to reset or re-initialize itself,
+having its constructor use that method
+is a way to avoid duplicating code.
+{: .continue}
 
 To execute the next instruction,
 the VM gets the value in memory that the instruction pointer currently refers to

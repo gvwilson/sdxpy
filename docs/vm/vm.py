@@ -5,14 +5,12 @@ COLUMNS = 4
 DIGITS = 8
 
 
-# [class]
+# [init]
 class VirtualMachine:
     def __init__(self):
         self.initialize([])
         self.prompt = ">>"
-# [/class]
 
-    # [init]
     def initialize(self, program):
         assert len(program) <= RAM_LEN, "Program too long"
         self.ram = [
@@ -21,7 +19,7 @@ class VirtualMachine:
         ]
         self.ip = 0
         self.reg = [0] * NUM_REG
-    # [/init]
+# [/init]
 
     # [fetch]
     def fetch(self):
