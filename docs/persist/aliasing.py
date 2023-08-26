@@ -1,7 +1,7 @@
-from oop import LoadOop, SaveOop
+from objects import LoadObjects, SaveObjects
 
 
-class SaveAlias(SaveOop):
+class SaveAlias(SaveObjects):
     def __init__(self, writer):
         super().__init__(writer)
         self.seen = set()
@@ -53,7 +53,7 @@ class SaveAlias(SaveOop):
             self.save(value)
 
 
-class LoadAlias(LoadOop):
+class LoadAlias(LoadObjects):
     def __init__(self, reader):
         super().__init__(reader)
         self.seen = {}
@@ -86,25 +86,25 @@ class LoadAlias(LoadOop):
         return super()._str(value)
 
     # [load_list]
-    def load_list(self, ident, value):
+    def load_list(self, ident, length):
         result = []
         self.seen[ident] = result
-        for _ in range(int(value)):
+        for _ in range(int(length)):
             result.append(self.load())
         return result
     # [/load_list]
 
-    def load_set(self, ident, value):
+    def load_set(self, ident, length):
         result = set()
         self.seen[ident] = result
-        for _ in range(int(value)):
+        for _ in range(int(length)):
             result.add(self.load())
         return result
 
-    def load_dict(self, ident, value):
+    def load_dict(self, ident, length):
         result = {}
         self.seen[ident] = result
-        for _ in range(int(value)):
+        for _ in range(int(length)):
             k = self.load()
             v = self.load()
             result[k] = v

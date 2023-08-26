@@ -4,7 +4,7 @@
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="repo" content="https://github.com/gvwilson/sdxpy">
-  <meta name="build_date" content="2023-08-25">
+  <meta name="build_date" content="2023-08-26">
   <meta name="template" content="default">
   <meta name="major" content="persist">
   <meta name="has_slides" content="true">
@@ -273,7 +273,7 @@
           
 <div class="draft notex">
   <p class="draft">
-    DRAFT 2023-08-25
+    DRAFT 2023-08-26
   </p>
   <p>
     revised 2023-08-07<br>
@@ -327,8 +327,6 @@
   
   <li markdown="1">Software designs should be open for extension but closed for modification.</li>
   
-  <li markdown="1">Extensibility can be implemented using multiple inheritance, duck typing, or helper classes.</li>
-  
   </ul>
   
 
@@ -365,9 +363,11 @@
           <div class="page-toc"></div>
           <p>Version control can keep track of our files,
 but what should we put in them?
-Plain text is one option
-(in fact, the only option that most version control systems fully support),
-but another is to store objects,
+Plain text works well for things like this chapter,
+but the data structures used to represent HTML (<a class="x-ref" href="../check/">Chapter 11</a>)
+or the state of a game
+aren&rsquo;t easy to represent in prose.</p>
+<p>Another option is to store objects,
 i.e.,
 to save a list of dictionaries as-is
 rather than flattering it into rows and columns.
@@ -522,7 +522,7 @@ what kinds of values are in the list.
 Each recursive call advances the input or output stream
 by precisely as many lines as it needs to.
 As a result,
-this approach should handle nested lists without any extra work.</p>
+this approach should handle empty lists and nested lists without any extra work.</p>
 <p>Our functions handle sets in exactly the same way as lists;
 the only difference is using the keyword <code>set</code> instead of the keyword <code>list</code>
 in the opening line.
@@ -604,6 +604,9 @@ i.e., that it should be possible to extend functionality
 without having to rewrite existing code.
 This allows old code to use new code,
 but only if our design permits the kinds of extensions people are going to want to make.
+(Even then,
+it often leads to deep class hierarchies
+that can be hard for the next programmer to understand.)
 Since we can&rsquo;t anticipate everything,
 it is normal to have to revise a design the first two or three times we try to extend it.
 As <span class="bib-ref">[<a class="bib-ref" href="../bib/#Brand1995">Brand1995</a>]</span> said of buildings,
@@ -644,8 +647,8 @@ result of calling method 5
 </div>
 <p>Using this,
 the core of our saving class is:</p>
-<div class="code-sample lang-py" title="oop.py">
-<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">SaveOop</span><span class="p">:</span>
+<div class="code-sample lang-py" title="objects.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">SaveObjects</span><span class="p">:</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">writer</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">writer</span> <span class="o">=</span> <span class="n">writer</span>
 
@@ -657,9 +660,9 @@ the core of our saving class is:</p>
         <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">)(</span><span class="n">thing</span><span class="p">)</span>
 </code></pre></div>
 </div>
-<p>We have called it <code>SaveOop</code> instead of just <code>Save</code>
+<p>We have called this class <code>SaveObjects</code> instead of just <code>Save</code>
 because we are going to create other variations on it.
-<code>SaveOop.save</code> figures out which <span class="ix-entry" ix-key="method" markdown="1">method</span> to call
+<code>SaveObjects.save</code> figures out which <span class="ix-entry" ix-key="method" markdown="1">method</span> to call
 to save a particular thing
 by constructing a name based on the thing&rsquo;s type,
 checking whether that method exists,
@@ -670,7 +673,7 @@ must all have the same <span class="ix-entry" ix-key="signature" markdown="1">si
 so that they can be called interchangeably.
 For example,
 the methods that write integers and strings are:</p>
-<div class="code-sample lang-py" title="oop.py">
+<div class="code-sample lang-py" title="objects.py">
 <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">save_int</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">thing</span><span class="p">):</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_write</span><span class="p">(</span><span class="s2">&quot;int&quot;</span><span class="p">,</span> <span class="n">thing</span><span class="p">)</span>
 
@@ -681,10 +684,10 @@ the methods that write integers and strings are:</p>
         <span class="nb">print</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">writer</span><span class="p">)</span>
 </code></pre></div>
 </div>
-<p><code>LoadOop.load</code> combines dynamic dispatch with
+<p><code>LoadObjects.load</code> combines dynamic dispatch with
 the string handling of our original <code>load</code> function:</p>
-<div class="code-sample lang-py" title="oop.py">
-<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">LoadOop</span><span class="p">:</span>
+<div class="code-sample lang-py" title="objects.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">LoadObjects</span><span class="p">:</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reader</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">reader</span> <span class="o">=</span> <span class="n">reader</span>
 
@@ -702,7 +705,7 @@ the string handling of our original <code>load</code> function:</p>
 <p>The methods that load individual items are even simpler.
 For example,
 we load a floating-point number like this:</p>
-<div class="code-sample lang-py" title="oop.py">
+<div class="code-sample lang-py" title="objects.py">
 <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">load_float</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
     <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
 </code></pre></div>
@@ -744,10 +747,11 @@ To reconstruct the original data correctly we need to:</p>
 </li>
 </ol>
 <p>We can keep track of the things we have saved
-using Python&rsquo;s built-in <code>id</code> function.
-This function returns a unique ID for every object in the program;
-even if two lists or dictionaries contain the same data,
-<code>id</code> will report different IDs
+using Python&rsquo;s built-in <code>id</code> function,
+which returns a unique ID for every object in the program.
+For example,
+even if two lists contain exactly the same values,
+<code>id</code> will report different IDs for those lists
 because they&rsquo;re stored in different locations in memory.
 We can use this to:</p>
 <ol>
@@ -763,7 +767,7 @@ We can use this to:</p>
 </ol>
 <p>Here&rsquo;s the start of <code>SaveAlias</code>:</p>
 <div class="code-sample lang-py" title="aliasing_wrong.py">
-<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">SaveAlias</span><span class="p">(</span><span class="n">SaveOop</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">SaveAlias</span><span class="p">(</span><span class="n">SaveObjects</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">writer</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">writer</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">seen</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
@@ -800,15 +804,15 @@ and either its value or its length:</p>
         <span class="bp">self</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
 </code></pre></div>
 </div>
-<p><code>SaveAlias._list</code> is a little different from <code>SaveOop._list</code>
+<p><code>SaveAlias._list</code> is a little different from <code>SaveObjects._list</code>
 because it has to save each object&rsquo;s identifier
 along with its type and its value or length.
-Our <code>LoadAlias</code> class needs a similar change compared to <code>LoadOop</code>.
+Our <code>LoadAlias</code> class needs a similar change compared to <code>LoadObjects</code>.
 The first version is shown below;
 as we will see,
 it contains a subtle bug:</p>
 <div class="code-sample lang-py" title="aliasing_wrong.py">
-<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">LoadAlias</span><span class="p">(</span><span class="n">LoadOop</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">LoadAlias</span><span class="p">(</span><span class="n">LoadObjects</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reader</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">reader</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">seen</span> <span class="o">=</span> <span class="p">{}</span>
@@ -843,9 +847,9 @@ it contains a subtle bug:</p>
 <div class="code-sample lang-py" title="test_aliasing_wrong.py">
 <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">roundtrip</span><span class="p">(</span><span class="n">fixture</span><span class="p">):</span>
     <span class="n">writer</span> <span class="o">=</span> <span class="n">StringIO</span><span class="p">()</span>
-    <span class="n">Save</span><span class="p">(</span><span class="n">writer</span><span class="p">)</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">fixture</span><span class="p">)</span>
+    <span class="n">SaveAlias</span><span class="p">(</span><span class="n">writer</span><span class="p">)</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">fixture</span><span class="p">)</span>
     <span class="n">reader</span> <span class="o">=</span> <span class="n">StringIO</span><span class="p">(</span><span class="n">writer</span><span class="o">.</span><span class="n">getvalue</span><span class="p">())</span>
-    <span class="k">return</span> <span class="n">Load</span><span class="p">(</span><span class="n">reader</span><span class="p">)</span><span class="o">.</span><span class="n">load</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">LoadAlias</span><span class="p">(</span><span class="n">reader</span><span class="p">)</span><span class="o">.</span><span class="n">load</span><span class="p">()</span>
 </code></pre></div>
 </div>
 <p class="continue">There isn&rsquo;t any aliasing in the test case,
@@ -889,8 +893,8 @@ but then says it can&rsquo;t find the object being referred to.</p>
 
 <p class="continue">The problem is these lines in <code>LoadAlias.load</code>
 marked as containing a bug,
-in combination with these lines inherited from <code>LoadOop</code>:</p>
-<div class="code-sample lang-py" title="oop.py">
+in combination with these lines inherited from <code>LoadObjects</code>:</p>
+<div class="code-sample lang-py" title="objects.py">
 <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">load_list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
     <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">load</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">value</span><span class="p">))]</span>
 </code></pre></div>
@@ -902,15 +906,15 @@ alias:4484025600:
 <ol>
 <li>
 <p>The first line tells us that there&rsquo;s a list whose ID is <code>4484025600</code>
-    so we <code>LoadOop._list</code> to load a list of one element.</p>
+    so we <code>LoadObjects._list</code> to load a list of one element.</p>
 </li>
 <li>
-<p><code>LoadOop._list</code> called <code>LoadAlias.load</code> recursively to load that one element.</p>
+<p><code>LoadObjects._list</code> called <code>LoadAlias.load</code> recursively to load that one element.</p>
 </li>
 <li>
 <p><code>LoadAlias.load</code> reads the second line of saved data,
     which tells it to re-use the data whose ID is <code>4484025600</code>.
-    But <code>LoadOop._list</code> hasn&rsquo;t created and returned that list yet—it
+    But <code>LoadObjects._list</code> hasn&rsquo;t created and returned that list yet—it
     is still reading in the elements—so
     <code>LoadAlias.load</code> hasn&rsquo;t had a chance to add the list to the <code>seen</code> dictionary
     of previously-read items.</p>
@@ -918,13 +922,13 @@ alias:4484025600:
 </ol>
 <p>The solution is to reorder the operations,
 which unfortunately means writing new versions
-of all the methods defined in <code>LoadOop</code>.
+of all the methods defined in <code>LoadObjects</code>.
 The new implementation of <code>_list</code> is:</p>
 <div class="code-sample lang-py" title="aliasing.py">
-<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">load_list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ident</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">load_list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ident</span><span class="p">,</span> <span class="n">length</span><span class="p">):</span>
     <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">seen</span><span class="p">[</span><span class="n">ident</span><span class="p">]</span> <span class="o">=</span> <span class="n">result</span>
-    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">value</span><span class="p">)):</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">length</span><span class="p">)):</span>
         <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">load</span><span class="p">())</span>
     <span class="k">return</span> <span class="n">result</span>
 </code></pre></div>
@@ -949,12 +953,12 @@ but the changes to <code>save_set</code> and <code>save_dict</code> follow exact
 </code></pre></div>
 </div>
 <div class="code-sample lang-out" title="save_aliasing.out">
-<div class="highlight"><pre><span></span><code>list:4499069632:2
-alias:4499069632:
-list:4498772736:2
-str:4498771824:1
+<div class="highlight"><pre><span></span><code>list:4314014016:2
+alias:4314014016:
+list:4313813952:2
+str:4313813040:1
 word
-alias:4498771824:
+alias:4313813040:
 </code></pre></div>
 </div>
 <h2 id="persist-summary">Section 16.4: Summary</h2>
@@ -965,25 +969,6 @@ alias:4498771824:
 
 <p><em>Please see <a class="x-ref" href="../bonus/">Appendix B</a> for extra material related to these ideas.</em></p>
 <h2 id="persist-exercises">Section 16.5: Exercises</h2>
-<h3 class="exercise">Reset</h3>
-<p><code>SaveAlias</code>, <code>SaveExtend</code>, and their loading counterparts
-don&rsquo;t re-set the tables of objects seen so far between runs.</p>
-<ol>
-<li>
-<p>If we construct one saver object and use it repeatedly on different data,
-    can it create incorrect or misleading archives?</p>
-</li>
-<li>
-<p>What about loading?
-    If we re-use a loader,
-    can it construct objects that aren&rsquo;t what they should be?</p>
-</li>
-<li>
-<p>Create new classes <code>SaveReset</code> and <code>LoadReset</code>
-    that fix the problems you have identified.
-    How much of the existing code did you have to change?</p>
-</li>
-</ol>
 <h3 class="exercise">A Dangling Colon</h3>
 <p>Why is there a colon at the end of the line <code>alias:12345678:</code>
 when we create an alias marker?</p>

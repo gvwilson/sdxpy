@@ -4,7 +4,6 @@ syllabus:
 -   Persistence must handle aliasing and circularity.
 -   Users should be able to extend persistence to handle objects of their own types.
 -   Software designs should be open for extension but closed for modification.
--   Extensibility can be implemented using multiple inheritance, duck typing, or helper classes.
 depends:
 -   interp
 status: "revised 2023-08-07"
@@ -12,9 +11,12 @@ status: "revised 2023-08-07"
 
 Version control can keep track of our files,
 but what should we put in them?
-Plain text is one option
-(in fact, the only option that most version control systems fully support),
-but another is to store objects,
+Plain text works well for things like this chapter,
+but the data structures used to represent HTML ([%x check %])
+or the state of a game
+aren't easy to represent in prose.
+
+Another option is to store objects,
 i.e.,
 to save a list of dictionaries as-is
 rather than flattering it into rows and columns.
@@ -122,7 +124,7 @@ what kinds of values are in the list.
 Each recursive call advances the input or output stream
 by precisely as many lines as it needs to.
 As a result,
-this approach should handle nested lists without any extra work.
+this approach should handle empty lists and nested lists without any extra work.
 
 Our functions handle sets in exactly the same way as lists;
 the only difference is using the keyword `set` instead of the keyword `list`
@@ -171,6 +173,9 @@ i.e., that it should be possible to extend functionality
 without having to rewrite existing code.
 This allows old code to use new code,
 but only if our design permits the kinds of extensions people are going to want to make.
+(Even then,
+it often leads to deep class hierarchies
+that can be hard for the next programmer to understand.)
 Since we can't anticipate everything,
 it is normal to have to revise a design the first two or three times we try to extend it.
 As [%b Brand1995 %] said of buildings,
@@ -193,11 +198,11 @@ we can then call it like a function:
 Using this,
 the core of our saving class is:
 
-[% inc file="oop.py" keep="save" %]
+[% inc file="objects.py" keep="save" %]
 
-We have called it `SaveOop` instead of just `Save`
+We have called this class `SaveObjects` instead of just `Save`
 because we are going to create other variations on it.
-`SaveOop.save` figures out which [%i "method" %] to call
+`SaveObjects.save` figures out which [%i "method" %] to call
 to save a particular thing
 by constructing a name based on the thing's type,
 checking whether that method exists,
@@ -209,18 +214,18 @@ so that they can be called interchangeably.
 For example,
 the methods that write integers and strings are:
 
-[% inc file="oop.py" keep="save_examples" %]
+[% inc file="objects.py" keep="save_examples" %]
 
-`LoadOop.load` combines dynamic dispatch with
+`LoadObjects.load` combines dynamic dispatch with
 the string handling of our original `load` function:
 
-[% inc file="oop.py" keep="load" %]
+[% inc file="objects.py" keep="load" %]
 
 The methods that load individual items are even simpler.
 For example,
 we load a floating-point number like this:
 
-[% inc file="oop.py" keep="load_float" %]
+[% inc file="objects.py" keep="load_float" %]
 
 ## Aliasing {: #persist-aliasing}
 
@@ -261,10 +266,11 @@ To reconstruct the original data correctly we need to:
 1.  reverse this process when loading data.
 
 We can keep track of the things we have saved
-using Python's built-in `id` function.
-This function returns a unique ID for every object in the program;
-even if two lists or dictionaries contain the same data,
-`id` will report different IDs
+using Python's built-in `id` function,
+which returns a unique ID for every object in the program.
+For example,
+even if two lists contain exactly the same values,
+`id` will report different IDs for those lists
 because they're stored in different locations in memory.
 We can use this to:
 
@@ -299,10 +305,10 @@ and either its value or its length:
 
 [% inc file="aliasing_wrong.py" keep="save_list" %]
 
-`SaveAlias._list` is a little different from `SaveOop._list`
+`SaveAlias._list` is a little different from `SaveObjects._list`
 because it has to save each object's identifier
 along with its type and its value or length.
-Our `LoadAlias` class needs a similar change compared to `LoadOop`.
+Our `LoadAlias` class needs a similar change compared to `LoadObjects`.
 The first version is shown below;
 as we will see,
 it contains a subtle bug:
@@ -361,10 +367,10 @@ but then says it can't find the object being referred to.
 
 The problem is these lines in `LoadAlias.load`
 marked as containing a bug,
-in combination with these lines inherited from `LoadOop`:
+in combination with these lines inherited from `LoadObjects`:
 {: .continue}
 
-[% inc file="oop.py" keep="load_list" %]
+[% inc file="objects.py" keep="load_list" %]
 
 Let's trace execution for the saved data:
 {: .continue}
@@ -375,20 +381,20 @@ alias:4484025600:
 ```
 
 1.  The first line tells us that there's a list whose ID is `4484025600`
-    so we `LoadOop._list` to load a list of one element.
+    so we `LoadObjects._list` to load a list of one element.
 
-1.  `LoadOop._list` called `LoadAlias.load` recursively to load that one element.
+1.  `LoadObjects._list` called `LoadAlias.load` recursively to load that one element.
 
 1.  `LoadAlias.load` reads the second line of saved data,
     which tells it to re-use the data whose ID is `4484025600`.
-    But `LoadOop._list` hasn't created and returned that list yet—it
+    But `LoadObjects._list` hasn't created and returned that list yet—it
     is still reading in the elements—so
     `LoadAlias.load` hasn't had a chance to add the list to the `seen` dictionary
     of previously-read items.
 
 The solution is to reorder the operations,
 which unfortunately means writing new versions
-of all the methods defined in `LoadOop`.
+of all the methods defined in `LoadObjects`.
 The new implementation of `_list` is:
 
 [% inc file="aliasing.py" keep="load_list" %]
@@ -418,22 +424,6 @@ but the changes to `save_set` and `save_dict` follow exactly the same pattern.
 *Please see [%x bonus %] for extra material related to these ideas.*
 
 ## Exercises {: #persist-exercises}
-
-### Reset {: .exercise}
-
-`SaveAlias`, `SaveExtend`, and their loading counterparts
-don't re-set the tables of objects seen so far between runs.
-
-1.  If we construct one saver object and use it repeatedly on different data,
-    can it create incorrect or misleading archives?
-
-1.  What about loading?
-    If we re-use a loader,
-    can it construct objects that aren't what they should be?
-
-1.  Create new classes `SaveReset` and `LoadReset`
-    that fix the problems you have identified.
-    How much of the existing code did you have to change?
 
 ### A Dangling Colon {: .exercise}
 

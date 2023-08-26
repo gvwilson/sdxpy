@@ -59,6 +59,9 @@ EXPECTED_FILES = {DIRECTIVES_FILE, INDEX_FILE, MAKEFILE, SLIDES_FILE}
 # Template name for slides files.
 SLIDES_TEMPLATE = "slides"
 
+# Automatically excluded directories.
+EXCLUDE_DIRS = {"__pycache__", ".pytest_cache"}
+
 
 def main():
     options = parse_args()
@@ -292,7 +295,10 @@ def get_figure(text):
 def get_files(config, slug):
     """Return set of files in or below a source directory."""
     dir_path = Path(config["src_dir"], slug)
-    candidates = set(Path(dir_path).rglob("**/*"))
+    candidates = set(
+        p for p in Path(dir_path).rglob("**/*")
+        if not _in_excluded_dir(p)
+    )
     result = set(str(f.name) for f in candidates if f.is_file())
     ignores = set(_directive(dir_path, "unreferenced"))
     result = {f for f in result if not any(fnmatch(f, pat) for pat in ignores)}
@@ -394,6 +400,11 @@ def _error(msg):
     """Report a fatal error."""
     print(msg)
     sys.exit(1)
+
+
+def _in_excluded_dir(path):
+    """Is this path automatically excluded?"""
+    return any(p in EXCLUDE_DIRS for p in path.parts)
 
 
 def _read_file(path):

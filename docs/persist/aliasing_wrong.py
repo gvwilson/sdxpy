@@ -1,8 +1,8 @@
-from oop import LoadOop, SaveOop
+from objects import LoadObjects, SaveObjects
 
 
 # [save]
-class SaveAlias(SaveOop):
+class SaveAlias(SaveObjects):
     def __init__(self, writer):
         super().__init__(writer)
         self.seen = set()
@@ -55,7 +55,7 @@ class SaveAlias(SaveOop):
 
 
 # [load]
-class LoadAlias(LoadOop):
+class LoadAlias(LoadObjects):
     def __init__(self, reader):
         super().__init__(reader)
         self.seen = {}

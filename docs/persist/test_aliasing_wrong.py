@@ -1,16 +1,15 @@
 from io import StringIO
 
 import pytest
-from aliasing_wrong import LoadAlias as Load
-from aliasing_wrong import SaveAlias as Save
+from aliasing_wrong import LoadAlias, SaveAlias
 
 
 # [roundtrip]
 def roundtrip(fixture):
     writer = StringIO()
-    Save(writer).save(fixture)
+    SaveAlias(writer).save(fixture)
     reader = StringIO(writer.getvalue())
-    return Load(reader).load()
+    return LoadAlias(reader).load()
 # [/roundtrip]
 
 # [no_aliasing]

@@ -1,5 +1,5 @@
 # [save]
-class SaveOop:
+class SaveObjects:
     def __init__(self, writer):
         self.writer = writer
 
@@ -49,7 +49,7 @@ class SaveOop:
 
 
 # [load]
-class LoadOop:
+class LoadObjects:
     def __init__(self, reader):
         self.reader = reader
 
