@@ -364,6 +364,14 @@ Modify the iterator example so that it handles empty strings correctly,
 i.e.,
 so that iterating over the list `["a", ""]` produces `["a"]`.
 
+### An Even Better Cursor {: .exercise}
+
+Rewrite the `BetterCursor` class
+so that it initializes `self._row` to 0 and `self._col` to -1
+and always calls `self._advance()` as the first action in `self.__next__`.
+(You will need to make a few other changes as well.)
+Do you think this implementation is simpler than the one presented in this chapter?
+
 ### Logging to a File {: .exercise}
 
 Create a decorator that takes the name of a file as an extra parameter
