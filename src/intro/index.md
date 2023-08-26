@@ -156,7 +156,8 @@ and occasionally break lines in unnatural ways to make them fit on the page.
 Where we do this,
 we end all but the last line with a single backslash `\`.
 Finally,
-we write functions as `function_name` rather than `function_name()`.
+we show glossary entries in **bold text**
+and write functions as `function_name` rather than `function_name()`.
 The latter is more common,
 but people don't use `array_name[]` for arrays,
 and the empty parentheses makes it hard to tell

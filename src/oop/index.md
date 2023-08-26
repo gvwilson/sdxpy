@@ -15,7 +15,7 @@ status: "revised 2023-07-27"
 We are going to create a lot of [%i "object" "objects" %] and [%i "class" "classes" %] in these lessons,
 and they will be a lot easier to use if we understand how they are implemented.
 Historically,
-[%g oop "object-oriented programming" %] was invented to solve two problems:
+[%g oop "object-oriented programming" %] (OOP) was invented to solve two problems:
 
 1.  What is a natural way to represent real-world "things" in code?
 
