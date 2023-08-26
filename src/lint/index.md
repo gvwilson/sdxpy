@@ -207,8 +207,14 @@ to keep track of what scopes we're currently in:
 
 [% inc file="find_unused_variables.py" keep="class" %]
 
+We could just use a list of three values to record information for each scope,
+but using `namedtuple` (which also comes from Python's `collections` module)
+tells readers explicitly what each scope consists of:
+
+[% inc file="find_unused_variables.py" keep="scope" %]
+
 Each time we encounter a new scope
-we push a triple onto the stack with a name,
+we push a new `Scope` triple onto the stack with a name,
 a set to hold the variables that are used in the scope,
 and another set to hold the variables that are defined in the scope.
 We then call `NodeVisitor.generic_visitor` to trigger recursion,
@@ -216,12 +222,6 @@ pop the record we just pushed off the stack,
 and report any problems:
 
 [% inc file="find_unused_variables.py" keep="search" %]
-
-We could just use a list of three values to record information for each scope,
-but `namedtuple` (which also comes from Python's `collections` module)
-tells readers explicitly what each scope consists of:
-
-[% inc file="find_unused_variables.py" keep="scope" %]
 
 The last part of the puzzle is `visit_Name`.
 If the variable's value is being read,
