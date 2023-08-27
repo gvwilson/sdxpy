@@ -287,3 +287,12 @@ Write a program that checks the ordering of headings in a page:
     an `h1` should only ever be followed by an `h2`,
     an `h2` should never be followed directly by an `h4`,
     and so on.
+
+### Report Full Path {: .exercise}
+
+Modify the checking tool so that it reports
+the full path for style violations when it finds a problem,
+e.g.,
+reports 'div.div.p`
+(meaning "a paragraph in a div in another div")
+instead of just `p`.
