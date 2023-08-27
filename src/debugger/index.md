@@ -207,14 +207,23 @@ may seem like a lot of work,
 but we're not testing the one-line program or the VM:
 we're testing the debugger.
 For example,
-the reader in the test below
-issues three `"s"` (single-step) commands and then a `"q"` command:
+the close below:
+
+1.  Defines a multiline string that loads 55 into R0,
+    prints it,
+    and then loads 65 into the same register to print
+    before halting.
+
+2.  Creates a `Reader`
+    that issues three `"s"` (single-step) commands and a `"q"` (quit) command.
+    Note that this isn't enough to reach the second print command.
+
+3.  Executes the program.
+
+4.  Checks that the `Writer` has only recorded one line of output, not two.
 
 [% inc file="test_vm.py" keep="print" %]
 
-In response,
-the debugger steps through the first three instructions
-and then stops the VM before it can execute the second print instruction.
 This test actually uncovered a bug in an earlier version of the debugger
 in which it would always execute one more instruction when told to quit.
 Interactive testing might have spotted that,
