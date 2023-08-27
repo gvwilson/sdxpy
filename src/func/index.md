@@ -195,8 +195,8 @@ the variables in the enclosing function
 to create a [%g closure "closure" %]
 ([%f func-closure %]).
 Doing this is a way to make data private:
-once `make_hidden` returns `_inner` and we assign it to `m` in the example above,
-nothing else in our program can access
+once `make_hidden` returns `_inner` and we assign it to `has_secret` in the example above,
+nothing else in our program has any way to access
 the value that was passed to `make_hidden` as `thing`.
 
 [% figure
