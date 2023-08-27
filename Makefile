@@ -18,7 +18,7 @@ release:
 	(cd docs && tar cf - $$(find . -name '*.css' -o -name '*.html' -o -name '*.ico' -o -name '*.jpg' -o -name '*.js' -o -name '*.png' -o -name '*.svg' -o -name '*.webp')) \
 	| (cd ${SDXPY_RELEASE} && tar xf -)
 	cd docs && zip -q -r ${SDXPY_RELEASE}/${ABBREV}-examples.zip . \
-	-i '*.ht' '*.json' '*.out' '*.py' '*.sh' '*.txt' '*.yml' \
+	-i '*.ht' '*.json' '*.out' '*.py' '*.sh' '*.tll' '*.txt' '*.yml' \
 	-x '*.css' '*.html' '*.ico' '*.js' '*.svg' '*.webp'
 	cd ${SDXPY_RELEASE} && unzip -q ${ABBREV}-examples.zip
 endif

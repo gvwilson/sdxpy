@@ -21,7 +21,7 @@ One way to evaluate the design of a piece of software is
 to ask how [%g extensibility "extensible" %] it is,
 i.e.,
 how easily we can add or change things [%b Wilson2022a %].
-The answer for the [%i "interpreter" %] of [%x interp %] is pretty easily"
+The answer for the [%i "interpreter" %] of [%x interp %] is "pretty easily"
 but the answer for the little language it interprets is "not at all"
 because users cannot define new operations in the little language itself.
 We need to give them a way to define and call functions.
@@ -264,7 +264,7 @@ without requiring a separate `"set"` instruction.
 
 1.  Modify `do_func` so that if it is given more than one argument,
     it uses all but the first as the body of the function
-    (i.e., treats every after the parameter list as an implicit `"seq"`).
+    (i.e., treats everything after the parameter list as an implicit `"seq"`).
 
 2.  Is there a way to make this work in combination with
     naming-at-creation from the previous exercise?
