@@ -225,12 +225,12 @@ containing two functions:
 
 [% inc pat="oop.*" fill="py out" %]
 
-These functions both refer to a dictionary called `private`,
-which is another way of saying that
-they both have reference to the dictionary Python created to represent the closure
-that has a key `"private"` ([%f func-objects %]).
-They share the data in this dictionary,
-but nothing else in the program has access to it.
+When this code runs,
+Python creates a closure that is shared by the two functions ([%f func-objects %]).
+The closure has a key `"private"`;
+there is nothing special about this name,
+but nothing in the program can see the data in the closure
+except the two functions.
 We could add more keys to this dictionary to create more complex objects,
 and build an entire system of objects and classes this way.
 {: .continue}
