@@ -29,6 +29,8 @@ def _format_name(detail):
     order = detail.get("order", None)
     if order == "pf":
         return f"{detail['personal']} {detail['family']}"
+    elif order == "pmf":
+        return f"{detail['personal']} {detail['middle']} {detail['family']}"
     elif order == "fp":
         return f"{detail['family']} {detail['personal']}"
     util.fail(f"Unknown order {order} in {detail}")
