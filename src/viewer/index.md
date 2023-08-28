@@ -32,7 +32,7 @@ A very simple curses-based program looks like this:
 
 [% inc file="first_curses.py" %]
 
-`curses.wrapper` takes a function of a single argument,
+`curses.wrapper` takes a function with a single parameter as input,
 does some setup,
 and then calls that function with an object
 that acts as an interface to the screen.
@@ -254,7 +254,7 @@ that method will be invoked when the object is "called" as if it were a function
 [% inc pat="call_example.*" fill="py out" %]
 
 Since the `MainApp` class below defines `__call__`,
-`curses.wrapper` believes we have given it the single-argument function it needs:
+`curses.wrapper` believes we have given it the single-parameter function it needs:
 
 [% inc file="main_app.py" keep="main" %]
 

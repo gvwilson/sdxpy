@@ -305,10 +305,10 @@ Modify the `getter`/`setter` example so that:
 1.  `make_object` accepts any number of named parameters
     and copies them into the `private` dictionary.
 
-2.  `getter` takes a name as a parameter
+2.  `getter` takes a name as an argument
     and returns the corresponding value from the dictionary.
 
-3.  `setter` takes a name and a new value as parameters
+3.  `setter` takes a name and a new value as arguments
     and updates the dictionary.
 
 What does your implementation of `getter` do

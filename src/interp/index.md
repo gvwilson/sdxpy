@@ -85,7 +85,7 @@ The function to add two expressions looks like this:
 
 Its single parameter is a list containing
 the two sub-expressions to be evaluated and added.
-After checking that it has the right number of parameters,
+After checking that this list contains the required number of values,
 it calls an as-yet-unwritten function `do`
 to evaluate those sub-expressions.
 (We've called the function `do` instead of `eval`

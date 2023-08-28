@@ -319,9 +319,9 @@ that contain references to properties, functions, and other dictionaries.
 ### Handling Named Arguments {: .exercise}
 
 The final version of `call` declares a parameter called `*args`
-to capture all the positional parameters of the method being called
+to capture all the positional arguments of the method being called
 and then spreads them in the actual call.
-Modify it to capture and spread named parameters as well.
+Modify it to capture and spread named arguments as well.
 
 ### Multiple Inheritance {: .exercise}
 

@@ -227,13 +227,13 @@ rather than `name = wrap(name)`:
 
 [% inc pat="decorator_simple.*" fill="py out" %]
 
-If we want to pass parameters at the time we apply the decorator,
+If we want to pass arguments at the time we apply the decorator,
 though,
 it seems like we're stuck:
 a Python decorator must take exactly one argument,
 which must be the function we want to decorate.
 The solution is to define a function inside a function *inside yet another function*
-to create a closure that captures the parameters:
+to create a closure that captures the arguments:
 
 [% inc pat="decorator_param.*" fill="py out" %]
 

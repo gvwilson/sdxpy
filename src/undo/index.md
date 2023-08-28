@@ -224,7 +224,7 @@ and then asked to do whatever they do:
 %]
 
 Note that we have modified all the handler methods
-to take the keystroke as an input parameter
+to take the keystroke as an input argument
 so that we don't have to distinguish between
 cases where it's needed and cases where it isn't.
 This simplifies the code a little
