@@ -428,7 +428,7 @@ while [%g big_endian "big-endian" %] order stores the most significant bits firs
 Modern Intel processors use little-endian order,
 but as [this article][big_little_endian] explains,
 some other processors (and most network protocols) use big-endian order.
-There are pro's and con's to both, which we won't go into here.
+There are pros and cons to both, which we won't go into here.
 What you *do* need to know is that if you move data from one architecture to another,
 it's your responsibility to flip the bytes around,
 because the machine doesn't know what the bytes mean.
