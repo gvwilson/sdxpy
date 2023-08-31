@@ -369,15 +369,17 @@ def handle(node, state, accum, doEscape):
         # Are we switching display type based on language?
         background = ""
         frame = "tblr"
+        rulesepcolor=""
         if node_match(node.parent.parent, "div", "code-sample"):
             if has_class(node.parent.parent, {"lang-html", "lang-out", "lang-txt"}):
                 background = r",backgroundcolor=\color{black!5}"
-            if has_class(node.parent.parent, {"lang-sh"}):
+            elif has_class(node.parent.parent, {"lang-sh"}):
                 frame = "shadowbox"
+                rulesepcolor = r", rulesepcolor=\color{black!50}"
 
         # Build code.
         assert body.name == "code", "Expected code as body of pre"
-        accum.append(f"\\begin{{lstlisting}}[frame={frame}{background}]\n")
+        accum.append(f"\\begin{{lstlisting}}[frame={frame}{rulesepcolor}{background}]\n")
         children(body, state, accum, False)
         accum.append("\\end{lstlisting}\n")
 
