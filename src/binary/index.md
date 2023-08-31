@@ -62,8 +62,6 @@ even if `x` is a valid number,
 `-x` may not be.
 
 We can write binary numbers directly in Python using the `0b` prefix:
-for example,
-`0b0011` is 3 base 10:
 
 [% inc pat="binary_notation.*" fill="py out" %]
 
