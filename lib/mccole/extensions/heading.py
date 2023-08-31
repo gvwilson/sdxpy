@@ -68,9 +68,8 @@ def _number(headings, major):
                 pass
 
             # Deeper heading, so extend stack.
-            elif depth > len(stack):
-                while len(stack) < depth:
-                    stack.append(1)
+            elif depth == len(stack) + 1:
+                stack.append(1)
 
             # Heading at the same level, so increment.
             elif depth == len(stack):
