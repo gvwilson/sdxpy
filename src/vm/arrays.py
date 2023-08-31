@@ -36,7 +36,7 @@ class DataAllocator(Assembler):
             lbl, num_words_text = fields
             assert lbl not in labels, f"Duplicate label '{lbl}' in allocation"
             num_words = int(num_words_text)
-            assert (base_of_data + num_words) < RAM_LEN,
+            assert (base_of_data + num_words) < RAM_LEN, \
                 f"Allocation '{lbl}' requires too much memory"
             labels[lbl] = base_of_data
             base_of_data += num_words

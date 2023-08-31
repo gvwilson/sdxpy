@@ -250,6 +250,24 @@ if we want to represent a character whose code point is 1789:
 -   We encode the low 6 bits as 10111101,
     meaning "a continuation byte with 6 payload bits 111101".
 
+<div class="callout" markdown="1">
+
+### Internal vs. External
+
+Since UTF-8 uses a varying number of bytes per character,
+the only way to get to a particular character in a string
+is to scan the string from the beginning,
+which means that indexing a string is \\( O(N) \\).
+However,
+when Python loads text into memory,
+it converts the variable-length encoding to a fixed-length encoding,
+i.e.,
+uses exactly the same number of bytes for each character.
+This allows it to jump directly to any character in the string in constant time,
+which a computer scientist would say is \\( O(1) \\).
+
+</div>
+
 ## And Now, Persistence {: #binary-binary}
 
 [%x persist %] showed how to store data as human-readable text.
