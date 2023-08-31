@@ -34,7 +34,7 @@ Many others now exist (such as [SCons][scons] and [Snakemake][snakemake]),
 but all perform the same basic operations.
 If a [%g build_target "target" %] is [%g build_stale "stale" %]
 with respect to any of its  [%g dependency "dependencies" %],
-the builder manager runs a [%g build_recipe "recipe" %] to refresh it.
+the build manager runs a [%g build_recipe "recipe" %] to refresh it.
 
 The build manager runs recipes in an order that respects dependencies,
 and it only runs each recipe once (if at all).
@@ -43,7 +43,7 @@ targets and dependencies must form a [%g dag "directed acyclic graph" %],
 i.e.,
 there cannot be a [%g cycle "cycle" %] of links
 leading from a [%i "node" %] back to itself.
-The builder manager constructs
+The build manager constructs
 a [%g topological_order "topological ordering" %] of that [%i "graph" %],
 i.e.,
 arranges nodes so that each one comes after everything it depends on,
@@ -190,7 +190,7 @@ but we can do better:
 
 2.  Printing actions to the screen isn't very useful,
     so we should collect them and return an ordered list of
-    the commands for the builder.
+    the commands for the build manager.
 
 3.  `assert` isn't a friendly way to handle user errors;
     we should raise `ValueError` (or a custom exception of our own)
@@ -208,7 +208,7 @@ but we can do better:
 5.  We might want to add other keys to rules,
     so we should put that check in a separate method that we can override.
 
-The top level of our better builder looks like this:
+The top level of our better build manager looks like this:
 
 [% inc file="build_better.py" keep="main" %]
 
