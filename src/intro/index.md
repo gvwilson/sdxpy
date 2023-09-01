@@ -1,10 +1,9 @@
 ---
 syllabus:
--   The complexity of a system increases more rapidly than the number of parts it contains.
+-   The complexity of a system increases more rapidly than its size.
 -   The best way to learn design is to study examples,
     and the best programs to use as examples are the ones programmers use every day.
--   These lessons assume readers already understand the basics of Python
-    and want to learn how to write larger programs,
+-   These lessons assume readers can write small programs and want to write larger ones,
     or are looking for material to use in software design classes that they teach.
 -   All of the content is free to read and re-use under open licenses,
     and all royalties from sales of this book will go to charity.
@@ -31,8 +30,8 @@ This [learner persona][t3_personas] [%b Wilson2019 %] describes who this book is
 
 > *Maya has a master's degree in genomics.
 > She knows enough Python to analyze data from her experiments,
-> but is struggling to write code that other people (including her future self) can use.
-> These lessons will teach her how to design, build, and test large programs
+> but struggles to write code other people can use.
+> These lessons will show her how to design, build, and test large programs
 > in less time and with less pain.*
 > {: .continue}
 
@@ -122,7 +121,7 @@ an expert can understand most quickly.
    caption="Novice and expert comprehension curves."
 %]
 
-The third big idea in this book is that programs are just another kind of data.
+Our third big idea is that programs are just another kind of data.
 Source code is just text,
 which we can process like other text files.
 Likewise,
@@ -254,7 +253,7 @@ we all get a lot.
   *This one's for Mike and Jon: I'm glad you always found time to chat.*
 </div>
 
-All royalties from sales of this book will go to support the [Red Door Family Shelter][red_door] in Toronto.
+All royalties from this book will go to the [Red Door Family Shelter][red_door] in Toronto.
 {: .continue}
 
 ## Exercises {: #intro-exercises}
@@ -274,8 +273,3 @@ Which of them can you understand?
 What makes the others hard to understand?
 What could you add, leave out, or write differently
 when you report a problem that you have found?
-
-1.  Every program contains at least one bug.
-2.  Every program can be made one line shorter.
-3.  Every program can therefore be reduced to a single statement,
-    which is wrong.
