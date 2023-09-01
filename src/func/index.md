@@ -51,6 +51,8 @@ we can define it on its own without naming it:
 
 [% inc file="example_def.py" keep="def" %]
 
+<div class="pagebreak"></div>
+
 To save the function for later use,
 we simply assign it to a name
 as we would assign any other value:
@@ -92,8 +94,8 @@ we will:
 
 2.  Look up the function.
 
-3.  Create a new [%i "environment" %] whose keys are the parameters' names
-    and whose values are the expressions' values.
+3.  Create a new [%i "environment" %] from the function's parameter names
+    and the expressions' values.
 
 4.  Call `do` to run the function's action and captures the result.
 
@@ -101,22 +103,17 @@ we will:
 
 6.  Return the function's result.
 
-The arguments passed to the functions can be expressions rather than constants,
-so we have to evaluate them when we make the call.
-We have decided not to put them in a sub-list
-in order to save ourselves one more layer of parentheses.
-
 <div class="callout" markdown="1">
 
 ### Eager and Lazy
 
-We said above that we have to evaluate a function's arguments when we call it,
-which is called [%g eager_evaluation "eager evaluation" %].
+Evaluating a function's arguments before we run it
+is called [%g eager_evaluation "eager evaluation" %].
 We could instead use [%g lazy_evaluation "lazy evaluation" %],
 in which case we would pass the argument sub-lists into the function
-and let the function evaluate them when it needed their values.
-Python and most other languages use the former strategy,
-but a handful of languages, such as R, use the latter.
+and let it evaluate them when it needed their values.
+Python and most other languages are eager,
+but a handful of languages, such as R, are lazy.
 It's a bit more work,
 but it allows the function to inspect the expressions it has been called with
 and decide how to handle them.
@@ -208,6 +205,8 @@ have access to things defined at the [%i "global" %] level of the program:
 But since functions are just another kind of data,
 the outer function can return the inner function it defined as its result:
 
+<div class="pagebreak"></div>
+
 [% inc pat="closure.*" fill="py out" %]
 
 The inner function still has access to the value of `thing`,
@@ -226,9 +225,8 @@ the value that was passed to `make_hidden` as `thing`.
    img="closure.svg"
    alt="Closures"
    caption="Closures"
+   cls="here"
 %]
-
-[% inc pat="adder.*" fill="py out" %]
 
 One common use of closures is
 to turn a function that needs many arguments
@@ -325,25 +323,6 @@ What would happen if it did evaluate them immediately?
 2.  Why might this be a good idea?
     What does it make more difficult?
 
-### What Can Change? {: .exercise}
-
-Explain why this program doesn't work:
-
-[% inc file="counter_fail.py" %]
-
-Explain why this one does:
-{: .continue}
-
-[% inc file="counter_succeed.py" %]
-
-### How Private Are Closures? {: .exercise}
-
-If the data in a closure is private,
-explain why lines 1 and 2 are the same in the output of this program
-but lines 3 and 4 are different.
-
-[% inc pat="closure_list.*" fill="py out" %]
-
 ### Generalizing Closure-Based Objects {: .exercise}
 
 Modify the `getter`/`setter` example so that:
@@ -362,3 +341,22 @@ if the name isn't already in the `private` dictionary?
 What does your `setter` do
 if the name isn't already there?
 What does it do if the update value has a different type than the current value?
+
+### What Can Change? {: .exercise}
+
+Explain why this program doesn't work:
+
+[% inc file="counter_fail.py" %]
+
+Explain why this one does:
+{: .continue}
+
+[% inc file="counter_succeed.py" %]
+
+### How Private Are Closures? {: .exercise}
+
+If the data in a closure is private,
+explain why lines 1 and 2 are the same in the output of this program
+but lines 3 and 4 are different.
+
+[% inc pat="closure_list.*" fill="py out" %]
