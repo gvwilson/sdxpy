@@ -360,6 +360,15 @@ Refactor the classes used to represent blocks, rows, and columns so that:
 
 2.  All common behavior is defined in that parent (if only with placeholder methods).
 
+### Removing Spreads {: .exercise}
+
+The code shown in this chapter makes heavy use of [%i "varargs" %] and [%i "spreading" %],
+i.e.,
+uses `*` to spread the values of lists to match parameters
+and `*children` to capture multiple arguments.
+Rewrite the code to use lists instead.
+Do you find your rewritten code easier to understand?
+
 ### Recycling {: .exercise}
 
 Modify the wrapping code so that new rows and columns are only created if needed.
