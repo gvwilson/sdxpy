@@ -17,10 +17,12 @@ class Undo(Action):
 # [/Undo]
 
 
+# [app]
 class UndoableApp(ActionApp):
+    # [skip]
     def _do_UNDO(self, key):
         return Undo(self)
-
+    # [/skip]
     def _interact(self):
         family, key = self._get_key()
         name = f"_do_{family}" if family else f"_do_{key}"
@@ -31,3 +33,4 @@ class UndoableApp(ActionApp):
         if action.save():
             self._history.append(action)
         self._add_log(key)
+# [/app]

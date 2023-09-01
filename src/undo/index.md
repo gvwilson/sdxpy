@@ -199,7 +199,9 @@ but instead choose to create a single class:
 
 [% inc file="action.py" keep="Move" %]
 
-This class depends on adding two new methods to `Cursor`
+This class records the new cursor position as well as the old one
+to make debugging easier.
+It depends on adding two new methods to `Cursor`
 to move in a particular direction by name
 (e.g., "right" or "left")
 and to move to a particular location:
@@ -253,6 +255,12 @@ but we override it in `Undo` to return `False`:
 
 [% inc file="undoable.py" keep="Undo" %]
 
+Note that popping the most recent action off the history stack
+only works once we modify the application's `_interact` method
+so that it only saves actions that ought to be saved:
+
+{% inc file="undoable.py" keep="app" omit="skip" %]
+
 We can now write tests like this to check that we can insert a character,
 undo the action,
 and get back the screen we originally had:
@@ -271,18 +279,32 @@ and get back the screen we originally had:
 
 ## Exercises {: #undo-exercises}
 
-### Limiting History {: .exercise}
-
-Modify the application so that only the most recent hundred operations can be undone.
-
 ### Combining Movement {: .exercise}
 
 Modify the application so that successive movement operations are combined
 into a single undo step.
 
+### Forgetting Moves  {: .exercise}
+
+Most editors do not save cursor movements in their undo history.
+Modify the code in this chapter so that undo only works on
+changes to the content being edited.
+
+### Limiting History {: .exercise}
+
+Modify the application so that only the most recent hundred operations can be undone.
+
+### Breaking Lines {: .exercise}
+
+Modify the code so that pressing the Enter key inserts a new line
+or breaks the current line in two.
+What information do you have to store to make this operation undoable?
+
 ### Re-doing Operations {: .exercise}
 
 Implement a "redo" command that re-executes an operation that has been undone.
+How does redo differ from undoing an undo?
+Does it make sense to redo an action that wasn't done?
 
 ### Repeating Operations {: .exercise}
 
