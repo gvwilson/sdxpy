@@ -27,7 +27,7 @@ the [%g time_complexity "time complexity" %] of our algorithm is \\( O(N^2) \\),
 which is pronounced "[%g big_oh "big-oh" %] of N squared".
 In simpler terms,
 when the number of files doubles the running time roughly quadruples,
-which means means that the time per file increases as the number of files increases.
+which means the time per file increases as the number of files increases.
 
 Slowdown like this is often unavoidable,
 but in our case there's a better way.
