@@ -50,7 +50,6 @@ by allowing the people using related things to ignore their differences:
 [% inc file="shapes_original.out" %]
 
 But how does polymorphism work?
-
 The first thing we need to understand is that a function is an [%i "object" %].
 While the bytes in a string represent characters
 and the bytes in an image represent pixels,
@@ -141,6 +140,8 @@ Calling a method now involves one more lookup
 because we have go to from the object to the class to the method,
 but once again we call the "method" with the object as the first argument:
 
+<div class="pagebreak"></div>
+
 [% inc file="shapes_class.py" keep="call" %]
 
 As a bonus,
@@ -189,6 +190,8 @@ This mechanism is sometimes referred to as [%g varargs "varargs" %]
 A complementary mechanism called [%g spread "spreading" %]
 allows us to take a list or dictionary full of arguments
 and spread them out in a call to match a function's parameters:
+
+<div class="pagebreak"></div>
 
 [% inc pat="spread.*" fill="py out" %]
 
@@ -258,6 +261,8 @@ the requested method ([%f oop-inherit-class %]):
    alt="Implementing inheritance"
    caption="Using dictionary search to implement inheritance."
 %]
+
+<div class="pagebreak"></div>
 
 A simple test shows that this is working as intended:
 
