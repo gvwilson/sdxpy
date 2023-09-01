@@ -148,6 +148,8 @@ We can now write a few tests to check that
 the tokenizer is producing a list of lists
 in which each sub-list represents a single token:
 
+<div class="pagebreak"></div>
+
 [% inc file="test_tokenizer.py" keep="tests" %]
 
 ## Parsing {: #parse-parse}
@@ -182,9 +184,7 @@ until we see an `EitherEnd` marker:
 This achieves the same thing in the two-token case,
 but allows us to write alternatives with more options
 without changing the code.
-{: .continue}
-
-Time for some tests:
+Tests confirm that we're on the right track:
 
 [% inc file="test_parser.py" keep="sample" %]
 

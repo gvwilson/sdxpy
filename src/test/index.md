@@ -234,6 +234,8 @@ for name in globals():
     print(name)
 ```
 
+<div class="pagebreak"></div>
+
 What happens if you run:
 
 ```python
@@ -279,10 +281,10 @@ then the tool only runs tests that contain the string `pattern` in their name.
 
 ### Finding Functions {: .exercise}
 
-Python is a [%g dynamic_typing "dynamically typed" %] language,
-which means that it checks the types of values as the program is running.
-We can do this ourselves using its built-in `type` function,
-which will tell us that `3` is an integer:
+Python is [%g dynamic_typing "dynamically typed" %],
+which means it checks the types of values as code runs.
+We can do this ourselves using the `type` function,
+which shows that 3 is an integer:
 
 [% inc pat="type_int.*" fill="py out" %]
 

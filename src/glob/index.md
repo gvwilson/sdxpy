@@ -99,6 +99,7 @@ while `rest` is responsible for matching the rest of the text.
 If `rest` is `None`,
 this matcher is the last one in the chain,
 so it must match to the end of the target string.
+{: .continue}
 
 The `match` method takes the text to be matched as an input
 along with an optional `start` parameter
@@ -163,6 +164,7 @@ If none of these possibilities succeeds,
 the overall match fails
 ([%f glob-any %]).
 
+<div class="pagebreak"></div>
 [% figure
    slug="glob-any"
    img="any.svg"
@@ -184,6 +186,8 @@ we try the second alternative,
 and if that doesn't work either we fail:
 
 [% inc file="glob_either.py" %]
+
+<div class="pagebreak"></div>
 
 Our first few tests pass:
 
@@ -233,6 +237,8 @@ And as [%b Tichy2010 %] showed,
 learning these patterns makes people better programmers.
 
 </div>
+
+<div class="pagebreak"></div>
 
 Our new parent class `Match` looks like this:
 
@@ -301,6 +307,8 @@ stayed the same as well.
 We should add some tests for `Null`,
 but we have now met our original goal,
 and as the exercises will show we can easily add matchers for other kinds of patterns.
+
+<div class="pagebreak"></div>
 
 ## Summary {: #glob-summary}
 
