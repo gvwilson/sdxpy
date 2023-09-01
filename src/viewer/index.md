@@ -184,7 +184,7 @@ to be more readable than 0 and 1 or `R` and `C`.
 but a pair of constants is good enough for now.)
 
 [% inc file="util.py" keep="coord" %]
-[% inc file="coord_const.py" keep="window" omit="omit" %]
+[% inc file="cursor_const.py" keep="window" omit="omit" %]
 
 ## Moving {: #viewer-move}
 

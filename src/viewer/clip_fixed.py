@@ -17,7 +17,7 @@ class ClipCursorFixed(ClipCursor):
     def _fix(self):
         self._pos[COL] = min(
             self._pos[COL],
-            (self._buf.ncol(self._pos[ROW])-1))
+            (self._buffer.ncol(self._pos[ROW])-1))
 # [/cursor]
 
 class ClipAppFixed(ClipApp):

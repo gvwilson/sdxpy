@@ -7,15 +7,15 @@ from buffer_class import Buffer, BufferApp
 
 # [cursor]
 class ClipCursor(Cursor):
-    def __init__(self, buf):
+    def __init__(self, buffer):
         super().__init__()
-        self._buf = buf
+        self._buffer = buffer
 
     def up(self):
         self._pos[ROW] = max(self._pos[ROW]-1, 0)
 
     def down(self):
-        self._pos[ROW] = min(self._pos[ROW]+1, self._buf.nrow()-1)
+        self._pos[ROW] = min(self._pos[ROW]+1, self._buffer.nrow()-1)
 
     def left(self):
         self._pos[COL] = max(self._pos[COL]-1, 0)
@@ -23,7 +23,7 @@ class ClipCursor(Cursor):
     def right(self):
         self._pos[COL] = min(
             self._pos[COL]+1,
-            self._buf.ncol(self._pos[ROW])-1
+            self._buffer.ncol(self._pos[ROW])-1
         )
 # [/cursor]
 
