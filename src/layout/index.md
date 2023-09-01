@@ -109,8 +109,8 @@ If the cell is a block, we place it there.
 If the cell is a row, on the other hand,
 we get its height
 and then calculate its lower edge as y1 = y0 + height.
-We then place the first child's upper-left corner at (x0, y1),
-the second child's at (x0 + width0, y1), and so on
+We then place the first child's upper-left corner at (x0, y1-height0),
+the second child's at (x0 + width0, y1-height0), and so on
 ([%f layout-layout %]).
 Similarly,
 if the cell is a column
