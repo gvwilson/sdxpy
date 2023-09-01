@@ -1,10 +1,8 @@
 SRC=df_col.py df_row.py df_base.py util.py
 TARGETS=\
   analysis.svg \
-  inspect_func.out \
   make.out \
   profile.out \
-  spread.out \
   timing.csv
 
 include ../../examples.mk
