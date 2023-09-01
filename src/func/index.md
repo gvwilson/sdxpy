@@ -138,7 +138,8 @@ Searching through all active stack frames for a variable
 is called is [%g dynamic_scoping "dynamic scoping" %].
 In contrast,
 most programming languages used [%g lexical_scoping "lexical scoping" %],
-which figures out what a variable name refers to based on the structure of the program text.
+which figures out what a variable name refers to
+based on the structure of the program text.
 The former is easier to implement (which is why we've chosen it);
 the latter is easier to understand,
 particularly in large programs.
@@ -151,15 +152,36 @@ The completed implementation of function definition is:
 
 [% inc file="func.py" keep="func" %]
 
-The completed implementation of function call is:
+and the completed implementation of function call is:
 {: .continue}
 
 [% inc file="func.py" keep="call" %]
 
-Our test program and its output are:
-{: .continue}
+and our test program and its output are:
 
 [% inc pat="func.*" fill="tll out" %]
+
+<div class="callout" markdown="1">
+
+### Unpacking One Line
+
+`do_call` contains the line:
+
+```py
+env.append(dict(zip(params, values)))
+```
+
+Working from the inside out,
+it uses the built-in function `zip`
+to create a list of pairs of corresponding items
+from `params` and `values`,
+then passes that list of pairs to `dict` to create a dictionary,
+which it then appends to the list `env`.
+The exercises will explore whether rewriting this
+would make it easier to read.
+{: .continue}
+
+</div>
 
 Once again,
 Python and other languages do more or less that we've done here.
@@ -254,11 +276,35 @@ and build an entire system of objects and classes this way.
 
 ## Exercises {: #func-exercises}
 
+### Rewriting Environment Creation {: .exercise}
+
+Re-read the description of how this line in `do_call` works:
+
+```py
+env.append(dict(zip(params, values)))
+```
+
+and then rewrite the line using a loop to insert
+parameter names and values into a dictionary.
+Do you find your rewritten code easier to read:
+{: .continue}
+
+### Chained Maps {: .exercise}
+
+Look at the documentation for the [`ChainMap`][py_chainmap] class
+and modify the interpreter to use that to manage environments.
+
 ### Defining Named Functions {: .exercise}
 
 Modify `do_func` so that if it is given three arguments instead of two,
 it uses the first one as the function's name
 without requiring a separate `"set"` instruction.
+
+### Evaluating Parameters {: .exercise}
+
+`do_func` stores the new function's parameters and body
+without evaluating them.
+What would happen if it did evaluate them immediately?
 
 ### Implicit Sequence {: .exercise}
 
