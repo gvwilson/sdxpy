@@ -117,6 +117,8 @@ to decide what other function to call.
 
 [% inc file="expr.py" keep="do" %]
 
+<div class="pagebreak"></div>
+
 This lookup-and-call process is called [%g dynamic_dispatch "dynamic dispatch" %],
 since the program decides who to give work to on the fly.
 It leads to a situation where `do` calls a function like `do_add`,
@@ -272,8 +274,9 @@ that stores every function whose name starts with `do_`
    caption="Dynamically-generated function lookup table."
 %]
 
+<div class="pagebreak"></div>
+
 Line by line:
-{: .continue}
 
 1.  We use a [%g dictionary_comprehension "dictionary comprehension" %]
     to create a dictionary in a single statement.
