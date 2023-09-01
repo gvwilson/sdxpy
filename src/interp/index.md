@@ -329,6 +329,13 @@ so that the following program produces the output shown:
 
 [% inc pat="doubling.*" fill="tll out" %]
 
+Does your `repeat` command handle "repeat zero times" correctly?
+I.e., does it handle this program?
+If so,
+what does your `do_repeat` function return as a result in this case?
+
+[% inc file="repeat_zero.tll" %]
+
 ### Arrays {: .exercise}
 
 Implement fixed-size one-dimensional arrays:
@@ -364,12 +371,6 @@ When enabled, it makes TLL print a messages showing each function call and its r
 
 Implement a `while` loop instruction.
 Your implementation can use either a Python `while` loop or recursion.
-
-### For Loops {: .exercise}
-
-Implement a `for` loop instruction that repeats instructions a certain number of times.
-Your implementation should allow users to specify a loop variable
-so that they know which iteration of the loop they're in.
 
 ### Internal Checks {: .exercise}
 
