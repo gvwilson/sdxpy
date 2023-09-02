@@ -117,6 +117,7 @@ and to load a list we just read the specified number of items:
    img="lists.svg"
    alt="Saving lists"
    caption="Saving nested data structures."
+   cls="here"
 %]
 
 Notice that `save` and `load` don't need to know
@@ -250,6 +251,7 @@ fixture = [shared, shared]
    img="shared.svg"
    alt="Saving aliased data incorrectly"
    caption="Saving aliased data without respecting aliases."
+   cls="here"
 %]
 
 The problem is that the list `shared` is [%i "alias" "aliased" %],
@@ -334,15 +336,13 @@ Here's a test that actually includes some aliasing:
 [% inc file="test_aliasing_wrong.py" keep="shared" %]
 
 It checks that the aliased sub-list is actually aliased after the data is restored,
-and then checks that modifying that sub-list works as it should
-(i.e.,
-that changes made through one alias are visible through the other).
+then checks that changes to the sub-list through one alias show up through the other.
 The second check ought to be redundant,
 but it's still comforting.
 {: .continue}
 
 There's one more case to check,
-and unfortunately it turns up a bug in our code.
+and unfortunately it reveals a bug.
 The two lines:
 
 ```python
@@ -387,10 +387,9 @@ alias:4484025600:
 
 1.  `LoadAlias.load` reads the second line of saved data,
     which tells it to re-use the data whose ID is `4484025600`.
-    But `LoadObjects._list` hasn't created and returned that list yet—it
-    is still reading in the elements—so
-    `LoadAlias.load` hasn't had a chance to add the list to the `seen` dictionary
-    of previously-read items.
+    But `LoadObjects._list` hasn't created that list yet—it
+    is still reading the elements—so
+    `LoadAlias.load` hasn't added the list to `seen`.
 
 The solution is to reorder the operations,
 which unfortunately means writing new versions
@@ -410,6 +409,8 @@ but the changes to `save_set` and `save_dict` follow exactly the same pattern.
 
 [% inc file="save_aliasing.py" keep="save" %]
 [% inc file="save_aliasing.out" %]
+
+<div class="pagebreak"></div>
 
 ## Summary {: #persist-summary}
 
