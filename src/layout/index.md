@@ -1,10 +1,10 @@
 ---
 syllabus:
--   A layout engine determines where to place text and other page elements based on their size and organization.
+-   A layout engine determines where to place page elements based on size and organization.
 -   Page elements are organized as a tree of basic blocks, rows, and columns.
 -   The layout engine calculates the position of each block based on its size and the position of its parent.
--   Drawing blocks on top of each other from top to bottom is an easy way to render them.
--   Use multiple inheritance and mixin classes to inject methods into classes without modifying their parent class.
+-   Drawing blocks on top of each other is an easy way to render them.
+-   Use multiple inheritance and mixin classes to inject methods into classes.
 depends:
 -   check
 -   template
@@ -12,7 +12,7 @@ status: "revised 2023-08-05"
 ---
 
 You might be reading this as [%i "HTML" %] in your browser,
-as an e-book (which is basically the same thing),
+as an e-book,
 or on the printed page.
 In all three cases
 a [%g layout_engine "layout engine" %] took some text and some layout instructions
@@ -153,15 +153,15 @@ One such test is:
 We drew blocks on graph paper
 to figure out the expected answers for the tests shown above.
 We can do something similar in software by creating a "screen" of space characters
-and then having each block draw itself in the right place.
-If we do this starting at the [%i "root" %] of the tree,
-child blocks will overwrite the markings made by their parents,
+and having each block draw itself in the right place.
+If we start at the [%i "root" %] of the tree,
+children will overwrite the marks made by their parents,
 which will automatically produce the right appearance
 ([%f layout-draw-over %]).
 (A more sophisticated version of this called [%g z_buffering "z-buffering" %]
 used in 3D graphics
 keeps track of the visual depth of each pixel
-in order to draw objects correctly regardless of their order.)
+to draw objects correctly regardless of their order.)
 
 [% figure
    slug="layout-draw-over"
@@ -170,10 +170,10 @@ in order to draw objects correctly regardless of their order.)
    caption="Render blocks by drawing child nodes on top of parent nodes."
 %]
 
-Our pretended screen is a list of lists of characters,
-with each inner list representing a row on the screen.
-We use lists for this rather than strings
-so that we can overwrite characters in place:
+Our "screen" is a list of lists of characters,
+with one inner list for each a row on the screen.
+(We use lists rather than strings
+so that we can overwrite characters in place.)
 
 [% inc file="render.py" keep="make_screen" %]
 
@@ -228,6 +228,8 @@ though we still had to draw things on paper
 to figure out what to expect:
 
 [% inc file="test_rendered.py" keep="col2" %]
+
+<div class="pagebreak"></div>
 
 The fact that our tests are difficult to understand
 is a sign that we should do more testing.
@@ -407,6 +409,12 @@ so that all of the columns in a row are automatically sized to have the same wid
 If the number of columns does not divide evenly into the width of the row,
 allocate the extra space as equally as possible from left to right.
 
+### Properties {: .exercise}
+
+Look at the documentation for Python's [`@property`][py_property] [%i "decorator" %]
+and modify the block classes to replace the `get_width` and `get_height` methods
+with properties called `width` and `height`.
+
 ### Drawing Borders {: .exercise}
 
 1.  Modify the existing code so that elements are drawn with borders like this:
@@ -438,12 +446,6 @@ For example, string `"text"` with a padding of 1 would render as:
 
 where the lines show the outer border of the rendering.
 {: .continue}
-
-### Properties {: .exercise}
-
-Look at the documentation for Python's [`@property`][py_property] [%i "decorator" %]
-and modify the block classes to replace the `get_width` and `get_height` methods
-with properties called `width` and `height`.
 
 ### Tables {: .exercise}
 
