@@ -367,7 +367,7 @@ The steps in cleanup are:
 
 5.  Generate a new in-memory index.
 
-The implementation of these steps is mostly a matter of bookeeping:
+The implementation of these steps is mostly a matter of bookkeeping:
 {: .continue}
 
 [% inc file="cleanup.py" keep="cleanup" %]

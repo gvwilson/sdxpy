@@ -266,7 +266,7 @@ the class representing columns needs a new method:
 
 [% inc file="wrapped.py" keep="blockcol" %]
 
-(The `*` in front of the list being pacced to `PlacedCol`
+(The `*` in front of the list being passed to `PlacedCol`
 in the last line of the code above
 is another use of the [%i "spreading" %] introduced in [%x oop %].)
 {: .continue}

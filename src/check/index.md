@@ -88,7 +88,7 @@ We can test this function with a short example:
 [% inc file="parse.out" %]
 
 In order to keep everything in one file,
-we have written the HTML "page" as a multi-line Python string;
+we have written the HTML "page" as a multiline Python string;
 we will do this frequently when writing unit tests
 so that the HTML [%i "fixture" %] is right beside the test code.
 Notice in the output that the line breaks in the HTML
@@ -210,7 +210,7 @@ and that we're not supposed to *emphasize* words in lists.
 Other users' rules may be different,
 but we now have the tool we need
 to check that any HTML we generate conforms to our intended rules.
-More imoprtantly,
+More importantly,
 we have a general pattern for building recursive code
 that we can use in upcoming chapters.
 

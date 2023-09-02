@@ -121,7 +121,7 @@ we copy those numbers into memory and reset the instruction pointer and register
 Notice that the VM's constructor calls `initialize` with an empty array
 (i.e., a program with no instructions)
 to do initial setup.
-If an object has a method to reset or re-initialize itself,
+If an object has a method to reset or reinitialize itself,
 having its constructor use that method
 is a way to avoid duplicating code.
 {: .continue}
