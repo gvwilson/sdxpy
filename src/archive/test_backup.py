@@ -1,10 +1,10 @@
-# [setup]
 from pathlib import Path
 from unittest.mock import patch
 import pytest
 
 from backup import backup
 
+# [setup]
 FILES = {"a.txt": "aaa", "b.txt": "bbb", "sub_dir/c.txt": "ccc"}
 
 @pytest.fixture

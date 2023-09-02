@@ -272,35 +272,28 @@ we can create the specific archiver we want with a single line:
 
 [% inc file="backup_oop.py" keep="create" %]
 
-Why go to this trouble?
-First,
-it makes life easier when we want to write archivers
+Doing this makes life easier when we want to write archivers
 that behave the same way but work differently.
 For example,
 we could create an archiver that [%g file_compression "compresses" %]
-files as it archives them
+the files it archives
 by deriving a new class from `ArchiveLocal`
-and changing only its `_copy_files` method.
-
-Second,
-other code can use an archiver *without knowing exactly what it's doing*.
+and writing a new `_copy_files` method.
+More importantly,
+other code can use an archiver *without knowing what it's doing*.
 For example,
 the function `analyze_and_save` reads some data,
 analyzes it,
 saves the results,
 and then create an archive of those results.
-It doesn't know,
-and doesn't need to know,
-whether the archive is compressing files,
-whether those files are being saved locally or remotely,
-or anything else:
+It doesn't know whether the archive is compressing files
+or whether they're being saved locally or remotely.
 
 [% inc file="backup_oop.py" keep="use" %]
 
-This example highlights one of the great strengths of [%i "object-oriented programming" %].
-It's easy to write programs in which new code uses old code;
-provided classes and objects are carefully designed,
-they allow old code to use new code without being changed.
+This example highlights one of the strengths of [%i "object-oriented programming" %]:
+it allows old code to use new code without any changes.
+{: .continue}
 
 ## Summary {: #archive-summary}
 
@@ -343,9 +336,8 @@ Why doesn't this solve the time of check/time of use race condition mentioned ea
     such as the first few characters of the data.
 
 3.  Rewrite the tests to use this function.
-
-How did you modify the main program
-so that the tests could control which hashing function is used?
+    How did you modify the main program
+    so that the tests could control which hashing function is used?
 
 ### Comparing Manifests {: .exercise}
 
@@ -367,9 +359,8 @@ Write a program `compare-manifests.py` that reads two manifest files and reports
 
 ### From One State to Another {: .exercise}
 
-1.  Write a program called `from_to.py` that takes the name of a directory
-    and the name of a manifest file
-    as its command-line arguments,
+1.  Write a program called `from_to.py` that takes a directory and a manifest file
+    as command-line arguments,
     then adds, removes, and/or renames files in the directory
     to restore the state described in the manifest.
     The program should only perform file operations when it needs to,
