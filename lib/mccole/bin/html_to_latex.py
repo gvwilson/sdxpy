@@ -517,12 +517,12 @@ def table(node, state, accum, doEscape):
     assert node.name == "table", "Node is not a table"
     label = node["id"] if node.has_attr("id") else None
     position = node["class"] if node.has_attr("class") else None
-    position = "[h]" if position is not None else ""
+    position = "[h]" if position == "here" else ""
 
     assert node.tbody, f"Table node does not have body {node}"
     rows = [table_row(row, state, doEscape, "td") for row in node.tbody.find_all("tr")]
     width = len(node.tbody.find("tr").find_all("td"))
-    spec = "l" * width
+    spec = r"p{0.48\textwidth}" * 2 if has_class(node, "twocol") else "l" * width
 
     thead = node.thead
     if thead:

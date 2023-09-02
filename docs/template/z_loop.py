@@ -1,5 +1,3 @@
-"""Repeat operations."""
-
 def open(expander, node):
     index_name, target_name = node.attrs["z-loop"].split(":")
     expander.showTag(node, False)

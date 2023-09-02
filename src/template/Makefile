@@ -13,7 +13,7 @@ EXTRAS = template.py vars.json
 template.py: expander.py
 	@touch $@
 
-expander.py: env.py visitor.py
+expander.py: env.py visitor.py z_if.py z_loop.py z_num.py z_var.py
 	@touch $@
 
 conditional.out: ${EXTRAS} conditional.ht

@@ -1,5 +1,3 @@
-"""Insert a constant."""
-
 def open(expander, node):
     expander.showTag(node, False)
     expander.output(node.attrs["z-num"])

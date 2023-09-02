@@ -74,22 +74,19 @@ the output will be standard HTML without any traces of how it was created:
 
 ### Human-Readable vs. Machine-Readable
 
-Mini-languages for page templating can quickly become unreadable.
-We have already started down that road
-by putting the loop variable and loop target in a single attribute
-and splitting that attribute to get them out.
-Doing this makes loops easy for people to type,
+Putting the loop variable and loop target in a single attribute
+and splitting that attribute to get them back
+makes loops easy for people to type
 but hides important information from standard HTML processing tools:
-they can't know that this particular attribute of these particular elements
-contains multiple values
-or that those values should be extracted by splitting a string on a colon.
-We could instead use two attributes like this:
+they can't know that this particular attribute contains
+multiple values separated by a colon.
+We could use two attributes like this:
 
 ```html
 <ul z-loop="names" z-loop-var="item">
 ```
 
-but we have decided to save ourselves a little typing.
+but we decided to save ourselves a little typing.
 And strictly speaking
 we should call our attributes `data-something` instead of `z-something`
 to conform with the [%i "HTML5 specification" url="html5_data_attributes" %],
@@ -118,6 +115,7 @@ and have it pass them into the expansion function as an dictionary
    img="api.svg"
    alt="Template API"
    caption="Combining text and data in templating."
+   cls="here"
 %]
 
 ## Managing Variables {: #template-values}
@@ -167,6 +165,8 @@ that uses an `Env` to keep track of variables.
 It imports handlers for each type of special node—we will explore those in a moment—and
 saves them along with a newly-created environment and a list of strings
 making up the output:
+
+<div class="pagebreak"></div>
 
 [% inc file="expander.py" keep="construct" %]
 
@@ -249,6 +249,8 @@ we are using modules to prevent [%i "name collision" %]
 just as we would use classes or functions.
 
 The handlers for variables are:
+
+<div class="pagebreak"></div>
 
 [% inc file="z_var.py" %]
 
