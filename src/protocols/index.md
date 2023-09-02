@@ -76,6 +76,8 @@ and write a test for it:
 
 [% inc file="mock_object.py" keep="test_real" %]
 
+<div class="pagebreak"></div>
+
 We then use `fixit` to replace the real `adder` function
 with a mock object that always returns 99
 ([%f protocols-timeline %]):
@@ -205,6 +207,8 @@ by creating a closure to [%i "variable_capture" "capture" %]
 the original function for later use:
 {: .continue}
 
+<div class="pagebreak"></div>
+
 [% inc pat="wrap_capture.*" fill="py out" %]
 
 [% figure
@@ -216,6 +220,8 @@ the original function for later use:
 
 Using a closure also gives us a way to pass extra arguments
 when we create the wrapped function:
+
+<div class="pagebreak"></div>
 
 [% inc pat="wrap_param.*" fill="py out" %]
 
