@@ -30,7 +30,6 @@ FILTER = 2
 def time_filter(df):
     def f(label_0, **args):
         return label_0 % FILTER == 1
-
     start = time.time()
     df.filter(f)
     return time.time() - start

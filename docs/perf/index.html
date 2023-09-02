@@ -361,16 +361,16 @@
 
 
           <div class="page-toc"></div>
-          <p>One of the drawbacks of publishing a book online is obsessing over analytics.
+          <p>One peril of publishing a book online is obsessing over analytics.
 How many people visited the site today?
 Which pages did they look at, and for how long?
-Whether we use <span class="ix-entry" ix-key="Excel" markdown="1">Excel</span>, <span class="ix-entry" ix-key="SQL" markdown="1">SQL</span>, <span class="ix-entry" ix-key="R" markdown="1">R</span>, or Python,
-we will almost certainly be using tables
-that have named columns and multiple rows.
-Tables of this kind are called <a class="gl-ref" href="../glossary/#gl:dataframe" title="A two-dimensional data structure for storing tabular data in memory. Rows represent records and columns represent fields." markdown="1">dataframes</a>,
+Whether we use <span class="ix-entry" ix-key="Excel" markdown="1">Excel</span>, <span class="ix-entry" ix-key="SQL" markdown="1">SQL</span>, or Python,
+we will almost certainly be analyzing tables
+with named columns and multiple rows.
+Such tables are called <a class="gl-ref" href="../glossary/#gl:dataframe" title="A two-dimensional data structure for storing tabular data in memory. Rows represent records and columns represent fields." markdown="1">dataframes</a>,
 and their performance is important when we are working with large datasets.
-This chapter therefore implements a basic dataframe in two different ways
-and then shows how to compare those implementations&rsquo; performance systematically.</p>
+This chapter therefore implements dataframes in two ways
+and shows how to compare their performance.</p>
 <h2 id="perf-options">Section 15.1: Options</h2>
 <p>To start,
 let&rsquo;s create an <span class="ix-entry" ix-key="abstract class" markdown="1">abstract class</span>
@@ -778,31 +778,26 @@ but this example is enough to illustrate the technique.</p>
 </code></pre></div>
 </div>
 <p>To time filtering,
-we arbitrarily decide that we will keep rows with an even value in the first column:</p>
+we arbitrarily decide to keep rows with an even value in the first column:</p>
 <div class="code-sample lang-py" title="timing.py">
 <div class="highlight"><pre><span></span><code><span class="n">FILTER</span> <span class="o">=</span> <span class="mi">2</span>
 
 <span class="k">def</span> <span class="nf">time_filter</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
     <span class="k">def</span> <span class="nf">f</span><span class="p">(</span><span class="n">label_0</span><span class="p">,</span> <span class="o">**</span><span class="n">args</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">label_0</span> <span class="o">%</span> <span class="n">FILTER</span> <span class="o">==</span> <span class="mi">1</span>
-
     <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
     <span class="n">df</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start</span>
 </code></pre></div>
 </div>
-<p class="continue">Again,
-if we were doing this for real
-we would look at some actual programs
-to see what fraction of rows filtering usually kept,
-and simulate that.
-And since <code>DfCol</code> and <code>DfRow</code> are derived from the same base class,
-<code>time_filter</code> doesn&rsquo;t know or care
-whether it&rsquo;s being given one or the other.</p>
-<p>Timing <code>select</code> is similar to timing <code>filter</code>.
+<p class="continue">Since <code>DfCol</code> and <code>DfRow</code> derive from the same base class,
+<code>time_filter</code> doesn&rsquo;t care which we give it.
 Again,
-we make an arbitrary decision about how many columns to keep
-(in this case one third):</p>
+if we were doing this for real
+we would look at actual programs
+to see what fraction of rows filtering usually kept and simulate that.</p>
+<p>To time <code>select</code>,
+we arbitrarily decide to keep one third of the columns:</p>
 <div class="code-sample lang-py" title="timing.py">
 <div class="highlight"><pre><span></span><code><span class="n">SELECT</span> <span class="o">=</span> <span class="mi">3</span>
 
@@ -889,15 +884,14 @@ while filtering is 1.8 times slower.</p>
 </tbody>
 </table>
 </div>
-<figure id="perf-analysis">
+<figure id="perf-analysis" class="here">
 <img src="./analysis.svg" alt="Performance curves"/>
 <figcaption markdown="1">Figure 15.7: Relative performance of row-wise and column-wise storage</figcaption>
 </figure>
 
 <p>We can get much more insight by <a class="gl-ref" href="../glossary/#gl:profiling" title="The act of measuring where a program spends it time, which operations consume memory or disk space, etc." markdown="1">profiling</a> our code
-using Python <a href="https://docs.python.org/3/library/profile.html"><code>cProfile</code></a> module.
-This tool runs a program for us,
-collects detailed information on how long functions ran,
+using Python <a href="https://docs.python.org/3/library/profile.html"><code>cProfile</code></a> module,
+which collects detailed information on how long each function runs
 and reports the result:</p>
 <div class="code-sample lang-sh" title="profile.sh">
 <div class="highlight"><pre><span></span><code>python<span class="w"> </span>-m<span class="w"> </span>cProfile<span class="w"> </span>--sort<span class="o">=</span>tottime<span class="w"> </span><span class="se">\</span>
@@ -1015,6 +1009,10 @@ and then filter by:</p>
 <li>strings starting with a specific character, and</li>
 <li>strings that contain a specific character</li>
 </ul>
+<h3 class="exercise">Inspection</h3>
+<p>Rewrite <code>DfCol.filter</code> using Python&rsquo;s <a href="https://docs.python.org/3/library/inspect.html"><code>inspect</code></a> module
+so that users&rsquo; filtering functions
+only need to define parameters for the columns of interest.</p>
 <h3 class="exercise">Join Performance</h3>
 <p>A <span class="ix-entry" ix-key="join" markdown="1">join</span> combines data from two tables based on matching keys.
 For example,
@@ -1157,10 +1155,6 @@ and construct all of the matches.</p>
 <p>Write a function that joins two tables this way.
 Is it faster or slower than using a double loop?
 How does the answer depend on the number of keys and the fraction that match?</p>
-<h3 class="exercise">Inspection</h3>
-<p>Rewrite <code>DfCol.filter</code> using Python&rsquo;s <a href="https://docs.python.org/3/library/inspect.html"><code>inspect</code></a> module
-so that users&rsquo; filtering functions
-only need to define parameters for the columns of interest.</p>
         </main>
       </div>
     </div>

@@ -9,16 +9,16 @@ depends:
 status: "revised 2023-08-06"
 ---
 
-One of the drawbacks of publishing a book online is obsessing over analytics.
+One peril of publishing a book online is obsessing over analytics.
 How many people visited the site today?
 Which pages did they look at, and for how long?
-Whether we use [%i "Excel" %], [%i "SQL" %], [%i "R" %], or Python,
-we will almost certainly be using tables
-that have named columns and multiple rows.
-Tables of this kind are called [%g dataframe "dataframes" %],
+Whether we use [%i "Excel" %], [%i "SQL" %], or Python,
+we will almost certainly be analyzing tables
+with named columns and multiple rows.
+Such tables are called [%g dataframe "dataframes" %],
 and their performance is important when we are working with large datasets.
-This chapter therefore implements a basic dataframe in two different ways
-and then shows how to compare those implementations' performance systematically.
+This chapter therefore implements dataframes in two ways
+and shows how to compare their performance.
 
 ## Options {: #perf-options}
 
@@ -323,24 +323,20 @@ but this example is enough to illustrate the technique.
 [% inc file="timing.py" keep="create" %]
 
 To time filtering,
-we arbitrarily decide that we will keep rows with an even value in the first column:
+we arbitrarily decide to keep rows with an even value in the first column:
 
 [% inc file="timing.py" keep="filter" %]
 
+Since `DfCol` and `DfRow` derive from the same base class,
+`time_filter` doesn't care which we give it.
 Again,
 if we were doing this for real
-we would look at some actual programs
-to see what fraction of rows filtering usually kept,
-and simulate that.
-And since `DfCol` and `DfRow` are derived from the same base class,
-`time_filter` doesn't know or care
-whether it's being given one or the other.
+we would look at actual programs
+to see what fraction of rows filtering usually kept and simulate that.
 {: .continue}
 
-Timing `select` is similar to timing `filter`.
-Again,
-we make an arbitrary decision about how many columns to keep
-(in this case one third):
+To time `select`,
+we arbitrarily decide to keep one third of the columns:
 
 [% inc file="timing.py" keep="select" %]
 
@@ -374,12 +370,12 @@ while filtering is 1.8 times slower.
    img="analysis.svg"
    alt="Performance curves"
    caption="Relative performance of row-wise and column-wise storage"
+   cls="here"
 %]
 
 We can get much more insight by [%g profiling "profiling" %] our code
-using Python [`cProfile`][py_cprofile] module.
-This tool runs a program for us,
-collects detailed information on how long functions ran,
+using Python [`cProfile`][py_cprofile] module,
+which collects detailed information on how long each function runs
 and reports the result:
 
 [% inc file="profile.sh" %]
@@ -499,6 +495,12 @@ and then filter by:
 -   strings starting with a specific character, and
 -   strings that contain a specific character
 
+### Inspection {: .exercise}
+
+Rewrite `DfCol.filter` using Python's [`inspect`][py_inspect] module
+so that users' filtering functions
+only need to define parameters for the columns of interest.
+
 ### Join Performance {: .exercise}
 
 A [%i "join" %] combines data from two tables based on matching keys.
@@ -577,9 +579,3 @@ and construct all of the matches.
 Write a function that joins two tables this way.
 Is it faster or slower than using a double loop?
 How does the answer depend on the number of keys and the fraction that match?
-
-### Inspection {: .exercise}
-
-Rewrite `DfCol.filter` using Python's [`inspect`][py_inspect] module
-so that users' filtering functions
-only need to define parameters for the columns of interest.
