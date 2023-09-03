@@ -193,13 +193,10 @@ we compare every entry X against every other entry Y:
 4.  If we haven't ruled out a candidate after doing all these checks,
     we add it to the list of allowed configurations.
 
-The code that implements these rules is:
+Sure enough,
+these rules find 3 valid combinations among our 18 possibilities:
 
 [% inc file="exhaustive.py" keep="compatible" %]
-
-Sure enough,
-it finds 3 valid combinations among our 18 possibilities:
-
 [% inc file="exhaustive.out" %]
 
 ## Generating Possibilities Manually {: #pack-manual}
@@ -207,7 +204,6 @@ it finds 3 valid combinations among our 18 possibilities:
 Our brute-force code uses `itertools.product`
 to generate all possible combinations of several lists of items.
 To see how it works,
-and to lay the ground for a more efficient algorithm,
 let's rewrite `make_possibilities` to use a function of our own:
 
 [% inc file="manual.py" keep="start" %]
@@ -344,8 +340,8 @@ that satisfies all the inter-package dependencies at once?"
 then a theorem prover is exactly what we need.
 
 To start,
-let's import a few things from the `z3` module
-and then create three [%g boolean_value "Boolean variables" %]:
+let's import a few things from `z3`
+and create three [%g boolean_value "Boolean variables" %]:
 
 [% inc file="z3_setup.py" %]
 
