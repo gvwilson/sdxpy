@@ -254,26 +254,25 @@ we need to override three methods:
 
 Our final design uses
 the [%g template_method_pattern "Template Method" %] pattern:
-a method in a [%i "parent class" %] defines the overall order of operations,
-while [%i "child class" %] implement those operations
-without changing the [%i "control flow" %].
-As you might suspect,
-we didn't know in advance exactly
-how to divide our code into methods.
-Instead,
-as we were trying to create a class that loaded and used timestamps,
-we did a bit of reorganizing in the parent class
-to give ourselves the [%g affordance "affordances" %] we needed.
+a method in a [%i "parent class" %] defines the [%i "control flow" %],
+while [%i "child class" "child classes" %] implement those operations.
+We didn't know in advance exactly
+how to divide our code into methods;
+instead,
+as we were creating a class that loaded and used timestamps,
+we reorganized the parent class
+to create the [%g affordance "affordances" %] we needed.
 Software design almost always works this way:
-the first two or three times we try to use or extend something,
+the first two or three times we try to extend something,
 we discover changes that would make those tasks easier.
-We should do less of this as time goes by;
-putting it another way,
+We should do less of this as time goes by:
 if we are still doing large-scale [%i "refactor" "refactoring" %]
-the tenth or dozenth time we try to use something,
-we probably need to rethink our entire design.
+the tenth time we use something,
+we should rethink our entire design.
 
 </div>
+
+<div class="pagebreak"></div>
 
 ## Summary {: #build-summary}
 
