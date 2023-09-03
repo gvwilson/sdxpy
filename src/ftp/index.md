@@ -101,6 +101,8 @@ From top to bottom:
     we'd keep reading from the socket until there was no more data.
 5.  Finally, we print another message.
 
+<div class="pagebreak"></div>
+
 The corresponding server has just as much low-level detail:
 
 [% inc file="server_raw.py" omit="main" %]
@@ -142,6 +144,8 @@ and calls that object's `handle` method.
    alt="Classes in a TCP server"
    caption="Classes used in a basic TCP server."
 %]
+
+<div class="pagebreak"></div>
 
 Using `TCPServer` and `BaseRequestHandler` as starting points,
 our server is:
@@ -188,6 +192,8 @@ If it gets less than a kilobyte,
 we have reached the end of the transmission
 and can return the result:
 
+<div class="pagebreak"></div>
+
 [% inc file="server_chunk.py" keep="class" %]
 
 We can modify the client to send data in chunks as well,
@@ -219,6 +225,8 @@ The main program is then:
 {: .continue}
 
 [% inc file="client_chunk.py" keep="main" %]
+
+<div class="pagebreak"></div>
 
 When we run the client and server,
 the client prints:
@@ -261,9 +269,9 @@ The `handle` method in this class relies on
 the `self.request` object created by the framework
 to send and receive data.
 We can create a testable server by deriving a class from `LoggingHandler`
-that inherits the `handle` method (which is the part we want to test)
+that inherits the `handle` method (which we want to test)
 but creates a mock `request` object
-and overrides the `debug` method so that it doesn't print logging messages:
+and overrides the `debug` method so it doesn't print logging messages:
 
 [% inc file="test_server.py" keep="handler" %]
 
@@ -297,6 +305,8 @@ how close is what we test to what we use in production?
 In an ideal world they are exactly the same,
 but in cases like this it makes sense to sacrifice a little fidelity for testability's sake.
 
+<div class="pagebreak"></div>
+
 ## Summary {: #ftp-summary}
 
 [% figure
@@ -323,12 +333,6 @@ so that the total copying work is \\( O(N^2) \\).
 Modify the server so that it collects chunks in a list
 and concatenates them at the end instead.
 
-### A Socket Client Class {: .exercise}
-
-Build a `socketclient` class that works like the `socketserver` class
-but sends data instead of handling requests.
-How useful is it in practice?
-
 ### Saving and Listing Files {: .exercise}
 
 1.  Modify the [%i "protocol" %] used by this chapter's client and server
@@ -338,3 +342,9 @@ How useful is it in practice?
 2.  Modify the protocol again so that the client can send the word `dir`
     followed by a newline and no other data
     and the server will send back a list of the files in its current working directory.
+
+### A Socket Client Class {: .exercise}
+
+Build a `socketclient` class that works like the `socketserver` class
+but sends data instead of handling requests.
+How useful is it in practice?
