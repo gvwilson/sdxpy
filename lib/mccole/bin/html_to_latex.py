@@ -520,8 +520,8 @@ def table(node, state, accum, doEscape):
     """Convert a table."""
     assert node.name == "table", "Node is not a table"
     label = node["id"] if node.has_attr("id") else None
-    position = node["class"] if node.has_attr("class") else None
-    position = "[h]" if position == "here" else ""
+    class_pos = node["class"] if node.has_attr("class") else []
+    latex_pos = "[h]" if ("here" in class_pos) else ""
 
     assert node.tbody, f"Table node does not have body {node}"
     rows = [table_row(row, state, doEscape, "td") for row in node.tbody.find_all("tr")]
@@ -540,7 +540,7 @@ def table(node, state, accum, doEscape):
     if label:
         caption = "".join(children(node.caption, state, [], True))
         caption = caption.split(":")[1].strip()
-        accum.append(f"\\begin{{table}}{position}\n")
+        accum.append(f"\\begin{{table}}{latex_pos}\n")
     else:
         accum.append("\n\\vspace{\\baselineskip}\n")
 

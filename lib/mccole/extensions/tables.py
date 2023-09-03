@@ -138,8 +138,6 @@ def _table_caption_replace(match):
     table = util.get_config("tables")[slug]
     label = util.make_label("table", table.number)
     cap = f"<caption>{label}: {caption}</caption>"
-    tbl_cls = ' class="table-here"' if "table-here" in cls else ""
+    tbl_cls = ' class="here"' if "here" in cls else ""
     result = f'<div class="table"><table id="{slug}"{tbl_cls}>{cap}'
-    if "pagebreak" in cls:
-        result = '<div class="pagebreak"></div>\n{result}'
     return result

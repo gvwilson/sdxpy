@@ -8,7 +8,11 @@ but would break that [%g attention_budget "attention budget" %].
 
 ## Using Function Attributes {: #bonus-attributes}
 
+<div class="center" markdown="1">
+
 *This material extends [%x test %].*
+
+</div>
 
 Since functions are objects,
 they can have attributes.
@@ -68,9 +72,15 @@ our test runner becomes:
 
 [% inc file="attribute.py" keep="run" %]
 
+<div class="pagebreak"></div>
+
 ## Lazy Evaluation {: #bonus-lazy}
 
+<div class="center" markdown="1">
+
 *This material extends [%x interp %].*
+
+</div>
 
 One way to evaluate a design is to ask how [%i "extensibility" "extensible" %] it is.
 The answer for our interpreter is now, "Pretty easily."
@@ -116,7 +126,11 @@ and `reference.part` if it isn't.
 
 ## Extension {: #bonus-extension}
 
+<div class="center" markdown="1">
+
 *This material extends [%x lint %].*
+
+</div>
 
 It's easy to check a single style rule by extending `NodeVisitor`,
 but what if we want to check dozens of rules?
@@ -149,6 +163,8 @@ If we create an object of `BlankNodeVisitor` and call its `visit` method:
 
 [% inc file="injection.py" keep="main" %]
 
+<div class="pagebreak"></div>
+
 then the inherited `generic_visit` method does what it always does.
 When it encounters a `Name` node,
 it looks in the object for something called `visit_Name`.
@@ -156,6 +172,7 @@ Since it doesn't find anything,
 it looks in the object's class for something with that name,
 finds our injected method,
 and calls it.
+{: .continue}
 
 With a bit more work we could have our injected method save and then call
 whatever `visit_Name` method was there when it was added to the class,
@@ -204,7 +221,11 @@ for each kind of node.
 
 ## Tracing Inheritance {: #bonus-inheritance}
 
+<div class="center" markdown="1">
+
 *This material extends [%x lint %].*
+
+</div>
 
 In order to keep track of the code we wrote for this book,
 we built a tool that reports which methods are defined or redefined in which classes.
@@ -226,6 +247,8 @@ When we encounter a new class definition,
 we push its name on the stack,
 record its parents,
 and create an empty set to hold its methods:
+
+<div class="pagebreak"></div>
 
 [% inc file="inheritance.py" keep="classdef" %]
 
@@ -261,7 +284,11 @@ none of that requires us to inspect the AST.
 
 ## Inspecting Functions {: #bonus-inspect}
 
+<div class="center" markdown="1">
+
 *This material extends [%x perf %].*
+
+</div>
 
 The implementation of dataframe filtering in [%x perf %] was somewhat brittle.
 A better implementation of filtering would make use of the fact that
@@ -279,7 +306,11 @@ which columns we need from the dataframe.
 
 ## User-Defined Classes {: #bonus-extend}
 
+<div class="center" markdown="1">
+
 *This material extends [%x persist %].*
+
+</div>
 
 The persistence framework of [%x persist %] only handles built-in data types,
 but can easily be extended to handle user-defined classes as well.
@@ -409,7 +440,11 @@ so everything goes as it should.
 
 ## Big and Little Endian {: #bonus-endian}
 
+<div class="center" markdown="1">
+
 *This material extends [%x binary %].*
+
+</div>
 
 Suppose we want to store a 32-bit integer in memory.
 As [%f bonus-big-little %] shows,
@@ -423,6 +458,7 @@ while [%g big_endian "big-endian" %] order stores the most significant bits firs
    img="big_little_endian.svg"
    alt="Endian order"
    caption="Big-endian and little-endian byte order."
+   cls="here"
 %]
 
 Modern Intel processors use little-endian order,
@@ -438,7 +474,7 @@ If you're using `struct`,
 the first character of a format string optionally indicates the byte order
 ([%t bonus-endian-formats %]).
 
-<div class="table" id="bonus-endian-formats" caption="`struct` package endian indicators" markdown="1">
+<div class="table here" id="bonus-endian-formats" caption="`struct` package endian indicators" markdown="1">
 | Character | Byte order | Size     | Alignment     |
 | --------- | ---------- | -------- | ------------- |
 | `@`       | native     | native   | native        |
@@ -448,11 +484,17 @@ the first character of a format string optionally indicates the byte order
 | `!`       | network    | standard | none          |
 </div>
 
+<div class="pagebreak"></div>
+
 ## Floating Point Numbers {: #bonus-float}
+
+<div class="center" markdown="1">
 
 *This material extends [%x binary %].*
 
-The rules for floating point numbers make Unicode look simple.
+</div>
+
+The rules for storing floating point numbers make those for Unicode look simple.
 The root of the problem is that
 we cannot represent an infinite number of real values
 with a finite set of bit patterns.
@@ -479,6 +521,7 @@ and 2 for the exponent.
    img="floating_point.svg"
    alt="Representing floating point numbers"
    caption="Representing floating point numbers."
+   cls="here"
 %]
 
 The IEEE standard avoids the redundancy in this representation by shifting things around.
@@ -495,7 +538,7 @@ But if this scheme has no representation for 9
 then \\( 8+1 \\) must be stored as either 8 or 10.
 What should \\( 8+1+1 \\) be?
 If we add from the left,
-\\( (8+1)+1 \\( is \\( 8+1 \\) is 8,
+\\( (8+1)+1 \\) is \\( 8+1 \\) is 8,
 but if we add from the right,
 \\( 8+(1+1) \\) is \\( 8+2 \\) is 10.
 Changing the order of operations makes the difference between right and wrong.
@@ -550,7 +593,11 @@ to avoid some precision issues.
 
 ## Generating Test Cases {: #bonus-theorem}
 
+<div class="center" markdown="1">
+
 *This material extends [%x pack %].*
+
+</div>
 
 Theorem provers like Z3 and [PicoSAT][picosat]
 are far more powerful than most programmers realize.
