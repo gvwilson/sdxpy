@@ -94,7 +94,7 @@ def escape(text, doEscape):
         .replace(">>>", r">\null>\null>")
         .replace("<<", r"<\null<")
         .replace(">>", r">\null>")
-        .replace("~", r"{\texttildelow}")
+        .replace("~", r"$\sim$")
         .replace("©", r"{\textcopyright}")
         .replace("μ", r"{\textmu}")
         .replace("…", "...")

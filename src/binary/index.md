@@ -37,7 +37,7 @@ two's complement rolls over when going below zero like an odometer.
 For example,
 with three-bit integers we get the values in [%t binary-3bit %].
 
-<div class="table" id="binary-3bit" caption="3-bit integer values" markdown="1">
+<div class="table" id="binary-3bit" caption="3-bit integer values using two's complement" markdown="1">
 | Base 10 | Base 2 |
 | ------- | ------ |
 | 3       | 011    |
@@ -60,6 +60,8 @@ numbers go from -4 to 3, or -16 to 15, and so on.
 As a result,
 even if `x` is a valid number,
 `-x` may not be.
+
+<div class="pagebreak"></div>
 
 We can write binary numbers directly in Python using the `0b` prefix:
 
@@ -93,8 +95,8 @@ for example,
 ## Bitwise Operations {: #binary-bitops}
 
 Like most languages based on C,
-Python provides [%g bitwise_operation "bitwise operations" %]
-for working directly with 1's and 0's in memory:
+Python has [%g bitwise_operation "bitwise operations" %]
+for working directly with 1's and 0's:
 `&` (and),
 `|` (or),
 `^` (xor),
@@ -186,9 +188,8 @@ The chaos was eventually tamed by the [%g ansi_encoding "ANSI standard" %]
 which (for example) defined the value 231 to mean the character "ç".
 
 A standard that specifies how characters are represented in memory
-is called a [%g character_encoding "character encoding" %].
-Unfortunately,
-the encoding defined by the ANSI standard only solved a small part of a large problem.
+is called a [%g character_encoding "character encoding" %],
+and the ANSI standard encoding only solved a small part of a large problem.
 It didn't include characters from Turkish, Devanagari, and many other alphabets,
 much less the thousands of characters used in some East Asian writing systems.
 One solution would have been to use 16 or even 32 bits per character,
@@ -203,7 +204,6 @@ U+0065 for an upper-case Latin "A",
 U+2605 for a black star,
 and so on.
 (The [Unicode Consortium site][unicode] offers a complete list.)
-
 The second part defined ways to store these values in memory.
 The simplest of these is [%g utf_32 "UTF-32" %],
 which stores every character as a 32-bit number.
@@ -223,8 +223,8 @@ For example,
 if the first byte of the character is `11101101` then:
 
 -   the first 1 signals that this is a multi-byte character;
--   the next two 1's signal that the character includes bits
-    from the following two bytes as well as this one;
+-   the next two 1's signal the character includes bits
+    from the following two bytes as well;
 -   the 0 separates the byte count from the first few bits used in the character;
     and
 -   the final 1101 is the first four bits of the character.
@@ -233,20 +233,20 @@ But that's not all:
 every byte that's a continuation of a character starts with the bits 10.
 (Such bytes are, unsurprisingly, called [%g continuation_byte "continuation bytes" %].)
 This rule means that if we look at any byte in a string
-we can immediately tell if it's the start of a character
-or the continuation of a character.
+we can immediately tell if it starts a character
+or continues a character.
 Thus,
-if we want to represent a character whose code point is 1789:
+to represent the character whose code point is 1789:
 
 -   We convert decimal 1789 to binary 11011111101.
 -   We count and realize that we'll need two bytes:
     the first storing the high 5 bits of the character,
     the second storing the low 6 bits.
--   We encode the high 5 bits as 11011011,
-    meaning "start of a character with one continuation byte
-    and the 5 payload bits 11011".
--   We encode the low 6 bits as 10111101,
-    meaning "a continuation byte with 6 payload bits 111101".
+-   We encode the high 5 bits as 11011011:
+    "start of a character with one continuation byte
+    and 5 payload bits 11011".
+-   We encode the low 6 bits as 10111101:
+    "a continuation byte with 6 payload bits 111101".
 
 <div class="callout" markdown="1">
 
@@ -259,8 +259,7 @@ which means that indexing a string is \\( O(N) \\).
 However,
 when Python loads text into memory,
 it converts the variable-length encoding to a fixed-length encoding,
-i.e.,
-uses exactly the same number of bytes for each character.
+with the same number of bytes per character.
 This allows it to jump directly to any character in the string in constant time,
 which a computer scientist would say is \\( O(1) \\).
 
@@ -351,6 +350,8 @@ and this extra information is what allows the interpreter to do [%i "introspecti
    caption="Using boxed values to store metadata."
 %]
 
+<div class="pagebreak"></div>
+
 The same is true of collections.
 For example,
 Fortran stores all the values in an array side by side in memory
@@ -416,6 +417,8 @@ The inverse function,
 takes some bytes and a format
 and returns a [%i "tuple" %] containing the unpacked values.
 Here's an example:
+
+<div class="pagebreak"></div>
 
 [% inc pat="pack_unpack.*" fill="py out" %]
 
