@@ -63,6 +63,8 @@ and use the `pytest.fixture` [%i "decorator" %] ([%x protocols %])
 to create a database and two records:
 {: .continue}
 
+<div class="pagebreak"></div>
+
 [% inc file="test_db_original.py" keep="fixture" %]
 
 Our first few tests are then:
@@ -83,6 +85,8 @@ so that we pass in the object that represents the record class:
 We can now refactor our database
 to use a [%i "static method" %] of the record class provided to its constructor
 when it needs a key:
+
+<div class="pagebreak"></div>
 
 [% inc file="just_dict_refactored.py" %]
 
@@ -181,6 +185,7 @@ we simply get it from the in-memory dictionary.
    img="single_file.svg"
    alt="Using a single file"
    caption="Saving the entire database in a single file."
+   cls="here"
 %]
 
 The two helper methods we need to make this work are:
@@ -243,6 +248,7 @@ the record with a particular sequence ID.
    img="alloc.svg"
    alt="Mapping records to blocks"
    caption="Mapping records to blocks."
+   cls="here"
 %]
 
 Let's create a new in-memory database
