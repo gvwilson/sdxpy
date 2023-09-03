@@ -52,7 +52,7 @@ Like Maya, you should be able to:
 
 This book is also designed to help another persona:
 
-> *Yim teaches two college courses on web programming.
+> *Yim teaches two college courses on software development.
 > They are frustrated that so many books talk about details but not about design
 > and use examples that their students can't relate to.
 > This material will give them material they can use in class
