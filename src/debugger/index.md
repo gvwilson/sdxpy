@@ -42,6 +42,8 @@ the "print register" instruction calls `self.write`:
 For now,
 `write` just prints things to whatever output stream the VM was given:
 
+<div class="pagebreak"></div>
+
 [% inc file="vm_base.py" keep="write" %]
 
 Our virtual machine now loads a program and runs it to completion,
@@ -360,6 +362,8 @@ The first step in implementing breakpoints is
 to add two more commands to the lookup table
 we created in the previous section:
 
+<div class="pagebreak"></div>
+
 [% inc file="vm_break.py" keep="init" %]
 
 To add a breakpoint,
@@ -391,9 +395,8 @@ saves us typing,
 and ensures that changes in the parent class
 will automatically show up in the [%i "child class" %].
 
-The final step is to change the `run` method
-so that the VM actually stops at a breakpoint.
-The whole method is:
+The final step is to change `run`
+so that the VM actually stops at a breakpoint:
 
 [% inc file="vm_break.py" keep="run" %]
 
@@ -417,6 +420,8 @@ allowed us to add commands without modifying `interact`;
 another lookup table would enable us to add new instructions
 without having to modify `run`.
 We will explore this in the exercises.
+
+<div class="pagebreak"></div>
 
 ## Summary {: #debugger-summary}
 
