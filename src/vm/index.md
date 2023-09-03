@@ -58,6 +58,8 @@ but we will write them in a simple text format called
 [%g assembly_code "assembly code" %]
 that gives those number human-readable names.
 
+<div class="pagebreak"></div>
+
 The instructions for our VM are 3 bytes long.
 The [%g op_code "op code" %] fits in one byte,
 and each instruction may include zero, one, or two single-byte operands.
@@ -125,6 +127,8 @@ If an object has a method to reset or reinitialize itself,
 having its constructor use that method
 is a way to avoid duplicating code.
 {: .continue}
+
+<div class="pagebreak"></div>
 
 To execute the next instruction,
 the VM gets the value in memory that the instruction pointer currently refers to
@@ -201,21 +205,31 @@ Its numeric representation (in [%i "hexadecimal" %]) is:
 
 One thing the assembly language has that the instruction set doesn't
 is [%g label_address "labels" %] on addresses in memory.
-A label like `loop` doesn't take up any space;
+The label `loop` doesn't take up any space;
 instead,
 it tells the assembler to give the address of the next instruction a name
-so that we can refer to that address as `@loop` in jump instructions.
+so that we can refer to `@loop` in jump instructions.
 For example,
 this program prints the numbers from 0 to 2
 ([%f vm-count-up %]):
 
-[% inc pat="count_up.*" fill="as mx" %]
+<table class="twocol">
+  <tbody>
+    <tr>
+      <td markdown="1">[% inc file="count_up.as" %]</td>
+      <td markdown="1">[% inc file="count_up.mx" %]</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="pagebreak"></div>
 
 [% figure
    slug="vm-count-up"
    img="count_up.svg"
    alt="Counting from 0 to 2"
    caption="Flowchart of assembly language program to count up from 0 to 2."
+   cls="here"
 %]
 
 Let's trace this program's execution
@@ -312,6 +326,8 @@ To test it,
 let's fill an array with the numbers from 0 to 3:
 
 [% inc pat="fill_array.*" fill="as out"%]
+
+<div class="pagebreak"></div>
 
 ## Summary {: #vm-summary}
 

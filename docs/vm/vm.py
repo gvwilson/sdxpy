@@ -57,13 +57,10 @@ class VirtualMachine:
             op, arg0, arg1 = self.fetch()
             if op == OPS["hlt"]["code"]:
                 running = False
-
             elif op == OPS["ldc"]["code"]:
                 self.reg[arg0] = arg1
-
             elif op == OPS["ldr"]["code"]:
                 self.reg[arg0] = self.ram[self.reg[arg1]]
-
             elif op == OPS["cpy"]["code"]:
                 self.reg[arg0] = self.reg[arg1]
             # [skip]
@@ -71,32 +68,25 @@ class VirtualMachine:
             elif op == OPS["str"]["code"]:
                 self.ram[self.reg[arg1]] = self.reg[arg0]
             # [/store]
-
             # [add]
             elif op == OPS["add"]["code"]:
                 self.reg[arg0] += self.reg[arg1]
             # [/add]
-
             elif op == OPS["sub"]["code"]:
                 self.reg[arg0] -= self.reg[arg1]
-
             # [beq]
             elif op == OPS["beq"]["code"]:
                 if self.reg[arg0] == 0:
                     self.ip = arg1
             # [/beq]
-
             elif op == OPS["bne"]["code"]:
                 if self.reg[arg0] != 0:
                     self.ip = arg1
-
             elif op == OPS["prr"]["code"]:
                 print(self.prompt, self.reg[arg0])
-
             elif op == OPS["prm"]["code"]:
                 print(self.prompt, self.ram[self.reg[arg0]])
             # [/skip]
-
             else:
                 assert False, f"Unknown op {op:06x}"
     # [/run]
