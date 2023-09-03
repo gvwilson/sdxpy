@@ -197,6 +197,8 @@ The [%i "child class" "child classes" %] for insertion and deletion are:
 We could implement one class for each direction of cursor movement,
 but instead choose to create a single class:
 
+<div class="pagebreak"></div>
+
 [% inc file="action.py" keep="Move" %]
 
 This class records the new cursor position as well as the old one
@@ -259,7 +261,7 @@ Note that popping the most recent action off the history stack
 only works once we modify the application's `_interact` method
 so that it only saves actions that ought to be saved:
 
-{% inc file="undoable.py" keep="app" omit="skip" %]
+[% inc file="undoable.py" keep="app" omit="skip" %]
 
 We can now write tests like this to check that we can insert a character,
 undo the action,

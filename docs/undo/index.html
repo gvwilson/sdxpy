@@ -682,6 +682,8 @@ That base class is:</p>
 </div>
 <p>We could implement one class for each direction of cursor movement,
 but instead choose to create a single class:</p>
+<div class="pagebreak"></div>
+
 <div class="code-sample lang-py" title="action.py">
 <div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Move</span><span class="p">(</span><span class="n">Action</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">,</span> <span class="n">direction</span><span class="p">):</span>
@@ -786,7 +788,20 @@ but we override it in <code>Undo</code> to return <code>False</code>:</p>
 <p>Note that popping the most recent action off the history stack
 only works once we modify the application&rsquo;s <code>_interact</code> method
 so that it only saves actions that ought to be saved:</p>
-<p>{% inc file=&rdquo;undoable.py&rdquo; keep=&rdquo;app&rdquo; omit=&rdquo;skip&rdquo; %]</p>
+<div class="code-sample lang-py" title="undoable.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">UndoableApp</span><span class="p">(</span><span class="n">ActionApp</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_interact</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">family</span><span class="p">,</span> <span class="n">key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_key</span><span class="p">()</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;_do_</span><span class="si">{</span><span class="n">family</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="n">family</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">&quot;_do_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+            <span class="k">return</span>
+        <span class="n">action</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">)(</span><span class="n">key</span><span class="p">)</span>
+        <span class="n">action</span><span class="o">.</span><span class="n">do</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">action</span><span class="o">.</span><span class="n">save</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">action</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_add_log</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+</code></pre></div>
+</div>
 <p>We can now write tests like this to check that we can insert a character,
 undo the action,
 and get back the screen we originally had:</p>
