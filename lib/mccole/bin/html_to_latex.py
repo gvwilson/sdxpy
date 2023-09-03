@@ -112,7 +112,10 @@ def figure(node, state, accum, doEscape):
         if (node.has_attr("class") and "here" in node["class"])
         else "figpdf"
     )
-    scale = node["scale"] if node.has_attr("scale") else LATEX_FIG_SCALE
+
+    scale = LATEX_FIG_SCALE
+    if node.img.has_attr("width"):
+        scale = float(node.img["width"].rstrip("%"))/100
 
     path = node.img["src"].replace(".svg", ".pdf")
     caption = "".join(children(node.figcaption, state, [], True))
@@ -221,11 +224,12 @@ def handle(node, state, accum, doEscape):
         children(node, state, accum, doEscape)
         accum.append("\\end{center}\n")
 
-    # <div class="chapterinfo"> => wrap in environment
+    # <div class="chapterinfo"> => wrap in environment if not empty
     elif node_match(node, "div", "chapterinfo"):
-        accum.append("\\begin{chapterinfo}\n")
-        children(node, state, accum, doEscape)
-        accum.append("\\end{chapterinfo}\n")
+        if (len(node.contents) > 1) or node.contents[0].strip():
+            accum.append("\\begin{chapterinfo}\n")
+            children(node, state, accum, doEscape)
+            accum.append("\\end{chapterinfo}\n")
 
     # <div class="code-sample"> => pass through
     elif node_match(node, "div", "code-sample"):

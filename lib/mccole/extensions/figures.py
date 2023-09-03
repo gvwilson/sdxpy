@@ -22,7 +22,7 @@ class Figure:
     alt: str = ""
     caption: str = ""
     number: tuple = ()
-    width: str = ""
+    scale: str = ""
 
 
 @ark.events.register(ark.events.Event.INIT)
@@ -100,7 +100,7 @@ def figure_def(pargs, kwargs, node):
     cls = f' class="{cls}"' if cls is not None else ""
 
     scale = kwargs.get("scale", None)
-    scale = f' scale="{scale}"' if scale is not None else ""
+    scale = f' width="{scale}"' if scale is not None else ""
 
     slug = kwargs["slug"]
     img = kwargs["img"]
@@ -112,8 +112,8 @@ def figure_def(pargs, kwargs, node):
     if util.is_slides(node):
         return dedent(
             f"""\
-            <figure{cls}{scale}>
-            <img src="../{img}" alt="{alt}"/>
+            <figure{cls}>
+            <img src="../{img}" alt="{alt}"{scale}/>
             </figure>
             """
         )
@@ -123,7 +123,7 @@ def figure_def(pargs, kwargs, node):
     return dedent(
         f"""\
         <figure id="{slug}"{cls}>
-        <img src="./{img}" alt="{alt}"/>
+        <img src="./{img}" alt="{alt}"{scale}/>
         <figcaption markdown="1">{label}: {caption}</figcaption>
         </figure>
         """

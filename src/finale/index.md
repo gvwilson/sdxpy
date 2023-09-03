@@ -2,13 +2,6 @@
 status: "revised 2023-08-15"
 ---
 
-[% figure
-   slug="finale-bicycle"
-   img="derosa.jpg"
-   alt="De Rosa SK Pininfarina bicycle"
-   caption="De Rosa SK Pininfarina bicycle."
-%]
-
 Consider the bicycle:
 more specifically,
 the De Rosa SK Pininfarina ([%f finale-bicycle %]).
@@ -17,6 +10,15 @@ but I wouldn't call it art,
 because being beautiful isn't its primary purpose.
 It was created to be useful;
 the fact that it can also be appreciated aesthetically is an intentional bonus.
+
+[% figure
+   slug="finale-bicycle"
+   img="derosa.jpg"
+   alt="De Rosa SK Pininfarina bicycle"
+   caption="De Rosa SK Pininfarina bicycle."
+   scale="25%"
+   cls="here"
+%]
 
 English doesn't have a word for things like this,
 but there are lots of other examples.
@@ -65,15 +67,13 @@ our conversations would be intellectually richer today.
 I hope this book will help us get there.
 I hope that some day we'll be able to talk to each other about the beauty of software
 because it *is* beautiful and we deserve to have ways to say that.
-
-I also hope that your journey won't stop here.
-If you would like to add a chapter to this book
-or translate it into another language,
-please see [%x intro %] and [%x contrib %].
 Until then:
 
 <div class="center" markdown="1">
-Start where you are.<br/>
-Use what you have.<br/>
+
+Start where you are.
+
+Use what you have.
+
 Help who you can.
 </div>
