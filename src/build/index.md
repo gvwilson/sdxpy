@@ -7,7 +7,7 @@ syllabus:
 -   Pattern rules can use automatic variables to specify targets and dependencies in recipes.
 depends:
 -   persist
-status: "revised 2023-08-10"
+status: "revised 2023-09-03"
 ---
 
 Suppose that `plot.py` produces `result.svg` from `collated.csv`,

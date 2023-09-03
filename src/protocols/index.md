@@ -10,7 +10,7 @@ syllabus:
 depends:
 -   func
 -   oop
-status: "revised 2023-07-31"
+status: "revised 2023-09-03"
 ---
 
 This book is supposed to teach software design

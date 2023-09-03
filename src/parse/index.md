@@ -9,7 +9,7 @@ syllabus:
     that are recognized by the compiler or interpreter.
 depends:
 -   glob
-status: "revised 2023-07-29"
+status: "revised 2023-09-03"
 ---
 
 We constructed objects to match patterns in [%x glob %],

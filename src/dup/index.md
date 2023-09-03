@@ -6,7 +6,7 @@ syllabus:
 -   A good hash function's output is evenly distributed.
 -   A cryptographic hash function generates a unique identifier for a file's contents.
 depends:
-status: "revised 2023-07-27"
+status: "revised 2023-09-03"
 ---
 
 Suppose we want to find duplicated files,

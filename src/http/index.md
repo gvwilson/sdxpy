@@ -7,7 +7,7 @@ syllabus:
 -   "HTTP is a stateless protocol: the application is responsible for remembering things between requests."
 depends:
 -   ftp
-status: "revised 2023-08-13"
+status: "revised 2023-09-03"
 ---
 
 Copying files from one machine to another is useful ([%x ftp %]),

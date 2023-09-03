@@ -9,7 +9,7 @@ syllabus:
 -   Most package managers use some kind of theorem prover to find compatible sets of packages to install.
 depends:
 -   dup
-status: "revised 2023-08-11"
+status: "revised 2023-09-03"
 ---
 
 Inspired by the [%i "Comprehensive TeX Archive Network" %] ([CTAN][ctan]),

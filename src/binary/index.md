@@ -7,7 +7,7 @@ syllabus:
 -   Sets of values can be packed into contiguous byte arrays for efficient transmission and storage.
 depends:
 -   persist
-status: "revised 2023-08-07"
+status: "revised 2023-09-03"
 ---
 
 Python and other high-level languages shield programmers from the low-level details

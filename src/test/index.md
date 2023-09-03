@@ -5,7 +5,7 @@ syllabus:
 -   A unit test function performs an operation on a fixture and passes, fails, or produces an error.
 -   A program can use introspection to find functions and other objects at runtime.
 depends:
-status: "revised 2023-07-30"
+status: "revised 2023-09-03"
 ---
 
 Not all software needs rigorous testing:

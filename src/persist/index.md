@@ -6,7 +6,7 @@ syllabus:
 -   Software designs should be open for extension but closed for modification.
 depends:
 -   interp
-status: "revised 2023-08-07"
+status: "revised 2023-09-03"
 ---
 
 Version control can keep track of our files,

@@ -6,7 +6,7 @@ syllabus:
 -   Dynamic code modification is very powerful, but the technique can produce insecure and unmaintainable code.
 depends:
 -   check
-status: "revised 2023-08-04"
+status: "revised 2023-09-03"
 ---
 
 This book relies on about 1800 lines of Python to turn Markdown into HTML,
