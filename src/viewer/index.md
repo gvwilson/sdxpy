@@ -162,6 +162,7 @@ and is going to constrain the rest of our design
    img="delayed.svg"
    alt="Delayed construction"
    caption="Order of operations in delayed construction"
+   cls="here"
 %]
 
 Nothing says we have to make our window exactly the same size as
@@ -282,6 +283,8 @@ instead of a long chain of `if`/`elif` statement:
 
 [% inc file="dispatch_keys.py" keep="interact" %]
 
+<div class="pagebreak"></div>
+
 A little experimentation showed that
 while the `curses` module uses names like `"KEY_DOWN"` for arrow keys,
 it returns actual [%i "control code" "control codes" %]
@@ -347,6 +350,8 @@ Again,
 we make a copy of `lines` rather than using the list the caller gives us
 so that other code can't change the buffer's internals.
 The corresponding change to the application class is:
+
+<div class="pagebreak"></div>
 
 [% inc file="buffer_class.py" keep="app" %]
 
@@ -483,27 +488,6 @@ in the same way as vertical movement:
 
 [% inc file="viewport.py" keep="cursor" %]
 
-[%f viewer-inheritance %] shows the classes we have created
-at each stage of this tutorial.
-As we have said several times above,
-if we were developing a file viewer for real use
-we would probably have added features to classes
-rather than repeatedly deriving new ones.
-However,
-we would probably have gone through the same sequence,
-i.e.,
-the history of our code in version control
-would probably show the classes as presented here.
-Again,
-*this is normal.*
-
-[% figure
-   slug="viewer-inheritance"
-   img="inheritance.svg"
-   alt="Inheritance in lesson"
-   caption="Class definitions and inheritance in lesson"
-%]
-
 ## Summary {: #viewer-summary}
 
 [% figure
@@ -518,7 +502,7 @@ Again,
 
 ### Using `global` {: .exercise}
 
-1.  Why does the `open_log` function need the line `global LOG`?
+1.  Why does `open_log` need the line `global LOG`?
     What happens if it is removed?
 
 2.  Why doesn't the `log` function need this statement?
@@ -536,3 +520,16 @@ then explain the bug `ViewportCursor` was created to fix.
 ### Line Numbers {: .exercise}
 
 Modify the file viewer to show line numbers on the left side of the text.
+
+### Inheritance {: .exercise}
+
+[%f viewer-inheritance %] shows the classes we created in this tutorial.
+Summarize the changes in each.
+
+[% figure
+   slug="viewer-inheritance"
+   img="inheritance.svg"
+   alt="Inheritance in lesson"
+   caption="Class definitions and inheritance in lesson"
+   cls="here"
+%]
