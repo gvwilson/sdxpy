@@ -161,15 +161,16 @@ it doesn't display anything:
 
 [% inc file="basic_server.sh" %]
 
-If we then go to `http://localhost:8080` with our browser,
-though,
-we get this in our browser:
+but if we then go to `http://localhost:8080` with our browser
+we see this:
+{: .continue}
 
 ```
 Hello, web!
 ```
 
 and this in our shell:
+{: .continue}
 
 [% inc file="basic_server.out" %]
 
@@ -237,7 +238,7 @@ and try to return that file.
 The server machine's passwords probably aren't stored there,
 but with enough `..`'s and some patience,
 an attacker could poke around large parts of our filesystem.
-We will tackle this security hole in the exercises.
+We will tackle this in the exercises.
 
 Another problem is that `send_content` always tells clients that
 it is returning an HTML file with the `Content-Type` header.
@@ -277,7 +278,7 @@ and check that the status, headers, and content are correct.
 
 -   `MockHandler` combines it with our mock request handler.
 
-It's a lot of work to test a GET request for one file,
+It's a lot of work to test a single GET request,
 but we can re-use `MockRequestHandler` to test
 the application-specific code for other servers.
 Most libraries don't provide helper classes like this to support testing,
@@ -293,6 +294,8 @@ but programmers appreciate those that do.
 `MockRequestHandler` is just a few lines of code,
 though it would be longer if our application relied on
 more methods from the library class we're replacing:
+
+<div class="pagebreak"></div>
 
 [% inc file="mock_handler.py" %]
 
@@ -318,6 +321,8 @@ create a server with mocked methods:
 {: .continue}
 
 [% inc file="test_testable_server.py" keep="combined" %]
+
+<div class="pagebreak"></div>
 
 ## Summary {: #http-summary}
 
