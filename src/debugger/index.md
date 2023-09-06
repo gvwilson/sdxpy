@@ -7,7 +7,6 @@ syllabus:
 depends:
 -   vm
 -   viewer
-status: "revised 2023-09-03"
 ---
 
 We have finally come to another of the questions that sparked this book:

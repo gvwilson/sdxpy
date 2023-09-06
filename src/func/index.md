@@ -14,7 +14,6 @@ syllabus:
 -   A closure stores the variables referenced in a particular scope.
 depends:
 -   interp
-status: "revised 2023-09-03"
 ---
 
 One way to evaluate the design of a piece of software is

@@ -9,7 +9,6 @@ depends:
 -   persist
 -   binary
 -   reflect
-status: "revised 2023-09-03"
 ---
 
 Persisting objects ([%x persist %]) lets us save and restore program state,

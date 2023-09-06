@@ -7,7 +7,6 @@ syllabus:
 depends:
 -   interp
 -   binary
-status: "revised 2023-09-03"
 ---
 
 The interpreter in [%x interp %] relied on Python to do

@@ -1,7 +1,3 @@
----
-status: "revised 2023-09-03"
----
-
 Consider the bicycle:
 more specifically,
 the De Rosa SK Pininfarina ([%f finale-bicycle %]).

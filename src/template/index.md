@@ -7,7 +7,6 @@ syllabus:
 depends:
 -   interp
 -   check
-status: "revised 2023-09-03"
 ---
 
 Every program needs documentation,

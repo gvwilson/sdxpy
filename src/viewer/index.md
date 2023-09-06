@@ -8,7 +8,6 @@ syllabus:
 -   Refactor code before attempting to add new features.
 -   Separate the logic for managing data from the logic for displaying it.
 depends:
-status: "revised 2023-09-03"
 ---
 
 Before they need version control tools or interpreters,

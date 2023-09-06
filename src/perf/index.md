@@ -6,7 +6,6 @@ syllabus:
 -   Measure performance to evaluate engineering tradeoffs.
 depends:
 -   reflect
-status: "revised 2023-09-03"
 ---
 
 One peril of publishing a book online is obsessing over analytics.

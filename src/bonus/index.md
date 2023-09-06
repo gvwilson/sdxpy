@@ -1,7 +1,3 @@
----
-status: "revised 2023-08-16"
----
-
 Each chapter in this book is designed to be teachable in one classroom hour.
 This appendix presents material that extends core ideas
 but would break that [%g attention_budget "attention budget" %].

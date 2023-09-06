@@ -10,7 +10,6 @@ depends:
 -   dup
 -   glob
 -   reflect
-status: "revised 2023-09-03"
 ---
 
 We've written almost a thousand lines of Python so far.

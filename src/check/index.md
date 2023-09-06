@@ -7,7 +7,6 @@ syllabus:
 -   We can summarize and check the structure of an HTML page by visiting each node and recording what we find there.
 depends:
 -   parse
-status: "revised 2023-09-03"
 ---
 
 Suppose we want to generate web pages to show the results of data analyses.

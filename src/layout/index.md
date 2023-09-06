@@ -8,7 +8,6 @@ syllabus:
 depends:
 -   check
 -   template
-status: "revised 2023-09-03"
 ---
 
 You might be reading this as [%i "HTML" %] in your browser,

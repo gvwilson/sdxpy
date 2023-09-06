@@ -9,7 +9,6 @@ syllabus:
 -   Build and check the parts of your code you are least sure of first
     to find out if your design will work.
 depends:
-status: "revised 2023-09-03"
 ---
 
 We used `*.txt` to tell the duplicate file finder of [%x dup %] which files to compare.

@@ -7,7 +7,6 @@ syllabus:
 depends:
 -   persist
 -   viewer
-status: "revised 2023-09-03"
 ---
 
 Viewing text files is useful,

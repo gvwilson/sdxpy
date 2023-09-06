@@ -7,7 +7,6 @@ syllabus:
     or are looking for material to use in software design classes that they teach.
 -   All of the content is free to read and re-use under open licenses,
     and all royalties from sales of this book will go to charity.
-status: "revised 2023-09-03"
 ---
 
 The best way to learn design in any field

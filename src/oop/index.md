@@ -9,7 +9,6 @@ syllabus:
 -   Inheritance can be implemented in several ways
     that differ in the order in which objects and classes are searched for methods.
 depends:
-status: "revised 2023-09-03"
 ---
 
 We are going to create a lot of [%i "object" "objects" %] and [%i "class" "classes" %] in these lessons,

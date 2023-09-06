@@ -7,7 +7,6 @@ syllabus:
 -   To test a program that uses the network, replace the network with a mock object.
 depends:
 -   archive
-status: "revised 2023-09-03"
 ---
 
 The Internet is simpler than most people realize

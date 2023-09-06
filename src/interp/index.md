@@ -10,7 +10,6 @@ syllabus:
 depends:
 -   oop
 -   test
-status: "revised 2023-09-03"
 ---
 
 [%x oop %] and [%x test %] introduced the idea that programs are just data.
