@@ -192,7 +192,7 @@ to take an environment as an extra parameter and pass it on as needed:
 
 [% inc file="vars.py" keep="do_abs" %]
 
-Looking up variables when we need their values is straightfoward.
+Looking up variables when we need their values is straightforward.
 We check that we have a variable name and that the name is in the environment,
 then return the stored value:
 
@@ -374,7 +374,7 @@ Your implementation can use either a Python `while` loop or recursion.
 [%g defensive_programming "Defensive programming" %] is an approach to software development
 that starts from the assumption that people make mistakes
 and should therefore put checks in their code to catch "impossible" situations.
-These checks are typically implement as `assert` statements
+These checks are typically implemented as `assert` statements
 that check the state of the program as it executes,
 like those in our interpreter that checks the lengths of lists.
 
