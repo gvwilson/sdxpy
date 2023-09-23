@@ -17,7 +17,7 @@ email = "gvwilson@third-bit.com"
 domain = "third-bit.com"
 plausible = True
 archive = f"{abbrev}-examples.zip"
-draft = True
+draft = False
 
 # Website.
 website = f"https://{domain}/{abbrev}/"

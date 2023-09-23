@@ -50,5 +50,5 @@ for ex in examples:
     p = call(ex, "perimeter")
     a = call(ex, "area")
     c = ex["_class"]["_classname"]
-    print(f"{n} is a {c}: {p:.2f} {p:.2f}")
+    print(f"{n} is a {c}: {p:.2f} {a:.2f}")
 # [/call]
