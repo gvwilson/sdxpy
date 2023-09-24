@@ -177,7 +177,7 @@ When recursion encounters a new node it calls `open` to do one of three things:
 1.  If there is a handler for the node,
     call the handler's `open` or `close` method.
 
-1.  Otherwise, open a regular [%i "tag" %].
+1.  Otherwise, open a regular [%i "tag (in HTML)" "tag" %].
 
 [% inc file="expander.py" keep="open" %]
 
