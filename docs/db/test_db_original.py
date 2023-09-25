@@ -1,6 +1,6 @@
 import pytest
 
-from record_original import BasicExperiment
+from record_original import BasicRec as BasicExperiment
 from just_dict_original import JustDict
 
 # [fixture]
