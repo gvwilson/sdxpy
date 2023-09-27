@@ -163,7 +163,7 @@ and we shouldn't require people to implement things they don't need.
 %]
 
 Here's what our catalog builder looks like
-when reimplemented on top of our `Visitor` class:
+when re-implemented on top of our `Visitor` class:
 
 [% inc file="catalog.py" keep="visitor" %]
 [% inc file="catalog.py" keep="main" %]
