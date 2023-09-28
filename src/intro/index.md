@@ -262,6 +262,8 @@ All royalties from this book will go to the [Red Door Family Shelter][red_door] 
 1.  Use [pip][pip] to install [Black][black], [flake8][flake8], and [isort][isort]
     on your computer.
 2.  Run them on a few programs you have already written.
+    (The file `setup.cfg` in the root directory of [this book's GitHub repository][book_repo]
+    has the settings we use for these tools.)
     What problems do they report?
     Which of these reports do you disagree with?
 
