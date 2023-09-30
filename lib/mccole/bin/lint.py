@@ -69,6 +69,7 @@ def main():
 
     for f in [
         check_bib,
+        check_captions,
         check_file_references,
         check_glossary_internal,
         check_glossary_redef,
@@ -96,6 +97,19 @@ def check_bib(config):
         _warn("unknown bibliography keys")
         for u in unknown:
             _warn(f"- {u}")
+
+
+def check_captions(config):
+    """Check formatting of captions."""
+    problems = []
+    for slug, text in config["prose"].items():
+        captions = [c.group(1) for c in regex.CAPTION.finditer(text)]
+        captions = [(slug, c) for c in captions if c[-1] not in ".?"]
+        problems.extend(captions)
+    if problems:
+        _warn("badly-formatted captions")
+        for (slug, caption) in problems:
+            print(f'- {slug}: "{caption}"')
 
 
 def check_dom(dom_spec, html_files):

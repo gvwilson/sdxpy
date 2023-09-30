@@ -36,7 +36,7 @@ two's complement rolls over when going below zero like an odometer.
 For example,
 with three-bit integers we get the values in [%t binary-3bit %].
 
-<div class="table" id="binary-3bit" caption="3-bit integer values using two's complement" markdown="1">
+<div class="table" id="binary-3bit" caption="3-bit integer values using two's complement." markdown="1">
 | Base 10 | Base 2 |
 | ------- | ------ |
 | 3       | 011    |
@@ -78,7 +78,7 @@ which makes it easy to translate bits to digits and vice versa:
 for example,
 `0xF7` is `0b11110111`.
 
-<div class="table" id="binary-hex" caption="Hexadecimal digits" markdown="1">
+<div class="table" id="binary-hex" caption="Hexadecimal digits." markdown="1">
 | Decimal | Hexadecimal | Bits | Decimal | Hexadecimal | Bits |
 | ------- | ----------- | ---- | ------- | ----------- | ---- |
 | 0       | 0           | 0000 | 8       | 8           | 1000 |
@@ -111,7 +111,7 @@ Finally,
 When these operators are applied on multi-bit values
 they work on corresponding bits independently as shown in [%t binary-ops %].
 
-<div class="table" id="binary-ops" caption="Bitwise operations" markdown="1">
+<div class="table" id="binary-ops" caption="Bitwise operations." markdown="1">
 | Expression | Bitwise       | Result (bits)   | Result (decimal) |
 | ---------- | ------------- | --------------- | ---------------- |
 | `12 & 6`   | `1100 & 0110` | `0100`          | `4`              |
@@ -434,7 +434,7 @@ All the other bytes are zeroes (`"\x00"`)
 because each of our integers is 32 bits long
 and the significant digits only fill one byte's worth of each.
 
-<div class="table" id="binary-formats" caption="`struct` package formats" markdown="1">
+<div class="table" id="binary-formats" caption="`struct` package formats." markdown="1">
 | Format | Meaning                                               |
 |------- | ----------------------------------------------------- |
 | `"c"`  | Single character (i.e., string of length 1)           |

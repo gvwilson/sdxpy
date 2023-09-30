@@ -223,7 +223,7 @@ the value that was passed to `make_hidden` as `thing`.
    slug="func-closure"
    img="closure.svg"
    alt="Closures"
-   caption="Closures"
+   caption="Closures."
    cls="here"
 %]
 
@@ -258,7 +258,7 @@ and build an entire system of objects and classes this way.
    slug="func-objects"
    img="objects.svg"
    alt="Objects as closures"
-   caption="Implementing objects using closures"
+   caption="Implementing objects using closures."
 %]
 
 ## Summary {: #func-summary}
@@ -267,7 +267,7 @@ and build an entire system of objects and classes this way.
    slug="func-concept-map"
    img="concept_map.svg"
    alt="Concept map of functions and closures"
-   caption="Concept map"
+   caption="Concept map."
    cls="here"
 %]
 

@@ -269,7 +269,7 @@ we could sort the classes from parent to child
 and display methods in the order in which they were first defined—but
 none of that requires us to inspect the AST.
 
-<div class="table" id="linter-inheritance" caption="Inheritance and methods" markdown="1">
+<div class="table" id="linter-inheritance" caption="Inheritance and methods." markdown="1">
 | | `GrandChild` | `LeftChild` | `Parent` | `RightChild` |
 | --- | --- | --- | --- | --- |
 | `blue` | X | X |   | X
@@ -470,7 +470,7 @@ If you're using `struct`,
 the first character of a format string optionally indicates the byte order
 ([%t bonus-endian-formats %]).
 
-<div class="table here" id="bonus-endian-formats" caption="`struct` package endian indicators" markdown="1">
+<div class="table here" id="bonus-endian-formats" caption="`struct` package endian indicators." markdown="1">
 | Character | Byte order | Size     | Alignment     |
 | --------- | ---------- | -------- | ------------- |
 | `@`       | native     | native   | native        |

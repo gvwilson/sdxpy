@@ -337,7 +337,7 @@ our test of nested loops pass.
    slug="protocols-concept-map"
    img="concept_map.svg"
    alt="Concept map of mocks, protocols, and iterators"
-   caption="Concept map"
+   caption="Concept map."
    cls="here"
 %]
 

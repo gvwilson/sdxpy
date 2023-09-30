@@ -222,7 +222,7 @@ and then asked to do whatever they do:
    slug="undo-verbs"
    img="verbs.svg"
    alt="Nouns as verbs in the Command pattern"
-   caption="Representing actions as objects in the Command design pattern"
+   caption="Representing actions as objects in the Command design pattern."
    cls="here"
 %]
 
@@ -274,7 +274,7 @@ and get back the screen we originally had:
    slug="undo-concept-map"
    img="concept_map.svg"
    alt="Concept map of undo"
-   caption="Concept map"
+   caption="Concept map."
    cls="here"
 %]
 

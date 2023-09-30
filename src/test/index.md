@@ -209,7 +209,7 @@ which is why books like this one exist.
    slug="test-concept-map"
    img="concept_map.svg"
    alt="Concept map of test runner"
-   caption="Concept map"
+   caption="Concept map."
    cls="here"
 %]
 

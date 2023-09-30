@@ -53,7 +53,7 @@ and then builds what it needs to in that order
    slug="build-dependencies"
    img="dependencies.svg"
    alt="Dependencies in a four-node graph"
-   caption="Dependencies and topological order"
+   caption="Dependencies and topological order."
 %]
 
 <div class="callout" markdown="1">
@@ -122,7 +122,7 @@ We also transform the rule's structure a bit to simplify later processing:
    slug="build-diamond"
    img="diamond.svg"
    alt="Representing graph"
-   caption="Representing dependency graph"
+   caption="Representing dependency graph."
 %]
 
 <div class="callout" markdown="1">
@@ -166,7 +166,7 @@ The next step is to figure out a safe order in which to build things.
    slug="build-topo-sort"
    img="topo_sort.svg"
    alt="Trace of topological sorting"
-   caption="Topological sort"
+   caption="Topological sort."
 %]
 
 The code that implements this algorithm is:
@@ -279,7 +279,7 @@ we should rethink our entire design.
    slug="build-concept-map"
    img="concept_map.svg"
    alt="Concept map of build manager"
-   caption="Concept map"
+   caption="Concept map."
    cls="here"
 %]
 

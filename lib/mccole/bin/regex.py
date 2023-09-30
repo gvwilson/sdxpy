@@ -31,3 +31,6 @@ SLIDES_H2 = re.compile(r"^##\s+", re.MULTILINE)
 # Styling.
 PARAGRAPH_CONTINUE = re.compile(r"^\{:\s+.continue\}\s*$", re.MULTILINE)
 EXERCISE_HEADER = re.compile(r"\{:\s+\.exercise\}")
+
+# Captions.
+CAPTION = re.compile(r'caption="(.+?)"')
