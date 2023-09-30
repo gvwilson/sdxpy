@@ -182,7 +182,8 @@ until we see an `EitherEnd` marker:
 
 This achieves the same thing in the two-token case,
 but allows us to write alternatives with more options
-without changing the code - assuming you solved the exercise "Multiple Alternatives" in [%x glob %].
+without changing the code
+(assuming you solved the "Multiple Alternatives" exercise in [%x glob %]).
 Tests confirm that we're on the right track:
 
 [% inc file="test_parser.py" keep="sample" %]
