@@ -89,10 +89,6 @@ when it needs a key:
 
 [% inc file="just_dict_refactored.py" %]
 
-After a bit of refactoring,
-our tests work as before.
-{: .continue}
-
 ## Saving Records {: #db-save}
 
 The next step in building a usable database is to have it store records
