@@ -38,7 +38,7 @@ This matcher will only handle the cases in [%t pattern-glob-cases %],
 but as the exercises will show,
 our design makes it easy to add new kinds of patterns.
 
-<div class="table" id="pattern-glob-cases" caption="Pattern matching cases" markdown="1">
+<div class="table" id="pattern-glob-cases" caption="Pattern matching cases." markdown="1">
 | Pattern | Text     | Match? | Pattern  | Text     | Match? |
 | ------- | -------- | ------ | -------- | -------- | ------ |
 | `abc`   | "abc"    | true   | `a*c`    | "abc"    | true   |

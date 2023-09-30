@@ -160,7 +160,7 @@ and is going to constrain the rest of our design
    slug="viewer-delayed"
    img="delayed.svg"
    alt="Delayed construction"
-   caption="Order of operations in delayed construction"
+   caption="Order of operations in delayed construction."
    cls="here"
 %]
 
@@ -493,7 +493,7 @@ in the same way as vertical movement:
    slug="viewer-concept-map"
    img="concept_map.svg"
    alt="Concept map of file viewer"
-   caption="Concept map"
+   caption="Concept map."
    cls="here"
 %]
 
@@ -529,6 +529,6 @@ Summarize the changes in each.
    slug="viewer-inheritance"
    img="inheritance.svg"
    alt="Inheritance in lesson"
-   caption="Class definitions and inheritance in lesson"
+   caption="Class definitions and inheritance in lesson."
    cls="here"
 %]

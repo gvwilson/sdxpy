@@ -361,7 +361,7 @@ but then says it can't find the object being referred to.
    slug="persist-circular"
    img="circular.svg"
    alt="A circular data structure"
-   caption="A data structure that contains a reference to itself"
+   caption="A data structure that contains a reference to itself."
 %]
 
 The problem is these lines in `LoadAlias.load`

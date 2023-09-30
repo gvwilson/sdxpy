@@ -240,7 +240,7 @@ this recycles the existing storage:
    slug="perf-col-select"
    img="col_select.svg"
    alt="Column-wise selection"
-   caption="Column-wise selection"
+   caption="Column-wise selection."
 %]
 
 Finally,
@@ -355,7 +355,7 @@ For a \\( 1000 \times 1000 \\) dataframe
 selection is over 250 times faster with column-wise storage than with row-wise,
 while filtering is 1.8 times slower.
 
-<div class="table" id="perf-timing" caption="Dataframe timings" markdown="1">
+<div class="table" id="perf-timing" caption="Dataframe timings." markdown="1">
 | nrow  | ncol  | filter col | select col | filter row | select row |
 | ----- | ----- | ---------- | ---------- | ---------- | ---------- |
 |    10 |    10 | 8.87e-05   | 7.70e-05   | 4.41e-05   | 2.50e-05   |
@@ -368,7 +368,7 @@ while filtering is 1.8 times slower.
    slug="perf-analysis"
    img="analysis.svg"
    alt="Performance curves"
-   caption="Relative performance of row-wise and column-wise storage"
+   caption="Relative performance of row-wise and column-wise storage."
    cls="here"
 %]
 
