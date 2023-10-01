@@ -28,6 +28,9 @@ MARKDOWN_H3 = re.compile(r"^###\s+(.+?)(\s+\{:(.+?)\}\s+)?$", re.MULTILINE)
 MARKDOWN_FOOTER_LINK = re.compile(r"\[.*?\]\[(.+?)\]", re.MULTILINE)
 SLIDES_H2 = re.compile(r"^##\s+", re.MULTILINE)
 
+# Match multiple whitespace characters.
+MULTISPACE = re.compile(r"\s+", re.DOTALL)
+
 # Styling.
 PARAGRAPH_CONTINUE = re.compile(r"^\{:\s+.continue\}\s*$", re.MULTILINE)
 EXERCISE_HEADER = re.compile(r"\{:\s+\.exercise\}")

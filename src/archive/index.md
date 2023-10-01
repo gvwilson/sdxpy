@@ -1,4 +1,10 @@
 ---
+abstract: >
+    Most programmers would agree that once they have a text editor
+    and a way to run their programs,
+    the next tool they need is version control.
+    This chapter therefore shows how the core of a simple version control system works
+    by building a file archiver that avoids creating duplicate copies of the same files.
 syllabus:
 -   Version control tools use hashing to uniquely identify each saved file.
 -   Each snapshot of a set of files is recorded in a manifest.

@@ -1,4 +1,12 @@
 ---
+abstract: >
+    Browsers, e-book readers, and text editors all rely on some kind of layout engine
+    that takes text and formatting instructions as input
+    and decides where to put each character and image.
+    To explore how they work,
+    this chapter builds a small HTML layout engine,
+    and in doing so,
+    introduces some useful ideas about recursion and multiple inheritance.
 syllabus:
 -   A layout engine determines where to place page elements based on size and organization.
 -   Page elements are organized as a tree of basic blocks, rows, and columns.

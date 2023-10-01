@@ -1,4 +1,9 @@
 ---
+abstract: >
+    This chapter brings together pieces from the preceding few lessons
+    to show how one program can check the structure of another.
+    Tools that do this, called linters,
+    rely once again on the fact that programs are just another kind of data.
 syllabus:
 -   A linter checks that a program conforms to a set of style and usage rules.
 -   Linters typically use the Visitor design pattern to find nodes of interest in an abstract syntax tree.

@@ -1,4 +1,13 @@
 ---
+abstract: >
+    The Hypertext Transfer Protocol (HTTP) defines a way for programs to exchange data over the web.
+    Clients (such as browsers) send requests to servers,
+    which respond by copying files from disk,
+    pulling records from a database,
+    or in any of dozens of other days.
+    This chapter shows how to build a simple web server
+    that understands the basics of HTTP
+    and how to test programs of this kind.
 syllabus:
 -   The HyperText Transfer Protocol (HTTP) specifies one way to interact via messages over sockets.
 -   A minimal HTTP request has a method, a URL, and a protocol version.

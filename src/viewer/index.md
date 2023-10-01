@@ -1,4 +1,12 @@
 ---
+abstract: >
+    Even simple editors like Notepad and Nano do a lot of things:
+    moving a cursor,
+    inserting and deleting characters,
+    and more.
+    This is too much to fit into one lesson,
+    so this chapter builds a tool for viewing files,
+    which the next chapters extends to create an editor with undo and redo.
 syllabus:
 -   The curses module manages text terminals in a platform-independent way.
 -   Write debugging information to a log file when the screen is not available.

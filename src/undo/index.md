@@ -1,4 +1,12 @@
 ---
+abstract: >
+    Viewing text files is useful,
+    but we'd like to be able to edit them as well.
+    This chapter therefore modifies the file viewer of the preceding chapter
+    so that we can add and delete text.
+    And since people make mistakes,
+    it also implements undo,
+    which introduces another commonly-used design pattern.
 syllabus:
 -   Replace user interface components with mock objects to simplify testing.
 -   Record actions and state to check behavior these mock objects.

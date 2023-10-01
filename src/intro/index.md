@@ -1,4 +1,15 @@
 ---
+abstract: >
+    The best way to learn design is to study examples,
+    and the best programs to use as examples are the ones programmers use every day.
+    These lessons therefore build small versions
+    of tools that programmers use every day
+    to show how experienced software designers think.
+    Along the way,
+    they introduce some fundamental ideas in computer science
+    that many self-taught programmers haven't encountered.
+    The lessons assume readers can write small programs and want to write larger ones,
+    or are looking for material to use in software design classes that they teach.
 syllabus:
 -   The complexity of a system increases more rapidly than its size.
 -   The best way to learn design is to study examples,

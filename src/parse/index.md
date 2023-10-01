@@ -1,4 +1,11 @@
 ---
+abstract: >
+    A parser turns text that's easy for a human being to read
+    into a data structure that a computer can work with.
+    The complete parser for a language like Python can be very complex,
+    but this chapter illustrates the key ideas
+    by building a parser for the simple filename matching patterns
+    implemented in the previous chapter.
 syllabus:
 -   Parsing transforms text that's easy for people to read into objects that are easy for computers to work with.
 -   A grammar defines the textual patterns that a parser recognizes.

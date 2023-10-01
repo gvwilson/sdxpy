@@ -1,4 +1,10 @@
 ---
+abstract: >
+    Debuggers are as much a part of good programmers' working lives as version control
+    but are taught far less often.
+    This chapter therefore builds a simple single-stepping debugger
+    for the virtual machine of the previous chapter
+    and shows how we can test it and other interactive applications.
 syllabus:
 -   Interactive programs can be tested by simulating input and recording output.
 -   Testing interactive programs is easier if their inputs and outputs can easily be replaced with mock objects.

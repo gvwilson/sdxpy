@@ -1,3 +1,14 @@
+---
+abstract: >
+    We have long accepted that software can and should be critiqued by asking
+    if it does what it's supposed to do and if it's pleasurable to use.
+    What is often missing is the question of whether
+    its design facilitated its manufacture and maintenance.
+    We hope that this book has helped you move one step closer
+    to being able to ask and answer that question
+    about the things you build.
+---
+
 Consider the bicycle:
 more specifically,
 the De Rosa SK Pininfarina ([%f finale-bicycle %]).

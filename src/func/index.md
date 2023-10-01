@@ -1,4 +1,12 @@
 ---
+abstract: >
+    This chapter extends the little interpreter of the previous one
+    to allow users to define functions of their own.
+    By doing so,
+    it shows that the way programs handle variable scope is a design choice,
+    and that the use of a particular technique called closures
+    enables programs written in Python (and other modern programming languages)
+    to encapsulate information in useful ways.
 syllabus:
 -   When we define a function,
     our programming system saves instructions for later use.

@@ -1,4 +1,10 @@
 ---
+abstract: >
+    Every programming language has tools to collect tests, run them, and report their results.
+    This chapter shows how such tools are built,
+    both to help programmers use them more effectively,
+    and to illustrate the single most important idea in this book:
+    that programs are just another kind of data.
 syllabus:
 -   Functions are objects you can save in data structures or pass to other functions.
 -   Python stores local and global variables in dictionary-like structures.

@@ -1,4 +1,10 @@
 ---
+abstract: >
+    A program in memory is just a data structure,
+    each of whose elements triggers some operation in the interpreter that's executing it.
+    This chapter builds a very simple interpreter to show how this process works,
+    and to show that we can evaluate the quality of a program's design
+    by asking how extensible it is.
 syllabus:
 -   Compilers and interpreters are just programs.
 -   Basic arithmetic operations are just functions that have special notation.

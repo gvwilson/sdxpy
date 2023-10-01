@@ -1,4 +1,9 @@
 ---
+abstract: >
+    Some simple kinds of data can be saved as lines of text,
+    but more complex data structures require a framework capable of handling aliasing and circularity.
+    This chapter shows how to build such a framework,
+    and in doing so demonstrates how libraries for handling JSON and other formats work.
 syllabus:
 -   A persistence framework saves and restores objects.
 -   Persistence must handle aliasing and circularity.

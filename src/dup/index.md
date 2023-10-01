@@ -1,4 +1,11 @@
 ---
+abstract: >
+    The naïve way to find duplicated files is to compare each file to all the others,
+    but that is unworkably slow for large sets of files.
+    A better approach is to generate a short label that depends only on the file's contents
+    so that we only need to compare files with the same label.
+    This idea is the basis of many real-world applications,
+    including the cryptographic systems used for secure online communication.
 syllabus:
 -   A hash function creates a fixed-size value from an arbitrary sequence of bytes.
 -   Use big-oh notation to estimate the running time of algorithms.

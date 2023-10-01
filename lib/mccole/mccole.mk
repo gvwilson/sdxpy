@@ -178,6 +178,11 @@ spelling: ${DOCS_INDEX} ${BIN_SPELLING}
 index: ${DOCS_INDEX} ${BIN_DEPENDENCIES}
 	@python ${BIN_DEPENDENCIES} --config ${CONFIG} --display plain
 
+## abstracts: show all abstracts
+.PHONY: abstracts
+abstracts:
+	@python ${MCCOLE}/bin/abstracts.py --config ${CONFIG}
+
 ## ---: ---
 
 ## html: create single-page HTML

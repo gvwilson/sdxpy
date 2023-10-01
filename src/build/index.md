@@ -1,4 +1,11 @@
 ---
+abstract: >
+    Programmers frequently need to chain operations together
+    so that if one file is updated,
+    everything that depends on it is also updated,
+    and then things that depend on them are updated as well.
+    This chapter builds a simple build manager to show how such tools work,
+    and to introduce some fundamental algorithms on directed graphs.
 syllabus:
 -   Build managers track dependencies between files and update files that are stale.
 -   Every build rule has a target, some dependencies, and a recipe for updating the target.

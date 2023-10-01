@@ -1,4 +1,12 @@
 ---
+abstract: >
+    This chapter starts by showing how we can simplify testing
+    by temporarily replacing real functions with ones that return predictable values,
+    then uses our need to do that
+    to motivate discussion of ways that programmers can hook their own code
+    into the Python interpreter.
+    Unlike other chapters in this book,
+    this one focuses on Python itself rather than the things we can build with it.
 syllabus:
 -   Temporarily replacing functions with mock objects can simplify testing.
 -   Mock objects can record their calls and/or return variable results.

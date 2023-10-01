@@ -1,4 +1,10 @@
 ---
+abstract: >
+    The standard version of Python is implemented in C,
+    but C is compiled to instructions for a particular processor.
+    To show how that lower layer works,
+    this chapter builds a simulator of a small computer
+    and an assembler for a very simple language that can be used to program it.
 syllabus:
 -   Every computer has a processor with a particular instruction set, some registers, and memory.
 -   Instructions are just numbers, but may be represented as assembly code.

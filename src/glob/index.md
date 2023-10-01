@@ -1,5 +1,11 @@
 ---
-title: "Matching Patterns"
+abstract: >
+    Pattern matching is ubiquitous in computer programs.
+    Whether we are selecting a set of files to open
+    or finding names and email addresses inside those files,
+    we need  an efficient way to find matches for complex patterns.
+    This chapter therefore implements the filename matching used in the Unix shell
+    to show how more complicated tools like regular expressions works.
 syllabus:
 -   Use globs and regular expressions to match patterns in text.
 -   Use inheritance to make matchers composable and extensible.

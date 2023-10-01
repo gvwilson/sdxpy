@@ -1,4 +1,10 @@
 ---
+abstract: >
+    Writing and updating HTML pages by hand is time-consuming and error-prone,
+    so most modern websites use some kind of static site generator (SSG)
+    to create pages from templates.
+    This chapter builds a simple SSG to show how they work
+    and to reinforce earlier lessons about creating little programming languages.
 syllabus:
 -   Static site generators create HTML pages from templates, directives, and data.
 -   A static site generator has the same core features as a programming language.

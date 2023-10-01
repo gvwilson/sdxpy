@@ -1,4 +1,10 @@
 ---
+abstract: >
+    Most languages have an online archive from which people can download packages,
+    each of which has a name, one or more versions, and a list of dependencies.
+    In order to install a package,
+    we need to figure out exactly what versions of its dependencies to install;
+    this chapter explores how to find a workable installation or prove that there isn't one.
 syllabus:
 -   Software packages often have multiple versions, which are usually identified by multi-part semantic version numbers.
 -   A package manager must find a mutually-compatible set of dependencies in order to install a package.

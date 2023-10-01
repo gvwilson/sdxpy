@@ -1,4 +1,9 @@
 ---
+abstract: >
+    This chapter builds a tool to check the structure of web pages
+    in order to show how programs can process HTML,
+    and to introduce a design pattern that is frequently used
+    to manage irregular data structures.
 syllabus:
 -   HTML consists of text and of elements represented by tags with attributes.
 -   HTML is represented in memory as a Document Object Model (DOM) tree.

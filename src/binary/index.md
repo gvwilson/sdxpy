@@ -1,4 +1,10 @@
 ---
+abstract: >
+    Python and other high-level languages shield programmers from the low-level details
+    of how computers actually store and manipulate data,
+    but sooner or later someone has to worry about bits and bytes.
+    This chapter explores how computers represent numbers and text
+    and shows how to work with data at this level.
 syllabus:
 -   Programs usually store integers using two's complement rather than sign and magnitude.
 -   Characters are usually encoded as bytes using either ASCII, UTF-8, or UTF-32.

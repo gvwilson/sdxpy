@@ -1,4 +1,10 @@
 ---
+abstract: >
+    This chapter implements the kind of multi-column table frequently used in data science
+    in two different ways
+    in order to reinforce earlier ideas about the value of abstraction
+    and to show how systematic performance testing can be used
+    to decide between different implementation strategies.
 syllabus:
 -   Create abstract classes to specify interfaces.
 -   Store two-dimensional data as rows or as columns.

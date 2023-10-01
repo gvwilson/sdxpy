@@ -1,4 +1,10 @@
 ---
+abstract: >
+    Almost every real-world application relies on some kind of database
+    that allows code to look up data without loading everything into memory.
+    To show how they work,
+    this chapter builds a very simple database
+    that appends every new copy of a record to a running log of operations.
 syllabus:
 -   Database stores records so that they can be accessed by key.
 -   Log-structured database appends new records to database and invalidates older versions of records.

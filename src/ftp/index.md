@@ -1,4 +1,10 @@
 ---
+abstract: >
+    A typical web application is made up of clients that send messages to servers
+    and then wait for them to respond.
+    This chapter shows how they work at a low level
+    by building a simple low-level client-server program
+    to move files from one machine to another.
 syllabus:
 -   Every computer on a network has a unique IP address.
 -   The Domain Name System (DNS) translates human-readable names into IP addresses.
