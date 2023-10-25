@@ -278,7 +278,7 @@ We do have one task left, though:
 we need to make sure that when a square or circle is made,
 it is made correctly.
 In short, we need to implement [%g constructor "constructors" %].
-We do this by giving the dictionaries that implements classes
+We do this by giving the dictionaries that implement classes
 a special key `_new`
 whose value is the function that builds something of that type:
 
