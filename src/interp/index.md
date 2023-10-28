@@ -142,7 +142,7 @@ until we reach an integer or some other value that doesn't require any further w
    slug="interp-recursive-evaluation"
    img="recursive_evaluation.svg"
    alt="Recursive evaluation of an expression tree"
-   caption="Recursively evaluating the expression `["abs",["add",1,2]]`."
+   caption="Recursively evaluating the expression `['abs',['add',1,2]]`."
 %]
 
 With all of this code in place,

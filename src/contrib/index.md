@@ -113,7 +113,7 @@ Why did you build your own production pipeline instead of using [GitBook][gitboo
     there is no straightforward way to achieve that with tools built on computational notebooks.
     That said,
     I'm sure the authors of those systems would find this book's tooling
-    just as frustrating and I find theirs.
+    just as frustrating as I find theirs.
 
 ## Making Decisions {: #contrib-decisions}
 

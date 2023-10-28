@@ -2,7 +2,7 @@
 abstract: >
     Object-oriented programming was invented to solve two problems:
     what is a natural way to represent real-world "things" in code,
-    and how can we organize that code so that it's easiser to undrestand, text, and extend?
+    and how can we organize that code so that it's easiser to understand, test, and extend?
     This chapter shows how object-oriented systems solve those problems
     by implementing a very simple object system using simpler data structures.
 syllabus:
