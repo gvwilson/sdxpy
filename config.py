@@ -18,6 +18,7 @@ domain = "third-bit.com"
 plausible = True
 archive = f"{abbrev}-examples.zip"
 draft = False
+isbn = "978-1032725253"
 
 # Website.
 website = f"https://{domain}/{abbrev}/"
