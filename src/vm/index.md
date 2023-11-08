@@ -78,24 +78,23 @@ or an address,
 which is just a constant that identifies a location in memory.
 Since constants have to fit in one byte,
 this means that the largest number we can represent directly is 256.
-[% t vm-op-codes %] uses the letters `r`, `c`, and `a`
+[% t vm-op-codes %] uses the letters `r` and `v`
 to indicate instruction format,
-where `r` indicates a register identifier,
-`c` indicates a constant,
-and `a` indicates an address.
+where `r` indicates a register identifier.
+and `v` indicates a constant value.
 
 <div class="table" id="vm-op-codes" caption="Virtual machine op codes." markdown="1">
 | Name  | Code | Format | Action              | Example     | Equivalent           |
 | :---- | ---: | :----- | :------------------ | :---------- | :------------------- |
 | `hlt` |    1 | `--`   | Halt program        | `hlt`       | `sys.exit(0)`        |
-| `ldc` |    2 | `rc`   | Load constant       | `ldc R0 99` | `R0 = 99`            |
+| `ldc` |    2 | `rv`   | Load constant       | `ldc R0 99` | `R0 = 99`            |
 | `ldr` |    3 | `rr`   | Load register       | `ldr R0 R1` | `R0 = memory[R1]`    |
 | `cpy` |    4 | `rr`   | Copy register       | `cpy R0 R1` | `R0 = R1`            |
 | `str` |    5 | `rr`   | Store register      | `str R0 R1` | `memory[R1] = R0`    |
 | `add` |    6 | `rr`   | Add                 | `add R0 R1` | `R0 = R0 + R1`       |
 | `sub` |    7 | `rr`   | Subtract            | `sub R0 R1` | `R0 = R0 - R1`       |
-| `beq` |    8 | `ra`   | Branch if equal     | `beq R0 99` | `if (R0==0) PC = 99` |
-| `bne` |    9 | `ra`   | Branch if not equal | `bne R0 99` | `if (R0!=0) PC = 99` |
+| `beq` |    8 | `rv`   | Branch if equal     | `beq R0 99` | `if (R0==0) IP = 99` |
+| `bne` |    9 | `rv`   | Branch if not equal | `bne R0 99` | `if (R0!=0) IP = 99` |
 | `prr` |   10 | `r-`   | Print register      | `prr R0`    | `print(R0)`          |
 | `prm` |   11 | `r-`   | Print memory        | `prm R0`    | `print(memory[R0])`  |
 </div>
