@@ -93,8 +93,8 @@ and `v` indicates a constant value.
 | `str` |    5 | `rr`   | Store register      | `str R0 R1` | `memory[R1] = R0`    |
 | `add` |    6 | `rr`   | Add                 | `add R0 R1` | `R0 = R0 + R1`       |
 | `sub` |    7 | `rr`   | Subtract            | `sub R0 R1` | `R0 = R0 - R1`       |
-| `beq` |    8 | `rv`   | Branch if equal     | `beq R0 99` | `if (R0==0) PC = 99` |
-| `bne` |    9 | `rv`   | Branch if not equal | `bne R0 99` | `if (R0!=0) PC = 99` |
+| `beq` |    8 | `rv`   | Branch if equal     | `beq R0 99` | `if (R0==0) IP = 99` |
+| `bne` |    9 | `rv`   | Branch if not equal | `bne R0 99` | `if (R0!=0) IP = 99` |
 | `prr` |   10 | `r-`   | Print register      | `prr R0`    | `print(R0)`          |
 | `prm` |   11 | `r-`   | Print memory        | `prm R0`    | `print(memory[R0])`  |
 </div>
