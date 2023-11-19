@@ -69,15 +69,15 @@ appendices = {
 
 # Files to copy verbatim.
 copy = [
+    "*.as",
+    "*.mx",
+    "*.tll",
     "*.xml",
 ]
 
 # Exclusions (don't process).
-exclude = [
-    "*.as",
+exclude = copy + [
     "*.dot",
-    "*.mx",
-    "*.tll",
     "*.xml",
 ]
 

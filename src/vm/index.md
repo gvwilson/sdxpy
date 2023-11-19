@@ -114,10 +114,7 @@ makes them easier to find as well as ensuring consistency.
 ## Execution {: #vm-execute}
 
 We start by defining a class with an instruction pointer, some registers, and some memory
-along with a prompt for output:
-
-[% inc file="vm.py" keep="init" %]
-
+along with a prompt for output.
 A program is just an array of numbers representing instructions.
 To load a program into our VM,
 we copy those numbers into memory and reset the instruction pointer and registers:

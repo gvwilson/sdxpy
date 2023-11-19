@@ -11,16 +11,11 @@ release:
 	@echo "SDXPY_RELEASE not defined"
 else
 release:
-	rm -rf docs
+	rm -rf docs ${SDXPY_RELEASE}
 	make build
-	rm -rf ${SDXPY_RELEASE}
-	mkdir ${SDXPY_RELEASE}
-	(cd docs && tar cf - $$(find . -name '*.css' -o -name '*.html' -o -name '*.ico' -o -name '*.jpg' -o -name '*.js' -o -name '*.png' -o -name '*.svg' -o -name '*.webp')) \
-	| (cd ${SDXPY_RELEASE} && tar xf -)
-	cd docs && zip -q -r ${SDXPY_RELEASE}/${ABBREV}-examples.zip . \
-	-i '*.ht' '*.json' '*.out' '*.py' '*.sh' '*.tll' '*.txt' '*.yml' \
-	-x '*.css' '*.html' '*.ico' '*.js' '*.svg' '*.webp'
-	cd ${SDXPY_RELEASE} && unzip -q ${ABBREV}-examples.zip
+	cp -r docs ${SDXPY_RELEASE}
+	find ${SDXPY_RELEASE} \( -name .DS_Store -or -name '*.pdf' -or -name '*.aux' -or -name '*.bbl' -or -name '*.bcf' -or -name '*.bib' -or -name '*.blg' -or -name '*.cls' -or -name '*.idx' -or -name '*.ilg' -or -name '*.ind' -or -name '*.log' -or -name '*.tex' -or -name '*.toc' \) -exec rm {} +
+	cd ${SDXPY_RELEASE} && zip -q -r ${ABBREV}-examples.zip . -i '*.as' '*.ht' '*.json' '*.mx' '*.out' '*.py' '*.sh' '*.tll' '*.txt' '*.yml'
 endif
 
 ## style: check source code style

@@ -4,7 +4,7 @@
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="repo" content="https://github.com/gvwilson/sdxpy">
-  <meta name="build_date" content="2023-10-28">
+  <meta name="build_date" content="2023-11-19">
   <meta name="template" content="default">
   <meta name="major" content="vm">
   <meta name="has_slides" content="true">
@@ -420,11 +420,10 @@ or an address,
 which is just a constant that identifies a location in memory.
 Since constants have to fit in one byte,
 this means that the largest number we can represent directly is 256.
-<a class="tbl-ref" href="../vm/#vm-op-codes">Table 25.1</a> uses the letters <code>r</code>, <code>c</code>, and <code>a</code>
+<a class="tbl-ref" href="../vm/#vm-op-codes">Table 25.1</a> uses the letters <code>r</code> and <code>v</code>
 to indicate instruction format,
-where <code>r</code> indicates a register identifier,
-<code>c</code> indicates a constant,
-and <code>a</code> indicates an address.</p>
+where <code>r</code> indicates a register identifier.
+and <code>v</code> indicates a constant value.</p>
 <div class="table"><table id="vm-op-codes"><caption>Table 25.1: Virtual machine op codes.</caption>
 <thead>
 <tr>
@@ -448,7 +447,7 @@ and <code>a</code> indicates an address.</p>
 <tr>
 <td style="text-align: left;"><code>ldc</code></td>
 <td style="text-align: right;">2</td>
-<td style="text-align: left;"><code>rc</code></td>
+<td style="text-align: left;"><code>rv</code></td>
 <td style="text-align: left;">Load constant</td>
 <td style="text-align: left;"><code>ldc R0 99</code></td>
 <td style="text-align: left;"><code>R0 = 99</code></td>
@@ -496,18 +495,18 @@ and <code>a</code> indicates an address.</p>
 <tr>
 <td style="text-align: left;"><code>beq</code></td>
 <td style="text-align: right;">8</td>
-<td style="text-align: left;"><code>ra</code></td>
+<td style="text-align: left;"><code>rv</code></td>
 <td style="text-align: left;">Branch if equal</td>
 <td style="text-align: left;"><code>beq R0 99</code></td>
-<td style="text-align: left;"><code>if (R0==0) PC = 99</code></td>
+<td style="text-align: left;"><code>if (R0==0) IP = 99</code></td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>bne</code></td>
 <td style="text-align: right;">9</td>
-<td style="text-align: left;"><code>ra</code></td>
+<td style="text-align: left;"><code>rv</code></td>
 <td style="text-align: left;">Branch if not equal</td>
 <td style="text-align: left;"><code>bne R0 99</code></td>
-<td style="text-align: left;"><code>if (R0!=0) PC = 99</code></td>
+<td style="text-align: left;"><code>if (R0!=0) IP = 99</code></td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>prr</code></td>
@@ -560,24 +559,8 @@ instead of scattering them across multiple files
 makes them easier to find as well as ensuring consistency.</p>
 <h2 id="vm-execute">Section 25.2: Execution</h2>
 <p>We start by defining a class with an instruction pointer, some registers, and some memory
-along with a prompt for output:</p>
-<div class="code-sample lang-py" title="vm.py">
-<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">VirtualMachine</span><span class="p">:</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">initialize</span><span class="p">([])</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">prompt</span> <span class="o">=</span> <span class="s2">&quot;&gt;&gt;&quot;</span>
-
-    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">program</span><span class="p">):</span>
-        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">program</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">RAM_LEN</span><span class="p">,</span> <span class="s2">&quot;Program too long&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ram</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="n">program</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">if</span> <span class="p">(</span><span class="n">i</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">program</span><span class="p">))</span> <span class="k">else</span> <span class="mi">0</span>
-            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">RAM_LEN</span><span class="p">)</span>
-        <span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ip</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">reg</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">NUM_REG</span>
-</code></pre></div>
-</div>
-<p>A program is just an array of numbers representing instructions.
+along with a prompt for output.
+A program is just an array of numbers representing instructions.
 To load a program into our VM,
 we copy those numbers into memory and reset the instruction pointer and registers:</p>
 <div class="code-sample lang-py" title="vm.py">
