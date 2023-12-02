@@ -32,7 +32,8 @@ A computer scientist would say that
 the [%g time_complexity "time complexity" %] of our algorithm is \\( O(N^2) \\),
 which is pronounced "[%g big_oh "big-oh" %] of N squared".
 In simpler terms,
-when the number of files doubles the running time roughly quadruples,
+when the number of files doubles,
+the running time roughly quadruples,
 which means the time per file increases as the number of files increases.
 
 Slowdown like this is often unavoidable,
@@ -250,7 +251,7 @@ The same math can tell us how many files we need to hash
 before there's a 50% chance of a [%g hash_collision "collision" %] with a 256-bit hash.
 According to [Wikipedia][birthday_problem],
 the answer is approximately \\( 4{\times}10^{38} \\) files.
-We're willing to take that risk…
+We're willing to take that risk.
 
 </div>
 
@@ -265,6 +266,9 @@ we only have to look at each file once,
 so the running time is as good as it possibly can be.
 
 ## Summary {: #dup-summary}
+
+[%f dup-concept-map %] summarizes the key ideas in this chapter,
+the most important of which is that some algorithms are intrinsically better than others.
 
 [% figure
    slug="dup-concept-map"
@@ -312,13 +316,13 @@ How fast is "rapidly" in big-oh terms?
 
 ###  The `hash` Function {: .exercise}
 
-1.  Read the documentation for Python's built-in `hash` function
+1.  Read the documentation for Python's built-in `hash` function.
 
-1.  Why do `hash(123)` and `hash("123")` work but `hash([123])` [%i "raise" %] an exception?
+1.  Why do `hash(123)` and `hash("123")` work when `hash([123])` [%i "raise" "raises" %] an exception?
 
 ### How Good Is SHA-256? {: .exercise}
 
-1.  Write a function that calculate the SHA-256 hash code
+1.  Write a function that calculates the SHA-256 hash code
     of each unique line of a text file.
 
 1.  Convert the hex digests of those hash codes to integers.
