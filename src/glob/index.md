@@ -1,6 +1,6 @@
 ---
 abstract: >
-    Pattern matching is ubiquitous in computer programs.
+    Pattern-matching is ubiquitous in computer programs.
     Whether we are selecting a set of files to open
     or finding names and email addresses inside those files,
     we need  an efficient way to find matches for complex patterns.
@@ -39,12 +39,12 @@ the [%g regular_expression "regular expressions" %]
 used to scrape data from text files,
 but the principles are the same.
 This chapter therefore implements a simple version of globbing
-to show how pattern matching works in general.
+to show how pattern-matching works in general.
 This matcher will only handle the cases in [%t pattern-glob-cases %],
 but as the exercises will show,
 our design makes it easy to add new kinds of patterns.
 
-<div class="table" id="pattern-glob-cases" caption="Pattern matching cases." markdown="1">
+<div class="table" id="pattern-glob-cases" caption="Pattern-matching cases." markdown="1">
 | Pattern | Text     | Match? | Pattern  | Text     | Match? |
 | ------- | -------- | ------ | -------- | -------- | ------ |
 | `abc`   | "abc"    | true   | `a*c`    | "abc"    | true   |
@@ -69,12 +69,12 @@ which can match parts of strings.)
 This design makes use of
 the [%g chain_of_responsibility_pattern "Chain of Responsibility" %]
 [%i "design pattern" %].
-Each matcher matches if it can,
+Each matcher matches if it can
 then asks the next matcher in the chain to try to match the remaining text
 ([%f glob-chain %]).
 Crucially,
-objects don't know how the long the chain after them is:
-they just know who to ask next.
+objects don't know how long the chain after them is:
+they just know whom to ask next.
 
 [% figure
    slug="glob-chain"
@@ -136,7 +136,7 @@ when one literal matcher is followed by another:
 Chaining two literal matchers together is unnecessary:
 we could (and probably should) write `Lit("ab")` instead of `Lit("a", Lit("b"))`.
 However,
-the fact that these two tests pass reassure us that our design is working.
+the fact that these two tests pass reassures us that our design is working.
 
 <div class="callout" markdown="1">
 
@@ -185,10 +185,12 @@ Once again we write a few tests before moving on:
 [% inc file="test_glob_any.py" keep="tests" %]
 
 Either/or matching works much the same way.
-If the first alternative matches we try the rest of the chain.
+If the first alternative matches,
+we try the rest of the chain.
 If not,
 we try the second alternative,
-and if that doesn't work either we fail:
+and if that doesn't work either,
+we fail:
 
 [% inc file="glob_either.py" %]
 
@@ -317,6 +319,9 @@ and as the exercises will show we can easily add matchers for other kinds of pat
 
 ## Summary {: #glob-summary}
 
+[%f glob-concept-map %] summarizes the key ideas in this chapter;
+we will see the Null Object and Chain of Responsibility design patterns again.
+
 [% figure
    slug="glob-concept-map"
    img="concept_map.svg"
@@ -346,11 +351,11 @@ meaning "match one or more characters".
 ### Match Sets of Characters {: .exercise}
 
 1.  Add a new matching class that matches any character from a set,
-    so that `Charset('aeiou')` matches any lower-case vowel.
+    so that `Charset('aeiou')` matches any lower case vowel.
 
 2.  Create a matcher that matches a range of characters.
     For example,
-    `Range("a", "z")` matches any single lower-case Latin alphabetic character.
+    `Range("a", "z")` matches any single lower case Latin alphabetic character.
     (This is just a convenience matcher: ranges can always be spelled out in full.)
 
 3.  Write some tests for your matchers.
