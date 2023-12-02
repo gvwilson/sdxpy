@@ -36,7 +36,7 @@ and better able to use them well.
 
 ## Audience {: #intro-audience}
 
-This [learner persona][t3_personas] [%b Wilson2019 %] describes who this book is for:
+This learner persona [%b Wilson2019 %] describes who this book is for:
 
 > *Maya has a master's degree in genomics.
 > She knows enough Python to analyze data from her experiments,
@@ -60,12 +60,12 @@ Like Maya, you should be able to:
 -   Use [Git][git] to save and share files.
     (It's OK not to know [the more obscure commands][git_man_page_generator].)
 
-This book is also designed to help another persona:
+These chapters ([%f intro-syllabus %]) are also designed to help another persona:
 
 > *Yim teaches two college courses on software development.
 > They are frustrated that so many books talk about details but not about design
 > and use examples that their students can't relate to.
-> This material will give them material they can use in class
+> This book will give them material they can use in class
 > and starting points for course projects.*
 > {: .continue}
 
@@ -106,7 +106,7 @@ we incur the [%g cognitive_load "cognitive load" %]
 of assembling micro-steps into something more meaningful.
 When we use a high-level language,
 on the other hand,
-we incur a similar load translating functions of functions of functions
+we incur a similar load translating functions of functions
 into actual operations on actual data.
 
 More experienced programmers are more capable at both ends of the curve,
@@ -168,9 +168,9 @@ Finally,
 we show glossary entries in **bold text**
 and write functions as `function_name` rather than `function_name()`.
 The latter is more common,
-but people don't use `array_name[]` for arrays,
-and the empty parentheses makes it hard to tell
-whether we're talking about "the function itself" or "a call to the function with no parameters".
+but the empty parentheses makes it hard to tell
+whether we're talking about the function itself
+or a call to the function with no parameters.
 
 ## Usage {: #intro-use}
 
@@ -193,7 +193,7 @@ If you would like to improve what we have,
 add new material,
 or ask questions,
 please file an issue in [our GitHub repository][book_repo]
-or [send email][email].
+or [send an email][email].
 All contributors are required to abide by our Code of Conduct
 ([%x conduct %]).
 
@@ -202,23 +202,23 @@ All contributors are required to abide by our Code of Conduct
 Here's what people said about the JavaScript version of this book [%b Wilson2022b %]:
 
 -   [Jessica Kerr][kerr_jessica]:
-    *Software Design by Example* is the book I'll recommend to every new dev…
+    "*Software Design by Example* is the book I'll recommend to every new dev…
     It is nice to you.
     It wants you to succeed…
-    It's a bridge from "learn to program" to working programmer.
+    It's a bridge from 'learn to program' to working programmer."
 
 -   [Jenn Schiffer][schiffer_jenn]:
-    I am v much enjoying gvwilson's book *Software Design by Example*.
-    It makes me miss teaching, it would be such a fun text to use!
+    "I am v much enjoying gvwilson's book *Software Design by Example*.
+    It makes me miss teaching, it would be such a fun text to use!"
 
 -   [Emily Gorcenski][gorcenski_emily]:
-    There's a lot of books on programming
+    "There's a lot of books on programming
     but fewer books that couple software development with effective and practical use of tools,
     presenting a language not as a main course but as a part of an engineering ecosystem.
-    Greg Wilson's book hits all the right notes in bringing together theory, pragmatism, and best practices.
+    Greg Wilson's book hits all the right notes in bringing together theory, pragmatism, and best practices."
 
 -   [Danielle Navarro][navarro_danielle]:
-    The book is really bloody lovely.
+    "The book is really bloody lovely."
 
 ## Acknowledgments {: #intro-acknowledgments}
 
@@ -259,12 +259,7 @@ and many other open source tools:
 if we all give a little,
 we all get a lot.
 
-<div class="center" markdown="1">
-  *This one's for Mike and Jon: I'm glad you always found time to chat.*
-</div>
-
 All royalties from this book will go to the [Red Door Family Shelter][red_door] in Toronto.
-{: .continue}
 
 ## Exercises {: #intro-exercises}
 
