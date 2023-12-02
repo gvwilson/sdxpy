@@ -40,7 +40,7 @@ i.e.,
 must provide methods with these names that do what those names suggest.
 For example,
 we can [%g derived_class "derive" %] classes from `Shape`
-to represent squares and circles
+to represent squares and circles.
 {: .continue}
 
 [% inc file="shapes_original.py" keep="concrete" %]
@@ -75,7 +75,7 @@ and assigns that object to the variable `example`:
 %]
 
 We can create an [%g alias "alias" %] for the function
-by assigning it to another variable,
+by assigning it to another variable
 and then call the function by referencing that second variable.
 Doing this doesn't alter or erase
 the connection between the function and the original name:
@@ -126,8 +126,8 @@ we want objects to store different values
 but the same behaviors
 (e.g., all squares should have the same methods).
 We can implement this by storing the methods in a dictionary called `Square`
-that corresponds to a class,
-and have each individual square contain a reference to that higher-level dictionary
+that corresponds to a class
+and having each individual square contain a reference to that higher-level dictionary
 ([%f oop-shapes-class %]).
 In the code below,
 that special reference uses the key `"_class"`:
@@ -142,7 +142,7 @@ that special reference uses the key `"_class"`:
 %]
 
 Calling a method now involves one more lookup
-because we have go to from the object to the class to the method,
+because we have to go from the object to the class to the method,
 but once again we call the "method" with the object as the first argument:
 
 <div class="pagebreak"></div>
@@ -164,8 +164,8 @@ and [%g parameter "parameter" %] interchangeably,
 but to make our meaning clear,
 we call the values passed into a function its arguments
 and the names the function uses to refer to them as its parameters.
-Put it another way,
-parameters are part of the definition
+Put another way,
+parameters are part of the definition,
 and arguments are given when the function is called.
 
 </div>
@@ -314,7 +314,8 @@ We have only scratched the surface of Python's object system.
 and [%g monkey_patching "monkey patching" %]
 are powerful tools,
 but they can all be understood in terms of dictionaries
-that contain references to properties, functions, and other dictionaries.
+that contain references to properties, functions, and other dictionaries
+([%f oop-concept-map %]).
 
 [% figure
    slug="oop-concept-map"
