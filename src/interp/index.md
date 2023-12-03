@@ -131,7 +131,7 @@ which in turn calls `do`,
 which may then call `do_add` (or something other function)
 and so on ([%f interp-recursive-evaluation %]).
 Having a function call itself either directly or indirectly is called [%i "recursion" %],
-and has a reputation for being hard to understand.
+which has a reputation for being hard to understand.
 As our interpreter shows,
 though,
 it's a natural way to solve a wide range of problems:
@@ -254,7 +254,7 @@ result =
 
 ## Introspection {: #interp-introspection}
 
-Now that we have evaluation, function lookup, and environments
+Now that we have evaluation, function lookup, and environments,
 we can write small programs.
 However,
 our `do` function now looks like this:
@@ -302,7 +302,7 @@ the `do_*` functions must have exactly the same [%i "signature" %]
 so that we can call any of them with an environment and a list of arguments
 without knowing exactly which function we're calling.
 And as with finding tests,
-introspection is more reliable than a hand-written lookup table,
+introspection is more reliable than a hand-written lookup table
 but is harder to understand.
 If we write out the lookup table explicitly like this:
 
@@ -318,6 +318,10 @@ but we can write `do` once and never worry about it again.
 
 ## Summary {: #interp-summary}
 
+[%f interp-concept-map %] summarizes the ideas introduced in this chapter.
+A lot is going on here,
+but the central idea is that a program is just another kind of data.
+
 [% figure
    slug="interp-concept-map"
    img="concept_map.svg"
@@ -327,26 +331,13 @@ but we can write `do` once and never worry about it again.
 %]
 
 *Please see [%x bonus %] for extra material related to these ideas.*
+{: .continue}
 
 ## Exercises {: #interp-exercises}
 
-### More Statements {: .exercise}
-
-Add `print` and `repeat` commands to the interpreter
-so that the following program produces the output shown:
-
-[% inc pat="doubling.*" fill="tll out" %]
-
-Does your `repeat` command handle "repeat zero times" correctly?
-I.e., does it handle this program?
-If so,
-what does your `do_repeat` function return as a result in this case?
-
-[% inc file="repeat_zero.tll" %]
-
 ### Arrays {: .exercise}
 
-Implement fixed-size one-dimensional arrays:
+Implement fixed-size, one-dimensional arrays:
 `["array", 10]` creates an array of 10 elements,
 while other instructions that you design
 get and set particular array elements by index.
@@ -365,10 +356,24 @@ when there's a bug in their program.
 
 3.  Add a `catch` statement to handle these errors.
 
+### More Statements {: .exercise}
+
+Add `print` and `repeat` commands to the interpreter
+so that the following program produces the output shown:
+
+[% inc pat="doubling.*" fill="tll out" %]
+
+Does your `repeat` command handle "repeat zero times" correctly,
+i.e., does it handle the program below?
+If so,
+what does your `do_repeat` function return as a result in this case?
+
+[% inc file="repeat_zero.tll" %]
+
 ### Tracing {: .exercise}
 
 Add a `--trace` command-line flag to the interpreter.
-When enabled, it makes TLL print a messages showing each function call and its result.
+When enabled, it makes TLL print a message showing each function call and its result.
 
 ### While Loops {: .exercise}
 
