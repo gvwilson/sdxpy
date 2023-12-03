@@ -18,8 +18,8 @@ depends:
 Every program needs documentation,
 and the best place to put documentation is on the web.
 Writing and updating HTML pages by hand is time-consuming and error-prone,
-particularly when many parts are the same,
-so most modern websites use some kind of
+particularly when many parts are the same.
+Most modern websites therefore use some kind of
 [%g static_site_generator "static site generator" %] (SSG)
 to create pages from templates.
 
@@ -79,24 +79,22 @@ the output will be standard HTML without any traces of how it was created:
 
 ### Human-Readable vs. Machine-Readable
 
-Putting the loop variable and loop target in a single attribute
-and splitting that attribute to get them back
-makes loops easy for people to type
-but hides important information from standard HTML processing tools:
-they can't know that this particular attribute contains
+Putting the loop variable and target in a single attribute
+makes loops easy to type
+but hides information from standard HTML tools,
+which can't know that this attribute contains
 multiple values separated by a colon.
-We could use two attributes like this:
+We should use two attributes like this:
 
 ```html
 <ul z-loop="names" z-loop-var="item">
 ```
 
 but we decided to save ourselves a little typing.
-And strictly speaking
-we should call our attributes `data-something` instead of `z-something`
+We should also call our attributes `data-something` instead of `z-something`
 to conform with the [%i "HTML5 specification" url="html5_data_attributes" %],
-but by the time we're finished processing our templates,
-there shouldn't be any `z-*` attributes left to confuse a browser.
+but again,
+decided to save ourselves a bit of typing.
 {: .continue}
 
 </div>
@@ -110,7 +108,7 @@ Those variables might come from a configuration file
 from a header in the file itself,
 or from somewhere else entirely,
 so we will assume the calling program has gotten them somehow
-and have it pass them into the expansion function as an dictionary
+and have it pass them into the expansion function as a dictionary
 ([%f template-api %]):
 
 [% inc file="example_call.py" %]
@@ -125,10 +123,11 @@ and have it pass them into the expansion function as an dictionary
 
 ## Managing Variables {: #template-values}
 
-As soon as we have variables we need a way to track their values.
+As soon as we have variables,
+we need a way to track their values.
 We also need to maintain multiple sets of variables
 so that (for example) variables used inside a loop
-don't conflict with ones used outside it.
+don't conflict with ones used outside of it.
 As in [%x interp %],
 we will use a stack of [%i "environment" "environments" %],
 each of which is a dictionary.
@@ -175,7 +174,8 @@ making up the output:
 
 [% inc file="expander.py" keep="construct" %]
 
-When recursion encounters a new node it calls `open` to do one of three things:
+When recursion encounters a new node,
+it calls `open` to do one of three things:
 
 1.  If the node is plain text,
     copy it to the output.
@@ -372,7 +372,7 @@ Let's test it:
 ### Spot the Bug
 
 This implementation of `if` contains a subtle bug.
-`open` and `close` both check the value of the control variable;
+`open` and `close` both check the value of the control variable.
 If something inside the body of the `if` changes that value,
 the result could be an opening tag
 without a matching [%i "closing tag" %] or vice versa.
@@ -417,6 +417,9 @@ of `open` and `close` functions.
 
 ## Summary {: #template-summary}
 
+[%f template-concept-map %] summarizes the key ideas in this chapter,
+some of which we first encountered in [%x interp %].
+
 [% figure
    slug="template-concept-map"
    img="concept_map.svg"
@@ -426,6 +429,7 @@ of `open` and `close` functions.
 %]
 
 *Please see [%x bonus %] for extra material related to these ideas.*
+{: .continue}
 
 ## Exercises {: #template-exercises}
 
@@ -479,7 +483,7 @@ For example:
 </html>
 ```
 
-would printed the word "Important:" in bold before each item in the list.
+would print the word "Important:" in bold before each item in the list.
 {: .continue}
 
 ### YAML Headers {: .exercise}
