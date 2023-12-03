@@ -45,7 +45,7 @@ This figure also shows that
 opening and self-closing tags can have [%g attribute "attributes" %],
 which are written as `key="value"`.
 For example,
-if we want to put an image in an HTML page
+if we want to put an image in an HTML page,
 we specify the image file's name using the `src` attribute of the `img` tag:
 
 ```
@@ -96,7 +96,7 @@ we have written the HTML "page" as a multiline Python string;
 we will do this frequently when writing unit tests
 so that the HTML [%i "fixture" %] is right beside the test code.
 Notice in the output that the line breaks in the HTML
-have been turned into text nodes containing only a newline character `"\n"'.
+have been turned into text nodes containing only a newline character.
 It's easy to forget about these when writing code that processes pages.
 {: .continue}
 
@@ -135,9 +135,9 @@ it produces this output
 
 [% inc file="contains.out" %]
 
-At this point have written several recursive functions
+At this point we have written several recursive functions
 that have almost exactly the same [%i "control flow" %].
-A good rule of software design is that if we have built something three times
+A good rule of software design is that if we have built something three times,
 we should make what we've learned reusable
 so that we never have to write it again.
 In this case,
@@ -220,6 +220,9 @@ that we can use in upcoming chapters.
 
 ## Summary {: #check-summary}
 
+HTML is probably the most widely used data format in the world today;
+[%f check-concept-map %] summarizes how it is represented and processed.
+
 [% figure
    slug="check-concept-map"
    img="concept_map.svg"
@@ -249,7 +252,7 @@ make your report more readable.
 ### Eliminating Newlines {: .exercise}
 
 Write a visitor that deletes any text nodes from a document
-that only contain newline characters.
+that only contains newline characters.
 Do you need to make any changes to `Visitor`,
 or can you implement this using the class as it is?
 
