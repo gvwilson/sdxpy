@@ -69,7 +69,7 @@ and some functions that test it
 [% inc file="manual.py" keep="tests" %]
 
 Each test does something to a [%g fixture "fixture" %]
-(such as the number -3)
+(such as the number 19)
 and uses [%g assertion "assertions" %]
 to compare the [%g actual_result "actual result" %]
 against the [%g expected_result "expected result" %].
@@ -94,13 +94,13 @@ We can implement this classification scheme as follows:
     (We don't care if it returns something,
     but by convention tests don't return a value.)
 
-2.  If the function raises an `AssertionError` exception
+2.  If the function raises an `AssertionError` exception,
     then the test has failed.
     Python's `assert` statement does this automatically
     when the condition it is checking is false,
     so almost all tests use `assert` for checks.
 
-3.  If the function raises any other kind of exception
+3.  If the function raises any other kind of exception,
     then we assume the test itself is broken
     and count it as an error.
 
@@ -173,7 +173,7 @@ to find all the functions whose names start with `test_`:
 The [%i "hexadecimal" %] numbers in the output show
 where each function object is stored in memory,
 which isn't particularly useful unless we're extending the language,
-but at least it doesn't take up much space on the screen…
+but at least it doesn't take up much space on the screen.
 {: .continue}
 
 Having a running program find things in itself like this
@@ -192,24 +192,20 @@ We could add many more features to this
 but almost every modern test runner uses this design.
 {: .continue}
 
-<div class="callout" markdown="1">
+## Summary {: #test-summary}
 
-### Magic
-
-[Clarke's Third Law][clarkes_laws] states that
+When reviewing the ideas introduced in this chapter ([%f test-concept-map %]),
+it's worth remembering [Clarke's Third Law][clarkes_laws],
+which states that
 any sufficiently advanced technology is indistinguishable from magic.
 The same is true of programming tricks like introspection:
-The code that finds tests dynamically seems transparent
+the code that finds tests dynamically seems transparent
 to an expert who understands that code is data,
 but can be incomprehensible to a novice.
 As we said in the discussion of comprehension curves in [%x intro %],
 no piece of software can be optimal for both audiences;
 the only solution to this problem is education,
 which is why books like this one exist.
-
-</div>
-
-## Summary {: #test-summary}
 
 [% figure
    slug="test-concept-map"
@@ -220,8 +216,30 @@ which is why books like this one exist.
 %]
 
 *Please see [%x bonus %] for extra material related to these ideas.*
+{: .continue}
 
 ## Exercises {: #test-exercises}
+
+### Looping Over `globals` {: .exercise}
+
+What happens if you run this code?
+
+```python
+for name in globals():
+    print(name)
+```
+
+What happens if you run this code instead?
+{: .continue}
+
+```python
+name = None
+for name in globals():
+    print(name)
+```
+
+Why are the two different?
+{: .continue}
 
 ### Why a Copy? {: .exercise}
 
@@ -230,33 +248,12 @@ containing the program's global variables?
 Why doesn't it return the dictionary itself so that programs can modify it?
 Why use a function at all instead of simply using a variable called `__globals__`?
 
-### Looping Over `globals` {: .exercise}
-
-What happens if you run:
-
-```python
-for name in globals():
-    print(name)
-```
-
-<div class="pagebreak"></div>
-
-What happens if you run:
-
-```python
-name = None
-for name in globals():
-    print(name)
-```
-
-Why?
-
 ### Individual Results {: .exercise}
 
 1.  Modify the test framework so that it reports which tests passed, failed, or had errors
     and also reports a summary of how many tests produced each result.
 
-2.  Write unit tests to check that your answer to part 1 works correctly.
+2.  Write unit tests to check that your answer works correctly.
 
 ### Setup and Teardown {: .exercise}
 
@@ -264,7 +261,7 @@ Testing frameworks often allow programmers to specify a `setup` function
 that is to be run before each test
 and a corresponding `teardown` function
 that is to be run after each test.
-(`setup` usually re-creates complicated test fixtures,
+(`setup` usually recreates complicated test fixtures,
 while `teardown` functions are sometimes needed to clean up after tests,
 e.g., to close database connections or delete temporary files.)
 
