@@ -315,8 +315,6 @@ We should add some tests for `Null`,
 but we have now met our original goal,
 and as the exercises will show we can easily add matchers for other kinds of patterns.
 
-<div class="pagebreak"></div>
-
 ## Summary {: #glob-summary}
 
 [%f glob-concept-map %] summarizes the key ideas in this chapter;
@@ -360,16 +358,16 @@ meaning "match one or more characters".
 
 3.  Write some tests for your matchers.
 
-### Make Repetition More Efficient {: .exercise}
-
-Rewrite `Any` so that it does not repeatedly re-match text.
-
 ### Exclusion {: .exercise}
 
 1.  Create a matcher that *doesn't* match a specified pattern.
     For example, `Not(Lit("abc"))` only succeeds if the text isn't "abc".
 
 2.  Write some tests for it.
+
+### Make Repetition More Efficient {: .exercise}
+
+Rewrite `Any` so that it does not repeatedly re-match text.
 
 ### Multiple Alternatives {: .exercise}
 

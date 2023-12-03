@@ -68,12 +68,12 @@ Our grammar's tokens are the special characters `,`, `{`, `}`, and `*`.
 Any sequence of one or more other characters is a single multi-letter token.
 This classification determines the design of our [%g tokenizer "tokenizer" %]:
 
-1.  If a character is not special then
-    append it to the current literal (if there is one)
+1.  If a character is not special,
+    then append it to the current literal (if there is one)
     or start a new literal (if there isn't).
 
-1.  If a character *is* special then
-    close the existing literal (if there is one)
+1.  If a character *is* special,
+    then close the existing literal (if there is one)
     and create a token for the special character.
     Note that the `,` character closes a literal but doesn't produce a token.
 
@@ -90,10 +90,10 @@ an [%g abstract_syntax_tree "abstract syntax tree" %] (AST)
 that represents the structure of what was parsed.
 We will re-use the classes defined in [%x glob %] for this purpose.
 
-Before we start writing our tokenizer
+Before we start writing our tokenizer,
 we have to decide whether to implement it as a set of functions
 or as one or more classes.
-Based on previous experience we choose the latter:
+Based on previous experience, we choose the latter:
 this tokenizer is simple enough that we'll only need a handful of functions,
 but one capable of handling a language like Python would be much larger,
 and classes are a handy way to group related functions together.
@@ -187,7 +187,7 @@ until we see an `EitherEnd` marker:
 
 [% inc file="better_parser.py" keep="either" %]
 
-This achieves the same thing in the two-token case,
+This achieves the same thing in the two-token case
 but allows us to write alternatives with more options
 without changing the code
 (assuming you solved the "Multiple Alternatives" exercise in [%x glob %]).
@@ -219,13 +219,19 @@ then adds its own tests.
 [%g operator_overloading "Operator overloading" %]
 relies on the fact that when Python sees `a == b` it calls `a.__eq__(b)`.
 Similarly,
-`a + b` is "just" a called to `a.__add__(b)`, and so on,
-so if we give our classes methods with the right names,
-we can manipulates objects of those classes using familiar operations.
+`a + b` is "just" a call to `a.__add__(b)`,
+so if we create methods with the right names,
+we can manipulate objects using familiar operations.
 
 </div>
 
 ## Summary {: #parse-summary}
+
+[%f parse-concept-map %] summarizes the key ideas in this chapter.
+Once again,
+while it's useful to understand how parsers work,
+please don't create new data formats that need new parsers
+if you can possibly avoid it.
 
 [% figure
    slug="parse-concept-map"
@@ -246,13 +252,13 @@ and `\\` is interpreted as a literal backslash.
 ### Character Sets {: .exercise}
 
 Modify the parser so that expressions like `[xyz]` are interpreted to mean
-"match any one of the characters 'x', 'y', or 'z'".
+"match any one of those three characters".
 (Note that this is a shorthand for `{x,y,z}`.)
 
 ### Negation {: .exercise}
 
 Modify the parser so that `[!abc]` is interpreted as
-"none of the characters 'a', 'b', or 'c'".
+"match anything *except* one of those three characters".
 
 ### Nested Lists {: .exercise}
 
@@ -264,7 +270,7 @@ should produce the corresponding Python list.
 ### Simple Arithmetic {: .exercise}
 
 Write a function that accepts a string consisting of numbers
-and the basic arithmetic operations `+`, `-`, `*`, and `/`
+and the basic arithmetic operations `+`, `-`, `*`, and `/`,
 and produces a nested structure showing the operations
 in the correct order.
 For example,
