@@ -101,8 +101,8 @@ containing some files we can use as [%i "fixture" "fixtures" %].
 However,
 we are going to change or delete those files
 as we back things up and restore them.
-To make sure early tests don't contaminate later ones
-we would have to re-create those files and directories after each test.
+To make sure early tests don't contaminate later ones,
+we would have to recreate those files and directories after each test.
 
 As discussed in [%x protocols %],
 a better approach is to use a [%i "mock object" %]
@@ -152,7 +152,7 @@ keeps track of which files have and haven't been backed up already.
 It stores backups in a directory that contains files like `abcd1234.bck`
 (the hash followed by `.bck`)
 and creates a [%g manifest "manifest" %]
-that describe the content of each snapshot.
+that describes the content of each snapshot.
 A real system would support remote storage as well
 so that losing one hard drive wouldn't mean losing all our work,
 so we need to design our system with multiple back ends in mind.
@@ -180,7 +180,7 @@ If two users run the backup tool at the same time,
 they will both see that there isn't a file (yet) with the current timestamp,
 so they will both try to create the first one.
 Ensuring that multi-file updates are [%g atomic_operation "atomic operations" %]
-(i.e., that they always behave a single indivisible step)
+(i.e., that they always appear to be a single indivisible step)
 is a hard problem;
 [%g file_locking "file locking" %] is a common approach,
 but complete solutions are out of the scope of this book.
@@ -290,7 +290,7 @@ For example,
 the function `analyze_and_save` reads some data,
 analyzes it,
 saves the results,
-and then create an archive of those results.
+and then creates an archive of those results.
 It doesn't know whether the archive is compressing files
 or whether they're being saved locally or remotely.
 
@@ -301,6 +301,9 @@ it allows old code to use new code without any changes.
 {: .continue}
 
 ## Summary {: #archive-summary}
+
+[%f archive-concept-map %] summarizes the key ideas in this chapter,
+which are the foundation of most modern tools for doing backups and version control.
 
 [% figure
    slug="archive-concept-map"
