@@ -29,7 +29,7 @@ to ask how [%g extensibility "extensible" %] it is,
 i.e.,
 how easily we can add or change things [%b Wilson2022a %].
 The answer for the [%i "interpreter" %] of [%x interp %] is "pretty easily"
-but the answer for the little language it interprets is "not at all"
+but the answer for the little language it interprets is "not at all",
 because users cannot define new operations in the little language itself.
 We need to give them a way to define and call functions.
 Doing this will take less than 60 lines of code,
@@ -71,7 +71,7 @@ as we would assign any other value:
 
 ### Anonymity
 
-A function without a name is called an [%g anonymous_function "anonymous" %].
+A function without a name is called an [%g anonymous_function "anonymous" %] function.
 JavaScript makes heavy use of anonymous functions;
 Python supports a very limited version of them
 using [%g lambda_expression "lambda expressions" %]:
@@ -91,8 +91,9 @@ so we write the call as:
 
 To make `"call"` work the way most programmers expect,
 we need to implement [%i "scope" %]
-so that parameters and variables used in a function
-aren't confused with defined outside it—in other words,
+so that the parameters and variables used in a function
+aren't confused with those defined outside it.
+In other words,
 we need to prevent [%g name_collision "name collision" %].
 When a function is called with one or more expressions as [%i "argument" "arguments" %],
 we will:
@@ -104,9 +105,9 @@ we will:
 3.  Create a new [%i "environment" %] from the function's parameter names
     and the expressions' values.
 
-4.  Call `do` to run the function's action and captures the result.
+4.  Call `do` to run the function's action and capture the result.
 
-5.  Discard the environment created in step 3.
+5.  Discard the environment created in Step 3.
 
 6.  Return the function's result.
 
@@ -123,7 +124,7 @@ Python and most other languages are eager,
 but a handful of languages, such as R, are lazy.
 It's a bit more work,
 but it allows the function to inspect the expressions it has been called with
-and decide how to handle them.
+and to decide how to handle them.
 
 </div>
 
@@ -139,7 +140,7 @@ we look through the list from the most recent dictionary to the oldest.
 ### Scoping Rules
 
 Searching through all active stack frames for a variable
-is called is [%g dynamic_scoping "dynamic scoping" %].
+is called [%g dynamic_scoping "dynamic scoping" %].
 In contrast,
 most programming languages used [%g lexical_scoping "lexical scoping" %],
 which figures out what a variable name refers to
@@ -188,7 +189,7 @@ would make it easier to read.
 </div>
 
 Once again,
-Python and other languages do more or less that we've done here.
+Python and other languages do more or less what we've done here.
 When we define a function,
 the interpreter saves the instructions in a lookup table.
 When we call a function at runtime,
@@ -258,7 +259,7 @@ The closure has a key `"private"`;
 there is nothing special about this name,
 but nothing in the program can see the data in the closure
 except the two functions.
-We could add more keys to this dictionary to create more complex objects,
+We could add more keys to this dictionary to create more complex objects
 and build an entire system of objects and classes this way.
 {: .continue}
 
@@ -270,6 +271,12 @@ and build an entire system of objects and classes this way.
 %]
 
 ## Summary {: #func-summary}
+
+[%f func-concept-map %] summarizes the ideas in this chapter,
+which is one of the most technically challenging in this book.
+In particular,
+don't be surprised if it takes several passes to understand closures:
+they are as subtle as they are useful.
 
 [% figure
    slug="func-concept-map"
@@ -291,7 +298,7 @@ env.append(dict(zip(params, values)))
 
 and then rewrite the line using a loop to insert
 parameter names and values into a dictionary.
-Do you find your rewritten code easier to read:
+Do you find your rewritten code easier to read?
 {: .continue}
 
 ### Chained Maps {: .exercise}
