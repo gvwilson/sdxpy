@@ -147,7 +147,7 @@ with C(…args…) as name:
     …do things…
 ```
 
-it does the following ([%f protocols-context-manager %])):
+it does the following ([%f protocols-context-manager %]):
 {: .continue}
 
 1.  Call `C`'s [%i "constructor" %]
@@ -336,10 +336,13 @@ using code identical to what we've already seen
 [% inc file="better_iterator.py" keep="cursor" omit="advance" %]
 
 With this change in place,
-our test of nested loops pass.
+our test of nested loops passes.
 {: .continue}
 
 ## Summary {: #protocols-summary}
+
+[%f protocols-concept-map %] summarizes
+the ideas and tools introduced in this chapter.
 
 [% figure
    slug="protocols-concept-map"
@@ -380,7 +383,7 @@ so that iterating over the list `["a", ""]` produces `["a"]`.
 ### An Even Better Cursor {: .exercise}
 
 Rewrite the `BetterCursor` class
-so that it initializes `self._row` to 0 and `self._col` to -1
+so that it initializes `self._row` to 0 and `self._col` to \\( -1 \\)
 and always calls `self._advance()` as the first action in `self.__next__`.
 (You will need to make a few other changes as well.)
 Do you think this implementation is simpler than the one presented in this chapter?
