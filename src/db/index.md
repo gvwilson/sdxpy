@@ -81,7 +81,7 @@ Our next step is to save the user's records in the database
 without tying the database to a particular type of record.
 The cleanest way to solve this problem is
 to require records to know how to convert themselves into something storable.
-Rather than passing a second function to the database's constructor
+Rather than passing a second function to the database's constructor,
 we will [%i "refactor" %] the database
 so that we pass in the object that represents the record class:
 
@@ -101,7 +101,7 @@ The next step in building a usable database is to have it store records
 rather than just refer to the user's objects.
 Since we don't want the database tied to any particular kind of record,
 records must know how to pack and unpack themselves.
-We could have use the techniques of [%x binary %],
+We could have used the techniques of [%x binary %],
 but to make our test and sample output a little more readable,
 we will pack numbers as strings
 with a [%g null_byte "null byte" %] `\0` between each string:
@@ -154,7 +154,7 @@ and then scanning records in the same way that
 we scanned the bytes making up [%i "Unicode" %] characters in [%x binary %].
 The first choice spends space (i.e., memory and disk) to save time;
 the second spends time to save space.
-As [%b Bentley1982 %] pointed out over forty years ago,
+As [%b Bentley1982 %] pointed out over 40 years ago,
 a lot of performance optimizations in programming
 come down to trading space for time or vice versa.
 
@@ -198,7 +198,7 @@ loading the entire database the first time we want a single record,
 and saving the entire database every time we add a record—but
 we are getting closer to something we might actually use.
 
-## Playing With Blocks {: #db-block}
+## Playing with Blocks {: #db-block}
 
 How can we make our file-backed implementation more efficient?
 One option would be to save each record in a file of its own,
@@ -206,7 +206,7 @@ in the same way that we saved each version of a file in [%x archive %].
 However,
 this strategy won't give us as much of a performance boost as we'd like.
 The reason is that computers do file I/O in [%g page "pages" %]
-that are typically two or four kilobytes in size.
+that are typically 2 or 4 kilobytes in size.
 Even when we want to read a single byte,
 the operating system always reads a full page
 and then gives us just the byte we asked for.
@@ -214,7 +214,7 @@ and then gives us just the byte we asked for.
 A more efficient strategy is
 to group records together in [%g block_memory "blocks of memory" %],
 each of which is the same size as a page,
-and create an [%i "index (a database)" "index" %] in memory
+and to create an [%i "index (a database)" "index" %] in memory
 to tell us which records are in which blocks.
 When we add a record,
 we only write its block to disk;
@@ -319,7 +319,7 @@ by reducing [%i "cognitive load" %].
 
 Saving a block is mostly a matter of bookkeeping at this point.
 Given the record,
-we figure out which block it does in,
+we figure out which block it belongs in,
 save it,
 pack the block,
 and write the result to a file:
@@ -389,6 +389,11 @@ we will explore this idea in the exercises.
 
 ## Summary {: #db-summary}
 
+[%f db-concept-map %] summarizes the key ideas introduced in this chapter.
+Most real databases use different data structures than ours,
+but must deal with the same challenges:
+making data access fast without ever losing data or allowing it to become inconsistent.
+
 [% figure
    slug="db-concept-map"
    img="concept_map.svg"
@@ -421,7 +426,8 @@ rewrites all of the blocks so that only live records are stored.
 
 ### Save the Index Separately {: .exercise}
 
-1.  Modify the database so that it saves the entire index in single file.
+1.  Modify the database so that it saves the entire index
+    in a single file.
 
 2.  Design and run an experiment to determine
     if this change improves performance or not.
