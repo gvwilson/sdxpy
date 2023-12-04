@@ -17,7 +17,7 @@ depends:
 
 The Internet is simpler than most people realize
 (as well as being more complex than anyone could possibly comprehend).
-Most systems still follow the rules they did thirty years ago;
+Most systems still follow the rules they did 30 years ago;
 in particular,
 most web servers still handle the same kinds of messages in the same way.
 
@@ -26,7 +26,7 @@ and [%g server "servers" %].
 A client program initiates communication by sending a message and waiting for a response;
 a server,
 on the other hand,
-waits for requests and the replies to them.
+waits for requests and then replies to them.
 There are typically many more clients than servers:
 for example,
 there may be hundreds or thousands of browsers
@@ -38,7 +38,7 @@ to move files from one machine to another.
 [%x http %] will extend this to show
 how to build programs that communicate using HTTP.
 A central concern in both chapters is how to test such programs;
-while who sends what messages when changes from application to application,
+while *who* sends *what* messages *when* changes from application to application,
 the testing techniques largely remain the same.
 
 ## Using TCP/IP {: #ftp-tcpip}
@@ -86,7 +86,7 @@ We call it "basic" rather than "simple" because there's a lot going on here.
 From top to bottom:
 {: .continue}
 
-1.  We import some modules and defines two constants.
+1.  We import some modules and define two constants.
     The first, `SERVER_ADDRESS`,
     consists of a host identifier and a port.
     (The string `"localhost"` means "the current machine".)
@@ -139,7 +139,7 @@ In order to do that,
 we derive a class of our own from `BaseRequestHandler`
 that provides a `handle` method
 ([%f ftp-inheritance %]).
-Every time `TCPServer` gets a new connection
+Every time `TCPServer` gets a new connection,
 it creates a new object of our class
 and calls that object's `handle` method.
 
@@ -177,7 +177,7 @@ If the client sends more than a kilobyte of data,
 our server will ignore it.
 This can result in [%g deadlock "deadlock" %]:
 the server is trying to send a reply
-while the client is a trying to send the rest of the message,
+while the client is trying to send the rest of the message,
 and since neither is listening,
 neither can move forward.
 Increasing the size of the [%i "buffer (in memory)" "memory buffer" %]
@@ -210,7 +210,7 @@ how many bytes were actually sent.
 If that number gets us to the end of the data we're sending,
 the function can exit the loop.
 If not,
-it adds the number of bytes send to `total`
+it adds the number of bytes sent to `total`
 so that it knows where to start sending
 the next time around:
 
@@ -246,7 +246,7 @@ and the server prints
 ## Testing {: #ftp-test}
 
 Testing single-process command-line applications is hard enough.
-To test a client-server application like the one above
+To test a client-server application like the one above,
 we have to start the server,
 wait for it to be ready,
 then run the client,
@@ -310,9 +310,12 @@ how close is what we test to what we use in production?
 In an ideal world they are exactly the same,
 but in cases like this it makes sense to sacrifice a little fidelity for testability's sake.
 
-<div class="pagebreak"></div>
-
 ## Summary {: #ftp-summary}
+
+[%f ftp-concept-map %] summarizes the idea introduces in this chapter.
+While understanding how to send data over a network is important,
+knowing how to test programs that interact with the outside world
+is just as important.
 
 [% figure
    slug="ftp-concept-map"
