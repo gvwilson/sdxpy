@@ -51,7 +51,7 @@ has to choose one of the following:
 1.  Save class definitions as well as objects' values
     so that when a program reads saved data
     it can reconstruct the classes
-    and then create fully-functional instances of them.
+    and then create fully functional instances of them.
     This choice is the most powerful,
     but it is also the hardest to implement,
     particularly across languages.
@@ -62,7 +62,7 @@ has to choose one of the following:
 This chapter starts by implementing the first option (built-in types only),
 then extends it to handle objects that the data structure refers to in several places
 (which JSON does not).
-To keep parsing and testing simple
+To keep parsing and testing simple,
 our framework will store everything as text with one value per line;
 we will look at non-text options in [%x binary %],
 and at how to handle user-defined types in [%x bonus %].
@@ -111,7 +111,8 @@ The code to do this is:
 
 [% inc file="builtin.py" keep="save_list" %]
 
-and to load a list we just read the specified number of items:
+while to load a list,
+we just read the specified number of items:
 {: .continue}
 
 [% inc file="builtin.py" keep="load_list" %]
@@ -237,7 +238,7 @@ we load a floating-point number like this:
 Consider the two lines of code below,
 which created the data structure shown in [%f persist-shared %].
 If we save this structure and then reload it
-using what we have built so far
+using what we have built so far,
 we will wind up with two copies of the list containing the string `"content"`
 instead of one.
 This won't be a problem if we only ever read the reloaded data,
@@ -261,7 +262,8 @@ fixture = [shared, shared]
 The problem is that the list `shared` is [%i "alias" "aliased" %],
 i.e.,
 there are two or more references to it.
-To reconstruct the original data correctly we need to:
+To reconstruct the original data correctly,
+we need to:
 
 1.  keep track of everything we have saved;
 
@@ -414,11 +416,11 @@ but the changes to `save_set` and `save_dict` follow exactly the same pattern.
 [% inc file="save_aliasing.py" keep="save" %]
 [% inc file="save_aliasing.out" %]
 
-<div class="pagebreak"></div>
-
 ## Summary {: #persist-summary}
 
-Please see [%x bonus %] for extra material related to these ideas.
+[%f persist-concept-map %] summarizes the ideas introduced in this chapter,
+while [%x bonus %] shows how to extend our framework
+to handle user-defined classes.
 
 [% figure
    slug="persist-concept-map"
@@ -430,7 +432,7 @@ Please see [%x bonus %] for extra material related to these ideas.
 
 ## Exercises {: #persist-exercises}
 
-### A Dangling Colon {: .exercise}
+### Dangling Colon {: .exercise}
 
 Why is there a colon at the end of the line `alias:12345678:`
 when we create an alias marker?
