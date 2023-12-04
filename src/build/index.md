@@ -23,13 +23,14 @@ If `raw.csv` changes we want to re-run all three programs;
 if `controls.csv` changes,
 on the other hand,
 we only need to re-run the analysis and plotting programs.
-If we try to keep track of this ourselves we will inevitably make mistakes;
-instead,
+If we try to manage this ourselves we will inevitably make mistakes.
+Instead,
 we should use a [%g build_manager "build manager" %]
 to keep track of which files depend on which
 and what actions to take to create or update files.
-This chapter shows how a simple build manager works,
-and along the way introduces some algorithms for working with graphs.
+This chapter shows how a simple build manager works;
+along the way,
+it introduces some algorithms for working with graphs.
 
 ## Concepts {: #build-concepts}
 
@@ -37,7 +38,7 @@ The first build manager,
 [Make][gnu_make],
 was written by a student intern at Bell Labs in the 1970s.
 Many others now exist (such as [SCons][scons] and [Snakemake][snakemake]),
-but all perform the same basic operations.
+but they all perform the same basic operations.
 If a [%g build_target "target" %] is [%g build_stale "stale" %]
 with respect to any of its  [%g dependency "dependencies" %],
 the build manager runs a [%g build_recipe "recipe" %] to refresh it.
@@ -52,7 +53,7 @@ leading from a [%i "node" %] back to itself.
 The build manager constructs
 a [%g topological_order "topological ordering" %] of that [%i "graph" %],
 i.e.,
-arranges nodes so that each one comes after everything it depends on,
+arranges nodes so that each one comes after everything it depends on
 and then builds what it needs to in that order
 ([%f build-dependencies %]).
 
@@ -78,7 +79,7 @@ to create a runnable program.
 If a source file hasn't changed,
 we don't need to recompile it before linking.
 Skipping unnecessary work in this way can save a lot of time
-when we are working with programs that contains thousands or tens of thousands of files.
+when we are working with programs that contain thousands or tens of thousands of files.
 
 </div>
 
@@ -142,7 +143,7 @@ that knows nothing about dependencies, rules, and required keys.
 There is a format called [JSON Schema][json_schema] for specifying these things
 and [a Python module][py_jsonschema] that implements its checks,
 but using it here would trade seven lines of code
-for ten minutes of explanation.
+for 10 minutes of explanation.
 We will explore its use in the exercises,
 but the most important point is that
 whether we write code by hand
@@ -173,7 +174,7 @@ The next step is to figure out a safe order in which to build things.
    slug="build-topo-sort"
    img="topo_sort.svg"
    alt="Trace of topological sorting"
-   caption="Topological sort."
+   caption="Topological Sort."
 %]
 
 The code that implements this algorithm is:
@@ -241,8 +242,7 @@ We can also extend it.
 For example,
 suppose we only want to update targets that are older than their dependencies
 (which is, after all, the whole point of a build manager).
-If the targets are files,
-we could their [%i "timestamp" "timestamps" %],
+If the targets are actual files we can check their [%i "timestamp" "timestamps" %],
 but for testing purposes
 we would like to specify pretended times in the configuration:
 
@@ -278,9 +278,11 @@ we should rethink our entire design.
 
 </div>
 
-<div class="pagebreak"></div>
-
 ## Summary {: #build-summary}
+
+[%f build-concept-map %] summarizes the ideas introduced in this chapter.
+Note that the small bubble labelled "graph algorithm" could be expanded
+to a shelf full of books.
 
 [% figure
    slug="build-concept-map"
@@ -296,7 +298,7 @@ we should rethink our entire design.
 
 Recent versions of Python guarantee that
 the entries in a `dict` preserve the order in which they were added,
-but doesn't make any such guarantee for sets.
+but do not make any such guarantee for sets.
 Explain why this makes it hard to test things that use sets.
 
 ### Checking Schema {: .exercise}
@@ -309,7 +311,7 @@ via the associated [Python module][py_jsonschema].
 1.  Modify the build manager so that a configuration file can specify
     whether its rule should succeed or fail.
     (This isn't particularly useful in real life,
-    but helps with testing.)
+    but it helps with testing.)
 
 2.  Modify it so that if a rule fails,
     other buildable targets are still built
