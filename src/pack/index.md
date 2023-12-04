@@ -96,7 +96,7 @@ but all of the detail is necessary.
 
 ### Comments
 
-We have been telling you since [%x parse %] not to design your own data format,
+We have been advising you since [%x parse %] not to design your own data format,
 but if you do,
 please include a single standard way for people to add comments.
 [%i "YAML" %] has this,
@@ -107,7 +107,7 @@ and [%i "CSV" %] don't.
 
 Imagine that each package we need is an axis on a multi-dimensional grid
 ([%f pack-allowable %]),
-so Each point on the grid is a possible combination of package versions.
+so each point on the grid is a possible combination of package versions.
 We can exclude regions of this grid using the constraints on the package versions;
 the points that are left represent legal combinations.
 
@@ -120,7 +120,7 @@ the points that are left represent legal combinations.
 
 How much work is it to check all of these possibilities?
 Our example has \\( 3×3×2=18 \\) combinations.
-If we were to add another package to the mix with 2 versions,
+If we were to add another package to the mix with two versions,
 the [%g search_space "search space" %] would double;
 add another,
 and it would double again,
@@ -129,7 +129,7 @@ and there are \\( N \\) packages,
 the [%i "big-oh notation" "work grows" %] as \\( O(c^N) \\).
 This exponential behavior is called
 [%g combinatorial_explosion "combinatorial explosion" %],
-and it makes brute force solutions impractical even for small problems.
+and it makes brute-force solutions impractical even for small problems.
 We will implement it as a starting point
 (and to give us something to test more complicated solutions against),
 but then we will need to find a more efficient approach.
@@ -268,7 +268,7 @@ it leads to some significant improvements.
 The main function for our modified program
 is similar to its predecessor.
 After loading the manifest,
-we generate a list of all the packages' names.
+we generate a list of all package names.
 Unlike our earlier code,
 the entries in this list don't include versions
 because we're going to be checking those as we go:
@@ -285,7 +285,7 @@ Our `find` function now has five parameters:
 
 1.  The manifest that tells us what's compatible with what.
 
-2.  The names of the packages we've haven't considered yet.
+2.  The names of the packages we haven't considered yet.
 
 3.  An accumulator to hold all the valid combinations we've found so far.
 
@@ -341,7 +341,7 @@ to determine how to make a set of logical propositions consistent with each othe
 or to prove that doing so is impossible.
 If we frame our problem as,
 "Is there a choice of package versions
-that satisfies all the inter-package dependencies at once?"
+that satisfies all the inter-package dependencies at once?",
 then a theorem prover is exactly what we need.
 
 To start,
@@ -353,7 +353,7 @@ and create three [%g boolean_value "Boolean variables" %]:
 Our three variables don't have values yet—they're not
 either true or false.
 Instead,
-each one represent all the possible states a Boolean could be in.
+each one represents all the possible states a Boolean could be in.
 If we had asked `z3` to create one of its special integers,
 it would have given us something that initially encompassed
 all possible integer values.
@@ -397,12 +397,12 @@ we can represent the versions from our running example like this:
 
 [% inc file="z3_triple.py" keep="setup" %]
 
-We then tell the solver that we want one of the available version of package A:
+We then tell the solver that we want one of the available versions of package A:
 {: .continue}
 
 [% inc file="z3_triple.py" keep="top" %]
 
-and that the three version of package A are mutually exclusive:
+and that the three versions of package A are mutually exclusive:
 {: .continue}
 
 [% inc file="z3_triple.py" keep="exclusive" %]
@@ -437,6 +437,12 @@ until the problem becomes unsolvable:
 [% inc file="z3_complete.out" %]
 
 ## Summary {: #pack-summary}
+
+[%f pack-concept-map %] summarizes the key ideas introduced in this chapter.
+The most important thing to take away is that
+modern theorem provers can solve many more problems than most programmers realize.
+While formulating problems in ways that theorem provers understand can be challenging,
+solving those problems ourselves is usually much harder.
 
 [% figure
    slug="pack-concept-map"
@@ -476,12 +482,12 @@ a function could measure the "distance" between two versions as:
 -   the difference in the patch numbers
     if both major and minor numbers agree.
 
-1.  Implement this function
-    and use it to measure the total distance between
-    the set of packages found by the solver
-    and the set containing the most recent version of each package.
-
-2.  Explain why this doesn't actually solve the original problem.
+Implement this function
+and use it to measure the total distance between
+the set of packages found by the solver
+and the set containing the most recent version of each package.
+Does it actually solve the original problem?
+{: .continue}
 
 ### Regular Releases {: .exercise}
 
