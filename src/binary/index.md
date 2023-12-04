@@ -27,7 +27,7 @@ Let's start by looking at how integers are stored.
 The natural way to do this with ones and zeroes uses base 2,
 so 1001 in binary is \\( (1×8)+(0×4)+(0×2)+(1×1) \\) or 9 base 10.
 We can handle negative numbers by reserving the top bit for the sign,
-so that 01001 is +9 and 11001 is -9.
+so that 01001 is \\( +9 \\) and 11001 is \\( -9 \\).
 
 This representation has two drawbacks.
 The less important one is that it gives us two zeroes,
@@ -40,7 +40,7 @@ called [%g twos_complement "two's complement" %].
 Instead of mirroring positive values,
 two's complement rolls over when going below zero like an odometer.
 For example,
-with three-bit integers we get the values in [%t binary-3bit %].
+three-bit integers give us the values in [%t binary-3bit %].
 
 <div class="table" id="binary-3bit" caption="3-bit integer values using two's complement." markdown="1">
 | Base 10 | Base 2 |
@@ -61,7 +61,7 @@ negative numbers have 1, positive numbers have 0.
 However,
 two's complement is asymmetric:
 since 0 counts as a positive number,
-numbers go from -4 to 3, or -16 to 15, and so on.
+numbers go from \\( -4 \\) to \\( 3 \\), or \\( -16 \\) to \\( 15 \\), and so on.
 As a result,
 even if `x` is a valid number,
 `-x` may not be.
@@ -75,7 +75,7 @@ We can write binary numbers directly in Python using the `0b` prefix:
 As noted in [%x dup %],
 programmers usually use [%i "hexadecimal" %] instead:
 the digits 0–9 have the usual meaning,
-and the letters A-F (or a-f) are used to represent the digits 11–15.
+and the letters A–F (or a–f) are used to represent the digits 11–15.
 We signal that we're using hexadecimal with a `0x` prefix,
 so `0xF7` is \\( (15×16)+7 \\) or 247 base 10.
 Each hexadecimal digit corresponds to four bits ([%t binary-hex %]),
@@ -160,19 +160,19 @@ so `17 >> 3` is 2.
 
 But what if the top bit of an integer changes from 1 to 0 or vice versa as a result of shifting?
 If we're using two's complement,
-then the bits `1111` represent the value -1;
-if we shift right we get `0111` which is 7.
+then the bits `1111` represent the value \\( -1 \\);
+if we shift right we get `0111` which is \\( 7 \\).
 Similarly,
 if we shift `0111` to the left we get `1110` (assuming we fill in the bottom with 0),
-which is -2.
+which is \\( -2 \\).
 
 Different languages deal with this problem in different ways.
 Python always fills with zeroes,
 while Java provides two versions of right shift:
-`>>` fills in the high end with zeroes
+`>>` fills in the high end with zeroes,
 while `>>>` copies in the topmost (sign) bit of the original value.
 C (and by extension C++) lets the underlying hardware decide,
-which means that if you want to be sure of getting a particular answer
+which means that if you want to be sure of getting a particular answer,
 you have to handle the top bit yourself.
 
 ## Text {: #binary-text}
@@ -212,7 +212,7 @@ and so on.
 The second part defined ways to store these values in memory.
 The simplest of these is [%g utf_32 "UTF-32" %],
 which stores every character as a 32-bit number.
-This scheme waste a lot of memory if the text is written in a Western European language,
+This scheme wastes a lot of memory if the text is written in a Western European language,
 since it uses four times as much storage as is absolutely necessary,
 but it's easy to process.
 
@@ -311,7 +311,7 @@ If we open a file for reading using `open("filename", "r")`
 then Python assumes we want to read character strings from the file.
 It therefore:
 
--   ask the operating system for the default character encoding
+-   asks the operating system for the default character encoding
     (which is almost always UTF-8);
 
 -   uses this to convert bytes to characters;
@@ -329,7 +329,8 @@ These translations are handy when we're working with text,
 but they mess up binary data:
 we probably don't want the pixels in our PNG image translated in these ways.
 As mentioned in [%x dup %],
-if we open a file in [%i "binary mode" %] using `open(filename, "rb")` with a lower-case 'b' after the 'r',
+if we open a file in [%i "binary mode" %]
+using `open(filename, "rb")` with a lower-case 'b' after the 'r',
 Python gives us back the file's contents as a `bytes` object
 instead of as character strings.
 In this case we will almost always get data
@@ -376,7 +377,7 @@ we just copy the bytes from \\( L \\) to \\( L+NB-1 \\) to the file.
 A Python list,
 on the other hand,
 stores references to values rather than the values themselves.
-To put the values in a file
+To put the values in a file,
 we can either write them one at a time
 or pack them into a contiguous block and write that.
 Similarly,
@@ -391,7 +392,7 @@ and how many values there are,
 which in turn exactly determines how much memory is required by the packed representation.
 
 Unpacking reverses this process.
-After reading data into memory
+After reading data into memory,
 we can unpack it according to a format.
 The most important thing is that
 *we can unpack data any way we want*.
@@ -496,7 +497,7 @@ We can pack them like this:
 pack('5s6s', 'hello', 'Python')
 ```
 
-but how do I know how to unpack 5 characters then 6?
+but how do we know how to unpack 5 characters then 6?
 The trick is to save the size along with the data.
 If we always use exactly the same number of bytes to store the size,
 we can read it back safely,
@@ -516,7 +517,8 @@ and a body made up of whatever's left.
 We then unpack the header,
 whose format we know,
 to determine how many characters are in the string.
-Once we've got that we use the trick shown earlier
+Once we've got that,
+we use the trick shown earlier
 to construct the right format on the fly
 and then unpack the string and return it.
 
@@ -539,7 +541,8 @@ You shouldn't worry about 1's and 0's unless you really have to.
 
 ## Summary {: #binary-summary}
 
-Please see [%x bonus %] for extra material related to these ideas.
+[%f binary-concept-map %] summarizes the ideas introduced in this chapter.
+Please see [%x bonus %] for extra material related to floating-point numbers.
 
 [% figure
    slug="binary-concept-map"
