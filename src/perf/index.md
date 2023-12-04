@@ -21,7 +21,7 @@ Whether we use [%i "Excel" %], [%i "SQL" %], or Python,
 we will almost certainly be analyzing tables
 with named columns and multiple rows.
 Such tables are called [%g dataframe "dataframes" %],
-and their performance is important when we are working with large datasets.
+and their performance is important when we are working with large data sets.
 This chapter therefore implements dataframes in two ways
 and shows how to compare their performance.
 
@@ -31,7 +31,7 @@ To start,
 let's create an [%i "abstract class" %]
 that defines the methods our dataframe classes will support.
 This class requires [%i "concrete class" "concrete classes" %]
-to implement the eight methods shown below:
+to implement the methods shown below:
 
 [% inc file="df_base.py" %]
 
@@ -138,7 +138,7 @@ Since we don't know how many columns the user might want,
 we give the `select` method a single parameter `*names`
 that will capture zero or more positional arguments.
 We then build a new list of dictionaries
-that only contain the fields with those names ([%f perf-row-select %]:
+that only contain the fields with those names ([%f perf-row-select %]):
 
 [% inc file="df_row.py" keep="select" %]
 
@@ -180,9 +180,9 @@ the implementation of `DfRow.filter` is:
 
 Notice that the dataframe created by `filter`
 re-uses the rows of the original dataframe ([%f perf-row-filter %]).
-This is safe and efficient so long as dataframes are [%g immutable "immutable" %],
+This is safe and efficient as long as dataframes are [%g immutable "immutable" %],
 i.e.,
-so long as their contents are never changed in place.
+as long as their contents are never changed in place.
 Most dataframe libraries work this way:
 while recycling memory can save a little time,
 it usually also makes bugs much harder to track down.
@@ -215,7 +215,8 @@ all of the values in any column have the same types:
 Notice that `DfCol`'s constructor does *not* have the same [%i "signature" %]
 as `DfRow`'s.
 At some point in our code we have to decide which of the two classes to construct.
-If we design our code well that decision will be made in exactly one place
+If we design our code well,
+that decision will be made in exactly one place
 and everything else will rely solely on the common interface defined by `DataFrame`.
 But since we have to type a different class name at the point of construction,
 it's OK for the constructors to be different.
@@ -303,7 +304,7 @@ different storage schemes are better (or worse) for different kinds of work.
 [%g oltp "Online transaction processing" %] (OLTP)
 refers to adding or querying individual records,
 such as online sales.
-[%g olap "online analytical processing" %] (OLAP),
+[%g olap "Online analytical processing" %] (OLAP),
 on the other hand,
 processes selected columns of a table in bulk to do things like find averages over time.
 Row-wise storage is usually best for OLTP,
@@ -318,7 +319,7 @@ to copy new or updated records from the OLTP databases over to the OLAP database
 To compare the speed of these classes,
 let's write a short program to create dataframes of each kind
 and time how long it takes to select their columns and filter their rows.
-To keep things simple
+To keep things simple,
 we will create dataframes whose columns are called `label_1`, `label_2`, and so on,
 and whose values are all integers in the range 0–9.
 A thorough set of [%g benchmark "benchmarks" %]
@@ -327,7 +328,7 @@ but this example is enough to illustrate the technique.
 
 [% inc file="timing.py" keep="create" %]
 
-To time filtering,
+To time `filter`,
 we arbitrarily decide to keep rows with an even value in the first column:
 
 [% inc file="timing.py" keep="filter" %]
@@ -335,13 +336,13 @@ we arbitrarily decide to keep rows with an even value in the first column:
 Since `DfCol` and `DfRow` derive from the same base class,
 `time_filter` doesn't care which we give it.
 Again,
-if we were doing this for real
+if we were doing this for real,
 we would look at actual programs
 to see what fraction of rows filtering usually kept and simulate that.
 {: .continue}
 
 To time `select`,
-we arbitrarily decide to keep one third of the columns:
+we arbitrarily decide to keep one-third of the columns:
 
 [% inc file="timing.py" keep="select" %]
 
@@ -357,11 +358,11 @@ is called [%g parameter_sweeping "parameter sweeping" %]:
 [% inc file="timing.py" keep="sweep" %]
 
 The results are shown in [%t perf-timing %] and [%f perf-analysis %].
-For a \\( 1000 \times 1000 \\) dataframe
+For a \\( 1000 \times 1000 \\) dataframe,
 selection is over 250 times faster with column-wise storage than with row-wise,
 while filtering is 1.8 times slower.
 
-<div class="table" id="perf-timing" caption="Dataframe timings." markdown="1">
+<div class="table here" id="perf-timing" caption="Dataframe timings." markdown="1">
 | nrow  | ncol  | filter col | select col | filter row | select row |
 | ----- | ----- | ---------- | ---------- | ---------- | ---------- |
 |    10 |    10 | 8.87e-05   | 7.70e-05   | 4.41e-05   | 2.50e-05   |
@@ -391,7 +392,7 @@ the number of times each function or method was called,
 the total time spent in those calls (which is what we care about most),
 the time spent per call,
 and the cumulative time spent in that call and all the things it calls.
-Right away we can see that the `dict_match` function
+We can see right away that the `dict_match` function
 that checks the consistency of the rows in a row-oriented dataframe
 is eating up a lot of time.
 It's only called in the constructor,
@@ -405,21 +406,17 @@ we're copying the values out of the columns into a temporary dictionary
 for every row when we filter,
 and building all those temporary dictionaries adds up to a lot of time.
 
-<div class="callout" markdown="1">
+## Summary {: #perf-summary}
 
-### Engineering
-
-If science is the use of the experimental method to investigate the world,
-engineering is the use of the experimental method
-to investigate and improve the things that people build.
+[%f perf-concept-map %] summarizes the key ideas introduced in this chapter.
+The most important is that experiments can help us decide
+how to implement key features of our software,
+but the results of those experiments depend on
+exactly what we measure.
 Good software designers collect and analyze data all the time
 to find out whether one website design works better than another [% b Kohavi2020 %]
 or to improve the performance of CPUs [% b Patterson2017 %].
 A few simple experiments like these can save weeks or months of misguided effort.
-
-</div>
-
-## Summary {: #perf-summary}
 
 [% figure
    slug="perf-concept-map"
@@ -435,7 +432,7 @@ A few simple experiments like these can save weeks or months of misguided effort
 
 Derive a class from `DfCol` and override its `filter` method
 so that the user-defined filtering functions take zero or more columns
-and an row index called `i_row` as parameters
+and a row index called `i_row` as parameters
 and return `True` or `False` to signal whether the row passes the test.
 
 1.  How much faster does this make filtering?
@@ -449,7 +446,7 @@ An empty dataframe is as reasonable and as useful as an empty string or an empty
 `DfCol` can represent this,
 but `DfRow` cannot:
 if the list of dictionaries is empty,
-we cannot ask for columns' names.
+we cannot ask for column names.
 Derive another dataframe class from `DF` that uses row-wise storage
 but can represent a dataframe with no rows.
 
@@ -467,11 +464,12 @@ and modify the tests in this chapter to use it.
 
 Derive another dataframe class from `DF`
 that uses Python's [`array`][py_array] module for column-wise storage.
-How does it performance compared to other implementations?
+How does it perform compared to other implementations?
 
 ### Crossover {: .exercise}
 
-1.  At what ratio of filters to selects are `DfRow` and `DfCol` equally fast?
+1.  At what ratio of filter operations to select operations
+    are `DfRow` and `DfCol` equally fast?
     (Your answer may depend on the size of the dataframe.)
 
 2.  How does the relative performance of the two classes change
@@ -493,12 +491,12 @@ Modify the comparison of filter and select to work with tables
 that contain columns of strings instead of columns of numbers
 and see how that changes performance.
 For testing,
-creating random 4-letter strings using the characters A-Z
+create random 4-letter strings using the characters A-Z
 and then filter by:
 
 -   an exact match,
 -   strings starting with a specific character, and
--   strings that contain a specific character
+-   strings that contain a specific character.
 
 ### Inspection {: .exercise}
 
