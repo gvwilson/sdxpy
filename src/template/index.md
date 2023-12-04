@@ -419,6 +419,7 @@ of `open` and `close` functions.
 
 [%f template-concept-map %] summarizes the key ideas in this chapter,
 some of which we first encountered in [%x interp %].
+Please see [%x bonus %] for extra material related to these ideas.
 
 [% figure
    slug="template-concept-map"
@@ -427,9 +428,6 @@ some of which we first encountered in [%x interp %].
    caption="HTML templating concept map."
    cls="here"
 %]
-
-*Please see [%x bonus %] for extra material related to these ideas.*
-{: .continue}
 
 ## Exercises {: #template-exercises}
 

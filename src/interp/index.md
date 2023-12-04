@@ -321,6 +321,7 @@ but we can write `do` once and never worry about it again.
 [%f interp-concept-map %] summarizes the ideas introduced in this chapter.
 A lot is going on here,
 but the central idea is that a program is just another kind of data.
+Please see [%x bonus %] for extra material related to these ideas.
 
 [% figure
    slug="interp-concept-map"
@@ -329,9 +330,6 @@ but the central idea is that a program is just another kind of data.
    caption="Interpreter concept map."
    cls="here"
 %]
-
-*Please see [%x bonus %] for extra material related to these ideas.*
-{: .continue}
 
 ## Exercises {: #interp-exercises}
 

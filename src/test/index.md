@@ -206,6 +206,7 @@ As we said in the discussion of comprehension curves in [%x intro %],
 no piece of software can be optimal for both audiences;
 the only solution to this problem is education,
 which is why books like this one exist.
+Please see [%x bonus %] for extra material related to these ideas.
 
 [% figure
    slug="test-concept-map"
@@ -214,9 +215,6 @@ which is why books like this one exist.
    caption="Concept map."
    cls="here"
 %]
-
-*Please see [%x bonus %] for extra material related to these ideas.*
-{: .continue}
 
 ## Exercises {: #test-exercises}
 

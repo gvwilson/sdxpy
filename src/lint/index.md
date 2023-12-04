@@ -76,7 +76,7 @@ about the function's [%i "argument" "arguments" %];
 other nodes that we have left out
 represent its return value,
 the call to `double`,
-the assignment to `result,
+the assignment to `result`,
 and so on.
 
 If we want a list of all the functions defined in this module,
@@ -131,7 +131,7 @@ and then call the `visit` method of our class to trigger recursion:
 
 With a little more work we could record class names as well,
 and then check that (for example)
-class names use CamelCase
+class names use CamelCase,
 while function and variable names use pothole\_case.
 We'll tackle this in the exercises.
 
@@ -139,7 +139,7 @@ We'll tackle this in the exercises.
 
 Many programs store their configuration in dictionaries.
 As those dictionaries grow larger,
-it's easy for programmer to redefine values by accident.
+it's easy for programmers to redefine values by accident.
 For example,
 the dictionary in this short piece of code has two entries
 for the key `"third"`:
@@ -156,7 +156,7 @@ it chooses the third option:
 
 [% inc file="has_duplicate_keys.out" %]
 
-We can built a linter that finds dictionaries like `has_duplicates`
+We can build a linter that finds dictionaries like `has_duplicates`
 with just a few lines of code
 and the `Counter` class from Python's [`collections`][py_collections] module
 (which implements a specialized dictionary that counts
@@ -206,7 +206,7 @@ but they are different variables.
 Let's start by defining a class
 that handles variables in [%i "module" "modules" %] and functions.
 Since functions can be defined inside modules and other functions,
-our class's constructor creates a list that we will use as a stack
+the constructor for our class creates a list that we will use as a stack
 to keep track of what scopes we're currently in:
 
 [% inc file="find_unused_variables.py" keep="class" %]
@@ -256,7 +256,8 @@ When we run our linter we get:
 
 ## Summary {: #lint-summary}
 
-*Please see [%x bonus %] for extra material related to these ideas.*
+[%f lint-concept-map %] summarizes the ideas introduced in this chapter;
+please see [%x bonus %] for some more related material.
 
 [% figure
    slug="lint-concept-map"
@@ -291,7 +292,7 @@ x = 2
 
 Write a linter that checks that
 class names are written in CamelCase
-but function and variable names are pothole\_case.
+but function and variable names are in pothole\_case.
 
 ### Missing Documentation {: .exercise}
 
@@ -309,7 +310,7 @@ then reports any functions from the first file that it hasn't seen.
 ### Chaining Methods {: .exercise}
 
 1.  Modify the code that injects methods into `NodeVisitor`
-    so that any previously-injected methods are also called.
+    so that any previously injected methods are also called.
 
 1.  Modify the methods again so that each one signals
     whether or not it has handled recursion

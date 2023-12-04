@@ -418,6 +418,8 @@ but the changes to `save_set` and `save_dict` follow exactly the same pattern.
 
 ## Summary {: #persist-summary}
 
+Please see [%x bonus %] for extra material related to these ideas.
+
 [% figure
    slug="persist-concept-map"
    img="concept_map.svg"
@@ -425,8 +427,6 @@ but the changes to `save_set` and `save_dict` follow exactly the same pattern.
    caption="Concepts for persistence."
    cls="here"
 %]
-
-*Please see [%x bonus %] for extra material related to these ideas.*
 
 ## Exercises {: #persist-exercises}
 

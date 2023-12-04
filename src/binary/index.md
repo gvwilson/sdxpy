@@ -539,7 +539,7 @@ You shouldn't worry about 1's and 0's unless you really have to.
 
 ## Summary {: #binary-summary}
 
-*Please see [%x bonus %] for extra material related to these ideas.*
+Please see [%x bonus %] for extra material related to these ideas.
 
 [% figure
    slug="binary-concept-map"
