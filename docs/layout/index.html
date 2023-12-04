@@ -372,7 +372,7 @@ we will build a small layout engine
 based on <span class="ix-entry" ix-key="Brubeck, Matt" markdown="1"><a href="https://limpet.net/mbrubeck/">Matt Brubeck&rsquo;s</a></span> <a href="https://limpet.net/mbrubeck/2014/08/08/toy-layout-engine-1.html">tutorial</a>
 and on <a href="https://pavpanchekha.com/">Pavel Panchekha</a> and <a href="https://twitter.com/chrishtr">Chris Harrelson&rsquo;s</a> book
 <a href="https://browser.engineering/"><em>Web Browser Engineering</em></a>.
-Since our focus is layout
+Since our focus is layout,
 we will create objects ourselves to represent <span class="ix-entry" ix-key="DOM" markdown="1">DOM</span> nodes
 rather than parsing HTML.</p>
 <h2 id="layout-size">Section 14.1: Sizing</h2>
@@ -394,10 +394,25 @@ A block has a fixed width and height:</p>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">height</span>
 </code></pre></div>
 </div>
+<div class="callout">
+<h3>Upside Down</h3>
+<p>The <span class="ix-entry" ix-key="coordinate system" markdown="1">coordinate systems</span> for screens
+puts (0, 0) in the upper-left corner instead of the lower-left,
+so Y increases as we go down, rather than up
+(<a class="fig-ref" href="../layout/#layout-coordinate-system">Figure 14.1</a>).
+This convention dates back to teletype terminals that printed on rolls of paper;
+as <span class="ix-entry" ix-key="Hoye, Mike" markdown="1"><a href="http://exple.tive.org/blarg/">Mike Hoye</a></span> has <a href="http://exple.tive.org/blarg/2020/11/26/punching-holes/">observed</a>,
+the past is all around us.</p>
+</div>
+<figure id="layout-coordinate-system">
+<img src="./coordinate_system.svg" alt="Coordinate system"/>
+<figcaption markdown="1">Figure 14.1: Coordinate system with (0, 0) in the upper-left corner.</figcaption>
+</figure>
+
 <p>A row arranges one or more cells horizontally;
 its width is the sum of the widths of its children,
 while its height is the height of its tallest <span class="ix-entry" ix-key="child" markdown="1">child</span>
-(<a class="fig-ref" href="../layout/#layout-sizing">Figure 14.1</a>):</p>
+(<a class="fig-ref" href="../layout/#layout-sizing">Figure 14.2</a>):</p>
 <div class="code-sample lang-py" title="easy_mode.py">
 <div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Row</span><span class="p">:</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">children</span><span class="p">):</span>
@@ -415,14 +430,17 @@ while its height is the height of its tallest <span class="ix-entry" ix-key="chi
 </div>
 <figure id="layout-sizing">
 <img src="./sizing.svg" alt="Calculating sizes of fixed blocks"/>
-<figcaption markdown="1">Figure 14.1: Calculating sizes of blocks with fixed width and height.</figcaption>
+<figcaption markdown="1">Figure 14.2: Calculating sizes of blocks with fixed width and height.</figcaption>
 </figure>
+
+<div class="pagebreak"></div>
 
 <p>Finally,
 a column arranges one or more cells vertically:
 its width is the width of its widest child
 and its height is the sum of the heights of its children.
-(Here and elsewhere we use the abbreviation <code>col</code> when referring to columns.)</p>
+(Here and elsewhere,
+we use the abbreviation <code>col</code> when referring to columns.)</p>
 <div class="code-sample lang-py" title="easy_mode.py">
 <div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Col</span><span class="p">:</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">children</span><span class="p">):</span>
@@ -438,23 +456,6 @@ and its height is the sum of the heights of its children.
         <span class="k">return</span> <span class="nb">sum</span><span class="p">([</span><span class="n">c</span><span class="o">.</span><span class="n">get_height</span><span class="p">()</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="p">])</span>
 </code></pre></div>
 </div>
-<div class="callout">
-<h3>Upside Down</h3>
-<p>The <span class="ix-entry" ix-key="coordinate system" markdown="1">coordinate systems</span> for screens
-puts (0, 0) in the upper left corner instead of the lower left.
-X increases to the right as usual,
-but Y increases as we go down, rather than up
-(<a class="fig-ref" href="../layout/#layout-coordinate-system">Figure 14.2</a>).
-This convention is a holdover from the days of teletype terminals
-that printed lines on rolls of paper;
-as <span class="ix-entry" ix-key="Hoye, Mike" markdown="1"><a href="http://exple.tive.org/blarg/">Mike Hoye</a></span> has <a href="http://exple.tive.org/blarg/2020/11/26/punching-holes/">observed</a>,
-the past is all around us.</p>
-</div>
-<figure id="layout-coordinate-system">
-<img src="./coordinate_system.svg" alt="Coordinate system"/>
-<figcaption markdown="1">Figure 14.2: Coordinate system with (0, 0) in the upper left corner.</figcaption>
-</figure>
-
 <p>Rows and columns nest inside one another:
 a row cannot span two or more columns,
 and a column cannot cross the boundary between two rows.
@@ -480,8 +481,9 @@ One such test is:</p>
 </code></pre></div>
 </div>
 <h2 id="layout-position">Section 14.2: Positioning</h2>
-<p>Once we know how big cells are we can figure out where to put them.
-Suppose we start with the upper left corner of the browser:
+<p>Once we know how big cells are,
+we can figure out where to put them.
+Suppose we start with the upper-left corner of the browser:
 upper because we lay out the page top-to-bottom
 and left because we are doing left-to-right layout.
 If the cell is a block, we place it there.
@@ -492,7 +494,7 @@ We then place the first child&rsquo;s upper-left corner at (x0, y1-height0),
 the second child&rsquo;s at (x0 + width0, y1-height0), and so on
 (<a class="fig-ref" href="../layout/#layout-layout">Figure 14.3</a>).
 Similarly,
-if the cell is a column
+if the cell is a column,
 we place the first child at (x0, y0),
 the next at (x0, y0 + height0),
 and so on.</p>
@@ -501,7 +503,8 @@ and so on.</p>
 <figcaption markdown="1">Figure 14.3: Laying out rows and columns of fixed-size blocks.</figcaption>
 </figure>
 
-<p>To save ourselves some work we will derive the classes that know how to do layout
+<p>To save ourselves some work,
+we will derive the classes that know how to do layout
 from the classes we wrote before.
 Basic blocks are:</p>
 <div class="code-sample lang-py" title="placed.py">
@@ -735,7 +738,7 @@ and returns that fixed width when asked for its size:</p>
 </code></pre></div>
 </div>
 <p class="continue">Wrapping puts the row&rsquo;s children into buckets,
-then converts the buckets to a row of a column of rows:</p>
+and then converts the buckets to a row of a column of rows:</p>
 <div class="code-sample lang-py" title="wrapped.py">
 <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">wrap</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="n">children</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">wrap</span><span class="p">()</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="p">]</span>
@@ -745,7 +748,7 @@ then converts the buckets to a row of a column of rows:</p>
     <span class="k">return</span> <span class="n">PlacedRow</span><span class="p">(</span><span class="n">new_col</span><span class="p">)</span>
 </code></pre></div>
 </div>
-<p>To bucket the children
+<p>To bucket the children,
 we add them one at a time to a temporary list.
 If adding another node would make the total width of the nodes in that list too large,
 we use that node to start a new temporary list:</p>
@@ -769,7 +772,8 @@ we use that node to start a new temporary list:</p>
     <span class="k">return</span> <span class="n">result</span>
 </code></pre></div>
 </div>
-<p>Once again we bring forward all the previous tests
+<p>Once again,
+we bring forward all the previous tests
 and write some new ones to test the functionality we&rsquo;ve added:</p>
 <div class="code-sample lang-py" title="test_wrapped.py">
 <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">test_wrap_a_row_of_two_blocks_that_do_not_fit_on_one_row</span><span class="p">():</span>
@@ -797,7 +801,7 @@ Programs often contain <a class="gl-ref" href="../glossary/#gl:accidental_comple
 as well,
 which can be removed if people are willing to accept change.
 In practice,
-that often means that it sticks around longer than it should…</p>
+that often means that it sticks around longer than it should.</p>
 <div class="callout">
 <h3>The Liskov Substitution Principle</h3>
 <p>We are able to re-use tests as our code evolved
@@ -816,6 +820,9 @@ Thinking in these terms leads to the methodology called
 <span class="ix-entry" ix-key="design by contract" markdown="1">design by contract</span> discussed in <a class="x-ref" href="../oop/">Chapter 2</a>.</p>
 </div>
 <h2 id="layout-summary">Section 14.5: Summary</h2>
+<p><a class="fig-ref" href="../layout/#layout-concept-map">Figure 14.7</a> summarizes the ideas introduced in this chapter.
+Real page layout systems do far more than what we have described,
+but all of them implement some kind of negotiation between containers and content.</p>
 <figure id="layout-concept-map" class="here">
 <img src="./concept_map.svg" alt="Concept map for page layout"/>
 <figcaption markdown="1">Figure 14.7: Page layout concept map.</figcaption>
@@ -852,7 +859,7 @@ so that the empty space in rows and columns is rendered as spaces.</p>
 <ol>
 <li>
 <p>Modify the wrapping and rendering so that
-    if a block of text is too wide for the available space
+    if a block of text is too wide for the available space,
     the extra characters are clipped.
     For example,
     if a column of width 5 contains a line &ldquo;unfittable&rdquo;,

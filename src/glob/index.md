@@ -349,11 +349,11 @@ meaning "match one or more characters".
 ### Match Sets of Characters {: .exercise}
 
 1.  Add a new matching class that matches any character from a set,
-    so that `Charset('aeiou')` matches any lower case vowel.
+    so that `Charset('aeiou')` matches any lower-case vowel.
 
 2.  Create a matcher that matches a range of characters.
     For example,
-    `Range("a", "z")` matches any single lower case Latin alphabetic character.
+    `Range("a", "z")` matches any single lower-case Latin alphabetic character.
     (This is just a convenience matcher: ranges can always be spelled out in full.)
 
 3.  Write some tests for your matchers.

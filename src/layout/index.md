@@ -29,7 +29,7 @@ we will build a small layout engine
 based on [%i "Brubeck, Matt" "Matt Brubeck's" url="brubeck_matt" %] [tutorial][browser_engine_tutorial]
 and on [Pavel Panchekha][panchekha_pavel] and [Chris Harrelson's][harrelson_chris] book
 [*Web Browser Engineering*][browser_engineering].
-Since our focus is layout
+Since our focus is layout,
 we will create objects ourselves to represent [%i "DOM" %] nodes
 rather than parsing HTML.
 
@@ -42,6 +42,27 @@ and every cell is either a row, a column, or a [%g block_page "block" %].
 A block has a fixed width and height:
 
 [% inc file="easy_mode.py" keep="block" %]
+
+<div class="callout" markdown="1">
+
+### Upside Down
+
+The [%i "coordinate system" "coordinate systems" %] for screens
+puts (0, 0) in the upper-left corner instead of the lower-left,
+so Y increases as we go down, rather than up
+([%f layout-coordinate-system %]).
+This convention dates back to teletype terminals that printed on rolls of paper;
+as [%i "Hoye, Mike" "Mike Hoye" url="hoye_mike" %] has [observed][punching_holes],
+the past is all around us.
+
+</div>
+
+[% figure
+   slug="layout-coordinate-system"
+   img="coordinate_system.svg"
+   alt="Coordinate system"
+   caption="Coordinate system with (0, 0) in the upper-left corner."
+%]
 
 A row arranges one or more cells horizontally;
 its width is the sum of the widths of its children,
@@ -57,36 +78,16 @@ while its height is the height of its tallest [%i "child" %]
    caption="Calculating sizes of blocks with fixed width and height."
 %]
 
+<div class="pagebreak"></div>
+
 Finally,
 a column arranges one or more cells vertically:
 its width is the width of its widest child
 and its height is the sum of the heights of its children.
-(Here and elsewhere we use the abbreviation `col` when referring to columns.)
+(Here and elsewhere,
+we use the abbreviation `col` when referring to columns.)
 
 [% inc file="easy_mode.py" keep="col" %]
-
-<div class="callout" markdown="1">
-
-### Upside Down
-
-The [%i "coordinate system" "coordinate systems" %] for screens
-puts (0, 0) in the upper left corner instead of the lower left.
-X increases to the right as usual,
-but Y increases as we go down, rather than up
-([%f layout-coordinate-system %]).
-This convention is a holdover from the days of teletype terminals
-that printed lines on rolls of paper;
-as [%i "Hoye, Mike" "Mike Hoye" url="hoye_mike" %] has [observed][punching_holes],
-the past is all around us.
-
-</div>
-
-[% figure
-   slug="layout-coordinate-system"
-   img="coordinate_system.svg"
-   alt="Coordinate system"
-   caption="Coordinate system with (0, 0) in the upper left corner."
-%]
 
 Rows and columns nest inside one another:
 a row cannot span two or more columns,
@@ -108,8 +109,9 @@ One such test is:
 
 ## Positioning {: #layout-position}
 
-Once we know how big cells are we can figure out where to put them.
-Suppose we start with the upper left corner of the browser:
+Once we know how big cells are,
+we can figure out where to put them.
+Suppose we start with the upper-left corner of the browser:
 upper because we lay out the page top-to-bottom
 and left because we are doing left-to-right layout.
 If the cell is a block, we place it there.
@@ -120,7 +122,7 @@ We then place the first child's upper-left corner at (x0, y1-height0),
 the second child's at (x0 + width0, y1-height0), and so on
 ([%f layout-layout %]).
 Similarly,
-if the cell is a column
+if the cell is a column,
 we place the first child at (x0, y0),
 the next at (x0, y0 + height0),
 and so on.
@@ -132,7 +134,8 @@ and so on.
    caption="Laying out rows and columns of fixed-size blocks."
 %]
 
-To save ourselves some work we will derive the classes that know how to do layout
+To save ourselves some work,
+we will derive the classes that know how to do layout
 from the classes we wrote before.
 Basic blocks are:
 
@@ -300,19 +303,20 @@ and returns that fixed width when asked for its size:
 [% inc file="wrapped.py" keep="row" %]
 
 Wrapping puts the row's children into buckets,
-then converts the buckets to a row of a column of rows:
+and then converts the buckets to a row of a column of rows:
 {: .continue}
 
 [% inc file="wrapped.py" keep="wrap" %]
 
-To bucket the children
+To bucket the children,
 we add them one at a time to a temporary list.
 If adding another node would make the total width of the nodes in that list too large,
 we use that node to start a new temporary list:
 
 [% inc file="wrapped.py" keep="bucket" %]
 
-Once again we bring forward all the previous tests
+Once again,
+we bring forward all the previous tests
 and write some new ones to test the functionality we've added:
 
 [% inc file="test_wrapped.py" keep="example" %]
@@ -326,7 +330,7 @@ Programs often contain [%g accidental_complexity "accidental complexity" %]
 as well,
 which can be removed if people are willing to accept change.
 In practice,
-that often means that it sticks around longer than it should…
+that often means that it sticks around longer than it should.
 
 <div class="callout" markdown="1">
 
@@ -350,6 +354,10 @@ Thinking in these terms leads to the methodology called
 </div>
 
 ## Summary {: #layout-summary}
+
+[%f layout-concept-map %] summarizes the ideas introduced in this chapter.
+Real page layout systems do far more than what we have described,
+but all of them implement some kind of negotiation between containers and content.
 
 [% figure
    slug="layout-concept-map"
@@ -394,7 +402,7 @@ so that the empty space in rows and columns is rendered as spaces.
 ### Clipping Text {: .exercise}
 
 1.  Modify the wrapping and rendering so that
-    if a block of text is too wide for the available space
+    if a block of text is too wide for the available space,
     the extra characters are clipped.
     For example,
     if a column of width 5 contains a line "unfittable",
