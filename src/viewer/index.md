@@ -79,11 +79,11 @@ We are now ready to actually show some text.
 Given a list of strings,
 the revised `main` function below will repeatedly:
 
-1.  clear the screen;
+1.  clear the screen,
 
-2.  display each line of text in the correct location;
+2.  display each line of text in the correct location,
 
-3.  wait for a keystroke; and
+3.  wait for a keystroke, and
 
 4.  exit if the key is a `q`.
 
@@ -102,7 +102,7 @@ it erases the entire screen each time the user presses a key.
 Doing this is unnecessary in most cases—if
 the user's action doesn't modify the text being shown,
 there's no need to redraw it—but
-keeping track of which actions do and don't require re-draw
+keeping track of which actions do and don't require redraw
 would require extra code (and extra debugging).
 For now,
 we'll do the simple, inefficient thing.
@@ -160,7 +160,7 @@ Notice that `main` creates the window object.
 We can't create it earlier and pass it into `main` as we do with `lines`
 because the [%i "constructor" %] for `Window` needs the screen object,
 which doesn't exist until `curses.wrapper` calls `main`.
-This is an example of [%g delayed_construction "delayed construction" %],
+This is an example of [%g delayed_construction "delayed construction" %]
 and is going to constrain the rest of our design
 ([%f viewer-delayed %]).
 
@@ -299,13 +299,13 @@ for key combinations like Ctrl-X.
 The `TRANSLATE` dictionary turns these into human-readable names
 that we can glue together with `_do_` to make a method name;
 we got the hexadecimal value `"\x18"` by logging keystrokes to a file
-and the looking at its contents.
+and then looking at its contents.
 We could probably have found this value in some documentation somewhere
 if we had looked hard enough,
 but a ten-second experiment seemed simpler.
 
 With `_interact` in place,
-we can re-write `_run` to be just five lines long:
+we can rewrite `_run` to be just five lines long:
 
 [% inc file="dispatch_keys.py" keep="main" %]
 
@@ -313,7 +313,7 @@ It now relies on a member variable called `_running`
 to keep the loop going.
 We could have had each key handler method return `True` or `False`
 to signal whether to keep going or not,
-but we found out that the hard way that
+but we found out the hard way that
 it's very easy to forget to do this,
 since almost every handler method's result is going to be the same.
 
@@ -371,10 +371,9 @@ in upcoming versions of our file viewer.
 If `setup` calls the constructors of specific classes
 to create the window, buffer, and cursor objects,
 we will have to rewrite the entire method
-each time we change which classes we want to use
-for any of those three things.
+each time we change the classes we use for those things.
 Putting constructor calls in [%g factory_method "factory methods" %]
-makes the code longer,
+makes the code longer
 but allows us to override them one by one.
 We didn't do this when we were first writing these examples;
 instead,
@@ -424,8 +423,8 @@ or outside the displayed text—unless,
 that is,
 we go to the end of a long line and then move up to a shorter one.
 The problem is that `up` and `down` only change
-the cursor's idea of the row it is on,
-and don't check that the column position is still inside the text.
+the cursor's idea of the row it is on;
+they don't check that the column position is still inside the text.
 The fix is simple:
 
 [% inc file="clip_fixed.py" keep="cursor" %]
@@ -472,7 +471,7 @@ to screen coordinates:
 
 [% inc file="viewport.py" keep="transform" %]
 
-The second moves `_top` up or down when we reach the edge of the display:
+The second method moves `_top` up or down when we reach the edge of the display:
 
 [% inc file="viewport.py" keep="scroll" %]
 
@@ -497,6 +496,11 @@ in the same way as vertical movement:
 
 ## Summary {: #viewer-summary}
 
+[%f viewer-concept-map %] summarizes the ideas introduced in this chapter.
+Keeping track of several sets of coordinates is a lot of bookkeeping;
+one of the big attractions of frameworks like [Textualize][textualize]
+is how much of this they do for us.
+
 [% figure
    slug="viewer-concept-map"
    img="concept_map.svg"
@@ -504,6 +508,8 @@ in the same way as vertical movement:
    caption="Concept map."
    cls="here"
 %]
+
+<div class="pagebreak"></div>
 
 ## Exercises {: #viewer-exercises}
 
