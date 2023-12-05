@@ -24,7 +24,7 @@ What we *don't* want to do is
 create a new [%i "protocol" %] for every application,
 any more than we create new file formats ([%x parse %]).
 
-The [%g http "Hypertext Transfer Protocol" %] (HTTP)
+The [%g http "HyperText Transfer Protocol" %] (HTTP)
 defines a way for programs to exchange data over the web.
 It is deliberately simple:
 the [%i "client" %] sends a [%g http_request "request" %]
@@ -32,8 +32,8 @@ specifying what it wants over a [%i "socket" %],
 and the [%i "server" %] sends a [%g http_response "response" %] containing some data.
 Servers can construct responses however they want:
 they can copy files from disk,
-generated [%i "HTML" %] dynamically,
-or anything else a programmer can think of.
+generate [%i "HTML" %] dynamically,
+or do anything else a programmer can think of.
 
 This chapter shows how to build a simple web server
 that understands the basics of HTTP
@@ -220,7 +220,7 @@ The method that handles files is an example of this:
 
 [% inc file="file_server.py" keep="handle_file" %]
 
-If there's an error at any point in the processing cycle
+If there's an error at any point in the processing cycle,
 we send a page with an error message
 *and* an error status code.
 The former gives human users something to read,
@@ -262,7 +262,7 @@ because the HTTP protocol requires the content length to be the number of bytes.
 The server reads files in [%i "binary mode" %]
 by using `"rb"` instead of just `"r"` when it opens files in `handle_file`,
 converts the internally-generated error page from characters to bytes
-using the [%i "UTF-8" %] encoding,
+using the [%i "UTF-8" %] encoding
 and specifies `charset=utf-8` as part of the content type.
 
 ## Testing  {: #http-testing}
@@ -317,9 +317,7 @@ and also stores the values that the client would receive:
 [% inc file="test_testable_server.py" keep="example" %]
 
 The main body of our runnable server
-combines the two classes to create what it needs,
-instantiates the result,
-and runs it:
+combines the two classes to create what it needs:
 
 [% inc file="testable_server.py" keep="main" %]
 
@@ -330,9 +328,11 @@ create a server with mocked methods:
 
 [% inc file="test_testable_server.py" keep="combined" %]
 
-<div class="pagebreak"></div>
-
 ## Summary {: #http-summary}
+
+[%f http-concept-map %] summarizes the ideas introduced in this chapter.
+Given the impact the World-Wide Web has had,
+newcomers are often surprised by how simple of HTTP actually is.
 
 [% figure
    slug="http-concept-map"
@@ -421,7 +421,7 @@ the server returns an HTML page that reports the current time on the server's ma
 
 Modify the file server to:
 
-1.  turn the query parameter's in the URL into a dictionary;
+1.  turn the query parameters in the URL into a dictionary;
 
 2.  use that dictionary to fill in a template page ([%x template %]); and
 
