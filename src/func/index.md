@@ -27,7 +27,7 @@ depends:
 One way to evaluate the design of a piece of software is
 to ask how [%g extensibility "extensible" %] it is,
 i.e.,
-how easily we can add or change things [%b Wilson2022a %].
+how easily we can add or change things [%b Wilson2022b %].
 The answer for the [%i "interpreter" %] of [%x interp %] is "pretty easily"
 but the answer for the little language it interprets is "not at all",
 because users cannot define new operations in the little language itself.

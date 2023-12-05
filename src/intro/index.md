@@ -199,7 +199,7 @@ All contributors are required to abide by our Code of Conduct
 
 ## What People Are Saying {: #intro-praise}
 
-Here's what people said about the JavaScript version of this book [%b Wilson2022b %]:
+Here's what people said about the JavaScript version of this book [%b Wilson2022a %]:
 
 -   [Jessica Kerr][kerr_jessica]:
     "*Software Design by Example* is the book I'll recommend to every new dev…
@@ -222,7 +222,7 @@ Here's what people said about the JavaScript version of this book [%b Wilson2022
 
 ## Acknowledgments {: #intro-acknowledgments}
 
-Like [%b Wilson2022b %],
+Like [%b Wilson2022a %],
 this book was inspired by [%b Kamin1990 Kernighan1979 Kernighan1981 Kernighan1983 Kernighan1988 Oram2007 Wirth1976 %] and by:
 
 -   [*The Architecture of Open Source Applications*][aosa] series

@@ -14,7 +14,7 @@ invariably produce software that behaves in unexpected (usually unfortunate) way
 and cannot be modified without heroic effort.
 
 This essay,
-which originally appeared as [%b Wilson2022a %],
+which originally appeared as [%b Wilson2022b %],
 presents a dozen tips that can help data scientists design large programs.
 These tips are taken from published sources like [%b Kernighan1999 Budgen2020 %],
 the author's personal experience,
