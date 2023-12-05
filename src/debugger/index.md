@@ -45,7 +45,8 @@ the "print register" instruction calls `self.write`:
 [% inc file="vm_base.py" keep="prr" %]
 
 For now,
-`write` just prints things to whatever output stream the VM was given:
+`write` just prints things to whatever output stream
+the virtual machine (VM) was given:
 
 <div class="pagebreak"></div>
 
@@ -70,7 +71,7 @@ so we derive a new class from our refactored VM:
 [% inc file="vm_step.py" keep="derive" %]
 
 (Again,
-if we were writing this code under normal circumstances
+if we were writing this code under normal circumstances,
 we would enhance the existing class,
 but since we want to keep several versions around for teaching,
 we derive and extend.)
@@ -79,12 +80,12 @@ we derive and extend.)
 The old `run` method kept going until the program finished.
 The new `run` method is necessarily more complicated.
 The VM is initially in the `STEPPING` state
-(because if we start it in the `RUNNING` state
+(because if we start it in the `RUNNING` state,
 we would never have an opportunity to interact with it
 to change its state).
-As long as the program isn't finished
+As long as the program isn't finished,
 we fetch, decode, and execute the next instruction as usual,
-but stop after each one if we're single-stepping:
+but we stop after each one if we're single-stepping:
 
 [% inc file="vm_step.py" keep="run" %]
 
@@ -107,7 +108,7 @@ The interaction method needs to handle several cases:
     in which case the method breaks out of the loop
     without changing the VM's state.
     `run` will then see that the VM is still in single-stepping mode
-    and execute a single instruction.
+    and will execute a single instruction.
 
 The method that disassembles an instruction to show us what we're about to do
 checks a [%g reverse_lookup "reverse lookup table" %]
@@ -163,13 +164,13 @@ we have to give it input when it wants some
 and capture its output for later inspection.
 We had a similar problem when testing
 the web server of [%x ftp %] and the editor of [%x undo %],
-and our solution is the similar:
+and our solution is similar:
 we will replace `input` and `print` with [%i "mock object" "mock objects" %].
 
 As shown earlier,
 our VM uses an object with a `write` method to produce output.
-We can define a class that provides this method,
-but which saves messages in a list for later inspection
+We can define a class which provides this method
+but saves messages in a list for later inspection
 instead of printing them:
 
 [% inc file="test_vm.py" keep="writer" %]
@@ -177,7 +178,7 @@ instead of printing them:
 Similarly,
 our VM gets input from a function that takes a prompt as an argument
 and returns whatever the user typed.
-We can define a class with a `__call__` method that acts like such a function,
+We can define a class with a `__call__` method which acts like such a function
 but which returns strings from a list instead of waiting for the user:
 
 [% inc file="test_vm.py" keep="reader" %]
@@ -189,8 +190,7 @@ and runs it with a mock reader and a mock writer:
 
 [% inc file="test_vm.py" keep="execute" %]
 
-We are now ready to start writing tests.
-Here's one that checks the debugger's "disassemble" command:
+We can no write tests, like this one for the "disassemble" command:
 
 [% inc file="test_vm.py" keep="disassemble" %]
 
@@ -211,8 +211,7 @@ Line by line, it:
 
 Defining two classes and a helper function to test a one-line program
 may seem like a lot of work,
-but we're not testing the one-line program or the VM:
-we're testing the debugger.
+but we're not testing the one-line program or the VM—we're testing the debugger.
 For example,
 the close below:
 
@@ -278,7 +277,7 @@ and so on.
 Once that's done,
 we modify `interact` to choose operations from a lookup table
 called `self.handlers`.
-Its keys are the commands typed by the user
+Its keys are the commands typed by the user,
 and its values are the operation methods we just created:
 {: .continue}
 
@@ -314,11 +313,12 @@ Instead,
 we want to set a [%g breakpoint "breakpoint" %]
 to tell the computer to stop at a particular location
 and drop us into the debugger.
-(We might even use
+We might even use
 a [%g conditional_breakpoint "conditional breakpoint" %]
-that would only stop if (for example)
+that would only stop if,
+for example,
 the variable `x` was zero at that point,
-but we'll leave that for the exercises.)
+but we'll leave that for the exercises.
 
 The easiest way to implement breakpoints would be
 to have the VM store their addresses in a set.
@@ -342,7 +342,7 @@ If the user later
 [%g clear_breakpoint "clears" %]
 the breakpoint,
 we copy the original instruction back into place,
-and if the VM encounters a breakpoint instruction while its running,
+and if the VM encounters a breakpoint instruction while it is running,
 it drops into interactive mode
 ([%f debugger-break %]).
 
@@ -392,43 +392,41 @@ We also update `show` to display any breakpoints that have been set:
 
 [% inc file="vm_break.py" keep="show" %]
 
-Notice how the implementation first calls the parent's `show` method
-to display everything we've been displaying so far,
-then adds a few lines to display extra information.
+The implementation first calls the parent's `show` method
+to display what we've seen so far
+before adding more information.
 Extending methods by [%i "upcall" "upcalling" %] this way
-saves us typing,
+saves typing
 and ensures that changes in the parent class
-will automatically show up in the [%i "child class" %].
+automatically show up in the [%i "child class" %].
 
 The final step is to change `run`
 so that the VM actually stops at a breakpoint:
 
 [% inc file="vm_break.py" keep="run" %]
 
-Given everything we've done so far,
-the logic is relatively straightforward.
+The logic here is relatively straightforward.
 If the instruction is a breakpoint,
-the VM fetches and decodes the original from the breakpoint lookup table.
-It then gives the user a chance to interact
+the VM uses the original instruction from the breakpoint lookup table,
+then gives the user a chance to interact
 before executing that original instruction.
-If the instruction *isn't* a breakpoint,
-on the other hand,
-the VM interacts with the user if it is in single-stepping mode,
+Otherwise,
+the VM interacts with the user if it is in single-stepping mode
 and then carries on as before.
 
 We can test our new-and-improved VM
 using the tools developed earlier in this chapter,
 but even before we do that,
-the changes to `run` tell us that we should re-think some of our design.
+the changes to `run` tell us that we should rethink some of our design.
 Using a lookup table for interactive commands
 allowed us to add commands without modifying `interact`;
 another lookup table would enable us to add new instructions
 without having to modify `run`.
 We will explore this in the exercises.
 
-<div class="pagebreak"></div>
-
 ## Summary {: #debugger-summary}
+
+[%f debugger-concept-map %] summarizes the key ideas in this chapter.
 
 [% figure
    slug="debugger-concept-map"
@@ -443,8 +441,9 @@ We will explore this in the exercises.
 ### Show Memory Range {: .exercise}
 
 Modify the debugger so that if the user provides a single address to the `"memory"` command,
-the debugger shows the value at that address,
-while if the user provides two addresses,
+the debugger shows the value at that address.
+If the user provides two addresses,
+on the other hand,
 the debugger shows all the memory between those addresses.
 
 1.  How did this change the way command lookup and execution work?
@@ -475,7 +474,8 @@ can specify that the VM should only stop at a location
 if R0 contains zero
 or if the value at a particular location in memory is greater than 3.
 (This exercise is potentially very large;
-you may restrict the kinds of conditions the user can set to make it more manageable,
+you may restrict the kinds of conditions the user can set
+to make the problem more tractable,
 or explore ways of using `eval` to support the general case.)
 
 ### Watchpoints {: .exercise}

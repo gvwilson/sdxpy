@@ -30,7 +30,7 @@ the fact that it can also be appreciated aesthetically is an intentional bonus.
 English doesn't have a word for things like this,
 but there are lots of other examples.
 Architecture and typography have deep roots,
-and starting in the early 20th Century,
+and starting in the early 20th century,
 people like [Christopher Dresser][dresser_christopher],
 [Jo Sinel][sinel_joseph],
 and [Raymond Loewy][loewy_raymond]
@@ -64,13 +64,13 @@ Can it be assembled at a reasonable cost?
 Will people understand how to use it without having to wade through a manual?
 Will it please the eye when it's sitting on the counter?
 Training in industrial design gives weight to all of these separately and together,
-and gives students the tools they need to tell the good from the bad.
+and gives students the tools they need to distinguish the good from the bad.
 
 In retrospect,
 this is what [%b Oram2007 Brown2011 Brown2012 %] were groping toward.
-If we had decided fifty years ago to call programming "industrial design for software"
+If we had decided 50 years ago to call programming "industrial design for software"
 rather than "software engineering",
-our conversations would be intellectually richer today.
+our conversations might be intellectually richer today.
 I hope this book will help us get there.
 I hope that some day we'll be able to talk to each other about the beauty of software
 because it *is* beautiful and we deserve to have ways to say that.
