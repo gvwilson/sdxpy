@@ -69,7 +69,7 @@ it produces `CONTROL_X`,
 meaning "exit the application".
 We need this to break out of the keystroke-processing loop in the application,
 and no,
-we didn't think of this up front…
+we didn't think of this up front.
 
 </div>
 
@@ -248,7 +248,7 @@ each handler method now builds an object and returns it:
 
 [% inc file="action.py" keep="actions" %]
 
-With all these changes in place
+With all these changes in place,
 our application *almost* works.
 We add an `_do_UNDO` handler that pops the most recent action from the history
 and calls its `undo` method.
@@ -277,6 +277,10 @@ and get back the screen we originally had:
 [% inc file="test_undoable.py" keep="example" %]
 
 ## Summary {: #undo-summary}
+
+[%f undo-concept-map %] summarizes the concepts introduced in this chapter.
+Real text editors (even simple ones) obviously have many more features,
+but we have now seen most of the key ideas.
 
 [% figure
    slug="undo-concept-map"
@@ -309,7 +313,7 @@ Modify the code so that pressing the Enter key inserts a new line
 or breaks the current line in two.
 What information do you have to store to make this operation undoable?
 
-### Re-doing Operations {: .exercise}
+### Redoing Operations {: .exercise}
 
 Implement a "redo" command that re-executes an operation that has been undone.
 How does redo differ from undoing an undo?
