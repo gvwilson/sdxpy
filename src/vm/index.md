@@ -7,9 +7,9 @@ abstract: >
     and an assembler for a very simple language that can be used to program it.
 syllabus:
 -   Every computer has a processor with a particular instruction set, some registers, and memory.
--   Instructions are just numbers, but may be represented as assembly code.
+-   Instructions are just numbers but may be represented as assembly code.
 -   Instructions may refer to registers, memory, both, or neither.
--   A processor usually executes instructions in order, but may jump to another location based on whether a conditional is true or false.
+-   A processor usually executes instructions in order but may jump to another location based on whether a conditional is true or false.
 depends:
 -   interp
 -   binary
@@ -17,7 +17,7 @@ depends:
 
 The interpreter in [%x interp %] relied on Python to do
 most of the actual work.
-The standard version of Python is implemented in C,
+The standard version of Python is implemented in C
 and relies on C's operators to add numbers, index arrays, and so on,
 but C is compiled to instructions for a particular processor.
 Each operation in the little language of [%x interp %]
@@ -30,7 +30,7 @@ have a look at the game [%i "Human Resource Machine" url="human_resource_machine
 
 ## Architecture {: #vm-arch}
 
-Our [%g virtual_machine "virtual machine" %]
+Our [%g virtual_machine "virtual machine" %] (VM)
 simulates a computer with three parts ([%f vm-architecture %]):
 
 1.  The [%g instruction_pointer "instruction pointer" %] (IP)
@@ -129,8 +129,6 @@ having its constructor use that method
 is a way to avoid duplicating code.
 {: .continue}
 
-<div class="pagebreak"></div>
-
 To execute the next instruction,
 the VM gets the value in memory that the instruction pointer currently refers to
 and moves the instruction pointer on by one address.
@@ -148,7 +146,7 @@ to extract the op code and operands from the instruction
    caption="Using bitwise operations to unpack instructions."
 %]
 
-We always unpack two operands regardless of whether the instructions has them or not,
+We always unpack two operands regardless of whether the instructions have them or not,
 since this is what most hardware implementations would do.
 {: .continue}
 
@@ -156,7 +154,7 @@ since this is what most hardware implementations would do.
 
 ### Processor Design
 
-Some processor do have variable-length instructions,
+Some processors do have variable-length instructions,
 but they make the hardware more complicated and therefore slower.
 To decide whether these costs are worth paying,
 engineers rely on simulation and profiling ([%x perf %]).
@@ -223,8 +221,6 @@ this program prints the numbers from 0 to 2
   </tbody>
 </table>
 
-<div class="pagebreak"></div>
-
 [% figure
    slug="vm-count-up"
    img="count_up.svg"
@@ -285,7 +281,7 @@ is the reverse of the unpacking done by the virtual machine:
 [% inc file="assembler.py" keep="combine" %]
 
 As a test,
-this program counts up to three:
+this program counts up to 3:
 
 [% inc pat="count_up.*" fill="as out" %]
 
@@ -328,9 +324,12 @@ let's fill an array with the numbers from 0 to 3:
 
 [% inc pat="fill_array.*" fill="as out"%]
 
-<div class="pagebreak"></div>
-
 ## Summary {: #vm-summary}
+
+[%f vm-concept-map %] summarizes the new ideas in this chapter.
+Real processors and the VMs for languages like Python are more complex,
+but experience shows that keeping things simple
+makes it much easier to make them fast and reliable.
 
 [% figure
    slug="vm-concept-map"
@@ -355,7 +354,7 @@ Write an assembly language program that starts with:
 -   the length of the array N in the next word
 -   N values immediately thereafter
 
-and reverses the array in place.
+and that reverses the array in place.
 {: .continue}
 
 ### Increment and Decrement {: .exercise}
@@ -365,7 +364,7 @@ and reverses the array in place.
 
 2.  Rewrite the examples to use these instructions.
     How much shorter do they make the programs?
-    How much easier to read?
+    Do they make it easier to read?
 
 ### Using Long Addresses {: .exercise}
 
