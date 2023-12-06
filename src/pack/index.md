@@ -171,7 +171,7 @@ that contains all possible combinations of items
 [% figure
    slug="pack-product"
    img="product.svg"
-   alt="Generating a cross-product"
+   alt="Generating a cross product"
    caption="Generating all possible combinations of items."
 %]
 
@@ -237,7 +237,7 @@ so the combination is appended to the accumulator.
 [% figure
    slug="pack-recursive"
    img="recursive.svg"
-   alt="Generating a cross-product recursively"
+   alt="Generating a cross product recursively"
    caption="Generating all possible combinations of items recursively."
 %]
 

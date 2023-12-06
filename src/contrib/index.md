@@ -37,7 +37,7 @@ This project uses [Martha's Rules][marthas_rules] for consensus decision making:
 1.  Before each meeting, anyone who wishes may sponsor a proposal by filing an
     issue in the GitHub repository tagged "comm-proposal".  People must file proposals
     at least 24 hours before a meeting in order for them to be considered at that
-    meeting, and must include:
+    meeting, and they must include:
     -   a one-line summary (the subject line of the issue)
     -   the full text of the proposal
     -   any required background information
@@ -68,7 +68,7 @@ This project uses [Martha's Rules][marthas_rules] for consensus decision making:
     After 10 minutes or when no one has anything further to add (whichever comes
     first), the facilitator calls for a yes-or-no vote on the question: "Should
     we implement this decision over the stated objections?"  If a majority votes
-    "yes" the proposal is implemented.  Otherwise, the proposal is returned to
+    "yes", the proposal is implemented.  Otherwise, the proposal is returned to
     the sponsor for further work.
 
 ## FAQ {: #contrib-faq}
