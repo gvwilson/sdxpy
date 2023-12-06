@@ -12,7 +12,7 @@ but would break that [%g attention_budget "attention budget" %].
 
 Since functions are objects,
 they can have attributes.
-The function `dir` (short for "directory") returns a list of those attributes' names:
+The function `dir` (short for "directory") returns a list of their names:
 
 [% inc pat="func_dir.*" fill="py out" %]
 
@@ -87,8 +87,8 @@ simply by writing `do_comment` function:
 [% inc file="stmt.py" keep="comment" %]
 
 An `if` statement is a bit more complex.
-If its first argument is true it evaluates and returns its second argument
-(the "if" branch).
+If its first argument is true,
+it evaluates and returns its second argument (the "if" branch).
 Otherwise,
 it evaluates and returns its second argument (the "else" branch):
 
@@ -104,7 +104,7 @@ most languages do this so that we can safely write things like:
 
 [% inc file="lazy.py" %]
 
-If the language always evaluated both branches
+If the language always evaluated both branches,
 then the code shown above would fail whenever `x` was zero,
 even though it's supposed to handle that case.
 In this case it might seem obvious what the language should do,
@@ -170,7 +170,8 @@ finds our injected method,
 and calls it.
 {: .continue}
 
-With a bit more work we could have our injected method save and then call
+With a bit more work,
+we could have our injected method save and then call
 whatever `visit_Name` method was there when it was added to the class,
 but we would quickly run into a problem.
 As we've seen in earlier examples,
@@ -244,8 +245,6 @@ we push its name on the stack,
 record its parents,
 and create an empty set to hold its methods:
 
-<div class="pagebreak"></div>
-
 [% inc file="inheritance.py" keep="classdef" %]
 
 When we encounter a function definition,
@@ -262,14 +261,15 @@ we add its name to our records:
 
 [% inc file="inheritance.py" keep="methoddef" %]
 
-Once we're done searching the AST we print out a table
+Once we're done searching the AST,
+we print out a table
 of the classes and methods we've seen ([%t linter-inheritance %]).
 We could make this display easier to read—for example,
 we could sort the classes from parent to child
-and display methods in the order in which they were first defined—but
+and display methods in the order they were first defined—but
 none of that requires us to inspect the AST.
 
-<div class="table" id="linter-inheritance" caption="Inheritance and methods." markdown="1">
+<div class="table here" id="linter-inheritance" caption="Inheritance and methods." markdown="1">
 | | `GrandChild` | `LeftChild` | `Parent` | `RightChild` |
 | --- | --- | --- | --- | --- |
 | `blue` | X | X |   | X
@@ -350,13 +350,12 @@ Our options are:
     that knows how to save and load objects of the class we're interested in.
     This approach is also commonly used in strictly-typed languages
     as a way of adding persistence after the fact
-    without disrupting the class hierarchy;
-    we'll explore it in the exercises.
+    without disrupting the class hierarchy.
 
 To implement option #2,
 we specify that if a class has a method called `to_dict`,
-we'll call that to get its contents as a dictionary
-and then persist the dictionary.
+we will call that to get the object's contents as a dictionary
+and then persist that dictionary.
 Before doing that,
 though,
 we will save a line indicating that
@@ -369,8 +368,7 @@ Loading user-defined classes requires more work
 because we have to map class names back to actual classes.
 (We could also use [%i "introspection" %]
 to find *all* the classes in the program
-and build a lookup table of the ones with the right method;
-we'll explore that in the exercises.)
+and build a lookup table of the ones with the right method.)
 We start by modifying the loader's constructor
 to take zero or more extension classes as arguments
 and then build a name-to-class lookup table from them:
@@ -433,54 +431,6 @@ which doesn't exist,
 so everything goes as it should.
 
 </div>
-
-## Big and Little Endian {: #bonus-endian}
-
-<div class="center" markdown="1">
-
-*This material extends [%x binary %].*
-
-</div>
-
-Suppose we want to store a 32-bit integer in memory.
-As [%f bonus-big-little %] shows,
-we can order its four bytes in two different ways.
-[%g little_endian "Little-endian" %] order
-stores the least significant bits of integer at the first (lowest) address in memory,
-while [%g big_endian "big-endian" %] order stores the most significant bits first.
-
-[% figure
-   slug="bonus-big-little"
-   img="big_little_endian.svg"
-   alt="Endian order"
-   caption="Big-endian and little-endian byte order."
-   cls="here"
-%]
-
-Modern Intel processors use little-endian order,
-but as [this article][big_little_endian] explains,
-some other processors (and most network protocols) use big-endian order.
-There are pros and cons to both, which we won't go into here.
-What you *do* need to know is that if you move data from one architecture to another,
-it's your responsibility to flip the bytes around,
-because the machine doesn't know what the bytes mean.
-This is such a pain that the [`struct`][py_struct] module and other libraries like it 
-will do things for you if you ask it to.
-If you're using `struct`,
-the first character of a format string optionally indicates the byte order
-([%t bonus-endian-formats %]).
-
-<div class="table here" id="bonus-endian-formats" caption="`struct` package endian indicators." markdown="1">
-| Character | Byte order | Size     | Alignment     |
-| --------- | ---------- | -------- | ------------- |
-| `@`       | native     | native   | native        |
-| `=`       | native     | standard | none          |
-| `<`       | little     | endian   | standard none |
-| `>`       | big        | endian   | standard none |
-| `!`       | network    | standard | none          |
-</div>
-
-<div class="pagebreak"></div>
 
 ## Floating Point Numbers {: #bonus-float}
 
@@ -587,6 +537,52 @@ which (as its name suggests) uses numerators and denominators
 to avoid some precision issues.
 [This post][textualize_fraction] describes one clever use of the module.
 
+## Big and Little Endian {: #bonus-endian}
+
+<div class="center" markdown="1">
+
+*This material extends [%x binary %].*
+
+</div>
+
+Suppose we want to store a 32-bit integer in memory.
+As [%f bonus-big-little %] shows,
+we can order its four bytes in two different ways.
+[%g little_endian "Little-endian" %] order
+stores the least significant bits of integer at the first (lowest) address in memory,
+while [%g big_endian "big-endian" %] order stores the most significant bits first.
+
+[% figure
+   slug="bonus-big-little"
+   img="big_little_endian.svg"
+   alt="Endian order"
+   caption="Big-endian and little-endian byte order."
+   cls="here"
+%]
+
+Modern Intel processors use little-endian order,
+but as [this article][big_little_endian] explains,
+some other processors (and most network protocols) use big-endian order.
+There are pros and cons to both, which we won't go into here.
+What you *do* need to know is that if you move data from one architecture to another,
+it's your responsibility to flip the bytes around,
+because the machine doesn't know what the bytes mean.
+This is such a pain that the [`struct`][py_struct] module and other libraries like it 
+will do things for you if you ask it to.
+If you're using `struct`,
+the first character of a format string optionally indicates the byte order
+([%t bonus-endian-formats %]).
+
+<div class="table here" id="bonus-endian-formats" caption="`struct` package endian indicators." markdown="1">
+| Character | Byte order | Size     | Alignment     |
+| --------- | ---------- | -------- | ------------- |
+| `@`       | native     | native   | native        |
+| `=`       | native     | standard | none          |
+| `<`       | little     | endian   | standard none |
+| `>`       | big        | endian   | standard none |
+| `!`       | network    | standard | none          |
+</div>
+
 ## Generating Test Cases {: #bonus-theorem}
 
 <div class="center" markdown="1">
@@ -597,7 +593,7 @@ to avoid some precision issues.
 
 Theorem provers like Z3 and [PicoSAT][picosat]
 are far more powerful than most programmers realize.
-Borrowing an example from [Andreas Zeller's][zeller_andreas],
+Borrowing an example from [Andreas Zeller][zeller_andreas],
 we can use theorem provers to generate test cases.
 Suppose we have a function that classifies triangles as equilateral,
 scalene,
