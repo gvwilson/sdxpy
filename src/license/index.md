@@ -6,7 +6,7 @@ while the software is made available under the Hippocratic License.
 
 *This is a human-readable summary of (and not a substitute for) the license.
 For the full legal text of this license, please see
-<https://creativecommons.org/licenses/by-nc/4.0/legalcode>.*
+<a class="no-footnote" href="https://creativecommons.org/licenses/by-nc/4.0/legalcode">https://creativecommons.org/licenses/by-nc/4.0/legalcode</a>.*
 
 All of this site is made available under the terms of the Creative Commons
 Attribution - NonCommercial 4.0 license. You are free to:
