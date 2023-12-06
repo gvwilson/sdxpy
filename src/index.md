@@ -30,6 +30,8 @@ Help of all kinds is welcome—we are very grateful for the following:
 
 Please see [%x contrib %] for more details.
 
+## Contents
+
 **[Chapter 1: Introduction](@root/intro/).**
 The best way to learn design is to study examples, and the best programs to use as examples are the ones programmers use every day. These lessons therefore build small versions of tools that programmers use every day to show how experienced software designers think. Along the way, they introduce some fundamental ideas in computer science that many self-taught programmers haven't encountered. The lessons assume readers can write small programs and want to write larger ones, or are looking for material to use in software design classes that they teach.
 
@@ -110,3 +112,13 @@ Debuggers are as much a part of good programmers' working lives as version contr
 
 **[Chapter 27: Conclusion](@root/finale/).**
 We have long accepted that software can and should be critiqued by asking if it does what it's supposed to do and if it's pleasurable to use. What is often missing is the question of whether its design facilitated its manufacture and maintenance. We hope that this book has helped you move one step closer to being able to ask and answer that question about the things you build.
+
+## Dedication
+
+<div class="center" markdown="1">
+  *This one's for Mike and Jon: I'm glad you always found time to chat.*
+</div>
+
+## About the Author
+
+[% credits %]
