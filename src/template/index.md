@@ -8,7 +8,7 @@ abstract: >
 syllabus:
 -   Static site generators create HTML pages from templates, directives, and data.
 -   A static site generator has the same core features as a programming language.
--   Special-purpose mini-languages quickly become as complex as mainstream languages.
+-   Special-purpose mini-languages quickly become as complex as other languages.
 -   Static methods are a convenient way to group functions together.
 depends:
 -   interp
