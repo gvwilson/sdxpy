@@ -150,7 +150,7 @@ before they're committed to a particular implementation
 and (b) if people write tests first,
 they'll actually write tests.
 However,
-research shows that writing tests doesn't actually make a difference [%b Fucci2016 %];
+research shows that the order in which the tests are written doesn't actually make a difference [%b Fucci2016 %];
 what actually matters is alternating short bursts of testing and coding.
 
 </div>
