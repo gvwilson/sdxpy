@@ -9,9 +9,9 @@ abstract: >
 syllabus:
 -   A hash function creates a fixed-size value from an arbitrary sequence of bytes.
 -   Use big-oh notation to estimate the running time of algorithms.
--   The output of a hash function is deterministic but not predictable.
+-   The output of a cryptographic hash function is deterministic but not predictable.
 -   A good hash function's output is evenly distributed.
--   A cryptographic hash function generates a unique identifier for a file's contents.
+-   A sufficiently long cryptographic hash can be used as a identifier for a file's contents.
 depends:
 ---
 
