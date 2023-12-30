@@ -8,7 +8,7 @@ from build_better import BuildBetter
 class BuildTime(BuildBetter):
     def _check_keys(self, name, details):
         super()._check_keys(name, details)
-        self._require("time" in details, f"No time for {name}")
+        self._must("time" in details, f"No time for {name}")
 
     def _refresh(self, config, node, actions):
         assert node in config, f"Unknown node {node}"
