@@ -190,7 +190,7 @@ and runs it with a mock reader and a mock writer:
 
 [% inc file="test_vm.py" keep="execute" %]
 
-We can no write tests, like this one for the "disassemble" command:
+We can now write tests, like this one for the "disassemble" command:
 
 [% inc file="test_vm.py" keep="disassemble" %]
 
