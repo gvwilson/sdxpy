@@ -164,7 +164,7 @@ then the bits `1111` represent the value \\( -1 \\);
 if we shift right we get `0111` which is \\( 7 \\).
 Similarly,
 if we shift `0111` to the left we get `1110` (assuming we fill in the bottom with 0),
-which is \\( -2 \\).
+which is \\( -6 \\).
 
 Different languages deal with this problem in different ways.
 Python always fills with zeroes,
