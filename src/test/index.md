@@ -239,13 +239,6 @@ for name in globals():
 Why are the two different?
 {: .continue}
 
-### Why a Copy? {: .exercise}
-
-Why does the function `globals` return a copy of the dictionary
-containing the program's global variables?
-Why doesn't it return the dictionary itself so that programs can modify it?
-Why use a function at all instead of simply using a variable called `__globals__`?
-
 ### Individual Results {: .exercise}
 
 1.  Modify the test framework so that it reports which tests passed, failed, or had errors
