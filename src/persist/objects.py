@@ -26,7 +26,7 @@ class SaveObjects:
 
     def save_str(self, thing):
         lines = thing.split("\n")
-        self._write("str", len(lines))
+        self._write("str:", len(lines))
         for line in lines:
             print(line, file=self.writer)
     # [/save_examples]
