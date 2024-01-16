@@ -75,7 +75,7 @@ For convenience,
 let's also define a function that replaces some function we've already defined
 with an instance of our `Fake` class:
 
-[% inc file="mock_object.py" keep="fixit" %]
+[% inc file="mock_object.py" keep="fakeit" %]
 
 To show how this works,
 we define a function that adds two numbers
@@ -85,7 +85,7 @@ and write a test for it:
 
 <div class="pagebreak"></div>
 
-We then use `fixit` to replace the real `adder` function
+We then use `fakeit` to replace the real `adder` function
 with a mock object that always returns 99
 ([%f protocols-timeline %]):
 

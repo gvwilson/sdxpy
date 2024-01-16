@@ -14,13 +14,13 @@ class Fake:
         return self.value
 # [/fake]
 
-# [fixit]
-def fixit(name, func=None, value=None):
+# [fakeit]
+def fakeit(name, func=None, value=None):
     assert name in globals()
     fake = Fake(func, value)
     globals()[name] = fake
     return fake
-# [/fixit]
+# [/fakeit]
 
 # [test_real]
 def adder(a, b):
@@ -32,13 +32,13 @@ def test_with_real_function():
 
 # [test_fixed]
 def test_with_fixed_return_value():
-    fixit("adder", value=99)
+    fakeit("adder", value=99)
     assert adder(2, 3) == 99
 # [/test_fixed]
 
 # [test_record]
 def test_fake_records_calls():
-    fake = fixit("adder", value=99)
+    fake = fakeit("adder", value=99)
     assert adder(2, 3) == 99
     assert adder(3, 4) == 99
     assert adder.calls == [[(2, 3), {}], [(3, 4), {}]]
@@ -46,7 +46,7 @@ def test_fake_records_calls():
 
 # [test_calc]
 def test_fake_calculates_result():
-    fixit("adder", func=lambda left, right: 10 * left + right)
+    fakeit("adder", func=lambda left, right: 10 * left + right)
     assert adder(2, 3) == 23
 # [/test_calc]
 
