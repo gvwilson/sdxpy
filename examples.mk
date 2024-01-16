@@ -4,7 +4,7 @@ MCCOLE:=$(realpath $(dir $(abspath $(lastword $(MAKEFILE_LIST))))/lib/mccole)
 
 # How to reformat output.
 COLUMNS:=68
-REFORMAT:=python ${MCCOLE}/bin/reformat.py --home /sd4ds --columns ${COLUMNS}
+REFORMAT:=python ${MCCOLE}/bin/reformat.py --home /sdx --columns ${COLUMNS}
 
 # The including file must define a variable TARGETS with the names of everything
 # to be created.
