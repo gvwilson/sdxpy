@@ -8,7 +8,7 @@ abstract: >
     and in doing so,
     introduces some useful ideas about recursion and multiple inheritance.
 syllabus:
--   A layout engine determines where to place page elements based on size and organization.
+-   A layout engine places page elements based on their size and organization.
 -   Page elements are organized as a tree of basic blocks, rows, and columns.
 -   The layout engine calculates the position of each block based on its size and the position of its parent.
 -   Drawing blocks on top of each other is an easy way to render them.

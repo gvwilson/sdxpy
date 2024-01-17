@@ -31,16 +31,17 @@ def _cleanup(collected):
 
 # ----------------------------------------------------------------------
 
-MAJOR = """<li>
-<a href="@root/{slug}" markdown="1">{title}</a>
+MAJOR = """<p class="continue">
+<a href="@root/{slug}" markdown="1" class="syllabus-backref">{title}</a>
 <span class="notex">(<a href="@root/{slug}/slides/">slides</a>)</span>
+</p>
 """
 
 @shortcodes.register("syllabus")
 def syllabus(pargs, kwargs, node):
     """Display syllabus."""
     syllabi = util.get_config("syllabus")
-    result = ["<ul>"]
+    result = []
     for slug, title, syllabus in syllabi:
         result.append(MAJOR.format(slug=slug, title=title))
         if syllabus:
@@ -48,7 +49,5 @@ def syllabus(pargs, kwargs, node):
             for item in syllabus:
                 result.append(f'<li markdown="1">{item}</li>')
             result.append("</ul>")
-        result.append("</li>")
-    result.append("</ul>")
     result = "\n".join(result)
     return result

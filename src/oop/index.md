@@ -11,7 +11,7 @@ syllabus:
 -   Objects that respect the same contract are polymorphic, i.e.,
     they can be used interchangeably even if they do different specific things.
 -   Objects and classes can be thought of as dictionaries with stereotyped behavior.
--   Most programming languages allow functions and methods to take a variable number of arguments.
+-   Most languages allow functions and methods to take a variable number of arguments.
 -   Inheritance can be implemented in several ways
     that differ in the order in which objects and classes are searched for methods.
 depends:

@@ -60,6 +60,7 @@ class LoadAlias(LoadObjects):
 
     def load(self):
         line = self.reader.readline()[:-1]
+        print(f"- load with line {repr(line)} and seen {self.seen}")
         assert line, "Nothing to read"
         fields = line.split(":", maxsplit=2)
         assert len(fields) == 3, f"Badly-formed line {line}"
@@ -74,16 +75,20 @@ class LoadAlias(LoadObjects):
         return getattr(self, method)(ident, value)
 
     def load_bool(self, ident, value):
-        return super()._bool(value)
+        self.seen[ident] = super().load_bool(value)
+        return self.seen[ident]
 
     def load_float(self, ident, value):
-        return super()._float(value)
+        self.seen[ident] = super().load_float(value)
+        return self.seen[ident]
 
     def load_int(self, ident, value):
-        return super()._int(value)
+        self.seen[ident] = super().load_int(value)
+        return self.seen[ident]
 
     def load_str(self, ident, value):
-        return super()._str(value)
+        self.seen[ident] = super().load_str(value)
+        return self.seen[ident]
 
     # [load_list]
     def load_list(self, ident, length):

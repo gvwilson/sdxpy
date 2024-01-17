@@ -8,7 +8,7 @@ abstract: >
 syllabus:
 -   Version control tools use hashing to uniquely identify each saved file.
 -   Each snapshot of a set of files is recorded in a manifest.
--   Using a mock filesystem to test version control is safer and faster than using the real thing.
+-   Using a mock filesystem for testing is safer and faster than using the real thing.
 -   Operations involving multiple files may suffer from race conditions.
 -   Use a base class to specify what a component must be able to do
     and derive child classes to implement those operations.

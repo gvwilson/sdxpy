@@ -10,7 +10,8 @@ syllabus:
 -   The Domain Name System (DNS) translates human-readable names into IP addresses.
 -   Programs send and receive messages through numbered sockets.
 -   The program that receives a message is responsible for interpreting the bytes in the message.
--   To test a program that uses the network, replace the network with a mock object.
+-   To test programs that rely on the network,
+    replace the network with a mock object that simulates message transmission and receipt.
 depends:
 -   archive
 ---

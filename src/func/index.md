@@ -17,8 +17,8 @@ syllabus:
 -   Programming languages can also use lazy evaluation,
     in which expressions are passed to functions for just-in-time evaluation.
 -   Every call to a function creates a new stack frame on the call stack.
--   When a function needs to look up variables,
-    it looks in its own stack frame and the global frame.
+-   When a function looks up variables
+    it checks its own stack frame and the global frame.
 -   A closure stores the variables referenced in a particular scope.
 depends:
 -   interp

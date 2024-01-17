@@ -546,3 +546,13 @@ Summarize the changes in each.
    caption="Class definitions and inheritance in lesson."
    cls="here"
 %]
+
+### Sizing
+
+The `Window` classes defined in this chapter
+accept user input to determine the size of the drawable area,
+using `curses.LINES` and `curses.COLS` by default.
+If a user provides sizes which are larger than the available area
+and tries to draw into that area,
+`curses` raises an error.
+Modify the code so that it doesn't.

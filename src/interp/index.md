@@ -10,7 +10,7 @@ syllabus:
 -   Basic arithmetic operations are just functions that have special notation.
 -   Programs can be represented as trees, which can be stored as nested lists.
 -   Interpreters recursively dispatch operations
-    to functions that implement the low-level details.
+    to functions that implement low-level steps.
 -   Programs store variables in stacked dictionaries called environments.
 -   One way to evaluate a program's design is to ask how extensible it is.
 depends:

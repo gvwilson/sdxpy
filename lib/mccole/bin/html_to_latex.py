@@ -155,6 +155,12 @@ def handle(node, state, accum, doEscape):
     elif node_match(node, "a", "link-ref"):
         children(node, state, accum, doEscape)
 
+    # <a class="syllabus-backref"> => just show the content
+    elif node_match(node, "a", "syllabus-backref"):
+        accum.append(r"\textbf{")
+        children(node, state, accum, doEscape)
+        accum.append(r"}")
+
     # <a class="tbl-ref"> => table cross-reference
     elif node_match(node, "a", "tbl-ref"):
         key = href_key(node)

@@ -15,39 +15,39 @@ class SaveAlias(SaveObjects):
 
         self.seen.add(id(thing))
         typename = type(thing).__name__
-        method = f"_{typename}"
+        method = f"save_{typename}"
         assert hasattr(self, method), f"Unknown object type {typename}"
         getattr(self, method)(thing)
     # [/save]
 
-    def _bool(self, thing):
+    def save_bool(self, thing):
         self._write("bool", id(thing), thing)
 
-    def _float(self, thing):
+    def save_float(self, thing):
         self._write("float", id(thing), thing)
 
-    def _int(self, thing):
+    def save_int(self, thing):
         self._write("int", id(thing), thing)
 
     # [save_list]
-    def _list(self, thing):
+    def save_list(self, thing):
         self._write("list", id(thing), len(thing))
         for item in thing:
             self.save(item)
     # [/save_list]
 
-    def _set(self, thing):
+    def save_set(self, thing):
         self._write("set", id(thing), len(thing))
         for item in thing:
             self.save(item)
 
-    def _str(self, thing):
+    def save_str(self, thing):
         lines = thing.split("\n")
         self._write("str", id(thing), len(lines))
         for line in lines:
             print(line, file=self.writer)
 
-    def _dict(self, thing):
+    def save_dict(self, thing):
         self._write("dict", id(thing), len(thing))
         for (key, value) in thing.items():
             self.save(key)
