@@ -272,7 +272,7 @@ As a last example of how protocols work,
 consider the `for` loop.
 The statement `for thing in collection`
 assigns items from `collection` to the variable `thing` one at a time.
-Python implements `for` this using a two-part [%g iterator "iterator" %] protocol,
+Python implements this using a two-part [%g iterator "iterator" %] protocol,
 which is a version of the [%g iterator_pattern "Iterator" %] [%i "design pattern" %]:
 
 1.  If an object has an `__iter__` method,

@@ -104,7 +104,7 @@ to decide how to handle the second:
 Saving a list is almost as easy:
 we save the number of items in the list,
 and then save each item
-with a [%i "recursion" "recursive" %] called to `save`.
+with a [%i "recursion" "recursive" %] call to `save`.
 For example,
 the list `[55, True, 2.71]` is saved as shown in [%f persist-lists %].
 The code to do this is:
@@ -213,7 +213,7 @@ to save a particular thing
 by constructing a name based on the thing's type,
 checking whether that method exists,
 and then calling it.
-As in previous example of dynamic dispatch,
+As in the previous example of dynamic dispatch,
 the methods that handle specific items
 must all have the same [%i "signature" %]
 so that they can be called interchangeably.

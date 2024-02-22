@@ -186,7 +186,7 @@ or a (rows, columns) pair specifying the size we want:
 
 We're going to have a lot of two-dimensional (row, column) coordinates
 in this program,
-so let's define a pair constants `ROW` and `COL`
+so let's define a pair of constants `ROW` and `COL`
 to be more readable than 0 and 1 or `R` and `C`.
 (We should really create an [%g enumeration "enumeration" %],
 but a pair of constants is good enough for now.)

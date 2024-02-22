@@ -80,7 +80,7 @@ Since constants have to fit in one byte,
 this means that the largest number we can represent directly is 256.
 [% t vm-op-codes %] uses the letters `r` and `v`
 to indicate instruction format,
-where `r` indicates a register identifier.
+where `r` indicates a register identifier
 and `v` indicates a constant value.
 
 <div class="table" id="vm-op-codes" caption="Virtual machine op codes." markdown="1">
