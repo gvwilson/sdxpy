@@ -145,7 +145,7 @@ class VirtualMachineBase:
         assert 0 <= reg < len(self.reg), f"Invalid register {reg:06x}"
 
     def assert_is_address(self, addr):
-        assert 0 <= addr < len(self.ram), f"Invalid register {addr:06x}"
+        assert 0 <= addr < len(self.ram), f"Invalid address {addr:06x}"
 
     # [write]
     def write(self, *args):
