@@ -1,7 +1,7 @@
 import curses
 import sys
 
-from util import open_log, log, make_lines, start
+from util import open_log, log, make_lines, start, ROW, COL
 
 # [window]
 class Window:
@@ -11,7 +11,8 @@ class Window:
             self._nrow = curses.LINES
             self._ncol = curses.COLS
         else:
-            self._nrow, self._ncol = size
+            self._nrow = min(size[ROW], curses.LINES)
+            self._ncol = min(size[COL], curses.COLS)
 
     def draw(self, lines):
         self._screen.erase()

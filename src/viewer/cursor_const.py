@@ -11,7 +11,7 @@ class Window:
         if size is None:
             self._size = (curses.LINES, curses.COLS)
         else:
-            self._size = size
+            self._size = [min(user_input, limit) for user_input, limit in zip(size, (curses.LINES, curses.COLS))]
 
     def size(self):
         return self._size
