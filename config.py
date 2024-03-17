@@ -19,6 +19,8 @@ plausible = True
 archive = f"{abbrev}-examples.zip"
 draft = False
 isbn = "978-1032725253"
+hardcopy = "https://www.routledge.com/Software-Design-by-Example-A-Tool-Based-Introduction-with-Python/Wilson/p/book/9781032725215"
+cover = f"{abbrev}-cover.png"
 
 # Website.
 website = f"https://{domain}/{abbrev}/"
