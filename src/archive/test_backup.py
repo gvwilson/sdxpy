@@ -15,9 +15,10 @@ def our_fs(fs):
 
 # [test]
 def test_nested_example(our_fs):
-    with patch("backup.current_time", return_value=1234):
+    timestamp = 1234
+    with patch("backup.current_time", return_value=timestamp):
         manifest = backup(".", "/backup")
+    assert Path("/backup", f"{timestamp}.csv").exists()
     for filename, hash_code in manifest:
         assert Path("/backup", f"{hash_code}.bck").exists()
-        assert Path("/backup", "1234.csv").exists()
 # [/test]
