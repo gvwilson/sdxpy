@@ -127,7 +127,7 @@ and then calls itself once for each child to collect their children:
 
 When we run our function on this page:
 
-[% inc file="page.html" %]
+[% inc file="page.html" keep="content" %]
 
 it produces this output
 (which we print in sorted order to make things easier to find):
