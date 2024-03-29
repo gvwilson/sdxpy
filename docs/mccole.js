@@ -10,11 +10,11 @@ const constructTableOfContents = () => {
     toc.appendChild(list)
     for (const heading of [...document.querySelectorAll("h2")]) {
         const item = document.createElement("li")
-        item.innerHTML = heading.innerHTML.replace(/Section.+:/g, "")
         const link = document.createElement("a")
+        link.innerHTML = heading.innerHTML.replace(/Section.+:/g, "")
         link.href = `#${heading.id}`
-        link.appendChild(item)
-        list.appendChild(link)
+        item.appendChild(link)
+        list.appendChild(item)
     }
 
     if (! document.querySelector("meta[name='has_slides']")) {
