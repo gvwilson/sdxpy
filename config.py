@@ -65,6 +65,7 @@ appendices = {
     "conduct": "Code of Conduct",
     "contrib": "Contributing",
     "glossary": "Glossary",
+    "colophon": "Colophon",
     "contents": "Index",
 }
 
