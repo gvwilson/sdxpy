@@ -21,5 +21,4 @@ def test_nested_example(our_fs):
     assert Path("/backup", f"{timestamp}.csv").exists()
     for filename, hash_code in manifest:
         assert Path("/backup", f"{hash_code}.bck").exists()
-        
 # [/test]
