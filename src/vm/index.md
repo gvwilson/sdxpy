@@ -1,4 +1,5 @@
 ---
+title: "A Virtual Machine"
 abstract: >
     The standard version of Python is implemented in C,
     but C is compiled to instructions for a particular processor.
@@ -83,27 +84,13 @@ to indicate instruction format,
 where `r` indicates a register identifier
 and `v` indicates a constant value.
 
-<div class="table" id="vm-op-codes" caption="Virtual machine op codes." markdown="1">
-| Name  | Code | Format | Action              | Example     | Equivalent           |
-| :---- | ---: | :----- | :------------------ | :---------- | :------------------- |
-| `hlt` |    1 | `--`   | Halt program        | `hlt`       | `sys.exit(0)`        |
-| `ldc` |    2 | `rv`   | Load constant       | `ldc R0 99` | `R0 = 99`            |
-| `ldr` |    3 | `rr`   | Load register       | `ldr R0 R1` | `R0 = memory[R1]`    |
-| `cpy` |    4 | `rr`   | Copy register       | `cpy R0 R1` | `R0 = R1`            |
-| `str` |    5 | `rr`   | Store register      | `str R0 R1` | `memory[R1] = R0`    |
-| `add` |    6 | `rr`   | Add                 | `add R0 R1` | `R0 = R0 + R1`       |
-| `sub` |    7 | `rr`   | Subtract            | `sub R0 R1` | `R0 = R0 - R1`       |
-| `beq` |    8 | `rv`   | Branch if equal     | `beq R0 99` | `if (R0==0) IP = 99` |
-| `bne` |    9 | `rv`   | Branch if not equal | `bne R0 99` | `if (R0!=0) IP = 99` |
-| `prr` |   10 | `r-`   | Print register      | `prr R0`    | `print(R0)`          |
-| `prm` |   11 | `r-`   | Print memory        | `prm R0`    | `print(memory[R0])`  |
-</div>
+[% table slug="vm-op-codes" tbl="op-codes.tbl" caption="Virtual machine op codes." %]
 
 To start building our virtual machine,
 we put the VM's details in a file
 that can be loaded by other modules:
 
-[% inc file="architecture.py" %]
+[%inc architecture.py %]
 
 There isn't a name for this [%i "design pattern" %],
 but putting all the constants that define a system in one file
@@ -119,7 +106,7 @@ A program is just an array of numbers representing instructions.
 To load a program into our VM,
 we copy those numbers into memory and reset the instruction pointer and registers:
 
-[% inc file="vm.py" keep="init" %]
+[%inc vm.py mark=init %]
 
 Notice that the VM's constructor calls `initialize` with an empty array
 (i.e., a program with no instructions)
@@ -137,7 +124,7 @@ It then uses [%i "bitwise operation" "bitwise operations" %]
 to extract the op code and operands from the instruction
 ([%f vm-unpacking %]).
 
-[% inc file="vm.py" keep="fetch" %]
+[%inc vm.py mark=fetch %]
 
 [% figure
    slug="vm-unpacking"
@@ -167,22 +154,22 @@ later ones must somehow do so as well in order to run old programs.
 The next step is to add a `run` method to our VM
 that fetches instructions and executes them until told to stop:
 
-[% inc file="vm.py" keep="run" omit="skip" %]
+[%inc vm.py mark=run omit=skip %]
 
 Let's look more closely at three of these instructions.
 The first, `str`, stores the value of one register in the address held by another register:
 
-[% inc file="vm.py" keep="store" %]
+[%inc vm.py mark=store %]
 
 Adding the value in one register to the value in another register is simpler:
 
-[% inc file="vm.py" keep="add" %]
+[%inc vm.py mark=add %]
 
 as is jumping to a fixed address if the value in a register is zero.
 This [%g conditional_jump "conditional jump" %] instruction is how we implement `if`:
 {: .continue}
 
-[% inc file="vm.py" keep="beq" %]
+[%inc vm.py mark=beq %]
 
 ## Assembly Code {: #vm-assembly}
 
@@ -195,12 +182,12 @@ that very closely represents actual machine instructions.
 Each command in our assembly languages matches an instruction in the VM.
 Here's an assembly language program to print the value stored in R1 and then halt:
 
-[% inc file="print_r1.as" %]
+[%inc print_r1.as %]
 
 Its numeric representation (in [%i "hexadecimal" %]) is:
 {: .continue}
 
-[% inc file="print_r1.mx" %]
+[%inc print_r1.mx %]
 
 One thing the assembly language has that the instruction set doesn't
 is [%g label_address "labels" %] on addresses in memory.
@@ -215,8 +202,8 @@ this program prints the numbers from 0 to 2
 <table class="twocol">
   <tbody>
     <tr>
-      <td markdown="1">[% inc file="count_up.as" %]</td>
-      <td markdown="1">[% inc file="count_up.mx" %]</td>
+      <td markdown="1">[%inc count_up.as %]</td>
+      <td markdown="1">[%inc count_up.mx %]</td>
     </tr>
   </tbody>
 </table>
@@ -253,37 +240,38 @@ The main method gets interesting lines,
 finds the addresses of labels,
 and turns each remaining line into an instruction:
 
-[% inc file="assembler.py" keep="class" %]
+[%inc assembler.py mark=class %]
 
 To find labels,
 we go through the lines one by one
 and either save the label *or* increment the current address
 (because labels don't take up space):
 
-[% inc file="assembler.py" keep="labels" %]
+[%inc assembler.py mark=labels %]
 
 To compile a single instruction we break the line into pieces,
 look up the format for the operands,
 and pack the values:
 
-[% inc file="assembler.py" keep="compile" %]
+[%inc assembler.py mark=compile %]
 
 To convert a value,
 we either look up the label's address (if the value starts with `@`)
 or convert the value to a number:
 
-[% inc file="assembler.py" keep="value" %]
+[%inc assembler.py mark=value %]
 
 Combining op codes and operands into a single value
 is the reverse of the unpacking done by the virtual machine:
 {: .continue}
 
-[% inc file="assembler.py" keep="combine" %]
+[%inc assembler.py mark=combine %]
 
 As a test,
 this program counts up to 3:
 
-[% inc pat="count_up.*" fill="as out" %]
+[%inc count_up.as %]
+[%inc count_up.out %]
 
 ## Arrays {: #vm-arrays}
 
@@ -310,19 +298,20 @@ This enhancement only requires a few changes to the assembler.
 First,
 we need to split the lines into instructions and data allocations:
 
-[% inc file="arrays.py" keep="assemble" %]
+[%inc arrays.py mark=assemble %]
 
 Second,
 we need to figure out where each allocation lies and create a label accordingly:
 
-[% inc file="arrays.py" keep="allocate" %]
+[%inc arrays.py mark=allocate %]
 
 And that's it:
 no other changes are needed to either compilation or execution.
 To test it,
 let's fill an array with the numbers from 0 to 3:
 
-[% inc pat="fill_array.*" fill="as out"%]
+[%inc fill_array.as %]
+[%inc fill_array.out %]
 
 ## Summary {: #vm-summary}
 

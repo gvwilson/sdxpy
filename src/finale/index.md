@@ -1,4 +1,5 @@
 ---
+title: "Conclusion"
 abstract: >
     We have long accepted that software can and should be critiqued by asking
     if it does what it's supposed to do and if it's pleasurable to use.

@@ -1,4 +1,5 @@
 ---
+title: "Undo and Redo"
 abstract: >
     Viewing text files is useful,
     but we'd like to be able to edit them as well.
@@ -50,7 +51,7 @@ so that our tests can check it easily.
 It also takes a list of keystrokes as input
 to simulate interaction with the user:
 
-[% inc file="headless.py" keep="screen" %]
+[%inc headless.py mark=screen %]
 
 GUI applications that don't display anything
 are often called [%g headless "headless" %] applications.
@@ -77,18 +78,18 @@ To finish this change,
 we also need to define a `HeadlessWindow`
 that takes a desired screen size and passes it to the screen:
 
-[% inc file="headless.py" keep="window" %]
+[%inc headless.py mark=window %]
 
 Finally,
 our new application class records keystrokes,
 the cursor position,
 and the screen contents for testing:
 
-[% inc file="headless.py" keep="app" %]
+[%inc headless.py mark=app %]
 
 We can now write tests like this:
 
-[% inc file="test_headless.py" keep="example" %]
+[%inc test_headless.py mark=example %]
 
 ## Insertion and Deletion {: #undo-indel}
 
@@ -96,7 +97,7 @@ We are now ready to implement insertion and deletion.
 The first step is to add methods to the buffer class
 that update a line of text:
 
-[% inc file="insert_delete.py" keep="buffer" %]
+[%inc insert_delete.py mark=buffer %]
 
 Notice that we delete the character *under* the cursor,
 not the one to the left of the cursor:
@@ -112,11 +113,11 @@ The first is to define the set of characters that can be inserted,
 which for our example will be letters and digits,
 and to create a buffer of the appropriate kind:
 
-[% inc file="insert_delete.py" keep="app" %]
+[%inc insert_delete.py mark=app %]
 
 We also need to create handlers for insertion and deletion:
 
-[% inc file="insert_delete.py" keep="action" %]
+[%inc insert_delete.py mark=action %]
 
 Finally,
 since we don't want to have to add one handler
@@ -129,7 +130,7 @@ the key is a special key with its own handler;
 otherwise,
 we look up the handler for the key's family:
 
-[% inc file="insert_delete.py" keep="dispatch" %]
+[%inc insert_delete.py mark=dispatch %]
 
 We're going to write a lot of tests for this application,
 so let's write a [%i "helper function" %]
@@ -137,11 +138,11 @@ to create a [%i "fixture" %],
 run the application,
 and return it:
 
-[% inc file="test_insert_delete.py" keep="fixture" %]
+[%inc test_insert_delete.py mark=fixture %]
 
 Our tests are now straightforward to set up and check:
 
-[% inc file="test_insert_delete.py" keep="example" %]
+[%inc test_insert_delete.py mark=example %]
 
 <div class="callout" markdown="1">
 
@@ -151,7 +152,7 @@ One of our tests uncovers the fact that
 our application crashes if we try to delete a character
 when the buffer is empty:
 
-[% inc file="test_insert_delete.py" keep="empty" %]
+[%inc test_insert_delete.py mark=empty %]
 
 Our focus is implementing undo,
 so we will leave fixing this for an exercise.
@@ -173,7 +174,7 @@ after each change,
 so that's what most systems do.
 The starting point is to append a record of every action to a log:
 
-[% inc file="history.py" keep="app" %]
+[%inc history.py mark=app %]
 
 But what about undoing cursor movement?
 If we add a character,
@@ -193,20 +194,20 @@ Our actions all derive from an [%g abstract_base_class "abstract base class" %]
 so that they can be used interchangeably.
 That base class is:
 
-[% inc file="action.py" keep="Action" %]
+[%inc action.py mark=Action %]
 
 The [%i "child class" "child classes" %] for insertion and deletion are:
 
-[% inc file="action.py" keep="Insert" %]
+[%inc action.py mark=Insert %]
 
-[% inc file="action.py" keep="Delete" %]
+[%inc action.py mark=Delete %]
 
 We could implement one class for each direction of cursor movement,
 but instead choose to create a single class:
 
 <div class="pagebreak"></div>
 
-[% inc file="action.py" keep="Move" %]
+[%inc action.py mark=Move %]
 
 This class records the new cursor position as well as the old one
 to make debugging easier.
@@ -215,7 +216,7 @@ to move in a particular direction by name
 (e.g., "right" or "left")
 and to move to a particular location:
 
-[% inc file="cursor.py" keep="extra" %]
+[%inc cursor.py mark=extra %]
 
 Our application's `_interact` method changes too.
 Instead of relying on keystroke handler methods to do things,
@@ -224,7 +225,7 @@ it expects them to create action objects
 These objects are appended to the application's history,
 and then asked to do whatever they do:
 
-[% inc file="action.py" keep="interact" %]
+[%inc action.py mark=interact %]
 
 [% figure
    slug="undo-verbs"
@@ -246,7 +247,7 @@ the handlers for special keys like cursor movement.
 Finally,
 each handler method now builds an object and returns it:
 
-[% inc file="action.py" keep="actions" %]
+[%inc action.py mark=actions %]
 
 With all these changes in place,
 our application *almost* works.
@@ -262,19 +263,19 @@ that tells the application whether or not to save this action.
 The default implementation returns `True`,
 but we override it in `Undo` to return `False`:
 
-[% inc file="undoable.py" keep="Undo" %]
+[%inc undoable.py mark=Undo %]
 
 Note that popping the most recent action off the history stack
 only works once we modify the application's `_interact` method
 so that it only saves actions that ought to be saved:
 
-[% inc file="undoable.py" keep="app" omit="skip" %]
+[%inc undoable.py mark=app omit=skip %]
 
 We can now write tests like this to check that we can insert a character,
 undo the action,
 and get back the screen we originally had:
 
-[% inc file="test_undoable.py" keep="example" %]
+[%inc test_undoable.py mark=example %]
 
 ## Summary {: #undo-summary}
 

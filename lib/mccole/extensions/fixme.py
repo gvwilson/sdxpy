@@ -1,15 +1,15 @@
-"""Handle FIXME markers."""
+"""Handle notes to self."""
 
 import shortcodes
+import util
 
 
 @shortcodes.register("fixme")
+@util.timing
 def fixme(pargs, kwargs, node):
-    """Handle [% fixme ...args... %]."""
-    pargs = " ".join(pargs)
-    if pargs:
-        pargs = f" {pargs}"
-    kwargs = " ".join(f"{k}={v}" for k, v in kwargs.items())
-    if kwargs:
-        kwargs = f" {kwargs}"
-    return f'<span class="fixme">FIXME{pargs}{kwargs}</span>'
+    """Leave a note to self."""
+    util.require(
+        (len(pargs) == 1) and (not kwargs),
+        f"Bad 'fixme' in {node.path}: '{pargs}' and '{kwargs}'",
+    )
+    return f'<p class="fixme">FIXME: {util.markdownify(pargs[0])}</p>'

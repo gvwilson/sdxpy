@@ -1,745 +1,743 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="repo" content="https://github.com/gvwilson/sdxpy">
-  <meta name="build_date" content="2024-04-28">
-  <meta name="template" content="slides">
-  <meta name="major" content="viewer">
-  
-  <link rel="icon" type="image/x-icon" href="../../favicon.ico">
-  <link rel="stylesheet" href="../../mccole.css">
-  <link rel="stylesheet" href="../../tango.css">
+    <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="../../logo.svg">
+<link rel="stylesheet" href="../../tango.css" type="text/css">
+<link rel="stylesheet" href="../../mccole.css" type="text/css">
+<title>Software Design by Example &middot; A File Viewer</title>
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [['\\(', '\\)']]
+    }
+  };
+</script>
+<script
+  type="text/javascript"
+  id="MathJax-script"
+  async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+</script>
+
   <script defer data-domain="third-bit.com" src="https://plausible.io/js/plausible.js"></script>
-  <script>
-    MathJax = {
-      tex: {
-        inlineMath: [['\\(', '\\)']]
-      }
-    };
-  </script>
-  <script
-    type="text/javascript"
-    id="MathJax-script"
-    async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
-  </script>
-  <script defer src="../../mccole.js"></script>
-  <title>Software Design by Example: A File Viewer</title>
-</head>
 
+
+    <script src="../../slides.js" defer></script>
+    <link rel="stylesheet" href="../../slides.css">
+  </head>
   <body>
-    <textarea id="source">
-
-class: slide-title
-
-<p>
-  <a href="https://third-bit.com/sdxpy/">Software Design by Example</a>
-</p>
-<h1>A File Viewer</h1>
-<div class="bottom">
-  <a href="../">chapter</a>
+<div class="row notex">
+  <div class="col-12 center">
+    <h1>A File Viewer</h1>
+    <p class="subtitle">Software Design by Example</p>
+  </div>
 </div>
+<hr>
+<h2>The Problem</h2>
+<ul>
+<li>
+<p>We have been editing a lot of files</p>
+</li>
+<li>
+<p>How can we display a text file in a window?</p>
+</li>
+<li>
+<p>How can we move around in that file?</p>
+</li>
+<li>
+<p>How we can change it will be the topic of <a href="../../undo/">Chapter&nbsp;24</a></p>
+</li>
+</ul>
+<hr />
+<h2>Curses</h2>
+<div class="language-py" title="first_curses.py">
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">curses</span>
 
----
+<span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">stdscr</span><span class="p">):</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="n">stdscr</span><span class="o">.</span><span class="n">getkey</span><span class="p">()</span>
 
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">curses</span><span class="o">.</span><span class="n">wrapper</span><span class="p">(</span><span class="n">main</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<ul>
+<li>
+<p>The <a href="https://docs.python.org/3/library/curses.html">curses</a> library handles interaction with a text terminal</p>
+</li>
+<li>
+<p><code>curses.wrapper</code> takes a function of a single argument</p>
+</li>
+<li>
+<p>Does setup, then calls that function with a standard screen</p>
+</li>
+<li>
+<p>This program just gobbles keystrokes: stop it with Ctrl-C</p>
+</li>
+</ul>
+<hr />
+<h2>Debugging</h2>
+<ul>
+<li>
+<p>Printing messages or single-stepping with a debugger is tricky</p>
+</li>
+<li>
+<p>Create a simple logging function</p>
+</li>
+</ul>
+<div class="language-py" title="util.py">
+<div class="highlight"><pre><span></span><code><span class="n">LOG</span> <span class="o">=</span> <span class="kc">None</span>
 
-## The Problem
+<span class="k">def</span> <span class="nf">open_log</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+    <span class="k">global</span> <span class="n">LOG</span>
+    <span class="n">LOG</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span>
 
--   We have been editing a lot of files
+<span class="k">def</span> <span class="nf">log</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">LOG</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Debugging</h2>
+<div class="language-py" title="logging_curses.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">stdscr</span><span class="p">):</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="n">stdscr</span><span class="o">.</span><span class="n">getkey</span><span class="p">()</span>
+        <span class="n">util</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">key</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">key</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;q&quot;</span><span class="p">:</span>
+            <span class="k">return</span>
 
--   How can we display a text file in a window?
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">util</span><span class="o">.</span><span class="n">open_log</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">curses</span><span class="o">.</span><span class="n">wrapper</span><span class="p">(</span><span class="n">main</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<ul>
+<li>
+<p>Print representation of characters to file (so that <code>\n</code> shows up)</p>
+</li>
+<li>
+<p>Exit cleanly</p>
+</li>
+</ul>
+<hr />
+<h2>Showing Lines</h2>
+<div class="language-py" title="show_lines.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">stdscr</span><span class="p">,</span> <span class="n">lines</span><span class="p">):</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="n">stdscr</span><span class="o">.</span><span class="n">erase</span><span class="p">()</span>
+        <span class="k">for</span> <span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">line</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">lines</span><span class="p">):</span>
+            <span class="n">stdscr</span><span class="o">.</span><span class="n">addstr</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">line</span><span class="p">)</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="n">stdscr</span><span class="o">.</span><span class="n">getkey</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">key</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;q&quot;</span><span class="p">:</span>
+            <span class="k">return</span>
+</code></pre></div>
+</div>
+<ul>
+<li>
+<p>Screen coordinates put (0, 0) in the upper left</p>
+</li>
+<li>
+<p>And use (y, x) rather than (x, y)</p>
+</li>
+</ul>
+<hr />
+<h2>Showing Lines</h2>
+<div class="language-py" title="show_lines.py">
+<div class="highlight"><pre><span></span><code><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">num_lines</span><span class="p">,</span> <span class="n">logfile</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+    <span class="n">lines</span> <span class="o">=</span> <span class="n">make_lines</span><span class="p">(</span><span class="n">num_lines</span><span class="p">)</span>
+    <span class="n">open_log</span><span class="p">(</span><span class="n">logfile</span><span class="p">)</span>
+    <span class="n">curses</span><span class="o">.</span><span class="n">wrapper</span><span class="p">(</span><span class="k">lambda</span> <span class="n">stdscr</span><span class="p">:</span> <span class="n">main</span><span class="p">(</span><span class="n">stdscr</span><span class="p">,</span> <span class="n">lines</span><span class="p">))</span>
+</code></pre></div>
+</div>
+<ul>
+<li>
+<p>Make lines for testing rather than showing file</p>
+</li>
+<li>
+<p>Open the log file</p>
+</li>
+<li>
+<p>Use <code>lambda</code> to make a one-parameter function for <code>curses.wrapper</code></p>
+</li>
+</ul>
+<hr />
+<h2>Making Lines</h2>
+<div class="language-py" title="util.py">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">string</span> <span class="kn">import</span> <span class="n">ascii_lowercase</span>
 
--   How can we move around in that file?
-
--   How we can change it will be the topic of <a class="x-ref" href="../../undo/">Chapter 24</a>
-
----
-
-## Curses
-
-```py
-import curses
-
-def main(stdscr):
-    while True:
-        key = stdscr.getkey()
-
-if __name__ == "__main__":
-    curses.wrapper(main)
-```
-
-
--   The [curses][py_curses] library handles interaction with a text terminal
-
--   `curses.wrapper` takes a function of a single argument
-
--   Does setup, then calls that function with a standard screen
-
--   This program just gobbles keystrokes: stop it with Ctrl-C
-
----
-
-## Debugging
-
--   Printing messages or single-stepping with a debugger is tricky
-
--   Create a simple logging function
-
-```py
-LOG = None
-
-def open_log(filename):
-    global LOG
-    LOG = open(filename, "w")
-
-def log(*args):
-    print(*args, file=LOG)
-```
-
-
----
-
-## Debugging
-
-```py
-def main(stdscr):
-    while True:
-        key = stdscr.getkey()
-        util.log(repr(key))
-        if key.lower() == "q":
-            return
-
-if __name__ == "__main__":
-    util.open_log(sys.argv[1])
-    curses.wrapper(main)
-```
-
-
--   Print representation of characters to file (so that `\n` shows up)
-
--   Exit cleanly
-
----
-
-## Showing Lines
-
-```py
-def main(stdscr, lines):
-    while True:
-        stdscr.erase()
-        for (y, line) in enumerate(lines):
-            stdscr.addstr(y, 0, line)
-        key = stdscr.getkey()
-        if key.lower() == "q":
-            return
-```
-
-
--   Screen coordinates put (0, 0) in the upper left
-
--   And use (y, x) rather than (x, y)
-
----
-
-## Showing Lines
-
-```py
-if __name__ == "__main__":
-    num_lines, logfile = int(sys.argv[1]), sys.argv[2]
-    lines = make_lines(num_lines)
-    open_log(logfile)
-    curses.wrapper(lambda stdscr: main(stdscr, lines))
-```
-
-
--   Make lines for testing rather than showing file
-
--   Open the log file
-
--   Use `lambda` to make a one-parameter function for `curses.wrapper`
-
----
-
-## Making Lines
-
-```py
-from string import ascii_lowercase
-
-def make_lines(num_lines):
-    result = []
-    for i in range(num_lines):
-        ch = ascii_lowercase[i % len(ascii_lowercase)]
-        result.append(ch + "".join(str(j % 10) for j in range(i)))
-    return result
-```
-
-```
-a
+<span class="k">def</span> <span class="nf">make_lines</span><span class="p">(</span><span class="n">num_lines</span><span class="p">):</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_lines</span><span class="p">):</span>
+        <span class="n">ch</span> <span class="o">=</span> <span class="n">ascii_lowercase</span><span class="p">[</span><span class="n">i</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">ascii_lowercase</span><span class="p">)]</span>
+        <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ch</span> <span class="o">+</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">j</span> <span class="o">%</span> <span class="mi">10</span><span class="p">)</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span><span class="p">)))</span>
+    <span class="k">return</span> <span class="n">result</span>
+</code></pre></div>
+</div>
+<div class="language-out" title="make_lines.out">
+<div class="highlight"><pre><span></span><code>a
 b0
 c01
 d012
 e0123
-```
-
-
----
-
-## Windowing
-
--   Run program with 100 lines (or anything else larger than screen)
-
--   `_curses.error: addwstr() returned ERR` because trying to draw outside screen
-
--   So create a `Window` class that knows how big the screen is
-
-```py
-class Window:
-    def __init__(self, screen):
-        self._screen = screen
-
-    def draw(self, lines):
-        self._screen.erase()
-        for (y, line) in enumerate(lines):
-            if 0 <= y < curses.LINES:
-                self._screen.addstr(y, 0, line[:curses.COLS])
-```
-
-
----
-
-## Windowing
-
-```py
-def main(stdscr, lines):
-    window = Window(stdscr)
-    window.draw(lines)
-    while True:
-        key = stdscr.getkey()
-        if key.lower() == "q":
-            return
-```
-
-
--   Can't create `Window` before calling `curses.wrapper` because it needs the screen
-
--   <a class="gl-ref" href="../../glossary/#gl:delayed_construction" title="The practice of constructing an object after something that needs it has been constructed rather than before." markdown="1">Delayed construction</a>
-
----
-
-class: aside
-
-## Optimization
-
--   `Window` re-draws everything after every keystroke
-
--   Fast enough that people (usually) won't notice
-
--   But an obvious target for optimization
-
----
-
-## Sizing the Window
-
--   Allow users to specify how big the window appears to be
-
--   Helps with testing
-
-```py
-class Window:
-    def __init__(self, screen, size):
-        self._screen = screen
-        if size is None:
-            self._nrow = curses.LINES
-            self._ncol = curses.COLS
-        else:
-            self._nrow = min(size[ROW], curses.LINES)
-            self._ncol = min(size[COL], curses.COLS)
-
-    def draw(self, lines):
-        self._screen.erase()
-        for (y, line) in enumerate(lines):
-            if 0 <= y < self._nrow:
-                self._screen.addstr(y, 0, line[:self._ncol])
-```
-
-
----
-
-## Two Dimensions
-
--   Use `ROW` and `COL` instead of 0 and 1 (or `R` and `C`)
-
--   Should really create an <a class="gl-ref" href="../../glossary/#gl:enumeration" title="A set of distinct named values defined in a program." markdown="1">enumeration</a>
-
-```py
-ROW = 0
-COL = 1
-```
-
-```py
-class Window:
-    def draw(self, lines):
-        self._screen.erase()
-        for (y, line) in enumerate(lines):
-            if 0 <= y < self._size[ROW]:
-                self._screen.addstr(y, 0, line[:self._size[COL]])
-```
-
-
----
-
-## Moving the Cursor
-
-```py
-class Cursor:
-    def __init__(self):
-        self._pos = [0, 0]
-
-    def pos(self):
-        return tuple(self._pos)
-
-    def up(self): self._pos[ROW] -= 1
-
-    def down(self): self._pos[ROW] += 1
-
-    def left(self): self._pos[COL] -= 1
-
-    def right(self): self._pos[COL] += 1
-```
-
-
--   `Cursor.pos` returns location as tuple so caller can't modify it
-
----
-
-## Moving the Cursor
-
-```py
-def main(stdscr, size, lines):
-    window = Window(stdscr, size)
-    cursor = Cursor()
-    while True:
-        window.draw(lines)
-        stdscr.move(*cursor.pos())
-        key = stdscr.getkey()
-        if key == "KEY_UP": cursor.up()
-        elif key == "KEY_DOWN": cursor.down()
-        elif key == "KEY_LEFT": cursor.left()
-        elif key == "KEY_RIGHT": cursor.right()
-        elif key.lower() == "q":
-            return
-```
-
-
--   <a class="gl-ref" href="../../glossary/#gl:spread" title="To automatically match the values from a list or dictionary supplied by the caller to the parameters of a function." markdown="1">Spread</a> position into `stdscr.move`
-
--   Screen's `getkey` method returns names of cursor keys
-
----
-
-## Boom
-
--   We can move right or below text
-
--   And blow up when moving off left of screen or off top with
-    `_curses.error: wmove() returned ERR`
-
--   Do some <a class="gl-ref" href="../../glossary/#gl:refactor" title="To rewrite existing code in order to make it simpler or more efficient without changing its functionality." markdown="1">refactoring</a> before fixing this problem
-
----
-
-## Application Class
-
--   Create an object with a `__call__` method
-
--   Fool `curses.wrapper` into thinking we have given it a function
-
-```py
-class MainApp:
-    def __init__(self, size, lines):
-        self._size = size
-        self._lines = lines
-
-    def __call__(self, screen):
-        self._setup(screen)
-        self._run()
-
-    def _setup(self, screen):
-        self._screen = screen
-        self._window = Window(self._screen, self._size)
-        self._cursor = Cursor()
-```
-
-
----
-
-## Application Class
-
-```py
-def _run(self):
-    while True:
-        self._window.draw(self._lines)
-        self._screen.move(*self._cursor.pos())
-        key = self._screen.getkey()
-        if key == "KEY_UP": self._cursor.up()
-        elif key == "KEY_DOWN": self._cursor.down()
-        elif key == "KEY_LEFT": self._cursor.left()
-        elif key == "KEY_RIGHT": self._cursor.right()
-        elif key.lower() == "q":
-            return
-```
-
-```py
-if __name__ == "__main__":
-    size, lines = start()
-    app = MainApp(size, lines)
-    curses.wrapper(app)
-```
-
-
----
-
-## Dispatching Keystrokes
-
--   Find and call key handlers via <a class="gl-ref" href="../../glossary/#gl:dynamic_dispatch" title="To find a function or a property of an object by name while a program is running. For example, instead of getting a specific property of an object using `obj.name`, a program might use `obj[someVariable]`, where `someVariable` could hold `&quot;name&quot;` or some other property name." markdown="1">dynamic dispatch</a>
-
-```py
-TRANSLATE = {
-    "\x18": "CONTROL_X"
-}
-
-def _interact(self):
-    key = self._screen.getkey()
-    key = self.TRANSLATE.get(key, key)
-    name = f"_do_{key}"
-    if hasattr(self, name):
-        getattr(self, name)()
-
-def _do_CONTROL_X(self):
-    self._running = False
-
-def _do_KEY_UP(self):
-    self._cursor.up()
-```
-
-
----
-
-## Dispatching Keystrokes
-
-```py
-class DispatchApp(MainApp):
-    def __init__(self, size, lines):
-        super().__init__(size, lines)
-        self._running = True
-
-    def _run(self):
-        while self._running:
-            self._window.draw(self._lines)
-            self._screen.move(*self._cursor.pos())
-            self._interact()
-```
-
-
--   Use a member variable `self._running` so that every other method
-    *doesn't* have to return a "keep running" flag
-
--   Add `TRANSLATE` to turn things like Ctrl-X into strings `CONTROL_X`
-
-    -   Got the value by looking in our log file
-
----
-
-class: aside
-
-## Inheritance
-
--   `DispatchApp` is a child of `MainApp` so that we can recycle initialization
-
--   `DispatchApp.__init__` <a class="gl-ref" href="../../glossary/#gl:upcall" title="The act of explicitly invoking a method of a parent class from inside a child class. A method in a child class may upcall to the corresponding method in the parent class as part of extending that method." markdown="1">upcalls</a> to `MainApp.__init__`
-
--   Probably wouldn't create multiple classes in a real program,
-    but simplifies exposition when teaching
-
--   Had to move some earlier code around when writing later classes
-    to make everything work cleanly
-
--   *This is normal*
-
----
-
-## Managing the Buffer
-
-```py
-class Buffer:
-    def __init__(self, lines):
-        self._lines = lines[:]
-
-    def lines(self):
-        return self._lines
-```
-
-
--   Doesn't do much yet, but will later keep track of viewable region
-
--   Makes a copy of `lines` so that other code can't change its internals
-
----
-
-## Changing the Application
-
-```py
-class BufferApp(DispatchApp):
-    def __init__(self, size, lines):
-        super().__init__(size, lines)
-
-    def _setup(self, screen):
-        self._screen = screen
-        self._make_window()
-        self._make_buffer()
-        self._make_cursor()
-
-    def _make_window(self):
-        self._window = Window(self._screen, self._size)
-
-    def _make_buffer(self):
-        self._buffer = Buffer(self._lines)
-
-    def _make_cursor(self):
-        self._cursor = Cursor()
-```
-
-
----
-
-class: aside
-
-## Factory Methods
-
--   Want to re-use as much of `BufferApp` as possible
-
--   If `setup` calls constructors to create window, buffer, and cursor,
-    we have to rewrite it each time
-
--   Putting constructor calls in <a class="gl-ref" href="../../glossary/#gl:factory_method" title="A method whose only job is to construct an object of some type. Factory methods are typically created to make it easier for child classes to construct objects of other types." markdown="1">factory methods</a>
-    allows us to override them one by one
-
--   Could pass classes into `BufferApp` constructor…
-
--   …but later on, these objects will need to reference each other
-
--   Again, moving things around like this is normal
-
----
-
-## Clipping
-
-```py
-class ClipCursor(Cursor):
-    def __init__(self, buffer):
-        super().__init__()
-        self._buffer = buffer
-
-    def up(self):
-        self._pos[ROW] = max(self._pos[ROW]-1, 0)
-
-    def down(self):
-        self._pos[ROW] = min(self._pos[ROW]+1, self._buffer.nrow()-1)
-
-    def left(self):
-        self._pos[COL] = max(self._pos[COL]-1, 0)
-
-    def right(self):
-        self._pos[COL] = min(
-            self._pos[COL]+1,
-            self._buffer.ncol(self._pos[ROW])-1
-        )
-```
-
-
----
-
-## Clipping
-
-```py
-class ClipBuffer(Buffer):
-    def nrow(self):
-        return len(self._lines)
-
-    def ncol(self, row):
-        return len(self._lines[row])
-
-class ClipApp(BufferApp):
-    def _make_buffer(self):
-        self._buffer = ClipBuffer(self._lines)
-
-    def _make_cursor(self):
-        self._cursor = ClipCursor(self._buffer)
-```
-
-
--   Add methods to the buffer
-
--   Construct different cursor and buffer objects
-    without changing anything else in the application
-
----
-
-## A Bug
-
--   Move to end of line and go up to shorter line
-    leaves cursor outside the text
-
-```py
-class ClipCursorFixed(ClipCursor):
-    def up(self):
-        super().up()
-        self._fix()
-
-    def down(self):
-        super().down()
-        self._fix()
-
-    def _fix(self):
-        self._pos[COL] = min(
-            self._pos[COL],
-            (self._buffer.ncol(self._pos[ROW])-1))
-```
-
-
--   Good design if there's one obvious place to make a change
-
----
-
-## Viewport
-
--   Can still move below the window because cursor is in buffer space not window space
-
--   What if the buffer is bigger than the window?
-
--   Need a <a class="gl-ref" href="../../glossary/#gl:viewport" title="A class or other data structure whose purpose is to keep track of what can currently be seen by the user." markdown="1">viewport</a> to track
-    the currently-visible portion of the buffer
-
-    -   Do vertical here and leave horizontal for exercises
-
----
-
-## Buffer
-
-```py
-class ViewportBuffer(ClipBuffer):
-    def __init__(self, lines):
-        super().__init__(lines)
-        self._top = 0
-        self._height = None
-
-    def lines(self):
-        return self._lines[self._top:self._top + self._height]
-
-    def set_height(self, height):
-        self._height = height
-
-    def _bottom(self):
-        return self._top + self._height
-```
-
-
----
-
-## Buffer
-
-```py
-def transform(self, pos):
-    result = (pos[ROW] - self._top, pos[COL])
-    return result
-```
-
-```py
-def scroll(self, row, col):
-    old = self._top
-    if (row == self._top - 1) and self._top > 0:
-        self._top -= 1
-    elif (row == self._bottom()) and \
-         (self._bottom() < self.nrow()):
-        self._top += 1
-```
-
-
----
-
-## Application
-
-```py
-class ViewportApp(ClipAppFixed):
-    def _make_buffer(self):
-        self._buffer = ViewportBuffer(self._lines)
-
-    def _make_cursor(self):
-        self._cursor = ViewportCursor(self._buffer, self._window)
-
-    def _run(self):
-        self._buffer.set_height(self._window.size()[ROW])
-        while self._running:
-            self._window.draw(self._buffer.lines())
-            screen_pos = self._buffer.transform(self._cursor.pos())
-            self._screen.move(*screen_pos)
-            self._interact()
-            self._buffer.scroll(*self._cursor.pos())
-```
-
-
--   Transform buffer coordinates into screen coordinates
-
--   This class is where we need separate factory methods
-
----
-
-## Cursor
-
-```py
-class ViewportCursor(ClipCursorFixed):
-    def __init__(self, buffer, window):
-        super().__init__(buffer)
-        self._window = window
-
-    def left(self):
-        super().left()
-        self._fix()
-
-    def right(self):
-        super().right()
-        self._fix()
-
-    def _fix(self):
-        self._pos[COL] = min(
-            self._pos[COL],
-            self._buffer.ncol(self._pos[ROW]) - 1,
-            self._window.size()[COL] - 1
-        )
-```
-
-
----
-
-class: summary
-
-## Summary
-
-<figure>
+</code></pre></div>
+</div>
+<hr />
+<h2>Windowing</h2>
+<ul>
+<li>
+<p>Run program with 100 lines (or anything else larger than screen)</p>
+</li>
+<li>
+<p><code>_curses.error: addwstr() returned ERR</code> because trying to draw outside screen</p>
+</li>
+<li>
+<p>So create a <code>Window</code> class that knows how big the screen is</p>
+</li>
+</ul>
+<div class="language-py" title="use_window.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Window</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">screen</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_screen</span> <span class="o">=</span> <span class="n">screen</span>
+
+    <span class="k">def</span> <span class="nf">draw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lines</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_screen</span><span class="o">.</span><span class="n">erase</span><span class="p">()</span>
+        <span class="k">for</span> <span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">line</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">lines</span><span class="p">):</span>
+            <span class="k">if</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">y</span> <span class="o">&lt;</span> <span class="n">curses</span><span class="o">.</span><span class="n">LINES</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_screen</span><span class="o">.</span><span class="n">addstr</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">line</span><span class="p">[:</span><span class="n">curses</span><span class="o">.</span><span class="n">COLS</span><span class="p">])</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Windowing</h2>
+<div class="language-py" title="use_window.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">stdscr</span><span class="p">,</span> <span class="n">lines</span><span class="p">):</span>
+    <span class="n">window</span> <span class="o">=</span> <span class="n">Window</span><span class="p">(</span><span class="n">stdscr</span><span class="p">)</span>
+    <span class="n">window</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="n">stdscr</span><span class="o">.</span><span class="n">getkey</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">key</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;q&quot;</span><span class="p">:</span>
+            <span class="k">return</span>
+</code></pre></div>
+</div>
+<ul>
+<li>
+<p>Can&rsquo;t create <code>Window</code> before calling <code>curses.wrapper</code> because it needs the screen</p>
+</li>
+<li>
+<p><a class="gl-ref" href="../../glossary/#delayed_construction" markdown="1">Delayed construction</a></p>
+</li>
+</ul>
+<hr />
+<!--# class="aside" -->
+
+<h2>Optimization</h2>
+<ul>
+<li>
+<p><code>Window</code> re-draws everything after every keystroke</p>
+</li>
+<li>
+<p>Fast enough that people (usually) won&rsquo;t notice</p>
+</li>
+<li>
+<p>But an obvious target for optimization</p>
+</li>
+</ul>
+<hr />
+<h2>Sizing the Window</h2>
+<ul>
+<li>
+<p>Allow users to specify how big the window appears to be</p>
+</li>
+<li>
+<p>Helps with testing</p>
+</li>
+</ul>
+<div class="language-py" title="size_window.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Window</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">screen</span><span class="p">,</span> <span class="n">size</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_screen</span> <span class="o">=</span> <span class="n">screen</span>
+        <span class="k">if</span> <span class="n">size</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_nrow</span> <span class="o">=</span> <span class="n">curses</span><span class="o">.</span><span class="n">LINES</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_ncol</span> <span class="o">=</span> <span class="n">curses</span><span class="o">.</span><span class="n">COLS</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_nrow</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">size</span><span class="p">[</span><span class="n">ROW</span><span class="p">],</span> <span class="n">curses</span><span class="o">.</span><span class="n">LINES</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_ncol</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">size</span><span class="p">[</span><span class="n">COL</span><span class="p">],</span> <span class="n">curses</span><span class="o">.</span><span class="n">COLS</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">draw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lines</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_screen</span><span class="o">.</span><span class="n">erase</span><span class="p">()</span>
+        <span class="k">for</span> <span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">line</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">lines</span><span class="p">):</span>
+            <span class="k">if</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">y</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nrow</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_screen</span><span class="o">.</span><span class="n">addstr</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">line</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">_ncol</span><span class="p">])</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Two Dimensions</h2>
+<ul>
+<li>
+<p>Use <code>ROW</code> and <code>COL</code> instead of 0 and 1 (or <code>R</code> and <code>C</code>)</p>
+</li>
+<li>
+<p>Should really create an <a class="gl-ref" href="../../glossary/#enumeration" markdown="1">enumeration</a></p>
+</li>
+</ul>
+<div class="language-py" title="util.py">
+<div class="highlight"><pre><span></span><code><span class="n">ROW</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">COL</span> <span class="o">=</span> <span class="mi">1</span>
+</code></pre></div>
+</div>
+<div class="language-py" title="cursor_const.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Window</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="nf">draw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lines</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_screen</span><span class="o">.</span><span class="n">erase</span><span class="p">()</span>
+        <span class="k">for</span> <span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">line</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">lines</span><span class="p">):</span>
+            <span class="k">if</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">y</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_size</span><span class="p">[</span><span class="n">ROW</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_screen</span><span class="o">.</span><span class="n">addstr</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">line</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">_size</span><span class="p">[</span><span class="n">COL</span><span class="p">]])</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Moving the Cursor</h2>
+<div class="language-py" title="move_cursor.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Cursor</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pos</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">pos</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_pos</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">up</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pos</span><span class="p">[</span><span class="n">ROW</span><span class="p">]</span> <span class="o">-=</span> <span class="mi">1</span>
+
+    <span class="k">def</span> <span class="nf">down</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pos</span><span class="p">[</span><span class="n">ROW</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="k">def</span> <span class="nf">left</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pos</span><span class="p">[</span><span class="n">COL</span><span class="p">]</span> <span class="o">-=</span> <span class="mi">1</span>
+
+    <span class="k">def</span> <span class="nf">right</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pos</span><span class="p">[</span><span class="n">COL</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+</code></pre></div>
+</div>
+<ul>
+<li><code>Cursor.pos</code> returns location as tuple so caller can&rsquo;t modify it</li>
+</ul>
+<hr />
+<h2>Moving the Cursor</h2>
+<div class="language-py" title="move_cursor.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">stdscr</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">lines</span><span class="p">):</span>
+    <span class="n">window</span> <span class="o">=</span> <span class="n">Window</span><span class="p">(</span><span class="n">stdscr</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span>
+    <span class="n">cursor</span> <span class="o">=</span> <span class="n">Cursor</span><span class="p">()</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="n">window</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span>
+        <span class="n">stdscr</span><span class="o">.</span><span class="n">move</span><span class="p">(</span><span class="o">*</span><span class="n">cursor</span><span class="o">.</span><span class="n">pos</span><span class="p">())</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="n">stdscr</span><span class="o">.</span><span class="n">getkey</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">&quot;KEY_UP&quot;</span><span class="p">:</span> <span class="n">cursor</span><span class="o">.</span><span class="n">up</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">&quot;KEY_DOWN&quot;</span><span class="p">:</span> <span class="n">cursor</span><span class="o">.</span><span class="n">down</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">&quot;KEY_LEFT&quot;</span><span class="p">:</span> <span class="n">cursor</span><span class="o">.</span><span class="n">left</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">&quot;KEY_RIGHT&quot;</span><span class="p">:</span> <span class="n">cursor</span><span class="o">.</span><span class="n">right</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">key</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;q&quot;</span><span class="p">:</span>
+            <span class="k">return</span>
+</code></pre></div>
+</div>
+<ul>
+<li>
+<p><a class="gl-ref" href="../../glossary/#spread" markdown="1">Spread</a> position into <code>stdscr.move</code></p>
+</li>
+<li>
+<p>Screen&rsquo;s <code>getkey</code> method returns names of cursor keys</p>
+</li>
+</ul>
+<hr />
+<h2>Boom</h2>
+<ul>
+<li>
+<p>We can move right or below text</p>
+</li>
+<li>
+<p>And blow up when moving off left of screen or off top with
+    <code>_curses.error: wmove() returned ERR</code></p>
+</li>
+<li>
+<p>Do some <a class="gl-ref" href="../../glossary/#refactor" markdown="1">refactoring</a> before fixing this problem</p>
+</li>
+</ul>
+<hr />
+<h2>Application Class</h2>
+<ul>
+<li>
+<p>Create an object with a <code>__call__</code> method</p>
+</li>
+<li>
+<p>Fool <code>curses.wrapper</code> into thinking we have given it a function</p>
+</li>
+</ul>
+<div class="language-py" title="main_app.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">MainApp</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">lines</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_size</span> <span class="o">=</span> <span class="n">size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_lines</span> <span class="o">=</span> <span class="n">lines</span>
+
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">screen</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_setup</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_run</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_setup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">screen</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_screen</span> <span class="o">=</span> <span class="n">screen</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_window</span> <span class="o">=</span> <span class="n">Window</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_screen</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_size</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cursor</span> <span class="o">=</span> <span class="n">Cursor</span><span class="p">()</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Application Class</h2>
+<div class="language-py" title="main_app.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">_run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_window</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_lines</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_screen</span><span class="o">.</span><span class="n">move</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">_cursor</span><span class="o">.</span><span class="n">pos</span><span class="p">())</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_screen</span><span class="o">.</span><span class="n">getkey</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">&quot;KEY_UP&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cursor</span><span class="o">.</span><span class="n">up</span><span class="p">()</span>
+            <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">&quot;KEY_DOWN&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cursor</span><span class="o">.</span><span class="n">down</span><span class="p">()</span>
+            <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">&quot;KEY_LEFT&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cursor</span><span class="o">.</span><span class="n">left</span><span class="p">()</span>
+            <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">&quot;KEY_RIGHT&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cursor</span><span class="o">.</span><span class="n">right</span><span class="p">()</span>
+            <span class="k">elif</span> <span class="n">key</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;q&quot;</span><span class="p">:</span>
+                <span class="k">return</span>
+</code></pre></div>
+</div>
+<div class="language-py" title="main_app.py">
+<div class="highlight"><pre><span></span><code><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">size</span><span class="p">,</span> <span class="n">lines</span> <span class="o">=</span> <span class="n">start</span><span class="p">()</span>
+    <span class="n">app</span> <span class="o">=</span> <span class="n">MainApp</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">lines</span><span class="p">)</span>
+    <span class="n">curses</span><span class="o">.</span><span class="n">wrapper</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Dispatching Keystrokes</h2>
+<ul>
+<li>Find and call key handlers via <a class="gl-ref" href="../../glossary/#dynamic_dispatch" markdown="1">dynamic dispatch</a></li>
+</ul>
+<div class="language-py" title="dispatch_keys.py">
+<div class="highlight"><pre><span></span><code>    <span class="n">TRANSLATE</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;</span><span class="se">\x18</span><span class="s2">&quot;</span><span class="p">:</span> <span class="s2">&quot;CONTROL_X&quot;</span>
+    <span class="p">}</span>
+
+    <span class="k">def</span> <span class="nf">_interact</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_screen</span><span class="o">.</span><span class="n">getkey</span><span class="p">()</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TRANSLATE</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;_do_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+            <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">)()</span>
+
+    <span class="k">def</span> <span class="nf">_do_CONTROL_X</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_running</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">def</span> <span class="nf">_do_KEY_UP</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cursor</span><span class="o">.</span><span class="n">up</span><span class="p">()</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Dispatching Keystrokes</h2>
+<div class="language-py" title="dispatch_keys.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">DispatchApp</span><span class="p">(</span><span class="n">MainApp</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">lines</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">lines</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_running</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="nf">_run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">_running</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_window</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_lines</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_screen</span><span class="o">.</span><span class="n">move</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">_cursor</span><span class="o">.</span><span class="n">pos</span><span class="p">())</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_interact</span><span class="p">()</span>
+</code></pre></div>
+</div>
+<ul>
+<li>
+<p>Use a member variable <code>self._running</code> so that every other method
+    <em>doesn&rsquo;t</em> have to return a &ldquo;keep running&rdquo; flag</p>
+</li>
+<li>
+<p>Add <code>TRANSLATE</code> to turn things like Ctrl-X into strings <code>CONTROL_X</code></p>
+<ul>
+<li>Got the value by looking in our log file</li>
+</ul>
+</li>
+</ul>
+<hr />
+<!--# class="aside" -->
+
+<h2>Inheritance</h2>
+<ul>
+<li>
+<p><code>DispatchApp</code> is a child of <code>MainApp</code> so that we can recycle initialization</p>
+</li>
+<li>
+<p><code>DispatchApp.__init__</code> <a class="gl-ref" href="../../glossary/#upcall" markdown="1">upcalls</a> to <code>MainApp.__init__</code></p>
+</li>
+<li>
+<p>Probably wouldn&rsquo;t create multiple classes in a real program,
+    but simplifies exposition when teaching</p>
+</li>
+<li>
+<p>Had to move some earlier code around when writing later classes
+    to make everything work cleanly</p>
+</li>
+<li>
+<p><em>This is normal</em></p>
+</li>
+</ul>
+<hr />
+<h2>Managing the Buffer</h2>
+<div class="language-py" title="buffer_class.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Buffer</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lines</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_lines</span> <span class="o">=</span> <span class="n">lines</span><span class="p">[:]</span>
+
+    <span class="k">def</span> <span class="nf">lines</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lines</span>
+</code></pre></div>
+</div>
+<ul>
+<li>
+<p>Doesn&rsquo;t do much yet, but will later keep track of viewable region</p>
+</li>
+<li>
+<p>Makes a copy of <code>lines</code> so that other code can&rsquo;t change its internals</p>
+</li>
+</ul>
+<hr />
+<h2>Changing the Application</h2>
+<div class="language-py" title="buffer_class.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">BufferApp</span><span class="p">(</span><span class="n">DispatchApp</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">lines</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">lines</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_setup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">screen</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_screen</span> <span class="o">=</span> <span class="n">screen</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_make_window</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_make_buffer</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_make_cursor</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_make_window</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_window</span> <span class="o">=</span> <span class="n">Window</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_screen</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_size</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_make_buffer</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span> <span class="o">=</span> <span class="n">Buffer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_lines</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_make_cursor</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cursor</span> <span class="o">=</span> <span class="n">Cursor</span><span class="p">()</span>
+</code></pre></div>
+</div>
+<hr />
+<!--# class="aside" -->
+
+<h2>Factory Methods</h2>
+<ul>
+<li>
+<p>Want to re-use as much of <code>BufferApp</code> as possible</p>
+</li>
+<li>
+<p>If <code>setup</code> calls constructors to create window, buffer, and cursor,
+    we have to rewrite it each time</p>
+</li>
+<li>
+<p>Putting constructor calls in <a class="gl-ref" href="../../glossary/#factory_method" markdown="1">factory methods</a>
+    allows us to override them one by one</p>
+</li>
+<li>
+<p>Could pass classes into <code>BufferApp</code> constructor…</p>
+</li>
+<li>
+<p>…but later on, these objects will need to reference each other</p>
+</li>
+<li>
+<p>Again, moving things around like this is normal</p>
+</li>
+</ul>
+<hr />
+<h2>Clipping</h2>
+<div class="language-py" title="clip_cursor.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">ClipCursor</span><span class="p">(</span><span class="n">Cursor</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">buffer</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span> <span class="o">=</span> <span class="n">buffer</span>
+
+    <span class="k">def</span> <span class="nf">up</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pos</span><span class="p">[</span><span class="n">ROW</span><span class="p">]</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_pos</span><span class="p">[</span><span class="n">ROW</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">down</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pos</span><span class="p">[</span><span class="n">ROW</span><span class="p">]</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_pos</span><span class="p">[</span><span class="n">ROW</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span><span class="o">.</span><span class="n">nrow</span><span class="p">()</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">left</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pos</span><span class="p">[</span><span class="n">COL</span><span class="p">]</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_pos</span><span class="p">[</span><span class="n">COL</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">right</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pos</span><span class="p">[</span><span class="n">COL</span><span class="p">]</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pos</span><span class="p">[</span><span class="n">COL</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span><span class="o">.</span><span class="n">ncol</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_pos</span><span class="p">[</span><span class="n">ROW</span><span class="p">])</span><span class="o">-</span><span class="mi">1</span>
+        <span class="p">)</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Clipping</h2>
+<div class="language-py" title="clip_cursor.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">ClipBuffer</span><span class="p">(</span><span class="n">Buffer</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">nrow</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_lines</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">ncol</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">row</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_lines</span><span class="p">[</span><span class="n">row</span><span class="p">])</span>
+
+<span class="k">class</span> <span class="nc">ClipApp</span><span class="p">(</span><span class="n">BufferApp</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_make_buffer</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span> <span class="o">=</span> <span class="n">ClipBuffer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_lines</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_make_cursor</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cursor</span> <span class="o">=</span> <span class="n">ClipCursor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<ul>
+<li>
+<p>Add methods to the buffer</p>
+</li>
+<li>
+<p>Construct different cursor and buffer objects
+    without changing anything else in the application</p>
+</li>
+</ul>
+<hr />
+<h2>A Bug</h2>
+<ul>
+<li>Move to end of line and go up to shorter line
+    leaves cursor outside the text</li>
+</ul>
+<div class="language-py" title="clip_fixed.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">ClipCursorFixed</span><span class="p">(</span><span class="n">ClipCursor</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">up</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">up</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_fix</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">down</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">down</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_fix</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_fix</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pos</span><span class="p">[</span><span class="n">COL</span><span class="p">]</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pos</span><span class="p">[</span><span class="n">COL</span><span class="p">],</span>
+            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span><span class="o">.</span><span class="n">ncol</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_pos</span><span class="p">[</span><span class="n">ROW</span><span class="p">])</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+</code></pre></div>
+</div>
+<ul>
+<li>Good design if there&rsquo;s one obvious place to make a change</li>
+</ul>
+<hr />
+<h2>Viewport</h2>
+<ul>
+<li>
+<p>Can still move below the window because cursor is in buffer space not window space</p>
+</li>
+<li>
+<p>What if the buffer is bigger than the window?</p>
+</li>
+<li>
+<p>Need a <a class="gl-ref" href="../../glossary/#viewport" markdown="1">viewport</a> to track
+    the currently-visible portion of the buffer</p>
+<ul>
+<li>Do vertical here and leave horizontal for exercises</li>
+</ul>
+</li>
+</ul>
+<hr />
+<h2>Buffer</h2>
+<div class="language-py" title="viewport.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">ViewportBuffer</span><span class="p">(</span><span class="n">ClipBuffer</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lines</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_top</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_height</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">lines</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lines</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_top</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">_top</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_height</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">set_height</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">height</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_height</span> <span class="o">=</span> <span class="n">height</span>
+
+    <span class="k">def</span> <span class="nf">_bottom</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_top</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_height</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Buffer</h2>
+<div class="language-py" title="viewport.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos</span><span class="p">):</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="p">(</span><span class="n">pos</span><span class="p">[</span><span class="n">ROW</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_top</span><span class="p">,</span> <span class="n">pos</span><span class="p">[</span><span class="n">COL</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">result</span>
+</code></pre></div>
+</div>
+<div class="language-py" title="viewport.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">scroll</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">row</span><span class="p">,</span> <span class="n">col</span><span class="p">):</span>
+        <span class="n">old</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_top</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">row</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">_top</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_top</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_top</span> <span class="o">-=</span> <span class="mi">1</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="n">row</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bottom</span><span class="p">())</span> <span class="ow">and</span> \
+             <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_bottom</span><span class="p">()</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">nrow</span><span class="p">()):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_top</span> <span class="o">+=</span> <span class="mi">1</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Application</h2>
+<div class="language-py" title="viewport.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">ViewportApp</span><span class="p">(</span><span class="n">ClipAppFixed</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_make_buffer</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span> <span class="o">=</span> <span class="n">ViewportBuffer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_lines</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_make_cursor</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cursor</span> <span class="o">=</span> <span class="n">ViewportCursor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_window</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span><span class="o">.</span><span class="n">set_height</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_window</span><span class="o">.</span><span class="n">size</span><span class="p">()[</span><span class="n">ROW</span><span class="p">])</span>
+        <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">_running</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_window</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span><span class="o">.</span><span class="n">lines</span><span class="p">())</span>
+            <span class="n">screen_pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_cursor</span><span class="o">.</span><span class="n">pos</span><span class="p">())</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_screen</span><span class="o">.</span><span class="n">move</span><span class="p">(</span><span class="o">*</span><span class="n">screen_pos</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_interact</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span><span class="o">.</span><span class="n">scroll</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">_cursor</span><span class="o">.</span><span class="n">pos</span><span class="p">())</span>
+</code></pre></div>
+</div>
+<ul>
+<li>
+<p>Transform buffer coordinates into screen coordinates</p>
+</li>
+<li>
+<p>This class is where we need separate factory methods</p>
+</li>
+</ul>
+<hr />
+<h2>Cursor</h2>
+<div class="language-py" title="viewport.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">ViewportCursor</span><span class="p">(</span><span class="n">ClipCursorFixed</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">buffer</span><span class="p">,</span> <span class="n">window</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">buffer</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_window</span> <span class="o">=</span> <span class="n">window</span>
+
+    <span class="k">def</span> <span class="nf">left</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">left</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_fix</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">right</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">right</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_fix</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_fix</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pos</span><span class="p">[</span><span class="n">COL</span><span class="p">]</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pos</span><span class="p">[</span><span class="n">COL</span><span class="p">],</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span><span class="o">.</span><span class="n">ncol</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_pos</span><span class="p">[</span><span class="n">ROW</span><span class="p">])</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_window</span><span class="o">.</span><span class="n">size</span><span class="p">()[</span><span class="n">COL</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="p">)</span>
+</code></pre></div>
+</div>
+<hr />
+<!--# class="summary" -->
+
+<h2>Summary</h2>
+<figure id="viewer-concept-map">
 <img src="../concept_map.svg" alt="Concept map of file viewer"/>
+<figcaption>Concept map</figcaption>
 </figure>
-
-
-
-[py_curses]: https://docs.python.org/3/library/curses.html
-
-    </textarea>
-    <script src="../../remark-latest.min.js"></script>
-    <script>
-      var slideshow = remark.create({
-        highlightLines: true
-      })
-    </script>
   </body>
 </html>

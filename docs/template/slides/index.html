@@ -1,553 +1,525 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="repo" content="https://github.com/gvwilson/sdxpy">
-  <meta name="build_date" content="2024-04-28">
-  <meta name="template" content="slides">
-  <meta name="major" content="template">
-  
-  <link rel="icon" type="image/x-icon" href="../../favicon.ico">
-  <link rel="stylesheet" href="../../mccole.css">
-  <link rel="stylesheet" href="../../tango.css">
+    <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="../../logo.svg">
+<link rel="stylesheet" href="../../tango.css" type="text/css">
+<link rel="stylesheet" href="../../mccole.css" type="text/css">
+<title>Software Design by Example &middot; A Template Expander</title>
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [['\\(', '\\)']]
+    }
+  };
+</script>
+<script
+  type="text/javascript"
+  id="MathJax-script"
+  async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+</script>
+
   <script defer data-domain="third-bit.com" src="https://plausible.io/js/plausible.js"></script>
-  <script>
-    MathJax = {
-      tex: {
-        inlineMath: [['\\(', '\\)']]
-      }
-    };
-  </script>
-  <script
-    type="text/javascript"
-    id="MathJax-script"
-    async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
-  </script>
-  <script defer src="../../mccole.js"></script>
-  <title>Software Design by Example: A Template Expander</title>
-</head>
 
+
+    <script src="../../slides.js" defer></script>
+    <link rel="stylesheet" href="../../slides.css">
+  </head>
   <body>
-    <textarea id="source">
-
-class: slide-title
-
-<p>
-  <a href="https://third-bit.com/sdxpy/">Software Design by Example</a>
-</p>
-<h1>A Template Expander</h1>
-<div class="bottom">
-  <a href="../">chapter</a>
+<div class="row notex">
+  <div class="col-12 center">
+    <h1>A Template Expander</h1>
+    <p class="subtitle">Software Design by Example</p>
+  </div>
 </div>
-
----
-
-
-## The Problem
-
--   Most pages on a site share some content
-
--   Many pages want to be customized based on data
-
--   So many sites use a templating system
-
-    -   Turn data and HTML page with embedded directives into final page
-
----
-
-## Design Options
-
-1.  Embed commands in an existing language like [EJS][ejs]
-
-2.  Create a mini-language with its own commands like [Jekyll][jekyll]
-
-3.  Put directives in specially-named attributes in the HTML
-
-<figure>
+<hr>
+<h2>The Problem</h2>
+<ul>
+<li>
+<p>Most pages on a site share some content</p>
+</li>
+<li>
+<p>Many pages want to be customized based on data</p>
+</li>
+<li>
+<p>So many sites use a templating system</p>
+<ul>
+<li>Turn data and HTML page with embedded directives into final page</li>
+</ul>
+</li>
+</ul>
+<hr />
+<h2>Design Options</h2>
+<ol>
+<li>
+<p>Embed commands in an existing language like <a href="https://ejs.co/">EJS</a></p>
+</li>
+<li>
+<p>Create a mini-language with its own commands like <a href="https://jekyllrb.com/">Jekyll</a></p>
+</li>
+<li>
+<p>Put directives in specially-named attributes in the HTML</p>
+</li>
+</ol>
+<figure id="template-options">
 <img src="../design_options.svg" alt="Three options for page templates"/>
+<figcaption>Three different ways to implement page templating.</figcaption>
 </figure>
 
-
--   We will use the third option so that we don't have to write a parser
-
----
-
-## What Does Done Look Like?
-
-```ht
-<html>
-  <body>
-    <ul z-loop="item:names">
-      <li><span z-var="item"/></li>
-    </ul>
-  </body>
-</html>
-```
-
-
--   `z-loop`: repeat this
-
--   `z-num`: a constant number
-
--   `z-var`: fill in a variable
-
--   `z-if`: conditional
-
----
-
-## What Does Done Look Like?
-
-```
-<html>
-<body>
 <ul>
-<li><span>Johnson</span></li>
-
-<li><span>Vaughan</span></li>
-
-<li><span>Jackson</span></li>
+<li>We will use the third option so that we don&rsquo;t have to write a parser</li>
 </ul>
-</body>
-</html>
-```
-
-
--   HTML doesn't care about extra blank lines, so we won't either
-
----
-
-## How Do We Call This?
-
--   Design the <a class="gl-ref" href="../../glossary/#gl:api" title="A set of functions provided by a software library or web service that other software can call." markdown="1">API</a> of our library first
-
-```py
-data = {"names": ["Johnson", "Vaughan", "Jackson"]}
-
-dom = read_html("template.html")
-expander = Expander(dom, data)
-expander.walk()
-print(expander.result)
-```
-
-
--   In real life, `data` would come from a configuration file or database
-
----
-
-## Managing Variables
-
--   Could use a `ChainMap`, but we'll write our own
-
-```py
-class Env:
-    def __init__(self, initial):
-        self.stack = [initial.copy()]
-
-    def push(self, frame):
-        self.stack.append(frame)
-
-    def pop(self):
-        self.stack.pop()
-
-    def find(self, name):
-        for frame in reversed(self.stack):
-            if name in frame:
-                return frame[name]
-        return None
-```
-
-
----
-
-## Visiting Nodes
-
--   Use the <a class="gl-ref" href="../../glossary/#gl:visitor_pattern" title="A design pattern in which the operation to be done is taken to each element of a data structure in turn. It is usually implemented by having a generator &quot;visitor&quot; that knows how to reach the structure&#x27;s elements, which is given a function or method to call for each in turn, and that carries out the specific operation." markdown="1">Visitor</a> design pattern
-
-```py
-class Visitor:
-    def __init__(self, root):
-        self.root = root
-
-    def walk(self, node=None):
-        if node is None:
-            node = self.root
-        if self.open(node):
-            for child in node.children:
-                self.walk(child)
-        self.close(node)
-
-    def open(self, node):
-        raise NotImplementedError("open")
-
-    def close(self, node):
-        raise NotImplementedError("close")
-```
-
-
----
-
-## Expanding a Template
-
-```py
-class Expander(Visitor):
-    def __init__(self, root, variables):
-        super().__init__(root)
-        self.env = Env(variables)
-        self.handlers = HANDLERS
-        self.result = []
-```
-
-
--   The environment
-
--   Handlers for our special node types
-
--   The result (strings we'll concatenate at the end)
-
----
-
-## Open…
-
-```py
-def open(self, node):
-    if isinstance(node, NavigableString):
-        self.output(node.string)
-        return False
-    elif self.hasHandler(node):
-        return self.getHandler(node).open(self, node)
-    else:
-        self.showTag(node, False)
-        return True
-```
-
-
--   If this is text, "display" it
-
--   If this is a special node, run a function
-
--   Otherwise, show the opening tag
-
--   Return value is "do we proceed"?
-
----
-
-## …and Close
-
-```py
-def close(self, node):
-    if isinstance(node, NavigableString):
-        return
-    elif self.hasHandler(node):
-        self.getHandler(node).close(self, node)
-    else:
-        self.showTag(node, True)
-```
-
-
--   Handlers come in open/close pairs
-
-    -   Because some might need to do cleanup
-
----
-
-## Managing Handlers
-
-```py
-def hasHandler(self, node):
-    return any(
-        name in self.handlers
-        for name in node.attrs
-    )
-
-def getHandler(self, node):
-    possible = [
-        name for name in node.attrs
-        if name in self.handlers
-    ]
-    assert len(possible) == 1, "Should be exactly one handler"
-    return self.handlers[possible[0]]
-```
-
-
--   `hasHandler` looks for attributes with special names
-
--   `getHandler` gets the one we need
-
----
-
-## But What's a Handler?
-
-```py
-def open(expander, node):
-    expander.showTag(node, False)
-    expander.output(node.attrs["z-num"])
-
-def close(expander, node):
-    expander.showTag(node, True)
-```
-
-
--   A module with `open` and `close` functions
-
--   None of our handlers need state, so we don't need objects
-
----
-
-## Variables Are Similar
-
-```py
-def open(expander, node):
-    expander.showTag(node, False)
-    expander.output(expander.env.find(node.attrs["z-var"]))
-
-def close(expander, node):
-    expander.showTag(node, True)
-```
-
-
--   We should think about error handling…
-
----
-
-## Testing
-
-```py
-import json
-import sys
-from bs4 import BeautifulSoup
-from expander import Expander
-
-def main():
-    with open(sys.argv[1], "r") as reader:
-        variables = json.load(reader)
-
-    with open(sys.argv[2], "r") as reader:
-        doc = BeautifulSoup(reader.read(), "html.parser")
-        template = doc.find("html")
-
-    expander = Expander(template, variables)
-    expander.walk()
-    print(expander.getResult())
-
-if __name__ == "__main__":
-    main()
-```
-
-
----
-
-## Static Text
-
--   If this doesn't work, nothing else will
-
-```ht
-<html>
-  <body>
-    <h1>Static Text</h1>
-    <p>test</p>
-  </body>
-</html>
-```
-
-
-```
-<html>
-<body>
-<h1>Static Text</h1>
-<p>test</p>
-</body>
-</html>
-```
-
-
----
-
-## Constants
-
-```ht
-<html>
-  <body>
-    <p><span z-num="123"/></p>
-  </body>
-</html>
-```
-
-
-```
-<html>
-<body>
-<p><span>123</span></p>
-</body>
-</html>
-```
-
-
----
-
-## Variables
-
-```ht
-<html>
-  <body>
-    <p><span z-var="varName"/></p>
-  </body>
-</html>
-```
-
-
-```
-<html>
-<body>
-<p><span>varValue</span></p>
-</body>
-</html>
-```
-
-
--   Input is a JSON file containing `{"varName": "varValue"}`
-
----
-
-## Conditionals
-
-```py
-def open(expander, node):
-    check = expander.env.find(node.attrs["z-if"])
-    if check:
-        expander.showTag(node, False)
-    return check
-
-def close(expander, node):
-    if expander.env.find(node.attrs["z-if"]):
-        expander.showTag(node, True)
-```
-
-
--   The handler determines whether to show this tag and go deeper
-
--   What if the variable's value changes between opening and closing?
-
----
-
-## Testing
-
-```ht
-<html>
-  <body>
-    <p z-if="yes">Should be shown.</p>
-    <p z-if="no">Should <em>not</em> be shown.</p>
-  </body>
-</html>
-```
-
-
-```
-<html>
-<body>
-<p>Should be shown.</p>
-
-</body>
-</html>
-```
-
-
--   With JSON `{"yes": True, "no": False}`
-
----
-
-## Loops
-
-1.  Create a new stack frame holding the current value of the loop variable
-
-1.  Expand all of the node's children with that stack frame in place
-
-1.  Pop the stack frame to get rid of the temporary variable
-
----
-
-## Loops
-
-```py
-def open(expander, node):
-    index_name, target_name = node.attrs["z-loop"].split(":")
-    expander.showTag(node, False)
-    target = expander.env.find(target_name)
-    for value in target:
-        expander.env.push({index_name: value})
-        for child in node.children:
-            expander.walk(child)
-        expander.env.pop()
-    return False
-
-def close(expander, node):
-    expander.showTag(node, True)
-```
-
-
--   The most complicated handler yet
-
----
-
-## Testing
-
-```ht
-<html>
-  <body>
-    <ul z-loop="item:names">
-      <li><span z-var="item"/></li>
-    </ul>
-  </body>
-</html>
-```
-
-
-```
-<html>
-<body>
+<hr />
+<h2>What Does Done Look Like?</h2>
+<div class="language-ht" title="loop.ht">
+<div class="highlight"><pre><span></span><code>&lt;html&gt;
+  &lt;body&gt;
+    &lt;ul z-loop=&quot;item:names&quot;&gt;
+      &lt;li&gt;&lt;span z-var=&quot;item&quot;/&gt;&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/body&gt;
+&lt;/html&gt;
+</code></pre></div>
+</div>
 <ul>
-<li><span>Johnson</span></li>
-
-<li><span>Vaughan</span></li>
-
-<li><span>Jackson</span></li>
+<li>
+<p><code>z-loop</code>: repeat this</p>
+</li>
+<li>
+<p><code>z-num</code>: a constant number</p>
+</li>
+<li>
+<p><code>z-var</code>: fill in a variable</p>
+</li>
+<li>
+<p><code>z-if</code>: conditional</p>
+</li>
 </ul>
-</body>
-</html>
-```
+<hr />
+<h2>What Does Done Look Like?</h2>
+<div class="language-out" title="loop.out">
+<div class="highlight"><pre><span></span><code>&lt;html&gt;
+&lt;body&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;span&gt;Johnson&lt;/span&gt;&lt;/li&gt;
 
+&lt;li&gt;&lt;span&gt;Vaughan&lt;/span&gt;&lt;/li&gt;
 
----
+&lt;li&gt;&lt;span&gt;Jackson&lt;/span&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</code></pre></div>
+</div>
+<ul>
+<li>HTML doesn&rsquo;t care about extra blank lines, so we won&rsquo;t either</li>
+</ul>
+<hr />
+<h2>How Do We Call This?</h2>
+<ul>
+<li>Design the <a class="gl-ref" href="../../glossary/#api" markdown="1">API</a> of our library first</li>
+</ul>
+<div class="language-py" title="example_call.py">
+<div class="highlight"><pre><span></span><code><span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;names&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;Johnson&quot;</span><span class="p">,</span> <span class="s2">&quot;Vaughan&quot;</span><span class="p">,</span> <span class="s2">&quot;Jackson&quot;</span><span class="p">]}</span>
 
-## Next Steps
+<span class="n">dom</span> <span class="o">=</span> <span class="n">read_html</span><span class="p">(</span><span class="s2">&quot;template.html&quot;</span><span class="p">)</span>
+<span class="n">expander</span> <span class="o">=</span> <span class="n">Expander</span><span class="p">(</span><span class="n">dom</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+<span class="n">expander</span><span class="o">.</span><span class="n">walk</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">expander</span><span class="o">.</span><span class="n">result</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<ul>
+<li>In real life, <code>data</code> would come from a configuration file or database</li>
+</ul>
+<hr />
+<h2>Managing Variables</h2>
+<ul>
+<li>Could use a <code>ChainMap</code>, but we&rsquo;ll write our own</li>
+</ul>
+<div class="language-py" title="env.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Env</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stack</span> <span class="o">=</span> <span class="p">[</span><span class="n">initial</span><span class="o">.</span><span class="n">copy</span><span class="p">()]</span>
 
--   The `z-if` issue might mean we need state after all
+    <span class="k">def</span> <span class="nf">push</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">frame</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stack</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">frame</span><span class="p">)</span>
 
--   Tackle that before going any further
+    <span class="k">def</span> <span class="nf">pop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stack</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
 
--   And figure out how to do unit testing
+    <span class="k">def</span> <span class="nf">find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">frame</span> <span class="ow">in</span> <span class="nb">reversed</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stack</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">frame</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">frame</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+        <span class="k">return</span> <span class="kc">None</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Visiting Nodes</h2>
+<ul>
+<li>Use the <a class="gl-ref" href="../../glossary/#visitor_pattern" markdown="1">Visitor</a> design pattern</li>
+</ul>
+<div class="language-py" title="visitor.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Visitor</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">root</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">root</span> <span class="o">=</span> <span class="n">root</span>
 
----
+    <span class="k">def</span> <span class="nf">walk</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">node</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">node</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">root</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">node</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">children</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">walk</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
 
-class: summary
+    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;open&quot;</span><span class="p">)</span>
 
-## Summary
+    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;close&quot;</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Expanding a Template</h2>
+<div class="language-py" title="expander.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Expander</span><span class="p">(</span><span class="n">Visitor</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">root</span><span class="p">,</span> <span class="n">variables</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">root</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">env</span> <span class="o">=</span> <span class="n">Env</span><span class="p">(</span><span class="n">variables</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">handlers</span> <span class="o">=</span> <span class="n">HANDLERS</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+</code></pre></div>
+</div>
+<ul>
+<li>
+<p>The environment</p>
+</li>
+<li>
+<p>Handlers for our special node types</p>
+</li>
+<li>
+<p>The result (strings we&rsquo;ll concatenate at the end)</p>
+</li>
+</ul>
+<hr />
+<h2>Open…</h2>
+<div class="language-py" title="expander.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">NavigableString</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">output</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">string</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">hasHandler</span><span class="p">(</span><span class="n">node</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">getHandler</span><span class="p">(</span><span class="n">node</span><span class="p">)</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">showTag</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">True</span>
+</code></pre></div>
+</div>
+<ul>
+<li>
+<p>If this is text, &ldquo;display&rdquo; it</p>
+</li>
+<li>
+<p>If this is a special node, run a function</p>
+</li>
+<li>
+<p>Otherwise, show the opening tag</p>
+</li>
+<li>
+<p>Return value is &ldquo;do we proceed&rdquo;?</p>
+</li>
+</ul>
+<hr />
+<h2>…and Close</h2>
+<div class="language-py" title="expander.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">NavigableString</span><span class="p">):</span>
+            <span class="k">return</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">hasHandler</span><span class="p">(</span><span class="n">node</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">getHandler</span><span class="p">(</span><span class="n">node</span><span class="p">)</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">showTag</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<ul>
+<li>
+<p>Handlers come in open/close pairs</p>
+<ul>
+<li>Because some might need to do cleanup</li>
+</ul>
+</li>
+</ul>
+<hr />
+<h2>Managing Handlers</h2>
+<div class="language-py" title="expander.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">hasHandler</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">any</span><span class="p">(</span>
+            <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">handlers</span>
+            <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">attrs</span>
+        <span class="p">)</span>
 
-<figure>
+    <span class="k">def</span> <span class="nf">getHandler</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="n">possible</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">name</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">attrs</span>
+            <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">handlers</span>
+        <span class="p">]</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">possible</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;Should be exactly one handler&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">handlers</span><span class="p">[</span><span class="n">possible</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+</code></pre></div>
+</div>
+<ul>
+<li>
+<p><code>hasHandler</code> looks for attributes with special names</p>
+</li>
+<li>
+<p><code>getHandler</code> gets the one we need</p>
+</li>
+</ul>
+<hr />
+<h2>But What&rsquo;s a Handler?</h2>
+<div class="language-py" title="z_num.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="n">expander</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+    <span class="n">expander</span><span class="o">.</span><span class="n">showTag</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="n">expander</span><span class="o">.</span><span class="n">output</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;z-num&quot;</span><span class="p">])</span>
+
+<span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="n">expander</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+    <span class="n">expander</span><span class="o">.</span><span class="n">showTag</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<ul>
+<li>
+<p>A module with <code>open</code> and <code>close</code> functions</p>
+</li>
+<li>
+<p>None of our handlers need state, so we don&rsquo;t need objects</p>
+</li>
+</ul>
+<hr />
+<h2>Variables Are Similar</h2>
+<div class="language-py" title="z_var.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="n">expander</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+    <span class="n">expander</span><span class="o">.</span><span class="n">showTag</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="n">expander</span><span class="o">.</span><span class="n">output</span><span class="p">(</span><span class="n">expander</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;z-var&quot;</span><span class="p">]))</span>
+
+<span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="n">expander</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+    <span class="n">expander</span><span class="o">.</span><span class="n">showTag</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<ul>
+<li>We should think about error handling…</li>
+</ul>
+<hr />
+<h2>Testing</h2>
+<div class="language-py" title="template.py">
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">from</span> <span class="nn">bs4</span> <span class="kn">import</span> <span class="n">BeautifulSoup</span>
+<span class="kn">from</span> <span class="nn">expander</span> <span class="kn">import</span> <span class="n">Expander</span>
+
+<span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">reader</span><span class="p">:</span>
+        <span class="n">variables</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">reader</span><span class="p">)</span>
+
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">reader</span><span class="p">:</span>
+        <span class="n">doc</span> <span class="o">=</span> <span class="n">BeautifulSoup</span><span class="p">(</span><span class="n">reader</span><span class="o">.</span><span class="n">read</span><span class="p">(),</span> <span class="s2">&quot;html.parser&quot;</span><span class="p">)</span>
+        <span class="n">template</span> <span class="o">=</span> <span class="n">doc</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;html&quot;</span><span class="p">)</span>
+
+    <span class="n">expander</span> <span class="o">=</span> <span class="n">Expander</span><span class="p">(</span><span class="n">template</span><span class="p">,</span> <span class="n">variables</span><span class="p">)</span>
+    <span class="n">expander</span><span class="o">.</span><span class="n">walk</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">expander</span><span class="o">.</span><span class="n">getResult</span><span class="p">())</span>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">main</span><span class="p">()</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Static Text</h2>
+<ul>
+<li>If this doesn&rsquo;t work, nothing else will</li>
+</ul>
+<div class="language-ht" title="static_text.ht">
+<div class="highlight"><pre><span></span><code>&lt;html&gt;
+  &lt;body&gt;
+    &lt;h1&gt;Static Text&lt;/h1&gt;
+    &lt;p&gt;test&lt;/p&gt;
+  &lt;/body&gt;
+&lt;/html&gt;
+</code></pre></div>
+</div>
+<div class="language-out" title="static_text.out">
+<div class="highlight"><pre><span></span><code>&lt;html&gt;
+&lt;body&gt;
+&lt;h1&gt;Static Text&lt;/h1&gt;
+&lt;p&gt;test&lt;/p&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</code></pre></div>
+</div>
+<hr />
+<h2>Constants</h2>
+<div class="language-ht" title="single_constant.ht">
+<div class="highlight"><pre><span></span><code>&lt;html&gt;
+  &lt;body&gt;
+    &lt;p&gt;&lt;span z-num=&quot;123&quot;/&gt;&lt;/p&gt;
+  &lt;/body&gt;
+&lt;/html&gt;
+</code></pre></div>
+</div>
+<div class="language-out" title="single_constant.out">
+<div class="highlight"><pre><span></span><code>&lt;html&gt;
+&lt;body&gt;
+&lt;p&gt;&lt;span&gt;123&lt;/span&gt;&lt;/p&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</code></pre></div>
+</div>
+<hr />
+<h2>Variables</h2>
+<div class="language-ht" title="single_variable.ht">
+<div class="highlight"><pre><span></span><code>&lt;html&gt;
+  &lt;body&gt;
+    &lt;p&gt;&lt;span z-var=&quot;varName&quot;/&gt;&lt;/p&gt;
+  &lt;/body&gt;
+&lt;/html&gt;
+</code></pre></div>
+</div>
+<div class="language-out" title="single_variable.out">
+<div class="highlight"><pre><span></span><code>&lt;html&gt;
+&lt;body&gt;
+&lt;p&gt;&lt;span&gt;varValue&lt;/span&gt;&lt;/p&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</code></pre></div>
+</div>
+<ul>
+<li>Input is a JSON file containing <code>{"varName": "varValue"}</code></li>
+</ul>
+<hr />
+<h2>Conditionals</h2>
+<div class="language-py" title="z_if.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="n">expander</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+    <span class="n">check</span> <span class="o">=</span> <span class="n">expander</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;z-if&quot;</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">check</span><span class="p">:</span>
+        <span class="n">expander</span><span class="o">.</span><span class="n">showTag</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">check</span>
+
+<span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="n">expander</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">expander</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;z-if&quot;</span><span class="p">]):</span>
+        <span class="n">expander</span><span class="o">.</span><span class="n">showTag</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<ul>
+<li>
+<p>The handler determines whether to show this tag and go deeper</p>
+</li>
+<li>
+<p>What if the variable&rsquo;s value changes between opening and closing?</p>
+</li>
+</ul>
+<hr />
+<h2>Testing</h2>
+<div class="language-ht" title="conditional.ht">
+<div class="highlight"><pre><span></span><code>&lt;html&gt;
+  &lt;body&gt;
+    &lt;p z-if=&quot;yes&quot;&gt;Should be shown.&lt;/p&gt;
+    &lt;p z-if=&quot;no&quot;&gt;Should &lt;em&gt;not&lt;/em&gt; be shown.&lt;/p&gt;
+  &lt;/body&gt;
+&lt;/html&gt;
+</code></pre></div>
+</div>
+<div class="language-out" title="conditional.out">
+<div class="highlight"><pre><span></span><code>&lt;html&gt;
+&lt;body&gt;
+&lt;p&gt;Should be shown.&lt;/p&gt;
+
+&lt;/body&gt;
+&lt;/html&gt;
+</code></pre></div>
+</div>
+<ul>
+<li>With JSON <code>{"yes": True, "no": False}</code></li>
+</ul>
+<hr />
+<h2>Loops</h2>
+<ol>
+<li>
+<p>Create a new stack frame holding the current value of the loop variable</p>
+</li>
+<li>
+<p>Expand all of the node&rsquo;s children with that stack frame in place</p>
+</li>
+<li>
+<p>Pop the stack frame to get rid of the temporary variable</p>
+</li>
+</ol>
+<hr />
+<h2>Loops</h2>
+<div class="language-py" title="z_loop.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="n">expander</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+    <span class="n">index_name</span><span class="p">,</span> <span class="n">target_name</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;z-loop&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">)</span>
+    <span class="n">expander</span><span class="o">.</span><span class="n">showTag</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="n">target</span> <span class="o">=</span> <span class="n">expander</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">target_name</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">target</span><span class="p">:</span>
+        <span class="n">expander</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">push</span><span class="p">({</span><span class="n">index_name</span><span class="p">:</span> <span class="n">value</span><span class="p">})</span>
+        <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">children</span><span class="p">:</span>
+            <span class="n">expander</span><span class="o">.</span><span class="n">walk</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+        <span class="n">expander</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+    <span class="k">return</span> <span class="kc">False</span>
+
+<span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="n">expander</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+    <span class="n">expander</span><span class="o">.</span><span class="n">showTag</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<ul>
+<li>The most complicated handler yet</li>
+</ul>
+<hr />
+<h2>Testing</h2>
+<div class="language-ht" title="loop.ht">
+<div class="highlight"><pre><span></span><code>&lt;html&gt;
+  &lt;body&gt;
+    &lt;ul z-loop=&quot;item:names&quot;&gt;
+      &lt;li&gt;&lt;span z-var=&quot;item&quot;/&gt;&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/body&gt;
+&lt;/html&gt;
+</code></pre></div>
+</div>
+<div class="language-out" title="loop.out">
+<div class="highlight"><pre><span></span><code>&lt;html&gt;
+&lt;body&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;span&gt;Johnson&lt;/span&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;span&gt;Vaughan&lt;/span&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;span&gt;Jackson&lt;/span&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</code></pre></div>
+</div>
+<hr />
+<h2>Next Steps</h2>
+<ul>
+<li>
+<p>The <code>z-if</code> issue might mean we need state after all</p>
+</li>
+<li>
+<p>Tackle that before going any further</p>
+</li>
+<li>
+<p>And figure out how to do unit testing</p>
+</li>
+</ul>
+<hr />
+<!--# class="summary" -->
+
+<h2>Summary</h2>
+<figure id="template-concept-map">
 <img src="../concept_map.svg" alt="Concept map for page templates"/>
+<figcaption>Concept map for templating HTML pages.</figcaption>
 </figure>
-
-
-
-[ejs]: https://ejs.co/
-[jekyll]: https://jekyllrb.com/
-
-    </textarea>
-    <script src="../../remark-latest.min.js"></script>
-    <script>
-      var slideshow = remark.create({
-        highlightLines: true
-      })
-    </script>
   </body>
 </html>

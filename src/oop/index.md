@@ -1,4 +1,5 @@
 ---
+title: "Objects and Classes"
 abstract: >
     Object-oriented programming was invented to solve two problems:
     what is a natural way to represent real-world "things" in code,
@@ -31,7 +32,7 @@ Historically,
 As a motivating problem,
 let's define some of the things a generic shape in a drawing package must be able to do:
 
-[% inc file="shapes_original.py" keep="shape" %]
+[%inc shapes_original.py mark=shape %]
 
 A specification like this is sometimes called
 a [%g design_by_contract "contract" %]
@@ -43,7 +44,7 @@ we can [%g derived_class "derive" %] classes from `Shape`
 to represent squares and circles.
 {: .continue}
 
-[% inc file="shapes_original.py" keep="concrete" %]
+[%inc shapes_original.py mark=concrete %]
 
 Since squares and circles have the same methods,
 we can use them interchangeably.
@@ -51,8 +52,8 @@ This is called [%g polymorphism "polymorphism" %],
 and it reduces [%i "cognitive load" %]
 by allowing the people using related things to ignore their differences:
 
-[% inc file="shapes_original.py" keep="poly" %]
-[% inc file="shapes_original.out" %]
+[%inc shapes_original.py mark=poly %]
+[%inc shapes_original.out %]
 
 But how does polymorphism work?
 The first thing we need to understand is that a function is an [%i "object" %].
@@ -65,7 +66,7 @@ it creates an object in memory
 that contains the instructions to print a string
 and assigns that object to the variable `example`:
 
-[% inc file="func_obj.py" keep="def" %]
+[%inc func_obj.py mark=def %]
 
 [% figure
    slug="oop-func-obj"
@@ -81,8 +82,8 @@ Doing this doesn't alter or erase
 the connection between the function and the original name:
 {: .continue}
 
-[% inc file="func_obj.py" keep="alias" %]
-[% inc file="func_obj.out" %]
+[%inc func_obj.py mark=alias %]
+[%inc func_obj.out %]
 
 We can also store function objects in data structures like
 lists and [%i "dictionary" "dictionaries" %].
@@ -90,7 +91,7 @@ Let's write some functions that do
 the same things as the [%i "method" "methods" %] in our original Python
 and store them in a dictionary to represent a square ([%f oop-shapes-dict %]):
 
-[% inc file="shapes_dict.py" keep="square" %]
+[%inc shapes_dict.py mark=square %]
 
 [% figure
    slug="oop-shapes-dict"
@@ -102,7 +103,7 @@ and store them in a dictionary to represent a square ([%f oop-shapes-dict %]):
 If we want to use one of the "methods" in this dictionary,
 we call it like this:
 
-[% inc file="shapes_dict.py" keep="call" %]
+[%inc shapes_dict.py mark=call %]
 
 The function `call` looks up the function stored in the dictionary,
 then calls that function with the dictionary as its first object;
@@ -132,7 +133,7 @@ and having each individual square contain a reference to that higher-level dicti
 In the code below,
 that special reference uses the key `"_class"`:
 
-[% inc file="shapes_class.py" keep="square" %]
+[%inc shapes_class.py mark=square %]
 
 [% figure
    slug="oop-shapes-class"
@@ -147,7 +148,7 @@ but once again we call the "method" with the object as the first argument:
 
 <div class="pagebreak"></div>
 
-[% inc file="shapes_class.py" keep="call" %]
+[%inc shapes_class.py mark=call %]
 
 As a bonus,
 we can now reliably identify objects' classes
@@ -188,7 +189,8 @@ Similarly,
 if we define a parameter with two leading stars `**`,
 it captures any extra named parameters:
 
-[% inc pat="varargs.*" fill="py out" %]
+[%inc varargs.py %]
+[%inc varargs.out %]
 
 This mechanism is sometimes referred to as [%g varargs "varargs" %]
 (short for "variable arguments").
@@ -198,30 +200,31 @@ and spread them out in a call to match a function's parameters:
 
 <div class="pagebreak"></div>
 
-[% inc pat="spread.*" fill="py out" %]
+[%inc spread.py %]
+[%inc spread.out %]
 
 With these tools in hand,
 let's add a method to our `Square` class
 to tell us whether a square is larger than a user-specified size:
 
-[% inc file="larger.py" keep="square" %]
+[%inc larger.py mark=square %]
 
 The function that implements this check for circles
 looks exactly the same:
 {: .continue}
 
-[% inc file="larger.py" keep="circle" %]
+[%inc larger.py mark=circle %]
 
 We then modify `call` to capture extra arguments in `*args`
 and spread them into the function being called:
 {: .continue}
 
-[% inc file="larger.py" keep="call" %]
+[%inc larger.py mark=call %]
 
 Our tests show that this works:
 
-[% inc file="larger.py" keep="example" %]
-[% inc file="larger.out" %]
+[%inc larger.py mark=example %]
+[%inc larger.out %]
 
 However,
 we now have two functions that do exactly the same thing—the
@@ -238,27 +241,27 @@ To see how this works in Python,
 let's add a method called `density` to our original `Shape` class
 that uses other methods defined by the class
 
-[% inc file="inherit_original.py" keep="shape" %]
-[% inc file="inherit_original.py" keep="use" %]
-[% inc file="inherit_original.out" %]
+[%inc inherit_original.py mark=shape %]
+[%inc inherit_original.py mark=use %]
+[%inc inherit_original.out %]
 
 To enable our dictionary-based "classes" to do the same thing,
 we create a dictionary to represent a generic shape
 and give it a "method" to calculate density:
 
-[% inc file="inherit_class.py" keep="shape" %]
+[%inc inherit_class.py mark=shape %]
 
 We then add another specially-named field to
 the dictionaries for "classes" like `Square`
 to keep track of their parents:
 
-[% inc file="inherit_class.py" keep="square" %]
+[%inc inherit_class.py mark=square %]
 
 and modify the `call` function to search for
 the requested method ([%f oop-inherit-class %]):
 {: .continue}
 
-[% inc file="inherit_class.py" keep="search" %]
+[%inc inherit_class.py mark=search %]
 
 [% figure
    slug="oop-inherit-class"
@@ -271,8 +274,8 @@ the requested method ([%f oop-inherit-class %]):
 
 A simple test shows that this is working as intended:
 
-[% inc file="inherit_class.py" keep="use" %]
-[% inc file="inherit_class.out" %]
+[%inc inherit_class.py mark=use %]
+[%inc inherit_class.out %]
 
 We do have one task left, though:
 we need to make sure that when a square or circle is made,
@@ -282,13 +285,13 @@ We do this by giving the dictionaries that implement classes
 a special key `_new`
 whose value is the function that builds something of that type:
 
-[% inc file="inherit_constructor.py" keep="shape" %]
+[%inc inherit_constructor.py mark=shape %]
 
 In order to make an object,
 we call the function associated with its `_new` key:
 {: .continue}
 
-[% inc file="inherit_constructor.py" keep="make" %]
+[%inc inherit_constructor.py mark=make %]
 
 That function is responsible for [%g upcall "upcalling" %]
 the constructor of its parent.
@@ -297,13 +300,13 @@ the constructor for a square calls the constructor for a generic shape
 and adds square-specific values using `|` to combine two dictionaries:
 {: .continue}
 
-[% inc file="inherit_constructor.py" keep="square" %]
+[%inc inherit_constructor.py mark=square %]
 
 Of course,
 we're not done until we test it:
 
-[% inc file="inherit_constructor.py" keep="call" %]
-[% inc file="inherit_constructor.out" %]
+[%inc inherit_constructor.py mark=call %]
+[%inc inherit_constructor.out %]
 
 ## Summary {: #oop-summary}
 

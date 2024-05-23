@@ -1,22 +1,22 @@
+"""Handle configuration values."""
+
 import ark
 import shortcodes
 import util
 
 
 @shortcodes.register("config")
+@util.timing
 def config(pargs, kwargs, node):
-    """Handle [% config name %] references to configuration values."""
+    """Handle [% config "key" %] shortcode."""
     util.require(
         (len(pargs) == 1) and (not kwargs),
-        f"Bad 'config' shortcode {pargs} and {kwargs} in {node}",
+        f"Bad 'config' shortcode in {node.path} with '{pargs}' and '{kwargs}'",
     )
-    key = pargs[0]
-    if key == "email":
-        assert key in ark.site.config, "No email address in configuration"
-        email = ark.site.config["email"]
-        return f'<a href="mailto:{email}" class="email">{email}</a>'
-    elif key == "repo":
-        assert key in ark.site.config, "No GitHub repository in configuration"
-        repo = ark.site.config["repo"]
-        return f'<a href="{repo}">{repo}</a>'
-    assert False, f"Unknown 'config' key {key}"
+    current = ark.site.config
+    for key in pargs[0].split("."):
+        try:
+            current = current[key]
+        except KeyError:
+            util.fail(f"Bad config key '{pargs[0]}': no component '{key}'")
+    return current

@@ -1,368 +1,357 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="repo" content="https://github.com/gvwilson/sdxpy">
-  <meta name="build_date" content="2024-04-28">
-  <meta name="template" content="slides">
-  <meta name="major" content="lint">
-  
-  <link rel="icon" type="image/x-icon" href="../../favicon.ico">
-  <link rel="stylesheet" href="../../mccole.css">
-  <link rel="stylesheet" href="../../tango.css">
+    <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="../../logo.svg">
+<link rel="stylesheet" href="../../tango.css" type="text/css">
+<link rel="stylesheet" href="../../mccole.css" type="text/css">
+<title>Software Design by Example &middot; A Code Linter</title>
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [['\\(', '\\)']]
+    }
+  };
+</script>
+<script
+  type="text/javascript"
+  id="MathJax-script"
+  async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+</script>
+
   <script defer data-domain="third-bit.com" src="https://plausible.io/js/plausible.js"></script>
-  <script>
-    MathJax = {
-      tex: {
-        inlineMath: [['\\(', '\\)']]
-      }
-    };
-  </script>
-  <script
-    type="text/javascript"
-    id="MathJax-script"
-    async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
-  </script>
-  <script defer src="../../mccole.js"></script>
-  <title>Software Design by Example: A Code Linter</title>
-</head>
 
+
+    <script src="../../slides.js" defer></script>
+    <link rel="stylesheet" href="../../slides.css">
+  </head>
   <body>
-    <textarea id="source">
-
-class: slide-title
-
-<p>
-  <a href="https://third-bit.com/sdxpy/">Software Design by Example</a>
-</p>
-<h1>A Code Linter</h1>
-<div class="bottom">
-  <a href="../">chapter</a>
+<div class="row notex">
+  <div class="col-12 center">
+    <h1>A Code Linter</h1>
+    <p class="subtitle">Software Design by Example</p>
+  </div>
 </div>
+<hr>
+<h2>The Problem</h2>
+<ul>
+<li>
+<p>Want to check that our code follows style rules</p>
+</li>
+<li>
+<p>And doesn&rsquo;t do things that are likely to be bugs</p>
+</li>
+<li>
+<p>Build a <a class="gl-ref" href="../../glossary/#linter" markdown="1">linters</a></p>
+<ul>
+<li>Checks for &ldquo;fluff&rdquo; in code</li>
+</ul>
+</li>
+</ul>
+<hr />
+<h2>Programs as Trees</h2>
+<ul>
+<li>
+<p><a href="../../check/">Chapter&nbsp;11</a> represented HTML as a <a class="gl-ref" href="../../glossary/#dom" markdown="1">DOM tree</a></p>
+</li>
+<li>
+<p>We can represent code as an <a class="gl-ref" href="../../glossary/#abstract_syntax_tree" markdown="1">abstract syntax tree</a> (AST)</p>
+</li>
+<li>
+<p>Each node represents a syntactic element in the program</p>
+</li>
+</ul>
+<hr />
+<h2>Programs as Trees</h2>
+<div class="language-py" title="simple.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">double</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="k">return</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">x</span>
 
----
-
-
-## The Problem
-
--   Want to check that our code follows style rules
-
--   And doesn't do things that are likely to be bugs
-
--   Build a <a class="gl-ref" href="../../glossary/#gl:linter" title="A program that checks for common problems in software, such as violations of indentation rules or variable naming conventions. The name comes from the first tool of its kind, called `lint`." markdown="1">linters</a>
-
-    -   Checks for "fluff" in code
-
----
-
-## Programs as Trees
-
--   <a class="x-ref" href="../../check/">Chapter 11</a> represented HTML as a <a class="gl-ref" href="../../glossary/#gl:dom" title="A standard, in-memory representation of HTML and XML. Each element is stored as a node in a DOM tree with a set of named attributes; contained elements are child nodes." markdown="1">DOM tree</a>
-
--   We can represent code as an <a class="gl-ref" href="../../glossary/#gl:abstract_syntax_tree" title="A deeply nested data structure, or tree, that represents the structure of a program. For example, the AST might have a node representing a `while` loop with one child representing the loop condition and another representing the loop body." markdown="1">abstract syntax tree</a> (AST)
-
--   Each node represents a syntactic element in the program
-
----
-
-## Programs as Trees
-
-```py
-def double(x):
-    return 2 * x
-
-result = double(3)
-print(result)
-```
-
-
-<figure>
+<span class="n">result</span> <span class="o">=</span> <span class="n">double</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<figure id="lint-ast-simple">
 <img src="../ast_simple.svg" alt="Simple AST"/>
+<figcaption>The abstract syntax tree for a simple Python program.</figcaption>
 </figure>
 
+<hr />
+<h2>Building Trees</h2>
+<div class="language-py" title="dump_ast.py">
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">ast</span>
+<span class="kn">import</span> <span class="nn">sys</span>
 
----
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">reader</span><span class="p">:</span>
+    <span class="n">source</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
 
-## Building Trees
-
-```py
-import ast
-import sys
-
-with open(sys.argv[1], "r") as reader:
-    source = reader.read()
-
-tree = ast.parse(source)
-print(ast.dump(tree, indent=4))
-```
-
-```
-Module(
+<span class="n">tree</span> <span class="o">=</span> <span class="n">ast</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">ast</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">tree</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">4</span><span class="p">))</span>
+</code></pre></div>
+</div>
+<div class="language-out" title="dump_ast_simple.out">
+<div class="highlight"><pre><span></span><code>Module(
     body=[
         FunctionDef(
-            name='double',
+            name=&#39;double&#39;,
             args=arguments(
                 posonlyargs=[],
                 args=[
-                    arg(arg='x')],
+                    arg(arg=&#39;x&#39;)],
                 kwonlyargs=[],
                 kw_defaults=[],
-…
-```
-
-
----
-
-## Finding Things
-
--   Could walk the tree to find `FunctionDef` nodes and record their `name` properties
-
--   But each node has a different structure,
-    so we would have to write a recursive function for each type of node
-
--   [`ast`][py_ast] module's `ast.NodeVisitor` implements
-    the <a class="gl-ref" href="../../glossary/#gl:visitor_pattern" title="A design pattern in which the operation to be done is taken to each element of a data structure in turn. It is usually implemented by having a generator &quot;visitor&quot; that knows how to reach the structure&#x27;s elements, which is given a function or method to call for each in turn, and that carries out the specific operation." markdown="1">Visitor</a> pattern
-
--   Each time it reaches a node of type `Thing`, it looks for a method `visit_Thing`
-
----
-
-## Collecting Names
-
-```py
-class CollectNames(ast.NodeVisitor):
-    def __init__(self):
-        super().__init__()
-        self.names = {}
-
-    def visit_Assign(self, node):
-        for var in node.targets:
-            self.add(var, var.id)
-        self.generic_visit(node)
-
-    def visit_FunctionDef(self, node):
-        self.add(node, node.name)
-        self.generic_visit(node)
-
-    def add(self, node, name):
-        loc = (node.lineno, node.col_offset)
-        self.names[name] = self.names.get(name, set())
-        self.names[name].add(loc)
-
-    def position(self, node):
-        return ({node.lineno}, {node.col_offset})
-```
-
-
----
-
-## Collecting Names
-
-1.  `CollectNames` constructors invokes `NodeVisitor` constructor
-    before doing anything else
-
-1.  `visit_Assign` and `visit_FunctionDef` must call `self.generic_visit(node)` explicitly
-    to recurse
-
-1.  `position` methods uses the fact that every AST node remembers where it came from
-
----
-
-## Collecting Names
-
-```py
-with open(sys.argv[1], "r") as reader:
-    source = reader.read()
-tree = ast.parse(source)
-collector = CollectNames()
-collector.visit(tree)
-print(collector.names)
-```
-
-```sh
-python walk_ast.py simple.py
-```
-
-
-```
-{'double': {(1, 0)}, 'result': {(4, 0)}}
-```
-
-
----
-
-## What Does This Do?
-
-```py
-has_duplicates = {
-    "third": 3,
-    "fourth": 4,
-    "fourth": 5,
-    "third": 6
-}
-print(has_duplicates)
-```
-
-
-1.  An error
-2.  Keeps the first
-3.  Keeps the last
-4.  Concatenates
-
---
-
-```
-{'third': 6, 'fourth': 5}
-```
-
-
----
-
-## Finding Duplicate Keys
-
-```py
-class FindDuplicateKeys(ast.NodeVisitor):
-    def visit_Dict(self, node):
-        seen = Counter()
-        for key in node.keys:
-            if isinstance(key, ast.Constant):
-                seen[key.value] += 1
-        problems = {k for (k, v) in seen.items() if v > 1}
-        self.report(node, problems)
-        self.generic_visit(node)
-
-    def report(self, node, problems):
-        if problems:
-            msg = ", ".join(p for p in problems)
-            print(f"duplicate key(s) {{{msg}}} at {node.lineno}")
-```
-
-```
-duplicate key(s) {fourth, third} at 1
-```
-
-
----
-
-## False Negatives
-
--   Our duplicate finder only detects constants
-
-```py
-def label():
-    return "label"
-
-actually_has_duplicate_keys = {
-    "label": 1,
-    "la" + "bel": 2,
-    label(): 3,
-    "".join(["l", "a", "b", "e", "l"]): 4,
-}
-```
-
-
--   Fundamental theoretical result in computer science is that
-    it's impossible to build a general-purpose algorithm
-    that predicts the output of a program
-
----
-
-## Finding Unused Variables
-
--   Not wrong, but clutter makes code harder to read
-
--   Have to take <a class="gl-ref" href="../../glossary/#gl:scope" title="A region of a program in which names can be defined without colliding with definitions in other parts of the program. In Python, each module and function creates a new scope." markdown="1">scope</a> into account
-
--   So keep a stack of scopes
-
-```py
-class FindUnusedVariables(ast.NodeVisitor):
-    def __init__(self):
-        super().__init__()
-        self.stack = []
-
-    def visit_Module(self, node):
-        self.search("global", node)
-
-    def visit_FunctionDef(self, node):
-        self.search(node.name, node)
-```
-
-
----
-
-## Recording Scope
-
--   Use `namedtuple` from Python's standard library
-
-```py
-Scope = namedtuple("Scope", ["name", "load", "store"])
-```
-
-
----
-
-## Bucketing
-
--   If the variable's value is being read,
-    `node.ctx` (short for "context") is an instance of `Load`
-
--   If the variable is being written to,
-    `node.ctx` is an instance of `Store`
-
-```py
-def visit_Name(self, node):
-    if isinstance(node.ctx, ast.Load):
-        self.stack[-1].load.add(node.id)
-    elif isinstance(node.ctx, ast.Store):
-        self.stack[-1].store.add(node.id)
-    else:
-        assert False, f"Unknown context"
-    self.generic_visit(node)
-
-```
-
-
----
-
-## And Finally…
-
-```py
-def search(self, name, node):
-    self.stack.append(Scope(name, set(), set()))
-    self.generic_visit(node)
-    scope = self.stack.pop()
-    self.check(scope)
-
-def check(self, scope):
-    unused = scope.store - scope.load
-    if unused:
-        names = ", ".join(sorted(unused))
-        print(f"unused in {scope.name}: {names}")
-```
-
-
----
-
-class: summary
-
-## Summary
-
-<figure>
+                defaults=[]),
+            body=[
+                Return(
+                    value=BinOp(
+                        left=Constant(value=2),
+                        op=Mult(),
+                        right=Name(id=&#39;x&#39;, ctx=Load())))],
+            decorator_list=[]),
+        Assign(
+            targets=[
+                Name(id=&#39;result&#39;, ctx=Store())],
+            value=Call(
+                func=Name(id=&#39;double&#39;, ctx=Load()),
+                args=[
+                    Constant(value=3)],
+                keywords=[])),
+        Expr(
+            value=Call(
+                func=Name(id=&#39;print&#39;, ctx=Load()),
+                args=[
+                    Name(id=&#39;result&#39;, ctx=Load())],
+                keywords=[]))],
+    type_ignores=[])
+</code></pre></div>
+</div>
+<hr />
+<h2>Finding Things</h2>
+<ul>
+<li>
+<p>Could walk the tree to find <code>FunctionDef</code> nodes and record their <code>name</code> properties</p>
+</li>
+<li>
+<p>But each node has a different structure,
+    so we would have to write a recursive function for each type of node</p>
+</li>
+<li>
+<p><a href="https://docs.python.org/3/library/ast.html"><code>ast</code></a> module&rsquo;s <code>ast.NodeVisitor</code> implements
+    the <a class="gl-ref" href="../../glossary/#visitor_pattern" markdown="1">Visitor</a> pattern</p>
+</li>
+<li>
+<p>Each time it reaches a node of type <code>Thing</code>, it looks for a method <code>visit_Thing</code></p>
+</li>
+</ul>
+<hr />
+<h2>Collecting Names</h2>
+<div class="language-py" title="walk_ast.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">CollectNames</span><span class="p">(</span><span class="n">ast</span><span class="o">.</span><span class="n">NodeVisitor</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">names</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">def</span> <span class="nf">visit_Assign</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">targets</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="n">var</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">generic_visit</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">visit_FunctionDef</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">node</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">generic_visit</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="n">loc</span> <span class="o">=</span> <span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">lineno</span><span class="p">,</span> <span class="n">node</span><span class="o">.</span><span class="n">col_offset</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">names</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">names</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="nb">set</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">names</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">loc</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">position</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">({</span><span class="n">node</span><span class="o">.</span><span class="n">lineno</span><span class="p">},</span> <span class="p">{</span><span class="n">node</span><span class="o">.</span><span class="n">col_offset</span><span class="p">})</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Collecting Names</h2>
+<ol>
+<li>
+<p><code>CollectNames</code> constructors invokes <code>NodeVisitor</code> constructor
+    before doing anything else</p>
+</li>
+<li>
+<p><code>visit_Assign</code> and <code>visit_FunctionDef</code> must call <code>self.generic_visit(node)</code> explicitly
+    to recurse</p>
+</li>
+<li>
+<p><code>position</code> methods uses the fact that every AST node remembers where it came from</p>
+</li>
+</ol>
+<hr />
+<h2>Collecting Names</h2>
+<div class="language-py" title="walk_ast.py">
+<div class="highlight"><pre><span></span><code><span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">reader</span><span class="p">:</span>
+    <span class="n">source</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+<span class="n">tree</span> <span class="o">=</span> <span class="n">ast</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+<span class="n">collector</span> <span class="o">=</span> <span class="n">CollectNames</span><span class="p">()</span>
+<span class="n">collector</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">collector</span><span class="o">.</span><span class="n">names</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<div class="language-sh" title="walk_ast.sh">
+<div class="highlight"><pre><span></span><code>python<span class="w"> </span>walk_ast.py<span class="w"> </span>simple.py
+</code></pre></div>
+</div>
+<div class="language-out" title="walk_ast.out">
+<div class="highlight"><pre><span></span><code>{&#39;double&#39;: {(1, 0)}, &#39;result&#39;: {(4, 0)}}
+</code></pre></div>
+</div>
+<hr />
+<h2>What Does This Do?</h2>
+<div class="language-py" title="has_duplicate_keys.py">
+<div class="highlight"><pre><span></span><code><span class="n">has_duplicates</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;third&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+    <span class="s2">&quot;fourth&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+    <span class="s2">&quot;fourth&quot;</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span>
+    <span class="s2">&quot;third&quot;</span><span class="p">:</span> <span class="mi">6</span>
+<span class="p">}</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">has_duplicates</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<ol>
+<li>An error</li>
+<li>Keeps the first</li>
+<li>Keeps the last</li>
+<li>Concatenates</li>
+</ol>
+<div class="language-out" title="has_duplicate_keys.out">
+<div class="highlight"><pre><span></span><code>{&#39;third&#39;: 6, &#39;fourth&#39;: 5}
+</code></pre></div>
+</div>
+<hr />
+<h2>Finding Duplicate Keys</h2>
+<div class="language-py" title="find_duplicate_keys.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">FindDuplicateKeys</span><span class="p">(</span><span class="n">ast</span><span class="o">.</span><span class="n">NodeVisitor</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">visit_Dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="n">seen</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">keys</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">Constant</span><span class="p">):</span>
+                <span class="n">seen</span><span class="p">[</span><span class="n">key</span><span class="o">.</span><span class="n">value</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">problems</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span> <span class="k">for</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="ow">in</span> <span class="n">seen</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">v</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">problems</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">generic_visit</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">report</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">,</span> <span class="n">problems</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">problems</span><span class="p">:</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">p</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">problems</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;duplicate key(s) </span><span class="se">{{</span><span class="si">{</span><span class="n">msg</span><span class="si">}</span><span class="se">}}</span><span class="s2"> at </span><span class="si">{</span><span class="n">node</span><span class="o">.</span><span class="n">lineno</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<div class="language-out" title="find_duplicate_keys.out">
+<div class="highlight"><pre><span></span><code>duplicate key(s) {fourth, third} at 1
+</code></pre></div>
+</div>
+<hr />
+<h2>False Negatives</h2>
+<ul>
+<li>Our duplicate finder only detects constants</li>
+</ul>
+<div class="language-py" title="function_keys.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">label</span><span class="p">():</span>
+    <span class="k">return</span> <span class="s2">&quot;label&quot;</span>
+
+<span class="n">actually_has_duplicate_keys</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;label&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="s2">&quot;la&quot;</span> <span class="o">+</span> <span class="s2">&quot;bel&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+    <span class="n">label</span><span class="p">():</span> <span class="mi">3</span><span class="p">,</span>
+    <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s2">&quot;l&quot;</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="s2">&quot;e&quot;</span><span class="p">,</span> <span class="s2">&quot;l&quot;</span><span class="p">]):</span> <span class="mi">4</span><span class="p">,</span>
+<span class="p">}</span>
+</code></pre></div>
+</div>
+<ul>
+<li>Fundamental theoretical result in computer science is that
+    it&rsquo;s impossible to build a general-purpose algorithm
+    that predicts the output of a program</li>
+</ul>
+<hr />
+<h2>Finding Unused Variables</h2>
+<ul>
+<li>
+<p>Not wrong, but clutter makes code harder to read</p>
+</li>
+<li>
+<p>Have to take <a class="gl-ref" href="../../glossary/#scope" markdown="1">scope</a> into account</p>
+</li>
+<li>
+<p>So keep a stack of scopes</p>
+</li>
+</ul>
+<div class="language-py" title="find_unused_variables.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">FindUnusedVariables</span><span class="p">(</span><span class="n">ast</span><span class="o">.</span><span class="n">NodeVisitor</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stack</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">def</span> <span class="nf">visit_Module</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s2">&quot;global&quot;</span><span class="p">,</span> <span class="n">node</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">visit_FunctionDef</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">node</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Recording Scope</h2>
+<ul>
+<li>Use <code>namedtuple</code> from Python&rsquo;s standard library</li>
+</ul>
+<div class="language-py" title="find_unused_variables.py">
+<div class="highlight"><pre><span></span><code><span class="n">Scope</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s2">&quot;Scope&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="s2">&quot;load&quot;</span><span class="p">,</span> <span class="s2">&quot;store&quot;</span><span class="p">])</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Bucketing</h2>
+<ul>
+<li>
+<p>If the variable&rsquo;s value is being read,
+    <code>node.ctx</code> (short for &ldquo;context&rdquo;) is an instance of <code>Load</code></p>
+</li>
+<li>
+<p>If the variable is being written to,
+    <code>node.ctx</code> is an instance of <code>Store</code></p>
+</li>
+</ul>
+<div class="language-py" title="find_unused_variables.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">visit_Name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">ctx</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">Load</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stack</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">load</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">ctx</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">Store</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stack</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">store</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="kc">False</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Unknown context&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">generic_visit</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>And Finally…</h2>
+<div class="language-py" title="find_unused_variables.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">search</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stack</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Scope</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="nb">set</span><span class="p">(),</span> <span class="nb">set</span><span class="p">()))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">generic_visit</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+        <span class="n">scope</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stack</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check</span><span class="p">(</span><span class="n">scope</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">check</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scope</span><span class="p">):</span>
+        <span class="n">unused</span> <span class="o">=</span> <span class="n">scope</span><span class="o">.</span><span class="n">store</span> <span class="o">-</span> <span class="n">scope</span><span class="o">.</span><span class="n">load</span>
+        <span class="k">if</span> <span class="n">unused</span><span class="p">:</span>
+            <span class="n">names</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">unused</span><span class="p">))</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;unused in </span><span class="si">{</span><span class="n">scope</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">names</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<hr />
+<!--# class="summary" -->
+
+<h2>Summary</h2>
+<figure id="lint-concept-map">
 <img src="../concept_map.svg" alt="Concept map for code manipulation"/>
+<figcaption>Concepts for code manipulation.</figcaption>
 </figure>
-
-
-
-[py_ast]: https://docs.python.org/3/library/ast.html
-
-    </textarea>
-    <script src="../../remark-latest.min.js"></script>
-    <script>
-      var slideshow = remark.create({
-        highlightLines: true
-      })
-    </script>
   </body>
 </html>

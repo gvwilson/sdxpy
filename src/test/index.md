@@ -1,4 +1,5 @@
 ---
+title: "Running Tests"
 abstract: >
     Every programming language has tools to collect tests, run them, and report their results.
     This chapter shows how such tools are built,
@@ -48,7 +49,8 @@ that we can assign to a variable.
 We can also store them in lists just like numbers or strings
 ([%f test-func-list %]):
 
-[% inc pat="func_list.*" fill="py out" %]
+[%inc func_list.py %]
+[%inc func_list.out %]
 
 However,
 we have to be able to call the functions in the same way
@@ -56,17 +58,18 @@ in order for this trick to work,
 which means they must have the same [%i "signature" %]:
 {: .continue}
 
-[% inc pat="signature.*" fill="py out" %]
+[%inc signature.py %]
+[%inc signature.out %]
 
 Now suppose we have a function we want to test:
 
-[% inc file="manual.py" keep="sign" %]
+[%inc manual.py mark=sign %]
 
 and some functions that test it
 (two of which contain deliberate errors):
 {: .continue}
 
-[% inc file="manual.py" keep="tests" %]
+[%inc manual.py mark=tests %]
 
 Each test does something to a [%g fixture "fixture" %]
 (such as the number 19)
@@ -108,14 +111,14 @@ Translating these rules into code gives us the function `run_tests`
 that runs every test in a list
 and counts how many outcomes of each kind it sees:
 
-[% inc file="manual.py" keep="run" %]
+[%inc manual.py mark=run %]
 
 We use `run_tests` by putting all of our test functions into a list
 and passing that to the test runner:
 
-[% inc file="manual.py" keep="use" %]
+[%inc manual.py mark=use %]
 
-[% inc file="manual.out" %]
+[%inc manual.out %]
 
 <div class="callout" markdown="1">
 
@@ -143,7 +146,8 @@ To make its output easier to read,
 we will [%g pretty_print "pretty-print" %] it
 using Python's [`pprint`][py_pprint] module:
 
-[% inc pat="globals.*" fill="py out" %]
+[%inc globals.py %]
+[%inc globals.out %]
 
 As the output shows,
 `globals` is a dictionary containing
@@ -156,7 +160,8 @@ Python uses double underscores for names that mean something special to it.)
 
 What happens when we define a variable of our own?
 
-[% inc pat="globals_plus.*" fill="py out" %]
+[%inc globals_plus.py %]
+[%inc globals_plus.out %]
 
 Sure enough,
 `my_variable` is now in the dictionary.
@@ -167,8 +172,8 @@ and a program's variables are stored in a dictionary,
 we can loop over that dictionary
 to find all the functions whose names start with `test_`:
 
-[% inc file="find_test_funcs.py" keep="main" %]
-[% inc file="find_test_funcs.out" %]
+[%inc find_test_funcs.py mark=main %]
+[%inc find_test_funcs.out %]
 
 The [%i "hexadecimal" %] numbers in the output show
 where each function object is stored in memory,
@@ -184,8 +189,8 @@ gives us something that finds test functions,
 runs them,
 and summarizes their results:
 
-[% inc file="runner.py" keep="run" %]
-[% inc file="runner.out" %]
+[%inc runner.py mark=run %]
+[%inc runner.out %]
 
 We could add many more features to this
 (and [pytest][pytest] does),
@@ -279,23 +284,27 @@ which means it checks the types of values as code runs.
 We can do this ourselves using the `type` function,
 which shows that 3 is an integer:
 
-[% inc pat="type_int.*" fill="py out" %]
+[%inc type_int.py %]
+[%inc type_int.out %]
 
 or that a function is a function:
 {: .continue}
 
-[% inc pat="type_func.*" fill="py out" %]
+[%inc type_func.py %]
+[%inc type_func.out %]
 
 However,
 built-in functions have a different type:
 {: .continue}
 
-[% inc pat="type_len.*" fill="py out" %]
+[%inc type_len.py %]
+[%inc type_len.out %]
 
 so it's safer to use `callable` to check if something can be called:
 {: .continue}
 
-[% inc pat="callable.*" fill="py out" %]
+[%inc callable.py %]
+[%inc callable.out %]
 
 1.  Modify the test runner in this chapter so that
     it *doesn't* try to call things whose names start with `test_`
@@ -314,4 +323,4 @@ that returns all the variables defined in the current [%g local "local" %] scope
 
 2.  Run the code and compare your prediction with its behavior.
 
-[% inc file="locals.py" %]
+[%inc locals.py %]

@@ -1,4 +1,5 @@
 ---
+title: "A Template Expander"
 abstract: >
     Writing and updating HTML pages by hand is time-consuming and error-prone,
     so most modern websites use some kind of static site generator (SSG)
@@ -64,7 +65,7 @@ Let's start by deciding what "done" looks like.
 Suppose we want to turn an array of strings into an HTML list.
 Our template will look like this:
 
-[% inc file="loop.ht" %]
+[%inc loop.ht %]
 
 The attribute `z-loop` tells the tool to repeat the contents of that node;
 the loop variable and the collection being looped over are separated by a colon.
@@ -73,7 +74,7 @@ tells the tool to fill in the node with the value of the variable.
 When our tool processes this page,
 the output will be standard HTML without any traces of how it was created:
 
-[% inc file="loop.out" %]
+[%inc loop.out %]
 
 <div class="callout" markdown="1">
 
@@ -111,7 +112,7 @@ so we will assume the calling program has gotten them somehow
 and have it pass them into the expansion function as a dictionary
 ([%f template-api %]):
 
-[% inc file="example_call.py" %]
+[%inc example_call.py %]
 
 [% figure
    slug="template-api"
@@ -138,7 +139,7 @@ and find a variable given its name.
 If the variable can't be found,
 `Env.find` returns `None` instead of raising an exception:
 
-[% inc file="env.py" keep="body" %]
+[%inc env.py mark=body %]
 
 ## Visiting Nodes {: #template-nodes}
 
@@ -152,7 +153,7 @@ Calling `Visitor.walk` without a value starts [%i "recursion" %] from that saved
 when `.walk` is given a value (as it is during recursive calls),
 it uses that instead.
 
-[% inc file="visitor.py" %]
+[%inc visitor.py %]
 
 `Visitor` defines two [%g abstract_method "abstract methods" %] `open` and `close`
 that are called when we first arrive at a node and when we are finished with it.
@@ -172,7 +173,7 @@ making up the output:
 
 <div class="pagebreak"></div>
 
-[% inc file="expander.py" keep="construct" %]
+[%inc expander.py mark=construct %]
 
 When recursion encounters a new node,
 it calls `open` to do one of three things:
@@ -185,19 +186,19 @@ it calls `open` to do one of three things:
 
 1.  Otherwise, open a regular [%i "tag (in HTML)" "tag" %].
 
-[% inc file="expander.py" keep="open" %]
+[%inc expander.py mark=open %]
 
 `Expander.close` works much the same way.
 Both methods find handlers by comparing the DOM node's attributes
 to the keys in the dictionary of handlers built during construction:
 {: .continue}
 
-[% inc file="expander.py" keep="handlers" %]
+[%inc expander.py mark=handlers %]
 
 Finally, we need a few helper methods to show tags and generate output:
 {: .continue}
 
-[% inc file="expander.py" keep="helpers" %]
+[%inc expander.py mark=helpers %]
 
 Notice that `Expander` adds strings to an array
 and joins them all right at the end
@@ -229,7 +230,7 @@ that each take an expander and a node as inputs
 and expand a DOM node with a `z-num` attribute
 to insert a number into the output:
 
-[% inc file="z_num.py" %]
+[%inc z_num.py %]
 
 When we enter a node like `<span z-num="123"/>`
 this handler asks the expander to show an [%i "opening tag" %]
@@ -245,7 +246,7 @@ it just knows that whoever called it implements the low-level operations it need
 Here's how we connect this handler (and others we're going to write in a second)
 to the expander:
 
-[% inc file="expander.py" keep="import" %]
+[%inc expander.py mark=import %]
 
 The `HANDLERS` dictionary maps the names of special attributes in the HTML to modules,
 each of which defines `open` and `close` functions for the expander to call.
@@ -257,7 +258,7 @@ The handlers for variables are:
 
 <div class="pagebreak"></div>
 
-[% inc file="z_var.py" %]
+[%inc z_var.py %]
 
 This code is almost the same as the previous example.
 The only difference is that instead of copying the attribute's value
@@ -268,25 +269,25 @@ we use it as a key to look up a value.
 These two pairs of handlers look plausible, but do they work?
 To find out,
 we can build a program that loads variable definitions from a JSON file,
-reads an HTML template using the [Beautiful Soup][beautiful_soup] module,
+reads an HTML template using the [Beautiful Soup][bs4] module,
 and does the expansion:
 
-[% inc file="template.py" %]
+[%inc template.py %]
 
 We added new variables for our test cases one by one
 as we were writing this chapter.
 To avoid repeating text repeatedly,
 here's the entire set:
 
-[% inc file="vars.json" %]
+[%inc vars.json %]
 
 Our first test checks whether static text is copied over as-is:
 
 <table class="twocol">
   <tbody>
     <tr>
-      <td markdown="1">[% inc file="static_text.ht" %]</td>
-      <td markdown="1">[% inc file="static_text.out" %]</td>
+      <td markdown="1">[%inc static_text.ht %]</td>
+      <td markdown="1">[%inc static_text.out %]</td>
     </tr>
   </tbody>
 </table>
@@ -297,8 +298,8 @@ Now, does the expander handle constants?
 <table class="twocol">
   <tbody>
     <tr>
-      <td markdown="1">[% inc file="single_constant.ht" %]</td>
-      <td markdown="1">[% inc file="single_constant.out" %]</td>
+      <td markdown="1">[%inc single_constant.ht %]</td>
+      <td markdown="1">[%inc single_constant.out %]</td>
     </tr>
   </tbody>
 </table>
@@ -309,8 +310,8 @@ What about a single variable?
 <table class="twocol">
   <tbody>
     <tr>
-      <td markdown="1">[% inc file="single_variable.ht" %]</td>
-      <td markdown="1">[% inc file="single_variable.out" %]</td>
+      <td markdown="1">[%inc single_variable.ht %]</td>
+      <td markdown="1">[%inc single_variable.out %]</td>
     </tr>
   </tbody>
 </table>
@@ -323,8 +324,8 @@ software isn't done until it has been tested.
 <table class="twocol">
   <tbody>
     <tr>
-      <td markdown="1">[% inc file="multiple_variables.ht" %]</td>
-      <td markdown="1">[% inc file="multiple_variables.out" %]</td>
+      <td markdown="1">[%inc multiple_variables.ht %]</td>
+      <td markdown="1">[%inc multiple_variables.out %]</td>
     </tr>
   </tbody>
 </table>
@@ -354,15 +355,15 @@ Since we're not implementing [%g boolean_expression "Boolean expressions" %] lik
 all we have to do for a condition is look up a variable
 and then expand the node if Python thinks the variable's value is [%g truthy "truthy" %]:
 
-[% inc file="z_if.py" %]
+[%inc z_if.py %]
 
 Let's test it:
 
 <table class="twocol">
   <tbody>
       <tr>
-        <td markdown="1">[% inc file="conditional.ht" %]</td>
-        <td markdown="1">[% inc file="conditional.out" %]</td>
+        <td markdown="1">[%inc conditional.ht %]</td>
+        <td markdown="1">[%inc conditional.out %]</td>
       </tr>
   </tbody>
 </table>
@@ -395,7 +396,7 @@ and do the following for each item it contains:
 
 1.  Pop the stack frame to get rid of the temporary variable.
 
-[% inc file="z_loop.py" %]
+[%inc z_loop.py %]
 
 Once again,
 it's not done until we test it:
@@ -403,8 +404,8 @@ it's not done until we test it:
 <table class="twocol">
   <tbody>
       <tr>
-        <td markdown="1">[% inc file="loop.ht" %]</td>
-        <td markdown="1">[% inc file="loop.out" %]</td>
+        <td markdown="1">[%inc loop.ht %]</td>
+        <td markdown="1">[%inc loop.out %]</td>
       </tr>
   </tbody>
 </table>

@@ -1,3 +1,7 @@
+---
+title: "Bonus Material"
+---
+
 Each chapter in this book is designed to be teachable in one classroom hour.
 This appendix presents material that extends core ideas
 but would break that [%g attention_budget "attention budget" %].
@@ -14,21 +18,22 @@ Since functions are objects,
 they can have attributes.
 The function `dir` (short for "directory") returns a list of their names:
 
-[% inc pat="func_dir.*" fill="py out" %]
+[%inc func_dir.py %]
+[%inc func_dir.out %]
 
 Most programmers never need to use most of these,
 but `__name__` holds the function's original name
 and `__doc__` holds its [%i "docstring" %]:
 
-[% inc file="func_attr.py" keep="print" %]
-[% inc file="func_attr.out" %]
+[%inc func_attr.py mark=print %]
+[%inc func_attr.out %]
 
 We can modify the test runner of [%x test %]
 to use the function's `__name__` attribute in reports
 instead of the key in the `globals` dictionary:
 
-[% inc file="with_name.py" keep="run" %]
-[% inc file="with_name.out" %]
+[%inc with_name.py mark=run %]
+[%inc with_name.out %]
 
 More usefully,
 we can say that if a test function's docstring contains the string `"test:skip"`
@@ -36,16 +41,16 @@ then we should skip the test,
 while `"test:fail"` means we expect this test to fail.
 Let's rewrite our tests to show this off:
 
-[% inc file="docstring.py" keep="tests" %]
+[%inc docstring.py mark=tests %]
 
 and then modify `run_tests` to look for these strings and act accordingly:
 {: .continue}
 
-[% inc file="docstring.py" keep="run" %]
+[%inc docstring.py mark=run %]
 
 The output is now:
 
-[% inc file="docstring.out" %]
+[%inc docstring.out %]
 
 Instead of (ab)using docstrings like this,
 we can instead add our own attributes to functions.
@@ -55,18 +60,18 @@ while if it has an attribute called `fail` whose value is `True`
 then the test is expected to fail.
 Our tests become:
 
-[% inc file="attribute.py" keep="tests" %]
+[%inc attribute.py mark=tests %]
 
 We can write a helper function called `classify` to classify tests.
 Note that it uses `hasattr` to check if an attribute is present
 before trying to get its value:
 
-[% inc file="attribute.py" keep="classify" %]
+[%inc attribute.py mark=classify %]
 
 Finally,
 our test runner becomes:
 
-[% inc file="attribute.py" keep="run" %]
+[%inc attribute.py mark=run %]
 
 <div class="pagebreak"></div>
 
@@ -84,7 +89,7 @@ For example,
 we can add a `comment` "operation" that does nothing and returns `None`
 simply by writing `do_comment` function:
 
-[% inc file="stmt.py" keep="comment" %]
+[%inc stmt.py mark=comment %]
 
 An `if` statement is a bit more complex.
 If its first argument is true,
@@ -92,7 +97,7 @@ it evaluates and returns its second argument (the "if" branch).
 Otherwise,
 it evaluates and returns its second argument (the "else" branch):
 
-[% inc file="stmt.py" keep="if" %]
+[%inc stmt.py mark=if %]
 
 As we said in [%x func %],
 this is called [%i "lazy evaluation" %]
@@ -102,7 +107,7 @@ that evaluates everything up front.
 most languages do this so that we can safely write things like:
 {: .continue}
 
-[% inc file="lazy.py" %]
+[%inc lazy.py %]
 
 If the language always evaluated both branches,
 then the code shown above would fail whenever `x` was zero,
@@ -144,7 +149,7 @@ that doesn't add anything to `NodeVisitor`,
 then uses `setattr` to add a method to it after it has been defined
 ([%f bonus-injection %]):
 
-[% inc file="injection.py" keep="attach" %]
+[%inc injection.py mark=attach %]
 
 [% figure
    slug="bonus-injection"
@@ -157,7 +162,7 @@ This trick works because classes and objects are just specialized dictionaries
 (for some large value of "just").
 If we create an object of `BlankNodeVisitor` and call its `visit` method:
 
-[% inc file="injection.py" keep="main" %]
+[%inc injection.py mark=main %]
 
 <div class="pagebreak"></div>
 
@@ -188,7 +193,7 @@ To avoid this complication,
 most systems use a different approach.
 Consider this class:
 
-[% inc file="register.py" keep="class" %]
+[%inc register.py mark=class %]
 
 The `add_handler` method takes three parameters:
 the type of node a callback function is meant to handle,
@@ -204,12 +209,12 @@ So what do handlers look like?
 Each one is a function that takes a node and some data as input
 and does whatever it's supposed to do:
 
-[% inc file="register.py" keep="handler" %]
+[%inc register.py mark=handler %]
 
 Setting up the visitor is a bit more complicated,
 since we have to create and [%i "register (in code)" "register" %] the handler:
 
-[% inc file="register.py" keep="main" %]
+[%inc register.py mark=main %]
 
 However,
 we can now register as many handlers as we want
@@ -230,7 +235,7 @@ To show how it works,
 this file that defines four classes,
 each of which defines or redefines some methods:
 
-[% inc file="inheritance_example.py" %]
+[%inc inheritance_example.py %]
 
 As in [%x lint %],
 our class's constructor creates a stack to keep track of where we are.
@@ -238,14 +243,14 @@ It also creates a couple of dictionaries to keep track of
 how classes inherit from each other
 and the methods each class defines:
 
-[% inc file="inheritance.py" keep="init" %]
+[%inc inheritance.py mark=init %]
 
 When we encounter a new class definition,
 we push its name on the stack,
 record its parents,
 and create an empty set to hold its methods:
 
-[% inc file="inheritance.py" keep="classdef" %]
+[%inc inheritance.py mark=classdef %]
 
 When we encounter a function definition,
 the first thing we do is check the stack.
@@ -259,7 +264,7 @@ If this function definition is inside a class,
 on the other hand,
 we add its name to our records:
 
-[% inc file="inheritance.py" keep="methoddef" %]
+[%inc inheritance.py mark=methoddef %]
 
 Once we're done searching the AST,
 we print out a table
@@ -269,14 +274,7 @@ we could sort the classes from parent to child
 and display methods in the order they were first defined—but
 none of that requires us to inspect the AST.
 
-<div class="table here" id="linter-inheritance" caption="Inheritance and methods." markdown="1">
-| | `GrandChild` | `LeftChild` | `Parent` | `RightChild` |
-| --- | --- | --- | --- | --- |
-| `blue` | X | X |   | X
-| `green` |   | X | X |
-| `orange` | X |   |   |
-| `red` | X |   | X | X
-</div>
+[% table slug="linter-inheritance" tbl="inheritance.tbl" caption="Inheritance and methods." %]
 
 ## Inspecting Functions {: #bonus-inspect}
 
@@ -291,7 +289,8 @@ A better implementation of filtering would make use of the fact that
 Python's [`inspect`][py_inspect] module lets us examine objects in memory.
 In particular, `inspect.signature` can tell us what parameters a function takes:
 
-[% inc pat="inspect_func.*" fill="py out" %]
+[%inc inspect_func.py %]
+[%inc inspect_func.out %]
 
 If, for example,
 the user wants to compare the `red` and `blue` columns of a dataframe,
@@ -313,17 +312,17 @@ but can easily be extended to handle user-defined classes as well.
 To start,
 we refactor the code so that the `save` method doesn't get any larger:
 
-[% inc file="extend.py" keep="save_base" omit="omit_extension" %]
+[%inc extend.py mark=save_base omit=omit_extension %]
 
 The method to handle built-in types is:
 {: .continue}
 
-[% inc file="extend.py" keep="save_builtin" %]
+[%inc extend.py mark=save_builtin %]
 
 and the one that handles aliases is:
 {: .continue}
 
-[% inc file="extend.py" keep="save_aliased" %]
+[%inc extend.py mark=save_aliased %]
 
 None of this code is new:
 we've just moved things into methods
@@ -362,7 +361,7 @@ we will save a line indicating that
 this dictionary should be used to reconstruct an object
 of a particular class:
 
-[% inc file="extend.py" keep="save_extension" %]
+[%inc extend.py mark=save_extension %]
 
 Loading user-defined classes requires more work
 because we have to map class names back to actual classes.
@@ -373,7 +372,7 @@ We start by modifying the loader's constructor
 to take zero or more extension classes as arguments
 and then build a name-to-class lookup table from them:
 
-[% inc file="extend.py" keep="load_constructor" %]
+[%inc extend.py mark=load_constructor %]
 
 The `load` method then looks for aliases,
 built-in types,
@@ -387,12 +386,12 @@ it raises a `KeyError` exception,
 and if none of the methods handle a case
 we fail:
 
-[% inc file="extend.py" keep="load_load" %]
+[%inc extend.py mark=load_load %]
 
 The code to handle built-ins and aliases is copied from our previous work
 and modified to raise `KeyError`:
 
-[% inc file="extend.py" keep="inherited" %]
+[%inc extend.py mark=inherited %]
 
 The method that handles extensions
 checks that the value on the line just read indicates an extension,
@@ -400,15 +399,15 @@ then reads the dictionary containing the object's contents
 from the input stream
 and uses it to build an [%i "instance" %] of the right class:
 
-[% inc file="extend.py" keep="load_extension" %]
+[%inc extend.py mark=load_extension %]
 
 Here's a class that defines the required method:
 
-[% inc file="user_classes.py" keep="parent" %]
+[%inc user_classes.py mark=parent %]
 
 and here's a test to make sure everything works:
 
-[% inc file="test_extend.py" keep="test_parent" %]
+[%inc test_extend.py mark=test_parent %]
 
 <div class="callout" markdown="1">
 
@@ -573,15 +572,7 @@ If you're using `struct`,
 the first character of a format string optionally indicates the byte order
 ([%t bonus-endian-formats %]).
 
-<div class="table here" id="bonus-endian-formats" caption="`struct` package endian indicators." markdown="1">
-| Character | Byte order | Size     | Alignment     |
-| --------- | ---------- | -------- | ------------- |
-| `@`       | native     | native   | native        |
-| `=`       | native     | standard | none          |
-| `<`       | little     | endian   | standard none |
-| `>`       | big        | endian   | standard none |
-| `!`       | network    | standard | none          |
-</div>
+[% table slug="bonus-endian-formats" tbl="endian-formats.tbl" caption="`struct` package endian indicators." %]
 
 ## Generating Test Cases {: #bonus-theorem}
 
@@ -600,22 +591,22 @@ scalene,
 or isosceles.
 We can set up some integer variables:
 
-[% inc file="equilateral.py" keep="setup" %]
+[%inc equilateral.py mark=setup %]
 
 and then ask it to create an equilateral triangle
 based solely on the definition:
 {: .continue}
 
-[% inc file="equilateral.py" keep="equilateral" %]
-[% inc file="equilateral.out" %]
+[%inc equilateral.py mark=equilateral %]
+[%inc equilateral.out %]
 
 The same technique can generate a test case for scalene triangles:
 
-[% inc file="scalene.py" keep="scalene" %]
-[% inc file="scalene.out" %]
+[%inc scalene.py mark=scalene %]
+[%inc scalene.out %]
 
 and isosceles triangles:
 {: .continue}
 
-[% inc file="isosceles.py" keep="isosceles" %]
-[% inc file="isosceles.out" %]
+[%inc isosceles.py mark=isosceles %]
+[%inc isosceles.out %]

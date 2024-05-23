@@ -1,4 +1,5 @@
 ---
+title: "A Build Manager"
 abstract: >
     Programmers frequently need to chain operations together
     so that if one file is updated,
@@ -96,7 +97,7 @@ For example,
 this file describes two targets `A` and `B`
 and states that the former depends on the latter:
 
-[% inc file="double_linear_dep.json" %]
+[%inc double_linear_dep.json %]
 
 As in [%x archive %],
 we will use [%i "successive refinement" %]
@@ -109,22 +110,23 @@ For now,
 "refreshing" means "prints the update rule";
 we will come back and make this more sophisticated later.
 
-[% inc file="build_simple.py" keep="main" %]
+[%inc build_simple.py mark=main %]
 
 To load a configuration file,
 we read in the JSON,
 build a set of known targets,
 and then verify each rule using a helper method called `_check`:
 
-[% inc file="build_simple.py" keep="config" %]
+[%inc build_simple.py mark=config %]
 
 To check a rule,
 we make sure the dictionary that represents it has the required keys
 and that we have a rule for every dependency it mentions.
-We also transform the rule's structure a bit to simplify later processing:
+We also transform the rule's structure a bit to simplify later processing
+([%f build-diamond %]):
 {: .continue}
 
-[% inc file="build_simple.py" keep="check" %]
+[%inc build_simple.py mark=check %]
 
 [% figure
    slug="build-diamond"
@@ -179,12 +181,13 @@ The next step is to figure out a safe order in which to build things.
 
 The code that implements this algorithm is:
 
-[% inc file="build_simple.py" keep="sort" %]
+[%inc build_simple.py mark=sort %]
 
 With all of this in place,
 we can run our first test:
 
-[% inc pat="double_linear_dep.*" fill="json out" %]
+[%inc double_linear_dep.json %]
+[%inc double_linear_dep.out %]
 
 ## A Better Design {: #build-better}
 
@@ -217,26 +220,26 @@ but we can do better:
 
 The top level of our better build manager looks like this:
 
-[% inc file="build_better.py" keep="main" %]
+[%inc build_better.py mark=main %]
 
 The revised configuration code is:
 {: .continue}
 
-[% inc file="build_better.py" keep="config" %]
+[%inc build_better.py mark=config %]
 
 and the updated topological sorting method is
 {: .continue}
 
-[% inc file="build_better.py" keep="sort" %]
+[%inc build_better.py mark=sort %]
 
 We can now test that the code detects circularities in the dependency graph:
 
-[% inc file="test_build_better.py" keep="test_circular" %]
+[%inc test_build_better.py mark=test_circular %]
 
 and that it builds what it's supposed to:
 {: .continue}
 
-[% inc file="test_build_better.py" keep="test_no_dep" %]
+[%inc test_build_better.py mark=test_no_dep %]
 
 We can also extend it.
 For example,
@@ -246,13 +249,13 @@ If the targets are actual files we can check their [%i "timestamp" "timestamps" 
 but for testing purposes
 we would like to specify pretended times in the configuration:
 
-[% inc file="test_build_time.py" keep="tests" %]
+[%inc test_build_time.py mark=tests %]
 
 Starting from the class we have written so far,
 we need to override three methods:
 {: .continue}
 
-[% inc file="build_time.py" keep="class" %]
+[%inc build_time.py mark=class %]
 
 <div class="callout" markdown="1">
 

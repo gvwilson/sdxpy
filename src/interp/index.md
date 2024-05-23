@@ -1,4 +1,5 @@
 ---
+title: "An Interpreter"
 abstract: >
     A program in memory is just a data structure,
     each of whose elements triggers some operation in the interpreter that's executing it.
@@ -60,7 +61,7 @@ and the values to be operated on as the other items.
 If we have multiple operations,
 we use nested lists:
 
-[% inc file="add_example.py" %]
+[%inc add_example.py %]
 
 <div class="callout" markdown="1">
 
@@ -86,7 +87,7 @@ on multiple values at once.
 
 The function to add two expressions looks like this:
 
-[% inc file="expr.py" keep="do_add" %]
+[%inc expr.py mark=do_add %]
 
 Its single parameter is a list containing
 the two sub-expressions to be evaluated and added.
@@ -103,7 +104,7 @@ it adds them and returns the result.
 The only differences are that it expects one value instead of two
 and calculates a different return value:
 
-[% inc file="expr.py" keep="do_abs" %]
+[%inc expr.py mark=do_abs %]
 
 Notice that `do_abs` and `do_add` have the same [%i "signature" %].
 As with the [%i "unit test" "unit testing" %] functions in [%x test %],
@@ -120,7 +121,7 @@ Otherwise,
 and then uses the first value in the list
 to decide what other function to call.
 
-[% inc file="expr.py" keep="do" %]
+[%inc expr.py mark=do %]
 
 <div class="pagebreak"></div>
 
@@ -151,7 +152,7 @@ the file containing the instructions to execute,
 call `do`,
 and print the result:
 
-[% inc file="expr.py" keep="main" %]
+[%inc expr.py mark=main %]
 
 The program we want to interpret is a list of lists of lists,
 so we can read it as [%i "JSON" %] using `json.load`
@@ -159,18 +160,18 @@ rather than writing our own parser.
 For example,
 if our program file contains:
 
-[% inc file="expr.tll" %]
+[%inc expr.tll %]
 
 then our little interpreter prints:
 {: .continue}
 
-[% inc file="expr.out" %]
+[%inc expr.out %]
 
 This is a lot of code to do something that Python already does,
 but it shows what Python (and other languages) do themselves.
 When we run:
 
-[% inc file="expr.sh" %]
+[%inc expr.sh %]
 
 Python reads `expr.py`,
 turns it into a data structure with operation identifiers and constants,
@@ -196,18 +197,18 @@ introduced in [%x test %] are both environments.
 Let's modify `do_add`, `do_abs`, `do`, and `main`
 to take an environment as an extra parameter and pass it on as needed:
 
-[% inc file="vars.py" keep="do_abs" %]
+[%inc vars.py mark=do_abs %]
 
 Looking up variables when we need their values is straightforward.
 We check that we have a variable name and that the name is in the environment,
 then return the stored value:
 
-[% inc file="vars.py" keep="do_get" %]
+[%inc vars.py mark=do_get %]
 
 To define a new variable or change an existing one,
 we evaluate an expression and store its value in the environment:
 
-[% inc file="vars.py" keep="do_set" %]
+[%inc vars.py mark=do_set %]
 
 We need to add one more function to make this all work.
 Our programs no longer consist of a single expression;
@@ -221,12 +222,13 @@ rather than calculating a value itself,
 it controls when and how other expressions are evaluated.
 Its implementation is:
 
-[% inc file="vars.py" keep="do_seq" %]
+[%inc vars.py mark=do_seq %]
 
 Let's try it out.
 Our test program is:
 
-[% inc pat="vars.*" fill="tll out" %]
+[%inc vars.tll %]
+[%inc vars.out %]
 
 <div class="callout" markdown="1">
 
@@ -259,7 +261,7 @@ we can write small programs.
 However,
 our `do` function now looks like this:
 
-[% inc file="vars.py" keep="do" %]
+[%inc vars.py mark=do %]
 
 The sequence of `if` statements that decide what function to call
 is becoming unwieldy.
@@ -270,7 +272,7 @@ to create a lookup table
 that stores every function whose name starts with `do_`
 ([%f interp-lookup %]):
 
-[% inc file="vars_reflect.py" keep="lookup" %]
+[%inc vars_reflect.py mark=lookup %]
 
 [% figure
    slug="interp-lookup"
@@ -295,7 +297,7 @@ Line by line:
 With this lookup table in hand,
 the code to select and run an operation is:
 
-[% inc file="vars_reflect.py" keep="do" %]
+[%inc vars_reflect.py mark=do %]
 
 As with unit test functions in [%x test %],
 the `do_*` functions must have exactly the same [%i "signature" %]
@@ -306,7 +308,7 @@ introspection is more reliable than a hand-written lookup table
 but is harder to understand.
 If we write out the lookup table explicitly like this:
 
-[% inc file="vars_table.py" keep="lookup" %]
+[%inc vars_table.py mark=lookup %]
 
 then we can see exactly what operations are available
 and what their names are.
@@ -359,14 +361,15 @@ when there's a bug in their program.
 Add `print` and `repeat` commands to the interpreter
 so that the following program produces the output shown:
 
-[% inc pat="doubling.*" fill="tll out" %]
+[%inc doubling.tll %]
+[%inc doubling.out %]
 
 Does your `repeat` command handle "repeat zero times" correctly,
 i.e., does it handle the program below?
 If so,
 what does your `do_repeat` function return as a result in this case?
 
-[% inc file="repeat_zero.tll" %]
+[%inc repeat_zero.tll %]
 
 ### Tracing {: .exercise}
 

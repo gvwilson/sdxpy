@@ -1,445 +1,513 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="repo" content="https://github.com/gvwilson/sdxpy">
-  <meta name="build_date" content="2024-04-28">
-  <meta name="template" content="slides">
-  <meta name="major" content="binary">
-  
-  <link rel="icon" type="image/x-icon" href="../../favicon.ico">
-  <link rel="stylesheet" href="../../mccole.css">
-  <link rel="stylesheet" href="../../tango.css">
+    <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="../../logo.svg">
+<link rel="stylesheet" href="../../tango.css" type="text/css">
+<link rel="stylesheet" href="../../mccole.css" type="text/css">
+<title>Software Design by Example &middot; Binary Data</title>
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [['\\(', '\\)']]
+    }
+  };
+</script>
+<script
+  type="text/javascript"
+  id="MathJax-script"
+  async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+</script>
+
   <script defer data-domain="third-bit.com" src="https://plausible.io/js/plausible.js"></script>
-  <script>
-    MathJax = {
-      tex: {
-        inlineMath: [['\\(', '\\)']]
-      }
-    };
-  </script>
-  <script
-    type="text/javascript"
-    id="MathJax-script"
-    async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
-  </script>
-  <script defer src="../../mccole.js"></script>
-  <title>Software Design by Example: Binary Data</title>
-</head>
 
+
+    <script src="../../slides.js" defer></script>
+    <link rel="stylesheet" href="../../slides.css">
+  </head>
   <body>
-    <textarea id="source">
-
-class: slide-title
-
-<p>
-  <a href="https://third-bit.com/sdxpy/">Software Design by Example</a>
-</p>
-<h1>Binary Data</h1>
-<div class="bottom">
-  <a href="../">chapter</a>
+<div class="row notex">
+  <div class="col-12 center">
+    <h1>Binary Data</h1>
+    <p class="subtitle">Software Design by Example</p>
+  </div>
 </div>
-
----
-
-
-## Why Binary?
-
--   Operations are much faster
-    -   Write addition using textual digits as an exercise
--   Bits take less space
-    -   `"10239472"` is 8 bytes, but `10239472` is just 4
--   How would we represent images, audio, or video as characters?
-
-```txt
- ,_,
+<hr>
+<h2>Why Binary?</h2>
+<ul>
+<li>Operations are much faster<ul>
+<li>Write addition using textual digits as an exercise</li>
+</ul>
+</li>
+<li>Bits take less space<ul>
+<li><code>"10239472"</code> is 8 bytes, but <code>10239472</code> is just 4</li>
+</ul>
+</li>
+<li>How would we represent images, audio, or video as characters?</li>
+</ul>
+<div class="language-txt" title="bird.txt">
+<div class="highlight"><pre><span></span><code> ,_,
 (O,O)
 (   )
--"-"-
-```
-
-
----
-
-## Integers
-
--   If all we have is 1's and 0's, use base-2
--   9<sub>10</sub> is (1×8)+(0×4)+(0×2)+(1×1) = 1001<sub>2</sub>
--   Can write numbers in binary using `0b` prefix
-
-```py
-print(0b101101)  # (1 * 32) + (1 * 8) + (1 * 4) + 1
-```
-
-
-```
-45
-```
-
-
----
-
-## Hexadecimal
-
--   More common to use <a class="gl-ref" href="../../glossary/#gl:hexadecimal" title="A base-16 numerical representation that uses the letters A-F (or a-f) to represent the values from 10 to 15." markdown="1">hexadecimal</a> (base 16)
--   Digits are 0123456789ABCDEF
--   Each digit represents 4 bits (half a byte)
-
-```py
-print(0x2D)  # (2 * 16) + 13
-```
-
-
-```
-45
-```
-
-
----
-
-## Negative Numbers
-
--   Could use <a class="gl-ref" href="../../glossary/#gl:sign_magnitude" title="A binary representation of integers in which one bit indicates whether the value is positive or negative and the remaining bits indicate its magnitude." markdown="1">sign and magnitude</a>
-    -   `0100` is 4
-    -   `1100` is -4
--   But:
-    -   Gives us two zeroes (one positive, one negative)
-    -   Makes the hardware to do arithmetic more complicated
-
----
-
-## Two's Complement
-
--   <a class="gl-ref" href="../../glossary/#gl:twos_complement" title="A binary representation of integers that &quot;rolls over&quot; like an odometer to represent negative values." markdown="1">Two's complement</a> wraps around like an odometer
-
-<div class="small">
-<table>
-<tr><th>Base 10</th><th>Base 2</th><th>Base 10</th><th>Base 2</th></tr>
-<tr><td>3</td><td>011</td><td>-1</td><td>111</td></tr>
-<tr><td>2</td><td>010</td><td>-2</td><td>110</td></tr>
-<tr><td>1</td><td>001</td><td>-3</td><td>101</td></tr>
-<tr><td>0</td><td>000</td><td>-4</td><td>100</td></tr>
-</table>
+-&quot;-&quot;-
+</code></pre></div>
 </div>
-
----
-
-## Two's Complement
-
--   Can still determine sign by looking at the first bit
-
--   But two's complement is asymmetric
-
--   No positive number to match the largest negative number
-
----
-
-## Bitwise Operations
-
--   Operate on corresponding bits in representation
-
--   `&` (and) is 1 if both bits are 1, 0 otherwise
-
-    -   `0b1100 & 0b1010 == 0b1000`
-
-    -   `12 & 10 == 8`
-
--   `|` (or) is 1 if *either* bit is 1, 0 otherwise
-
-    -   `0b1100 | 0b1010 == 0b1110`
-
-    -   `12 | 10 == 14`
-
----
-
-## Bitwise Operations
-
-<table>
-<tr><th> Name        </th><th> Expression </th><th> Bitwise       </th><th> Result          </th></tr>
-<tr><td> and         </td><td> 12 & 6   </td><td> 1100 & 0110 </td><td> 4 (0100)    </td></tr>
-<tr><td> or          </td><td> 12 | 6   </td><td> 1100 | 0110 </td><td> 14 (1110)   </td></tr>
-<tr><td> xor         </td><td> 12 ^ 6   </td><td> 1100 ^ 0110 </td><td> 10 (1010)   </td></tr>
-<tr><td> not         </td><td> ~ 6      </td><td> ~ 0110      </td><td> -7(1001)    </td></tr>
-<tr><td> left shift  </td><td> 12 << 2  </td><td> 1100 << 2   </td><td> 48 (110000) </td></tr>
-<tr><td> right shift </td><td> 12 >> 2  </td><td> 1100 >> 2   </td><td> 3 (0011)    </td></tr>
+<hr />
+<h2>Integers</h2>
+<ul>
+<li>If all we have is 1&rsquo;s and 0&rsquo;s, use base-2</li>
+<li>9<sub>10</sub> is (1×8)+(0×4)+(0×2)+(1×1) = 1001<sub>2</sub></li>
+<li>Can write numbers in binary using <code>0b</code> prefix</li>
+</ul>
+<div class="language-py" title="binary_notation.py">
+<div class="highlight"><pre><span></span><code><span class="nb">print</span><span class="p">(</span><span class="mb">0b101101</span><span class="p">)</span>  <span class="c1"># (1 * 32) + (1 * 8) + (1 * 4) + 1</span>
+</code></pre></div>
+</div>
+<div class="language-out" title="binary_notation.out">
+<div class="highlight"><pre><span></span><code>45
+</code></pre></div>
+</div>
+<hr />
+<h2>Hexadecimal</h2>
+<ul>
+<li>More common to use <a class="gl-ref" href="../../glossary/#hexadecimal" markdown="1">hexadecimal</a> (base 16)</li>
+<li>Digits are 0123456789ABCDEF</li>
+<li>Each digit represents 4 bits (half a byte)</li>
+</ul>
+<div class="language-py" title="hex_notation.py">
+<div class="highlight"><pre><span></span><code><span class="nb">print</span><span class="p">(</span><span class="mh">0x2D</span><span class="p">)</span>  <span class="c1"># (2 * 16) + 13</span>
+</code></pre></div>
+</div>
+<div class="language-out" title="hex_notation.out">
+<div class="highlight"><pre><span></span><code>45
+</code></pre></div>
+</div>
+<hr />
+<h2>Negative Numbers</h2>
+<ul>
+<li>Could use <a class="gl-ref" href="../../glossary/#sign_magnitude" markdown="1">sign and magnitude</a><ul>
+<li><code>0100</code> is 4</li>
+<li><code>1100</code> is -4</li>
+</ul>
+</li>
+<li>But:<ul>
+<li>Gives us two zeroes (one positive, one negative)</li>
+<li>Makes the hardware to do arithmetic more complicated</li>
+</ul>
+</li>
+</ul>
+<hr />
+<h2>Two&rsquo;s Complement</h2>
+<ul>
+<li><a class="gl-ref" href="../../glossary/#twos_complement" markdown="1">Two&rsquo;s complement</a> wraps around like an odometer</li>
+</ul>
+<table id="binary-3bit"><caption>3-bit integer values using two&rsquo;s complement.</caption>
+<thead>
+<tr>
+<th>Base 10</th>
+<th>Base 2</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>3</td>
+<td>011</td>
+</tr>
+<tr>
+<td>2</td>
+<td>010</td>
+</tr>
+<tr>
+<td>1</td>
+<td>001</td>
+</tr>
+<tr>
+<td>0</td>
+<td>000</td>
+</tr>
+<tr>
+<td>-1</td>
+<td>111</td>
+</tr>
+<tr>
+<td>-2</td>
+<td>110</td>
+</tr>
+<tr>
+<td>-3</td>
+<td>101</td>
+</tr>
+<tr>
+<td>-4</td>
+<td>100</td>
+</tr>
+</tbody>
 </table>
 
----
+<hr />
+<h2>Two&rsquo;s Complement</h2>
+<ul>
+<li>
+<p>Can still determine sign by looking at the first bit</p>
+</li>
+<li>
+<p>But two&rsquo;s complement is asymmetric</p>
+</li>
+<li>
+<p>No positive number to match the largest negative number</p>
+</li>
+</ul>
+<hr />
+<h2>Bitwise Operations</h2>
+<ul>
+<li>
+<p>Operate on corresponding bits in representation</p>
+</li>
+<li>
+<p><code>&amp;</code> (and) is 1 if both bits are 1, 0 otherwise</p>
+<ul>
+<li>
+<p><code>0b1100 &amp; 0b1010 == 0b1000</code></p>
+</li>
+<li>
+<p><code>12 &amp; 10 == 8</code></p>
+</li>
+</ul>
+</li>
+<li>
+<p><code>|</code> (or) is 1 if <em>either</em> bit is 1, 0 otherwise</p>
+<ul>
+<li>
+<p><code>0b1100 | 0b1010 == 0b1110</code></p>
+</li>
+<li>
+<p><code>12 | 10 == 14</code></p>
+</li>
+</ul>
+</li>
+</ul>
+<hr />
+<h2>Bitwise Operations</h2>
+<table id="binary-ops"><caption>Bitwise operations.</caption>
+<thead>
+<tr>
+<th>Expression</th>
+<th>Bitwise</th>
+<th>Result (bits)</th>
+<th>Result (decimal)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>12 &amp; 6</code></td>
+<td><code>1100 &amp; 0110</code></td>
+<td><code>0100</code></td>
+<td><code>4</code></td>
+</tr>
+<tr>
+<td><code>12 | 6</code></td>
+<td><code>1100 | 0110</code></td>
+<td><code>1110</code></td>
+<td><code>14</code></td>
+</tr>
+<tr>
+<td><code>12 ^ 6</code></td>
+<td><code>1100 ^ 0110</code></td>
+<td><code>1010</code></td>
+<td><code>10</code></td>
+</tr>
+<tr>
+<td><code>~ 6</code></td>
+<td><code>~ 0110</code></td>
+<td><code>1001</code></td>
+<td><code>9</code></td>
+</tr>
+<tr>
+<td><code>12 &lt;&lt; 2</code></td>
+<td><code>1100 &lt;&lt; 2</code></td>
+<td><code>110000</code></td>
+<td><code>48</code></td>
+</tr>
+<tr>
+<td><code>12 &gt;&gt; 2</code></td>
+<td><code>1100 &gt;&gt; 2</code></td>
+<td><code>0011</code></td>
+<td><code>3</code></td>
+</tr>
+</tbody>
+</table>
 
-class: aside
+<hr />
+<!--# class="aside" -->
 
-## This Is Not Arithmetic
-
--   Take a closer look at `~6`
-
-    -   We are using two's complement, so 6 is `0b000…00110`
-
-    -   Its bitwise negation is `0b111…11001`, which is -7
-
--   Shifting up and down is *almost* like multiplying or dividing by 2
-
--   But what if the top bit changes?
-
-    -   If we only have 4 bits, `0b1111 >> 1` is `0b0111`, so -1/2 is 7
-
----
-
-## Storing Numbers
-
--   C and Fortran store numbers as numbers
--   Python used **boxed values**
-    -   Reference count
-    -   Type code
-    -   Value
-
-<figure>
+<h2>This Is Not Arithmetic</h2>
+<ul>
+<li>
+<p>Take a closer look at <code>~6</code></p>
+<ul>
+<li>
+<p>We are using two&rsquo;s complement, so 6 is <code>0b000…00110</code></p>
+</li>
+<li>
+<p>Its bitwise negation is <code>0b111…11001</code>, which is -7</p>
+</li>
+</ul>
+</li>
+<li>
+<p>Shifting up and down is <em>almost</em> like multiplying or dividing by 2</p>
+</li>
+<li>
+<p>But what if the top bit changes?</p>
+<ul>
+<li>If we only have 4 bits, <code>0b1111 &gt;&gt; 1</code> is <code>0b0111</code>, so -1/2 is 7</li>
+</ul>
+</li>
+</ul>
+<hr />
+<h2>Storing Numbers</h2>
+<ul>
+<li>C and Fortran store numbers as numbers</li>
+<li>Python used <strong>boxed values</strong><ul>
+<li>Reference count</li>
+<li>Type code</li>
+<li>Value</li>
+</ul>
+</li>
+</ul>
+<figure id="binary-boxing">
 <img src="../boxing.svg" alt="Boxed values"/>
+<figcaption>Using boxed values to store metadata.</figcaption>
 </figure>
 
-
----
-
-## Storing Arrays
-
--   The differences are even larger for arrays and lists
-
-<figure>
+<hr />
+<h2>Storing Arrays</h2>
+<ul>
+<li>The differences are even larger for arrays and lists</li>
+</ul>
+<figure id="binary-arrays">
 <img src="../arrays.svg" alt="Boxed arrays"/>
+<figcaption>Low-level and high-level array storage.</figcaption>
 </figure>
 
+<hr />
+<h2>Packing and Unpacking</h2>
+<ul>
+<li>Operations on unboxed (raw) values are much faster<ul>
+<li>Most numerical libraries written in C or Fortran</li>
+<li>Then wrapped in Python or R</li>
+</ul>
+</li>
+<li>Need to:<ul>
+<li>Get data from raw bytes into Python structures</li>
+<li>Copy data from Python structures into packed bytes</li>
+</ul>
+</li>
+<li>Also do this for efficient storage of large data</li>
+</ul>
+<hr />
+<h2>The <code>struct</code> Module</h2>
+<div class="language-py" title="pack_unpack.py">
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">struct</span>
 
----
+<span class="n">fmt</span> <span class="o">=</span> <span class="s2">&quot;ii&quot;</span>  <span class="c1"># two 32-bit integers</span>
+<span class="n">x</span> <span class="o">=</span> <span class="mi">31</span>
+<span class="n">y</span> <span class="o">=</span> <span class="mi">65</span>
 
-## Packing and Unpacking
+<span class="n">binary</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">fmt</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;binary representation:&quot;</span><span class="p">,</span> <span class="nb">repr</span><span class="p">(</span><span class="n">binary</span><span class="p">))</span>
 
--   Operations on unboxed (raw) values are much faster
-    -   Most numerical libraries written in C or Fortran
-    -   Then wrapped in Python or R
--   Need to:
-    -   Get data from raw bytes into Python structures
-    -   Copy data from Python structures into packed bytes
--   Also do this for efficient storage of large data
-
----
-
-## The `struct` Module
-
-```py
-import struct
-
-fmt = "ii"  # two 32-bit integers
-x = 31
-y = 65
-
-binary = struct.pack(fmt, x, y)
-print("binary representation:", repr(binary))
-
-normal = struct.unpack(fmt, binary)
-print("back to normal:", normal)
-```
-
-
-```
-binary representation: b'\x1f\x00\x00\x00A\x00\x00\x00'
+<span class="n">normal</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="n">fmt</span><span class="p">,</span> <span class="n">binary</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;back to normal:&quot;</span><span class="p">,</span> <span class="n">normal</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<div class="language-out" title="pack_unpack.out">
+<div class="highlight"><pre><span></span><code>binary representation: b&#39;\x1f\x00\x00\x00A\x00\x00\x00&#39;
 back to normal: (31, 65)
-```
+</code></pre></div>
+</div>
+<hr />
+<!--# class="aside" -->
 
+<h2>Hexadecimal Again</h2>
+<ul>
+<li>
+<p>Not all bytes correspond to common characters</p>
+</li>
+<li>
+<p>So Python uses two-digit hex representation <code>\xPQ</code></p>
+</li>
+<li>
+<p><code>\x00</code> is a <a class="gl-ref" href="../../glossary/#null_byte" markdown="1">null byte</a> (value 0)</p>
+</li>
+<li>
+<p>Easy to miss the actual <code>A</code> between one <code>\x00</code> and the next</p>
+</li>
+</ul>
+<hr />
+<h2>Packing With Counts</h2>
+<div class="language-py" title="pack_count.py">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">struct</span> <span class="kn">import</span> <span class="n">pack</span>
 
----
+<span class="nb">print</span><span class="p">(</span><span class="n">pack</span><span class="p">(</span><span class="s2">&quot;3i&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">pack</span><span class="p">(</span><span class="s2">&quot;5s&quot;</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">(</span><span class="s2">&quot;hello&quot;</span><span class="p">,</span> <span class="s2">&quot;utf-8&quot;</span><span class="p">)))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">pack</span><span class="p">(</span><span class="s2">&quot;5s&quot;</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">(</span><span class="s2">&quot;a longer string&quot;</span><span class="p">,</span> <span class="s2">&quot;utf-8&quot;</span><span class="p">)))</span>
+</code></pre></div>
+</div>
+<div class="language-out" title="pack_count.out">
+<div class="highlight"><pre><span></span><code>b&#39;\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00\x00&#39;
+b&#39;hello&#39;
+b&#39;a lon&#39;
+</code></pre></div>
+</div>
+<ul>
+<li>Only packs as much as we tell it to</li>
+</ul>
+<hr />
+<h2>Dynamic Formats</h2>
+<ul>
+<li>Construct format dynamically</li>
+</ul>
+<div class="language-py" title="dynamic_format.py">
+<div class="highlight"><pre><span></span><code><span class="n">text</span> <span class="o">=</span> <span class="s2">&quot;hello&quot;</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">)</span><span class="si">}</span><span class="s2">s&quot;</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<div class="language-out" title="dynamic_format.out">
+<div class="highlight"><pre><span></span><code>5s
+</code></pre></div>
+</div>
+<hr />
+<h2>Variable-Length Packing</h2>
+<ul>
+<li>
+<p>Pack strings as a fixed-size count and that many bytes</p>
+</li>
+<li>
+<p>Use <code>bytes</code> to convert character string to bytes</p>
+</li>
+</ul>
+<div class="language-py" title="variable_packing.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">pack_string</span><span class="p">(</span><span class="n">as_string</span><span class="p">):</span>
+    <span class="n">as_bytes</span> <span class="o">=</span> <span class="nb">bytes</span><span class="p">(</span><span class="n">as_string</span><span class="p">,</span> <span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+    <span class="n">header</span> <span class="o">=</span> <span class="n">pack</span><span class="p">(</span><span class="s2">&quot;i&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">as_bytes</span><span class="p">))</span>
+    <span class="nb">format</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">as_bytes</span><span class="p">)</span><span class="si">}</span><span class="s2">s&quot;</span>
+    <span class="n">body</span> <span class="o">=</span> <span class="n">pack</span><span class="p">(</span><span class="nb">format</span><span class="p">,</span> <span class="n">as_bytes</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">header</span> <span class="o">+</span> <span class="n">body</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Variable-Length Packing</h2>
+<div class="language-py" title="variable_packing.py">
+<div class="highlight"><pre><span></span><code><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">pack_string</span><span class="p">(</span><span class="s2">&quot;hello!&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">result</span><span class="p">))</span>
+</code></pre></div>
+</div>
+<div class="language-out" title="variable_packing.out">
+<div class="highlight"><pre><span></span><code>b&#39;\x06\x00\x00\x00hello!&#39;
+</code></pre></div>
+</div>
+<ul>
+<li>First four bytes are the 32-bit integer representation of 6</li>
+<li>Next six bytes are our characters</li>
+</ul>
+<hr />
+<h2>Unpacking</h2>
+<div class="language-py" title="variable_unpacking.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">unpack_string</span><span class="p">(</span><span class="n">buffer</span><span class="p">):</span>
+   <span class="n">header</span><span class="p">,</span> <span class="n">body</span> <span class="o">=</span> <span class="n">buffer</span><span class="p">[:</span><span class="mi">4</span><span class="p">],</span> <span class="n">buffer</span><span class="p">[</span><span class="mi">4</span><span class="p">:]</span>
+   <span class="n">length</span> <span class="o">=</span> <span class="n">unpack</span><span class="p">(</span><span class="s2">&quot;i&quot;</span><span class="p">,</span> <span class="n">header</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+   <span class="nb">format</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">length</span><span class="si">}</span><span class="s2">s&quot;</span>
+   <span class="n">result</span> <span class="o">=</span> <span class="n">unpack</span><span class="p">(</span><span class="nb">format</span><span class="p">,</span> <span class="n">body</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+   <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
 
-class: aside
+<span class="n">buffer</span> <span class="o">=</span> <span class="n">pack_string</span><span class="p">(</span><span class="s2">&quot;hello!&quot;</span><span class="p">)</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">unpack_string</span><span class="p">(</span><span class="n">buffer</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<div class="language-out" title="variable_unpacking.out">
+<div class="highlight"><pre><span></span><code>hello!
+</code></pre></div>
+</div>
+<hr />
+<h2>Bytes and Text</h2>
+<ul>
+<li>ASCII originally defined 128 7-bit characters<ul>
+<li>0–31 were <a class="gl-ref" href="../../glossary/#control_code" markdown="1">control codes</a></li>
+</ul>
+</li>
+<li>Since bytes have 8 bits, programmers used the values 128–255 however they wanted</li>
+<li>ANSI standard defined (for example) 231<sub>10</sub> to be &ldquo;ç&rdquo;</li>
+<li>But what about Turkish, Devanagari, kanji, hieroglyphics, …?<ul>
+<li>Two bytes wouldn&rsquo;t be enough</li>
+<li>Four bytes per character would quadruple storage requirements</li>
+<li>And would mostly not be needed (by American businesses)</li>
+</ul>
+</li>
+</ul>
+<hr />
+<h2>Unicode</h2>
+<ul>
+<li>Define a <a class="gl-ref" href="../../glossary/#code_point" markdown="1">code point</a> for every character<ul>
+<li>U+0065 for an upper-case Latin &ldquo;A&rdquo;</li>
+<li>U+2605 for a black star &#9733;</li>
+</ul>
+</li>
+<li>Define several <a class="gl-ref" href="../../glossary/#character_encoding" markdown="1">character encodings</a></li>
+<li>UTF-32 uses 32 bits for every character</li>
+<li>Most popular is <a class="gl-ref" href="../../glossary/#utf_8" markdown="1">UTF-8</a><ul>
+<li>Code points 0–127 are stored in a single byte with a leading 0</li>
+<li>If the top bit is 1, the number of 1&rsquo;s tells UTF-8 how many bytes there are in the character</li>
+</ul>
+</li>
+</ul>
+<hr />
+<h2>Unicode</h2>
+<ul>
+<li>If the first byte is <code>0b11101101</code>:<ul>
+<li>The leading 1 means &ldquo;multibyte&rdquo;</li>
+<li>The next two bits mean &ldquo;this is a three-byte character&rdquo;</li>
+<li>The first 0 separates the header from the start of the character</li>
+<li>The final <code>1101</code> is the first four bits of the character</li>
+</ul>
+</li>
+<li>Every <a class="gl-ref" href="../../glossary/#continuation_byte" markdown="1">continuation byte</a> starts with <code>10</code><ul>
+<li>So we can tell if a byte is in the middle of a character</li>
+</ul>
+</li>
+</ul>
+<hr />
+<h2>Characters as Bytes</h2>
+<div class="language-py" title="pack_unicode.py">
+<div class="highlight"><pre><span></span><code><span class="n">result</span> <span class="o">=</span> <span class="n">pack_string</span><span class="p">(</span><span class="s2">&quot;こんにちは!&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">result</span><span class="p">))</span>
+</code></pre></div>
+</div>
+<div class="language-out" title="pack_unicode.out">
+<div class="highlight"><pre><span></span><code>b&#39;\x10\x00\x00\x00\xe3\x81\x93\xe3\x82\x93\xe3\x81\xab\xe3\x81\xa1\x \
+e3\x81\xaf!&#39;
+</code></pre></div>
+</div>
+<hr />
+<!--# class="aside" -->
 
-## Hexadecimal Again
+<h2>Binary Mode</h2>
+<ul>
+<li><code>open(filename, "r")</code> converts bytes to characters<ul>
+<li>And converts Windows line endings <code>\r\n</code> to Unix <code>\n</code></li>
+</ul>
+</li>
+<li>Use <code>open(filename, "rb")</code> to read in <a class="gl-ref" href="../../glossary/#binary_mode" markdown="1">binary mode</a></li>
+</ul>
+<hr />
+<!--# class="summary" -->
 
--   Not all bytes correspond to common characters
-
--   So Python uses two-digit hex representation `\xPQ`
-
--   `\x00` is a <a class="gl-ref" href="../../glossary/#gl:null_byte" title="A byte with the value zero. Null bytes are used to mark the ends of strings in C and C++, and are sometimes used to fill unused space in fixed-size binary records." markdown="1">null byte</a> (value 0)
-
--   Easy to miss the actual `A` between one `\x00` and the next
-
----
-
-## Packing With Counts
-
-```py
-from struct import pack
-
-print(pack("3i", 1, 2, 3))
-print(pack("5s", bytes("hello", "utf-8")))
-print(pack("5s", bytes("a longer string", "utf-8")))
-```
-
-
-```
-b'\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00\x00'
-b'hello'
-b'a lon'
-```
-
-
--   Only packs as much as we tell it to
-
----
-
-## Dynamic Formats
-
--   Construct format dynamically
-
-```py
-text = "hello"
-print(f"{len(text)}s")
-```
-
-
-```
-5s
-```
-
-
----
-
-## Variable-Length Packing
-
--   Pack strings as a fixed-size count and that many bytes
-
--   Use `bytes` to convert character string to bytes
-
-```py
-def pack_string(as_string):
-    as_bytes = bytes(as_string, "utf-8")
-    header = pack("i", len(as_bytes))
-    format = f"{len(as_bytes)}s"
-    body = pack(format, as_bytes)
-    return header + body
-```
-
-
----
-
-## Variable-Length Packing
-
-```py
-if __name__ == "__main__":
-    result = pack_string("hello!")
-    print(repr(result))
-```
-
-```
-b'\x06\x00\x00\x00hello!'
-```
-
-
--   First four bytes are the 32-bit integer representation of 6
--   Next six bytes are our characters
-
----
-
-## Unpacking
-
-```py
-def unpack_string(buffer):
-   header, body = buffer[:4], buffer[4:]
-   length = unpack("i", header)[0]
-   format = f"{length}s"
-   result = unpack(format, body)[0]
-   return str(result, "utf-8")
-
-buffer = pack_string("hello!")
-result = unpack_string(buffer)
-print(result)
-```
-
-```
-hello!
-```
-
-
----
-
-## Bytes and Text
-
--   ASCII originally defined 128 7-bit characters
-    -   0–31 were <a class="gl-ref" href="../../glossary/#gl:control_code" title="Originally a &quot;character&quot; that made a teletype perform some operation, such as moving to the next line or ringing the bell. Only a handful of control codes such as tab and newline are still in common use." markdown="1">control codes</a>
--   Since bytes have 8 bits, programmers used the values 128–255 however they wanted
--   ANSI standard defined (for example) 231<sub>10</sub> to be "ç"
--   But what about Turkish, Devanagari, kanji, hieroglyphics, …?
-    -   Two bytes wouldn't be enough
-    -   Four bytes per character would quadruple storage requirements
-    -   And would mostly not be needed (by American businesses)
-
----
-
-## Unicode
-
--   Define a <a class="gl-ref" href="../../glossary/#gl:code_point" title="A number that uniquely identifies a character in the Unicode standard." markdown="1">code point</a> for every character
-    -   U+0065 for an upper-case Latin "A"
-    -   U+2605 for a black star &#9733;
--   Define several <a class="gl-ref" href="../../glossary/#gl:character_encoding" title="A way to represent characters as bytes. Common examples include ASCII and UTF-8." markdown="1">character encodings</a>
--   UTF-32 uses 32 bits for every character
--   Most popular is <a class="gl-ref" href="../../glossary/#gl:utf_8" title="A way to store the numeric codes representing Unicode characters that is backward-compatible with the older ASCII standard." markdown="1">UTF-8</a>
-    -   Code points 0–127 are stored in a single byte with a leading 0
-    -   If the top bit is 1, the number of 1's tells UTF-8 how many bytes there are in the character
-
----
-
-## Unicode
-
--   If the first byte is `0b11101101`:
-    -   The leading 1 means "multibyte"
-    -   The next two bits mean "this is a three-byte character"
-    -   The first 0 separates the header from the start of the character
-    -   The final `1101` is the first four bits of the character
--   Every <a class="gl-ref" href="../../glossary/#gl:continuation_byte" title="The second or subsequent byte in a multi-byte character encoding." markdown="1">continuation byte</a> starts with `10`
-    -   So we can tell if a byte is in the middle of a character
-
----
-
-## Characters as Bytes
-
-```py
-result = pack_string("こんにちは!")
-print(repr(result))
-```
-
-```
-b'\x10\x00\x00\x00\xe3\x81\x93\xe3\x82\x93\xe3\x81\xab\xe3\x81\xa1\x \
-e3\x81\xaf!'
-```
-
-
----
-
-class: aside
-
-## Binary Mode
-
--   `open(filename, "r")` converts bytes to characters
-    -   And converts Windows line endings `\r\n` to Unix `\n`
--   Use `open(filename, "rb")` to read in <a class="gl-ref" href="../../glossary/#gl:binary_mode" title="An option for reading or writing files in which each byte is transferred literally. The term is used in contrast with text mode." markdown="1">binary mode</a>
-
----
-
-class: summary
-
-## Summary
-
-<figure>
+<h2>Summary</h2>
+<figure id="binary-concept-map">
 <img src="../concept_map.svg" alt="Concept map for binary data"/>
+<figcaption>Concepts for binary data.</figcaption>
 </figure>
-
-
-
-
-
-    </textarea>
-    <script src="../../remark-latest.min.js"></script>
-    <script>
-      var slideshow = remark.create({
-        highlightLines: true
-      })
-    </script>
   </body>
 </html>

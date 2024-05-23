@@ -1,172 +1,66 @@
 """Handle glossary references and glossary."""
 
-import html
-import re
-
 import ark
-import regex
+import re
 import shortcodes
+
 import util
 
-# Prefix glossary keys to avoid collision with e.g. chapter heading keys.
-GL_PREFIX = "gl:"
 
-# Replacements in Markdown when creating tooltips for glossary mouseovers.
-UNMARKDOWN = [
-    (regex.MULTISPACE, " "),
-    (re.compile(r"\[(.+?)\]\(.+?\)"), lambda match: match.group(1)),
-]
-
-
-@ark.events.register(ark.events.Event.INIT)
-def collect():
-    """Collect information from pages.
-
-    This has to be done during initialization rather than incrementally
-    because we don't know when a cross-reference will be encountered.
-    """
-    major = util.make_major_numbering()
-    collected = {}
-    ark.nodes.root().walk(lambda node: _collect(node, major, collected))
-    _cleanup(collected)
-
-
-def _collect(node, major, collected):
-    """Pull data from a single node."""
-    if util.is_slides(node):
-        return
-    parser = shortcodes.Parser(inherit_globals=False, ignore_unknown=True)
-    parser.register(_parse, "g")
-    collected[node.slug] = set()
-    try:
-        parser.parse(node.text, collected[node.slug])
-    except shortcodes.ShortcodeSyntaxError as exc:
-        util.fail(f"%g shortcode parsing error in {node}: {exc}")
-
-
-def _parse(pargs, kwargs, data):
-    """Collect information from a single glossary shortcode."""
-    data.add(pargs[0])
-    return ""
-
-
-def _cleanup(collected):
-    """Save glossary terms to show definitions per chapter."""
-    _, _ = util.read_glossary()  # to ensure load
-    glossary = util.get_config("glossary_by_key")
-    used = util.make_config("glossary_in_chapter")
-    for slug, seen in collected.items():
-        terms = [(key, glossary[key]["term"]) for key in glossary if key in seen]
-        terms.sort(key=lambda item: item[1].lower())
-        used.append((slug, terms))
-
-
-# ----------------------------------------------------------------------
+# Scrub whitespace.
+WHITESPACE = re.compile(r'\s', re.DOTALL)
 
 
 @shortcodes.register("g")
+@util.timing
 def glossary_ref(pargs, kwargs, node):
-    """Handle [% g key "text" %] glossary reference shortcode."""
+    """Handle [%g key "text" %] glossary reference shortcode."""
     util.require(
         (len(pargs) == 2) and (not kwargs),
-        f"Bad 'g' shortcode {pargs} and {kwargs} in {node}",
+        f"Bad 'g' in {node.path}: '{pargs}' and '{kwargs}'",
     )
     key, text = pargs
-    used = util.make_config("glossary_keys_used")
-    used.add(key)
-    return _format_ref(key, text)
+    cls = 'class="gl-ref"'
+    href = f'href="@root/glossary/#{key}"'
+    return f'<a {cls} {href} markdown="1">{text}</a>'
 
 
 @shortcodes.register("glossary")
+@util.timing
 def glossary(pargs, kwargs, node):
-    """Convert glossary to Markdown."""
+    """Handle [% glossary %] shortcode."""
     util.require(
         (not pargs) and (not kwargs),
-        f"Bad 'glossary' shortcode {pargs} and {kwargs} in {node}",
+        f"Bad 'glossary' in {node.path}: '{pargs}' and '{kwargs}'",
     )
-    glossary, lang = util.read_glossary()
+    lang = ark.site.config["lang"]
+    glossary = util.load_glossary()
+
     try:
         glossary.sort(key=lambda x: x[lang]["term"].lower())
     except KeyError as exc:
         util.fail(f"Glossary entries missing key, term, or {lang}: {exc}.")
 
-    markdown = [_as_markdown(entry, lang) for entry in glossary]
-    entries = "\n\n".join(markdown)
-    return f'<div class="glossary" markdown="1">\n{entries}\n</div>'
+    inverted = {entry["key"]: entry for entry in glossary}
+    combined = "\n\n".join([_as_markdown(inverted, entry, lang) for entry in glossary])
+    return util.markdownify(combined).replace("<dl>", '<dl class="glossary">', 1)
 
 
-@ark.events.register(ark.events.Event.EXIT)
-def check():
-    """Check that glossary entries are defined and used."""
-    glossary, lang = util.read_glossary()
-    defined = {entry["key"] for entry in glossary}
-
-    if (used := util.get_config("glossary_keys_used")) is None:
-        return
-    used |= _internal_references(glossary, lang)
-    used |= _cross_references(glossary, lang)
-
-    util.warn("unknown glossary references", used - defined)
-    util.warn("unused glossary entries", defined - used)
-
-
-def _as_markdown(entry, lang):
+def _as_markdown(inverted, entry, lang):
     """Convert a single glossary entry to Markdown."""
-    cls = 'class="gl-key"'
-    first = f'<span {cls} id="{GL_PREFIX}{entry["key"]}">{entry[lang]["term"]}</span>'
-
-    if "acronym" in entry[lang]:
-        first += f" ({entry[lang]['acronym']})"
-    elif "full" in entry[lang]:
-        first += f" ({entry[lang]['full']})"
-
-    body = regex.MULTISPACE.sub(" ", entry[lang]["def"]).rstrip()
-    body = regex.GLOSSARY_INTERNAL_REF.sub(lambda m: f"](#gl:{m.group(1)})", body)
-
-    if "ref" in entry:
-        glossary = util.get_config("glossary_by_key")
-        seealso = util.TRANSLATIONS[lang]["seealso"]
-        try:
-            refs = [f"[{glossary[r]['term']}](#gl:{r})" for r in entry["ref"]]
-        except KeyError as exc:
-            util.fail(f"Unknown glossary cross-ref in {entry['key']}: {exc}")
-        body += f"<br/>{seealso}: {', '.join(refs)}."
-
-    result = f"{first}\n:   {body}"
-    return result
+    key = entry["key"]
+    term = entry[lang]["term"]
+    acronym = f" ({entry[lang]['acronym']})" if "acronym" in entry[lang] else ""
+    defn = WHITESPACE.sub(' ', entry[lang]["def"]) + _add_see_also(inverted, entry, lang)
+    return f'{term}{acronym} {{: #{key}}}\n:   {defn}'
 
 
-def _cross_references(glossary, lang):
-    """Get all explicit cross-references from glossary entries."""
-    result = set()
-    for entry in glossary:
-        result.update(entry.get("ref", []))
-    return result
-
-
-def _format_ref(key, text):
-    """Format a glossary reference."""
-    cls = 'class="gl-ref"'
-    href = f'href="@root/glossary/#{GL_PREFIX}{key}"'
-    tooltip = f'title="{_make_tooltip(key)}"'
-    return f'<a {cls} {href} {tooltip} markdown="1">{text}</a>'
-
-
-def _internal_references(glossary, lang):
-    """Get all in-body cross-references from glossary entries."""
-    result = set()
-    for entry in glossary:
-        for match in regex.GLOSSARY_INTERNAL_REF.finditer(entry[lang]["def"]):
-            result.add(match.group(1))
-    return result
-
-
-def _make_tooltip(key):
-    """Make tooltip for glossary display."""
-    glossary = util.get_config("glossary_by_key")
-    util.require(key in glossary, f"Unknown glossary key {key}")
-    entry = glossary[key]
-    text = entry["def"].strip()
-    for pat, sub in UNMARKDOWN:
-        text = pat.sub(sub, text)
-    return html.escape(text)
+def _add_see_also(inverted, entry, lang):
+    """Add 'see also' if present."""
+    if "ref" not in entry:
+        return ""
+    try:
+        refs = [f"[{inverted[r][lang]['term']}](#{r})" for r in entry["ref"]]
+    except KeyError as exc:
+        util.fail(f"Unknown glossary cross-ref in {entry['key']}: {exc}")
+    return f" See also: {', '.join(refs)}."

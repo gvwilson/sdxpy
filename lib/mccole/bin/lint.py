@@ -1,438 +1,351 @@
 """Check project."""
 
 import argparse
-import re
-import sys
-from fnmatch import fnmatch
+import ark
+from bs4 import BeautifulSoup, NavigableString, Tag
+from collections import Counter
+import importlib.util
 from pathlib import Path
+import re
+import shortcodes
+import yaml
 
-import frontmatter
-import regex
-import util
-from bs4 import BeautifulSoup, Tag
 
-# Required keys in configuration and their types.
-CONFIG_REQUIRED = {
-    "abbrev": str,
-    "acknowledgments": str,
-    "appendices": dict,
-    "author": str,
-    "bibliography": str,
-    "bibliography_style": str,
-    "chapters": dict,
-    "copy": list,
-    "credits": str,
-    "debug": bool,
-    "exclude": list,
-    "extension": str,
-    "glossary": str,
-    "lang": str,
-    "links": str,
-    "markdown_settings": dict,
-    "out_dir": str,
-    "repo": str,
-    "src_dir": str,
-    "tagline": str,
-    "theme": str,
-    "title": str,
-    "warnings": bool,
+# File types ignored when checking for inclusions
+IGNORED_SUFFIXES = {
+    ".bkp",
+    ".md",
+    ".pdf",
+    ".png",
+    ".svg",
+    ".tbl"
 }
 
-# Parts of configuration used in linting.
-CONFIG_USED = [
-    "appendices",
-    "bibliography",
-    "chapters",
-    "glossary",
-    "lang",
-    "links",
-    "src_dir",
-]
+# Shortcode keys that are required to be unique
+UNIQUE_KEYS = {
+    "fig_def",
+    "gloss",
+    "tbl_def",
+}
 
-# Files expected in source directories.
-DIRECTIVES_FILE = ".mccole"
-INDEX_FILE = "index.md"
-MAKEFILE = "Makefile"
-SLIDES_FILE = "slides.html"
-EXPECTED_FILES = {DIRECTIVES_FILE, INDEX_FILE, MAKEFILE, SLIDES_FILE}
 
-# Template name for slides files.
-SLIDES_TEMPLATE = "slides"
-
-# Automatically excluded directories.
-EXCLUDE_DIRS = {"__pycache__", ".pytest_cache"}
+@ark.filters.register(ark.filters.Filter.LOAD_NODE_FILE)
+def keep_file(value, path):
+    """Only process .md Markdown files."""
+    return path.suffix == ".md"
 
 
 def main():
     options = parse_args()
-    config = get_config(options.config)
+    options.config = load_config(options)
+    options.html = find_html_files(options)
 
-    for f in [
+    check_html(options)
+
+    links = check_redundant_links(options)
+    check_colophon(options, links)
+
+    found = collect_all()
+    for func in [
         check_bib,
-        check_captions,
-        check_file_references,
-        check_glossary_internal,
-        check_glossary_redef,
-        check_glossary_ref_in_index,
-        check_glossary_refs,
-        check_ids,
-        check_index_refs,
-        check_links,
-        check_slides,
+        check_fig,
+        check_inc,
+        check_tbl,
+        check_xref,
     ]:
-        f(config)
+        func(options, found)
 
-    check_dom(options.dom, options.pages)
+    gloss_internal_keys = check_gloss_internal(options)
+    check_gloss(options, found, gloss_internal_keys)
 
 
-def check_bib(config):
+def check_bib(options, found):
     """Check bibliography citations."""
-    used = set()
-    for text in config["prose"].values():
-        for match in regex.BIBLIOGRAPHY_REF.finditer(text):
-            for key in match.group(1).split():
-                used.add(key.strip())
-    unknown = used - {b for b in config["bibliography_data"].entries}
-    if unknown:
-        _warn("unknown bibliography keys")
-        for u in unknown:
-            _warn(f"- {u}")
+    expected = get_bib_keys(options)
+    compare_keys("bibliography", expected, found["bib"])
 
 
-def check_captions(config):
-    """Check formatting of captions."""
-    problems = []
-    for slug, text in config["prose"].items():
-        captions = [c.group(1) for c in regex.CAPTION.finditer(text)]
-        captions = [(slug, c) for c in captions if c[-1] not in ".?"]
-        problems.extend(captions)
-    if problems:
-        _warn("badly-formatted captions")
-        for (slug, caption) in problems:
-            print(f'- {slug}: "{caption}"')
+def check_colophon(options, actual):
+    """Check all colophon links are present."""
+    actual_keys = set([e["key"] for e in actual])
+    expected = yaml.safe_load(Path(options.root, "lib", "mccole", "colophon.yml").read_text())
+    expected_keys = set([e["key"] for e in expected])
+    missing = expected_keys - actual_keys
+    if missing:
+        print(f"Missing colophon link(s): {listify(missing)}")
 
 
-def check_dom(dom_spec, html_files):
-    """Check DOM elements in generated files."""
-    allowed = util.read_yaml(dom_spec)
-    seen = {}
-    for filename in html_files:
-        with open(filename, "r") as reader:
-            text = reader.read()
-        _dom_collect(seen, BeautifulSoup(text, "html.parser"))
-    _dom_diff(seen, allowed)
+def check_fig(options, found):
+    """Check figure definitions and citations."""
+    compare_keys("figure", set(found["fig_def"].keys()), found["fig_ref"])
 
 
-def check_file_references(config):
-    """Check file references."""
-    for slug in config["prose"]:
-        existing = get_files(config, slug)
-        referenced = set()
-        for text in (config["prose"][slug], config["slides"].get(slug, "")):
-            for f in (get_inc, get_figure, get_image):
-                referenced |= f(text)
-        _diff(f"{slug} inclusions", existing, referenced)
+def check_gloss(options, found, internal):
+    """Check glossary citations."""
+    expected = get_gloss_keys(options)
+    compare_keys("gloss", expected, found["gloss"], extra=internal)
 
 
-def check_glossary_internal(config):
-    """Check internal consistency of glossary."""
-    # Entries missing 'key'.
-    if missing_keys := [g for g in config["glossary_data"] if "key" not in g]:
-        _warn(f"glossary entries without keys: {missing_keys}")
-        return
+def check_gloss_internal(options):
+    """Check internal references in glossary."""
+    text = Path(options.root, "info", "glossary.yml").read_text()
 
-    glossary = {g["key"]: g for g in config["glossary_data"]}
-    for key, entry in sorted(glossary.items()):
-        # Explicit cross-references.
+    glossary = yaml.safe_load(text) or []
+    actual = Counter([e["key"] for e in glossary])
+    duplicates = {k for k, v in actual.items() if v > 1}
+    if duplicates:
+        print(f"duplicate glossary key(s) {listify(duplicates)}")
+
+    internal = set(re.findall(r'\[.+?\]\(#(.+?)\)', text, re.DOTALL))
+    for entry in glossary:
         if "ref" in entry:
-            config["glossary_refs"] |= set(entry["ref"])
-            if any(missing := [ref for ref in entry["ref"] if ref not in glossary]):
-                _warn(f"missing ref(s) in glossary entry {key}: {missing}")
+            internal.update(set(entry["ref"]))
 
-        # No data for current language.
-        if (details := entry.get(config["lang"], None)) is None:
-            _warn(f"glossary entry {key} missing language {config['lang']}")
+    unknown = internal - {e["key"] for e in glossary}
+    if unknown:
+        print(f"unknown internal glossary key(s) {listify(unknown)}")
 
-        # Term not defined for current language.
-        elif "def" not in details:
-            _warn(f"glossary entry {key}/{config['lang']} missing 'def'")
-
-        # Collect internal cross-references.
-        else:
-            config["glossary_refs"] |= {
-                m.group(1) for m in regex.GLOSSARY_CROSSREF.finditer(details["def"])
-            }
+    return internal
 
 
-def check_glossary_redef(config):
-    """Check for redefinition of glossary terms."""
-    seen = {}
-    for slug, text in config["prose"].items():
-        for match in regex.GLOSSARY_REF.finditer(text):
-            key = match.group(1)
-            if key not in seen:
-                seen[key] = []
-            seen[key].append(slug)
-    problems = {
-        key: occurrences
-        for key, occurrences in sorted(seen.items())
-        if len(occurrences) > 1
-    }
+def check_html(options):
+    """Check generated HTML pages."""
+    for filename in options.html:
+        with open(filename, "r") as reader:
+            dom = BeautifulSoup(reader.read(), "html.parser")
+            visit_html(filename, dom)
+
+
+def check_inc(options, found):
+    """Check file inclusions."""
+    expected = get_includable_files(options)
+    compare_keys("inc", expected, found["inc"])
+
+
+def check_redundant_links(options):
+    """Look for redundant link definitions."""
+    links = yaml.safe_load(Path(options.root, "info", "links.yml").read_text()) or []
+    count = Counter(entry["url"] for entry in links)
+    problems = [url for url in count if count[url] > 1]
     if problems:
-        _warn("glossary re-definitions")
-        for key, occurrences in problems.items():
-            print(f"- {key}: {', '.join(occurrences)}")
+        print(f"redundant link definitions: {', '.join(sorted(problems))}")
+    return links
 
 
-def check_glossary_ref_in_index(config):
-    """Check for glossary references immediately inside index references."""
-    pat = re.compile(r"\[%\s*i\b.+?%\]\[%g.+?\]\[%/i%\]")
-    problems = {
-        slug: [m.group(0) for m in pat.finditer(text)]
-        for (slug, text) in config["prose"].items()
+def check_tbl(options, found):
+    """Check table definitions and citations."""
+    compare_keys("table", set(found["tbl_def"].keys()), found["tbl_ref"])
+
+
+def check_xref(options, found):
+    """Check chapter/appendix cross-references."""
+    expected = options.config.chapters + options.config.appendices
+    compare_keys("cross-ref", expected, found["xref"], unused=False)
+
+
+def collect_all():
+    """Collect values from Markdown files."""
+    parser = shortcodes.Parser(inherit_globals=False, ignore_unknown=True)
+    parser.register(collect_bib, "b")
+    parser.register(collect_fig_def, "figure")
+    parser.register(collect_fig_ref, "f")
+    parser.register(collect_gloss, "g")
+    parser.register(collect_inc, "inc")
+    parser.register(collect_tbl_def, "table")
+    parser.register(collect_tbl_ref, "t")
+    parser.register(collect_xref, "x")
+    collected = {
+        "bib": {},
+        "fig_def": {},
+        "fig_ref": {},
+        "gloss": {},
+        "inc": {},
+        "tbl_def": {},
+        "tbl_ref": {},
+        "xref": {},
     }
-    if sum(len(prob) for prob in problems.values()):
-        _warn("glossary references inside index terms")
-        for slug in problems:
-            if not problems[slug]:
-                continue
-            print(f"- {slug}")
-            for p in problems[slug]:
-                print(f"  - {p}")
-
-
-def check_glossary_refs(config):
-    """Check glossary references."""
-    defined = {gl["key"] for gl in config["glossary_data"]}
-    seen = config["glossary_refs"]
-    for text in [*config["prose"].values(), *config["slides"].values()]:
-        seen |= {m.group(1) for m in regex.GLOSSARY_REF.finditer(text)}
-    _diff("glossary", defined, seen)
-
-
-def check_ids(config):
-    """Check format of anchor identifiers."""
-    for kind in ["prose", "slides"]:
-        for slug, text in config[kind].items():
-            expected = f"{slug}-"
-            figures = [
-                m.group(1)
-                for m in regex.FIGURE.finditer(text)
-                if not m.group(1).startswith(expected)
-            ]
-            expected = f"#{slug}-"
-            headings = [
-                m.group(2)
-                for m in regex.MARKDOWN_H2.finditer(text)
-                if not m.group(2).strip().startswith(expected)
-            ]
-            problems = [*figures, *headings]
-            if problems:
-                _warn(f"Bad slugs in {slug}: {', '.join(problems)}")
-
-
-def check_index_refs(config):
-    """Check formatting of index references."""
-    for slug, text in config["prose"].items():
-        for match in regex.INDEX_REF.finditer(text):
-            key = match.group(1)
-            text = match.group(3)
-            url = match.group(5)
-            if not key:
-                _warn(f"{slug} badly-formatted index reference {key}")
-            elif key == text:
-                _warn(f"{slug} redundant key and text {key}")
-
-
-def check_links(config):
-    """Check external link references."""
-    defined = {ln["key"] for ln in config["links_data"] if "direct" not in ln}
-    seen = set()
-    for text in [*config["prose"].values(), *config["slides"].values()]:
-        seen |= {m.group(1) for m in regex.INDEX_URL.finditer(text)}
-        for scrub in [
-            regex.MARKDOWN_CODE_BLOCK,
-            regex.MARKDOWN_CODE_INLINE,
-            regex.SHORTCODE,
-        ]:
-            text = scrub.sub("", text)
-        seen |= {m.group(1) for m in regex.MARKDOWN_FOOTER_LINK.finditer(text)}
-    _diff("links", defined, seen)
-
-
-def check_slides(config):
-    """Check slides.html files if they exist."""
-    wrong = {
-        slug
-        for slug, text in config["slides"].items()
-        if frontmatter.loads(text).get("template", None) != SLIDES_TEMPLATE
-    }
-    if wrong:
-        _warn(f"missing/incorrect slides templates in {sorted(wrong)}")
-
-
-def get_config(filepath):
-    """Load and check configuration file."""
-    module = util.load_config(filepath)
-
-    for field, kind in CONFIG_REQUIRED.items():
-        if field not in dir(module):
-            _error(f"Configuration does not have {field}")
-        elif not isinstance(getattr(module, field), kind):
-            _error(f"Configuration value for {field} is not {str(kind)}")
-
-    config = {key: getattr(module, key) for key in CONFIG_USED}
-    for key in ["glossary", "links"]:
-        config[f"{key}_data"] = util.read_yaml(config[key])
-        config[f"{key}_refs"] = set()
-    config["bibliography_data"] = util.read_bibliography(config["bibliography"])
-
-    config["prose"] = {
-        slug: _read_file(Path(config["src_dir"], slug, INDEX_FILE))
-        for slug in [*config["chapters"].keys(), *config["appendices"].keys()]
-    }
-    config["slides"] = {
-        slug: _read_file(Path(config["src_dir"], slug, SLIDES_FILE))
-        for slug in config["chapters"].keys()
-    }
-
-    return config
-
-
-def get_figure(text):
-    """Return all figures."""
-    figures = {m.group(2) for m in regex.FIGURE.finditer(text)}
-    pdfs = {f.replace(".svg", ".pdf") for f in figures if f.endswith(".svg")}
-    return figures | pdfs
-
-
-def get_files(config, slug):
-    """Return set of files in or below a source directory."""
-    dir_path = Path(config["src_dir"], slug)
-    candidates = set(
-        p for p in Path(dir_path).rglob("**/*")
-        if not _in_excluded_dir(p)
+    ark.nodes.root().walk(
+        lambda node: collect_visitor(node, parser, collected)
     )
-    result = set(str(f.name) for f in candidates if f.is_file())
-    ignores = set(_directive(dir_path, "unreferenced"))
-    result = {f for f in result if not any(fnmatch(f, pat) for pat in ignores)}
-    return result - EXPECTED_FILES
+    return collected
 
 
-def get_image(text):
-    """Find direct image references."""
-    return {m.group(1) for m in regex.IMAGE.finditer(text)}
+def collect_bib(pargs, kwargs, found):
+    """Collect data from a bibliography reference shortcode."""
+    found["bib"].update(pargs)
 
 
-def get_inc(text):
-    """Find inclusion filenames."""
-    result = {m.group(2) for m in regex.INCLUSION_FILE.finditer(text)}
-    pats = [(m.group(1), m.group(2)) for m in regex.INCLUSION_PAT.finditer(text)]
-    for pat, fill in pats:
-        result |= {pat.replace("*", f) for f in fill.split()}
+def collect_fig_def(pargs, kwargs, found):
+    """Collect data from a figure definition shortcode."""
+    slug = kwargs["slug"]
+    if slug in found["fig_def"]:
+        print(f"Duplicate definition of figure slug {slug}")
+    else:
+        found["fig_def"].add(slug)
+
+
+def collect_fig_ref(pargs, kwargs, found):
+    """Collect data from a figure reference shortcode."""
+    found["fig_ref"].add(pargs[0])
+
+
+def collect_gloss(pargs, kwargs, found):
+    """Collect data from a glossary reference shortcode."""
+    found["gloss"].add(pargs[0])
+
+
+def collect_inc(pargs, kwargs, found):
+    """Collect data from an inclusion shortcode."""
+    found["inc"].add(f"{found['_dirname_']}/{pargs[0]}")
+
+
+def collect_tbl_def(pargs, kwargs, found):
+    """Collect data from a table definition shortcode."""
+    slug = kwargs.get("slug", None) or str(Path(kwargs["tbl"]).stem)
+    if slug in found["tbl_def"]:
+        print("Duplicate definition of table slug {slug}")
+    else:
+        found["tbl_def"].add(slug)
+
+
+def collect_tbl_ref(pargs, kwargs, found):
+    """Collect data from a table reference shortcode."""
+    found["tbl_ref"].add(pargs[0])
+
+
+def collect_xref(pargs, kwargs, found):
+    """Collect data from a cross-reference shortcode."""
+    found["xref"].add(pargs[0])
+
+
+def collect_visitor(node, parser, collected):
+    """Visit each node, collecting data."""
+    if Path(node.filepath).name != "index.md":
+        return
+    found = {key: set() for key in collected.keys()}
+    found["_dirname_"] = f"src/{node.slug}"
+    parser.parse(node.text, found)
+    for kind in found:
+        if kind != "_dirname_":
+            reorganize_found(node, kind, collected, found)
+
+
+def compare_keys(kind, expected, actual, extra=None, unused=True):
+    """Check two sets of keys."""
+    for key, slugs in actual.items():
+        if key not in expected:
+            print(f"unknown {kind} {key} used in {listify(slugs)}")
+        else:
+            expected.remove(key)
+    if extra:
+        expected -= extra
+    if unused and expected:
+        print(f"unused {kind} {listify(expected)}")
+
+
+def find_html_files(options):
+    """Get list of all generated HTML files."""
+    candidates = Path(options.htmldir).rglob("**/*.html")
+    if options.skipslides:
+        candidates = (x for x in candidates if '/slides/' not in str(x))
+    return list(candidates)
+
+
+def get_bib_keys(options):
+    """Get actual bibliography keys."""
+    text = Path(options.root, "info", "bibliography.bib").read_text()
+    return set(re.findall(r"^@.+?\{(.+?),$", text, re.MULTILINE))
+
+
+def get_gloss_keys(options):
+    """Get actual glossary keys."""
+    text = Path(options.root, "info", "glossary.yml").read_text()
+    glossary = yaml.safe_load(text) or []
+    if isinstance(glossary, dict):
+        glossary = [glossary]
+    return {entry["key"] for entry in glossary}
+
+
+def get_includable_files(options):
+    """Get all includable files from source directory."""
+    result = set()
+    for slug in options.config.chapters + options.config.appendices:
+        for filename in Path(options.root, "src", slug).rglob("**/*"):
+            if is_includable(options, filename):
+                result.add(str(filename))
     return result
+
+
+def is_includable(options, filename):
+    """Might this thing be included?"""
+    if filename.is_dir():
+        return False
+    if filename.suffix in IGNORED_SUFFIXES:
+        return False
+    if filename.name in options.exclude:
+        return False
+    filestr = str(filename)
+    if filestr.endswith("~"):
+        return False
+    if filestr in options.config.unincluded:
+        return False
+    return True
+
+
+def listify(values):
+    """Format values for printing."""
+    return ", ".join(sorted(list(values)))
+
+
+def load_config(options):
+    """Load configuration file as module."""
+    filename = Path(options.root, "config.py")
+    spec = importlib.util.spec_from_file_location("config", filename)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 def parse_args():
     """Parse arguments."""
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", required=True, help="Configuration file")
     parser.add_argument("--dom", required=True, help="DOM specification file")
-    parser.add_argument("--pages", nargs="+", default=[], help="pages")
-    return parser.parse_args()
-
-
-def _diff(title, defined, seen):
-    """Report problems."""
-    for subtitle, items in [
-        ("unused", defined - seen),
-        ("unknown", seen - defined),
-    ]:
-        if not items:
-            continue
-        _warn(f"{title} {subtitle}")
-        for i in sorted(items):
-            _warn(f"- {i}")
-
-
-def _directive(dir_path, section):
-    """Get a section from the directives file if it exists"""
-    file_path = Path(dir_path).joinpath(DIRECTIVES_FILE)
-    if not file_path.exists():
-        return []
-    content = util.read_yaml(file_path, True)
-    return content.get(section, [])
-
-
-def _dom_collect(seen, node):
-    """Collect DOM element attributes from given node and its descendents."""
-    if not isinstance(node, Tag):
-        return
-    if _dom_skip(node):
-        return
-    if node.name not in seen:
-        seen[node.name] = {}
-    for key, value in node.attrs.items():
-        if key not in seen[node.name]:
-            seen[node.name][key] = set()
-        if isinstance(value, str):
-            seen[node.name][key].add(value)
-        else:
-            for v in value:
-                seen[node.name][key].add(v)
-    for child in node:
-        _dom_collect(seen, child)
-
-
-def _dom_diff(actual, expected):
-    """Show difference between two DOM structures."""
-    for name in sorted(actual):
-        if name not in expected:
-            _warn(f"DOM {name} seen but not expected")
-            continue
-        for attr in sorted(actual[name]):
-            if attr not in expected[name]:
-                _warn(f"DOM {name}.{attr} seen but not expected")
-                continue
-            if expected[name][attr] == "any":
-                continue
-            for value in sorted(actual[name][attr]):
-                if value not in expected[name][attr]:
-                    _warn(f"DOM {name}.{attr} == '{value}' seen but not expected")
-
-
-def _dom_skip(node):
-    """Ignore this node and its children?"""
-    return (
-        (node.name == "div")
-        and node.has_attr("class")
-        and ("highlight" in node["class"])
+    parser.add_argument("--exclude", nargs="+", help="Includable files to ignore")
+    parser.add_argument("--htmldir", required=True, help="HTML directory")
+    parser.add_argument("--root", required=True, help="Root directory")
+    parser.add_argument(
+        "--skipslides",
+        action="store_true",
+        default=False,
+        help="skip slides when checking HTML"
     )
+    options = parser.parse_args()
+    options.exclude = set(options.exclude)
+    return options
 
 
-def _error(msg):
-    """Report a fatal error."""
-    print(msg)
-    sys.exit(1)
+def reorganize_found(node, kind, collected, found):
+    """Copy found keys into overall collection."""
+    for key in found[kind]:
+        if key not in collected[kind]:
+            collected[kind][key] = set()
+        elif kind in UNIQUE_KEYS:
+            print(f"{kind} key {key} redefined")
+        slug = node.slug if node.slug else "@root"
+        collected[kind][key].add(slug)
 
 
-def _in_excluded_dir(path):
-    """Is this path automatically excluded?"""
-    return any(p in EXCLUDE_DIRS for p in path.parts)
-
-
-def _read_file(path):
-    """Read a file or fail."""
-    try:
-        with open(path, "r") as reader:
-            return reader.read()
-    except FileNotFoundError:
-        _error(f"file not found{str(path)}")
-
-
-def _warn(msg):
-    """Warn but continue."""
-    print(msg)
+def visit_html(filename, node):
+    """Recursively check nodes of DOM tree."""
+    if isinstance(node, NavigableString):
+        if "][" in node.text:
+            print(f"{filename} dangling ][: '''{node.text}'''")
+    elif not isinstance(node, Tag):
+        return
+    elif node.name in {"code", "pre"}:
+        return
+    for child in node:
+        visit_html(filename, child)
 
 
 if __name__ == "__main__":

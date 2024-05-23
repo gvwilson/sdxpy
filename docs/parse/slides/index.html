@@ -1,357 +1,341 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="repo" content="https://github.com/gvwilson/sdxpy">
-  <meta name="build_date" content="2024-04-28">
-  <meta name="template" content="slides">
-  <meta name="major" content="parse">
-  
-  <link rel="icon" type="image/x-icon" href="../../favicon.ico">
-  <link rel="stylesheet" href="../../mccole.css">
-  <link rel="stylesheet" href="../../tango.css">
+    <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="../../logo.svg">
+<link rel="stylesheet" href="../../tango.css" type="text/css">
+<link rel="stylesheet" href="../../mccole.css" type="text/css">
+<title>Software Design by Example &middot; Parsing Text</title>
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [['\\(', '\\)']]
+    }
+  };
+</script>
+<script
+  type="text/javascript"
+  id="MathJax-script"
+  async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+</script>
+
   <script defer data-domain="third-bit.com" src="https://plausible.io/js/plausible.js"></script>
-  <script>
-    MathJax = {
-      tex: {
-        inlineMath: [['\\(', '\\)']]
-      }
-    };
-  </script>
-  <script
-    type="text/javascript"
-    id="MathJax-script"
-    async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
-  </script>
-  <script defer src="../../mccole.js"></script>
-  <title>Software Design by Example: Parsing Text</title>
-</head>
 
+
+    <script src="../../slides.js" defer></script>
+    <link rel="stylesheet" href="../../slides.css">
+  </head>
   <body>
-    <textarea id="source">
-
-class: slide-title
-
-<p>
-  <a href="https://third-bit.com/sdxpy/">Software Design by Example</a>
-</p>
-<h1>Parsing Text</h1>
-<div class="bottom">
-  <a href="../">chapter</a>
+<div class="row notex">
+  <div class="col-12 center">
+    <h1>Parsing Text</h1>
+    <p class="subtitle">Software Design by Example</p>
+  </div>
 </div>
-
----
-
-
-## The Problem
-
--   `"2023-*{pdf,txt}"` is easier to read and write
-    than `Lit("2023-", Any(Either("pdf", "txt")))`
-
--   How can we translate the former into the latter?
-
---
-
-1.  Group characters into <a class="gl-ref" href="../../glossary/#gl:token" title="An indivisible unit of text for a parser, such as a variable name or a number. Exactly what constitutes a token depends on the language." markdown="1">tokens</a>
-
-2.  Use tokens to create an <a class="gl-ref" href="../../glossary/#gl:abstract_syntax_tree" title="A deeply nested data structure, or tree, that represents the structure of a program. For example, the AST might have a node representing a `while` loop with one child representing the loop condition and another representing the loop body." markdown="1">abstract syntax tree</a>
-
-<figure>
+<hr>
+<h2>The Problem</h2>
+<ul>
+<li>
+<p><code>"2023-*{pdf,txt}"</code> is easier to read and write
+    than <code>Lit("2023-", Any(Either("pdf", "txt")))</code></p>
+</li>
+<li>
+<p>How can we translate the former into the latter?</p>
+</li>
+<li>
+<p>Group characters into <a class="gl-ref" href="../../glossary/#token" markdown="1">tokens</a></p>
+</li>
+<li>
+<p>Use tokens to create an <a class="gl-ref" href="../../glossary/#abstract_syntax_tree" markdown="1">abstract syntax tree</a></p>
+</li>
+</ul>
+<figure id="parse-pipeline">
 <img src="../pipeline.svg" alt="Parsing pipeline"/>
+<figcaption>Stages in parsing pipeline.</figcaption>
 </figure>
 
-
----
-
-## Cases
-
--   Characters like `{` and `*` can be processed immediately
-
--   But "regular" characters need to be accumulated
-
-    -   `Lit("abc")` rather than `Lit("a", Lit("b", Lit("c")))`
-
-    -   When we encounter a special character or '}',
-        we close the current literal token
-
--   The `,` character closes a literal but doesn't produce a token
-
----
-
-## A Bit More Design
-
--   The result is the final (flat) list of tokens
-
--   We could pass around a list and append to it
-
--   But we also need to know the characters in each `Literal`
-    and the options in each `Either`
-
--   So create a class rather than a function
-
-    -   Easier than carrying state around explicitly
-
----
-
-## Tokenizer
-
-```py
-def tok(self, text):
-    self._setup()
-    for ch in text:
-        if ch == "*":
-            self._add("Any")
-        elif ch == "{":
-            self._add("EitherStart")
-        elif ch == ",":
-            self._add(None)
-        elif ch == "}":
-            self._add("EitherEnd")
-        elif ch in CHARS:
-            self.current += ch
-        else:
-            raise NotImplementedError(f"what is '{ch}'?")
-    self._add(None)
-    return self.result
-```
-
-
----
-
-## Tokenizer
-
--   Call `self._setup()` at the start so that the tokenizer can be re-used
-
--   *Don't* call `self._add()` for regular characters
-
-    -   Add literals when we see special characters
-
-    -   And after all the input has been parsed
-
----
-
-## Adding Tokens
-
-```py
-def _add(self, thing):
-    if len(self.current) > 0:
-        self.result.append(["Lit", self.current])
-        self.current = ""
-    if thing is not None:
-        self.result.append([thing])
-```
-
-
--   `self._add(None)` means "add the literal but nothing else"
-
-<figure>
+<hr />
+<h2>Cases</h2>
+<ul>
+<li>
+<p>Characters like <code>{</code> and <code>*</code> can be processed immediately</p>
+</li>
+<li>
+<p>But &ldquo;regular&rdquo; characters need to be accumulated</p>
+<ul>
+<li>
+<p><code>Lit("abc")</code> rather than <code>Lit("a", Lit("b", Lit("c")))</code></p>
+</li>
+<li>
+<p>When we encounter a special character or &lsquo;}&rsquo;,
+    we close the current literal token</p>
+</li>
+</ul>
+</li>
+<li>
+<p>The <code>,</code> character closes a literal but doesn&rsquo;t produce a token</p>
+</li>
+</ul>
+<hr />
+<h2>A Bit More Design</h2>
+<ul>
+<li>
+<p>The result is the final (flat) list of tokens</p>
+</li>
+<li>
+<p>We could pass around a list and append to it</p>
+</li>
+<li>
+<p>But we also need to know the characters in each <code>Literal</code>
+    and the options in each <code>Either</code></p>
+</li>
+<li>
+<p>So create a class rather than a function</p>
+<ul>
+<li>Easier than carrying state around explicitly</li>
+</ul>
+</li>
+</ul>
+<hr />
+<h2>Tokenizer</h2>
+<div class="language-py" title="tokenizer.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">tok</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_setup</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="n">text</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">ch</span> <span class="o">==</span> <span class="s2">&quot;*&quot;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_add</span><span class="p">(</span><span class="s2">&quot;Any&quot;</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">ch</span> <span class="o">==</span> <span class="s2">&quot;{&quot;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_add</span><span class="p">(</span><span class="s2">&quot;EitherStart&quot;</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">ch</span> <span class="o">==</span> <span class="s2">&quot;,&quot;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_add</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">ch</span> <span class="o">==</span> <span class="s2">&quot;}&quot;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_add</span><span class="p">(</span><span class="s2">&quot;EitherEnd&quot;</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">ch</span> <span class="ow">in</span> <span class="n">CHARS</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">current</span> <span class="o">+=</span> <span class="n">ch</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;what is &#39;</span><span class="si">{</span><span class="n">ch</span><span class="si">}</span><span class="s2">&#39;?&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_add</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">result</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Tokenizer</h2>
+<ul>
+<li>
+<p>Call <code>self._setup()</code> at the start so that the tokenizer can be re-used</p>
+</li>
+<li>
+<p><em>Don&rsquo;t</em> call <code>self._add()</code> for regular characters</p>
+<ul>
+<li>
+<p>Add literals when we see special characters</p>
+</li>
+<li>
+<p>And after all the input has been parsed</p>
+</li>
+</ul>
+</li>
+</ul>
+<hr />
+<h2>Adding Tokens</h2>
+<div class="language-py" title="tokenizer.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">_add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">thing</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="s2">&quot;Lit&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">current</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">current</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">thing</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">thing</span><span class="p">])</span>
+</code></pre></div>
+</div>
+<ul>
+<li><code>self._add(None)</code> means &ldquo;add the literal but nothing else&rdquo;</li>
+</ul>
+<figure id="parse-tokenize">
 <img src="../tokenize.svg" alt="Tokenizing"/>
+<figcaption>Steps in tokenizing a string.</figcaption>
 </figure>
 
-
----
-
-## Testing
-
-```py
-def test_tok_empty_string():
-    assert Tokenizer().tok("") == []
+<hr />
+<h2>Testing</h2>
+<div class="language-py" title="test_tokenizer.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">test_tok_empty_string</span><span class="p">():</span>
+    <span class="k">assert</span> <span class="n">Tokenizer</span><span class="p">()</span><span class="o">.</span><span class="n">tok</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="p">[]</span>
 
 
-def test_tok_any_either():
-    assert Tokenizer().tok("*{abc,def}") == [
-        ["Any"],
-        ["EitherStart"],
-        ["Lit", "abc"],
-        ["Lit", "def"],
-        ["EitherEnd"],
-    ]
-```
+<span class="k">def</span> <span class="nf">test_tok_any_either</span><span class="p">():</span>
+    <span class="k">assert</span> <span class="n">Tokenizer</span><span class="p">()</span><span class="o">.</span><span class="n">tok</span><span class="p">(</span><span class="s2">&quot;*{abc,def}&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="p">[</span>
+        <span class="p">[</span><span class="s2">&quot;Any&quot;</span><span class="p">],</span>
+        <span class="p">[</span><span class="s2">&quot;EitherStart&quot;</span><span class="p">],</span>
+        <span class="p">[</span><span class="s2">&quot;Lit&quot;</span><span class="p">,</span> <span class="s2">&quot;abc&quot;</span><span class="p">],</span>
+        <span class="p">[</span><span class="s2">&quot;Lit&quot;</span><span class="p">,</span> <span class="s2">&quot;def&quot;</span><span class="p">],</span>
+        <span class="p">[</span><span class="s2">&quot;EitherEnd&quot;</span><span class="p">],</span>
+    <span class="p">]</span>
+</code></pre></div>
+</div>
+<ul>
+<li>Each sub-list represents one token</li>
+</ul>
+<hr />
+<h2>Parsing</h2>
+<div class="language-py" title="parser.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">_parse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tokens</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">tokens</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">Null</span><span class="p">()</span>
 
+        <span class="n">front</span><span class="p">,</span> <span class="n">back</span> <span class="o">=</span> <span class="n">tokens</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">tokens</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+        <span class="k">if</span> <span class="n">front</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;Any&quot;</span><span class="p">:</span> <span class="n">handler</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse_Any</span>
+        <span class="k">elif</span> <span class="n">front</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;EitherStart&quot;</span><span class="p">:</span> <span class="n">handler</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse_EitherStart</span>
+        <span class="k">elif</span> <span class="n">front</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;Lit&quot;</span><span class="p">:</span> <span class="n">handler</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse_Lit</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="kc">False</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Unknown token type </span><span class="si">{</span><span class="n">front</span><span class="si">}</span><span class="s2">&quot;</span>
 
--   Each sub-list represents one token
+        <span class="k">return</span> <span class="n">handler</span><span class="p">(</span><span class="n">front</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="n">back</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<ul>
+<li>
+<p><code>front[0]</code> is the token&rsquo;s name, <code>front[1:]</code> is any other data</p>
+</li>
+<li>
+<p><code>back</code> is the remaining tokens</p>
+</li>
+<li>
+<p>Look for a <code>_parse_<em>thing</em></code> method to handle each token</p>
+</li>
+</ul>
+<hr />
+<!--# class="aside" -->
 
----
-
-## Parsing
-
-```py
-def _parse(self, tokens):
-    if not tokens:
-        return Null()
-
-    front, back = tokens[0], tokens[1:]
-    if front[0] == "Any": handler = self._parse_Any
-    elif front[0] == "EitherStart": handler = self._parse_EitherStart
-    elif front[0] == "Lit": handler = self._parse_Lit
-    else:
-        assert False, f"Unknown token type {front}"
-
-    return handler(front[1:], back)
-```
-
-
--   `front[0]` is the token's name, `front[1:]` is any other data
-
--   `back` is the remaining tokens
-
--   Look for a <code>\_parse\_<em>thing</em></code> method to handle each token
-
----
-
-class: aside
-
-## Introspection and Dispatch
-
--   <a class="gl-ref" href="../../glossary/#gl:introspection" title="See reflection." markdown="1">Introspection</a>:
+<h2>Introspection and Dispatch</h2>
+<ul>
+<li>
+<p><a class="gl-ref" href="../../glossary/#introspection" markdown="1">Introspection</a>:
     having a program look up a function or method inside itself
-    while it is running
-
--   <a class="gl-ref" href="../../glossary/#gl:dynamic_dispatch" title="To find a function or a property of an object by name while a program is running. For example, instead of getting a specific property of an object using `obj.name`, a program might use `obj[someVariable]`, where `someVariable` could hold `&quot;name&quot;` or some other property name." markdown="1">Dynamic dispatch</a>:
+    while it is running</p>
+</li>
+<li>
+<p><a class="gl-ref" href="../../glossary/#dynamic_dispatch" markdown="1">Dynamic dispatch</a>:
     using introspection to decide what to do next
-    rather than a long chain of `if` statements
+    rather than a long chain of <code>if</code> statements</p>
+</li>
+<li>
+<p>These are powerful techniques and we use them frequently</p>
+</li>
+</ul>
+<hr />
+<h2>Fill in the Simple Stuff</h2>
+<div class="language-py" title="parser.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">_parse_Any</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rest</span><span class="p">,</span> <span class="n">back</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Any</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_parse</span><span class="p">(</span><span class="n">back</span><span class="p">))</span>
 
--   These are powerful techniques and we use them frequently
+    <span class="k">def</span> <span class="nf">_parse_Lit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rest</span><span class="p">,</span> <span class="n">back</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Lit</span><span class="p">(</span><span class="n">rest</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse</span><span class="p">(</span><span class="n">back</span><span class="p">))</span>
+</code></pre></div>
+</div>
+<ul>
+<li>Hardest part is making sure to name them properly
+    so that <code>_parse</code> can find them</li>
+</ul>
+<hr />
+<h2><code>Either</code> is Messy</h2>
+<div class="language-py" title="parser.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">_parse_EitherStart</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rest</span><span class="p">,</span> <span class="n">back</span><span class="p">):</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="nb">len</span><span class="p">(</span><span class="n">back</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">3</span>
+            <span class="ow">or</span> <span class="p">(</span><span class="n">back</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">&quot;Lit&quot;</span><span class="p">)</span>
+            <span class="ow">or</span> <span class="p">(</span><span class="n">back</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">&quot;Lit&quot;</span><span class="p">)</span>
+            <span class="ow">or</span> <span class="p">(</span><span class="n">back</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">&quot;EitherEnd&quot;</span><span class="p">)</span>
+        <span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;badly-formatted Either&quot;</span><span class="p">)</span>
+        <span class="n">left</span> <span class="o">=</span> <span class="n">Lit</span><span class="p">(</span><span class="n">back</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">right</span> <span class="o">=</span> <span class="n">Lit</span><span class="p">(</span><span class="n">back</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">Either</span><span class="p">([</span><span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse</span><span class="p">(</span><span class="n">back</span><span class="p">[</span><span class="mi">3</span><span class="p">:]))</span>
+</code></pre></div>
+</div>
+<ul>
+<li>Remember, we didn&rsquo;t save the commas</li>
+<li>It really should pull things from <code>back</code> until it hits <code>EitherEnd</code></li>
+</ul>
+<hr />
+<h2>A Better Implementation</h2>
+<div class="language-py" title="better_parser.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">_parse_EitherStart</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rest</span><span class="p">,</span> <span class="n">back</span><span class="p">):</span>
+        <span class="n">children</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">while</span> <span class="n">back</span> <span class="ow">and</span> <span class="p">(</span><span class="n">back</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;Lit&quot;</span><span class="p">):</span>
+            <span class="n">children</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Lit</span><span class="p">(</span><span class="n">back</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]))</span>
+            <span class="n">back</span> <span class="o">=</span> <span class="n">back</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
 
----
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">children</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;empty Either&quot;</span><span class="p">)</span>
 
-## Fill in the Simple Stuff
+        <span class="k">if</span> <span class="n">back</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">&quot;EitherEnd&quot;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;badly-formatted Either&quot;</span><span class="p">)</span>
 
-```py
-def _parse_Any(self, rest, back):
-    return Any(self._parse(back))
+        <span class="k">return</span> <span class="n">Either</span><span class="p">(</span><span class="n">children</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse</span><span class="p">(</span><span class="n">back</span><span class="p">[</span><span class="mi">1</span><span class="p">:]))</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Testing</h2>
+<div class="language-py" title="test_parser.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">test_parse_either_two_lit</span><span class="p">():</span>
+    <span class="k">assert</span> <span class="n">Parser</span><span class="p">()</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="s2">&quot;{abc,def}&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="n">Either</span><span class="p">(</span>
+        <span class="p">[</span><span class="n">Lit</span><span class="p">(</span><span class="s2">&quot;abc&quot;</span><span class="p">),</span> <span class="n">Lit</span><span class="p">(</span><span class="s2">&quot;def&quot;</span><span class="p">)]</span>
+    <span class="p">)</span>
+</code></pre></div>
+</div>
+<ul>
+<li>But this assumes we can compare <code>Match</code> objects</li>
+</ul>
+<hr />
+<!--# class="aside" -->
 
-def _parse_Lit(self, rest, back):
-    return Lit(rest[0], self._parse(back))
-```
-
-
--   Hardest part is making sure to name them properly
-    so that `_parse` can find them
-
----
-
-## `Either` is Messy
-
-```py
-def _parse_EitherStart(self, rest, back):
-    if (
-        len(back) < 3
-        or (back[0][0] != "Lit")
-        or (back[1][0] != "Lit")
-        or (back[2][0] != "EitherEnd")
-    ):
-        raise ValueError("badly-formatted Either")
-    left = Lit(back[0][1])
-    right = Lit(back[1][1])
-    return Either([left, right], self._parse(back[3:]))
-```
-
-
--   Remember, we didn't save the commas
-
---
-
--   It really should pull things from `back` until it hits `EitherEnd`
-
----
-
-## A Better Implementation
-
-```py
-def _parse_EitherStart(self, rest, back):
-    children = []
-    while back and (back[0][0] == "Lit"):
-        children.append(Lit(back[0][1]))
-        back = back[1:]
-
-    if not children:
-        raise ValueError("empty Either")
-
-    if back[0][0] != "EitherEnd":
-        raise ValueError("badly-formatted Either")
-
-    return Either(children, self._parse(back[1:]))
-```
-
-
----
-
-## Testing
-
-```py
-def test_parse_either_two_lit():
-    assert Parser().parse("{abc,def}") == Either(
-        [Lit("abc"), Lit("def")]
-    )
-```
-
-
--   But this assumes we can compare `Match` objects
-
----
-
-class: aside
-
-## They're Just Methods
-
--   `a == b` is "just" `a.__eq__(b)`
--   <a class="gl-ref" href="../../glossary/#gl:operator_overloading" title="Defining or redefining the implementation of built-in operators like `+`." markdown="1">Operator overloading</a>:
+<h2>They&rsquo;re Just Methods</h2>
+<ul>
+<li><code>a == b</code> is &ldquo;just&rdquo; <code>a.__eq__(b)</code></li>
+<li><a class="gl-ref" href="../../glossary/#operator_overloading" markdown="1">Operator overloading</a>:
     if our class has methods with the right names,
-    Python calls them to perform "built-in" operations
--   Parent `Match` class does shared work
-    -   E.g., make sure objects have
-        the same <a class="gl-ref" href="../../glossary/#gl:concrete_class" title="A class that can actually be instantiated. The term is used in contrast with abstract class." markdown="1">concrete class</a>
--   Child method (if any) does details
-    -   E.g., make sure two `Lit` objects are checking for the same text
+    Python calls them to perform &ldquo;built-in&rdquo; operations</li>
+<li>Parent <code>Match</code> class does shared work<ul>
+<li>E.g., make sure objects have
+    the same <a class="gl-ref" href="../../glossary/#concrete_class" markdown="1">concrete class</a></li>
+</ul>
+</li>
+<li>Child method (if any) does details<ul>
+<li>E.g., make sure two <code>Lit</code> objects are checking for the same text</li>
+</ul>
+</li>
+</ul>
+<hr />
+<h2>Infrastructure</h2>
+<div class="language-py" title="match.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Match</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rest</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rest</span> <span class="o">=</span> <span class="n">rest</span> <span class="k">if</span> <span class="n">rest</span> <span class="k">else</span> <span class="n">Null</span><span class="p">()</span>
 
----
+    <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">other</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> 
+                <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="vm">__class__</span> <span class="ow">and</span> 
+                <span class="bp">self</span><span class="o">.</span><span class="n">rest</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">rest</span><span class="p">)</span>
 
-## Infrastructure
+<span class="k">class</span> <span class="nc">Lit</span><span class="p">(</span><span class="n">Match</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chars</span><span class="p">,</span> <span class="n">rest</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">rest</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">chars</span> <span class="o">=</span> <span class="n">chars</span>
 
-```py
-class Match:
-    def __init__(self, rest):
-        self.rest = rest if rest else Null()
+    <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__eq__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">chars</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">chars</span>
+        <span class="p">)</span>
+</code></pre></div>
+</div>
+<hr />
+<!--# class="summary" -->
 
-    def __eq__(self, other):
-        return (other is not None and
-                self.__class__ == other.__class__ and
-                self.rest == other.rest)
-
-class Lit(Match):
-    def __init__(self, chars, rest=None):
-        super().__init__(rest)
-        self.chars = chars
-
-    def __eq__(self, other):
-        return super().__eq__(other) and (
-            self.chars == other.chars
-        )
-```
-
-
----
-
-class: summary
-
-## Summary
-
-<figure>
+<h2>Summary</h2>
+<figure id="parse-concept-map">
 <img src="../concept_map.svg" alt="Concept map of parsing"/>
+<figcaption>Concept map</figcaption>
 </figure>
-
-
-
-
-
-    </textarea>
-    <script src="../../remark-latest.min.js"></script>
-    <script>
-      var slideshow = remark.create({
-        highlightLines: true
-      })
-    </script>
   </body>
 </html>

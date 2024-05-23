@@ -1,113 +1,121 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="repo" content="https://github.com/gvwilson/sdxpy">
-  <meta name="build_date" content="2024-04-28">
-  <meta name="template" content="slides">
-  <meta name="major" content="vm">
-  
-  <link rel="icon" type="image/x-icon" href="../../favicon.ico">
-  <link rel="stylesheet" href="../../mccole.css">
-  <link rel="stylesheet" href="../../tango.css">
+    <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="../../logo.svg">
+<link rel="stylesheet" href="../../tango.css" type="text/css">
+<link rel="stylesheet" href="../../mccole.css" type="text/css">
+<title>Software Design by Example &middot; A Virtual Machine</title>
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [['\\(', '\\)']]
+    }
+  };
+</script>
+<script
+  type="text/javascript"
+  id="MathJax-script"
+  async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+</script>
+
   <script defer data-domain="third-bit.com" src="https://plausible.io/js/plausible.js"></script>
-  <script>
-    MathJax = {
-      tex: {
-        inlineMath: [['\\(', '\\)']]
-      }
-    };
-  </script>
-  <script
-    type="text/javascript"
-    id="MathJax-script"
-    async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
-  </script>
-  <script defer src="../../mccole.js"></script>
-  <title>Software Design by Example: A Virtual Machine</title>
-</head>
 
+
+    <script src="../../slides.js" defer></script>
+    <link rel="stylesheet" href="../../slides.css">
+  </head>
   <body>
-    <textarea id="source">
-
-class: slide-title
-
-<p>
-  <a href="https://third-bit.com/sdxpy/">Software Design by Example</a>
-</p>
-<h1>A Virtual Machine</h1>
-<div class="bottom">
-  <a href="../">chapter</a>
+<div class="row notex">
+  <div class="col-12 center">
+    <h1>A Virtual Machine</h1>
+    <p class="subtitle">Software Design by Example</p>
+  </div>
 </div>
-
----
-
-
-## The Problem
-
--   Still a lot of magic in the interpreter of <a class="x-ref" href="../../interp/">Chapter 7</a>
-
--   Build something that mimics hardware more closely
-
--   See <span class="bib-ref">[<a class="bib-ref" href="../../bib/#Nisan2021">Nisan2021</a>]</span> for a fuller description
-
--   Or play [Human Resource Machine][human_resource_machine]
-
----
-
-## Architecture
-
--  Our <a class="gl-ref" href="../../glossary/#gl:virtual_machine" title="A program that pretends to be a computer. This may seem a bit redundant, but VMs are quick to create and start up, and changes made inside the virtual machine are contained within that VM so we can install new packages or run a completely different operating system without affecting the underlying computer." markdown="1">virtual machine</a> (VM)
-
-<figure>
+<hr>
+<h2>The Problem</h2>
+<ul>
+<li>
+<p>Still a lot of magic in the interpreter of <a href="../../interp/">Chapter&nbsp;7</a></p>
+</li>
+<li>
+<p>Build something that mimics hardware more closely</p>
+</li>
+<li>
+<p>See <span class="bib-ref">[<a class="bib-ref" href="../../bib/#Nisan2021">Nisan2021</a>]</span> for a fuller description</p>
+</li>
+<li>
+<p>Or play <a href="https://tomorrowcorporation.com/humanresourcemachine">Human Resource Machine</a></p>
+</li>
+</ul>
+<hr />
+<h2>Architecture</h2>
+<ul>
+<li>Our <a class="gl-ref" href="../../glossary/#virtual_machine" markdown="1">virtual machine</a> (VM)</li>
+</ul>
+<figure id="vm-architecture">
 <img src="../architecture.svg" alt="Virtual machine architecture"/>
+<figcaption>Architecture of the virtual machine.</figcaption>
 </figure>
 
-
----
-
-## Architecture
-
-1.  <a class="gl-ref" href="../../glossary/#gl:instruction_pointer" title="A special register in a processor that stores the address of the next instruction to execute." markdown="1">Instruction pointer</a> (IP)
-    holds the address of the next instruction
-
-    -   Automatically initialized to 0,
-        so every program must start there
-
-1.  Instructions can access <a class="gl-ref" href="../../glossary/#gl:register_hardware" title="A small piece of memory (typically one word long) built into a processor that operations can refer to directly." markdown="1">registers</a> R0 to R3 directly
-
-    -   No memory-to-memory operations
-
-1.  256 <a class="gl-ref" href="../../glossary/#gl:word_memory" title="The unit of memory that a particular processor most naturally works with. While a byte is a fixed size (8 bits), a word may be 16, 32, or 64 bits long depending on the processor." markdown="1">words</a> of memory
-
-    -   Addresses fit in a single byte
-
----
-
-## What It Can Do
-
--   <a class="gl-ref" href="../../glossary/#gl:instruction_set" title="The basic operations that a particular processor can execute directly." markdown="1">Instruction set</a> defines what the processor can do
-
--   Each instruction is 3 bytes
-
--   <a class="gl-ref" href="../../glossary/#gl:op_code" title="The numerical operation code for an instruction that a processor can execute." markdown="1">op code</a> fits in one byte
-
--   May have zero, one, or two single-byte operands
-
-    -   Could use variable-length instructions,
-        but that would complicate the VM
-
--   Each operand is a register identifier, a constant, or an address
-
----
-
-## Writing Instructions
-
--   Instructions are numbers,
-
--   Write them in <a class="gl-ref" href="../../glossary/#gl:assembly_code" title="A low-level programming language whose statements correspond closely to the actual instruction set of a particular kind of processor." markdown="1">assembly code</a> for readability
-
+<hr />
+<h2>Architecture</h2>
+<ol>
+<li>
+<p><a class="gl-ref" href="../../glossary/#instruction_pointer" markdown="1">Instruction pointer</a> (IP)
+    holds the address of the next instruction</p>
+<ul>
+<li>Automatically initialized to 0,
+    so every program must start there</li>
+</ul>
+</li>
+<li>
+<p>Instructions can access <a class="gl-ref" href="../../glossary/#register_hardware" markdown="1">registers</a> R0 to R3 directly</p>
+<ul>
+<li>No memory-to-memory operations</li>
+</ul>
+</li>
+<li>
+<p>256 <a class="gl-ref" href="../../glossary/#word_memory" markdown="1">words</a> of memory</p>
+<ul>
+<li>Addresses fit in a single byte</li>
+</ul>
+</li>
+</ol>
+<hr />
+<h2>What It Can Do</h2>
+<ul>
+<li>
+<p><a class="gl-ref" href="../../glossary/#instruction_set" markdown="1">Instruction set</a> defines what the processor can do</p>
+</li>
+<li>
+<p>Each instruction is 3 bytes</p>
+</li>
+<li>
+<p><a class="gl-ref" href="../../glossary/#op_code" markdown="1">op code</a> fits in one byte</p>
+</li>
+<li>
+<p>May have zero, one, or two single-byte operands</p>
+<ul>
+<li>Could use variable-length instructions,
+    but that would complicate the VM</li>
+</ul>
+</li>
+<li>
+<p>Each operand is a register identifier, a constant, or an address</p>
+</li>
+</ul>
+<hr />
+<h2>Writing Instructions</h2>
+<ul>
+<li>
+<p>Instructions are numbers,</p>
+</li>
+<li>
+<p>Write them in <a class="gl-ref" href="../../glossary/#assembly_code" markdown="1">assembly code</a> for readability</p>
+</li>
+</ul>
 <div class="small">
 <table>
 <tr><th>Name</th><th>Code</th><th>Format</th><th>Action</th><th>Example</th></tr>
@@ -120,186 +128,172 @@ class: slide-title
 </table>
 </div>
 
----
+<hr />
+<h2>Details</h2>
+<div class="language-py" title="architecture.py">
+<div class="highlight"><pre><span></span><code><span class="n">NUM_REG</span> <span class="o">=</span> <span class="mi">4</span>  <span class="c1"># number of registers</span>
+<span class="n">RAM_LEN</span> <span class="o">=</span> <span class="mi">256</span>  <span class="c1"># number of words in RAM</span>
 
-## Details
+<span class="n">OPS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;hlt&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;code&quot;</span><span class="p">:</span> <span class="mh">0x1</span><span class="p">,</span> <span class="s2">&quot;fmt&quot;</span><span class="p">:</span> <span class="s2">&quot;--&quot;</span><span class="p">},</span>  <span class="c1"># Halt program</span>
+    <span class="s2">&quot;ldc&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;code&quot;</span><span class="p">:</span> <span class="mh">0x2</span><span class="p">,</span> <span class="s2">&quot;fmt&quot;</span><span class="p">:</span> <span class="s2">&quot;rv&quot;</span><span class="p">},</span>  <span class="c1"># Load value</span>
+    <span class="s2">&quot;ldr&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;code&quot;</span><span class="p">:</span> <span class="mh">0x3</span><span class="p">,</span> <span class="s2">&quot;fmt&quot;</span><span class="p">:</span> <span class="s2">&quot;rr&quot;</span><span class="p">},</span>  <span class="c1"># Load register</span>
+    <span class="s2">&quot;cpy&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;code&quot;</span><span class="p">:</span> <span class="mh">0x4</span><span class="p">,</span> <span class="s2">&quot;fmt&quot;</span><span class="p">:</span> <span class="s2">&quot;rr&quot;</span><span class="p">},</span>  <span class="c1"># Copy register</span>
+    <span class="s2">&quot;str&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;code&quot;</span><span class="p">:</span> <span class="mh">0x5</span><span class="p">,</span> <span class="s2">&quot;fmt&quot;</span><span class="p">:</span> <span class="s2">&quot;rr&quot;</span><span class="p">},</span>  <span class="c1"># Store register</span>
+    <span class="s2">&quot;add&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;code&quot;</span><span class="p">:</span> <span class="mh">0x6</span><span class="p">,</span> <span class="s2">&quot;fmt&quot;</span><span class="p">:</span> <span class="s2">&quot;rr&quot;</span><span class="p">},</span>  <span class="c1"># Add</span>
+    <span class="s2">&quot;sub&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;code&quot;</span><span class="p">:</span> <span class="mh">0x7</span><span class="p">,</span> <span class="s2">&quot;fmt&quot;</span><span class="p">:</span> <span class="s2">&quot;rr&quot;</span><span class="p">},</span>  <span class="c1"># Subtract</span>
+    <span class="s2">&quot;beq&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;code&quot;</span><span class="p">:</span> <span class="mh">0x8</span><span class="p">,</span> <span class="s2">&quot;fmt&quot;</span><span class="p">:</span> <span class="s2">&quot;rv&quot;</span><span class="p">},</span>  <span class="c1"># Branch if equal</span>
+    <span class="s2">&quot;bne&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;code&quot;</span><span class="p">:</span> <span class="mh">0x9</span><span class="p">,</span> <span class="s2">&quot;fmt&quot;</span><span class="p">:</span> <span class="s2">&quot;rv&quot;</span><span class="p">},</span>  <span class="c1"># Branch if not equal</span>
+    <span class="s2">&quot;prr&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;code&quot;</span><span class="p">:</span> <span class="mh">0xA</span><span class="p">,</span> <span class="s2">&quot;fmt&quot;</span><span class="p">:</span> <span class="s2">&quot;r-&quot;</span><span class="p">},</span>  <span class="c1"># Print register</span>
+    <span class="s2">&quot;prm&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;code&quot;</span><span class="p">:</span> <span class="mh">0xB</span><span class="p">,</span> <span class="s2">&quot;fmt&quot;</span><span class="p">:</span> <span class="s2">&quot;r-&quot;</span><span class="p">},</span>  <span class="c1"># Print memory</span>
+<span class="p">}</span>
 
-```py
-NUM_REG = 4  # number of registers
-RAM_LEN = 256  # number of words in RAM
+<span class="n">OP_MASK</span> <span class="o">=</span> <span class="mh">0xFF</span>  <span class="c1"># select a single byte</span>
+<span class="n">OP_SHIFT</span> <span class="o">=</span> <span class="mi">8</span>  <span class="c1"># shift up by one byte</span>
+<span class="n">OP_WIDTH</span> <span class="o">=</span> <span class="mi">6</span>  <span class="c1"># op width in characters when printing</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>VM Class</h2>
+<div class="language-py" title="vm.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">VirtualMachine</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">initialize</span><span class="p">([])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prompt</span> <span class="o">=</span> <span class="s2">&quot;&gt;&gt;&quot;</span>
 
-OPS = {
-    "hlt": {"code": 0x1, "fmt": "--"},  # Halt program
-    "ldc": {"code": 0x2, "fmt": "rv"},  # Load value
-    "ldr": {"code": 0x3, "fmt": "rr"},  # Load register
-    "cpy": {"code": 0x4, "fmt": "rr"},  # Copy register
-    "str": {"code": 0x5, "fmt": "rr"},  # Store register
-    "add": {"code": 0x6, "fmt": "rr"},  # Add
-    "sub": {"code": 0x7, "fmt": "rr"},  # Subtract
-    "beq": {"code": 0x8, "fmt": "rv"},  # Branch if equal
-    "bne": {"code": 0x9, "fmt": "rv"},  # Branch if not equal
-    "prr": {"code": 0xA, "fmt": "r-"},  # Print register
-    "prm": {"code": 0xB, "fmt": "r-"},  # Print memory
-}
-
-OP_MASK = 0xFF  # select a single byte
-OP_SHIFT = 8  # shift up by one byte
-OP_WIDTH = 6  # op width in characters when printing
-```
-
-
----
-
-## VM Class
-
-```py
-class VirtualMachine:
-    def __init__(self):
-        self.initialize([])
-        self.prompt = ">>"
-
-    def initialize(self, program):
-        assert len(program) <= RAM_LEN, "Program too long"
-        self.ram = [
-            program[i] if (i < len(program)) else 0
-            for i in range(RAM_LEN)
-        ]
-        self.ip = 0
-        self.reg = [0] * NUM_REG
-```
-
-
----
-
-## Fetching and Unpacking
-
-```py
-def fetch(self):
-    instruction = self.ram[self.ip]
-    self.ip += 1
-    op = instruction & OP_MASK
-    instruction >>= OP_SHIFT
-    arg0 = instruction & OP_MASK
-    instruction >>= OP_SHIFT
-    arg1 = instruction & OP_MASK
-    return [op, arg0, arg1]
-```
-
-
--  Use <a class="gl-ref" href="../../glossary/#gl:bitwise_operation" title="An operation that manipulates individual bits in memory. Common bitwise operations include `and`, `or`, `not`, and `xor`." markdown="1">bitwise operations</a> to get bytes out of integer
-
-<figure>
+    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">program</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">program</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">RAM_LEN</span><span class="p">,</span> <span class="s2">&quot;Program too long&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ram</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">program</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">if</span> <span class="p">(</span><span class="n">i</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">program</span><span class="p">))</span> <span class="k">else</span> <span class="mi">0</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">RAM_LEN</span><span class="p">)</span>
+        <span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ip</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reg</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">NUM_REG</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Fetching and Unpacking</h2>
+<div class="language-py" title="vm.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">fetch</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">instruction</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ram</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">ip</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ip</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">op</span> <span class="o">=</span> <span class="n">instruction</span> <span class="o">&amp;</span> <span class="n">OP_MASK</span>
+        <span class="n">instruction</span> <span class="o">&gt;&gt;=</span> <span class="n">OP_SHIFT</span>
+        <span class="n">arg0</span> <span class="o">=</span> <span class="n">instruction</span> <span class="o">&amp;</span> <span class="n">OP_MASK</span>
+        <span class="n">instruction</span> <span class="o">&gt;&gt;=</span> <span class="n">OP_SHIFT</span>
+        <span class="n">arg1</span> <span class="o">=</span> <span class="n">instruction</span> <span class="o">&amp;</span> <span class="n">OP_MASK</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">op</span><span class="p">,</span> <span class="n">arg0</span><span class="p">,</span> <span class="n">arg1</span><span class="p">]</span>
+</code></pre></div>
+</div>
+<ul>
+<li>Use <a class="gl-ref" href="../../glossary/#bitwise_operation" markdown="1">bitwise operations</a> to get bytes out of integer</li>
+</ul>
+<figure id="vm-unpacking">
 <img src="../unpacking.svg" alt="Unpacking instructions"/>
+<figcaption>Using bitwise operations to unpack instructions.</figcaption>
 </figure>
 
+<hr />
+<h2>Running a Program</h2>
+<div class="language-py" title="vm.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">running</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">while</span> <span class="n">running</span><span class="p">:</span>
+            <span class="n">op</span><span class="p">,</span> <span class="n">arg0</span><span class="p">,</span> <span class="n">arg1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fetch</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">op</span> <span class="o">==</span> <span class="n">OPS</span><span class="p">[</span><span class="s2">&quot;hlt&quot;</span><span class="p">][</span><span class="s2">&quot;code&quot;</span><span class="p">]:</span>
+                <span class="n">running</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">elif</span> <span class="n">op</span> <span class="o">==</span> <span class="n">OPS</span><span class="p">[</span><span class="s2">&quot;ldc&quot;</span><span class="p">][</span><span class="s2">&quot;code&quot;</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">reg</span><span class="p">[</span><span class="n">arg0</span><span class="p">]</span> <span class="o">=</span> <span class="n">arg1</span>
+            <span class="k">elif</span> <span class="n">op</span> <span class="o">==</span> <span class="n">OPS</span><span class="p">[</span><span class="s2">&quot;ldr&quot;</span><span class="p">][</span><span class="s2">&quot;code&quot;</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">reg</span><span class="p">[</span><span class="n">arg0</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ram</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">reg</span><span class="p">[</span><span class="n">arg1</span><span class="p">]]</span>
+            <span class="k">elif</span> <span class="n">op</span> <span class="o">==</span> <span class="n">OPS</span><span class="p">[</span><span class="s2">&quot;cpy&quot;</span><span class="p">][</span><span class="s2">&quot;code&quot;</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">reg</span><span class="p">[</span><span class="n">arg0</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reg</span><span class="p">[</span><span class="n">arg1</span><span class="p">]</span>
 
----
-
-## Running a Program
-
-```py
-def run(self):
-    running = True
-    while running:
-        op, arg0, arg1 = self.fetch()
-        if op == OPS["hlt"]["code"]:
-            running = False
-        elif op == OPS["ldc"]["code"]:
-            self.reg[arg0] = arg1
-        elif op == OPS["ldr"]["code"]:
-            self.reg[arg0] = self.ram[self.reg[arg1]]
-        elif op == OPS["cpy"]["code"]:
-            self.reg[arg0] = self.reg[arg1]
-        else:
-            assert False, f"Unknown op {op:06x}"
-```
-
-
----
-
-## Sample Instructions
-
--   Store a value
-
-```py
-elif op == OPS["str"]["code"]:
-    self.ram[self.reg[arg1]] = self.reg[arg0]
-```
-
-
--   Addition
-
-```py
-elif op == OPS["add"]["code"]:
-    self.reg[arg0] += self.reg[arg1]
-```
-
-
--   <a class="gl-ref" href="../../glossary/#gl:conditional_jump" title="An instruction that tells a processor to start executing somewhere other than at the next address if a condition is true. Conditional jumps are used to implement higher-level constructs like `if` statements and loops." markdown="1">Conditional jump</a>
-
-```py
-elif op == OPS["beq"]["code"]:
-    if self.reg[arg0] == 0:
-        self.ip = arg1
-```
-
-
----
-
-## Writing Programs
-
--   Hexadecimal
-
-```mx
-00010a
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">assert</span> <span class="kc">False</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Unknown op </span><span class="si">{</span><span class="n">op</span><span class="si">:</span><span class="s2">06x</span><span class="si">}</span><span class="s2">&quot;</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Sample Instructions</h2>
+<ul>
+<li>Store a value</li>
+</ul>
+<div class="language-py" title="vm.py">
+<div class="highlight"><pre><span></span><code>            <span class="k">elif</span> <span class="n">op</span> <span class="o">==</span> <span class="n">OPS</span><span class="p">[</span><span class="s2">&quot;str&quot;</span><span class="p">][</span><span class="s2">&quot;code&quot;</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ram</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">reg</span><span class="p">[</span><span class="n">arg1</span><span class="p">]]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reg</span><span class="p">[</span><span class="n">arg0</span><span class="p">]</span>
+</code></pre></div>
+</div>
+<ul>
+<li>Addition</li>
+</ul>
+<div class="language-py" title="vm.py">
+<div class="highlight"><pre><span></span><code>            <span class="k">elif</span> <span class="n">op</span> <span class="o">==</span> <span class="n">OPS</span><span class="p">[</span><span class="s2">&quot;add&quot;</span><span class="p">][</span><span class="s2">&quot;code&quot;</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">reg</span><span class="p">[</span><span class="n">arg0</span><span class="p">]</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reg</span><span class="p">[</span><span class="n">arg1</span><span class="p">]</span>
+</code></pre></div>
+</div>
+<ul>
+<li><a class="gl-ref" href="../../glossary/#conditional_jump" markdown="1">Conditional jump</a></li>
+</ul>
+<div class="language-py" title="vm.py">
+<div class="highlight"><pre><span></span><code>            <span class="k">elif</span> <span class="n">op</span> <span class="o">==</span> <span class="n">OPS</span><span class="p">[</span><span class="s2">&quot;beq&quot;</span><span class="p">][</span><span class="s2">&quot;code&quot;</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">reg</span><span class="p">[</span><span class="n">arg0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">ip</span> <span class="o">=</span> <span class="n">arg1</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Writing Programs</h2>
+<ul>
+<li>Hexadecimal</li>
+</ul>
+<div class="language-mx" title="print_r1.mx">
+<div class="highlight"><pre><span></span><code>00010a
 000001
-```
-
-
--   Assembly code
-
-```as
-# Print initial contents of R1.
-prr R1
-hlt
-```
-
-
--   Write an <a class="gl-ref" href="../../glossary/#gl:assembler" title="A compiler that translates software written in assembly code into machine instructions." markdown="1">assembler</a> to the latter into the former
-
----
-
-## Labels
-
--   Instruction set doesn't have names for addresses
-
--   But we want <a class="gl-ref" href="../../glossary/#gl:label_address" title="A human-readable name given to a particular location in memory when writing programs in assembly code." markdown="1">labels</a> for readability
-
-```as
-# Count up to 3.
-# - R0: loop index.
-# - R1: loop limit.
-ldc R0 0
-ldc R1 3
-loop:
-prr R0
-ldc R2 1
-add R0 R2
-cpy R2 R1
-sub R2 R0
-bne R2 @loop
-hlt
-```
-
-
----
-
-## Counting Up
-
-```
->> 0
->> 1
->> 2
+</code></pre></div>
+</div>
+<ul>
+<li>Assembly code</li>
+</ul>
+<div class="language-as" title="print_r1.as">
+<div class="highlight"><pre><span></span><code><span class="err">#</span><span class="w"> </span><span class="nx">Print</span><span class="w"> </span><span class="nx">initial</span><span class="w"> </span><span class="nx">contents</span><span class="w"> </span><span class="nx">of</span><span class="w"> </span><span class="nx">R1</span><span class="p">.</span>
+<span class="nx">prr</span><span class="w"> </span><span class="nx">R1</span>
+<span class="nx">hlt</span>
+</code></pre></div>
+</div>
+<ul>
+<li>Write an <a class="gl-ref" href="../../glossary/#assembler" markdown="1">assembler</a> to the latter into the former</li>
+</ul>
+<hr />
+<h2>Labels</h2>
+<ul>
+<li>
+<p>Instruction set doesn&rsquo;t have names for addresses</p>
+</li>
+<li>
+<p>But we want <a class="gl-ref" href="../../glossary/#label_address" markdown="1">labels</a> for readability</p>
+</li>
+</ul>
+<div class="language-as" title="count_up.as">
+<div class="highlight"><pre><span></span><code><span class="err">#</span><span class="w"> </span><span class="nx">Count</span><span class="w"> </span><span class="nx">up</span><span class="w"> </span><span class="nx">to</span><span class="w"> </span><span class="mi">3</span><span class="p">.</span>
+<span class="err">#</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="nx">R0</span><span class="o">:</span><span class="w"> </span><span class="nx">loop</span><span class="w"> </span><span class="nx">index</span><span class="p">.</span>
+<span class="err">#</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="nx">R1</span><span class="o">:</span><span class="w"> </span><span class="nx">loop</span><span class="w"> </span><span class="nx">limit</span><span class="p">.</span>
+<span class="nx">ldc</span><span class="w"> </span><span class="nx">R0</span><span class="w"> </span><span class="mi">0</span>
+<span class="nx">ldc</span><span class="w"> </span><span class="nx">R1</span><span class="w"> </span><span class="mi">3</span>
+<span class="nx">loop</span><span class="o">:</span>
+<span class="nx">prr</span><span class="w"> </span><span class="nx">R0</span>
+<span class="nx">ldc</span><span class="w"> </span><span class="nx">R2</span><span class="w"> </span><span class="mi">1</span>
+<span class="nx">add</span><span class="w"> </span><span class="nx">R0</span><span class="w"> </span><span class="nx">R2</span>
+<span class="nx">cpy</span><span class="w"> </span><span class="nx">R2</span><span class="w"> </span><span class="nx">R1</span>
+<span class="nx">sub</span><span class="w"> </span><span class="nx">R2</span><span class="w"> </span><span class="nx">R0</span>
+<span class="nx">bne</span><span class="w"> </span><span class="nx">R2</span><span class="w"> </span><span class="err">@</span><span class="nx">loop</span>
+<span class="nx">hlt</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Counting Up</h2>
+<div class="language-out" title="count_up.out">
+<div class="highlight"><pre><span></span><code>&gt;&gt; 0
+&gt;&gt; 1
+&gt;&gt; 2
 R000000 = 000003
 R000001 = 000003
 R000002 = 000000
@@ -307,138 +301,113 @@ R000003 = 000000
 000000:   000002  030102  00000a  010202
 000004:   020006  010204  000207  020209
 000008:   000001  000000  000000  000000
-```
-
-
----
-
-## Counting Up
-
-<figure>
+</code></pre></div>
+</div>
+<hr />
+<h2>Counting Up</h2>
+<figure id="vm-count-up">
 <img src="../count_up.svg" alt="Counting from 0 to 2"/>
+<figcaption>Flowchart of assembly language program to count up from 0 to 2.</figcaption>
 </figure>
 
-
----
-
-## Counting Up
-
-<figure>
+<hr />
+<h2>Counting Up</h2>
+<figure id="vm-count-trace">
 <img src="../count_trace.svg" alt="Trace counting program"/>
+<figcaption>Tracing registers and memory values for a simple counting program.</figcaption>
 </figure>
 
+<hr />
+<h2>Assembler Class</h2>
+<div class="language-py" title="assembler.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Assembler</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">assemble</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lines</span><span class="p">):</span>
+        <span class="n">lines</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_lines</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span>
+        <span class="n">labels</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_find_labels</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span>
+        <span class="n">instructions</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">ln</span> <span class="k">for</span> <span class="n">ln</span> <span class="ow">in</span> <span class="n">lines</span> <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_label</span><span class="p">(</span><span class="n">ln</span><span class="p">)</span>
+        <span class="p">]</span>
+        <span class="n">compiled</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_compile</span><span class="p">(</span><span class="n">instr</span><span class="p">,</span> <span class="n">labels</span><span class="p">)</span> <span class="k">for</span> <span class="n">instr</span> <span class="ow">in</span> <span class="n">instructions</span>
+        <span class="p">]</span>
+        <span class="n">program</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_to_text</span><span class="p">(</span><span class="n">compiled</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">program</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Resolving Labels</h2>
+<div class="language-py" title="assembler.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">_find_labels</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lines</span><span class="p">):</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">loc</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">ln</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_label</span><span class="p">(</span><span class="n">ln</span><span class="p">):</span>
+                <span class="n">label</span> <span class="o">=</span> <span class="n">ln</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+                <span class="k">assert</span> <span class="n">label</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">result</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Duplicated </span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="n">result</span><span class="p">[</span><span class="n">label</span><span class="p">]</span> <span class="o">=</span> <span class="n">loc</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">loc</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="n">result</span>
 
----
+    <span class="k">def</span> <span class="nf">_is_label</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">line</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">line</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<ul>
+<li>Either save label <em>or</em> increment current address</li>
+</ul>
+<hr />
+<h2>Compiling an Instruction</h2>
+<div class="language-py" title="assembler.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">_compile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instruction</span><span class="p">,</span> <span class="n">labels</span><span class="p">):</span>
+        <span class="n">tokens</span> <span class="o">=</span> <span class="n">instruction</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+        <span class="n">op</span><span class="p">,</span> <span class="n">args</span> <span class="o">=</span> <span class="n">tokens</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">tokens</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+        <span class="n">fmt</span><span class="p">,</span> <span class="n">code</span> <span class="o">=</span> <span class="n">OPS</span><span class="p">[</span><span class="n">op</span><span class="p">][</span><span class="s2">&quot;fmt&quot;</span><span class="p">],</span> <span class="n">OPS</span><span class="p">[</span><span class="n">op</span><span class="p">][</span><span class="s2">&quot;code&quot;</span><span class="p">]</span>
 
-## Assembler Class
+        <span class="k">if</span> <span class="n">fmt</span> <span class="o">==</span> <span class="s2">&quot;--&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_combine</span><span class="p">(</span><span class="n">code</span><span class="p">)</span>
 
-```py
-class Assembler:
-    def assemble(self, lines):
-        lines = self._get_lines(lines)
-        labels = self._find_labels(lines)
-        instructions = [
-            ln for ln in lines if not self._is_label(ln)
-        ]
-        compiled = [
-            self._compile(instr, labels) for instr in instructions
-        ]
-        program = self._to_text(compiled)
-        return program
-```
+        <span class="k">elif</span> <span class="n">fmt</span> <span class="o">==</span> <span class="s2">&quot;r-&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_combine</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_reg</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">code</span><span class="p">)</span>
 
+        <span class="k">elif</span> <span class="n">fmt</span> <span class="o">==</span> <span class="s2">&quot;rr&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_combine</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_reg</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="bp">self</span><span class="o">.</span><span class="n">_reg</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">code</span>
+            <span class="p">)</span>
 
----
+        <span class="k">elif</span> <span class="n">fmt</span> <span class="o">==</span> <span class="s2">&quot;rv&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_combine</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_val</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">labels</span><span class="p">),</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_reg</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">code</span>
+            <span class="p">)</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Converting a Value</h2>
+<ul>
+<li>
+<p>Look up label&rsquo;s address if value starts with <code>@</code></p>
+</li>
+<li>
+<p>Convert value to number if it doesn&rsquo;t</p>
+</li>
+</ul>
+<div class="language-py" title="assembler.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">_val</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">token</span><span class="p">,</span> <span class="n">labels</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">token</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">&quot;@&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
+        <span class="n">lbl</span> <span class="o">=</span> <span class="n">token</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+        <span class="k">assert</span> <span class="n">lbl</span> <span class="ow">in</span> <span class="n">labels</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Unknown label &#39;</span><span class="si">{</span><span class="n">token</span><span class="si">}</span><span class="s2">&#39;&quot;</span>
+        <span class="k">return</span> <span class="n">labels</span><span class="p">[</span><span class="n">lbl</span><span class="p">]</span>
+</code></pre></div>
+</div>
+<hr />
+<!--# class="summary" -->
 
-## Resolving Labels
-
-```py
-def _find_labels(self, lines):
-    result = {}
-    loc = 0
-    for ln in lines:
-        if self._is_label(ln):
-            label = ln[:-1].strip()
-            assert label not in result, f"Duplicated {label}"
-            result[label] = loc
-        else:
-            loc += 1
-    return result
-
-def _is_label(self, line):
-    return line.endswith(":")
-```
-
-
--   Either save label *or* increment current address
-
----
-
-## Compiling an Instruction
-
-```py
-def _compile(self, instruction, labels):
-    tokens = instruction.split()
-    op, args = tokens[0], tokens[1:]
-    fmt, code = OPS[op]["fmt"], OPS[op]["code"]
-
-    if fmt == "--":
-        return self._combine(code)
-
-    elif fmt == "r-":
-        return self._combine(self._reg(args[0]), code)
-
-    elif fmt == "rr":
-        return self._combine(
-            self._reg(args[1]), self._reg(args[0]), code
-        )
-
-    elif fmt == "rv":
-        return self._combine(
-            self._val(args[1], labels),
-            self._reg(args[0]), code
-        )
-```
-
-
----
-
-## Converting a Value
-
--   Look up label's address if value starts with `@`
-
--   Convert value to number if it doesn't
-
-```py
-def _val(self, token, labels):
-    if token[0] != "@":
-        return int(token)
-    lbl = token[1:]
-    assert lbl in labels, f"Unknown label '{token}'"
-    return labels[lbl]
-```
-
-
----
-
-class: summary
-
-## Summary
-
-<figure>
+<h2>Summary</h2>
+<figure id="vm-concept-map">
 <img src="../concept_map.svg" alt="Concept map for virtual machine and assembler"/>
+<figcaption>Concept map for virtual machine and assembler.</figcaption>
 </figure>
-
-
-
-[human_resource_machine]: https://tomorrowcorporation.com/humanresourcemachine
-
-    </textarea>
-    <script src="../../remark-latest.min.js"></script>
-    <script>
-      var slideshow = remark.create({
-        highlightLines: true
-      })
-    </script>
   </body>
 </html>

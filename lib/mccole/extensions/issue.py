@@ -1,4 +1,4 @@
-"""Generate link to GitHub issue."""
+"""Shortcode for linking to GitHub issue."""
 
 import ark
 import shortcodes
@@ -6,17 +6,20 @@ import util
 
 
 @shortcodes.register("issue")
-def issue_ref(pargs, kwargs, node):
-    """Handle [% issue number %] issue reference shortcodes."""
+@util.timing
+def issue(pargs, kwargs, node):
+    """Insert link to GitHub issue."""
     util.require(
         (len(pargs) == 1) and (not kwargs),
-        f"Bad 'issue' shortcode with {pargs} and {kwargs} in {node}",
+        f"Bad 'issue' in {node.path}: '{pargs}' and '{kwargs}'",
     )
     try:
         number = int(pargs[0])
     except ValueError:
-        util.fail(f"Bad issue number {pargs[0]} in issue shortcode in {node}")
-    repo = ark.site.config["repo"]
+        util.fail(f"Bad 'issue' in {node.path}: {pargs[0]} is not a number")
+    try:
+        repo = ark.site.config["repo"]
+    except KeyError:
+        util.fail(f"While processing 'issue' in {node.path}: 'repo' not in config")
     url = f"{repo}/issues/{number}"
-    title = util.TRANSLATIONS[ark.site.config["lang"]]["issue"]
-    return f'{title} <a href="{url}">#{number}</a>'
+    return f'<a href="{url}" class="issue">Issue {number}</a>'

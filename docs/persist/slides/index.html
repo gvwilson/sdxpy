@@ -1,141 +1,131 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="repo" content="https://github.com/gvwilson/sdxpy">
-  <meta name="build_date" content="2024-04-28">
-  <meta name="template" content="slides">
-  <meta name="major" content="persist">
-  
-  <link rel="icon" type="image/x-icon" href="../../favicon.ico">
-  <link rel="stylesheet" href="../../mccole.css">
-  <link rel="stylesheet" href="../../tango.css">
+    <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="../../logo.svg">
+<link rel="stylesheet" href="../../tango.css" type="text/css">
+<link rel="stylesheet" href="../../mccole.css" type="text/css">
+<title>Software Design by Example &middot; Object Persistence</title>
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [['\\(', '\\)']]
+    }
+  };
+</script>
+<script
+  type="text/javascript"
+  id="MathJax-script"
+  async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+</script>
+
   <script defer data-domain="third-bit.com" src="https://plausible.io/js/plausible.js"></script>
-  <script>
-    MathJax = {
-      tex: {
-        inlineMath: [['\\(', '\\)']]
-      }
-    };
-  </script>
-  <script
-    type="text/javascript"
-    id="MathJax-script"
-    async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
-  </script>
-  <script defer src="../../mccole.js"></script>
-  <title>Software Design by Example: Object Persistence</title>
-</head>
 
+
+    <script src="../../slides.js" defer></script>
+    <link rel="stylesheet" href="../../slides.css">
+  </head>
   <body>
-    <textarea id="source">
-
-class: slide-title
-
-<p>
-  <a href="https://third-bit.com/sdxpy/">Software Design by Example</a>
-</p>
-<h1>Object Persistence</h1>
-<div class="bottom">
-  <a href="../">chapter</a>
+<div class="row notex">
+  <div class="col-12 center">
+    <h1>Object Persistence</h1>
+    <p class="subtitle">Software Design by Example</p>
+  </div>
 </div>
-
----
-
-
-## How to Save Data?
-
--   Prose as plain text
--   Tables as CSV
--   What about objects?
-    -   List of dictionaries of lists of dictionaries
-
----
-
-## Existing Options
-
--   [JSON][py_json] or [YAML][py_yaml]: language-neutral
-    -   But therefore lowest common denominator
-    -   Boolean, number, string, list, dictionary (with string keys)
--   [pickle][py_pickle] module: Python-specific
-    -   Arbitrary nested objects (good)
-    -   Other languages can't read its files (bad)
-
----
-
-## Getting Started
-
--   Store each __atomic value__ on a line of its own
-    -   `type_name:value`
-
-```txt
-bool:True
+<hr>
+<h2>How to Save Data?</h2>
+<ul>
+<li>Prose as plain text</li>
+<li>Tables as CSV</li>
+<li>What about objects?<ul>
+<li>List of dictionaries of lists of dictionaries</li>
+</ul>
+</li>
+</ul>
+<hr />
+<h2>Existing Options</h2>
+<ul>
+<li><a href="https://docs.python.org/3/library/json.html">JSON</a> or <a href="https://pyyaml.org/wiki/PyYAMLDocumentation">YAML</a>: language-neutral<ul>
+<li>But therefore lowest common denominator</li>
+<li>Boolean, number, string, list, dictionary (with string keys)</li>
+</ul>
+</li>
+<li><a href="https://docs.python.org/3/library/pickle.html">pickle</a> module: Python-specific<ul>
+<li>Arbitrary nested objects (good)</li>
+<li>Other languages can&rsquo;t read its files (bad)</li>
+</ul>
+</li>
+</ul>
+<hr />
+<h2>Getting Started</h2>
+<ul>
+<li>Store each <strong>atomic value</strong> on a line of its own<ul>
+<li><code>type_name:value</code></li>
+</ul>
+</li>
+</ul>
+<div class="language-txt" title="format.txt">
+<div class="highlight"><pre><span></span><code>bool:True
 int:123
-```
-
-
--   Split strings on newlines
-    -   Save the number of lines
-
-```txt
-# input
+</code></pre></div>
+</div>
+<ul>
+<li>Split strings on newlines<ul>
+<li>Save the number of lines</li>
+</ul>
+</li>
+</ul>
+<div class="language-txt" title="multiline_input.txt">
+<div class="highlight"><pre><span></span><code># input
 this is
 two lines
-```
-
-```txt
-# output
+</code></pre></div>
+</div>
+<div class="language-txt" title="multiline_output.txt">
+<div class="highlight"><pre><span></span><code># output
 str:2
 this is
 two lines
-```
+</code></pre></div>
+</div>
+<hr />
+<h2>Implementation</h2>
+<div class="language-py" title="builtin.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">save</span><span class="p">(</span><span class="n">writer</span><span class="p">,</span> <span class="n">thing</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">thing</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;bool:</span><span class="si">{</span><span class="n">thing</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">writer</span><span class="p">)</span>
 
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">thing</span><span class="p">,</span> <span class="nb">float</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;float:</span><span class="si">{</span><span class="n">thing</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">writer</span><span class="p">)</span>
 
----
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">thing</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;int:</span><span class="si">{</span><span class="n">thing</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">writer</span><span class="p">)</span>
 
-## Implementation
-
-```py
-def save(writer, thing):
-    if isinstance(thing, bool):
-        print(f"bool:{thing}", file=writer)
-
-    elif isinstance(thing, float):
-        print(f"float:{thing}", file=writer)
-
-    elif isinstance(thing, int):
-        print(f"int:{thing}", file=writer)
-
-    else:
-        raise ValueError(f"unknown type of thing {type(thing)}")
-```
-
-
----
-
-## Collections
-
--   Save type and number of elements
-
-```py
-elif isinstance(thing, list):
-    print(f"list:{len(thing)}", file=writer)
-    for item in thing:
-        save(writer, item)
-```
-
-
----
-
-## What This Looks Like
-
-```py
-save(sys.stdout, [False, 3.14, "hello", {"left": 1, "right": [2, 3]}])
-```
-
-```
-list:4
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;unknown type of thing </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">thing</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Collections</h2>
+<ul>
+<li>Save type and number of elements</li>
+</ul>
+<div class="language-py" title="builtin.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">thing</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;list:</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">thing</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">writer</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">thing</span><span class="p">:</span>
+            <span class="n">save</span><span class="p">(</span><span class="n">writer</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>What This Looks Like</h2>
+<div class="language-py" title="save_builtin.py">
+<div class="highlight"><pre><span></span><code><span class="n">save</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="p">,</span> <span class="p">[</span><span class="kc">False</span><span class="p">,</span> <span class="mf">3.14</span><span class="p">,</span> <span class="s2">&quot;hello&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;left&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;right&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]}])</span>
+</code></pre></div>
+</div>
+<div class="language-out" title="save_builtin.out">
+<div class="highlight"><pre><span></span><code>list:4
 bool:False
 float:3.14
 str:1
@@ -149,198 +139,176 @@ right
 list:2
 int:2
 int:3
-```
+</code></pre></div>
+</div>
+<ul>
+<li>Computer doesn&rsquo;t need indentation or end markers</li>
+<li>But we might add them for readability</li>
+</ul>
+<hr />
+<h2>Reading Data</h2>
+<div class="language-py" title="builtin.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="n">reader</span><span class="p">):</span>
+    <span class="n">line</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">readline</span><span class="p">()[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">assert</span> <span class="n">line</span><span class="p">,</span> <span class="s2">&quot;Nothing to read&quot;</span>
+    <span class="n">fields</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">,</span> <span class="n">maxsplit</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">fields</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Badly-formed line </span><span class="si">{</span><span class="n">line</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="o">=</span> <span class="n">fields</span>
 
+    <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">&quot;bool&quot;</span><span class="p">:</span>
+        <span class="n">names</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;True&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;False&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">}</span>
+        <span class="k">assert</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">names</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Unknown Boolean </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">return</span> <span class="n">names</span><span class="p">[</span><span class="n">value</span><span class="p">]</span>
 
---
+    <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">&quot;float&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
 
--   Computer doesn't need indentation or end markers
--   But we might add them for readability
+    <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">&quot;int&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
 
----
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;unknown type of thing </span><span class="si">{</span><span class="n">line</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Reading Multi-line Values</h2>
+<div class="language-py" title="builtin.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">&quot;list&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">load</span><span class="p">(</span><span class="n">reader</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">value</span><span class="p">))]</span>
+</code></pre></div>
+</div>
+<ul>
+<li>Use a list comprehension instead of a loop</li>
+</ul>
+<hr />
+<h2>Open-Closed Principle</h2>
+<ul>
+<li>Software should be open for extension but closed for modification<ul>
+<li>I.e., should be able to add new code without rewriting existing code</li>
+</ul>
+</li>
+<li>Create a dispatch function that figures out what reader or writer to call</li>
+<li>Find appropriate things to call dynamically</li>
+<li>Instead of looking for functions, look for methods</li>
+<li>If the type of the thing we&rsquo;re saving is <code>something</code>,
+    provide a method <code>_something</code></li>
+</ul>
+<hr />
+<h2>Saving</h2>
+<div class="language-py" title="objects.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">SaveObjects</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">writer</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">writer</span> <span class="o">=</span> <span class="n">writer</span>
 
-## Reading Data
-
-```py
-def load(reader):
-    line = reader.readline()[:-1]
-    assert line, "Nothing to read"
-    fields = line.split(":", maxsplit=1)
-    assert len(fields) == 2, f"Badly-formed line {line}"
-    key, value = fields
-
-    if key == "bool":
-        names = {"True": True, "False": False}
-        assert value in names, f"Unknown Boolean {value}"
-        return names[value]
-
-    elif key == "float":
-        return float(value)
-
-    elif key == "int":
-        return int(value)
-
-    else:
-        raise ValueError(f"unknown type of thing {line}")
-```
-
-
----
-
-## Reading Multi-line Values
-
-```py
-elif key == "list":
-    return [load(reader) for _ in range(int(value))]
-```
-
-
--   Use a list comprehension instead of a loop
-
----
-
-## Open-Closed Principle
-
--   Software should be open for extension but closed for modification
-    -   I.e., should be able to add new code without rewriting existing code
--   Create a dispatch function that figures out what reader or writer to call
--   Find appropriate things to call dynamically
--   Instead of looking for functions, look for methods
--   If the type of the thing we're saving is `something`,
-    provide a method `_something`
-
----
-
-## Saving
-
-```py
-class SaveObjects:
-    def __init__(self, writer):
-        self.writer = writer
-
-    def save(self, thing):
-        typename = type(thing).__name__
-        method = f"save_{typename}"
-        assert hasattr(self, method), \
-            f"Unknown object type {typename}"
-        getattr(self, method)(thing)
-```
-
-
--   Handle loading the same way
-
----
-
-## Next Steps
-
--   What to do with user-defined classes?
-    -   Or things from the standard library, for that matter?
--   Convert user types to built-in types
-    -   Either the object tells us how…
-    -   …or we do it generically
-    -   Either way, how to convert back?
--   Save class definitions as well as objects' values
-    -   Most general (code is just data)
-    -   But most difficult to implement
-    -   And a potential security hole
-
----
-
-## Aliasing
-
-<figure>
+    <span class="k">def</span> <span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">thing</span><span class="p">):</span>
+        <span class="n">typename</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">thing</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span>
+        <span class="n">method</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;save_</span><span class="si">{</span><span class="n">typename</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">assert</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">),</span> \
+            <span class="sa">f</span><span class="s2">&quot;Unknown object type </span><span class="si">{</span><span class="n">typename</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">)(</span><span class="n">thing</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<ul>
+<li>Handle loading the same way</li>
+</ul>
+<hr />
+<h2>Next Steps</h2>
+<ul>
+<li>What to do with user-defined classes?<ul>
+<li>Or things from the standard library, for that matter?</li>
+</ul>
+</li>
+<li>Convert user types to built-in types<ul>
+<li>Either the object tells us how…</li>
+<li>…or we do it generically</li>
+<li>Either way, how to convert back?</li>
+</ul>
+</li>
+<li>Save class definitions as well as objects&rsquo; values<ul>
+<li>Most general (code is just data)</li>
+<li>But most difficult to implement</li>
+<li>And a potential security hole</li>
+</ul>
+</li>
+</ul>
+<hr />
+<h2>Aliasing</h2>
+<figure id="persist-shared">
 <img src="../shared.svg" alt="A shared data structure"/>
+<figcaption>A shared data structure</figcaption>
 </figure>
 
+<div class="language-py" title="shared.py">
+<div class="highlight"><pre><span></span><code><span class="n">shared</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;shared&quot;</span><span class="p">]</span>
+<span class="n">fixture</span> <span class="o">=</span> <span class="p">[</span><span class="n">shared</span><span class="p">,</span> <span class="n">shared</span><span class="p">]</span>
+</code></pre></div>
+</div>
+<ul>
+<li>&ldquo;Surely nobody would ever do this!&rdquo;</li>
+<li>But every child node in an HTML tree has a reference to its parent</li>
+</ul>
+<hr />
+<h2>Aliasing</h2>
+<ul>
+<li>
+<p>Store a unique ID for every object using Python&rsquo;s <code>id</code></p>
+</li>
+<li>
+<p>Keep track of the objects seen so far</p>
+</li>
+<li>
+<p>Write that ID the first time we see the object</p>
+</li>
+<li>
+<p>Write a special entry when we see the object again</p>
+</li>
+</ul>
+<hr />
+<h2>Saving</h2>
+<div class="language-py" title="aliasing.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">thing</span><span class="p">):</span>
+        <span class="n">thing_id</span> <span class="o">=</span> <span class="nb">id</span><span class="p">(</span><span class="n">thing</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">thing_id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">seen</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_write</span><span class="p">(</span><span class="s2">&quot;alias&quot;</span><span class="p">,</span> <span class="n">thing_id</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+            <span class="k">return</span>
 
-```py
-shared = ["shared"]
-fixture = [shared, shared]
-```
+        <span class="bp">self</span><span class="o">.</span><span class="n">seen</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">thing_id</span><span class="p">)</span>
+        <span class="n">typename</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">thing</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span>
+        <span class="n">method</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;save_</span><span class="si">{</span><span class="n">typename</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">assert</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">),</span> \
+            <span class="sa">f</span><span class="s2">&quot;Unknown object type </span><span class="si">{</span><span class="n">typename</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">)(</span><span class="n">thing</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>What It Looks Like</h2>
+<div class="language-py" title="save_aliasing.py">
+<div class="highlight"><pre><span></span><code><span class="n">word</span> <span class="o">=</span> <span class="s2">&quot;word&quot;</span>
+<span class="n">child</span> <span class="o">=</span> <span class="p">[</span><span class="n">word</span><span class="p">,</span> <span class="n">word</span><span class="p">]</span>
+<span class="n">parent</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">parent</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+<span class="n">parent</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
 
-
--   "Surely nobody would ever do this!"
--   But every child node in an HTML tree has a reference to its parent
-
----
-
-## Aliasing
-
--   Store a unique ID for every object using Python's `id`
-
--   Keep track of the objects seen so far
-
--   Write that ID the first time we see the object
-
--   Write a special entry when we see the object again
-
----
-
-## Saving
-
-```py
-def save(self, thing):
-    thing_id = id(thing)
-    if thing_id in self.seen:
-        self._write("alias", thing_id, "")
-        return
-
-    self.seen.add(thing_id)
-    typename = type(thing).__name__
-    method = f"save_{typename}"
-    assert hasattr(self, method), \
-        f"Unknown object type {typename}"
-    getattr(self, method)(thing)
-```
-
-
----
-
-## What It Looks Like
-
-```py
-word = "word"
-child = [word, word]
-parent = []
-parent.append(parent)
-parent.append(child)
-
-saver = SaveAlias(sys.stdout)
-saver.save(parent)
-```
-
-```
-list:4539747200:2
+<span class="n">saver</span> <span class="o">=</span> <span class="n">SaveAlias</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="p">)</span>
+<span class="n">saver</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<div class="language-out" title="save_aliasing.out">
+<div class="highlight"><pre><span></span><code>list:4539747200:2
 alias:4539747200:
 list:4539552960:2
 str:4539552048:1
 word
 alias:4539552048:
-```
+</code></pre></div>
+</div>
+<hr />
+<!--# class="summary" -->
 
-
----
-
-class: summary
-
-## Summary
-
-<figure>
+<h2>Summary</h2>
+<figure id="persist-concept-map">
 <img src="../concept_map.svg" alt="Concept map of persistence"/>
+<figcaption>Concept map</figcaption>
 </figure>
-
-
-
-[py_json]: https://docs.python.org/3/library/json.html
-[py_pickle]: https://docs.python.org/3/library/pickle.html
-[py_yaml]: https://pyyaml.org/wiki/PyYAMLDocumentation
-
-    </textarea>
-    <script src="../../remark-latest.min.js"></script>
-    <script>
-      var slideshow = remark.create({
-        highlightLines: true
-      })
-    </script>
   </body>
 </html>

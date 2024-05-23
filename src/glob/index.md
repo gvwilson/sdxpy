@@ -1,4 +1,5 @@
 ---
+title: "Matching Patterns"
 abstract: >
     Pattern-matching is ubiquitous in computer programs.
     Whether we are selecting a set of files to open
@@ -44,15 +45,7 @@ This matcher will only handle the cases in [%t pattern-glob-cases %],
 but as the exercises will show,
 our design makes it easy to add new kinds of patterns.
 
-<div class="table" id="pattern-glob-cases" caption="Pattern-matching cases." markdown="1">
-| Pattern | Text     | Match? | Pattern  | Text     | Match? |
-| ------- | -------- | ------ | -------- | -------- | ------ |
-| `abc`   | "abc"    | true   | `a*c`    | "abc"    | true   |
-| `ab`    | "abc"    | false  | `{a,b}`  | "a"      | true   |
-| `abc`   | "ab"     | false  | `{a,b}`  | "c"      | false  |
-| `*`     | ""       | true   | `{a,b}`  | "ab"     | false  |
-| `*`     | "abc"    | true   | `*{x,y}` | "abcx"   | true   |
-</div>
+[% table slug="pattern-glob-cases" tbl="glob-cases.tbl" caption="Pattern-matching cases." %]
 
 ## Simple Patterns {: #glob-simple}
 
@@ -97,7 +90,7 @@ We call this class `Lit` because a fixed string of characters
 is sometimes called a [%g literal "literal" %],
 and it has a constructor and a `match` method:
 
-[% inc file="glob_lit.py" %]
+[%inc glob_lit.py %]
 
 `chars` is the characters to be matched,
 while `rest` is responsible for matching the rest of the text.
@@ -116,7 +109,7 @@ they need to tell it where to start looking.
 To see if this works,
 let's write and run a few tests:
 
-[% inc file="test_glob_lit.py" keep="tests" %]
+[%inc test_glob_lit.py mark=tests %]
 
 Notice that we give tests long, meaningful names
 to make failure reports from the test runner easier to read.
@@ -131,7 +124,7 @@ to find out if their entire design is going to work or not.
 We therefore write a test to make sure that chaining works
 when one literal matcher is followed by another:
 
-[% inc file="test_glob_lit.py" keep="chain" %]
+[%inc test_glob_lit.py mark=chain %]
 
 Chaining two literal matchers together is unnecessary:
 we could (and probably should) write `Lit("ab")` instead of `Lit("a", Lit("b"))`.
@@ -177,12 +170,12 @@ the overall match fails
    caption="How wildcard matching works."
 %]
 
-[% inc file="glob_any.py" %]
+[%inc glob_any.py %]
 
 Once again we write a few tests before moving on:
 {: .continue}
 
-[% inc file="test_glob_any.py" keep="tests" %]
+[%inc test_glob_any.py mark=tests %]
 
 Either/or matching works much the same way.
 If the first alternative matches,
@@ -192,19 +185,19 @@ we try the second alternative,
 and if that doesn't work either,
 we fail:
 
-[% inc file="glob_either.py" %]
+[%inc glob_either.py %]
 
 <div class="pagebreak"></div>
 
 Our first few tests pass:
 
-[% inc file="test_glob_either.py" keep="tests" %]
+[%inc test_glob_either.py mark=tests %]
 
 but further testing uncovers a bug:
 {: .continue}
 
-[% inc file="test_glob_problem.py" keep="keep" %]
-[% inc file="test_glob_problem.out" %]
+[%inc test_glob_problem.py mark=keep %]
+[%inc test_glob_problem.out %]
 
 The problem is that `Either.match` isn't using `rest` properly—in fact,
 it's not using `rest` at all
@@ -249,7 +242,7 @@ learning these patterns makes people better programmers.
 
 Our new parent class `Match` looks like this:
 
-[% inc file="glob_null.py" keep="parent" %]
+[%inc glob_null.py mark=parent %]
 
 `Match.rest` requires every [%g child_class "child class" %] to have
 a [%g helper_method "helper method" %] called `_match`
@@ -260,7 +253,7 @@ and returns `True` or `False` as appropriate.
 
 Our new Null Object class looks like this:
 
-[% inc file="glob_null.py" keep="null" %]
+[%inc glob_null.py mark=null %]
 
 `Null` objects must be at the end of the matching chain,
 i.e.,
@@ -276,7 +269,7 @@ without having to test whether it's the last matcher in line or not.
 With these changes in place,
 our literal matcher becomes:
 
-[% inc file="glob_null.py" keep="lit" %]
+[%inc glob_null.py mark=lit %]
 
 `Lit`'s constructor calls the constructor of its parent class
 to initialize the things that all classes share,
@@ -290,14 +283,14 @@ As before,
 the matcher for `*` checks what happens
 if it matches an ever-larger part of the target string:
 
-[% inc file="glob_null.py" keep="any" %]
+[%inc glob_null.py mark=any %]
 
 (The exercises will ask why loop has to run to `len(text) + 1`.)
 Finally,
 the either/or matcher that prompted this refactoring becomes:
 {: .continue}
 
-[% inc file="glob_null.py" keep="either" %]
+[%inc glob_null.py mark=either %]
 
 Looping over the left and right alternative
 saves us from repeating code or introducing a helper method.

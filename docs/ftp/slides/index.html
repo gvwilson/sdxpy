@@ -1,410 +1,397 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="repo" content="https://github.com/gvwilson/sdxpy">
-  <meta name="build_date" content="2024-04-28">
-  <meta name="template" content="slides">
-  <meta name="major" content="ftp">
-  
-  <link rel="icon" type="image/x-icon" href="../../favicon.ico">
-  <link rel="stylesheet" href="../../mccole.css">
-  <link rel="stylesheet" href="../../tango.css">
+    <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="../../logo.svg">
+<link rel="stylesheet" href="../../tango.css" type="text/css">
+<link rel="stylesheet" href="../../mccole.css" type="text/css">
+<title>Software Design by Example &middot; Transferring Files</title>
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [['\\(', '\\)']]
+    }
+  };
+</script>
+<script
+  type="text/javascript"
+  id="MathJax-script"
+  async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+</script>
+
   <script defer data-domain="third-bit.com" src="https://plausible.io/js/plausible.js"></script>
-  <script>
-    MathJax = {
-      tex: {
-        inlineMath: [['\\(', '\\)']]
-      }
-    };
-  </script>
-  <script
-    type="text/javascript"
-    id="MathJax-script"
-    async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
-  </script>
-  <script defer src="../../mccole.js"></script>
-  <title>Software Design by Example: Transferring Files</title>
-</head>
 
+
+    <script src="../../slides.js" defer></script>
+    <link rel="stylesheet" href="../../slides.css">
+  </head>
   <body>
-    <textarea id="source">
-
-class: slide-title
-
-<p>
-  <a href="https://third-bit.com/sdxpy/">Software Design by Example</a>
-</p>
-<h1>Transferring Files</h1>
-<div class="bottom">
-  <a href="../">chapter</a>
+<div class="row notex">
+  <div class="col-12 center">
+    <h1>Transferring Files</h1>
+    <p class="subtitle">Software Design by Example</p>
+  </div>
 </div>
-
----
-
-
-## The Problem
-
--   We want to make information available to others
-
-    -   Which includes programs as well as people
-
--   Understanding how a web server works will help us do this
-
----
-
-## TCP/IP
-
--   Most networked computers use <a class="gl-ref" href="../../glossary/#gl:internet_protocol" title="A set of specifications for ways computers can communicate. TCP/IP is the most widely used." markdown="1">Internet Protocol (IP)</a>
-
--   Defines multiple layers on top of each other
-
--   <a class="gl-ref" href="../../glossary/#gl:tcp" title="The most popular member of the IP family of protocols. TCP/IP tries to deliver messages reliably and in order so that programs can communicate as if they were reading and writing files." markdown="1">Transmission Control Protocol (TCP/IP)</a>
+<hr>
+<h2>The Problem</h2>
+<ul>
+<li>
+<p>We want to make information available to others</p>
+<ul>
+<li>Which includes programs as well as people</li>
+</ul>
+</li>
+<li>
+<p>Understanding how a web server works will help us do this</p>
+</li>
+</ul>
+<hr />
+<h2>TCP/IP</h2>
+<ul>
+<li>
+<p>Most networked computers use <a class="gl-ref" href="../../glossary/#internet_protocol" markdown="1">Internet Protocol (IP)</a></p>
+</li>
+<li>
+<p>Defines multiple layers on top of each other</p>
+</li>
+<li>
+<p><a class="gl-ref" href="../../glossary/#tcp" markdown="1">Transmission Control Protocol (TCP/IP)</a>
     makes communication between computers look like
-    reading and writing files
+    reading and writing files</p>
+</li>
+</ul>
+<hr />
+<h2>Sockets</h2>
+<ul>
+<li>
+<p>A <a class="gl-ref" href="../../glossary/#socket" markdown="1">sockets</a> is one end of a point-to-point communication channel</p>
+</li>
+<li>
+<p><a class="gl-ref" href="../../glossary/#ip_address" markdown="1">IP address</a> identifies machine</p>
+<ul>
+<li>Typically written as four 8-bit numbers like <code>93.184.216.34</code></li>
+</ul>
+</li>
+<li>
+<p><a class="gl-ref" href="../../glossary/#port" markdown="1">port</a> identifies a specific connection on that machine</p>
+<ul>
+<li>
+<p>A number in the range 0–65535</p>
+</li>
+<li>
+<p>Some numbers reserved for well-known applications</p>
+</li>
+<li>
+<p>E.g., port 80 is usually a web server</p>
+</li>
+</ul>
+</li>
+</ul>
+<hr />
+<!--# class="aside" -->
 
----
+<h2>Naming Things</h2>
+<ul>
+<li>
+<p>IP addresses are hard to remember</p>
+<ul>
+<li>And might actually identify a set of machines</li>
+</ul>
+</li>
+<li>
+<p><a class="gl-ref" href="../../glossary/#dns" markdown="1">Domain Name System (DNS)</a> translates names like <code>third-bit.com</code>
+    into numerical identifiers</p>
+</li>
+</ul>
+<hr />
+<h2>Clients and Servers</h2>
+<ul>
+<li>
+<p>A <a class="gl-ref" href="../../glossary/#client" markdown="1">client</a> sends requests and processes responses
+    (e.g., web browser)</p>
+</li>
+<li>
+<p>A <a class="gl-ref" href="../../glossary/#server" markdown="1">server</a> waits for requests and replies to them
+    (e.g., a web server)</p>
+</li>
+</ul>
+<hr />
+<h2>Socket Client</h2>
+<div class="language-py" title="client_all.py">
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">socket</span>
 
-## Sockets
+<span class="n">CHUNK_SIZE</span> <span class="o">=</span> <span class="mi">1024</span>
+<span class="n">SERVER_ADDRESS</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;localhost&quot;</span><span class="p">,</span> <span class="mi">8080</span><span class="p">)</span>
 
--   A <a class="gl-ref" href="../../glossary/#gl:socket" title="A communication channel between two computers that provides an interface similar to reading and writing files." markdown="1">sockets</a> is one end of a point-to-point communication channel
+<span class="n">message</span> <span class="o">=</span> <span class="s2">&quot;message text&quot;</span>
 
--   <a class="gl-ref" href="../../glossary/#gl:ip_address" title="A four-part number that uniquely identifies a computer on a network." markdown="1">IP address</a> identifies machine
+<span class="n">sock</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">socket</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">AF_INET</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">SOCK_STREAM</span><span class="p">)</span>
+<span class="n">sock</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">SERVER_ADDRESS</span><span class="p">)</span>
+<span class="n">sock</span><span class="o">.</span><span class="n">sendall</span><span class="p">(</span><span class="nb">bytes</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="s2">&quot;utf-8&quot;</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;client sent </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">message</span><span class="p">)</span><span class="si">}</span><span class="s2"> bytes&quot;</span><span class="p">)</span>
 
-    -   Typically written as four 8-bit numbers like `93.184.216.34`
+<span class="n">received</span> <span class="o">=</span> <span class="n">sock</span><span class="o">.</span><span class="n">recv</span><span class="p">(</span><span class="n">CHUNK_SIZE</span><span class="p">)</span>
+<span class="n">received_str</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">received</span><span class="p">,</span> <span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;client received </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">received</span><span class="p">)</span><span class="si">}</span><span class="s2"> bytes: &#39;</span><span class="si">{</span><span class="n">received_str</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Socket Server</h2>
+<div class="language-py" title="server_raw.py">
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">socket</span>
 
--   <a class="gl-ref" href="../../glossary/#gl:port" title="A logical endpoint for communication, like a phone number in an office building. Only one program on a computer may use a particular port on that computer at any time." markdown="1">port</a> identifies a specific connection on that machine
+<span class="n">CHUNK_SIZE</span> <span class="o">=</span> <span class="mi">1024</span>
 
-    -   A number in the range 0–65535
+<span class="k">def</span> <span class="nf">handler</span><span class="p">():</span>
+    <span class="n">host</span><span class="p">,</span> <span class="n">port</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">gethostbyname</span><span class="p">(</span><span class="s2">&quot;localhost&quot;</span><span class="p">),</span> <span class="mi">8080</span>
+    <span class="n">server_socket</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">socket</span><span class="p">()</span>
+    <span class="n">server_socket</span><span class="o">.</span><span class="n">bind</span><span class="p">((</span><span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">))</span>
 
-    -   Some numbers reserved for well-known applications
+    <span class="n">server_socket</span><span class="o">.</span><span class="n">listen</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">conn</span><span class="p">,</span> <span class="n">address</span> <span class="o">=</span> <span class="n">server_socket</span><span class="o">.</span><span class="n">accept</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Connection from </span><span class="si">{</span><span class="n">address</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
-    -   E.g., port 80 is usually a web server
+    <span class="n">data</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">conn</span><span class="o">.</span><span class="n">recv</span><span class="p">(</span><span class="n">CHUNK_SIZE</span><span class="p">),</span> <span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+    <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;got request from </span><span class="si">{</span><span class="n">address</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
 
----
+    <span class="n">conn</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="nb">bytes</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="s2">&quot;utf-8&quot;</span><span class="p">))</span>
+    <span class="n">conn</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 
-class: aside
-
-## Naming Things
-
--   IP addresses are hard to remember
-
-    -   And might actually identify a set of machines
-
--   <a class="gl-ref" href="../../glossary/#gl:dns" title="A decentralized naming system for computers that translates hostnames into the IP address of particular computers." markdown="1">Domain Name System (DNS)</a> translates names like `third-bit.com`
-    into numerical identifiers
-
----
-
-## Clients and Servers
-
--   A <a class="gl-ref" href="../../glossary/#gl:client" title="A program such as a browser that sends requests to a server and does something with the response." markdown="1">client</a> sends requests and processes responses
-    (e.g., web browser)
-
--   A <a class="gl-ref" href="../../glossary/#gl:server" title="A program that waits for requests from clients and sends them data in response." markdown="1">server</a> waits for requests and replies to them
-    (e.g., a web server)
-
----
-
-## Socket Client
-
-```py
-import socket
-
-CHUNK_SIZE = 1024
-SERVER_ADDRESS = ("localhost", 8080)
-
-message = "message text"
-
-sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-sock.connect(SERVER_ADDRESS)
-sock.sendall(bytes(message, "utf-8"))
-print(f"client sent {len(message)} bytes")
-
-received = sock.recv(CHUNK_SIZE)
-received_str = str(received, "utf-8")
-print(f"client received {len(received)} bytes: '{received_str}'")
-```
-
-
----
-
-## Socket Server
-
-```py
-import socket
-
-CHUNK_SIZE = 1024
-
-def handler():
-    host, port = socket.gethostbyname("localhost"), 8080
-    server_socket = socket.socket()
-    server_socket.bind((host, port))
-
-    server_socket.listen(1)
-    conn, address = server_socket.accept()
-    print(f"Connection from {address}")
-
-    data = str(conn.recv(CHUNK_SIZE), "utf-8")
-    msg = f"got request from {address}: {len(data)}"
-    print(msg)
-
-    conn.send(bytes(msg, "utf-8"))
-    conn.close()
-
-```
-
-
----
-
-## Interactions
-
-<figure>
+<span class="c1"># [main]</span>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">handler</span><span class="p">()</span>
+<span class="c1"># [/main]</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Interactions</h2>
+<figure id="ftp-interaction">
 <img src="../interaction.svg" alt="Client/server interaction"/>
+<figcaption>Steps and messages in client/server interaction.</figcaption>
 </figure>
 
+<hr />
+<h2>Using the Library</h2>
+<div class="language-py" title="server_lib.py">
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">socketserver</span>
 
----
+<span class="n">CHUNK_SIZE</span> <span class="o">=</span> <span class="mi">1024</span>
+<span class="n">SERVER_ADDRESS</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;localhost&quot;</span><span class="p">,</span> <span class="mi">8080</span><span class="p">)</span>
 
-## Using the Library
+<span class="k">class</span> <span class="nc">MyHandler</span><span class="p">(</span><span class="n">socketserver</span><span class="o">.</span><span class="n">BaseRequestHandler</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">handle</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">recv</span><span class="p">(</span><span class="n">CHUNK_SIZE</span><span class="p">)</span>
+        <span class="n">cli</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client_address</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;got request from </span><span class="si">{</span><span class="n">cli</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">sendall</span><span class="p">(</span><span class="nb">bytes</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="s2">&quot;utf-8&quot;</span><span class="p">))</span>
 
-```py
-import socketserver
-
-CHUNK_SIZE = 1024
-SERVER_ADDRESS = ("localhost", 8080)
-
-class MyHandler(socketserver.BaseRequestHandler):
-    def handle(self):
-        data = self.request.recv(CHUNK_SIZE)
-        cli = self.client_address[0]
-        msg = f"got request from {cli}: {len(data)}"
-        print(msg)
-        self.request.sendall(bytes(msg, "utf-8"))
-
-if __name__ == "__main__":
-    server = socketserver.TCPServer(SERVER_ADDRESS, MyHandler)
-    server.serve_forever()
-```
-
-
----
-
-## Chunking
-
--   Server uses `self.request.recv(CHUNK_SIZE)`
-
--   What if client sends more data than that?
-
--   Allocating a larger <a class="gl-ref" href="../../glossary/#gl:buffer_memory" title="A temporary storage area in memory." markdown="1">buffer</a> just delays the problem
-
--   Better solution: keep reading until there is no more data
-
----
-
-## Reading Chunks
-
-```py
-class FileHandler(socketserver.BaseRequestHandler):
-    def handle(self):
-        print("server about to start receiving")
-        data = bytes()
-        while True:
-            latest = self.request.recv(CHUNK_SIZE)
-            print(f"...server received {len(latest)} bytes")
-            data += latest
-            if len(latest) < CHUNK_SIZE:
-                print(f"...server breaking")
-                break
-        print(f"server finished received, about to reply")
-        self.request.sendall(bytes(f"{len(data)}", "utf-8"))
-```
-
-
----
-
-## Writing Chunks
-
-```py
-def send_file(conn, filename):
-    with open(filename, "rb") as reader:
-        data = reader.read()
-    print(f"client sending {len(data)} bytes")
-    total = 0
-    while total < len(data):
-        sent = conn.send(data[total:])
-        print(f"...client sent {sent} bytes")
-        if sent == 0:
-            break
-        total += sent
-        print(f"...client total now {total} bytes")
-    return total
-```
-
-
--   Try to send all remaining data
-
--   Advance marker by amount actually sent and re-try
-
----
-
-## Output
-
--   Client
-
-```
-client sending 1236 bytes
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">server</span> <span class="o">=</span> <span class="n">socketserver</span><span class="o">.</span><span class="n">TCPServer</span><span class="p">(</span><span class="n">SERVER_ADDRESS</span><span class="p">,</span> <span class="n">MyHandler</span><span class="p">)</span>
+    <span class="n">server</span><span class="o">.</span><span class="n">serve_forever</span><span class="p">()</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Chunking</h2>
+<ul>
+<li>
+<p>Server uses <code>self.request.recv(CHUNK_SIZE)</code></p>
+</li>
+<li>
+<p>What if client sends more data than that?</p>
+</li>
+<li>
+<p>Allocating a larger <a class="gl-ref" href="../../glossary/#buffer_memory" markdown="1">buffer</a> just delays the problem</p>
+</li>
+<li>
+<p>Better solution: keep reading until there is no more data</p>
+</li>
+</ul>
+<hr />
+<h2>Reading Chunks</h2>
+<div class="language-py" title="server_chunk.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">FileHandler</span><span class="p">(</span><span class="n">socketserver</span><span class="o">.</span><span class="n">BaseRequestHandler</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">handle</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;server about to start receiving&quot;</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="nb">bytes</span><span class="p">()</span>
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">latest</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">recv</span><span class="p">(</span><span class="n">CHUNK_SIZE</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;...server received </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">latest</span><span class="p">)</span><span class="si">}</span><span class="s2"> bytes&quot;</span><span class="p">)</span>
+            <span class="n">data</span> <span class="o">+=</span> <span class="n">latest</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">latest</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">CHUNK_SIZE</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;...server breaking&quot;</span><span class="p">)</span>
+                <span class="k">break</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;server finished received, about to reply&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">sendall</span><span class="p">(</span><span class="nb">bytes</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;utf-8&quot;</span><span class="p">))</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Writing Chunks</h2>
+<div class="language-py" title="client_chunk.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">send_file</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">reader</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;client sending </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="si">}</span><span class="s2"> bytes&quot;</span><span class="p">)</span>
+    <span class="n">total</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">while</span> <span class="n">total</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+        <span class="n">sent</span> <span class="o">=</span> <span class="n">conn</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">total</span><span class="p">:])</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;...client sent </span><span class="si">{</span><span class="n">sent</span><span class="si">}</span><span class="s2"> bytes&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">sent</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">break</span>
+        <span class="n">total</span> <span class="o">+=</span> <span class="n">sent</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;...client total now </span><span class="si">{</span><span class="n">total</span><span class="si">}</span><span class="s2"> bytes&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">total</span>
+</code></pre></div>
+</div>
+<ul>
+<li>
+<p>Try to send all remaining data</p>
+</li>
+<li>
+<p>Advance marker by amount actually sent and re-try</p>
+</li>
+</ul>
+<hr />
+<h2>Output</h2>
+<ul>
+<li>Client</li>
+</ul>
+<div class="language-out" title="client_chunk.out">
+<div class="highlight"><pre><span></span><code>client sending 1236 bytes
 ...client sent 1236 bytes
 ...client total now 1236 bytes
 client main sent 1236 bytes
 client main received 1236 bytes
 True
-```
-
-
-- Server
-
-```
-server about to start receiving
+</code></pre></div>
+</div>
+<ul>
+<li>Server</li>
+</ul>
+<div class="language-out" title="server_chunk.out">
+<div class="highlight"><pre><span></span><code>server about to start receiving
 ...server received 1024 bytes
 ...server received 212 bytes
 ...server breaking
 server finished received, about to reply
-```
+</code></pre></div>
+</div>
+<hr />
+<h2>Testing</h2>
+<ul>
+<li>
+<p>Manual testing:</p>
+<ul>
+<li>Start the server</li>
+<li>Wait for it to be ready</li>
+<li>Run the client</li>
+<li>Shut down the server</li>
+</ul>
+</li>
+<li>
+<p>Better: use a <a class="gl-ref" href="../../glossary/#mock_object" markdown="1">mock object</a>
+    instead of a real network connection</p>
+</li>
+</ul>
+<hr />
+<h2>Refactor the Logging</h2>
+<div class="language-py" title="logging_handler.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">LoggingHandler</span><span class="p">(</span><span class="n">socketserver</span><span class="o">.</span><span class="n">BaseRequestHandler</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">handle</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;server about to start receiving&quot;</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="nb">bytes</span><span class="p">()</span>
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">latest</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">recv</span><span class="p">(</span><span class="n">BLOCK_SIZE</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;...server received </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">latest</span><span class="p">)</span><span class="si">}</span><span class="s2"> bytes&quot;</span><span class="p">)</span>
+            <span class="n">data</span> <span class="o">+=</span> <span class="n">latest</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">latest</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">BLOCK_SIZE</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;...server breaking&quot;</span><span class="p">)</span>
+                <span class="k">break</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;server finished received, about to reply&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">sendall</span><span class="p">(</span><span class="nb">bytes</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;utf-8&quot;</span><span class="p">))</span>
+</code></pre></div>
+</div>
+<div class="language-py" title="logging_handler.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">debug</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Creating a Testable Server</h2>
+<div class="language-py" title="test_server.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">MockHandler</span><span class="p">(</span><span class="n">LoggingHandler</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">request</span> <span class="o">=</span> <span class="n">MockRequest</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
 
+    <span class="k">def</span> <span class="nf">debug</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="k">pass</span>
+</code></pre></div>
+</div>
+<ul>
+<li>
+<p><em>Don&rsquo;t</em> upcall constructor of <code>LoggingHandler</code></p>
+</li>
+<li>
+<p>Don&rsquo;t want to trigger all of the library&rsquo;s socket machinery</p>
+</li>
+</ul>
+<hr />
+<h2>Mocking the Request Object</h2>
+<ol>
+<li>
+<p>A constructor that records
+    the data we&rsquo;re going to pretend to have received over a socket
+    and does other setup</p>
+</li>
+<li>
+<p>A <code>recv</code> method with the same signature as the real object&rsquo;s</p>
+</li>
+<li>
+<p>A <code>sendall</code> method whose signature matches the real thing&rsquo;s</p>
+</li>
+</ol>
+<hr />
+<h2>Mocking the Request Object</h2>
+<div class="language-py" title="test_server.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">MockRequest</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_message</span> <span class="o">=</span> <span class="n">message</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_position</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sent</span> <span class="o">=</span> <span class="p">[]</span>
 
----
+    <span class="k">def</span> <span class="nf">recv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">max_bytes</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_position</span> <span class="o">&lt;=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_message</span><span class="p">)</span>
+        <span class="n">top</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_message</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">_position</span> <span class="o">+</span> <span class="n">BLOCK_SIZE</span><span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_message</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_position</span><span class="p">:</span><span class="n">top</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_position</span> <span class="o">=</span> <span class="n">top</span>
+        <span class="k">return</span> <span class="n">result</span>
 
-## Testing
+    <span class="k">def</span> <span class="nf">sendall</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">outgoing</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sent</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">outgoing</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Our First Test</h2>
+<div class="language-py" title="test_server.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">test_short</span><span class="p">():</span>
+    <span class="n">msg</span> <span class="o">=</span> <span class="nb">bytes</span><span class="p">(</span><span class="s2">&quot;message&quot;</span><span class="p">,</span> <span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+    <span class="n">handler</span> <span class="o">=</span> <span class="n">MockHandler</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+    <span class="n">handler</span><span class="o">.</span><span class="n">handle</span><span class="p">()</span>
+    <span class="k">assert</span> <span class="n">handler</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">_sent</span> <span class="o">==</span> <span class="p">[</span><span class="nb">bytes</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;utf-8&quot;</span><span class="p">)]</span>
+</code></pre></div>
+</div>
+<ul>
+<li>Trade <a class="gl-ref" href="../../glossary/#test_fidelity" markdown="1">fidelity</a> for ease of use</li>
+</ul>
+<hr />
+<!--# class="summary" -->
 
--   Manual testing:
-    -   Start the server
-    -   Wait for it to be ready
-    -   Run the client
-    -   Shut down the server
-
--   Better: use a <a class="gl-ref" href="../../glossary/#gl:mock_object" title="A simplified replacement for part of a program whose behavior is easy to control and predict. Mock objects are used in unit tests to simulate databases, web services, and other complex systems." markdown="1">mock object</a>
-    instead of a real network connection
-
----
-
-## Refactor the Logging
-
-```py
-class LoggingHandler(socketserver.BaseRequestHandler):
-    def handle(self):
-        self.debug("server about to start receiving")
-        data = bytes()
-        while True:
-            latest = self.request.recv(BLOCK_SIZE)
-            self.debug(f"...server received {len(latest)} bytes")
-            data += latest
-            if len(latest) < BLOCK_SIZE:
-                self.debug(f"...server breaking")
-                break
-        self.debug(f"server finished received, about to reply")
-        self.request.sendall(bytes(f"{len(data)}", "utf-8"))
-
-```
-
-
---
-
-```py
-def debug(self, *args):
-    print(*args)
-```
-
-
----
-
-## Creating a Testable Server
-
-```py
-class MockHandler(LoggingHandler):
-    def __init__(self, message):
-        self.request = MockRequest(message)
-
-    def debug(self, *args):
-        pass
-```
-
-
--   *Don't* upcall constructor of `LoggingHandler`
-
--   Don't want to trigger all of the library's socket machinery
-
----
-
-## Mocking the Request Object
-
-1.  A constructor that records
-    the data we're going to pretend to have received over a socket
-    and does other setup
-
-2.  A `recv` method with the same signature as the real object's
-
-3.  A `sendall` method whose signature matches the real thing's
-
----
-
-## Mocking the Request Object
-
-```py
-class MockRequest:
-    def __init__(self, message):
-        self._message = message
-        self._position = 0
-        self._sent = []
-
-    def recv(self, max_bytes):
-        assert self._position <= len(self._message)
-        top = min(len(self._message), self._position + BLOCK_SIZE)
-        result = self._message[self._position:top]
-        self._position = top
-        return result
-
-    def sendall(self, outgoing):
-        self._sent.append(outgoing)
-```
-
-
----
-
-## Our First Test
-
-```py
-def test_short():
-    msg = bytes("message", "utf-8")
-    handler = MockHandler(msg)
-    handler.handle()
-    assert handler.request._sent == [bytes(f"{len(msg)}", "utf-8")]
-```
-
-
--   Trade <a class="gl-ref" href="../../glossary/#gl:test_fidelity" title="The degree to which a mock object or other replacement for part or all of a system mimics the behavior of that system for testing purposes." markdown="1">fidelity</a> for ease of use
-
----
-
-class: summary
-
-## Summary
-
-<figure>
+<h2>Summary</h2>
+<figure id="ftp-concept-map">
 <img src="../concept_map.svg" alt="Concept map of web server"/>
+<figcaption>Concept map</figcaption>
 </figure>
-
-
-
-
-
-    </textarea>
-    <script src="../../remark-latest.min.js"></script>
-    <script>
-      var slideshow = remark.create({
-        highlightLines: true
-      })
-    </script>
   </body>
 </html>

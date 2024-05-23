@@ -1,507 +1,525 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="repo" content="https://github.com/gvwilson/sdxpy">
-  <meta name="build_date" content="2024-04-28">
-  <meta name="template" content="slides">
-  <meta name="major" content="pack">
-  
-  <link rel="icon" type="image/x-icon" href="../../favicon.ico">
-  <link rel="stylesheet" href="../../mccole.css">
-  <link rel="stylesheet" href="../../tango.css">
+    <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="../../logo.svg">
+<link rel="stylesheet" href="../../tango.css" type="text/css">
+<link rel="stylesheet" href="../../mccole.css" type="text/css">
+<title>Software Design by Example &middot; A Package Manager</title>
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [['\\(', '\\)']]
+    }
+  };
+</script>
+<script
+  type="text/javascript"
+  id="MathJax-script"
+  async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+</script>
+
   <script defer data-domain="third-bit.com" src="https://plausible.io/js/plausible.js"></script>
-  <script>
-    MathJax = {
-      tex: {
-        inlineMath: [['\\(', '\\)']]
-      }
-    };
-  </script>
-  <script
-    type="text/javascript"
-    id="MathJax-script"
-    async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
-  </script>
-  <script defer src="../../mccole.js"></script>
-  <title>Software Design by Example: A Package Manager</title>
-</head>
 
+
+    <script src="../../slides.js" defer></script>
+    <link rel="stylesheet" href="../../slides.css">
+  </head>
   <body>
-    <textarea id="source">
-
-class: slide-title
-
-<p>
-  <a href="https://third-bit.com/sdxpy/">Software Design by Example</a>
-</p>
-<h1>A Package Manager</h1>
-<div class="bottom">
-  <a href="../">chapter</a>
+<div class="row notex">
+  <div class="col-12 center">
+    <h1>A Package Manager</h1>
+    <p class="subtitle">Software Design by Example</p>
+  </div>
 </div>
-
----
-
-
-## The Problem
-
--   Packages and their dependencies change over time
-
--   If A and B require different versions of C
-    it might not be possible to use A and B together
-
--   Need a systematic way to find globally-consistent sets of packages
-
----
-
-## Identifying Versions
-
--   <a class="gl-ref" href="../../glossary/#gl:semantic_versioning" title="A standard for identifying software releases. In the version identifier `major.minor.patch`, `major` changes when a new version of software is incompatible with old versions, `minor` changes when new features are added to an existing version, and `patch` changes when small bugs are fixed." markdown="1">Semantic versioning</a> uses three integers `X.Y.Z`
-
-    -   `X` is the major version (breaking changes)
-
-    -   `Y` is the minor version (new features)
-
-    -   `Z` is the <a class="gl-ref" href="../../glossary/#gl:patch" title="A single file containing a set of changes to a set of files, separated by markers that indicate where each individual change should be applied, or the semantic versioning identifier for such a file." markdown="1">patch</a> (bug fixes)
-
--   Notation
-
-    -   `>=1.2.3` means "any version from 1.2.3 onward"
-
-    -   `<4` means "any version before 4.anything"
-
-    -   `1.0-3.1` means "any version in the specified range"
-
----
-
-## A Simplified Version
-
-```json
-{
-  "A": {
-    "3": {"B": ["3", "2"], "C": ["2"]},
-    "2": {"B": ["2"],      "C": ["2", "1"]},
-    "1": {"B": ["1"]}
-  },
-  "B": {
-    "3": {"C": ["2"]},
-    "2": {"C": ["1"]},
-    "1": {"C": ["1"]}
-  },
-  "C": {
-    "2": [],
-    "1": []
-  }
-}
-```
-
-
----
-
-## Multiple Dimensions
-
--   Imagine a multi-dimensional grid with one axis per package
-
--   Possible combinations are points in this grid
-
-<figure>
+<hr>
+<h2>The Problem</h2>
+<ul>
+<li>
+<p>Packages and their dependencies change over time</p>
+</li>
+<li>
+<p>If A and B require different versions of C
+    it might not be possible to use A and B together</p>
+</li>
+<li>
+<p>Need a systematic way to find globally-consistent sets of packages</p>
+</li>
+</ul>
+<hr />
+<h2>Identifying Versions</h2>
+<ul>
+<li>
+<p><a class="gl-ref" href="../../glossary/#semantic_versioning" markdown="1">Semantic versioning</a> uses three integers <code>X.Y.Z</code></p>
+<ul>
+<li>
+<p><code>X</code> is the major version (breaking changes)</p>
+</li>
+<li>
+<p><code>Y</code> is the minor version (new features)</p>
+</li>
+<li>
+<p><code>Z</code> is the <a class="gl-ref" href="../../glossary/#patch" markdown="1">patch</a> (bug fixes)</p>
+</li>
+</ul>
+</li>
+<li>
+<p>Notation</p>
+<ul>
+<li>
+<p><code>&gt;=1.2.3</code> means &ldquo;any version from 1.2.3 onward&rdquo;</p>
+</li>
+<li>
+<p><code>&lt;4</code> means &ldquo;any version before 4.anything&rdquo;</p>
+</li>
+<li>
+<p><code>1.0-3.1</code> means &ldquo;any version in the specified range&rdquo;</p>
+</li>
+</ul>
+</li>
+</ul>
+<hr />
+<h2>A Simplified Version</h2>
+<div class="language-json" title="triple.json">
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;A&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;3&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;B&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;3&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;2&quot;</span><span class="p">],</span><span class="w"> </span><span class="nt">&quot;C&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;2&quot;</span><span class="p">]},</span>
+<span class="w">    </span><span class="nt">&quot;2&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;B&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;2&quot;</span><span class="p">],</span><span class="w">      </span><span class="nt">&quot;C&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;2&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;1&quot;</span><span class="p">]},</span>
+<span class="w">    </span><span class="nt">&quot;1&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;B&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;1&quot;</span><span class="p">]}</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;B&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;3&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;C&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;2&quot;</span><span class="p">]},</span>
+<span class="w">    </span><span class="nt">&quot;2&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;C&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;1&quot;</span><span class="p">]},</span>
+<span class="w">    </span><span class="nt">&quot;1&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;C&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;1&quot;</span><span class="p">]}</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;C&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;2&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span>
+<span class="w">    </span><span class="nt">&quot;1&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[]</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Multiple Dimensions</h2>
+<ul>
+<li>
+<p>Imagine a multi-dimensional grid with one axis per package</p>
+</li>
+<li>
+<p>Possible combinations are points in this grid</p>
+</li>
+</ul>
+<figure id="pack-allowable">
 <img src="../allowable.svg" alt="Allowable versions"/>
+<figcaption>Finding allowable combinations of package versions.</figcaption>
 </figure>
 
-
--   But how do we find the legal ones?
-
----
-
-## Estimate Work
-
--   Our example has 3×3×2=18 combinations
-
--   Adding one more package with two versions doubles
-    the <a class="gl-ref" href="../../glossary/#gl:search_space" title="The set of all possible solutions to a problem, i.e., the set of possibilities that an algorithm must search through to find an answer." markdown="1">search space</a>
-
--   A <a class="gl-ref" href="../../glossary/#gl:combinatorial_explosion" title="The exponential growth in the size of a problem or the time required to solve it that arises when all possible combinations of a set of items must be searched." markdown="1">combinatorial explosion</a>
-
--   Brute force solutions are impractical even for small problems
-
--   But worth implementing as a starting point and for testing
-
----
-
-## Brute Force
-
--   Generate all possible combinations of package versions
-
--   Then eliminate ones that aren't compatible with the manifest
-
-```py
-def main():
-    manifest = json.load(sys.stdin)
-    possible = make_possibilities(manifest)
-    print(f"{len(possible)} possibilities")
-    allowed = [p for p in possible if compatible(manifest, p)]
-    print(f"{len(allowed)} allowed")
-    for a in allowed:
-        print(a)
-```
-
-
----
-
-## Generating Possibilities
-
--   Create a list of the available versions of each package
-
--   Generate their <a class="gl-ref" href="../../glossary/#gl:cross_product" title="The set of all possible combinations of items from one or more sets." markdown="1">cross product</a>
-
-```py
-def make_possibilities(manifest):
-    available = []
-    for package, versions in manifest.items():
-        available.append([(package, v) for v in versions])
-    return list(itertools.product(*available))
-```
-
-
-<figure>
+<ul>
+<li>But how do we find the legal ones?</li>
+</ul>
+<hr />
+<h2>Estimate Work</h2>
+<ul>
+<li>
+<p>Our example has 3×3×2=18 combinations</p>
+</li>
+<li>
+<p>Adding one more package with two versions doubles
+    the <a class="gl-ref" href="../../glossary/#search_space" markdown="1">search space</a></p>
+</li>
+<li>
+<p>A <a class="gl-ref" href="../../glossary/#combinatorial_explosion" markdown="1">combinatorial explosion</a></p>
+</li>
+<li>
+<p>Brute force solutions are impractical even for small problems</p>
+</li>
+<li>
+<p>But worth implementing as a starting point and for testing</p>
+</li>
+</ul>
+<hr />
+<h2>Brute Force</h2>
+<ul>
+<li>
+<p>Generate all possible combinations of package versions</p>
+</li>
+<li>
+<p>Then eliminate ones that aren&rsquo;t compatible with the manifest</p>
+</li>
+</ul>
+<div class="language-py" title="exhaustive.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+    <span class="n">manifest</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">stdin</span><span class="p">)</span>
+    <span class="n">possible</span> <span class="o">=</span> <span class="n">make_possibilities</span><span class="p">(</span><span class="n">manifest</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">possible</span><span class="p">)</span><span class="si">}</span><span class="s2"> possibilities&quot;</span><span class="p">)</span>
+    <span class="n">allowed</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">possible</span> <span class="k">if</span> <span class="n">compatible</span><span class="p">(</span><span class="n">manifest</span><span class="p">,</span> <span class="n">p</span><span class="p">)]</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">allowed</span><span class="p">)</span><span class="si">}</span><span class="s2"> allowed&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">allowed</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Generating Possibilities</h2>
+<ul>
+<li>
+<p>Create a list of the available versions of each package</p>
+</li>
+<li>
+<p>Generate their <a class="gl-ref" href="../../glossary/#cross_product" markdown="1">cross product</a></p>
+</li>
+</ul>
+<div class="language-py" title="exhaustive.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">make_possibilities</span><span class="p">(</span><span class="n">manifest</span><span class="p">):</span>
+    <span class="n">available</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">package</span><span class="p">,</span> <span class="n">versions</span> <span class="ow">in</span> <span class="n">manifest</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">available</span><span class="o">.</span><span class="n">append</span><span class="p">([(</span><span class="n">package</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">versions</span><span class="p">])</span>
+    <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="o">*</span><span class="n">available</span><span class="p">))</span>
+</code></pre></div>
+</div>
+<figure id="pack-product">
 <img src="../product.svg" alt="Generating a cross-product"/>
+<figcaption>Generating all possible combinations of items.</figcaption>
 </figure>
 
-
----
-
-## Checking Validity
-
--   Compare every entry X against every other entry Y
-
--   If they are the same package, keep looking
-
--   If package X's requirements say nothing about package Y,
-    keep searching
-
--   If X *does* depend on Y
-    but this particular version of X doesn't list this particular version of Y
+<hr />
+<h2>Checking Validity</h2>
+<ul>
+<li>
+<p>Compare every entry X against every other entry Y</p>
+</li>
+<li>
+<p>If they are the same package, keep looking</p>
+</li>
+<li>
+<p>If package X&rsquo;s requirements say nothing about package Y,
+    keep searching</p>
+</li>
+<li>
+<p>If X <em>does</em> depend on Y
+    but this particular version of X doesn&rsquo;t list this particular version of Y
     as a dependency,
-    rule out this combination
-
--   If combination is still a candidate, add to list
-
----
-
-## Checking Validity
-
-```py
-def compatible(manifest, combination):
-    for package_i, version_i in combination:
-        lookup_i = manifest[package_i][version_i]
-        for package_j, version_j in combination:
-            if package_i == package_j:
-                continue
-            if package_j not in lookup_i:
-                continue
-            if version_j not in lookup_i[package_j]:
-                return False
-    return True
-```
-
-
--   Finds 3 valid combinations among our 18 possibilities
-
-```
-18 possibilities
+    rule out this combination</p>
+</li>
+<li>
+<p>If combination is still a candidate, add to list</p>
+</li>
+</ul>
+<hr />
+<h2>Checking Validity</h2>
+<div class="language-py" title="exhaustive.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">compatible</span><span class="p">(</span><span class="n">manifest</span><span class="p">,</span> <span class="n">combination</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">package_i</span><span class="p">,</span> <span class="n">version_i</span> <span class="ow">in</span> <span class="n">combination</span><span class="p">:</span>
+        <span class="n">lookup_i</span> <span class="o">=</span> <span class="n">manifest</span><span class="p">[</span><span class="n">package_i</span><span class="p">][</span><span class="n">version_i</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">package_j</span><span class="p">,</span> <span class="n">version_j</span> <span class="ow">in</span> <span class="n">combination</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">package_i</span> <span class="o">==</span> <span class="n">package_j</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="n">package_j</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">lookup_i</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="n">version_j</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">lookup_i</span><span class="p">[</span><span class="n">package_j</span><span class="p">]:</span>
+                <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">return</span> <span class="kc">True</span>
+</code></pre></div>
+</div>
+<ul>
+<li>Finds 3 valid combinations among our 18 possibilities</li>
+</ul>
+<div class="language-out" title="exhaustive.out">
+<div class="highlight"><pre><span></span><code>18 possibilities
 3 allowed
-(('A', '3'), ('B', '3'), ('C', '2'))
-(('A', '2'), ('B', '2'), ('C', '1'))
-(('A', '1'), ('B', '1'), ('C', '1'))
-```
-
-
----
-
-## Manual Generation
-
--   Create our own cross-product function
-    in preparation for doing something more efficient
-
-```py
-def make_possibilities(manifest):
-    available = []
-    for package, versions in manifest.items():
-        available.append([(package, v) for v in versions])
-
-    accum = []
-    _make_possible(available, [], accum)
-    return accum
-```
-
-
--   Create a list of lists of available versions
-
--   Create an empty accumulator
-
--   Do some magic
-
----
-
-## Manual Generation
-
--   Each call to `_make_possible` handles one package's worth of work
-
--   Loop over available versions of current package
-
--   Add that package to the combination in progress
-
--   If more packages, recurse
-
--   Otherwise, append to accumulator
-
-```py
-def _make_possible(remaining, current, accum):
-    if not remaining:
-        accum.append(current)
-    else:
-        head, tail = remaining[0], remaining[1:]
-        for h in head:
-            _make_possible(tail, current + [h], accum)
-```
-
-
----
-
-## Incremental Search
-
--   Generate-and-discard is inefficient
-
--   Stop immediately if a partial combination of packages is illegal
-
-```py
-def main():
-    manifest = json.load(sys.stdin)
-    packages = list(manifest.keys())
-    if len(sys.argv) > 1:
-        packages.reverse()
-
-    accum = []
-    count = find(manifest, packages, accum, [], 0)
-
-    print(f"count {count}")
-    for a in accum:
-        print(a)
-```
-
-
---
-
--   `reverse` to allow experimentation
-
----
-
-## Finding Possibilities
-
-```py
-def find(manifest, remaining, accum, current, count):
-    count += 1
-    if not remaining:
-        accum.append(current)
-    else:
-        head, tail = remaining[0], remaining[1:]
-        for version in manifest[head]:
-            candidate = current + [(head, version)]
-            if compatible(manifest, candidate):
-                count = find(
-                    manifest, tail, accum, candidate, count
-                )
-    return count
-```
-
-
----
-
-## Finding Possibilities
-
-1.  The manifest that tells us what's compatible with what.
-
-2.  The names of the packages we've haven't considered yet.
-
-3.  An accumulator to hold all the valid combinations we've found so far.
-
-4.  The partially-completed combination we're going to extend next.
-
-5.  A count of the number of combinations we've considered so far,
-    which we will use as a measure of efficiency.
-
----
-
-## Savings
-
--   We only create 11 candidates instead of 18
-
-```sh
-python incremental.py < triple.json
-```
-
-
-```
-count 11
-[('A', '3'), ('B', '3'), ('C', '2')]
-[('A', '2'), ('B', '2'), ('C', '1')]
-[('A', '1'), ('B', '1'), ('C', '1')]
-```
-
-
--   Reversing the order cuts it to 9
-
-```sh
-python incremental.py reversed < triple.json
-```
-
-
-```
-count 9
-[('C', '2'), ('B', '3'), ('A', '3')]
-[('C', '1'), ('B', '2'), ('A', '2')]
-[('C', '1'), ('B', '1'), ('A', '1')]
-```
-
-
----
-
-## Using a Theorem Prover
-
--   An automated theorem prover can do much better 
-
-    -   But the algorithms quickly become very complex
-
--   Prove that a set of logical propositions (e.g., dependencies) are satisfiable
-
--   We will use the [Z3 theorem prover][z3]
-
-    -   Whose documentation is unfortunately a barrier to entry
-
----
-
-## Using Z3
-
-```py
-from z3 import Bool, Solver
-
-A = Bool("A")
-B = Bool("B")
-C = Bool("C")
-```
-
-
--   `A`, `B`, and `C` don't have values
-
--   Instead, each represents the set of possible Boolean values
-
----
-
-## Using Z3
-
--   Specify constraints such as `A == B`
-
-```py
-solver = Solver()
-solver.add(A == B)
-solver.add(B == C)
-report("A == B & B == C", solver.check())
-```
-
-
--   Then ask Z3 to find a <a class="gl-ref" href="../../glossary/#gl:model" title="A set of values for variables that satisfies a specific set of constraints." markdown="1">model</a> that satisfies those constraints
-
-```
-A == B & B == C: sat
+((&#39;A&#39;, &#39;3&#39;), (&#39;B&#39;, &#39;3&#39;), (&#39;C&#39;, &#39;2&#39;))
+((&#39;A&#39;, &#39;2&#39;), (&#39;B&#39;, &#39;2&#39;), (&#39;C&#39;, &#39;1&#39;))
+((&#39;A&#39;, &#39;1&#39;), (&#39;B&#39;, &#39;1&#39;), (&#39;C&#39;, &#39;1&#39;))
+</code></pre></div>
+</div>
+<hr />
+<h2>Manual Generation</h2>
+<ul>
+<li>Create our own cross-product function
+    in preparation for doing something more efficient</li>
+</ul>
+<div class="language-py" title="manual.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">make_possibilities</span><span class="p">(</span><span class="n">manifest</span><span class="p">):</span>
+    <span class="n">available</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">package</span><span class="p">,</span> <span class="n">versions</span> <span class="ow">in</span> <span class="n">manifest</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">available</span><span class="o">.</span><span class="n">append</span><span class="p">([(</span><span class="n">package</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">versions</span><span class="p">])</span>
+
+    <span class="n">accum</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">_make_possible</span><span class="p">(</span><span class="n">available</span><span class="p">,</span> <span class="p">[],</span> <span class="n">accum</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">accum</span>
+</code></pre></div>
+</div>
+<ul>
+<li>
+<p>Create a list of lists of available versions</p>
+</li>
+<li>
+<p>Create an empty accumulator</p>
+</li>
+<li>
+<p>Do some magic</p>
+</li>
+</ul>
+<hr />
+<h2>Manual Generation</h2>
+<ul>
+<li>
+<p>Each call to <code>_make_possible</code> handles one package&rsquo;s worth of work</p>
+</li>
+<li>
+<p>Loop over available versions of current package</p>
+</li>
+<li>
+<p>Add that package to the combination in progress</p>
+</li>
+<li>
+<p>If more packages, recurse</p>
+</li>
+<li>
+<p>Otherwise, append to accumulator</p>
+</li>
+</ul>
+<div class="language-py" title="manual.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">_make_possible</span><span class="p">(</span><span class="n">remaining</span><span class="p">,</span> <span class="n">current</span><span class="p">,</span> <span class="n">accum</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">remaining</span><span class="p">:</span>
+        <span class="n">accum</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">current</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">head</span><span class="p">,</span> <span class="n">tail</span> <span class="o">=</span> <span class="n">remaining</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">remaining</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+        <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">head</span><span class="p">:</span>
+            <span class="n">_make_possible</span><span class="p">(</span><span class="n">tail</span><span class="p">,</span> <span class="n">current</span> <span class="o">+</span> <span class="p">[</span><span class="n">h</span><span class="p">],</span> <span class="n">accum</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Incremental Search</h2>
+<ul>
+<li>
+<p>Generate-and-discard is inefficient</p>
+</li>
+<li>
+<p>Stop immediately if a partial combination of packages is illegal</p>
+</li>
+</ul>
+<div class="language-py" title="incremental.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+    <span class="n">manifest</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">stdin</span><span class="p">)</span>
+    <span class="n">packages</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">manifest</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">packages</span><span class="o">.</span><span class="n">reverse</span><span class="p">()</span>
+
+    <span class="n">accum</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">count</span> <span class="o">=</span> <span class="n">find</span><span class="p">(</span><span class="n">manifest</span><span class="p">,</span> <span class="n">packages</span><span class="p">,</span> <span class="n">accum</span><span class="p">,</span> <span class="p">[],</span> <span class="mi">0</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;count </span><span class="si">{</span><span class="n">count</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">accum</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<ul>
+<li><code>reverse</code> to allow experimentation</li>
+</ul>
+<hr />
+<h2>Finding Possibilities</h2>
+<div class="language-py" title="incremental.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">find</span><span class="p">(</span><span class="n">manifest</span><span class="p">,</span> <span class="n">remaining</span><span class="p">,</span> <span class="n">accum</span><span class="p">,</span> <span class="n">current</span><span class="p">,</span> <span class="n">count</span><span class="p">):</span>
+    <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">remaining</span><span class="p">:</span>
+        <span class="n">accum</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">current</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">head</span><span class="p">,</span> <span class="n">tail</span> <span class="o">=</span> <span class="n">remaining</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">remaining</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+        <span class="k">for</span> <span class="n">version</span> <span class="ow">in</span> <span class="n">manifest</span><span class="p">[</span><span class="n">head</span><span class="p">]:</span>
+            <span class="n">candidate</span> <span class="o">=</span> <span class="n">current</span> <span class="o">+</span> <span class="p">[(</span><span class="n">head</span><span class="p">,</span> <span class="n">version</span><span class="p">)]</span>
+            <span class="k">if</span> <span class="n">compatible</span><span class="p">(</span><span class="n">manifest</span><span class="p">,</span> <span class="n">candidate</span><span class="p">):</span>
+                <span class="n">count</span> <span class="o">=</span> <span class="n">find</span><span class="p">(</span>
+                    <span class="n">manifest</span><span class="p">,</span> <span class="n">tail</span><span class="p">,</span> <span class="n">accum</span><span class="p">,</span> <span class="n">candidate</span><span class="p">,</span> <span class="n">count</span>
+                <span class="p">)</span>
+    <span class="k">return</span> <span class="n">count</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Finding Possibilities</h2>
+<ol>
+<li>
+<p>The manifest that tells us what&rsquo;s compatible with what.</p>
+</li>
+<li>
+<p>The names of the packages we&rsquo;ve haven&rsquo;t considered yet.</p>
+</li>
+<li>
+<p>An accumulator to hold all the valid combinations we&rsquo;ve found so far.</p>
+</li>
+<li>
+<p>The partially-completed combination we&rsquo;re going to extend next.</p>
+</li>
+<li>
+<p>A count of the number of combinations we&rsquo;ve considered so far,
+    which we will use as a measure of efficiency.</p>
+</li>
+</ol>
+<hr />
+<h2>Savings</h2>
+<ul>
+<li>We only create 11 candidates instead of 18</li>
+</ul>
+<div class="language-sh" title="incremental.sh">
+<div class="highlight"><pre><span></span><code>python<span class="w"> </span>incremental.py<span class="w"> </span>&lt;<span class="w"> </span>triple.json
+</code></pre></div>
+</div>
+<div class="language-out" title="incremental.out">
+<div class="highlight"><pre><span></span><code>count 11
+[(&#39;A&#39;, &#39;3&#39;), (&#39;B&#39;, &#39;3&#39;), (&#39;C&#39;, &#39;2&#39;)]
+[(&#39;A&#39;, &#39;2&#39;), (&#39;B&#39;, &#39;2&#39;), (&#39;C&#39;, &#39;1&#39;)]
+[(&#39;A&#39;, &#39;1&#39;), (&#39;B&#39;, &#39;1&#39;), (&#39;C&#39;, &#39;1&#39;)]
+</code></pre></div>
+</div>
+<ul>
+<li>Reversing the order cuts it to 9</li>
+</ul>
+<div class="language-sh" title="incremental_reverse.sh">
+<div class="highlight"><pre><span></span><code>python<span class="w"> </span>incremental.py<span class="w"> </span>reversed<span class="w"> </span>&lt;<span class="w"> </span>triple.json
+</code></pre></div>
+</div>
+<div class="language-out" title="incremental_reverse.out">
+<div class="highlight"><pre><span></span><code>count 9
+[(&#39;C&#39;, &#39;2&#39;), (&#39;B&#39;, &#39;3&#39;), (&#39;A&#39;, &#39;3&#39;)]
+[(&#39;C&#39;, &#39;1&#39;), (&#39;B&#39;, &#39;2&#39;), (&#39;A&#39;, &#39;2&#39;)]
+[(&#39;C&#39;, &#39;1&#39;), (&#39;B&#39;, &#39;1&#39;), (&#39;A&#39;, &#39;1&#39;)]
+</code></pre></div>
+</div>
+<hr />
+<h2>Using a Theorem Prover</h2>
+<ul>
+<li>
+<p>An automated theorem prover can do much better </p>
+<ul>
+<li>But the algorithms quickly become very complex</li>
+</ul>
+</li>
+<li>
+<p>Prove that a set of logical propositions (e.g., dependencies) are satisfiable</p>
+</li>
+<li>
+<p>We will use the <a href="https://en.wikipedia.org/wiki/Z3_Theorem_Prover">Z3 theorem prover</a></p>
+<ul>
+<li>Whose documentation is unfortunately a barrier to entry</li>
+</ul>
+</li>
+</ul>
+<hr />
+<h2>Using Z3</h2>
+<div class="language-py" title="z3_equal.py">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">z3</span> <span class="kn">import</span> <span class="n">Bool</span><span class="p">,</span> <span class="n">Solver</span>
+
+<span class="n">A</span> <span class="o">=</span> <span class="n">Bool</span><span class="p">(</span><span class="s2">&quot;A&quot;</span><span class="p">)</span>
+<span class="n">B</span> <span class="o">=</span> <span class="n">Bool</span><span class="p">(</span><span class="s2">&quot;B&quot;</span><span class="p">)</span>
+<span class="n">C</span> <span class="o">=</span> <span class="n">Bool</span><span class="p">(</span><span class="s2">&quot;C&quot;</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<ul>
+<li>
+<p><code>A</code>, <code>B</code>, and <code>C</code> don&rsquo;t have values</p>
+</li>
+<li>
+<p>Instead, each represents the set of possible Boolean values</p>
+</li>
+</ul>
+<hr />
+<h2>Using Z3</h2>
+<ul>
+<li>Specify constraints such as <code>A == B</code></li>
+</ul>
+<div class="language-py" title="z3_equal.py">
+<div class="highlight"><pre><span></span><code><span class="n">solver</span> <span class="o">=</span> <span class="n">Solver</span><span class="p">()</span>
+<span class="n">solver</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">A</span> <span class="o">==</span> <span class="n">B</span><span class="p">)</span>
+<span class="n">solver</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">B</span> <span class="o">==</span> <span class="n">C</span><span class="p">)</span>
+<span class="n">report</span><span class="p">(</span><span class="s2">&quot;A == B &amp; B == C&quot;</span><span class="p">,</span> <span class="n">solver</span><span class="o">.</span><span class="n">check</span><span class="p">())</span>
+</code></pre></div>
+</div>
+<ul>
+<li>Then ask Z3 to find a <a class="gl-ref" href="../../glossary/#model" markdown="1">model</a> that satisfies those constraints</li>
+</ul>
+<div class="language-out" title="z3_equal.out">
+<div class="highlight"><pre><span></span><code>A == B &amp; B == C: sat
 A False
 B False
 C False
-```
+</code></pre></div>
+</div>
+<hr />
+<h2>Unsatisfiable</h2>
+<ul>
+<li>Require <code>A</code> to equal <code>B</code> and <code>B</code> to equal <code>C</code>
+    but <code>A</code> and <code>C</code> to be unequal</li>
+</ul>
+<div class="language-py" title="z3_unequal.py">
+<div class="highlight"><pre><span></span><code><span class="n">solver</span> <span class="o">=</span> <span class="n">Solver</span><span class="p">()</span>
+<span class="n">solver</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">A</span> <span class="o">==</span> <span class="n">B</span><span class="p">)</span>
+<span class="n">solver</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">B</span> <span class="o">==</span> <span class="n">C</span><span class="p">)</span>
+<span class="n">solver</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">A</span> <span class="o">!=</span> <span class="n">C</span><span class="p">)</span>
+<span class="n">report</span><span class="p">(</span><span class="s2">&quot;A == B &amp; B == C &amp; B != C&quot;</span><span class="p">,</span> <span class="n">solver</span><span class="o">.</span><span class="n">check</span><span class="p">())</span>
+</code></pre></div>
+</div>
+<div class="language-out" title="z3_unequal.out">
+<div class="highlight"><pre><span></span><code>A == B &amp; B == C &amp; B != C: unsat
+</code></pre></div>
+</div>
+<hr />
+<h2>Packaging</h2>
+<ul>
+<li>Represent our package versions</li>
+</ul>
+<div class="language-py" title="z3_triple.py">
+<div class="highlight"><pre><span></span><code><span class="n">A1</span> <span class="o">=</span> <span class="n">Bool</span><span class="p">(</span><span class="s2">&quot;A.1&quot;</span><span class="p">)</span>
+<span class="n">A2</span> <span class="o">=</span> <span class="n">Bool</span><span class="p">(</span><span class="s2">&quot;A.2&quot;</span><span class="p">)</span>
+<span class="n">A3</span> <span class="o">=</span> <span class="n">Bool</span><span class="p">(</span><span class="s2">&quot;A.3&quot;</span><span class="p">)</span>
 
+<span class="n">B1</span> <span class="o">=</span> <span class="n">Bool</span><span class="p">(</span><span class="s2">&quot;B.1&quot;</span><span class="p">)</span>
+<span class="n">B2</span> <span class="o">=</span> <span class="n">Bool</span><span class="p">(</span><span class="s2">&quot;B.2&quot;</span><span class="p">)</span>
+<span class="n">B3</span> <span class="o">=</span> <span class="n">Bool</span><span class="p">(</span><span class="s2">&quot;B.3&quot;</span><span class="p">)</span>
 
----
+<span class="n">C1</span> <span class="o">=</span> <span class="n">Bool</span><span class="p">(</span><span class="s2">&quot;C.1&quot;</span><span class="p">)</span>
+<span class="n">C2</span> <span class="o">=</span> <span class="n">Bool</span><span class="p">(</span><span class="s2">&quot;C.2&quot;</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Packaging</h2>
+<ul>
+<li>We want one version of <code>A</code></li>
+</ul>
+<div class="language-py" title="z3_triple.py">
+<div class="highlight"><pre><span></span><code><span class="n">solver</span> <span class="o">=</span> <span class="n">Solver</span><span class="p">()</span>
+<span class="n">solver</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Or</span><span class="p">(</span><span class="n">A1</span><span class="p">,</span> <span class="n">A2</span><span class="p">,</span> <span class="n">A3</span><span class="p">))</span>
+</code></pre></div>
+</div>
+<ul>
+<li>But the versions of <code>A</code> are mutually exclusive</li>
+</ul>
+<div class="language-py" title="z3_triple.py">
+<div class="highlight"><pre><span></span><code><span class="n">solver</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Implies</span><span class="p">(</span><span class="n">A1</span><span class="p">,</span> <span class="n">Not</span><span class="p">(</span><span class="n">Or</span><span class="p">(</span><span class="n">A2</span><span class="p">,</span> <span class="n">A3</span><span class="p">))))</span>
+<span class="n">solver</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Implies</span><span class="p">(</span><span class="n">A2</span><span class="p">,</span> <span class="n">Not</span><span class="p">(</span><span class="n">Or</span><span class="p">(</span><span class="n">A1</span><span class="p">,</span> <span class="n">A3</span><span class="p">))))</span>
+<span class="n">solver</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Implies</span><span class="p">(</span><span class="n">A3</span><span class="p">,</span> <span class="n">Not</span><span class="p">(</span><span class="n">Or</span><span class="p">(</span><span class="n">A1</span><span class="p">,</span> <span class="n">A2</span><span class="p">))))</span>
+</code></pre></div>
+</div>
+<ul>
+<li>Do the same for <code>B</code> and <code>C</code></li>
+</ul>
+<hr />
+<h2>Dependencies</h2>
+<ul>
+<li>Add inter-package dependencies and solve</li>
+</ul>
+<div class="language-py" title="z3_triple.py">
+<div class="highlight"><pre><span></span><code><span class="n">solver</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Implies</span><span class="p">(</span><span class="n">A3</span><span class="p">,</span> <span class="n">And</span><span class="p">(</span><span class="n">Or</span><span class="p">(</span><span class="n">B3</span><span class="p">,</span> <span class="n">B2</span><span class="p">),</span> <span class="n">C2</span><span class="p">)))</span>
+<span class="n">solver</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Implies</span><span class="p">(</span><span class="n">A2</span><span class="p">,</span> <span class="n">And</span><span class="p">(</span><span class="n">B2</span><span class="p">,</span> <span class="n">Or</span><span class="p">(</span><span class="n">C2</span><span class="p">,</span> <span class="n">C1</span><span class="p">))))</span>
+<span class="n">solver</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Implies</span><span class="p">(</span><span class="n">A1</span><span class="p">,</span> <span class="n">B1</span><span class="p">))</span>
+<span class="n">solver</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Implies</span><span class="p">(</span><span class="n">B3</span><span class="p">,</span> <span class="n">C2</span><span class="p">))</span>
+<span class="n">solver</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Implies</span><span class="p">(</span><span class="n">B2</span><span class="p">,</span> <span class="n">C1</span><span class="p">))</span>
+<span class="n">solver</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Implies</span><span class="p">(</span><span class="n">B1</span><span class="p">,</span> <span class="n">C1</span><span class="p">))</span>
 
-## Unsatisfiable
-
--   Require `A` to equal `B` and `B` to equal `C`
-    but `A` and `C` to be unequal
-
-```py
-solver = Solver()
-solver.add(A == B)
-solver.add(B == C)
-solver.add(A != C)
-report("A == B & B == C & B != C", solver.check())
-```
-
-```
-A == B & B == C & B != C: unsat
-```
-
-
----
-
-## Packaging
-
--   Represent our package versions
-
-```py
-A1 = Bool("A.1")
-A2 = Bool("A.2")
-A3 = Bool("A.3")
-
-B1 = Bool("B.1")
-B2 = Bool("B.2")
-B3 = Bool("B.3")
-
-C1 = Bool("C.1")
-C2 = Bool("C.2")
-```
-
-
----
-
-## Packaging
-
--   We want one version of `A`
-
-```py
-solver = Solver()
-solver.add(Or(A1, A2, A3))
-```
-
-
--   But the versions of `A` are mutually exclusive
-
-```py
-solver.add(Implies(A1, Not(Or(A2, A3))))
-solver.add(Implies(A2, Not(Or(A1, A3))))
-solver.add(Implies(A3, Not(Or(A1, A2))))
-```
-
-
--   Do the same for `B` and `C`
-
----
-
-## Dependencies
-
--   Add inter-package dependencies and solve
-
-```py
-solver.add(Implies(A3, And(Or(B3, B2), C2)))
-solver.add(Implies(A2, And(B2, Or(C2, C1))))
-solver.add(Implies(A1, B1))
-solver.add(Implies(B3, C2))
-solver.add(Implies(B2, C1))
-solver.add(Implies(B1, C1))
-
-print("result", solver.check(), solver.model())
-```
-
-```
-result sat [B.3 = True,
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;result&quot;</span><span class="p">,</span> <span class="n">solver</span><span class="o">.</span><span class="n">check</span><span class="p">(),</span> <span class="n">solver</span><span class="o">.</span><span class="n">model</span><span class="p">())</span>
+</code></pre></div>
+</div>
+<div class="language-out" title="z3_triple.out">
+<div class="highlight"><pre><span></span><code>result sat [B.3 = True,
  A.1 = False,
  C.2 = True,
  C.1 = False,
@@ -509,27 +527,13 @@ result sat [B.3 = True,
  A.3 = True,
  A.2 = False,
  B.1 = False]
-```
-
-
----
-
-## Summary
-
-<figure>
+</code></pre></div>
+</div>
+<hr />
+<h2>Summary</h2>
+<figure id="pack-concept-map">
 <img src="../concept_map.svg" alt="Concept map for package manager."/>
+<figcaption>Concepts for package manager.</figcaption>
 </figure>
-
-
-
-[z3]: https://en.wikipedia.org/wiki/Z3_Theorem_Prover
-
-    </textarea>
-    <script src="../../remark-latest.min.js"></script>
-    <script>
-      var slideshow = remark.create({
-        highlightLines: true
-      })
-    </script>
   </body>
 </html>

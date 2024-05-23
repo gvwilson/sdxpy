@@ -1,4 +1,5 @@
 ---
+title: "Performance Profiling"
 abstract: >
     This chapter implements the kind of multi-column table frequently used in data science
     in two different ways
@@ -33,7 +34,7 @@ that defines the methods our dataframe classes will support.
 This class requires [%i "concrete class" "concrete classes" %]
 to implement the methods shown below:
 
-[% inc file="df_base.py" %]
+[%inc df_base.py %]
 
 <div class="callout" markdown="1">
 
@@ -92,12 +93,12 @@ which takes a list of dictionaries as an argument,
 checks that they're consistent with each other,
 and saves them:
 
-[% inc file="df_row.py" keep="top" %]
+[%inc df_row.py mark=top %]
 
 The [%i "helper function" %] to check that a bunch of dictionaries
 all have the same keys and the same types of values associated with those keys is:
 
-[% inc file="util.py" keep="match" %]
+[%inc util.py mark=match %]
 
 Notice that `DfRow`'s constructor compares all of the rows against the first row.
 Doing this means that we can't create an empty dataframe,
@@ -113,13 +114,13 @@ Four of the methods required by `DataFrame` are easy to implement
 on top of row-wise storage,
 though once again our implementation assumes there is at least one row:
 
-[% inc file="df_row.py" keep="simple" %]
+[%inc df_row.py mark=simple %]
 
 Checking equality is also relatively simple.
 Two dataframes are the same if they have exactly the same columns
 and the same values in every column:
 
-[% inc file="df_row.py" keep="equal" %]
+[%inc df_row.py mark=equal %]
 
 Notice that we use `other.cols()` and `other.get()`
 rather than reaching into the other dataframe.
@@ -140,7 +141,7 @@ that will capture zero or more positional arguments.
 We then build a new list of dictionaries
 that only contain the fields with those names ([%f perf-row-select %]):
 
-[% inc file="df_row.py" keep="select" %]
+[%inc df_row.py mark=select %]
 
 [% figure
    slug="perf-row-select"
@@ -160,12 +161,12 @@ whose parameters match the names of the table's columns.
 For example,
 if we have this test [%i "fixture" %]:
 
-[% inc file="test_df_row.py" keep="fixture" %]
+[%inc test_df_row.py mark=fixture %]
 
 then we should be able to write this test:
 {: .continue}
 
-[% inc file="test_df_row.py" keep="filter" %]
+[%inc test_df_row.py mark=filter %]
 
 We can implement this  by using `**` to [%i "spread" %] the row
 across the function's parameters ([%x oop %]).
@@ -176,7 +177,7 @@ but that's probably what we want.
 Using this,
 the implementation of `DfRow.filter` is:
 
-[% inc file="df_row.py" keep="filter" %]
+[%inc df_row.py mark=filter %]
 
 Notice that the dataframe created by `filter`
 re-uses the rows of the original dataframe ([%f perf-row-filter %]).
@@ -200,13 +201,13 @@ Having done all of this thinking,
 our column-wise dataframe class is somewhat easier to write.
 We start as before with its constructor:
 
-[% inc file="df_col.py" keep="top" %]
+[%inc df_col.py mark=top %]
 
 and use a helper function `all_eq` to check that
 all of the values in any column have the same types:
 {: .continue}
 
-[% inc file="util.py" keep="eq" %]
+[%inc util.py mark=eq %]
 
 <div class="callout" markdown="1">
 
@@ -227,21 +228,22 @@ The four methods that were simple to write for `DfRow`
 are equally simple to write for `DfCol`,
 though once again our prototype implementation accidentally disallows empty dataframes:
 
-[% inc file="df_col.py" keep="simple" %]
+[%inc df_col.py mark=simple %]
 
 As with `DfRow`,
 the method that checks equality relies on the internal details of its own class
 but uses the interface defined by `DataFrame` to access the other object:
 
-[% inc file="df_col.py" keep="equal" %]
+[%inc df_col.py mark=equal %]
 
 To select columns,
 we pick the ones named by the caller
 and use them to create a new dataframe.
 Again,
-this recycles the existing storage:
+this recycles the existing storage
+([%f perf-col-select %]):
 
-[% inc file="df_col.py" keep="select" %]
+[%inc df_col.py mark=select %]
 
 [% figure
    slug="perf-col-select"
@@ -278,17 +280,17 @@ the corresponding values across all columns)
 and use `**` to spread it across the filter function.
 [%x bonus %] looks at a safer, but more complex, way to do this.
 
-[% inc file="df_col.py" keep="filter" %]
+[%inc df_col.py mark=filter %]
 
 Time to write some tests.
 This one checks that we can construct a dataframe with some values:
 
-[% inc file="test_df_col.py" keep="test_two_pairs" %]
+[%inc test_df_col.py mark=test_two_pairs %]
 
 while this one checks that `filter` works correctly:
 {: .continue}
 
-[% inc file="test_df_col.py" keep="test_filter" %]
+[%inc test_df_col.py mark=test_filter %]
 
 ## Performance {: #perf-performance}
 
@@ -326,12 +328,12 @@ A thorough set of [%g benchmark "benchmarks" %]
 would create columns with other datatypes as well,
 but this example is enough to illustrate the technique.
 
-[% inc file="timing.py" keep="create" %]
+[%inc timing.py mark=create %]
 
 To time `filter`,
 we arbitrarily decide to keep rows with an even value in the first column:
 
-[% inc file="timing.py" keep="filter" %]
+[%inc timing.py mark=filter %]
 
 Since `DfCol` and `DfRow` derive from the same base class,
 `time_filter` doesn't care which we give it.
@@ -344,7 +346,7 @@ to see what fraction of rows filtering usually kept and simulate that.
 To time `select`,
 we arbitrarily decide to keep one-third of the columns:
 
-[% inc file="timing.py" keep="select" %]
+[%inc timing.py mark=select %]
 
 Finally,
 we write a function that takes a list of strings like `3x3` or `100x20`,
@@ -355,21 +357,14 @@ We call this function `sweep` because
 executing code multiple times with different parameters to measure performance
 is called [%g parameter_sweeping "parameter sweeping" %]:
 
-[% inc file="timing.py" keep="sweep" %]
+[%inc timing.py mark=sweep %]
 
 The results are shown in [%t perf-timing %] and [%f perf-analysis %].
 For a \\( 1000 \times 1000 \\) dataframe,
 selection is over 250 times faster with column-wise storage than with row-wise,
 while filtering is 1.8 times slower.
 
-<div class="table here" id="perf-timing" caption="Dataframe timings." markdown="1">
-| nrow  | ncol  | filter col | select col | filter row | select row |
-| ----- | ----- | ---------- | ---------- | ---------- | ---------- |
-|    10 |    10 | 8.87e-05   | 7.70e-05   | 4.41e-05   | 2.50e-05   |
-|   100 |   100 | 0.00275    | 4.10e-05   | 0.00140    | 8.76e      |
-|  1000 |  1000 | 0.146      | 0.000189   | 0.0787     | 0.0508     |
-| 10000 | 10000 | 19.0       | 0.00234    | 9.97       | 5.57       |
-</div>
+[% table slug="perf-timing" tbl="timing.tbl" caption="Dataframe timings." %]
 
 [% figure
    slug="perf-analysis"
@@ -384,8 +379,8 @@ using Python [`cProfile`][py_cprofile] module,
 which collects detailed information on how long each function runs
 and reports the result:
 
-[% inc file="profile.sh" %]
-[% inc file="profile.out" head="10" %]
+[%inc profile.sh %]
+[%inc profile.out head="10" %]
 
 The profiler's output tells us
 the number of times each function or method was called,

@@ -1,4 +1,5 @@
 ---
+title: "Object Persistence"
 abstract: >
     Some simple kinds of data can be saved as lines of text,
     but more complex data structures require a framework capable of handling aliasing and circularity.
@@ -73,7 +74,7 @@ The first thing we need to do is specify our data format.
 We will store each [%g atomic_value "atomic value" %] on a line of its own
 with a type name and a value separated by a colon:
 
-[% inc file="format.txt" %]
+[%inc format.txt %]
 
 Since we are storing things as text,
 we have to handle strings carefully:
@@ -84,12 +85,12 @@ We do this by splitting strings on newline characters
 and saving the number of lines,
 followed by the actual data:
 
-[% inc file="multiline_input.txt" %]
-[% inc file="multiline_output.txt" %]
+[%inc multiline_input.txt %]
+[%inc multiline_output.txt %]
 
 The function `save` handles three of Python's built-in types to start with:
 
-[% inc file="builtin.py" keep="save" omit="extras" %]
+[%inc builtin.py mark=save omit=extras %]
 
 The function that loads data starts by reading a single line,
 stripping off the newline at the end
@@ -99,7 +100,7 @@ After checking that there are two fields,
 it uses the type name in the first field
 to decide how to handle the second:
 
-[% inc file="builtin.py" keep="load" omit="extras" %]
+[%inc builtin.py mark=load omit=extras %]
 
 Saving a list is almost as easy:
 we save the number of items in the list,
@@ -109,13 +110,13 @@ For example,
 the list `[55, True, 2.71]` is saved as shown in [%f persist-lists %].
 The code to do this is:
 
-[% inc file="builtin.py" keep="save_list" %]
+[%inc builtin.py mark=save_list %]
 
 while to load a list,
 we just read the specified number of items:
 {: .continue}
 
-[% inc file="builtin.py" keep="load_list" %]
+[%inc builtin.py mark=load_list %]
 
 [% figure
    slug="persist-lists"
@@ -139,14 +140,14 @@ To save a [%i "dictionary" %],
 we save the number of entries
 and then save each key and value in turn:
 
-[% inc file="builtin.py" keep="save_dict" %]
+[%inc builtin.py mark=save_dict %]
 
 The code to load a dictionary is analogous.
 With this machinery in place,
 we can save our first data structure:
 
-[% inc file="save_builtin.py" keep="save" %]
-[% inc file="save_builtin.out" %]
+[%inc save_builtin.py mark=save %]
+[%inc save_builtin.out %]
 
 We now need to write some unit tests.
 We will use two tricks when doing this:
@@ -164,7 +165,7 @@ We will use two tricks when doing this:
     the same way we indent our Python code,
     which makes the test easier to read.
 
-[% inc file="test_builtin.py" keep="test_save_list_flat" %]
+[%inc test_builtin.py mark=test_save_list_flat %]
 
 ## Converting to Classes {: #persist-oop}
 
@@ -199,12 +200,13 @@ If it does,
 if that attribute happens to be a method,
 we can then call it like a function:
 
-[% inc pat="attr.*" fill="py out" %]
+[%inc attr.py %]
+[%inc attr.out %]
 
 Using this,
 the core of our saving class is:
 
-[% inc file="objects.py" keep="save" %]
+[%inc objects.py mark=save %]
 
 We have called this class `SaveObjects` instead of just `Save`
 because we are going to create other variations on it.
@@ -220,18 +222,18 @@ so that they can be called interchangeably.
 For example,
 the methods that write integers and strings are:
 
-[% inc file="objects.py" keep="save_examples" %]
+[%inc objects.py mark=save_examples %]
 
 `LoadObjects.load` combines dynamic dispatch with
 the string handling of our original `load` function:
 
-[% inc file="objects.py" keep="load" %]
+[%inc objects.py mark=load %]
 
 The methods that load individual items are even simpler.
 For example,
 we load a floating-point number like this:
 
-[% inc file="objects.py" keep="load_float" %]
+[%inc objects.py mark=load_float %]
 
 ## Aliasing {: #persist-aliasing}
 
@@ -291,7 +293,7 @@ We can use this to:
 
 Here's the start of `SaveAlias`:
 
-[% inc file="aliasing_wrong.py" keep="save" %]
+[%inc aliasing_wrong.py mark=save %]
 
 Its constructor creates an empty set of IDs seen so far.
 If `SaveAlias.save` notices that the object it's about to save
@@ -311,7 +313,7 @@ its ID,
 and either its value or its length:
 {: .continue}
 
-[% inc file="aliasing_wrong.py" keep="save_list" %]
+[%inc aliasing_wrong.py mark=save_list %]
 
 `SaveAlias._list` is a little different from `SaveObjects._list`
 because it has to save each object's identifier
@@ -321,16 +323,16 @@ The first version is shown below;
 as we will see,
 it contains a subtle bug:
 
-[% inc file="aliasing_wrong.py" keep="load" %]
+[%inc aliasing_wrong.py mark=load %]
 
 The first test of our new code is:
 
-[% inc file="test_aliasing_wrong.py" keep="no_aliasing" %]
+[%inc test_aliasing_wrong.py mark=no_aliasing %]
 
 which uses this [%i "helper function" %]:
 {: .continue}
 
-[% inc file="test_aliasing_wrong.py" keep="roundtrip" %]
+[%inc test_aliasing_wrong.py mark=roundtrip %]
 
 There isn't any aliasing in the test case,
 but that's deliberate:
@@ -339,7 +341,7 @@ before we move on.
 Here's a test that actually includes some aliasing:
 {: .continue}
 
-[% inc file="test_aliasing_wrong.py" keep="shared" %]
+[%inc test_aliasing_wrong.py mark=shared %]
 
 It checks that the aliased sub-list is actually aliased after the data is restored,
 then checks that changes to the sub-list through one alias show up through the other.
@@ -376,7 +378,7 @@ marked as containing a bug,
 in combination with these lines inherited from `LoadObjects`:
 {: .continue}
 
-[% inc file="objects.py" keep="load_list" %]
+[%inc objects.py mark=load_list %]
 
 Let's trace execution for the saved data:
 {: .continue}
@@ -402,7 +404,7 @@ which unfortunately means writing new versions
 of all the methods defined in `LoadObjects`.
 The new implementation of `_list` is:
 
-[% inc file="aliasing.py" keep="load_list" %]
+[%inc aliasing.py mark=load_list %]
 
 This method creates the list it's going to return,
 adds that list to the `seen` dictionary immediately,
@@ -413,8 +415,8 @@ and we have to use a loop rather than
 a [%g list_comprehension "list comprehension" %],
 but the changes to `save_set` and `save_dict` follow exactly the same pattern.
 
-[% inc file="save_aliasing.py" keep="save" %]
-[% inc file="save_aliasing.out" %]
+[%inc save_aliasing.py mark=save %]
+[%inc save_aliasing.out %]
 
 ## Summary {: #persist-summary}
 

@@ -1,424 +1,396 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="repo" content="https://github.com/gvwilson/sdxpy">
-  <meta name="build_date" content="2024-04-28">
-  <meta name="template" content="slides">
-  <meta name="major" content="http">
-  
-  <link rel="icon" type="image/x-icon" href="../../favicon.ico">
-  <link rel="stylesheet" href="../../mccole.css">
-  <link rel="stylesheet" href="../../tango.css">
+    <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="../../logo.svg">
+<link rel="stylesheet" href="../../tango.css" type="text/css">
+<link rel="stylesheet" href="../../mccole.css" type="text/css">
+<title>Software Design by Example &middot; Serving Web Pages</title>
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [['\\(', '\\)']]
+    }
+  };
+</script>
+<script
+  type="text/javascript"
+  id="MathJax-script"
+  async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+</script>
+
   <script defer data-domain="third-bit.com" src="https://plausible.io/js/plausible.js"></script>
-  <script>
-    MathJax = {
-      tex: {
-        inlineMath: [['\\(', '\\)']]
-      }
-    };
-  </script>
-  <script
-    type="text/javascript"
-    id="MathJax-script"
-    async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
-  </script>
-  <script defer src="../../mccole.js"></script>
-  <title>Software Design by Example: Serving Web Pages</title>
-</head>
 
+
+    <script src="../../slides.js" defer></script>
+    <link rel="stylesheet" href="../../slides.css">
+  </head>
   <body>
-    <textarea id="source">
-
-class: slide-title
-
-<p>
-  <a href="https://third-bit.com/sdxpy/">Software Design by Example</a>
-</p>
-<h1>Serving Web Pages</h1>
-<div class="bottom">
-  <a href="../">chapter</a>
+<div class="row notex">
+  <div class="col-12 center">
+    <h1>Serving Web Pages</h1>
+    <p class="subtitle">Software Design by Example</p>
+  </div>
 </div>
-
----
-
-
-## The Problem
-
--   Uploading and downloading files (<a class="x-ref" href="../../ftp/">Chapter 21</a>) is useful,
-    but we want to do more
-
--   Don't want to create a new <a class="gl-ref" href="../../glossary/#gl:protocol" title="A set of rules that something promises to obey, i.e., the contract between that thing and its users." markdown="1">protocol</a> for every interaction
-
--   Use a standard protocol in a variety of ways
-
----
-
-## HTTP
-
--   <a class="gl-ref" href="../../glossary/#gl:http" title="The protocol used to exchange information between browsers and websites, and more generally between other clients and servers. Communication consists of requests and responses." markdown="1">Hypertext Transfer Protocol (HTTP)</a> specifies
+<hr>
+<h2>The Problem</h2>
+<ul>
+<li>
+<p>Uploading and downloading files (<a href="../../ftp/">Chapter&nbsp;21</a>) is useful,
+    but we want to do more</p>
+</li>
+<li>
+<p>Don&rsquo;t want to create a new <a class="gl-ref" href="../../glossary/#protocol" markdown="1">protocol</a> for every interaction</p>
+</li>
+<li>
+<p>Use a standard protocol in a variety of ways</p>
+</li>
+</ul>
+<hr />
+<h2>HTTP</h2>
+<ul>
+<li>
+<p><a class="gl-ref" href="../../glossary/#http" markdown="1">Hypertext Transfer Protocol (HTTP)</a> specifies
     what kinds of messages clients and servers can exchange
-    and how those messages are formatted
-
--   Client sends a <a class="gl-ref" href="../../glossary/#gl:http_request" title="A precisely-formatted block of text sent from a client such as a browser to a server that specifies what resource is being requested, what data formats the client will accept, etc." markdown="1">request</a> as text over a socket connection
-
--   Server replies with a <a class="gl-ref" href="../../glossary/#gl:http_response" title="A precisely-formatted block of text sent from a server back to a client in reply to a request." markdown="1">response</a> (also text)
-
--   Requests and responses may carry (non-textual) data with them
-
--   *Server can respond to requests however it wants*
-
----
-
-## HTTP Requests
-
--   A <a class="gl-ref" href="../../glossary/#gl:http_method" title="The verb in an HTTP request that defines what the client wants to do. Common methods are `GET` (to get data) and `POST` (to submit data)." markdown="1">method</a> such as `GET` or `POST`
-
--   A <a class="gl-ref" href="../../glossary/#gl:url" title="A multi-part identifier that specifies something on a computer network. A URL may contain a protocol (such as `http`), a hostname such as `example.com`, a port (such as 80), a path (such as `/homepage.html`), and various other things." markdown="1">URL</a>
-
--   A <a class="gl-ref" href="../../glossary/#gl:http_protocol_version" title="Specifies the version of HTTP being used, which in turn defines what headers can appear, how they are to be interpreted, etc." markdown="1">protocol version</a>
-
-```txt
-GET /index.html HTTP/1.1
-```
-
-
----
-
-## Headers
-
--   Requests may also have <a class="gl-ref" href="../../glossary/#gl:http_header" title="A name-value pair at the start of an HTTP request or response. Headers are used to specify what data formats the sender can handle, the date and time the message was sent, and so on." markdown="1">headers</a>
-
-```txt
-GET /index.html HTTP/1.1
+    and how those messages are formatted</p>
+</li>
+<li>
+<p>Client sends a <a class="gl-ref" href="../../glossary/#http_request" markdown="1">request</a> as text over a socket connection</p>
+</li>
+<li>
+<p>Server replies with a <a class="gl-ref" href="../../glossary/#http_response" markdown="1">response</a> (also text)</p>
+</li>
+<li>
+<p>Requests and responses may carry (non-textual) data with them</p>
+</li>
+<li>
+<p><em>Server can respond to requests however it wants</em></p>
+</li>
+</ul>
+<hr />
+<h2>HTTP Requests</h2>
+<ul>
+<li>
+<p>A <a class="gl-ref" href="../../glossary/#http_method" markdown="1">method</a> such as <code>GET</code> or <code>POST</code></p>
+</li>
+<li>
+<p>A <a class="gl-ref" href="../../glossary/#url" markdown="1">URL</a></p>
+</li>
+<li>
+<p>A <a class="gl-ref" href="../../glossary/#http_protocol_version" markdown="1">protocol version</a></p>
+</li>
+</ul>
+<div class="language-txt" title="minimal_http_request.txt">
+<div class="highlight"><pre><span></span><code>GET /index.html HTTP/1.1
+</code></pre></div>
+</div>
+<hr />
+<h2>Headers</h2>
+<ul>
+<li>Requests may also have <a class="gl-ref" href="../../glossary/#http_header" markdown="1">headers</a></li>
+</ul>
+<div class="language-txt" title="http_request_headers.txt">
+<div class="highlight"><pre><span></span><code>GET /index.html HTTP/1.1
 Accept: text/html
 Accept-Language: en, fr
 If-Modified-Since: 16-May-2023
-```
-
-
--   A key can appear any number of times
-
----
-
-## HTTP Response
-
--   Protocol and version
-
--   A <a class="gl-ref" href="../../glossary/#gl:http_status_code" title="A numerical code that indicates what happened when an HTTP request was processed, such as 200 (OK), 404 (not found), or 500 (internal server error)." markdown="1">status code</a> and phrase
-
--   Headers, possibly including `Content-Length` (in bytes)
-
--   Blank line followed by content
-
-```txt
-HTTP/1.1 200 OK
+</code></pre></div>
+</div>
+<ul>
+<li>A key can appear any number of times</li>
+</ul>
+<hr />
+<h2>HTTP Response</h2>
+<ul>
+<li>
+<p>Protocol and version</p>
+</li>
+<li>
+<p>A <a class="gl-ref" href="../../glossary/#http_status_code" markdown="1">status code</a> and phrase</p>
+</li>
+<li>
+<p>Headers, possibly including <code>Content-Length</code> (in bytes)</p>
+</li>
+<li>
+<p>Blank line followed by content</p>
+</li>
+</ul>
+<div class="language-txt" title="http_response.txt">
+<div class="highlight"><pre><span></span><code>HTTP/1.1 200 OK
 Date: Thu, 16 June 2023 12:28:53 GMT
 Content-Type: text/html
 Content-Length: 53
 
-<html>
-<body>
-<h1>Hello, World!</h1>
-</body>
-</html>
-```
+&lt;html&gt;
+&lt;body&gt;
+&lt;h1&gt;Hello, World!&lt;/h1&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</code></pre></div>
+</div>
+<hr />
+<h2>Requests</h2>
+<div class="language-py" title="requests_example.py">
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">requests</span>
 
-
----
-
-## Requests
-
-```py
-import requests
-
-response = requests.get("http://third-bit.com/test.html")
-print("status code:", response.status_code)
-print("content length:", response.headers["content-length"])
-print(response.text)
-```
-
-
-```
-status code: 200
+<span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;http://third-bit.com/test.html&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;status code:&quot;</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;content length:&quot;</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s2">&quot;content-length&quot;</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<div class="language-out" title="requests_example.out">
+<div class="highlight"><pre><span></span><code>status code: 200
 content length: 103
-<html>
-  <head>
-    <title>Test Page</title>
-  </head>
-  <body>
-    <p>test page</p>
-  </body>
-</html>
-```
-
-
----
-
-## HTTP Lifecycle
-
-<figure>
+&lt;html&gt;
+  &lt;head&gt;
+    &lt;title&gt;Test Page&lt;/title&gt;
+  &lt;/head&gt;
+  &lt;body&gt;
+    &lt;p&gt;test page&lt;/p&gt;
+  &lt;/body&gt;
+&lt;/html&gt;
+</code></pre></div>
+</div>
+<hr />
+<h2>HTTP Lifecycle</h2>
+<figure id="http-lifecycle">
 <img src="../http_lifecycle.svg" alt="HTTP request/response lifecycle"/>
+<figcaption>Lifecycle of an HTTP request and response.</figcaption>
 </figure>
 
+<hr />
+<h2>Basic HTTP Server</h2>
+<div class="language-py" title="basic_server.py">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">http.server</span> <span class="kn">import</span> <span class="n">BaseHTTPRequestHandler</span><span class="p">,</span> <span class="n">HTTPServer</span>
 
----
+<span class="n">PAGE</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;&lt;html&gt;&lt;body&gt;&lt;p&gt;test page&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;&quot;&quot;&quot;</span>
 
-## Basic HTTP Server
+<span class="k">class</span> <span class="nc">RequestHandler</span><span class="p">(</span><span class="n">BaseHTTPRequestHandler</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">do_GET</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">content</span> <span class="o">=</span> <span class="nb">bytes</span><span class="p">(</span><span class="n">PAGE</span><span class="p">,</span> <span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">send_response</span><span class="p">(</span><span class="mi">200</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">send_header</span><span class="p">(</span>
+            <span class="s2">&quot;Content-Type&quot;</span><span class="p">,</span> <span class="s2">&quot;text/html; charset=utf-8&quot;</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">send_header</span><span class="p">(</span><span class="s2">&quot;Content-Length&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">content</span><span class="p">)))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">end_headers</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
 
-```py
-from http.server import BaseHTTPRequestHandler, HTTPServer
-
-PAGE = """<html><body><p>test page</p></body></html>"""
-
-class RequestHandler(BaseHTTPRequestHandler):
-    def do_GET(self):
-        content = bytes(PAGE, "utf-8")
-        self.send_response(200)
-        self.send_header(
-            "Content-Type", "text/html; charset=utf-8"
-        )
-        self.send_header("Content-Length", str(len(content)))
-        self.end_headers()
-        self.wfile.write(content)
-
-if __name__ == "__main__":
-    server_address = ("localhost", 8080)
-    server = HTTPServer(server_address, RequestHandler)
-    server.serve_forever()
-```
-
-
----
-
-## Running the Server
-
-```sh
-python basic_http_server.py
-```
-
-
--   Displays nothing until we go to `http://localhost:8080` in our browser
-
--   Browser shows page
-
--   Shell shows log messages
-
-```
-127.0.0.1 - - [16/Sep/2022 06:34:59] "GET / HTTP/1.1" 200 -
-127.0.0.1 - - [16/Sep/2022 06:35:00] "GET /favicon.ico HTTP/1.1" 200 -
-```
-
-
----
-
-## Serving Files
-
-```py
-class RequestHandler(BaseHTTPRequestHandler):
-    def do_GET(self):
-        try:
-            url_path = self.path.lstrip("/")
-            full_path = Path.cwd().joinpath(url_path)
-            if not full_path.exists():
-                raise ServerException(f"{self.path} not found")
-            elif full_path.is_file():
-                self.handle_file(self.path, full_path)
-            else:
-                raise ServerException(f"{self.path} unknown")
-        except Exception as msg:
-            self.handle_error(msg)
-```
-
-
----
-
-## Read and Reply
-
--   Translate path in URL into path to local file
-
--   <a class="gl-ref" href="../../glossary/#gl:path_resolution" title="The process of converting the filename portion of a URL into a specific file on disk." markdown="1">Resolve</a> paths relative to server's directory
-
-```py
-def handle_file(self, given_path, full_path):
-    try:
-        with open(full_path, 'rb') as reader:
-            content = reader.read()
-        self.send_content(content, HTTPStatus.OK)
-    except IOError:
-        raise ServerException(f"Cannot read {given_path}")
-```
-
-
----
-
-## Handling Errors
-
-```py
-ERROR_PAGE = """\
-<html>
-  <head><title>Error accessing {path}</title></head>
-  <body>
-    <h1>Error accessing {path}: {msg}</h1>
-  </body>
-</html>
-"""
-```
-
-```py
-def handle_error(self, msg):
-    content = ERROR_PAGE.format(path=self.path, msg=msg)
-    content = bytes(content, "utf-8")
-    self.send_content(content, HTTPStatus.NOT_FOUND)
-```
-
-
--   Use `try`/`except` to handle errors in called methods
-
--   <a class="gl-ref" href="../../glossary/#gl:throw_low_catch_high" title="A widely-used pattern for managing exceptions whereby they are raised in many places at low levels of a program but caught in a few high-level places where corrective action can be taken." markdown="1">Throw low, catch high</a>
-
----
-
-## Problems
-
--   Client can escape from our <a class="gl-ref" href="../../glossary/#gl:sandbox" title="A space where code can execute safely." markdown="1">sandbox</a>
-    by asking for `http://localhost:8080/../../passwords.txt`
-
--   `send_content` always says it is returning HTML with `Content-Type`
-
-    -   Should use things like `image/png` for images
-
--   But we got <a class="gl-ref" href="../../glossary/#gl:character_encoding" title="A way to represent characters as bytes. Common examples include ASCII and UTF-8." markdown="1">character encoding</a> right
-
----
-
-## Test Case
-
--   Want to write this
-
-```py
-def test_existing_path(fs):
-    content_str = "actual"
-    content_bytes = bytes(content_str, "utf-8")
-    fs.create_file("/actual.txt", contents=content_str)
-    handler = MockHandler("/actual.txt")
-    handler.do_GET()
-    assert handler.status == int(HTTPStatus.OK)
-    assert handler.headers["Content-Type"] == \
-        ["text/html; charset=utf-8"]
-    assert handler.headers["Content-Length"] == \
-        [str(len(content_bytes))]
-    assert handler.wfile.getvalue() == content_bytes
-```
-
-
----
-
-## Combining Code
-
--   Use <a class="gl-ref" href="../../glossary/#gl:multiple_inheritance" title="Inheriting from two or more classes when creating a new class." markdown="1">multiple inheritance</a>
-
-<figure>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">server_address</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;localhost&quot;</span><span class="p">,</span> <span class="mi">8080</span><span class="p">)</span>
+    <span class="n">server</span> <span class="o">=</span> <span class="n">HTTPServer</span><span class="p">(</span><span class="n">server_address</span><span class="p">,</span> <span class="n">RequestHandler</span><span class="p">)</span>
+    <span class="n">server</span><span class="o">.</span><span class="n">serve_forever</span><span class="p">()</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Running the Server</h2>
+<div class="language-sh" title="basic_server.sh">
+<div class="highlight"><pre><span></span><code>python<span class="w"> </span>basic_http_server.py
+</code></pre></div>
+</div>
+<ul>
+<li>
+<p>Displays nothing until we go to <code>http://localhost:8080</code> in our browser</p>
+</li>
+<li>
+<p>Browser shows page</p>
+</li>
+<li>
+<p>Shell shows log messages</p>
+</li>
+</ul>
+<div class="language-out" title="basic_server.out">
+<div class="highlight"><pre><span></span><code>127.0.0.1 - - [16/Sep/2022 06:34:59] &quot;GET / HTTP/1.1&quot; 200 -
+127.0.0.1 - - [16/Sep/2022 06:35:00] &quot;GET /favicon.ico HTTP/1.1&quot; 200 -
+</code></pre></div>
+</div>
+<hr />
+<h2>Serving Files</h2>
+<div class="language-py" title="file_server.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">RequestHandler</span><span class="p">(</span><span class="n">BaseHTTPRequestHandler</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">do_GET</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">url_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">lstrip</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)</span>
+            <span class="n">full_path</span> <span class="o">=</span> <span class="n">Path</span><span class="o">.</span><span class="n">cwd</span><span class="p">()</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="n">url_path</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">full_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+                <span class="k">raise</span> <span class="n">ServerException</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="si">}</span><span class="s2"> not found&quot;</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">full_path</span><span class="o">.</span><span class="n">is_file</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">handle_file</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">full_path</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">ServerException</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="si">}</span><span class="s2"> unknown&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">msg</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">handle_error</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Read and Reply</h2>
+<ul>
+<li>
+<p>Translate path in URL into path to local file</p>
+</li>
+<li>
+<p><a class="gl-ref" href="../../glossary/#path_resolution" markdown="1">Resolve</a> paths relative to server&rsquo;s directory</p>
+</li>
+</ul>
+<div class="language-py" title="file_server.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">handle_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">given_path</span><span class="p">,</span> <span class="n">full_path</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">full_path</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">reader</span><span class="p">:</span>
+                <span class="n">content</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">send_content</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="n">HTTPStatus</span><span class="o">.</span><span class="n">OK</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">IOError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ServerException</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Cannot read </span><span class="si">{</span><span class="n">given_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Handling Errors</h2>
+<div class="language-py" title="file_server.py">
+<div class="highlight"><pre><span></span><code><span class="n">ERROR_PAGE</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span><span class="se">\</span>
+<span class="s2">&lt;html&gt;</span>
+<span class="s2">  &lt;head&gt;&lt;title&gt;Error accessing </span><span class="si">{path}</span><span class="s2">&lt;/title&gt;&lt;/head&gt;</span>
+<span class="s2">  &lt;body&gt;</span>
+<span class="s2">    &lt;h1&gt;Error accessing </span><span class="si">{path}</span><span class="s2">: </span><span class="si">{msg}</span><span class="s2">&lt;/h1&gt;</span>
+<span class="s2">  &lt;/body&gt;</span>
+<span class="s2">&lt;/html&gt;</span>
+<span class="s2">&quot;&quot;&quot;</span>
+</code></pre></div>
+</div>
+<div class="language-py" title="file_server.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">handle_error</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">):</span>
+        <span class="n">content</span> <span class="o">=</span> <span class="n">ERROR_PAGE</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">msg</span><span class="o">=</span><span class="n">msg</span><span class="p">)</span>
+        <span class="n">content</span> <span class="o">=</span> <span class="nb">bytes</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">send_content</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="n">HTTPStatus</span><span class="o">.</span><span class="n">NOT_FOUND</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<ul>
+<li>
+<p>Use <code>try</code>/<code>except</code> to handle errors in called methods</p>
+</li>
+<li>
+<p><a class="gl-ref" href="../../glossary/#throw_low_catch_high" markdown="1">Throw low, catch high</a></p>
+</li>
+</ul>
+<hr />
+<h2>Problems</h2>
+<ul>
+<li>
+<p>Client can escape from our <a class="gl-ref" href="../../glossary/#sandbox" markdown="1">sandbox</a>
+    by asking for <code>http://localhost:8080/../../passwords.txt</code></p>
+</li>
+<li>
+<p><code>send_content</code> always says it is returning HTML with <code>Content-Type</code></p>
+<ul>
+<li>Should use things like <code>image/png</code> for images</li>
+</ul>
+</li>
+<li>
+<p>But we got <a class="gl-ref" href="../../glossary/#character_encoding" markdown="1">character encoding</a> right</p>
+</li>
+</ul>
+<hr />
+<h2>Test Case</h2>
+<ul>
+<li>Want to write this</li>
+</ul>
+<div class="language-py" title="test_testable_server.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">test_existing_path</span><span class="p">(</span><span class="n">fs</span><span class="p">):</span>
+    <span class="n">content_str</span> <span class="o">=</span> <span class="s2">&quot;actual&quot;</span>
+    <span class="n">content_bytes</span> <span class="o">=</span> <span class="nb">bytes</span><span class="p">(</span><span class="n">content_str</span><span class="p">,</span> <span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+    <span class="n">fs</span><span class="o">.</span><span class="n">create_file</span><span class="p">(</span><span class="s2">&quot;/actual.txt&quot;</span><span class="p">,</span> <span class="n">contents</span><span class="o">=</span><span class="n">content_str</span><span class="p">)</span>
+    <span class="n">handler</span> <span class="o">=</span> <span class="n">MockHandler</span><span class="p">(</span><span class="s2">&quot;/actual.txt&quot;</span><span class="p">)</span>
+    <span class="n">handler</span><span class="o">.</span><span class="n">do_GET</span><span class="p">()</span>
+    <span class="k">assert</span> <span class="n">handler</span><span class="o">.</span><span class="n">status</span> <span class="o">==</span> <span class="nb">int</span><span class="p">(</span><span class="n">HTTPStatus</span><span class="o">.</span><span class="n">OK</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">handler</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s2">&quot;Content-Type&quot;</span><span class="p">]</span> <span class="o">==</span> \
+        <span class="p">[</span><span class="s2">&quot;text/html; charset=utf-8&quot;</span><span class="p">]</span>
+    <span class="k">assert</span> <span class="n">handler</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s2">&quot;Content-Length&quot;</span><span class="p">]</span> <span class="o">==</span> \
+        <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">content_bytes</span><span class="p">))]</span>
+    <span class="k">assert</span> <span class="n">handler</span><span class="o">.</span><span class="n">wfile</span><span class="o">.</span><span class="n">getvalue</span><span class="p">()</span> <span class="o">==</span> <span class="n">content_bytes</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Combining Code</h2>
+<ul>
+<li>Use <a class="gl-ref" href="../../glossary/#multiple_inheritance" markdown="1">multiple inheritance</a></li>
+</ul>
+<figure id="http-inheritance">
 <img src="../inheritance.svg" alt="Testing class hierarchy"/>
+<figcaption>Class hierarchy for a testable server.</figcaption>
 </figure>
 
+<hr />
+<h2>Mock Request Handler</h2>
+<div class="language-py" title="mock_handler.py">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">io</span> <span class="kn">import</span> <span class="n">BytesIO</span>
 
----
+<span class="k">class</span> <span class="nc">MockRequestHandler</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="n">path</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">headers</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wfile</span> <span class="o">=</span> <span class="n">BytesIO</span><span class="p">()</span>
 
-## Mock Request Handler
+    <span class="k">def</span> <span class="nf">send_response</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">status</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="n">status</span>
 
-```py
-from io import BytesIO
+    <span class="k">def</span> <span class="nf">send_header</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">headers</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
 
-class MockRequestHandler:
-    def __init__(self, path):
-        self.path = path
-        self.status = None
-        self.headers = {}
-        self.wfile = BytesIO()
+    <span class="k">def</span> <span class="nf">end_headers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Application Code</h2>
+<div class="language-py" title="testable_server.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">ApplicationRequestHandler</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">do_GET</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">url_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">lstrip</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)</span>
+            <span class="n">full_path</span> <span class="o">=</span> <span class="n">Path</span><span class="o">.</span><span class="n">cwd</span><span class="p">()</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="n">url_path</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">full_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+                <span class="k">raise</span> <span class="n">ServerException</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="si">}</span><span class="s2">&#39; not found&quot;</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">full_path</span><span class="o">.</span><span class="n">is_file</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">handle_file</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">full_path</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">ServerException</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown object &#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">msg</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">handle_error</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
 
-    def send_response(self, status):
-        self.status = status
+    <span class="c1"># ...etc...</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Two Servers</h2>
+<div class="language-py" title="testable_server.py">
+<div class="highlight"><pre><span></span><code><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">RequestHandler</span><span class="p">(</span>
+            <span class="n">BaseHTTPRequestHandler</span><span class="p">,</span>
+            <span class="n">ApplicationRequestHandler</span>
+    <span class="p">):</span>
+        <span class="k">pass</span>
 
-    def send_header(self, key, value):
-        if key not in self.headers:
-            self.headers[key] = []
-        self.headers[key].append(value)
-
-    def end_headers(self):
-        pass
-```
-
-
----
-
-## Application Code
-
-```py
-class ApplicationRequestHandler:
-    def do_GET(self):
-        try:
-            url_path = self.path.lstrip("/")
-            full_path = Path.cwd().joinpath(url_path)
-            if not full_path.exists():
-                raise ServerException(f"'{self.path}' not found")
-            elif full_path.is_file():
-                self.handle_file(self.path, full_path)
-            else:
-                raise ServerException(f"Unknown object '{self.path}'")
-        except Exception as msg:
-            self.handle_error(msg)
-
-    # ...etc...
-```
-
-
----
-
-## Two Servers
-
-```py
-if __name__ == '__main__':
-    class RequestHandler(
-            BaseHTTPRequestHandler,
-            ApplicationRequestHandler
-    ):
-        pass
-
-    serverAddress = ('', 8080)
-    server = HTTPServer(serverAddress, RequestHandler)
-    server.serve_forever()
-```
-
-
-```py
-class MockHandler(
-        MockRequestHandler,
-        ApplicationRequestHandler
-):
-    pass
-```
-
-
----
-
-## Summary
-
-<figure>
+    <span class="n">serverAddress</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="mi">8080</span><span class="p">)</span>
+    <span class="n">server</span> <span class="o">=</span> <span class="n">HTTPServer</span><span class="p">(</span><span class="n">serverAddress</span><span class="p">,</span> <span class="n">RequestHandler</span><span class="p">)</span>
+    <span class="n">server</span><span class="o">.</span><span class="n">serve_forever</span><span class="p">()</span>
+</code></pre></div>
+</div>
+<div class="language-py" title="test_testable_server.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">MockHandler</span><span class="p">(</span>
+        <span class="n">MockRequestHandler</span><span class="p">,</span>
+        <span class="n">ApplicationRequestHandler</span>
+<span class="p">):</span>
+    <span class="k">pass</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Summary</h2>
+<figure id="http-concept-map">
 <img src="../concept_map.svg" alt="HTTP concept map"/>
+<figcaption>HTTP concept map.</figcaption>
 </figure>
-
-
-
-
-
-    </textarea>
-    <script src="../../remark-latest.min.js"></script>
-    <script>
-      var slideshow = remark.create({
-        highlightLines: true
-      })
-    </script>
   </body>
 </html>

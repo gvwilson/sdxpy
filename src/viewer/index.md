@@ -1,4 +1,5 @@
 ---
+title: "A File Viewer"
 abstract: >
     Even simple editors like Notepad and Nano do a lot of things:
     moving a cursor,
@@ -37,7 +38,7 @@ which handles interaction with text terminals on several different operating sys
 in a uniform way.
 A very simple curses-based program looks like this:
 
-[% inc file="first_curses.py" %]
+[%inc first_curses.py %]
 
 `curses.wrapper` takes a function with a single parameter as input,
 does some setup,
@@ -58,7 +59,7 @@ for the same reason,
 so for the moment we will cheat and create a [%g log_file "log file" %]
 for the program to write to:
 
-[% inc file="util.py" keep="log" %]
+[%inc util.py mark=log %]
 
 With this in hand,
 we can rewrite our program to take the name of the log file
@@ -67,7 +68,7 @@ and print messages to that file to show the keys that are being pressed.
 We can also modify the program so that when the user presses `q`,
 the program exits cleanly:
 
-[% inc file="logging_curses.py" keep="show" %]
+[%inc logging_curses.py mark=show %]
 
 Notice that we print the representation of the characters using `repr`
 so that (for example)
@@ -87,7 +88,7 @@ the revised `main` function below will repeatedly:
 
 4.  exit if the key is a `q`.
 
-[% inc file="show_lines.py" keep="main" %]
+[%inc show_lines.py mark=main %]
 
 Two things about this function need to be kept in mind.
 First, as explained in [%x layout %],
@@ -109,7 +110,7 @@ we'll do the simple, inefficient thing.
 
 Here's how we run our revised `main` function:
 
-[% inc file="show_lines.py" keep="run" %]
+[%inc show_lines.py mark=run %]
 
 From top to bottom,
 we make a list of strings to display,
@@ -122,13 +123,13 @@ and immediately calls `main` with the two arguments that *it* requires.
 A real text viewer would display the contents of a file,
 but for development we will just make up a regular pattern of text:
 
-[% inc file="util.py" keep="lines" %]
+[%inc util.py mark=lines %]
 
 If we ask for five lines,
 the pattern is:
 {: .continue}
 
-[% inc file="make_lines.out" %]
+[%inc make_lines.out %]
 
 These lines are a very (very) simple example of [%g synthetic_data "synthetic data" %],
 i.e.,
@@ -150,11 +151,11 @@ The solution is to create a `Window` class
 that knows how big the screen is
 and only displays lines (or parts of lines) that fit inside it:
 
-[% inc file="use_window.py" keep="window" %]
+[%inc use_window.py mark=window %]
 
 Our `main` function is then:
 
-[% inc file="use_window.py" keep="main" %]
+[%inc use_window.py mark=main %]
 
 Notice that `main` creates the window object.
 We can't create it earlier and pass it into `main` as we do with `lines`
@@ -182,7 +183,7 @@ This version of `Window` takes an extra parameter `size`
 which is either `None` (meaning "use the full terminal")
 or a (rows, columns) pair specifying the size we want:
 
-[% inc file="size_window.py" keep="window" %]
+[%inc size_window.py mark=window %]
 
 We're going to have a lot of two-dimensional (row, column) coordinates
 in this program,
@@ -191,8 +192,8 @@ to be more readable than 0 and 1 or `R` and `C`.
 (We should really create an [%g enumeration "enumeration" %],
 but a pair of constants is good enough for now.)
 
-[% inc file="util.py" keep="coord" %]
-[% inc file="cursor_const.py" keep="window" omit="omit" %]
+[%inc util.py mark=coord %]
+[%inc cursor_const.py mark=window omit=omit %]
 
 ## Moving {: #viewer-move}
 
@@ -203,7 +204,7 @@ we need to teach the application to scroll.
 let's create another class to keep track of
 the position of a cursor:
 
-[% inc file="move_cursor.py" keep="cursor" %]
+[%inc move_cursor.py mark=cursor %]
 
 The cursor keeps track of its current (row, column) position in a list,
 but `Cursor.pos` returns the location as a separate tuple
@@ -220,7 +221,7 @@ Now that we have a way to keep track of where the cursor is,
 we can tell `curses` to draw the cursor in the right location
 each time it renders the screen:
 
-[% inc file="move_cursor.py" keep="main" %]
+[%inc move_cursor.py mark=main %]
 
 As this code shows,
 the screen's `getkey` method returns the names of the arrow keys.
@@ -259,36 +260,37 @@ one of the [%i "protocol" "protocols" %] introduced in [%x protocols %]:
 if an object has a method named `__call__`,
 that method will be invoked when the object is "called" as if it were a function:
 
-[% inc pat="call_example.*" fill="py out" %]
+[%inc call_example.py %]
+[%inc call_example.out %]
 
 Since the `MainApp` class below defines `__call__`,
 `curses.wrapper` believes we have given it the single-parameter function it needs:
 
-[% inc file="main_app.py" keep="main" %]
+[%inc main_app.py mark=main %]
 
 The `__call__` method calls `_setup`
 to create and store the objects the application needs,
 then `_run` to handle interaction.
 The latter is:
 
-[% inc file="main_app.py" keep="run" %]
+[%inc main_app.py mark=run %]
 
 Finally,
 we pull the startup code into a function `start`
 so that we can use it in future versions of this code:
 
-[% inc file="util.py" keep="start" %]
+[%inc util.py mark=start %]
 
 and then launch our application like this:
 {: .continue}
 
-[% inc file="main_app.py" keep="launch" %]
+[%inc main_app.py mark=launch %]
 
 Next,
 we refactor `_run` to handle keystrokes using [%i "dynamic dispatch" %]
 instead of a long chain of `if`/`elif` statement:
 
-[% inc file="dispatch_keys.py" keep="interact" %]
+[%inc dispatch_keys.py mark=interact %]
 
 <div class="pagebreak"></div>
 
@@ -307,7 +309,7 @@ but a ten-second experiment seemed simpler.
 With `_interact` in place,
 we can rewrite `_run` to be just five lines long:
 
-[% inc file="dispatch_keys.py" keep="main" %]
+[%inc dispatch_keys.py mark=main %]
 
 It now relies on a member variable called `_running`
 to keep the loop going.
@@ -349,7 +351,7 @@ We now have classes to represent the application, the window, and the cursor,
 but we are still storing the text to display as a naked list of lines.
 Let's wrap it up in a class:
 
-[% inc file="buffer_class.py" keep="buffer" %]
+[%inc buffer_class.py mark=buffer %]
 
 This [%g buffer_text "text buffer" %] class doesn't do much yet,
 but will later keep track of the viewable region.
@@ -360,7 +362,7 @@ The corresponding change to the application class is:
 
 <div class="pagebreak"></div>
 
-[% inc file="buffer_class.py" keep="app" %]
+[%inc buffer_class.py mark=app %]
 
 <div class="callout" markdown="1">
 
@@ -397,7 +399,7 @@ As a result,
 while we have to change the code that *creates* a cursor,
 we won't have to make any changes to the code that *uses* the cursor:
 
-[% inc file="clip_cursor.py" keep="cursor" %]
+[%inc clip_cursor.py mark=cursor %]
 
 The logic in the movement methods in `ClipCursor` is relatively straightforward.
 If the user wants to go up,
@@ -415,7 +417,7 @@ in the application class
 to construct the appropriate objects
 *without* changing the kind of window we are creating:
 
-[% inc file="clip_cursor.py" keep="other" %]
+[%inc clip_cursor.py mark=other %]
 
 When we run this program,
 we are no longer able to move the cursor outside the window
@@ -427,7 +429,7 @@ the cursor's idea of the row it is on;
 they don't check that the column position is still inside the text.
 The fix is simple:
 
-[% inc file="clip_fixed.py" keep="cursor" %]
+[%inc clip_fixed.py mark=cursor %]
 
 One sign of a good design is that
 there is one (hopefully obvious) place to make a change
@@ -450,7 +452,7 @@ we will add two member variables to the buffer instead
 to keep track of the top-most visible line
 and the height of the window:
 
-[% inc file="viewport.py" keep="buffer" %]
+[%inc viewport.py mark=buffer %]
 
 The most important change in the buffer is that
 `lines` returns the visible portion of the text
@@ -469,18 +471,18 @@ Our buffer also gains two more methods.
 The first transforms the cursor's position from buffer coordinates
 to screen coordinates:
 
-[% inc file="viewport.py" keep="transform" %]
+[%inc viewport.py mark=transform %]
 
 The second method moves `_top` up or down when we reach the edge of the display:
 
-[% inc file="viewport.py" keep="scroll" %]
+[%inc viewport.py mark=scroll %]
 
 As before,
 we derive a new application class to create the right kind of buffer object.
 We also override `_run` to scroll the buffer
 after each interaction with the user:
 
-[% inc file="viewport.py" keep="app" %]
+[%inc viewport.py mark=app %]
 
 Notice that the `ViewportApp` class creates a `ViewportCursor`.
 When we were testing the program,
@@ -492,7 +494,7 @@ The solution is to add another check to `_fix`
 and to ensure that left and right movement constrain the cursor's position
 in the same way as vertical movement:
 
-[% inc file="viewport.py" keep="cursor" %]
+[%inc viewport.py mark=cursor %]
 
 ## Summary {: #viewer-summary}
 

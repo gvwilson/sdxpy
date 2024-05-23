@@ -1,4 +1,5 @@
 ---
+title: "Transferring Files"
 abstract: >
     A typical web application is made up of clients that send messages to servers
     and then wait for them to respond.
@@ -81,7 +82,7 @@ since there's always the chance that two different people will pick 1234 or 6789
 
 A basic socket client looks like this:
 
-[% inc file="client_all.py" %]
+[%inc client_all.py %]
 
 We call it "basic" rather than "simple" because there's a lot going on here.
 From top to bottom:
@@ -111,7 +112,7 @@ From top to bottom:
 
 The corresponding server has just as much low-level detail:
 
-[% inc file="server_raw.py" omit="main" %]
+[%inc server_raw.py omit=main %]
 
 This code claims a socket,
 listens until it receives a single connection request,
@@ -156,7 +157,7 @@ and calls that object's `handle` method.
 Using `TCPServer` and `BaseRequestHandler` as starting points,
 our server is:
 
-[% inc file="server_lib.py" %]
+[%inc server_lib.py %]
 
 These two classes use a different design than what we've seen before.
 Instead of creating one class for programmers to extend,
@@ -200,7 +201,7 @@ and can return the result:
 
 <div class="pagebreak"></div>
 
-[% inc file="server_chunk.py" keep="class" %]
+[%inc server_chunk.py mark=class %]
 
 We can modify the client to send data in chunks as well,
 but we handle this a little differently.
@@ -215,34 +216,34 @@ it adds the number of bytes sent to `total`
 so that it knows where to start sending
 the next time around:
 
-[% inc file="client_chunk.py" keep="send" %]
+[%inc client_chunk.py mark=send %]
 
 While we're here,
 we might as well write a function to create a socket:
 
-[% inc file="client_chunk.py" keep="make" %]
+[%inc client_chunk.py mark=make %]
 
 and another to wait for the acknowledgment from the server:
 {: .continue}
 
-[% inc file="client_chunk.py" keep="receive" %]
+[%inc client_chunk.py mark=receive %]
 
 The main program is then:
 {: .continue}
 
-[% inc file="client_chunk.py" keep="main" %]
+[%inc client_chunk.py mark=main %]
 
 <div class="pagebreak"></div>
 
 When we run the client and server,
 the client prints:
 
-[% inc file="client_chunk.out" %]
+[%inc client_chunk.out %]
 
 and the server prints
 {: .continue}
 
-[% inc file="server_chunk.out" %]
+[%inc server_chunk.out %]
 
 ## Testing {: #ftp-test}
 
@@ -264,12 +265,12 @@ To start,
 let's [%i "refactor" %] our server's `handle` method
 so that it calls `self.debug` instead of printing directly:
 
-[% inc file="logging_handler.py" keep="class" omit="debug" %]
+[%inc logging_handler.py mark=class omit=debug %]
 
 The `debug` method takes any number of arguments and passes them to `print`:
 {: .continue}
 
-[% inc file="logging_handler.py" keep="debug" %]
+[%inc logging_handler.py mark=debug %]
 
 The `handle` method in this class relies on
 the `self.request` object created by the framework
@@ -279,7 +280,7 @@ that inherits the `handle` method (which we want to test)
 but creates a mock `request` object
 and overrides the `debug` method so it doesn't print logging messages:
 
-[% inc file="test_server.py" keep="handler" %]
+[%inc test_server.py mark=handler %]
 
 Notice that we *don't* call the [%i "constructor" %] of `LoggingHandler`
 in the constructor of `MockHandler`.
@@ -300,11 +301,11 @@ The class we use to create our mock `request` object needs three things:
 
 The whole class is:
 
-[% inc file="test_server.py" keep="request" %]
+[%inc test_server.py mark=request %]
 
 With it, we can now write unit tests like this:
 
-[% inc file="test_server.py" keep="test" %]
+[%inc test_server.py mark=test %]
 
 The key to our approach is the notion of [%g test_fidelity "fidelity" %]:
 how close is what we test to what we use in production?

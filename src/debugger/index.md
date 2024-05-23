@@ -1,4 +1,5 @@
 ---
+title: "A Debugger"
 abstract: >
     Debuggers are as much a part of good programmers' working lives as version control
     but are taught far less often.
@@ -35,14 +36,14 @@ but we've made a few changes to allow for future growth.
 The first is to pass an output stream to the constructor,
 which by default will be `sys.stdout`:
 
-[% inc file="vm_base.py" keep="init" %]
+[%inc vm_base.py mark=init %]
 
 We then replace every `print` statement with
 a call to new method called `write`.
 For example,
 the "print register" instruction calls `self.write`:
 
-[% inc file="vm_base.py" keep="prr" %]
+[%inc vm_base.py mark=prr %]
 
 For now,
 `write` just prints things to whatever output stream
@@ -50,14 +51,14 @@ the virtual machine (VM) was given:
 
 <div class="pagebreak"></div>
 
-[% inc file="vm_base.py" keep="write" %]
+[%inc vm_base.py mark=write %]
 
 Our virtual machine now loads a program and runs it to completion,
 so it's either running or finished.
 We want to add a third state for single-step execution,
 so let's start by adding an [%i "enumeration" %] to `architecture.py`:
 
-[% inc file="architecture.py" keep="state" %]
+[%inc architecture.py mark=state %]
 
 We could use strings to keep track of states,
 but as soon as there are more than two there are likely to be many,
@@ -68,7 +69,7 @@ to find out what they can be.
 We are now in a better position to move forward,
 so we derive a new class from our refactored VM:
 
-[% inc file="vm_step.py" keep="derive" %]
+[%inc vm_step.py mark=derive %]
 
 (Again,
 if we were writing this code under normal circumstances,
@@ -87,7 +88,7 @@ As long as the program isn't finished,
 we fetch, decode, and execute the next instruction as usual,
 but we stop after each one if we're single-stepping:
 
-[% inc file="vm_step.py" keep="run" %]
+[%inc vm_step.py mark=run %]
 
 The interaction method needs to handle several cases:
 
@@ -114,13 +115,13 @@ The method that disassembles an instruction to show us what we're about to do
 checks a [%g reverse_lookup "reverse lookup table" %]
 to create a printable representation of an instruction and its operands:
 
-[% inc file="vm_step.py" keep="disassemble" %]
+[%inc vm_step.py mark=disassemble %]
 
 We build the reverse lookup table from the `OPS` table in `architecture.py`
 so that it's always in sync with the table we're using to construct operations
 ([%f debugger-table %]):
 
-[% inc file="vm_step.py" keep="lookup" %]
+[%inc vm_step.py mark=lookup %]
 
 If we wrote the reverse lookup table ourselves,
 sooner or later we'd forget to update it when updating the forward lookup table.
@@ -139,12 +140,12 @@ it does,
 but only by default.
 The constructor for our single-stepping VM is:
 
-[% inc file="vm_step.py" keep="init" %]
+[%inc vm_step.py mark=init %]
 
 and its `read` method is:
 {: .continue}
 
-[% inc file="vm_step.py" keep="read" %]
+[%inc vm_step.py mark=read %]
 
 As with the `write` method introduced in the previous section,
 adding this wrapper method will help us with testing,
@@ -173,7 +174,7 @@ We can define a class which provides this method
 but saves messages in a list for later inspection
 instead of printing them:
 
-[% inc file="test_vm.py" keep="writer" %]
+[%inc test_vm.py mark=writer %]
 
 Similarly,
 our VM gets input from a function that takes a prompt as an argument
@@ -181,18 +182,18 @@ and returns whatever the user typed.
 We can define a class with a `__call__` method which acts like such a function
 but which returns strings from a list instead of waiting for the user:
 
-[% inc file="test_vm.py" keep="reader" %]
+[%inc test_vm.py mark=reader %]
 
 With these in hand,
 we can write a [%i "helper function" %] that compiles a program,
 creates a virtual machine,
 and runs it with a mock reader and a mock writer:
 
-[% inc file="test_vm.py" keep="execute" %]
+[%inc test_vm.py mark=execute %]
 
 We can now write tests, like this one for the "disassemble" command:
 
-[% inc file="test_vm.py" keep="disassemble" %]
+[%inc test_vm.py mark=disassemble %]
 
 Line by line, it:
 {: .continue}
@@ -228,7 +229,7 @@ the close below:
 
 4.  Checks that the `Writer` has only recorded one line of output, not two.
 
-[% inc file="test_vm.py" keep="print" %]
+[%inc test_vm.py mark=print %]
 
 This test actually uncovered a bug in an earlier version of the debugger
 in which it would always execute one more instruction when told to quit.
@@ -266,12 +267,12 @@ in interactive mode
 and `False` if interaction is over.
 The method for showing the contents of memory is:
 
-[% inc file="vm_extend.py" keep="memory" %]
+[%inc vm_extend.py mark=memory %]
 
 while the one for advancing one step is:
 {: .continue}
 
-[% inc file="vm_extend.py" keep="step" %]
+[%inc vm_extend.py mark=step %]
 
 and so on.
 Once that's done,
@@ -281,7 +282,7 @@ Its keys are the commands typed by the user,
 and its values are the operation methods we just created:
 {: .continue}
 
-[% inc file="vm_extend.py" keep="interact" %]
+[%inc vm_extend.py mark=interact %]
 
 Finally,
 we extend the virtual machine's constructor
@@ -291,7 +292,7 @@ we [%i "register (in code)" "register" %] the methods
 under both single-letter keys
 and longer command names:
 
-[% inc file="vm_extend.py" keep="init" %]
+[%inc vm_extend.py mark=init %]
 
 As in previous chapters,
 creating a lookup table like this makes the class easier to extend.
@@ -369,14 +370,14 @@ we created in the previous section:
 
 <div class="pagebreak"></div>
 
-[% inc file="vm_break.py" keep="init" %]
+[%inc vm_break.py mark=init %]
 
 To add a breakpoint,
 we copy the instruction at the given address
 into the dictionary `self.breaks`
 and replace it with a breakpoint instruction:
 
-[% inc file="vm_break.py" keep="add" %]
+[%inc vm_break.py mark=add %]
 
 Notice that if there's already a breakpoint in place,
 we don't do anything.
@@ -386,11 +387,11 @@ to wait for another command from the user.
 
 Clearing a breakpoint is just as easy:
 
-[% inc file="vm_break.py" keep="clear" %]
+[%inc vm_break.py mark=clear %]
 
 We also update `show` to display any breakpoints that have been set:
 
-[% inc file="vm_break.py" keep="show" %]
+[%inc vm_break.py mark=show %]
 
 The implementation first calls the parent's `show` method
 to display what we've seen so far
@@ -403,7 +404,7 @@ automatically show up in the [%i "child class" %].
 The final step is to change `run`
 so that the VM actually stops at a breakpoint:
 
-[% inc file="vm_break.py" keep="run" %]
+[%inc vm_break.py mark=run %]
 
 The logic here is relatively straightforward.
 If the instruction is a breakpoint,

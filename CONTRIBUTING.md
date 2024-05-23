@@ -252,7 +252,7 @@ and makes it easier to create a table of external links.
 
     This is converted to `Figure N.K`.
 
-1.  Use [diagrams.net][diagrams] to create SVG diagrams
+1.  Use [diagrams.net][draw_io] to create SVG diagrams
     using the "sketch" style and a 12-point Verdana font for all text.
     (`make fonts` will report diagrams that use other fonts.)
 

@@ -1,470 +1,633 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="repo" content="https://github.com/gvwilson/sdxpy">
-  <meta name="build_date" content="2024-04-28">
-  <meta name="template" content="slides">
-  <meta name="major" content="perf">
-  
-  <link rel="icon" type="image/x-icon" href="../../favicon.ico">
-  <link rel="stylesheet" href="../../mccole.css">
-  <link rel="stylesheet" href="../../tango.css">
+    <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="../../logo.svg">
+<link rel="stylesheet" href="../../tango.css" type="text/css">
+<link rel="stylesheet" href="../../mccole.css" type="text/css">
+<title>Software Design by Example &middot; Performance Profiling</title>
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [['\\(', '\\)']]
+    }
+  };
+</script>
+<script
+  type="text/javascript"
+  id="MathJax-script"
+  async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+</script>
+
   <script defer data-domain="third-bit.com" src="https://plausible.io/js/plausible.js"></script>
-  <script>
-    MathJax = {
-      tex: {
-        inlineMath: [['\\(', '\\)']]
-      }
-    };
-  </script>
-  <script
-    type="text/javascript"
-    id="MathJax-script"
-    async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
-  </script>
-  <script defer src="../../mccole.js"></script>
-  <title>Software Design by Example: Performance Profiling</title>
-</head>
 
+
+    <script src="../../slides.js" defer></script>
+    <link rel="stylesheet" href="../../slides.css">
+  </head>
   <body>
-    <textarea id="source">
-
-class: slide-title
-
-<p>
-  <a href="https://third-bit.com/sdxpy/">Software Design by Example</a>
-</p>
-<h1>Performance Profiling</h1>
-<div class="bottom">
-  <a href="../">chapter</a>
+<div class="row notex">
+  <div class="col-12 center">
+    <h1>Performance Profiling</h1>
+    <p class="subtitle">Software Design by Example</p>
+  </div>
 </div>
+<hr>
+<h2>The Problem</h2>
+<ul>
+<li>
+<p>We can build dataframes several different ways</p>
+</li>
+<li>
+<p>Which will be most efficient?</p>
+</li>
+<li>
+<p>Find out by doing experiments</p>
+</li>
+</ul>
+<hr />
+<h2>What Can Dataframes Do?</h2>
+<div class="language-py" title="df_base.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">DataFrame</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">ncol</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Report the number of columns.&quot;&quot;&quot;</span>
 
----
+    <span class="k">def</span> <span class="nf">nrow</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Report the number of rows.&quot;&quot;&quot;</span>
 
+    <span class="k">def</span> <span class="nf">cols</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the set of column names.&quot;&quot;&quot;</span>
 
-## The Problem
+    <span class="k">def</span> <span class="nf">eq</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check equality with another dataframe.&quot;&quot;&quot;</span>
 
--   We can build dataframes several different ways
+    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">col</span><span class="p">,</span> <span class="n">row</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get a scalar value.&quot;&quot;&quot;</span>
 
--   Which will be most efficient?
+    <span class="k">def</span> <span class="nf">select</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">names</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Select a named subset of columns.&quot;&quot;&quot;</span>
 
--   Find out by doing experiments
-
----
-
-## What Can Dataframes Do?
-
-```py
-class DataFrame:
-    def ncol(self):
-        """Report the number of columns."""
-
-    def nrow(self):
-        """Report the number of rows."""
-
-    def cols(self):
-        """Return the set of column names."""
-
-    def eq(self, other):
-        """Check equality with another dataframe."""
-
-    def get(self, col, row):
-        """Get a scalar value."""
-
-    def select(self, *names):
-        """Select a named subset of columns."""
-
-    def filter(self, func):
-        """Select a subset of rows by testing values."""
-```
-
-
----
-
-## Row-wise Storage
-
--   A list of dictionaries
-
-<figure>
+    <span class="k">def</span> <span class="nf">filter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Select a subset of rows by testing values.&quot;&quot;&quot;</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Row-wise Storage</h2>
+<ul>
+<li>A list of dictionaries</li>
+</ul>
+<figure id="perf-row-storage">
 <img src="../row_storage.svg" alt="Row-wise storage"/>
+<figcaption>Row-wise storage of a dataframe</figcaption>
 </figure>
 
-
----
-
-## Column-wise Storage
-
--   A dictionary of lists
-
-<figure>
+<hr />
+<h2>Column-wise Storage</h2>
+<ul>
+<li>A dictionary of lists</li>
+</ul>
+<figure id="perf-col-storage">
 <img src="../col_storage.svg" alt="Column-wise storage"/>
+<figcaption>Column-wise storage of a dataframe</figcaption>
 </figure>
 
+<hr />
+<h2>Row-wise: Starting</h2>
+<div class="language-py" title="df_row.py">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">df_base</span> <span class="kn">import</span> <span class="n">DataFrame</span>
+<span class="kn">from</span> <span class="nn">util</span> <span class="kn">import</span> <span class="n">dict_match</span>
 
----
+<span class="k">class</span> <span class="nc">DfRow</span><span class="p">(</span><span class="n">DataFrame</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rows</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">rows</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+        <span class="k">assert</span> <span class="nb">all</span><span class="p">(</span><span class="n">dict_match</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">rows</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">=</span> <span class="n">rows</span>
+</code></pre></div>
+</div>
+<div class="language-py" title="util.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">dict_match</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">prototype</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">set</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">!=</span> <span class="nb">set</span><span class="p">(</span><span class="n">prototype</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">return</span> <span class="nb">all</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="n">k</span><span class="p">])</span> <span class="o">==</span> <span class="nb">type</span><span class="p">(</span><span class="n">prototype</span><span class="p">[</span><span class="n">k</span><span class="p">])</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">d</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Row-wise Operations</h2>
+<div class="language-py" title="df_row.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">ncol</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
 
-## Row-wise: Starting
+    <span class="k">def</span> <span class="nf">nrow</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">)</span>
 
-```py
-from df_base import DataFrame
-from util import dict_match
+    <span class="k">def</span> <span class="nf">cols</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
 
-class DfRow(DataFrame):
-    def __init__(self, rows):
-        assert len(rows) > 0
-        assert all(dict_match(r, rows[0]) for r in rows)
-        self._data = rows
-```
-
-```py
-def dict_match(d, prototype):
-    if set(d.keys()) != set(prototype.keys()):
-        return False
-    return all(type(d[k]) == type(prototype[k]) for k in d)
-```
-
-
----
-
-## Row-wise Operations
-
-```py
-def ncol(self):
-    return len(self._data[0])
-
-def nrow(self):
-    return len(self._data)
-
-def cols(self):
-    return set(self._data[0].keys())
-
-def get(self, col, row):
-    assert col in self._data[0]
-    assert 0 <= row < len(self._data)
-    return self._data[row][col]
-```
-
-
----
-
-## Row-wise Equality
-
-```py
-def eq(self, other):
-    assert isinstance(other, DataFrame)
-    for (i, row) in enumerate(self._data):
-        for key in row:
-            if key not in other.cols():
-                return False
-            if row[key] != other.get(key, i):
-                return False
-    return True
-```
-
-
--   Don't rely on implementation details of the other dataframe
--   We might want to compare this dataframe with one that's stored a different way
-
----
-
-## Row-wise Selection
-
-```py
-def select(self, *names):
-    assert all(n in self._data[0] for n in names)
-    rows = [{key: r[key] for key in names} for r in self._data]
-    return DfRow(rows)
-```
-
-
-<figure>
+    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">col</span><span class="p">,</span> <span class="n">row</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="n">col</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">assert</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">row</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">[</span><span class="n">row</span><span class="p">][</span><span class="n">col</span><span class="p">]</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Row-wise Equality</h2>
+<div class="language-py" title="df_row.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">eq</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">DataFrame</span><span class="p">)</span>
+        <span class="k">for</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">row</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">row</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">other</span><span class="o">.</span><span class="n">cols</span><span class="p">():</span>
+                    <span class="k">return</span> <span class="kc">False</span>
+                <span class="k">if</span> <span class="n">row</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">!=</span> <span class="n">other</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+                    <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="kc">True</span>
+</code></pre></div>
+</div>
+<ul>
+<li>Don&rsquo;t rely on implementation details of the other dataframe</li>
+<li>We might want to compare this dataframe with one that&rsquo;s stored a different way</li>
+</ul>
+<hr />
+<h2>Row-wise Selection</h2>
+<div class="language-py" title="df_row.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">select</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">names</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="nb">all</span><span class="p">(</span><span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">names</span><span class="p">)</span>
+        <span class="n">rows</span> <span class="o">=</span> <span class="p">[{</span><span class="n">key</span><span class="p">:</span> <span class="n">r</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">names</span><span class="p">}</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">DfRow</span><span class="p">(</span><span class="n">rows</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<figure id="perf-row-select">
 <img src="../row_select.svg" alt="Row-wise selection"/>
+<figcaption>Row-wise selection</figcaption>
 </figure>
 
+<hr />
+<h2>How to Filter?</h2>
+<ul>
+<li>
+<p>User provides <code>func(red, green)</code> returning <code>True</code> or <code>False</code></p>
+</li>
+<li>
+<p>Need to match column names with parameters</p>
+</li>
+</ul>
+<div class="language-py" title="test_df_row.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">odd_even</span><span class="p">():</span>
+    <span class="k">return</span> <span class="n">DfRow</span><span class="p">([{</span><span class="s2">&quot;a&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">},</span> <span class="p">{</span><span class="s2">&quot;a&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">}])</span>
+</code></pre></div>
+</div>
+<div class="language-py" title="test_df_row.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">test_filter</span><span class="p">():</span>
+    <span class="k">def</span> <span class="nf">odd</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">a</span> <span class="o">%</span> <span class="mi">2</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
 
----
-
-## How to Filter?
-
--   User provides `func(red, green)` returning `True` or `False`
-
--   Need to match column names with parameters
-
-```py
-def odd_even():
-    return DfRow([{"a": 1, "b": 3}, {"a": 2, "b": 4}])
-```
-
-```py
-def test_filter():
-    def odd(a, b):
-        return (a % 2) == 1
-
-    df = odd_even()
-    assert df.filter(odd).eq(DfRow([{"a": 1, "b": 3}]))
-```
-
-
----
-
-## How to Call?
-
--   Use `**` to <a class="gl-ref" href="../../glossary/#gl:spread" title="To automatically match the values from a list or dictionary supplied by the caller to the parameters of a function." markdown="1">spread</a> the row
-
----
-
-## Row-wise Filter
-
-```py
-def filter(self, func):
-    result = [r for r in self._data if func(**r)]
-    return DfRow(result)
-```
-
-
--   Spread the rows out to match
-
--   Convert the result to a row-wise dataframe
-
-<figure>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">odd_even</span><span class="p">()</span>
+    <span class="k">assert</span> <span class="n">df</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">odd</span><span class="p">)</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="n">DfRow</span><span class="p">([{</span><span class="s2">&quot;a&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">}]))</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>How to Call?</h2>
+<ul>
+<li>Use <code>**</code> to <a class="gl-ref" href="../../glossary/#spread" markdown="1">spread</a> the row</li>
+</ul>
+<hr />
+<h2>Row-wise Filter</h2>
+<div class="language-py" title="df_row.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">filter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">):</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="p">[</span><span class="n">r</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="k">if</span> <span class="n">func</span><span class="p">(</span><span class="o">**</span><span class="n">r</span><span class="p">)]</span>
+        <span class="k">return</span> <span class="n">DfRow</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<ul>
+<li>
+<p>Spread the rows out to match</p>
+</li>
+<li>
+<p>Convert the result to a row-wise dataframe</p>
+</li>
+</ul>
+<figure id="perf-row-filter">
 <img src="../row_filter.svg" alt="Row-wise filtering"/>
+<figcaption>Row-wise filtering</figcaption>
 </figure>
 
+<hr />
+<h2>Column-Wise: Starting</h2>
+<div class="language-py" title="df_col.py">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">df_base</span> <span class="kn">import</span> <span class="n">DataFrame</span>
+<span class="kn">from</span> <span class="nn">util</span> <span class="kn">import</span> <span class="n">all_eq</span>
 
----
+<span class="k">class</span> <span class="nc">DfCol</span><span class="p">(</span><span class="n">DataFrame</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+        <span class="k">assert</span> <span class="n">all_eq</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="n">k</span><span class="p">])</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">all_eq</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">=</span> <span class="n">kwargs</span>
+</code></pre></div>
+</div>
+<div class="language-py" title="util.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">all_eq</span><span class="p">(</span><span class="o">*</span><span class="n">values</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">(</span><span class="ow">not</span> <span class="n">values</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">all</span><span class="p">(</span><span class="n">v</span> <span class="o">==</span> <span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">values</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Column-wise Operations</h2>
+<div class="language-py" title="df_col.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">ncol</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">)</span>
 
-## Column-Wise: Starting
+    <span class="k">def</span> <span class="nf">nrow</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">keys</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">[</span><span class="n">n</span><span class="p">])</span>
 
-```py
-from df_base import DataFrame
-from util import all_eq
+    <span class="k">def</span> <span class="nf">cols</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
 
-class DfCol(DataFrame):
-    def __init__(self, **kwargs):
-        assert len(kwargs) > 0
-        assert all_eq(len(kwargs[k]) for k in kwargs)
-        for k in kwargs:
-            assert all_eq(type(v) for v in kwargs[k])
-        self._data = kwargs
-```
-
-```py
-def all_eq(*values):
-    return (not values) or all(v == values[0] for v in values)
-```
-
-
----
-
-## Column-wise Operations
-
-```py
-def ncol(self):
-    return len(self._data)
-
-def nrow(self):
-    n = list(self._data.keys())[0]
-    return len(self._data[n])
-
-def cols(self):
-    return set(self._data.keys())
-
-def get(self, col, row):
-    assert col in self._data
-    assert 0 <= row < len(self._data[col])
-    return self._data[col][row]
-```
-
-
--   Doesn't allow for empty dataframes
-
----
-
-## Column-wise Selection
-
-```py
-def select(self, *names):
-    assert all(n in self._data for n in names)
-    return DfCol(**{n: self._data[n] for n in names})
-```
-
-
-<figure>
+    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">col</span><span class="p">,</span> <span class="n">row</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="n">col</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span>
+        <span class="k">assert</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">row</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">[</span><span class="n">col</span><span class="p">])</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">[</span><span class="n">col</span><span class="p">][</span><span class="n">row</span><span class="p">]</span>
+</code></pre></div>
+</div>
+<ul>
+<li>Doesn&rsquo;t allow for empty dataframes</li>
+</ul>
+<hr />
+<h2>Column-wise Selection</h2>
+<div class="language-py" title="df_col.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">select</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">names</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="nb">all</span><span class="p">(</span><span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">names</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">DfCol</span><span class="p">(</span><span class="o">**</span><span class="p">{</span><span class="n">n</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">names</span><span class="p">})</span>
+</code></pre></div>
+</div>
+<figure id="perf-col-select">
 <img src="../col_select.svg" alt="Column-wise selection"/>
+<figcaption>Column-wise selection</figcaption>
 </figure>
 
-
----
-
-## Column-wise Filter
-
-```py
-def filter(self, func):
-    result = {n: [] for n in self._data}
-    for i in range(self.nrow()):
-        args = {n: self._data[n][i] for n in self._data}
-        if func(**args):
-            for n in self._data:
-                result[n].append(self._data[n][i])
-    return DfCol(**result)
-```
-
-
-<figure>
+<hr />
+<h2>Column-wise Filter</h2>
+<div class="language-py" title="df_col.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">filter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">):</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="p">{</span><span class="n">n</span><span class="p">:</span> <span class="p">[]</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">}</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nrow</span><span class="p">()):</span>
+            <span class="n">args</span> <span class="o">=</span> <span class="p">{</span><span class="n">n</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">}</span>
+            <span class="k">if</span> <span class="n">func</span><span class="p">(</span><span class="o">**</span><span class="n">args</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">:</span>
+                    <span class="n">result</span><span class="p">[</span><span class="n">n</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="n">i</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">DfCol</span><span class="p">(</span><span class="o">**</span><span class="n">result</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<figure id="perf-col-filter">
 <img src="../col_filter.svg" alt="Column-wise filter"/>
+<figcaption>Column-wise selection</figcaption>
 </figure>
 
+<hr />
+<h2>How to Compare?</h2>
+<ul>
+<li>
+<p>Select is (probably) fast for column-wise but slow for row-wise</p>
+</li>
+<li>
+<p>Filter is (probably) slower for column-wise than for row-wise</p>
+</li>
+<li>
+<p>Overall performance will depend on the ratio of selects to filters</p>
+</li>
+<li>
+<p>So we do experiments</p>
+</li>
+</ul>
+<hr />
+<h2>Experimental Setup</h2>
+<div class="language-py" title="timing.py">
+<div class="highlight"><pre><span></span><code><span class="n">RANGE</span> <span class="o">=</span> <span class="mi">10</span>
 
----
+<span class="k">def</span> <span class="nf">make_col</span><span class="p">(</span><span class="n">nrow</span><span class="p">,</span> <span class="n">ncol</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_col</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">start</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[((</span><span class="n">start</span> <span class="o">+</span> <span class="n">i</span><span class="p">)</span> <span class="o">%</span> <span class="n">RANGE</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">)]</span>
+    <span class="n">fill</span> <span class="o">=</span> <span class="p">{</span><span class="sa">f</span><span class="s2">&quot;label_</span><span class="si">{</span><span class="n">c</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">:</span> <span class="n">_col</span><span class="p">(</span><span class="n">nrow</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ncol</span><span class="p">)}</span>
+    <span class="k">return</span> <span class="n">DfCol</span><span class="p">(</span><span class="o">**</span><span class="n">fill</span><span class="p">)</span>
 
-## How to Compare?
-
--   Select is (probably) fast for column-wise but slow for row-wise
-
--   Filter is (probably) slower for column-wise than for row-wise
-
--   Overall performance will depend on the ratio of selects to filters
-
--   So we do experiments
-
----
-
-## Experimental Setup
-
-```py
-RANGE = 10
-
-def make_col(nrow, ncol):
-    def _col(n, start):
-        return [((start + i) % RANGE) for i in range(n)]
-    fill = {f"label_{c}": _col(nrow, c) for c in range(ncol)}
-    return DfCol(**fill)
-
-def make_row(nrow, ncol):
-    labels = [f"label_{c}" for c in range(ncol)]
-    def _row(r):
-        return {
-            c: ((r + i) % RANGE) for (i, c) in enumerate(labels)
-        }
-    fill = [_row(r) for r in range(nrow)]
-    return DfRow(fill)
-```
-
-
----
-
-## Experimental Setup
-
-```
-column-wise
-{'label_0': [0, 1, 2], 'label_1': [1, 2, 3], 'label_2': [2, 3, 4]}
+<span class="k">def</span> <span class="nf">make_row</span><span class="p">(</span><span class="n">nrow</span><span class="p">,</span> <span class="n">ncol</span><span class="p">):</span>
+    <span class="n">labels</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;label_</span><span class="si">{</span><span class="n">c</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ncol</span><span class="p">)]</span>
+    <span class="k">def</span> <span class="nf">_row</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="n">c</span><span class="p">:</span> <span class="p">((</span><span class="n">r</span> <span class="o">+</span> <span class="n">i</span><span class="p">)</span> <span class="o">%</span> <span class="n">RANGE</span><span class="p">)</span> <span class="k">for</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">labels</span><span class="p">)</span>
+        <span class="p">}</span>
+    <span class="n">fill</span> <span class="o">=</span> <span class="p">[</span><span class="n">_row</span><span class="p">(</span><span class="n">r</span><span class="p">)</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nrow</span><span class="p">)]</span>
+    <span class="k">return</span> <span class="n">DfRow</span><span class="p">(</span><span class="n">fill</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Experimental Setup</h2>
+<div class="language-out" title="make.out">
+<div class="highlight"><pre><span></span><code>column-wise
+{&#39;label_0&#39;: [0, 1, 2], &#39;label_1&#39;: [1, 2, 3], &#39;label_2&#39;: [2, 3, 4]}
 
 row-wise
-[{'label_0': 0, 'label_1': 1, 'label_2': 2},
- {'label_0': 1, 'label_1': 2, 'label_2': 3},
- {'label_0': 2, 'label_1': 3, 'label_2': 4}]
-```
+[{&#39;label_0&#39;: 0, &#39;label_1&#39;: 1, &#39;label_2&#39;: 2},
+ {&#39;label_0&#39;: 1, &#39;label_1&#39;: 2, &#39;label_2&#39;: 3},
+ {&#39;label_0&#39;: 2, &#39;label_1&#39;: 3, &#39;label_2&#39;: 4}]
+</code></pre></div>
+</div>
+<div class="language-py" title="timing.py">
+<div class="highlight"><pre><span></span><code><span class="n">FILTER</span> <span class="o">=</span> <span class="mi">2</span>
 
-
-```py
-FILTER = 2
-
-def time_filter(df):
-    def f(label_0, **args):
-        return label_0 % FILTER == 1
-    start = time.time()
-    df.filter(f)
-    return time.time() - start
-```
-
-
--   Should vary the filtering criteria, the proportion of rows kept, etc.
-
----
-
-## So Which Is Better?
-
-| nrow | ncol | filter_col | select_col | filter_row | select_row |
-| ---: | ---: | ---------: | ---------: | ---------: | ---------: |
-| 10 | 10 | 7.8e-05 | 8.8e-06 | 3.7e-05 | 2.1e-05 |
-| 50 | 50 | 6.0e-4 | 1.9e-05 | 3.4e-4 | 2.4e-4 |
-| 100 | 100 | 2.2e-3 | 3.5e-05 | 1.3e-3 | 8.4e-4 |
-| 500 | 500 | 0.05 | 1.5e-4 | 0.03 | 0.02 |
-| 1000 | 1000 | 0.21 | 3.0e-4 | 0.12 | 0.08 |
-| 5000 | 5000 | 6.6 | 1.5e-3 | 3.5 | 2.1 |
-| 10000 | 10000 | 25.4 | 3.0e-3 | 14.0 | 8.8 |
-
----
-
-## So Which Is Better?
-
-<figure>
+<span class="k">def</span> <span class="nf">time_filter</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">f</span><span class="p">(</span><span class="n">label_0</span><span class="p">,</span> <span class="o">**</span><span class="n">args</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">label_0</span> <span class="o">%</span> <span class="n">FILTER</span> <span class="o">==</span> <span class="mi">1</span>
+    <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="n">df</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start</span>
+</code></pre></div>
+</div>
+<ul>
+<li>Should vary the filtering criteria, the proportion of rows kept, etc.</li>
+</ul>
+<hr />
+<h2>So Which Is Better?</h2>
+<table>
+<thead>
+<tr>
+<th style="text-align: right;">nrow</th>
+<th style="text-align: right;">ncol</th>
+<th style="text-align: right;">filter_col</th>
+<th style="text-align: right;">select_col</th>
+<th style="text-align: right;">filter_row</th>
+<th style="text-align: right;">select_row</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">7.8e-05</td>
+<td style="text-align: right;">8.8e-06</td>
+<td style="text-align: right;">3.7e-05</td>
+<td style="text-align: right;">2.1e-05</td>
+</tr>
+<tr>
+<td style="text-align: right;">50</td>
+<td style="text-align: right;">50</td>
+<td style="text-align: right;">6.0e-4</td>
+<td style="text-align: right;">1.9e-05</td>
+<td style="text-align: right;">3.4e-4</td>
+<td style="text-align: right;">2.4e-4</td>
+</tr>
+<tr>
+<td style="text-align: right;">100</td>
+<td style="text-align: right;">100</td>
+<td style="text-align: right;">2.2e-3</td>
+<td style="text-align: right;">3.5e-05</td>
+<td style="text-align: right;">1.3e-3</td>
+<td style="text-align: right;">8.4e-4</td>
+</tr>
+<tr>
+<td style="text-align: right;">500</td>
+<td style="text-align: right;">500</td>
+<td style="text-align: right;">0.05</td>
+<td style="text-align: right;">1.5e-4</td>
+<td style="text-align: right;">0.03</td>
+<td style="text-align: right;">0.02</td>
+</tr>
+<tr>
+<td style="text-align: right;">1000</td>
+<td style="text-align: right;">1000</td>
+<td style="text-align: right;">0.21</td>
+<td style="text-align: right;">3.0e-4</td>
+<td style="text-align: right;">0.12</td>
+<td style="text-align: right;">0.08</td>
+</tr>
+<tr>
+<td style="text-align: right;">5000</td>
+<td style="text-align: right;">5000</td>
+<td style="text-align: right;">6.6</td>
+<td style="text-align: right;">1.5e-3</td>
+<td style="text-align: right;">3.5</td>
+<td style="text-align: right;">2.1</td>
+</tr>
+<tr>
+<td style="text-align: right;">10000</td>
+<td style="text-align: right;">10000</td>
+<td style="text-align: right;">25.4</td>
+<td style="text-align: right;">3.0e-3</td>
+<td style="text-align: right;">14.0</td>
+<td style="text-align: right;">8.8</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>So Which Is Better?</h2>
+<figure id="perf-analysis">
 <img src="../analysis.svg" alt="Comparing performance"/>
+<figcaption>Comparing performance empirically</figcaption>
 </figure>
 
-
----
-
-## Use Tools
-
--   A <a class="gl-ref" href="../../glossary/#gl:profiler" title="A tool that measures one or more aspects of a program&#x27;s performance." markdown="1">profiler</a> measures where a program spends its time
-
-```sh
-python -m cProfile --sort=tottime \
-  timing.py --silent 10x10 50x50 100x100 500x500 1000x1000
-```
-
-```
-         3007281 function calls (3003108 primitive calls) in 2.120 seconds
+<hr />
+<h2>Use Tools</h2>
+<ul>
+<li>A <a class="gl-ref" href="../../glossary/#profiler" markdown="1">profiler</a> measures where a program spends its time</li>
+</ul>
+<div class="language-sh" title="profile.sh">
+<div class="highlight"><pre><span></span><code>python<span class="w"> </span>-m<span class="w"> </span>cProfile<span class="w"> </span>--sort<span class="o">=</span>tottime<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>timing.py<span class="w"> </span>--silent<span class="w"> </span>10x10<span class="w"> </span>50x50<span class="w"> </span>100x100<span class="w"> </span>500x500<span class="w"> </span>1000x1000
+</code></pre></div>
+</div>
+<div class="language-out" title="profile.out">
+<div class="highlight"><pre><span></span><code>         3007281 function calls (3003108 primitive calls) in 2.120 seconds
 
    Ordered by: internal time
 
    ncalls  tottime  percall  cumtime  percall filename:lineno(function)
-  2319840    0.671    0.000    0.671    0.000 util.py:10(<genexpr>)
+  2319840    0.671    0.000    0.671    0.000 util.py:10(&lt;genexpr&gt;)
         5    0.271    0.054    0.521    0.104 df_col.py:50(filter)
-     1660    0.261    0.000    0.261    0.000 timing.py:20(<dictcomp>)
+     1660    0.261    0.000    0.261    0.000 timing.py:20(&lt;dictcomp&gt;)
 8066/3916    0.213    0.000    1.056    0.000 {built-in method builtins.all}
-     1660    0.191    0.000    0.191    0.000 df_col.py:53(<dictcomp>)
-…
-```
-
-
---
-
--   Uh, what is line 7 of `util.py` doing?
-
----
-
-## The Offending Lines
-
--   A quarter of our total runtime is calling `dict_match` to check that
+     1660    0.191    0.000    0.191    0.000 df_col.py:53(&lt;dictcomp&gt;)
+     4150    0.165    0.000    1.048    0.000 util.py:7(dict_match)
+     1660    0.144    0.000    0.144    0.000 timing.py:13(&lt;listcomp&gt;)
+        5    0.061    0.012    0.062    0.012 df_row.py:49(&lt;listcomp&gt;)
+   631305    0.054    0.000    0.054    0.000 {method &#39;append&#39; of &#39;list&#39; objects}
+     1660    0.049    0.000    0.049    0.000 df_row.py:43(&lt;dictcomp&gt;)
+        1    0.008    0.008    2.120    2.120 timing.py:1(&lt;module&gt;)
+     4165    0.004    0.000    1.052    0.000 df_row.py:8(&lt;genexpr&gt;)
+       15    0.003    0.000    0.008    0.001 df_col.py:6(__init__)
+        5    0.002    0.000    0.148    0.030 timing.py:14(&lt;dictcomp&gt;)
+     1660    0.002    0.000    0.263    0.000 timing.py:19(_row)
+     1660    0.002    0.000    0.146    0.000 timing.py:12(_col)
+     3891    0.002    0.000    0.004    0.000 util.py:2(all_eq)
+     3320    0.002    0.000    0.002    0.000 timing.py:31(f)
+       10    0.001    0.000    0.244    0.024 timing.py:41(time_select)
+       10    0.001    0.000    0.872    0.087 timing.py:30(time_filter)
+        1    0.001    0.001    2.109    2.109 timing.py:50(sweep)
+     7782    0.001    0.000    0.001    0.000 util.py:3(&lt;genexpr&gt;)
+        5    0.001    0.000    0.264    0.053 timing.py:23(&lt;listcomp&gt;)
+     8305    0.001    0.000    0.001    0.000 {method &#39;keys&#39; of &#39;dict&#39; objects}
+        5    0.001    0.000    0.050    0.010 df_row.py:43(&lt;listcomp&gt;)
+        1    0.000    0.000    0.000    0.000 {built-in method _imp.create_dynamic}
+     3876    0.000    0.000    0.000    0.000 df_col.py:10(&lt;genexpr&gt;)
+       10    0.000    0.000    0.000    0.000 timing.py:42(&lt;listcomp&gt;)
+        6    0.000    0.000    0.000    0.000 {built-in method posix.getcwd}
+        5    0.000    0.000    0.000    0.000 timing.py:18(&lt;listcomp&gt;)
+        5    0.000    0.000    0.152    0.030 timing.py:11(make_col)
+       10    0.000    0.000    0.000    0.000 timing.py:43(&lt;listcomp&gt;)
+        5    0.000    0.000    0.000    0.000 df_col.py:51(&lt;dictcomp&gt;)
+       22    0.000    0.000    0.000    0.000 {built-in method posix.stat}
+        5    0.000    0.000    0.000    0.000 {built-in method io.open_code}
+        5    0.000    0.000    0.002    0.000 df_col.py:44(select)
+        5    0.000    0.000    0.000    0.000 {built-in method marshal.loads}
+      561    0.000    0.000    0.000    0.000 df_col.py:45(&lt;genexpr&gt;)
+      561    0.000    0.000    0.000    0.000 df_row.py:42(&lt;genexpr&gt;)
+       10    0.000    0.000    0.000    0.000 {built-in method builtins.__build_class__}
+        5    0.000    0.000    0.000    0.000 df_col.py:46(&lt;dictcomp&gt;)
+       11    0.000    0.000    0.000    0.000 &lt;frozen importlib._bootstrap_external&gt;:1604(find_spec)
+       40    0.000    0.000    0.000    0.000 {built-in method time.time}
+        5    0.000    0.000    0.000    0.000 {method &#39;__exit__&#39; of &#39;_io._IOBase&#39; objects}
+        5    0.000    0.000    0.350    0.070 df_row.py:48(filter)
+        6    0.000    0.000    0.001    0.000 &lt;frozen importlib._bootstrap&gt;:1054(_find_spec)
+        5    0.000    0.000    0.001    0.000 &lt;frozen importlib._bootstrap_external&gt;:1007(get_code)
+      6/3    0.000    0.000    0.003    0.001 &lt;frozen importlib._bootstrap&gt;:1165(_find_and_load)
+       15    0.000    0.000    1.053    0.070 df_row.py:6(__init__)
+        5    0.000    0.000    0.000    0.000 {method &#39;read&#39; of &#39;_io.BufferedReader&#39; objects}
+       56    0.000    0.000    0.000    0.000 &lt;frozen importlib._bootstrap_external&gt;:128(&lt;listcomp&gt;)
+       56    0.000    0.000    0.000    0.000 &lt;frozen importlib._bootstrap_external&gt;:126(_path_join)
+       42    0.000    0.000    0.000    0.000 {built-in method builtins.getattr}
+        5    0.000    0.000    0.240    0.048 df_row.py:41(select)
+       10    0.000    0.000    0.000    0.000 &lt;frozen importlib._bootstrap_external&gt;:437(cache_from_source)
+        6    0.000    0.000    0.001    0.000 &lt;frozen importlib._bootstrap_external&gt;:1464(_get_spec)
+        5    0.000    0.000    0.839    0.168 timing.py:17(make_row)
+        1    0.000    0.000    0.000    0.000 {built-in method _imp.exec_dynamic}
+       66    0.000    0.000    0.000    0.000 {built-in method builtins.len}
+        6    0.000    0.000    0.000    0.000 &lt;frozen importlib._bootstrap&gt;:493(_init_module_attrs)
+      6/3    0.000    0.000    0.002    0.001 &lt;frozen importlib._bootstrap&gt;:666(_load_unlocked)
+        6    0.000    0.000    0.000    0.000 &lt;frozen importlib._bootstrap&gt;:179(_get_module_lock)
+        1    0.000    0.000    0.001    0.001 csv.py:1(&lt;module&gt;)
+        5    0.000    0.000    0.000    0.000 &lt;frozen importlib._bootstrap_external&gt;:1127(get_data)
+      6/3    0.000    0.000    0.003    0.001 &lt;frozen importlib._bootstrap&gt;:1120(_find_and_load_unlocked)
+        5    0.000    0.000    0.000    0.000 df_col.py:18(nrow)
+        6    0.000    0.000    0.000    0.000 &lt;frozen importlib._bootstrap_external&gt;:778(spec_from_file_location)
+      6/1    0.000    0.000    2.120    2.120 {built-in method builtins.exec}
+        3    0.000    0.000    0.000    0.000 {built-in method _csv.register_dialect}
+      5/3    0.000    0.000    0.002    0.001 &lt;frozen importlib._bootstrap_external&gt;:934(exec_module)
+        6    0.000    0.000    0.000    0.000 &lt;frozen importlib._bootstrap_external&gt;:1599(_get_spec)
+       64    0.000    0.000    0.000    0.000 &lt;frozen importlib._bootstrap&gt;:244(_verbose_message)
+       10    0.000    0.000    0.000    0.000 &lt;frozen importlib._bootstrap_external&gt;:132(_path_split)
+        6    0.000    0.000    0.001    0.000 &lt;frozen importlib._bootstrap&gt;:566(module_from_spec)
+       66    0.000    0.000    0.000    0.000 {method &#39;join&#39; of &#39;str&#39; objects}
+        6    0.000    0.000    0.000    0.000 &lt;frozen importlib._bootstrap&gt;:100(acquire)
+        6    0.000    0.000    0.000    0.000 __init__.py:89(find_spec)
+       13    0.000    0.000    0.000    0.000 &lt;frozen importlib._bootstrap_external&gt;:1421(_path_importer_cache)
+        6    0.000    0.000    0.000    0.000 &lt;frozen importlib._bootstrap&gt;:125(release)
+        6    0.000    0.000    0.000    0.000 &lt;frozen importlib._bootstrap_external&gt;:567(_get_cached)
+        5    0.000    0.000    0.000    0.000 &lt;frozen importlib._bootstrap_external&gt;:727(_compile_bytecode)
+        5    0.000    0.000    0.000    0.000 &lt;frozen importlib._bootstrap_external&gt;:642(_classify_pyc)
+      122    0.000    0.000    0.000    0.000 {method &#39;rstrip&#39; of &#39;str&#39; objects}
+       10    0.000    0.000    0.000    0.000 {built-in method builtins.max}
+        6    0.000    0.000    0.000    0.000 &lt;frozen importlib._bootstrap&gt;:169(__enter__)
+       15    0.000    0.000    0.000    0.000 &lt;frozen importlib._bootstrap_external&gt;:84(_unpack_uint32)
+     13/6    0.000    0.000    0.001    0.000 &lt;frozen importlib._bootstrap&gt;:233(_call_with_frames_removed)
+       24    0.000    0.000    0.000    0.000 &lt;frozen importlib._bootstrap&gt;:1030(__exit__)
+       22    0.000    0.000    0.000    0.000 &lt;frozen importlib._bootstrap_external&gt;:140(_path_stat)
+       11    0.000    0.000    0.000    0.000 &lt;frozen importlib._bootstrap&gt;:392(cached)
+        6    0.000    0.000    0.001    0.000 &lt;frozen importlib._bootstrap_external&gt;:1496(find_spec)
+        6    0.000    0.000    0.000    0.000 &lt;frozen importlib._bootstrap&gt;:198(cb)
+        1    0.000    0.000    0.001    0.001 df_col.py:1(&lt;module&gt;)
+       20    0.000    0.000    0.000    0.000 &lt;frozen importlib._bootstrap_external&gt;:134(&lt;genexpr&gt;)
+       11    0.000    0.000    0.000    0.000 &lt;frozen importlib._bootstrap_external&gt;:67(_relax_case)
+        6    0.000    0.000    0.000    0.000 {method &#39;format&#39; of &#39;str&#39; objects}
+       24    0.000    0.000    0.000    0.000 &lt;frozen importlib._bootstrap&gt;:1026(__enter__)
+        6    0.000    0.000    0.000    0.000 &lt;frozen importlib._bootstrap&gt;:71(__init__)
+        5    0.000    0.000    0.000    0.000 &lt;frozen importlib._bootstrap_external&gt;:675(_validate_timestamp_pyc)
+       33    0.000    0.000    0.000    0.000 {method &#39;rpartition&#39; of &#39;str&#39; objects}
+       15    0.000    0.000    0.000    0.000 df_col.py:8(&lt;genexpr&gt;)
+       23    0.000    0.000    0.000    0.000 {built-in method builtins.hasattr}
+        5    0.000    0.000    0.000    0.000 &lt;frozen importlib._bootstrap_external&gt;:599(_check_name_wrapper)
+        6    0.000    0.000    0.000    0.000 &lt;frozen importlib._bootstrap&gt;:173(__exit__)
+       36    0.000    0.000    0.000    0.000 {built-in method _imp.release_lock}
+       36    0.000    0.000    0.000    0.000 {built-in method _imp.acquire_lock}
+        6    0.000    0.000    0.000    0.000 &lt;frozen importlib._bootstrap&gt;:920(find_spec)
+        5    0.000    0.000    0.000    0.000 &lt;frozen importlib._bootstrap_external&gt;:1146(path_stats)
+        6    0.000    0.000    0.000    0.000 &lt;frozen importlib._bootstrap_external&gt;:150(_path_is_mode_type)
+        6    0.000    0.000    0.000    0.000 &lt;frozen importlib._bootstrap_external&gt;:159(_path_isfile)
+        6    0.000    0.000    0.000    0.000 {built-in method builtins.locals}
+        5    0.000    0.000    0.000    0.000 &lt;frozen importlib._bootstrap&gt;:48(_new_module)
+       23    0.000    0.000    0.000    0.000 {built-in method builtins.isinstance}
+       12    0.000    0.000    0.000    0.000 {built-in method _thread.allocate_lock}
+        1    0.000    0.000    0.000    0.000 csv.py:80(DictReader)
+        6    0.000    0.000    0.000    0.000 {built-in method _imp.is_builtin}
+        6    0.000    0.000    0.000    0.000 &lt;frozen importlib._bootstrap&gt;:405(parent)
+        6    0.000    0.000    0.000    0.000 &lt;frozen importlib._bootstrap&gt;:357(__init__)
+        6    0.000    0.000    0.000    0.000 {built-in method _imp.find_frozen}
+        1    0.000    0.000    0.000    0.000 df_row.py:1(&lt;module&gt;)
+        1    0.000    0.000    0.000    0.000 csv.py:165(Sniffer)
+        1    0.000    0.000    0.000    0.000 &lt;frozen importlib._bootstrap_external&gt;:1231(create_module)
+       10    0.000    0.000    0.000    0.000 {method &#39;rfind&#39; of &#39;str&#39; objects}
+        1    0.000    0.000    0.000    0.000 timing.py:68(&lt;listcomp&gt;)
+        5    0.000    0.000    0.000    0.000 df_row.py:13(ncol)
+        6    0.000    0.000    0.000    0.000 &lt;frozen importlib._bootstrap_external&gt;:180(_path_isabs)
+        7    0.000    0.000    0.000    0.000 {method &#39;endswith&#39; of &#39;str&#39; objects}
+        1    0.000    0.000    0.000    0.000 timing.py:67(&lt;listcomp&gt;)
+        6    0.000    0.000    0.000    0.000 &lt;frozen importlib._bootstrap&gt;:748(find_spec)
+        6    0.000    0.000    0.000    0.000 {method &#39;startswith&#39; of &#39;str&#39; objects}
+       15    0.000    0.000    0.000    0.000 {built-in method from_bytes}
+        1    0.000    0.000    0.000    0.000 df_row.py:5(DfRow)
+        5    0.000    0.000    0.000    0.000 df_col.py:15(ncol)
+       12    0.000    0.000    0.000    0.000 {method &#39;__exit__&#39; of &#39;_thread.lock&#39; objects}
+        5    0.000    0.000    0.000    0.000 {built-in method _imp._fix_co_filename}
+        1    0.000    0.000    0.000    0.000 &lt;frozen io&gt;:60(__getattr__)
+        1    0.000    0.000    0.000    0.000 timing.py:66(setup)
+       16    0.000    0.000    0.000    0.000 {built-in method posix.fspath}
+        6    0.000    0.000    0.000    0.000 &lt;frozen importlib._bootstrap&gt;:165(__init__)
+       18    0.000    0.000    0.000    0.000 {method &#39;get&#39; of &#39;dict&#39; objects}
+        1    0.000    0.000    0.000    0.000 &lt;frozen importlib._bootstrap_external&gt;:1239(exec_module)
+       12    0.000    0.000    0.000    0.000 {built-in method _thread.get_ident}
+        1    0.000    0.000    0.000    0.000 df_col.py:5(DfCol)
+        5    0.000    0.000    0.000    0.000 {method &#39;split&#39; of &#39;str&#39; objects}
+        1    0.000    0.000    0.000    0.000 csv.py:23(Dialect)
+        1    0.000    0.000    0.000    0.000 df_base.py:1(DataFrame)
+        6    0.000    0.000    0.000    0.000 {method &#39;pop&#39; of &#39;dict&#39; objects}
+        5    0.000    0.000    0.000    0.000 &lt;frozen importlib._bootstrap_external&gt;:1097(__init__)
+        6    0.000    0.000    0.000    0.000 &lt;frozen importlib._bootstrap&gt;:413(has_location)
+        1    0.000    0.000    0.000    0.000 csv.py:130(DictWriter)
+        1    0.000    0.000    0.000    0.000 df_base.py:1(&lt;module&gt;)
+        1    0.000    0.000    0.000    0.000 csv.py:54(excel)
+        5    0.000    0.000    0.000    0.000 &lt;frozen importlib._bootstrap_external&gt;:1122(get_filename)
+        6    0.000    0.000    0.000    0.000 __init__.py:96(&lt;lambda&gt;)
+        5    0.000    0.000    0.000    0.000 &lt;frozen importlib._bootstrap_external&gt;:931(create_module)
+        1    0.000    0.000    0.000    0.000 &lt;frozen importlib._bootstrap_external&gt;:1220(__init__)
+        1    0.000    0.000    0.000    0.000 {method &#39;disable&#39; of &#39;_lsprof.Profiler&#39; objects}
+        1    0.000    0.000    0.000    0.000 {method &#39;setter&#39; of &#39;property&#39; objects}
+        1    0.000    0.000    0.000    0.000 csv.py:69(unix_dialect)
+        1    0.000    0.000    0.000    0.000 util.py:1(&lt;module&gt;)
+        1    0.000    0.000    0.000    0.000 csv.py:64(excel_tab)
+</code></pre></div>
+</div>
+<ul>
+<li>Uh, what is line 7 of <code>util.py</code> doing?</li>
+</ul>
+<hr />
+<h2>The Offending Lines</h2>
+<ul>
+<li>
+<p>A quarter of our total runtime is calling <code>dict_match</code> to check that
     all the rows in a row-wise dataframe
-    have the same types for the same keys
+    have the same types for the same keys</p>
+</li>
+<li>
+<p>Surely we can do better…</p>
+</li>
+</ul>
+<hr />
+<!--# class="summary" -->
 
--   Surely we can do better…
-
----
-
-class: summary
-
-## Summary
-
-<figure>
+<h2>Summary</h2>
+<figure id="perf-concept-map">
 <img src="../concept_map.svg" alt="Concept map of performance profiling"/>
+<figcaption>Concept map</figcaption>
 </figure>
-
-
-
-
-
-    </textarea>
-    <script src="../../remark-latest.min.js"></script>
-    <script>
-      var slideshow = remark.create({
-        highlightLines: true
-      })
-    </script>
   </body>
 </html>

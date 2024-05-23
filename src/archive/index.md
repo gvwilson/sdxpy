@@ -1,4 +1,5 @@
 ---
+title: "A File Archiver"
 abstract: >
     Most programmers would agree that once they have a text editor
     and a way to run their programs,
@@ -75,7 +76,7 @@ As described in [%x glob %],
 Python's [`glob`][py_glob] module can do this for us.
 Let's use this to create a table of files and hashes:
 
-[% inc file="hash_all.py" keep="func" %]
+[%inc hash_all.py mark=func %]
 
 Notice that we're truncating the [%i "hash code" %] of each file
 to just 16 [%i "hexadecimal" %] digits.
@@ -85,12 +86,13 @@ but it makes our program's output easier to show on screen.
 For example,
 if our test directory looks like this:
 
-[% inc file="sample_dir.out" %]
+[%inc sample_dir.out %]
 
 then our program's output is:
 {: .continue}
 
-[% inc pat="hash_all.*" fill="sh out" %]
+[%inc hash_all.sh %]
+[%inc hash_all.out %]
 
 ## Testing {: #archive-test}
 
@@ -128,22 +130,22 @@ that we can use to create files.
 We tell [pytest][pytest] we want to use this fixture
 by passing it as an argument to our testing function:
 
-[% inc file="test_mock_fs.py" %]
+[%inc test_mock_fs.py %]
 
 We can use `fs` to create more complicated fixtures of our own
 with multiple directories and files:
 
-[% inc file="test_mock_tree.py" %]
+[%inc test_mock_tree.py %]
 
 and then test that `hash_all` finds all the files:
 {: .continue}
 
-[% inc file="test_hash_all.py" omit="change" %]
+[%inc test_hash_all.py omit=change %]
 
 and that hashes change when files change:
 {: .continue}
 
-[% inc file="test_hash_all.py" keep="change" %]
+[%inc test_hash_all.py mark=change %]
 
 ## Tracking Backups {: #archive-track}
 
@@ -190,7 +192,7 @@ but complete solutions are out of the scope of this book.
 This function creates a backup—or rather,
 it will once we fill in all the functions it depends on:
 
-[% inc file="backup.py" keep="backup" %]
+[%inc backup.py mark=backup %]
 
 Writing a high-level function first
 and then filling in the things it needs
@@ -211,12 +213,12 @@ create it if it does not,
 and then save the manifest as CSV:
 {: .continue}
 
-[% inc file="backup.py" keep="write" %]
+[%inc backup.py mark=write %]
 
 We then copy those files that *haven't* already been saved:
 {: .continue}
 
-[% inc file="backup.py" keep="copy" %]
+[%inc backup.py mark=copy %]
 
 We have introduced several more race conditions here:
 for example,
@@ -236,7 +238,7 @@ called `current_time`
 that does nothing but call `time.time` from
 [%i "Python standard library" "Python's standard library" %]:
 
-[% inc file="backup.py" keep="time" %]
+[%inc backup.py mark=time %]
 
 We could call `time.time` directly,
 but wrapping it up like this makes it easier to replace with a mock for testing.
@@ -246,19 +248,20 @@ but wrapping it up like this makes it easier to replace with a mock for testing.
 
 Let's do one test with real files:
 
-[% inc pat="test_backup_manual.*" fill="sh out" %]
+[%inc test_backup_manual.sh %]
+[%inc test_backup_manual.out %]
 
 The rest of our tests use a fake filesystem
 and a mock replacement for the `current_time` function
 (so that we know what the manifest file will be called).
 The setup is:
 
-[% inc file="test_backup.py" keep="setup" %]
+[%inc test_backup.py mark=setup %]
 
 and an example of a single test is:
 {: .continue}
 
-[% inc file="test_backup.py" keep="test" %]
+[%inc test_backup.py mark=test %]
 
 ## Refactoring {: #archive-refactor}
 
@@ -266,7 +269,7 @@ Now that we have a better idea of what we're doing,
 we can [%i "refactor" %] to create a [%g base_class "base class" %]
 that prescribes the general steps in creating a backup:
 
-[% inc file="backup_oop.py" keep="base" %]
+[%inc backup_oop.py mark=base %]
 
 We can then derive a [%i "child class" %]
 to archive things locally
@@ -275,7 +278,7 @@ we have just written.
 Once we've done this,
 we can create the specific archiver we want with a single line:
 
-[% inc file="backup_oop.py" keep="create" %]
+[%inc backup_oop.py mark=create %]
 
 Doing this makes life easier when we want to write archivers
 that behave the same way but work differently.
@@ -294,7 +297,7 @@ and then creates an archive of those results.
 It doesn't know whether the archive is compressing files
 or whether they're being saved locally or remotely.
 
-[% inc file="backup_oop.py" keep="use" %]
+[%inc backup_oop.py mark=use %]
 
 This example highlights one of the strengths of [%i "object-oriented programming" %]:
 it allows old code to use new code without any changes.

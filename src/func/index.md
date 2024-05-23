@@ -1,4 +1,5 @@
 ---
+title: "Functions and Closures"
 abstract: >
     This chapter extends the little interpreter of the previous one
     to allow users to define functions of their own.
@@ -44,7 +45,7 @@ and immediately returns it.
 In Python,
 this is:
 
-[% inc file="example_def.py" keep="python" %]
+[%inc example_def.py mark=python %]
 
 It has a name,
 a (possibly empty) list of parameters,
@@ -56,7 +57,7 @@ Our little language does things differently.
 Since a function is just another kind of object,
 we can define it on its own without naming it:
 
-[% inc file="example_def.py" keep="def" %]
+[%inc example_def.py mark=def %]
 
 <div class="pagebreak"></div>
 
@@ -65,7 +66,7 @@ we simply assign it to a name
 as we would assign any other value:
 {: .continue}
 
-[% inc file="example_def.py" keep="save" %]
+[%inc example_def.py mark=save %]
 
 <div class="callout" markdown="1">
 
@@ -76,7 +77,7 @@ JavaScript makes heavy use of anonymous functions;
 Python supports a very limited version of them
 using [%g lambda_expression "lambda expressions" %]:
 
-[% inc file="example_def.py" keep="lambda" %]
+[%inc example_def.py mark=lambda %]
 
 </div>
 
@@ -87,7 +88,7 @@ we would call this function as `same(3)`.
 Our little language requires us to specify an operator explicitly,
 so we write the call as:
 
-[% inc file="example_def.py" keep="call" %]
+[%inc example_def.py mark=call %]
 
 To make `"call"` work the way most programmers expect,
 we need to implement [%i "scope" %]
@@ -155,16 +156,17 @@ of how to build lexical scoping.
 
 The completed implementation of function definition is:
 
-[% inc file="func.py" keep="func" %]
+[%inc func.py mark=func %]
 
 and the completed implementation of function call is:
 {: .continue}
 
-[% inc file="func.py" keep="call" %]
+[%inc func.py mark=call %]
 
 and our test program and its output are:
 
-[% inc pat="func.*" fill="tll out" %]
+[%inc func.tll %]
+[%inc func.out %]
 
 <div class="callout" markdown="1">
 
@@ -208,14 +210,16 @@ the variables defined in the enclosing function,
 just as the functions we've seen in earlier examples
 have access to things defined at the [%i "global" %] level of the program:
 
-[% inc pat="inner.*" fill="py out" %]
+[%inc inner.py %]
+[%inc inner.out %]
 
 But since functions are just another kind of data,
 the outer function can return the inner function it defined as its result:
 
 <div class="pagebreak"></div>
 
-[% inc pat="closure.*" fill="py out" %]
+[%inc closure.py %]
+[%inc closure.out %]
 
 The inner function still has access to the value of `thing`,
 but nothing else in the program does.
@@ -251,7 +255,8 @@ for example,
 the function `make_object` creates a dictionary
 containing two functions:
 
-[% inc pat="oop.*" fill="py out" %]
+[%inc oop.py %]
+[%inc oop.out %]
 
 When this code runs,
 Python creates a closure that is shared by the two functions ([%f func-objects %]).
@@ -360,12 +365,12 @@ What does it do if the update value has a different type than the current value?
 
 Explain why this program doesn't work:
 
-[% inc file="counter_fail.py" %]
+[%inc counter_fail.py %]
 
 Explain why this one does:
 {: .continue}
 
-[% inc file="counter_succeed.py" %]
+[%inc counter_succeed.py %]
 
 ### How Private Are Closures? {: .exercise}
 
@@ -373,4 +378,5 @@ If the data in a closure is private,
 explain why lines 1 and 2 are the same in the output of this program
 but lines 3 and 4 are different.
 
-[% inc pat="closure_list.*" fill="py out" %]
+[% inc closure_list.py %]
+[% inc closure_list.out %]

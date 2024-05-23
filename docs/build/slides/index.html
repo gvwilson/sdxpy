@@ -1,419 +1,385 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="repo" content="https://github.com/gvwilson/sdxpy">
-  <meta name="build_date" content="2024-04-28">
-  <meta name="template" content="slides">
-  <meta name="major" content="build">
-  
-  <link rel="icon" type="image/x-icon" href="../../favicon.ico">
-  <link rel="stylesheet" href="../../mccole.css">
-  <link rel="stylesheet" href="../../tango.css">
+    <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="../../logo.svg">
+<link rel="stylesheet" href="../../tango.css" type="text/css">
+<link rel="stylesheet" href="../../mccole.css" type="text/css">
+<title>Software Design by Example &middot; A Build Manager</title>
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [['\\(', '\\)']]
+    }
+  };
+</script>
+<script
+  type="text/javascript"
+  id="MathJax-script"
+  async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+</script>
+
   <script defer data-domain="third-bit.com" src="https://plausible.io/js/plausible.js"></script>
-  <script>
-    MathJax = {
-      tex: {
-        inlineMath: [['\\(', '\\)']]
-      }
-    };
-  </script>
-  <script
-    type="text/javascript"
-    id="MathJax-script"
-    async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
-  </script>
-  <script defer src="../../mccole.js"></script>
-  <title>Software Design by Example: A Build Manager</title>
-</head>
 
+
+    <script src="../../slides.js" defer></script>
+    <link rel="stylesheet" href="../../slides.css">
+  </head>
   <body>
-    <textarea id="source">
-
-class: slide-title
-
-<p>
-  <a href="https://third-bit.com/sdxpy/">Software Design by Example</a>
-</p>
-<h1>A Build Manager</h1>
-<div class="bottom">
-  <a href="../">chapter</a>
+<div class="row notex">
+  <div class="col-12 center">
+    <h1>A Build Manager</h1>
+    <p class="subtitle">Software Design by Example</p>
+  </div>
 </div>
-
----
-
-
-## The Problem
-
--   `plot.py` produces `result.svg` from `collated.csv`
-
--   `analyze.py` produces `collated.csv` from `samples.csv` and `controls.csv`
-
--   Both `samples.csv` and `controls.csv` depends on `normalize.py` and `raw.csv`,
-    but `normalize.py` takes a long time to run
-
--   How can we regenerate the files we need, but only when we need them?
-
----
-
-## Make
-
--   <a class="gl-ref" href="../../glossary/#gl:build_manager" title="A program that keeps track of how files depend on one another and runs commands to update any files that are out-of-date. Build managers were invented to compile only those parts of programs that had changed but are now often used to implement workflows in which plots depend on results files, which in turn depend on raw data files or configuration files." markdown="1">Build managers</a>
-    keep track of which files depend on which
-
-    -   First tool of this kind was [Make][gnu_make]
-
-    -   Many others now exist (e.g., [Snakemake][snakemake])
-
--   If a <a class="gl-ref" href="../../glossary/#gl:build_target" title="The file(s) that a build rule will update if they are out-of-date compared to their dependencies." markdown="1">target</a> is <a class="gl-ref" href="../../glossary/#gl:build_stale" title="To be out-of-date compared to a prerequisite. A build manager finds and updates things that are stale." markdown="1">stale</a>
-    with respect to any of its  <a class="gl-ref" href="../../glossary/#gl:dependency" title="Something that a build target depends on." markdown="1">dependencies</a>,
-    run a <a class="gl-ref" href="../../glossary/#gl:build_recipe" title="The part of a build rule that describes how to update something that has fallen out-of-date." markdown="1">recipe</a> to refresh it
-
--   Run recipes in order
-
--   Run each recipe at most once
-
----
-
-## Terminology
-
--   Targets and dependencies must form a <a class="gl-ref" href="../../glossary/#gl:dag" title="A directed graph which does not contain any cycles (i.e., it is not possible to reach a node from itself by following edges)." markdown="1">directed acyclic graph</a>
-
--   A <a class="gl-ref" href="../../glossary/#gl:topological_order" title="Any ordering of the nodes in a graph that respects the direction of its edges, i.e., if there is an edge from node A to node B, A comes before B in the ordering. There may be many topological orderings of a particular graph." markdown="1">topological ordering</a> of a graph
-    arranges nodes so that each one comes after everything it depends on
-
-<figure>
+<hr>
+<h2>The Problem</h2>
+<ul>
+<li>
+<p><code>plot.py</code> produces <code>result.svg</code> from <code>collated.csv</code></p>
+</li>
+<li>
+<p><code>analyze.py</code> produces <code>collated.csv</code> from <code>samples.csv</code> and <code>controls.csv</code></p>
+</li>
+<li>
+<p>Both <code>samples.csv</code> and <code>controls.csv</code> depends on <code>normalize.py</code> and <code>raw.csv</code>,
+    but <code>normalize.py</code> takes a long time to run</p>
+</li>
+<li>
+<p>How can we regenerate the files we need, but only when we need them?</p>
+</li>
+</ul>
+<hr />
+<h2>Make</h2>
+<ul>
+<li>
+<p><a class="gl-ref" href="../../glossary/#build_manager" markdown="1">Build managers</a>
+    keep track of which files depend on which</p>
+<ul>
+<li>
+<p>First tool of this kind was <a href="https://www.gnu.org/software/make/">Make</a></p>
+</li>
+<li>
+<p>Many others now exist (e.g., <a href="https://snakemake.readthedocs.io/">Snakemake</a>)</p>
+</li>
+</ul>
+</li>
+<li>
+<p>If a <a class="gl-ref" href="../../glossary/#build_target" markdown="1">target</a> is <a class="gl-ref" href="../../glossary/#build_stale" markdown="1">stale</a>
+    with respect to any of its  <a class="gl-ref" href="../../glossary/#dependency" markdown="1">dependencies</a>,
+    run a <a class="gl-ref" href="../../glossary/#build_recipe" markdown="1">recipe</a> to refresh it</p>
+</li>
+<li>
+<p>Run recipes in order</p>
+</li>
+<li>
+<p>Run each recipe at most once</p>
+</li>
+</ul>
+<hr />
+<h2>Terminology</h2>
+<ul>
+<li>
+<p>Targets and dependencies must form a <a class="gl-ref" href="../../glossary/#dag" markdown="1">directed acyclic graph</a></p>
+</li>
+<li>
+<p>A <a class="gl-ref" href="../../glossary/#topological_order" markdown="1">topological ordering</a> of a graph
+    arranges nodes so that each one comes after everything it depends on</p>
+</li>
+</ul>
+<figure id="build-dependencies">
 <img src="../dependencies.svg" alt="Dependencies in a four-node graph"/>
+<figcaption>Dependencies and topological order</figcaption>
 </figure>
 
+<hr />
+<h2>Representing Rules</h2>
+<ol>
+<li>Invent a special-purpose syntax<ul>
+<li>Fits the problem</li>
+<li>But you need a parser, auto-complete, a debugger, etc.</li>
+</ul>
+</li>
+<li>Use existing syntax<ul>
+<li>Get tooling for free</li>
+<li>But the semantics are invisible to those tools</li>
+</ul>
+</li>
+<li>We will use JSON</li>
+</ol>
+<div class="language-json" title="double_linear_dep.json">
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;A&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;depends&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;B&quot;</span><span class="p">],</span><span class="w"> </span><span class="nt">&quot;rule&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;build A&quot;</span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;B&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;depends&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span><span class="w"> </span><span class="nt">&quot;rule&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;build B&quot;</span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Top-Down Design</h2>
+<ul>
+<li>Start with the big picture</li>
+</ul>
+<div class="language-py" title="build_simple.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">BuildBase</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">build</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config_file</span><span class="p">):</span>
+        <span class="n">config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_configure</span><span class="p">(</span><span class="n">config_file</span><span class="p">)</span>
+        <span class="n">ordered</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_topo_sort</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">ordered</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_refresh</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">node</span><span class="p">)</span>
 
----
-
-## Representing Rules
-
-1.  Invent a special-purpose syntax
-    -   Fits the problem
-    -   But you need a parser, auto-complete, a debugger, etc.
-2.  Use existing syntax
-    -   Get tooling for free
-    -   But the semantics are invisible to those tools
--   We will use JSON
-
-```json
-{
-  "A": {"depends": ["B"], "rule": "build A"},
-  "B": {"depends": [], "rule": "build B"}
-}
-```
-
-
----
-
-## Top-Down Design
-
--   Start with the big picture
-
-```py
-class BuildBase:
-    def build(self, config_file):
-        config = self._configure(config_file)
-        ordered = self._topo_sort(config)
-        for node in ordered:
-            self._refresh(config, node)
-
-    def _refresh(self, config, node):
-        assert node in config, f"Unknown node {node}"
-        print(config[node]["rule"])
-```
-
-
---
-
-1.  Get the configuration
-2.  Figure out the update order
-3.  Refresh each file (for now, just print action)
-
----
-
-## Configuration
-
-```py
-def _configure(self, config_file):
-    with open(config_file, "r") as reader:
-        config = json.load(reader)
-        known = set(config.keys())
-        return {
-            n: self._check(n, d, known)
-            for n, d in config.items()
-        }
-```
-
-
--   Use a dictionary comprehension
-    -   Key is node name (for lookup)
-    -   Value contains rule and dependencies
-
----
-
-## Check and Build
-
-```py
-def _check(self, name, details, known):
-    assert "rule" in details, f"Missing rule for {name}"
-    assert "depends" in details, f"Missing depends for {name}"
-    depends = set(details["depends"])
-    assert depends.issubset(known), \
-        f"Unknown depends for {name}"
-    return {"rule": details["rule"], "depends": depends}
-```
-
-
-<figure>
+    <span class="k">def</span> <span class="nf">_refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">config</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Unknown node </span><span class="si">{</span><span class="n">node</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="n">node</span><span class="p">][</span><span class="s2">&quot;rule&quot;</span><span class="p">])</span>
+</code></pre></div>
+</div>
+<ol>
+<li>Get the configuration</li>
+<li>Figure out the update order</li>
+<li>Refresh each file (for now, just print action)</li>
+</ol>
+<hr />
+<h2>Configuration</h2>
+<div class="language-py" title="build_simple.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">_configure</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config_file</span><span class="p">):</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">config_file</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">reader</span><span class="p">:</span>
+            <span class="n">config</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">reader</span><span class="p">)</span>
+            <span class="n">known</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+            <span class="k">return</span> <span class="p">{</span>
+                <span class="n">n</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">d</span><span class="p">,</span> <span class="n">known</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">n</span><span class="p">,</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">config</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+            <span class="p">}</span>
+</code></pre></div>
+</div>
+<ul>
+<li>Use a dictionary comprehension<ul>
+<li>Key is node name (for lookup)</li>
+<li>Value contains rule and dependencies</li>
+</ul>
+</li>
+</ul>
+<hr />
+<h2>Check and Build</h2>
+<div class="language-py" title="build_simple.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">_check</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">details</span><span class="p">,</span> <span class="n">known</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="s2">&quot;rule&quot;</span> <span class="ow">in</span> <span class="n">details</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Missing rule for </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">assert</span> <span class="s2">&quot;depends&quot;</span> <span class="ow">in</span> <span class="n">details</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Missing depends for </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">depends</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">details</span><span class="p">[</span><span class="s2">&quot;depends&quot;</span><span class="p">])</span>
+        <span class="k">assert</span> <span class="n">depends</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span><span class="n">known</span><span class="p">),</span> \
+            <span class="sa">f</span><span class="s2">&quot;Unknown depends for </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;rule&quot;</span><span class="p">:</span> <span class="n">details</span><span class="p">[</span><span class="s2">&quot;rule&quot;</span><span class="p">],</span> <span class="s2">&quot;depends&quot;</span><span class="p">:</span> <span class="n">depends</span><span class="p">}</span>
+</code></pre></div>
+</div>
+<figure id="build-diamond">
 <img src="../diamond.svg" alt="Representing graph"/>
+<figcaption>Representing dependency graph</figcaption>
 </figure>
 
-
----
-
-## Topological Sorting
-
-<figure>
+<hr />
+<h2>Topological Sorting</h2>
+<figure id="build-topo-sort">
 <img src="../topo_sort.svg" alt="Trace of topological sorting"/>
+<figcaption>Topological sort</figcaption>
 </figure>
 
-
----
-
-## Topological Sorting
-
-```py
-def _topo_sort(self, config):
-    graph = {n: config[n]["depends"] for n in config}
-    result = []
-    while graph:
-        available = {n for n in graph if not graph[n]}
-        assert available, f"Circular graph {graph.keys()}"
-        result.extend(available)
-        graph = {
-            n: graph[n] - available
-            for n in graph
-            if n not in available
-        }
-    return result
-```
-
-
----
-
-## Testing
-
-```json
-{
-  "A": {"depends": ["B"], "rule": "build A"},
-  "B": {"depends": [], "rule": "build B"}
-}
-```
-
-
-```
-build B
+<hr />
+<h2>Topological Sorting</h2>
+<div class="language-py" title="build_simple.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">_topo_sort</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
+        <span class="n">graph</span> <span class="o">=</span> <span class="p">{</span><span class="n">n</span><span class="p">:</span> <span class="n">config</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="s2">&quot;depends&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">config</span><span class="p">}</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">while</span> <span class="n">graph</span><span class="p">:</span>
+            <span class="n">available</span> <span class="o">=</span> <span class="p">{</span><span class="n">n</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">graph</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">graph</span><span class="p">[</span><span class="n">n</span><span class="p">]}</span>
+            <span class="k">assert</span> <span class="n">available</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Circular graph </span><span class="si">{</span><span class="n">graph</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">available</span><span class="p">)</span>
+            <span class="n">graph</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="n">n</span><span class="p">:</span> <span class="n">graph</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">-</span> <span class="n">available</span>
+                <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">graph</span>
+                <span class="k">if</span> <span class="n">n</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">available</span>
+            <span class="p">}</span>
+        <span class="k">return</span> <span class="n">result</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Testing</h2>
+<div class="language-json" title="double_linear_dep.json">
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;A&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;depends&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;B&quot;</span><span class="p">],</span><span class="w"> </span><span class="nt">&quot;rule&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;build A&quot;</span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;B&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;depends&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span><span class="w"> </span><span class="nt">&quot;rule&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;build B&quot;</span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+</div>
+<div class="language-out" title="double_linear_dep.out">
+<div class="highlight"><pre><span></span><code>build B
 build A
-```
+</code></pre></div>
+</div>
+<hr />
+<h2>Critique</h2>
+<ol>
+<li>Configuration might not come directly from a JSON file<ul>
+<li>So modify constructor to take config as input</li>
+</ul>
+</li>
+<li>Printing actions to the screen isn&rsquo;t very useful<ul>
+<li>So collect them and return an ordered list of commands</li>
+</ul>
+</li>
+<li><code>assert</code> isn&rsquo;t a friendly way to handle user errors<ul>
+<li>Raise <code>ValueError</code></li>
+</ul>
+</li>
+<li>Topological sort isn&rsquo;t <a class="gl-ref" href="../../glossary/#stable_sort" markdown="1">stable</a><ul>
+<li><code>dict</code> is ordered but <code>set</code> is not</li>
+<li>So sort node names when appending</li>
+</ul>
+</li>
+<li>We might want to add other keys to rules<ul>
+<li>So put that check in a separate method we can override</li>
+</ul>
+</li>
+</ol>
+<hr />
+<h2>Revise the Big Picture</h2>
+<div class="language-py" title="build_better.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">BuildBetter</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">build</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
+        <span class="n">config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_configure</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+        <span class="n">ordered</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_topo_sort</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+        <span class="n">actions</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">ordered</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_refresh</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">node</span><span class="p">,</span> <span class="n">actions</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">actions</span>
 
+    <span class="k">def</span> <span class="nf">_refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">node</span><span class="p">,</span> <span class="n">actions</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">config</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Unknown node </span><span class="si">{</span><span class="n">node</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">actions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="n">node</span><span class="p">][</span><span class="s2">&quot;rule&quot;</span><span class="p">])</span>
 
----
+    <span class="k">def</span> <span class="nf">_must</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">condition</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">condition</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Revise Configuration</h2>
+<div class="language-py" title="build_better.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">_configure</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
+        <span class="n">known</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="k">return</span> <span class="p">{</span><span class="n">n</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">d</span><span class="p">,</span> <span class="n">known</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">n</span><span class="p">,</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">config</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
 
-## Critique
+    <span class="k">def</span> <span class="nf">_check</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">details</span><span class="p">,</span> <span class="n">known</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_keys</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">details</span><span class="p">)</span>
+        <span class="n">depends</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">details</span><span class="p">[</span><span class="s2">&quot;depends&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_must</span><span class="p">(</span>
+            <span class="n">depends</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span><span class="n">known</span><span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;Unknown depends for </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">details</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">result</span><span class="p">[</span><span class="s2">&quot;depends&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">depends</span>
+        <span class="k">return</span> <span class="n">result</span>
 
-1.  Configuration might not come directly from a JSON file
-    -   So modify constructor to take config as input
-2.  Printing actions to the screen isn't very useful
-    -   So collect them and return an ordered list of commands
-3.  `assert` isn't a friendly way to handle user errors
-    -   Raise `ValueError`
-4.  Topological sort isn't <a class="gl-ref" href="../../glossary/#gl:stable_sort" title="A sorting algorithm that preserves the original order of items that are considered equal." markdown="1">stable</a>
-    -   `dict` is ordered but `set` is not
-    -   So sort node names when appending
-5.  We might want to add other keys to rules
-    -   So put that check in a separate method we can override
+    <span class="k">def</span> <span class="nf">_check_keys</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">details</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_must</span><span class="p">(</span><span class="s2">&quot;rule&quot;</span> <span class="ow">in</span> <span class="n">details</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Missing rule for </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_must</span><span class="p">(</span>
+            <span class="s2">&quot;depends&quot;</span> <span class="ow">in</span> <span class="n">details</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Missing depends for </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Revise Topological Sort</h2>
+<div class="language-py" title="build_better.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">_topo_sort</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
+        <span class="n">graph</span> <span class="o">=</span> <span class="p">{</span><span class="n">n</span><span class="p">:</span> <span class="n">config</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="s2">&quot;depends&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">config</span><span class="p">}</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">while</span> <span class="n">graph</span><span class="p">:</span>
+            <span class="n">available</span> <span class="o">=</span> <span class="p">{</span><span class="n">n</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">graph</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">graph</span><span class="p">[</span><span class="n">n</span><span class="p">]}</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_must</span><span class="p">(</span>
+                <span class="n">available</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s2">&quot;Circular graph </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">graph</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">available</span><span class="p">))</span>
+            <span class="n">graph</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="n">n</span><span class="p">:</span> <span class="n">graph</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">-</span> <span class="n">available</span>
+                <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">graph</span>
+                <span class="k">if</span> <span class="n">n</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">available</span>
+            <span class="p">}</span>
+        <span class="k">return</span> <span class="n">result</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Now It&rsquo;s Testable</h2>
+<div class="language-py" title="test_build_better.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">test_circular</span><span class="p">():</span>
+    <span class="n">action_A</span> <span class="o">=</span> <span class="s2">&quot;build A&quot;</span>
+    <span class="n">action_B</span> <span class="o">=</span> <span class="s2">&quot;build B&quot;</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;A&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;depends&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;B&quot;</span><span class="p">],</span> <span class="s2">&quot;rule&quot;</span><span class="p">:</span> <span class="n">action_A</span><span class="p">},</span>
+        <span class="s2">&quot;B&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;depends&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;A&quot;</span><span class="p">],</span> <span class="s2">&quot;rule&quot;</span><span class="p">:</span> <span class="n">action_B</span><span class="p">},</span>
+    <span class="p">}</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">Builder</span><span class="p">()</span><span class="o">.</span><span class="n">build</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;should have had exception&quot;</span>
+    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+        <span class="k">pass</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Now It&rsquo;s Testable</h2>
+<div class="language-py" title="test_build_better.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">test_no_dep</span><span class="p">():</span>
+    <span class="n">action_A</span> <span class="o">=</span> <span class="s2">&quot;build A&quot;</span>
+    <span class="n">action_B</span> <span class="o">=</span> <span class="s2">&quot;build B&quot;</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;A&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;depends&quot;</span><span class="p">:</span> <span class="p">[],</span> <span class="s2">&quot;rule&quot;</span><span class="p">:</span> <span class="n">action_A</span><span class="p">},</span>
+        <span class="s2">&quot;B&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;depends&quot;</span><span class="p">:</span> <span class="p">[],</span> <span class="s2">&quot;rule&quot;</span><span class="p">:</span> <span class="n">action_B</span><span class="p">},</span>
+    <span class="p">}</span>
+    <span class="k">assert</span> <span class="n">Builder</span><span class="p">()</span><span class="o">.</span><span class="n">build</span><span class="p">(</span><span class="n">config</span><span class="p">)</span> <span class="o">==</span> <span class="p">[</span><span class="n">action_A</span><span class="p">,</span> <span class="n">action_B</span><span class="p">]</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>And Extensible</h2>
+<div class="language-py" title="build_time.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">BuildTime</span><span class="p">(</span><span class="n">BuildBetter</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_check_keys</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">details</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">_check_keys</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">details</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_must</span><span class="p">(</span><span class="s2">&quot;time&quot;</span> <span class="ow">in</span> <span class="n">details</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;No time for </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
----
+    <span class="k">def</span> <span class="nf">_refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">node</span><span class="p">,</span> <span class="n">actions</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">config</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Unknown node </span><span class="si">{</span><span class="n">node</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_needs_update</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+            <span class="n">actions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="n">node</span><span class="p">][</span><span class="s2">&quot;rule&quot;</span><span class="p">])</span>
 
-## Revise the Big Picture
+    <span class="k">def</span> <span class="nf">_needs_update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">any</span><span class="p">(</span>
+            <span class="n">config</span><span class="p">[</span><span class="n">node</span><span class="p">][</span><span class="s2">&quot;time&quot;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">config</span><span class="p">[</span><span class="n">d</span><span class="p">][</span><span class="s2">&quot;time&quot;</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">config</span><span class="p">[</span><span class="n">node</span><span class="p">][</span><span class="s2">&quot;depends&quot;</span><span class="p">]</span>
+        <span class="p">)</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>More Testing</h2>
+<div class="language-py" title="test_build_time.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">test_diamond_dep</span><span class="p">():</span>
+    <span class="n">action_A</span> <span class="o">=</span> <span class="s2">&quot;build A&quot;</span>
+    <span class="n">action_B</span> <span class="o">=</span> <span class="s2">&quot;build B&quot;</span>
+    <span class="n">action_C</span> <span class="o">=</span> <span class="s2">&quot;build C&quot;</span>
+    <span class="n">action_D</span> <span class="o">=</span> <span class="s2">&quot;build D&quot;</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;A&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;depends&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">],</span> <span class="s2">&quot;rule&quot;</span><span class="p">:</span> <span class="n">action_A</span><span class="p">,</span> <span class="s2">&quot;time&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">},</span>
+        <span class="s2">&quot;B&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;depends&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;D&quot;</span><span class="p">],</span> <span class="s2">&quot;rule&quot;</span><span class="p">:</span> <span class="n">action_B</span><span class="p">,</span> <span class="s2">&quot;time&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">},</span>
+        <span class="s2">&quot;C&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;depends&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;D&quot;</span><span class="p">],</span> <span class="s2">&quot;rule&quot;</span><span class="p">:</span> <span class="n">action_C</span><span class="p">,</span> <span class="s2">&quot;time&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span>
+        <span class="s2">&quot;D&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;depends&quot;</span><span class="p">:</span> <span class="p">[],</span> <span class="s2">&quot;rule&quot;</span><span class="p">:</span> <span class="n">action_D</span><span class="p">,</span> <span class="s2">&quot;time&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span>
+    <span class="p">}</span>
+    <span class="k">assert</span> <span class="n">Builder</span><span class="p">()</span><span class="o">.</span><span class="n">build</span><span class="p">(</span><span class="n">config</span><span class="p">)</span> <span class="o">==</span> <span class="p">[</span><span class="n">action_B</span><span class="p">,</span> <span class="n">action_A</span><span class="p">]</span>
+</code></pre></div>
+</div>
+<hr />
+<!--# class="summary" -->
 
-```py
-class BuildBetter:
-    def build(self, config):
-        config = self._configure(config)
-        ordered = self._topo_sort(config)
-        actions = []
-        for node in ordered:
-            self._refresh(config, node, actions)
-        return actions
-
-    def _refresh(self, config, node, actions):
-        assert node in config, f"Unknown node {node}"
-        actions.append(config[node]["rule"])
-
-    def _must(self, condition, message):
-        if not condition:
-            raise ValueError(message)
-```
-
-
----
-
-## Revise Configuration
-
-```py
-def _configure(self, config):
-    known = set(config.keys())
-    return {n: self._check(n, d, known)
-            for n, d in config.items()}
-
-def _check(self, name, details, known):
-    self._check_keys(name, details)
-    depends = set(details["depends"])
-    self._must(
-        depends.issubset(known), f"Unknown depends for {name}"
-    )
-    result = details.copy()
-    result["depends"] = depends
-    return result
-
-def _check_keys(self, name, details):
-    self._must("rule" in details, f"Missing rule for {name}")
-    self._must(
-        "depends" in details, f"Missing depends for {name}"
-    )
-```
-
-
----
-
-## Revise Topological Sort
-
-```py
-def _topo_sort(self, config):
-    graph = {n: config[n]["depends"] for n in config}
-    result = []
-    while graph:
-        available = {n for n in graph if not graph[n]}
-        self._must(
-            available,
-            f"Circular graph {list(graph.keys())}",
-        )
-        result.extend(sorted(available))
-        graph = {
-            n: graph[n] - available
-            for n in graph
-            if n not in available
-        }
-    return result
-```
-
-
----
-
-## Now It's Testable
-
-```py
-def test_circular():
-    action_A = "build A"
-    action_B = "build B"
-    config = {
-        "A": {"depends": ["B"], "rule": action_A},
-        "B": {"depends": ["A"], "rule": action_B},
-    }
-    try:
-        Builder().build(config)
-        assert False, "should have had exception"
-    except ValueError:
-        pass
-```
-
-
----
-
-## Now It's Testable
-
-```py
-def test_no_dep():
-    action_A = "build A"
-    action_B = "build B"
-    config = {
-        "A": {"depends": [], "rule": action_A},
-        "B": {"depends": [], "rule": action_B},
-    }
-    assert Builder().build(config) == [action_A, action_B]
-```
-
-
----
-
-## And Extensible
-
-```py
-class BuildTime(BuildBetter):
-    def _check_keys(self, name, details):
-        super()._check_keys(name, details)
-        self._must("time" in details, f"No time for {name}")
-
-    def _refresh(self, config, node, actions):
-        assert node in config, f"Unknown node {node}"
-        if self._needs_update(config, node):
-            actions.append(config[node]["rule"])
-
-    def _needs_update(self, config, node):
-        return any(
-            config[node]["time"] < config[d]["time"]
-            for d in config[node]["depends"]
-        )
-```
-
-
----
-
-## More Testing
-
-```py
-def test_diamond_dep():
-    action_A = "build A"
-    action_B = "build B"
-    action_C = "build C"
-    action_D = "build D"
-    config = {
-        "A": {"depends": ["B", "C"], "rule": action_A, "time": 0},
-        "B": {"depends": ["D"], "rule": action_B, "time": 0},
-        "C": {"depends": ["D"], "rule": action_C, "time": 1},
-        "D": {"depends": [], "rule": action_D, "time": 1},
-    }
-    assert Builder().build(config) == [action_B, action_A]
-```
-
-
----
-
-class: summary
-
-## Summary
-
-<figure>
+<h2>Summary</h2>
+<figure id="build-concept-map">
 <img src="../concept_map.svg" alt="Concept map of build manager"/>
+<figcaption>Concept map</figcaption>
 </figure>
-
-
-
-[gnu_make]: https://www.gnu.org/software/make/
-[snakemake]: https://snakemake.readthedocs.io/
-
-    </textarea>
-    <script src="../../remark-latest.min.js"></script>
-    <script>
-      var slideshow = remark.create({
-        highlightLines: true
-      })
-    </script>
   </body>
 </html>

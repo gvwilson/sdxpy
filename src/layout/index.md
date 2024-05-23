@@ -1,4 +1,5 @@
 ---
+title: "Page Layout"
 abstract: >
     Browsers, e-book readers, and text editors all rely on some kind of layout engine
     that takes text and formatting instructions as input
@@ -41,7 +42,7 @@ Everything we can put on the screen is represented as a rectangular cell,
 and every cell is either a row, a column, or a [%g block_page "block" %].
 A block has a fixed width and height:
 
-[% inc file="easy_mode.py" keep="block" %]
+[%inc easy_mode.py mark=block %]
 
 <div class="callout" markdown="1">
 
@@ -69,7 +70,7 @@ its width is the sum of the widths of its children,
 while its height is the height of its tallest [%i "child" %]
 ([%f layout-sizing %]):
 
-[% inc file="easy_mode.py" keep="row" %]
+[%inc easy_mode.py mark=row %]
 
 [% figure
    slug="layout-sizing"
@@ -87,7 +88,7 @@ and its height is the sum of the heights of its children.
 (Here and elsewhere,
 we use the abbreviation `col` when referring to columns.)
 
-[% inc file="easy_mode.py" keep="col" %]
+[%inc easy_mode.py mark=col %]
 
 Rows and columns nest inside one another:
 a row cannot span two or more columns,
@@ -105,7 +106,7 @@ so we write some tests to check that it works properly
 before trying to build anything more complicated.
 One such test is:
 
-[% inc file="test_easy_mode.py" keep="example" %]
+[%inc test_easy_mode.py mark=example %]
 
 ## Positioning {: #layout-position}
 
@@ -139,24 +140,24 @@ we will derive the classes that know how to do layout
 from the classes we wrote before.
 Basic blocks are:
 
-[% inc file="placed.py" keep="block" %]
+[%inc placed.py mark=block %]
 
 The constructor and reporting method for the `PlacedCol` class looks much the same.
 Its placement method is:
 {: .continue}
 
-[% inc file="placed.py" keep="colplace" %]
+[%inc placed.py mark=colplace %]
 
 while the placement method for rows is:
 {: .continue}
 
-[% inc file="placed.py" keep="rowplace" %]
+[%inc placed.py mark=rowplace %]
 
 Once again,
 we write and run some tests to check that everything is doing what it's supposed to.
 One such test is:
 
-[% inc file="test_placed.py" keep="col2" %]
+[%inc test_placed.py mark=col2 %]
 
 ## Rendering {: #layout-render}
 
@@ -185,7 +186,7 @@ with one inner list for each a row on the screen.
 (We use lists rather than strings
 so that we can overwrite characters in place.)
 
-[% inc file="render.py" keep="make_screen" %]
+[%inc render.py mark=make_screen %]
 
 We will use successive lower-case characters to show each block,
 i.e.,
@@ -193,7 +194,7 @@ the root block will draw itself using 'a',
 while its children will be 'b', 'c', and so on.
 {: .continue}
 
-[% inc file="render.py" keep="draw" %]
+[%inc render.py mark=draw %]
 
 To teach each kind of cell to render itself,
 we derive new classes from the ones we have
@@ -203,12 +204,12 @@ we can do this with a [%g mixin_class "mixin class" %]
 ([%f layout-mixin %]).
 The `Renderable` mixin is:
 
-[% inc file="rendered.py" keep="render" %]
+[%inc rendered.py mark=render %]
 
 Using it,
 the new cell classes are simply:
 
-[% inc file="rendered.py" keep="derive" %]
+[%inc rendered.py mark=derive %]
 
 [% figure
    slug="layout-mixin"
@@ -237,7 +238,7 @@ Simple tests are a little easier to read using rendering,
 though we still had to draw things on paper
 to figure out what to expect:
 
-[% inc file="test_rendered.py" keep="col2" %]
+[%inc test_rendered.py mark=col2 %]
 
 <div class="pagebreak"></div>
 
@@ -274,7 +275,7 @@ Columns become themselves as well,
 but since they have children that might need to wrap,
 the class representing columns needs a new method:
 
-[% inc file="wrapped.py" keep="blockcol" %]
+[%inc wrapped.py mark=blockcol %]
 
 (The `*` in front of the list being passed to `PlacedCol`
 in the last line of the code above
@@ -300,26 +301,26 @@ we will look at making this more efficient in the exercises.
 Our new wrappable row's constructor takes a fixed width followed by the children
 and returns that fixed width when asked for its size:
 
-[% inc file="wrapped.py" keep="row" %]
+[%inc wrapped.py mark=row %]
 
 Wrapping puts the row's children into buckets,
 and then converts the buckets to a row of a column of rows:
 {: .continue}
 
-[% inc file="wrapped.py" keep="wrap" %]
+[%inc wrapped.py mark=wrap %]
 
 To bucket the children,
 we add them one at a time to a temporary list.
 If adding another node would make the total width of the nodes in that list too large,
 we use that node to start a new temporary list:
 
-[% inc file="wrapped.py" keep="bucket" %]
+[%inc wrapped.py mark=bucket %]
 
 Once again,
 we bring forward all the previous tests
 and write some new ones to test the functionality we've added:
 
-[% inc file="test_wrapped.py" keep="example" %]
+[%inc test_wrapped.py mark=example %]
 
 We could have had columns handle resizing rather than rows,
 but we (probably) don't need to make both resizeable.

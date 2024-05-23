@@ -1,4 +1,5 @@
 ---
+title: "Protocols"
 abstract: >
     This chapter starts by showing how we can simplify testing
     by temporarily replacing real functions with ones that return predictable values,
@@ -39,7 +40,7 @@ we can temporarily replace the real `time.time` function
 with one that returns a specific value
 so we know what result to expect in our test:
 
-[% inc file="mock_time.py" %]
+[%inc mock_time.py %]
 
 Temporary replacements like this are called [%g mock_object "mock objects" %]
 because we usually use objects even if the thing we're replacing is a function.
@@ -52,7 +53,8 @@ For example,
 the code below defines a class `Adder`
 whose instances add a constant to their input:
 
-[% inc pat="callable.*" fill="py out" %]
+[%inc callable.py %]
+[%inc callable.out %]
 
 Let's create a reusable mock object class that:
 
@@ -69,19 +71,19 @@ Let's create a reusable mock object class that:
 
 The class itself is only 11 lines long:
 
-[% inc file="mock_object.py" keep="fake" %]
+[%inc mock_object.py mark=fake %]
 
 For convenience,
 let's also define a function that replaces some function we've already defined
 with an instance of our `Fake` class:
 
-[% inc file="mock_object.py" keep="fakeit" %]
+[%inc mock_object.py mark=fakeit %]
 
 To show how this works,
 we define a function that adds two numbers
 and write a test for it:
 
-[% inc file="mock_object.py" keep="test_real" %]
+[%inc mock_object.py mark=test_real %]
 
 <div class="pagebreak"></div>
 
@@ -89,7 +91,7 @@ We then use `fakeit` to replace the real `adder` function
 with a mock object that always returns 99
 ([%f protocols-timeline %]):
 
-[% inc file="mock_object.py" keep="test_fixed" %]
+[%inc mock_object.py mark=test_fixed %]
 
 [% figure
    slug="protocols-timeline"
@@ -101,12 +103,12 @@ with a mock object that always returns 99
 Another test proves that our `Fake` class records
 all of the calls:
 
-[% inc file="mock_object.py" keep="test_record" %]
+[%inc mock_object.py mark=test_record %]
 
 And finally,
 the user can provide a function to calculate a return value:
 
-[% inc file="mock_object.py" keep="test_calc" %]
+[%inc mock_object.py mark=test_calc %]
 
 ## Protocols {: #protocols-protocols}
 
@@ -167,7 +169,7 @@ it does the following ([%f protocols-context-manager %]):
 Here's a mock object that inherits all the capabilities of `Fake`
 and adds the two methods needed by `with`:
 
-[% inc file="mock_context.py" keep="contextfake" %]
+[%inc mock_context.py mark=contextfake %]
 
 Notice that `__enter__` doesn't take any extra parameters:
 anything it needs must be provided via the object's constructor.
@@ -178,7 +180,7 @@ and if so,
 what the exception was.
 This test shows that our context manager is doing what it's supposed to:
 
-[% inc file="mock_context.py" keep="test" %]
+[%inc mock_context.py mark=test %]
 
 Context managers can't prevent people from making mistakes,
 but they make it easier for people to do the right thing.
@@ -202,7 +204,7 @@ that prints a message before and after
 each call to some other arbitrary function.
 We could try to do it like this:
 
-[% inc file="wrap_infinite.py" %]
+[%inc wrap_infinite.py %]
 
 but when we try to call `original` we wind up in an infinite loop.
 The wrapped version of our function refers to `original`,
@@ -216,7 +218,8 @@ the original function for later use:
 
 <div class="pagebreak"></div>
 
-[% inc pat="wrap_capture.*" fill="py out" %]
+[%inc wrap_capture.py %]
+[%inc wrap_capture.out %]
 
 [% figure
    slug="protocols-recursion"
@@ -230,7 +233,8 @@ when we create the wrapped function:
 
 <div class="pagebreak"></div>
 
-[% inc pat="wrap_param.*" fill="py out" %]
+[%inc wrap_param.py %]
+[%inc wrap_param.out %]
 
 Wrapping functions like this is so useful
 that Python has built-in support for doing it.
@@ -238,7 +242,8 @@ We define the decorator function that does the wrapping as before,
 but then use `@wrap` to apply it
 rather than `name = wrap(name)`:
 
-[% inc pat="decorator_simple.*" fill="py out" %]
+[%inc decorator_simple.py %]
+[%inc decorator_simple.out %]
 
 If we want to pass arguments at the time we apply the decorator,
 though,
@@ -248,7 +253,8 @@ which must be the function we want to decorate.
 The solution is to define a function inside a function *inside yet another function*
 to create a closure that captures the arguments:
 
-[% inc pat="decorator_param.*" fill="py out" %]
+[%inc decorator_param.py %]
+[%inc decorator_param.out %]
 
 Decorators didn't need to be this complicated.
 In order to define a method that takes \\( N \\) parameters in Python,
@@ -259,7 +265,7 @@ i.e.,
 allowed people to define a function of \\( N+1 \\) parameters
 and have `@` fill in the first automatically:
 
-[% inc file="alternative_design.py" %]
+[%inc alternative_design.py %]
 
 But this isn't the path Python took,
 and as a result,
@@ -292,29 +298,29 @@ each object is its own iterator,
 i.e.,
 each object keeps track of what value to return next when looping:
 
-[% inc file="naive_iterator.py" keep="body" %]
+[%inc naive_iterator.py mark=body %]
 
 If we think of the text in terms of rows and columns,
 the `advance` method moves the column marker forward within the current row.
 When we reach the end of a row,
 we reset the column to 0 and advance the row index by one:
 
-[% inc file="naive_iterator.py" keep="advance" %]
+[%inc naive_iterator.py mark=advance %]
 
 Our first test seems to work:
 
-[% inc file="test_naive_iterator.py" keep="success" %]
+[%inc test_naive_iterator.py mark=success %]
 
 However,
 our iterator doesn't work if the buffer contains an empty string:
 {: .continue}
 
-[% inc file="test_naive_iterator.py" keep="failure" %]
+[%inc test_naive_iterator.py mark=failure %]
 
 It also fails when we use a nested loop:
 {: .continue}
 
-[% inc file="test_naive_iterator.py" keep="nested" %]
+[%inc test_naive_iterator.py mark=nested %]
 
 We can fix the first problem with more careful bookkeeping—we leave that
 as an exercise—but
@@ -326,14 +332,14 @@ but two loops trying to use them.
 What we need to do instead is
 create a separate object for each loop to use:
 
-[% inc file="better_iterator.py" keep="buffer" %]
+[%inc better_iterator.py mark=buffer %]
 
 Each [%i "cursor" %] keeps track of the current location
 for a single loop
 using code identical to what we've already seen
 (including the same bug with empty strings):
 
-[% inc file="better_iterator.py" keep="cursor" omit="advance" %]
+[%inc better_iterator.py mark=cursor omit=advance %]
 
 With this change in place,
 our test of nested loops passes.

@@ -1,4 +1,5 @@
 ---
+title: "A Code Linter"
 abstract: >
     This chapter brings together pieces from the preceding few lessons
     to show how one program can check the structure of another.
@@ -50,7 +51,7 @@ For example,
 [%f lint-ast-simple %] shows key parts of the AST
 for the short program shown below:
 
-[% inc file="simple.py" %]
+[%inc simple.py %]
 
 [% figure
    slug="lint-ast-simple"
@@ -65,9 +66,9 @@ To see them,
 let's use `ast.parse` to turn our example code into an AST
 and `ast.dump` to display it:
 
-[% inc file="dump_ast.py" %]
-[% inc file="dump_ast_simple.sh" %]
-[% inc file="dump_ast_simple.out" head="10" %]
+[%inc dump_ast.py %]
+[%inc dump_ast_simple.sh %]
+[%inc dump_ast_simple.out head="10" %]
 
 The node representing the definition of the function `double`
 is a `FunctionDef` node with a `name`
@@ -100,7 +101,7 @@ The class `CollectNames` uses this machinery
 to create a list of the function and variable names
 defined in a program:
 
-[% inc file="walk_ast.py" keep="class" %]
+[%inc walk_ast.py mark=class %]
 
 A few things worth noting about this class are:
 {: .continue}
@@ -126,8 +127,9 @@ we read the source of the program that we want to analyze,
 parse it,
 and then call the `visit` method of our class to trigger recursion:
 
-[% inc file="walk_ast.py" keep="main" %]
-[% inc pat="walk_ast.*" fill="sh out" %]
+[%inc walk_ast.py mark=main %]
+[%inc walk_ast.sh %]
+[%inc walk_ast.out %]
 
 With a little more work we could record class names as well,
 and then check that (for example)
@@ -144,7 +146,7 @@ For example,
 the dictionary in this short piece of code has two entries
 for the key `"third"`:
 
-[% inc file="has_duplicate_keys.py" %]
+[%inc has_duplicate_keys.py %]
 
 Python could treat this as an error,
 keep the first entry,
@@ -154,7 +156,7 @@ As the output below shows,
 it chooses the third option:
 {: .continue}
 
-[% inc file="has_duplicate_keys.out" %]
+[%inc has_duplicate_keys.out %]
 
 We can build a linter that finds dictionaries like `has_duplicates`
 with just a few lines of code
@@ -165,14 +167,14 @@ We define a `visit_Dict` method for `NodeVisitor`
 that adds each constant key to the counter,
 then look for keys that have been seen more than once:
 
-[% inc file="find_duplicate_keys.py" keep="class" %]
+[%inc find_duplicate_keys.py mark=class %]
 
 When we parse `has_duplicate_keys.py`
 and pass the AST to `FindDuplicateKeys`,
 we get:
 {: .continue}
 
-[% inc file="find_duplicate_keys.out" %]
+[%inc find_duplicate_keys.out %]
 
 <div class="callout" markdown="1">
 
@@ -181,7 +183,7 @@ we get:
 `FindDuplicateKeys` only considers constant keys,
 which means it won't find duplicate keys that are created on the fly like this:
 
-[% inc file="function_keys.py" %]
+[%inc function_keys.py %]
 
 We could try adding more code to handle this,
 but there are so many different ways to generate keys on the fly
@@ -209,13 +211,13 @@ Since functions can be defined inside modules and other functions,
 the constructor for our class creates a list that we will use as a stack
 to keep track of what scopes we're currently in:
 
-[% inc file="find_unused_variables.py" keep="class" %]
+[%inc find_unused_variables.py mark=class %]
 
 We could just use a list of three values to record information for each scope,
 but using `namedtuple` (which also comes from Python's `collections` module)
 tells readers explicitly what each scope consists of:
 
-[% inc file="find_unused_variables.py" keep="scope" %]
+[%inc find_unused_variables.py mark=scope %]
 
 Each time we encounter a new scope
 we push a new `Scope` triple onto the stack with a name,
@@ -225,7 +227,7 @@ We then call `NodeVisitor.generic_visitor` to trigger recursion,
 pop the record we just pushed off the stack,
 and report any problems:
 
-[% inc file="find_unused_variables.py" keep="search" %]
+[%inc find_unused_variables.py mark=search %]
 
 The last part of the puzzle is `visit_Name`.
 If the variable's value is being read,
@@ -235,7 +237,7 @@ the node's `.ctx` property will be an instance of `ast.Store`.
 Checking this property allows us to put the name in the right set
 in the scope that's at the top of the stack:
 
-[% inc file="find_unused_variables.py" keep="name" %]
+[%inc find_unused_variables.py mark=name %]
 
 Once again,
 we can run this by reading the source of a program,
@@ -243,16 +245,16 @@ converting it to an AST,
 constructing an instance of `FindUnusedVariables`,
 and running its `visit` method:
 
-[% inc file="find_unused_variables.py" keep="main" %]
+[%inc find_unused_variables.py mark=main %]
 
 To test our code,
 let's create a program that has some unused variables:
 
-[% inc file="has_unused_variables.py" %]
+[%inc has_unused_variables.py %]
 
 When we run our linter we get:
 
-[% inc file="find_unused_variables.out" %]
+[%inc find_unused_variables.out %]
 
 ## Summary {: #lint-summary}
 

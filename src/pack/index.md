@@ -1,4 +1,5 @@
 ---
+title: "A Package Manager"
 abstract: >
     Most languages have an online archive from which people can download packages,
     each of which has a name, one or more versions, and a list of dependencies.
@@ -74,7 +75,7 @@ To avoid messing around with parsers,
 we store the [%i "manifest" %]
 of available packages as JSON:
 
-[% inc file="triple.json" %]
+[%inc triple.json %]
 
 The keys in the main dictionary identify packages
 (which we've called `A`, `B`, and `C` for simplicity).
@@ -157,7 +158,7 @@ then eliminates ones that aren't compatible with the manifest.
 Its main body is just those steps in order
 with a few `print` statements to show the results:
 
-[% inc file="exhaustive.py" keep="main" %]
+[%inc exhaustive.py mark=main %]
 
 To generate the possibilities,
 we create a list of the available versions of each package,
@@ -166,7 +167,7 @@ to generate the [%g cross_product "cross product" %]
 that contains all possible combinations of items
 ([%f pack-product %]):
 
-[% inc file="exhaustive.py" keep="possible" %]
+[%inc exhaustive.py mark=possible %]
 
 [% figure
    slug="pack-product"
@@ -201,8 +202,8 @@ we compare every entry X against every other entry Y:
 Sure enough,
 these rules find 3 valid combinations among our 18 possibilities:
 
-[% inc file="exhaustive.py" keep="compatible" %]
-[% inc file="exhaustive.out" %]
+[%inc exhaustive.py mark=compatible %]
+[%inc exhaustive.out %]
 
 ## Generating Possibilities Manually {: #pack-manual}
 
@@ -211,7 +212,7 @@ to generate all possible combinations of several lists of items.
 To see how it works,
 let's rewrite `make_possibilities` to use a function of our own:
 
-[% inc file="manual.py" keep="start" %]
+[%inc manual.py mark=start %]
 
 The first half creates the same list of lists as before,
 where each sub-list is the available versions of a single package.
@@ -231,8 +232,8 @@ If there aren't any more lists to loop over,
 the recursive calls must have included exactly one version of each package,
 so the combination is appended to the accumulator.
 
-[% inc file="manual.py" keep="make" %]
-[% inc file="manual.out" %]
+[%inc manual.py mark=make %]
+[%inc manual.out %]
 
 [% figure
    slug="pack-recursive"
@@ -273,7 +274,7 @@ Unlike our earlier code,
 the entries in this list don't include versions
 because we're going to be checking those as we go:
 
-[% inc file="incremental.py" keep="main" %]
+[%inc incremental.py mark=main %]
 
 Notice that
 we reverse the list of packages before starting our search
@@ -294,7 +295,7 @@ Our `find` function now has five parameters:
 5.  A count of the number of combinations we've considered so far,
     which we will use as a measure of efficiency.
 
-[% inc file="incremental.py" keep="find" %]
+[%inc incremental.py mark=find %]
 
 The algorithm combines the generation and checking we've already written:
 
@@ -316,14 +317,16 @@ Using the same test case as before,
 we only create 11 candidates instead of 18,
 so we've reduced our search by about a third:
 
-[% inc pat="incremental.*" fill="sh out" %]
+[%inc incremental.sh %]
+[%inc incremental.out %]
 
 If we reverse the order in which we search,
 though,
 we only generate half as many candidates as before:
 {: .continue}
 
-[% inc pat="incremental_reverse.*" fill="sh out" %]
+[%inc incremental_reverse.sh %]
+[%inc incremental_reverse.out %]
 
 ## Using a Theorem Prover {: #pack-smt}
 
@@ -348,7 +351,7 @@ To start,
 let's import a few things from `z3`
 and create three [%g boolean_value "Boolean variables" %]:
 
-[% inc file="z3_setup.py" %]
+[%inc z3_setup.py %]
 
 Our three variables don't have values yet—they're not
 either true or false.
@@ -370,8 +373,8 @@ and `B` to equal `C` at the same time.
 The answer is "yes",
 and the solution the solver finds is to make them all `False`:
 
-[% inc file="z3_equal.py" keep="solve" %]
-[% inc file="z3_equal.out" %]
+[%inc z3_equal.py mark=solve %]
+[%inc z3_equal.out %]
 
 What if we say that `A` and `B` must be equal,
 but `B` and `C` must be unequal?
@@ -379,8 +382,8 @@ In this case,
 the solver finds a solution in which `A` and `B` are `True`
 but `C` is `False`:
 
-[% inc file="z3_part_equal.py" keep="solve" %]
-[% inc file="z3_part_equal.out" %]
+[%inc z3_part_equal.py mark=solve %]
+[%inc z3_part_equal.out %]
 
 Finally,
 what if we require `A` to equal `B` and `B` to equal `C`
@@ -389,23 +392,23 @@ No assignment of values to the three variables
 can satisfy all three constraints at once,
 and the solver duly tells us that:
 
-[% inc file="z3_unequal.py" keep="solve" %]
-[% inc file="z3_unequal.out" %]
+[%inc z3_unequal.py mark=solve %]
+[%inc z3_unequal.out %]
 
 Returning to package management,
 we can represent the versions from our running example like this:
 
-[% inc file="z3_triple.py" keep="setup" %]
+[%inc z3_triple.py mark=setup %]
 
 We then tell the solver that we want one of the available versions of package A:
 {: .continue}
 
-[% inc file="z3_triple.py" keep="top" %]
+[%inc z3_triple.py mark=top %]
 
 and that the three versions of package A are mutually exclusive:
 {: .continue}
 
-[% inc file="z3_triple.py" keep="exclusive" %]
+[%inc z3_triple.py mark=exclusive %]
 
 We need equivalent statements for packages B and C;
 we'll explore in the exercises
@@ -416,8 +419,8 @@ Finally,
 we add the inter-package dependencies
 and search for a result:
 
-[% inc file="z3_triple.py" keep="depends" %]
-[% inc file="z3_triple.out" %]
+[%inc z3_triple.py mark=depends %]
+[%inc z3_triple.out %]
 
 The output tells us that the combination of A.3, B.3, and C.2
 will satisfy our constraints.
@@ -433,8 +436,8 @@ We can repeat the process many times,
 adding "not the latest solution" to the constraints each time
 until the problem becomes unsolvable:
 
-[% inc file="z3_complete.py" keep="all" %]
-[% inc file="z3_complete.out" %]
+[%inc z3_complete.py mark=all %]
+[%inc z3_complete.out %]
 
 ## Summary {: #pack-summary}
 

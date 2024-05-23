@@ -1,4 +1,5 @@
 ---
+title: "Serving Web Pages"
 abstract: >
     The Hypertext Transfer Protocol (HTTP) defines a way for programs to exchange data over the web.
     Clients (such as browsers) send requests to servers,
@@ -52,7 +53,7 @@ a [%g url "URL" %],
 and a [%g http_protocol_version "protocol version" %]
 on a single line separated by spaces:
 
-[% inc file="minimal_http_request.txt" %]
+[%inc minimal_http_request.txt %]
 
 The HTTP method is almost always either `GET` (to fetch information)
 or `POST` (to submit form data or upload files).
@@ -68,7 +69,7 @@ Most real requests have a few extra lines called
 [%g http_header "headers" %],
 which are key-value pairs like the ones shown below:
 
-[% inc file="http_request_headers.txt" %]
+[%inc http_request_headers.txt %]
 
 Unlike the keys in hash tables,
 [%i "key" "keys" %] may appear any number of times in HTTP headers,
@@ -93,14 +94,15 @@ There are then some headers
 a blank line,
 and the body:
 
-[% inc file="http_response.txt" %]
+[%inc http_response.txt %]
 
 Constructing HTTP requests is tedious,
 so most people use a library to do the repetitive work.
 The most popular one in Python is the [`requests`][requests] module,
 and works like this:
 
-[% inc pat="requests_example.*" fill="py out" %]
+[%inc requests_example.py %]
+[%inc requests_example.out %]
 
 `request.get` sends an HTTP GET request to a server
 and returns an object containing the response ([%f http-lifecycle %]).
@@ -136,7 +138,7 @@ so the [%i "Python standard library" %] has a module called [`http.server`][py_h
 to do most of the work.
 Here's the entire server:
 
-[% inc file="basic_server.py" %]
+[%inc basic_server.py %]
 
 Let's start at the bottom and work our way up.
 
@@ -167,7 +169,7 @@ So what does `RequestHandler` do?
 If we run this program from the command line,
 it doesn't display anything:
 
-[% inc file="basic_server.sh" %]
+[%inc basic_server.sh %]
 
 but if we then go to `http://localhost:8080` with our browser
 we see this:
@@ -180,7 +182,7 @@ Hello, web!
 and this in our shell:
 {: .continue}
 
-[% inc file="basic_server.out" %]
+[%inc basic_server.out %]
 
 The first line is straightforward:
 since we didn't ask for a particular file,
@@ -196,7 +198,7 @@ Serving the same page for every request isn't particularly useful,
 so let's rewrite our simple server to return files.
 The basic logic looks like this:
 
-[% inc file="file_server.py" keep="do_get" %]
+[%inc file_server.py mark=do_get %]
 
 We first turn the path in the URL into a local file path
 by removing the leading `/`.
@@ -218,7 +220,7 @@ which means that errors should be flagged in many places
 but handled in a few places high up in the code.
 The method that handles files is an example of this:
 
-[% inc file="file_server.py" keep="handle_file" %]
+[%inc file_server.py mark=handle_file %]
 
 If there's an error at any point in the processing cycle,
 we send a page with an error message
@@ -226,16 +228,16 @@ we send a page with an error message
 The former gives human users something to read,
 while the latter gives software a meaningful value in a predictable place:
 
-[% inc file="file_server.py" keep="handle_error" %]
+[%inc file_server.py mark=handle_error %]
 
 The error page is just HTML with some placeholders for the path and message:
 
-[% inc file="file_server.py" keep="error_page" %]
+[%inc file_server.py mark=error_page %]
 
 The code that actually sends the response is similar to what we've seen before:
 {: .continue}
 
-[% inc file="file_server.py" keep="send_content" %]
+[%inc file_server.py mark=send_content %]
 
 This server works, but only for a very forgiving definition of "works".
 We are careful not to show clients the actual paths to files on the server
@@ -305,28 +307,28 @@ more methods from the library class we're replacing:
 
 <div class="pagebreak"></div>
 
-[% inc file="mock_handler.py" %]
+[%inc mock_handler.py %]
 
 The application-specific class contains the code we've already seen:
 
-[% inc file="testable_server.py" keep="handler" omit="skip" %]
+[%inc testable_server.py mark=handler omit=skip %]
 
 `MockHandler` handles the simulated request
 and also stores the values that the client would receive:
 
-[% inc file="test_testable_server.py" keep="example" %]
+[%inc test_testable_server.py mark=example %]
 
 The main body of our runnable server
 combines the two classes to create what it needs:
 
-[% inc file="testable_server.py" keep="main" %]
+[%inc testable_server.py mark=main %]
 
 Our tests,
 on the other hand,
 create a server with mocked methods:
 {: .continue}
 
-[% inc file="test_testable_server.py" keep="combined" %]
+[%inc test_testable_server.py mark=combined %]
 
 ## Summary {: #http-summary}
 

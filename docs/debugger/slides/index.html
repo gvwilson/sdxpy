@@ -1,492 +1,481 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="repo" content="https://github.com/gvwilson/sdxpy">
-  <meta name="build_date" content="2024-04-28">
-  <meta name="template" content="slides">
-  <meta name="major" content="debugger">
-  
-  <link rel="icon" type="image/x-icon" href="../../favicon.ico">
-  <link rel="stylesheet" href="../../mccole.css">
-  <link rel="stylesheet" href="../../tango.css">
+    <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="../../logo.svg">
+<link rel="stylesheet" href="../../tango.css" type="text/css">
+<link rel="stylesheet" href="../../mccole.css" type="text/css">
+<title>Software Design by Example &middot; A Debugger</title>
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [['\\(', '\\)']]
+    }
+  };
+</script>
+<script
+  type="text/javascript"
+  id="MathJax-script"
+  async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+</script>
+
   <script defer data-domain="third-bit.com" src="https://plausible.io/js/plausible.js"></script>
-  <script>
-    MathJax = {
-      tex: {
-        inlineMath: [['\\(', '\\)']]
-      }
-    };
-  </script>
-  <script
-    type="text/javascript"
-    id="MathJax-script"
-    async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
-  </script>
-  <script defer src="../../mccole.js"></script>
-  <title>Software Design by Example: A Debugger</title>
-</head>
 
+
+    <script src="../../slides.js" defer></script>
+    <link rel="stylesheet" href="../../slides.css">
+  </head>
   <body>
-    <textarea id="source">
-
-class: slide-title
-
-<p>
-  <a href="https://third-bit.com/sdxpy/">Software Design by Example</a>
-</p>
-<h1>A Debugger</h1>
-<div class="bottom">
-  <a href="../">chapter</a>
+<div class="row notex">
+  <div class="col-12 center">
+    <h1>A Debugger</h1>
+    <p class="subtitle">Software Design by Example</p>
+  </div>
 </div>
-
----
-
-
-## The Problem
-
--   Tracing execution with `print` statements is tedious
-
--   And impossible (or nearly so) in some situations
-
--   Single-stepping/breakpoint debugger is far more effective
-
--   Build one to understand how they work
-
--   And to show how to test interactive applications
-
----
-
-## Preparation
-
--   We will want non-interactive input and output for testing
-
--   So <a class="gl-ref" href="../../glossary/#gl:refactor" title="To rewrite existing code in order to make it simpler or more efficient without changing its functionality." markdown="1">refactor</a> the virtual machine of <a class="x-ref" href="../../vm/">Chapter 25</a>
-
--   Pass an output stream (by default `sys.stdout`)
-
-```py
-def __init__(self, writer=sys.stdout):
-    """Set up memory."""
-    self.writer = writer
-    self.initialize([])
-```
-
-
--   Replace every `print` with a call to `self.write`
-
-```py
-def write(self, *args):
-    msg = "".join(args) + "\n"
-    self.writer.write(msg)
-```
-
-
----
-
-## Getting Input
-
--   Similarly, don't use `input` function directly
-
-```py
-def __init__(self, reader=input, writer=sys.stdout):
-    super().__init__(writer)
-    self.reader = reader
-```
-
-
-```py
-def read(self, prompt):
-    return self.reader(prompt).strip()
-```
-
-
----
-
-## Enumerating State
-
--   Old VM was either running or finished
-
--   New one has a third state: single-stepping
-
--   So define an <a class="gl-ref" href="../../glossary/#gl:enumeration" title="A set of distinct named values defined in a program." markdown="1">enumeration</a>
-
-```py
-class VMState(Enum):
-    """Virtual machine states."""
-    FINISHED = 0
-    STEPPING = 1
-    RUNNING = 2
-```
-
-
--   Safer than using strings (which can be mis-spelled)
-
----
-
-## Running
-
--   New `run` method starts in `STEPPING` state
-
-    -   If it started in `RUNNING` we could never tell it to do otherwise
-
-```py
-def run(self):
-    self.state = VMState.STEPPING
-    while True:
-        if self.state == VMState.STEPPING:
-            self.interact(self.ip)
-        if self.state == VMState.FINISHED:
-            break
-        instruction = self.ram[self.ip]
-        self.ip += 1
-        op, arg0, arg1 = self.decode(instruction)
-        self.execute(op, arg0, arg1)
-```
-
-
----
-
-## Interaction Cases
-
-1.  Empty line: go around again
-
-2.  <a class="gl-ref" href="../../glossary/#gl:disassemble" title="To convert machine instructions into assembly code or some higher-level language." markdown="1">Disassemble</a> current instruction or show memory:
-    do that and go around again
-
-3.  Quit:
-    change state to `FINISHED`.
-
-4.  Run normally:
-    change state to `RUNNING`
-
-5.  Single-step:
-    exit loop without changing state
-
----
-
-## Disassembling
-
-```py
-OPS_LOOKUP = {value["code"]: key for key, value in OPS.items()}
-```
-
-
--   If we type in the number-to-instruction lookup table,
-    it will eventually fall out of step
-
--   So build it from architecture description
-
-<figure>
+<hr>
+<h2>The Problem</h2>
+<ul>
+<li>
+<p>Tracing execution with <code>print</code> statements is tedious</p>
+</li>
+<li>
+<p>And impossible (or nearly so) in some situations</p>
+</li>
+<li>
+<p>Single-stepping/breakpoint debugger is far more effective</p>
+</li>
+<li>
+<p>Build one to understand how they work</p>
+</li>
+<li>
+<p>And to show how to test interactive applications</p>
+</li>
+</ul>
+<hr />
+<h2>Preparation</h2>
+<ul>
+<li>
+<p>We will want non-interactive input and output for testing</p>
+</li>
+<li>
+<p>So <a class="gl-ref" href="../../glossary/#refactor" markdown="1">refactor</a> the virtual machine of <a href="../../vm/">Chapter&nbsp;25</a></p>
+</li>
+<li>
+<p>Pass an output stream (by default <code>sys.stdout</code>)</p>
+</li>
+</ul>
+<div class="language-py" title="vm_base.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">writer</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set up memory.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">writer</span> <span class="o">=</span> <span class="n">writer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">initialize</span><span class="p">([])</span>
+</code></pre></div>
+</div>
+<ul>
+<li>Replace every <code>print</code> with a call to <code>self.write</code></li>
+</ul>
+<div class="language-py" title="vm_base.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">writer</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Getting Input</h2>
+<ul>
+<li>Similarly, don&rsquo;t use <code>input</code> function directly</li>
+</ul>
+<div class="language-py" title="vm_step.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reader</span><span class="o">=</span><span class="nb">input</span><span class="p">,</span> <span class="n">writer</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">writer</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reader</span> <span class="o">=</span> <span class="n">reader</span>
+</code></pre></div>
+</div>
+<div class="language-py" title="vm_step.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">read</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prompt</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">reader</span><span class="p">(</span><span class="n">prompt</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Enumerating State</h2>
+<ul>
+<li>
+<p>Old VM was either running or finished</p>
+</li>
+<li>
+<p>New one has a third state: single-stepping</p>
+</li>
+<li>
+<p>So define an <a class="gl-ref" href="../../glossary/#enumeration" markdown="1">enumeration</a></p>
+</li>
+</ul>
+<div class="language-py" title="architecture.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">VMState</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Virtual machine states.&quot;&quot;&quot;</span>
+    <span class="n">FINISHED</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">STEPPING</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">RUNNING</span> <span class="o">=</span> <span class="mi">2</span>
+</code></pre></div>
+</div>
+<ul>
+<li>Safer than using strings (which can be mis-spelled)</li>
+</ul>
+<hr />
+<h2>Running</h2>
+<ul>
+<li>
+<p>New <code>run</code> method starts in <code>STEPPING</code> state</p>
+<ul>
+<li>If it started in <code>RUNNING</code> we could never tell it to do otherwise</li>
+</ul>
+</li>
+</ul>
+<div class="language-py" title="vm_step.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">VMState</span><span class="o">.</span><span class="n">STEPPING</span>
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="n">VMState</span><span class="o">.</span><span class="n">STEPPING</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">interact</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ip</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="n">VMState</span><span class="o">.</span><span class="n">FINISHED</span><span class="p">:</span>
+                <span class="k">break</span>
+            <span class="n">instruction</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ram</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">ip</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ip</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">op</span><span class="p">,</span> <span class="n">arg0</span><span class="p">,</span> <span class="n">arg1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">instruction</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">op</span><span class="p">,</span> <span class="n">arg0</span><span class="p">,</span> <span class="n">arg1</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Interaction Cases</h2>
+<ol>
+<li>
+<p>Empty line: go around again</p>
+</li>
+<li>
+<p><a class="gl-ref" href="../../glossary/#disassemble" markdown="1">Disassemble</a> current instruction or show memory:
+    do that and go around again</p>
+</li>
+<li>
+<p>Quit:
+    change state to <code>FINISHED</code>.</p>
+</li>
+<li>
+<p>Run normally:
+    change state to <code>RUNNING</code></p>
+</li>
+<li>
+<p>Single-step:
+    exit loop without changing state</p>
+</li>
+</ol>
+<hr />
+<h2>Disassembling</h2>
+<div class="language-py" title="vm_step.py">
+<div class="highlight"><pre><span></span><code><span class="n">OPS_LOOKUP</span> <span class="o">=</span> <span class="p">{</span><span class="n">value</span><span class="p">[</span><span class="s2">&quot;code&quot;</span><span class="p">]:</span> <span class="n">key</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">OPS</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+</code></pre></div>
+</div>
+<ul>
+<li>
+<p>If we type in the number-to-instruction lookup table,
+    it will eventually fall out of step</p>
+</li>
+<li>
+<p>So build it from architecture description</p>
+</li>
+</ul>
+<figure id="debugger-table">
 <img src="../table.svg" alt="Building a consistent lookup table"/>
+<figcaption>Building a consistent lookup table.</figcaption>
 </figure>
 
+<hr />
+<h2>Capturing Output</h2>
+<ul>
+<li>
+<p>Has to be an object with a <code>write</code> method</p>
+</li>
+<li>
+<p>But can save what it&rsquo;s given for later inspection</p>
+</li>
+</ul>
+<div class="language-py" title="test_vm.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Writer</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">seen</span> <span class="o">=</span> <span class="p">[]</span>
 
----
+    <span class="k">def</span> <span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">seen</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Providing Input</h2>
+<ul>
+<li>
+<p>Need a &ldquo;function&rdquo; that takes a prompt and returns a string</p>
+</li>
+<li>
+<p>Create a class with a <code>__call__</code> method that &ldquo;reads&rdquo; from a list</p>
+</li>
+</ul>
+<div class="language-py" title="test_vm.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Reader</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">commands</span> <span class="o">=</span> <span class="n">args</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="mi">0</span>
 
-## Capturing Output
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prompt</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">index</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">commands</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">index</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">commands</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">index</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Testing Disassembly</h2>
+<div class="language-py" title="test_vm.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">test_disassemble</span><span class="p">():</span>
+    <span class="n">source</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    hlt</span>
+<span class="s2">    &quot;&quot;&quot;</span>
+    <span class="n">reader</span> <span class="o">=</span> <span class="n">Reader</span><span class="p">(</span><span class="s2">&quot;d&quot;</span><span class="p">,</span> <span class="s2">&quot;q&quot;</span><span class="p">)</span>
+    <span class="n">writer</span> <span class="o">=</span> <span class="n">Writer</span><span class="p">()</span>
+    <span class="n">execute</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">reader</span><span class="p">,</span> <span class="n">writer</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">writer</span><span class="o">.</span><span class="n">seen</span> <span class="o">==</span> <span class="p">[</span><span class="s2">&quot;hlt | 0 | 0</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">]</span>
+</code></pre></div>
+</div>
+<ol>
+<li>Create program (just a <code>hlt</code> instruction)</li>
+<li>Create a <code>Reader</code> with the commands <code>"d"</code> and <code>"q"</code></li>
+<li>Create a <code>Writer</code> to capture output</li>
+<li>Run the program</li>
+<li>Check that the output is correct</li>
+</ol>
+<hr />
+<h2>Is It Worth It?</h2>
+<ul>
+<li>
+<p>Yes</p>
+</li>
+<li>
+<p>Test that the debugger can single-step three times and then quit</p>
+</li>
+</ul>
+<div class="language-py" title="test_vm.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">test_print_two_values</span><span class="p">():</span>
+    <span class="n">source</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    ldc R0 55</span>
+<span class="s2">    prr R0</span>
+<span class="s2">    ldc R0 65</span>
+<span class="s2">    prr R0</span>
+<span class="s2">    hlt</span>
+<span class="s2">    &quot;&quot;&quot;</span>
+    <span class="n">reader</span> <span class="o">=</span> <span class="n">Reader</span><span class="p">(</span><span class="s2">&quot;s&quot;</span><span class="p">,</span> <span class="s2">&quot;s&quot;</span><span class="p">,</span> <span class="s2">&quot;s&quot;</span><span class="p">,</span> <span class="s2">&quot;q&quot;</span><span class="p">)</span>
+    <span class="n">writer</span> <span class="o">=</span> <span class="n">Writer</span><span class="p">()</span>
+    <span class="n">execute</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">reader</span><span class="p">,</span> <span class="n">writer</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">writer</span><span class="o">.</span><span class="n">seen</span> <span class="o">==</span> <span class="p">[</span>
+        <span class="s2">&quot;000037</span><span class="se">\n</span><span class="s2">&quot;</span>
+    <span class="p">]</span>
+</code></pre></div>
+</div>
+<hr />
+<!--# class="aside" -->
 
--   Has to be an object with a `write` method
-
--   But can save what it's given for later inspection
-
-```py
-class Writer:
-    def __init__(self):
-        self.seen = []
-
-    def write(self, *args):
-        self.seen.extend(args)
-```
-
-
----
-
-## Providing Input
-
--   Need a "function" that takes a prompt and returns a string
-
--   Create a class with a `__call__` method that "reads" from a list
-
-```py
-class Reader:
-    def __init__(self, *args):
-        self.commands = args
-        self.index = 0
-
-    def __call__(self, prompt):
-        assert self.index < len(self.commands)
-        self.index += 1
-        return self.commands[self.index - 1]
-```
-
-
----
-
-## Testing Disassembly
-
-```py
-def test_disassemble():
-    source = """
-    hlt
-    """
-    reader = Reader("d", "q")
-    writer = Writer()
-    execute(source, reader, writer)
-    assert writer.seen == ["hlt | 0 | 0\n"]
-```
-
-
-1.  Create program (just a `hlt` instruction)
-2.  Create a `Reader` with the commands `"d"` and `"q"`
-3.  Create a `Writer` to capture output
-4.  Run the program
-5.  Check that the output is correct
-
----
-
-## Is It Worth It?
-
--   Yes
-
--   Test that the debugger can single-step three times and then quit
-
-```py
-def test_print_two_values():
-    source = """
-    ldc R0 55
-    prr R0
-    ldc R0 65
-    prr R0
-    hlt
-    """
-    reader = Reader("s", "s", "s", "q")
-    writer = Writer()
-    execute(source, reader, writer)
-    assert writer.seen == [
-        "000037\n"
-    ]
-```
-
-
----
-
-class: aside
-
-## Other Tools
-
--   [Expect][expect] often used to script command-line applications
-
-    -   Can be used through the [pexpect][pexpect] module
-
--   [Selenium][selenium] and [Cypress][cypress] for browser-based applications
-
-    -   Simulate mouse clicks, window resizing, etc.
-
--   Harder to set up and use than a simple `assert`
-
--   But so are the things they're testing
-
----
-
-## Extensibility
-
--   Move every interactive operation to a method
-
--   Return Boolean to signal whether debugger should stay in interactive mode
-
-```py
-def _do_memory(self, addr):
-    self.show()
-    return True
-```
-
-
-```py
-def _do_step(self, addr):
-    self.state = VMState.STEPPING
-    return False
-```
-
-
----
-
-## Extensibility
-
--   Modify `interact` to choose operations from a lookup table
-
-```py
-def interact(self, addr):
-    prompt = "".join(sorted({key[0] for key in self.handlers}))
-    interacting = True
-    while interacting:
-        try:
-            command = self.read(f"{addr:06x} [{prompt}]> ")
-            if not command:
-                continue
-            elif command not in self.handlers:
-                self.write(f"Unknown command {command}")
-            else:
-                interacting = self.handlers[command](self.ip)
-        except EOFError:
-            self.state = VMState.FINISHED
-            interacting = False
-```
-
-
----
-
-## Extensibility
-
--   Build the table in the constructor
-
-```py
-def __init__(self, reader=input, writer=sys.stdout):
-    super().__init__(reader, writer)
-    self.handlers = {
-        "d": self._do_disassemble,
-        "dis": self._do_disassemble,
-        "i": self._do_ip,
-        "ip": self._do_ip,
-        "m": self._do_memory,
-        "memory": self._do_memory,
-        "q": self._do_quit,
-        "quit": self._do_quit,
-        "r": self._do_run,
-        "run": self._do_run,
-        "s": self._do_step,
-        "step": self._do_step,
-    }
-```
-
-
----
-
-## Stop Here
-
--   A <a class="gl-ref" href="../../glossary/#gl:breakpoint" title="A point in a program where a debugger should halt execution in order to interact with a user." markdown="1">breakpoint</a> tells the computer to stop at a particular instruction
-
-    -   A <a class="gl-ref" href="../../glossary/#gl:conditional_breakpoint" title="A breakpoint at which the debugger should only halt if some user-specified condition is true." markdown="1">conditional breakpoint</a> stops if a condition is true
-
----
-
-## Breakpoint Sets
-
--   Design #1: store breakpoint addresses in a set for `run` to check
-
-<figure>
+<h2>Other Tools</h2>
+<ul>
+<li>
+<p><a href="https://en.wikipedia.org/wiki/Expect">Expect</a> often used to script command-line applications</p>
+<ul>
+<li>Can be used through the <a href="https://pexpect.readthedocs.io/">pexpect</a> module</li>
+</ul>
+</li>
+<li>
+<p><a href="https://www.selenium.dev/">Selenium</a> and <a href="https://www.cypress.io/">Cypress</a> for browser-based applications</p>
+<ul>
+<li>Simulate mouse clicks, window resizing, etc.</li>
+</ul>
+</li>
+<li>
+<p>Harder to set up and use than a simple <code>assert</code></p>
+</li>
+<li>
+<p>But so are the things they&rsquo;re testing</p>
+</li>
+</ul>
+<hr />
+<h2>Extensibility</h2>
+<ul>
+<li>
+<p>Move every interactive operation to a method</p>
+</li>
+<li>
+<p>Return Boolean to signal whether debugger should stay in interactive mode</p>
+</li>
+</ul>
+<div class="language-py" title="vm_extend.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">_do_memory</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">addr</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+        <span class="k">return</span> <span class="kc">True</span>
+</code></pre></div>
+</div>
+<div class="language-py" title="vm_extend.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">_do_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">addr</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">VMState</span><span class="o">.</span><span class="n">STEPPING</span>
+        <span class="k">return</span> <span class="kc">False</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Extensibility</h2>
+<ul>
+<li>Modify <code>interact</code> to choose operations from a lookup table</li>
+</ul>
+<div class="language-py" title="vm_extend.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">interact</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">addr</span><span class="p">):</span>
+        <span class="n">prompt</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">sorted</span><span class="p">({</span><span class="n">key</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">handlers</span><span class="p">}))</span>
+        <span class="n">interacting</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">while</span> <span class="n">interacting</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">command</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">addr</span><span class="si">:</span><span class="s2">06x</span><span class="si">}</span><span class="s2"> [</span><span class="si">{</span><span class="n">prompt</span><span class="si">}</span><span class="s2">]&gt; &quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">command</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="k">elif</span> <span class="n">command</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">handlers</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown command </span><span class="si">{</span><span class="n">command</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">interacting</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">handlers</span><span class="p">[</span><span class="n">command</span><span class="p">](</span><span class="bp">self</span><span class="o">.</span><span class="n">ip</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">EOFError</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">VMState</span><span class="o">.</span><span class="n">FINISHED</span>
+                <span class="n">interacting</span> <span class="o">=</span> <span class="kc">False</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Extensibility</h2>
+<ul>
+<li>Build the table in the constructor</li>
+</ul>
+<div class="language-py" title="vm_extend.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reader</span><span class="o">=</span><span class="nb">input</span><span class="p">,</span> <span class="n">writer</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">reader</span><span class="p">,</span> <span class="n">writer</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">handlers</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;d&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_do_disassemble</span><span class="p">,</span>
+            <span class="s2">&quot;dis&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_do_disassemble</span><span class="p">,</span>
+            <span class="s2">&quot;i&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_do_ip</span><span class="p">,</span>
+            <span class="s2">&quot;ip&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_do_ip</span><span class="p">,</span>
+            <span class="s2">&quot;m&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_do_memory</span><span class="p">,</span>
+            <span class="s2">&quot;memory&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_do_memory</span><span class="p">,</span>
+            <span class="s2">&quot;q&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_do_quit</span><span class="p">,</span>
+            <span class="s2">&quot;quit&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_do_quit</span><span class="p">,</span>
+            <span class="s2">&quot;r&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_do_run</span><span class="p">,</span>
+            <span class="s2">&quot;run&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_do_run</span><span class="p">,</span>
+            <span class="s2">&quot;s&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_do_step</span><span class="p">,</span>
+            <span class="s2">&quot;step&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_do_step</span><span class="p">,</span>
+        <span class="p">}</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Stop Here</h2>
+<ul>
+<li>
+<p>A <a class="gl-ref" href="../../glossary/#breakpoint" markdown="1">breakpoint</a> tells the computer to stop at a particular instruction</p>
+<ul>
+<li>A <a class="gl-ref" href="../../glossary/#conditional_breakpoint" markdown="1">conditional breakpoint</a> stops if a condition is true</li>
+</ul>
+</li>
+</ul>
+<hr />
+<h2>Breakpoint Sets</h2>
+<ul>
+<li>Design #1: store breakpoint addresses in a set for <code>run</code> to check</li>
+</ul>
+<figure id="debugger-beside">
 <img src="../beside.svg" alt="Storing breakpoint addresses beside the program"/>
+<figcaption>Storing breakpoints beside the program.</figcaption>
 </figure>
 
-
----
-
-## What Hardware Does
-
--   Replace actual instruction with new `brk` instruction
-
--   Look up the real instruction when we hit a `brk`
-
-<figure>
+<hr />
+<h2>What Hardware Does</h2>
+<ul>
+<li>
+<p>Replace actual instruction with new <code>brk</code> instruction</p>
+</li>
+<li>
+<p>Look up the real instruction when we hit a <code>brk</code></p>
+</li>
+</ul>
+<figure id="debugger-break">
 <img src="../break.svg" alt="Inserting breakpoint instructions"/>
+<figcaption>Inserting breakpoints into a program.</figcaption>
 </figure>
 
+<hr />
+<h2>Add Commands</h2>
+<ul>
+<li>
+<p>Rely on parent class to initialize most of the table</p>
+</li>
+<li>
+<p>Then add more entries</p>
+</li>
+</ul>
+<div class="language-py" title="vm_break.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">breaks</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">handlers</span> <span class="o">|=</span> <span class="p">{</span>
+            <span class="s2">&quot;b&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_do_add_breakpoint</span><span class="p">,</span>
+            <span class="s2">&quot;break&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_do_add_breakpoint</span><span class="p">,</span>
+            <span class="s2">&quot;c&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_do_clear_breakpoint</span><span class="p">,</span>
+            <span class="s2">&quot;clear&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_do_clear_breakpoint</span><span class="p">,</span>
+        <span class="p">}</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Setting and Clearing</h2>
+<div class="language-py" title="vm_break.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">_do_add_breakpoint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">addr</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ram</span><span class="p">[</span><span class="n">addr</span><span class="p">]</span> <span class="o">==</span> <span class="n">OPS</span><span class="p">[</span><span class="s2">&quot;brk&quot;</span><span class="p">][</span><span class="s2">&quot;code&quot;</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">breaks</span><span class="p">[</span><span class="n">addr</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ram</span><span class="p">[</span><span class="n">addr</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ram</span><span class="p">[</span><span class="n">addr</span><span class="p">]</span> <span class="o">=</span> <span class="n">OPS</span><span class="p">[</span><span class="s2">&quot;brk&quot;</span><span class="p">][</span><span class="s2">&quot;code&quot;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="kc">True</span>
+</code></pre></div>
+</div>
+<div class="language-py" title="vm_break.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">_do_clear_breakpoint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">addr</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ram</span><span class="p">[</span><span class="n">addr</span><span class="p">]</span> <span class="o">!=</span> <span class="n">OPS</span><span class="p">[</span><span class="s2">&quot;brk&quot;</span><span class="p">][</span><span class="s2">&quot;code&quot;</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ram</span><span class="p">[</span><span class="n">addr</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">breaks</span><span class="p">[</span><span class="n">addr</span><span class="p">]</span>
+        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">breaks</span><span class="p">[</span><span class="n">addr</span><span class="p">]</span>
+        <span class="k">return</span> <span class="kc">True</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Running</h2>
+<div class="language-py" title="vm_break.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">VMState</span><span class="o">.</span><span class="n">STEPPING</span>
+        <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">!=</span> <span class="n">VMState</span><span class="o">.</span><span class="n">FINISHED</span><span class="p">:</span>
+            <span class="n">instruction</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ram</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">ip</span><span class="p">]</span>
+            <span class="n">op</span><span class="p">,</span> <span class="n">arg0</span><span class="p">,</span> <span class="n">arg1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">instruction</span><span class="p">)</span>
 
----
+            <span class="k">if</span> <span class="n">op</span> <span class="o">==</span> <span class="n">OPS</span><span class="p">[</span><span class="s2">&quot;brk&quot;</span><span class="p">][</span><span class="s2">&quot;code&quot;</span><span class="p">]:</span>
+                <span class="n">original</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">breaks</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">ip</span><span class="p">]</span>
+                <span class="n">op</span><span class="p">,</span> <span class="n">arg0</span><span class="p">,</span> <span class="n">arg1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">original</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">interact</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ip</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ip</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">op</span><span class="p">,</span> <span class="n">arg0</span><span class="p">,</span> <span class="n">arg1</span><span class="p">)</span>
 
-## Add Commands
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="n">VMState</span><span class="o">.</span><span class="n">STEPPING</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">interact</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ip</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ip</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">op</span><span class="p">,</span> <span class="n">arg0</span><span class="p">,</span> <span class="n">arg1</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<hr />
+<!--# class="summary" -->
 
--   Rely on parent class to initialize most of the table
-
--   Then add more entries
-
-```py
-def __init__(self):
-    super().__init__()
-    self.breaks = {}
-    self.handlers |= {
-        "b": self._do_add_breakpoint,
-        "break": self._do_add_breakpoint,
-        "c": self._do_clear_breakpoint,
-        "clear": self._do_clear_breakpoint,
-    }
-```
-
-
----
-
-## Setting and Clearing
-
-```py
-def _do_add_breakpoint(self, addr):
-    if self.ram[addr] == OPS["brk"]["code"]:
-        return True
-    self.breaks[addr] = self.ram[addr]
-    self.ram[addr] = OPS["brk"]["code"]
-    return True
-```
-
-
-```py
-def _do_clear_breakpoint(self, addr):
-    if self.ram[addr] != OPS["brk"]["code"]:
-        return True
-    self.ram[addr] = self.breaks[addr]
-    del self.breaks[addr]
-    return True
-```
-
-
----
-
-## Running
-
-```py
-def run(self):
-    self.state = VMState.STEPPING
-    while self.state != VMState.FINISHED:
-        instruction = self.ram[self.ip]
-        op, arg0, arg1 = self.decode(instruction)
-
-        if op == OPS["brk"]["code"]:
-            original = self.breaks[self.ip]
-            op, arg0, arg1 = self.decode(original)
-            self.interact(self.ip)
-            self.ip += 1
-            self.execute(op, arg0, arg1)
-
-        else:
-            if self.state == VMState.STEPPING:
-                self.interact(self.ip)
-            self.ip += 1
-            self.execute(op, arg0, arg1)
-```
-
-
----
-
-class: summary
-
-## Summary
-
-<figure>
+<h2>Summary</h2>
+<figure id="debugger-concept-map">
 <img src="../concept_map.svg" alt="Concept map for debugger"/>
+<figcaption>Concepts for debugger.</figcaption>
 </figure>
-
-
-
-[cypress]: https://www.cypress.io/
-[expect]: https://en.wikipedia.org/wiki/Expect
-[pexpect]: https://pexpect.readthedocs.io/
-[selenium]: https://www.selenium.dev/
-
-    </textarea>
-    <script src="../../remark-latest.min.js"></script>
-    <script>
-      var slideshow = remark.create({
-        highlightLines: true
-      })
-    </script>
   </body>
 </html>

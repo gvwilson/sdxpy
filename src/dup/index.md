@@ -1,4 +1,5 @@
 ---
+title: "Finding Duplicate Files"
 abstract: >
     The naïve way to find duplicated files is to compare each file to all the others,
     but that is unworkably slow for large sets of files.
@@ -56,12 +57,12 @@ The short program below takes a list of filenames from the command line,
 finds duplicates,
 and prints the matches:
 
-[% inc file="brute_force_1.py" keep="main" %]
+[%inc brute_force_1.py mark=main %]
 
 This program uses a function called `same_bytes`
 that reads two files and compares them byte by byte:
 
-[% inc file="brute_force_1.py" keep="bytes" %]
+[%inc brute_force_1.py mark=bytes %]
 
 Notice that the files are opened in [%g binary_mode "binary mode" %]
 using `"rb"` instead of the usual `"r"`.
@@ -81,7 +82,8 @@ We expect the three `a` files and the two `b` files to be reported as duplicates
 There's no particular reason for these tests—we just have to start somewhere.
 Our first test looks like this:
 
-[% inc pat="brute_force_1.*" fill="sh out" %]
+[%inc brute_force_1.sh %]
+[%inc brute_force_1.out %]
 
 Our program's output is correct but not useful:
 every file is reported as being identical to itself,
@@ -90,7 +92,7 @@ Let's fix the nested loop in `find_duplicates`
 so that we only check potentially differing pairs once
 ([%f dup-triangle %]):
 
-[% inc file="brute_force_2.py" keep="dup" %]
+[%inc brute_force_2.py mark=dup %]
 
 [% figure
    slug="dup-triangle"
@@ -130,13 +132,13 @@ Since bytes are just numbers,
 we can create a very simple hash function by adding up the bytes in a file
 and taking the remainder modulo some number:
 
-[% inc file="naive_hash.py" keep="hash" %]
+[%inc naive_hash.py mark=hash %]
 
 Here's a quick test that calculates the hash code for
 successively longer substrings of the word `"hashing"`:
 
-[% inc file="naive_hash.py" keep="example" %]
-[% inc file="naive_hash.out" %]
+[%inc naive_hash.py mark=example %]
+[%inc naive_hash.out %]
 
 The output seems random,
 but is it?
@@ -189,13 +191,13 @@ with the hash code as its key
 and an empty set as a value.
 It can then be sure that there's a set to add the filename to:
 
-[% inc file="grouped.py" keep="group" %]
+[%inc grouped.py mark=group %]
 
 We can now re-use most of the code we wrote earlier
 to find duplicates within each group:
 
-[% inc file="grouped.py" keep="main" %]
-[% inc file="grouped.out" %]
+[%inc grouped.py mark=main %]
+[%inc grouped.out %]
 
 ## Better Hashing {: #dup-hash}
 
@@ -230,8 +232,8 @@ which is normally written as a 64-character [%g hexadecimal "hexadecimal" %] str
 This uses the letters A-F (or a-f) to represent the digits from 10 to 15,
 so that (for example) `3D5` is \\((3×16^2)+(13×16^1)+(5×16^0)\\), or 981 in decimal:
 
-[% inc file="using_sha256.py" keep="example" %]
-[% inc file="using_sha256.out" %]
+[%inc using_sha256.py mark=example %]
+[%inc using_sha256.out %]
 
 <div class="callout" markdown="1">
 
@@ -257,7 +259,8 @@ We're willing to take that risk.
 
 Using this library function makes our duplicate file finder much shorter:
 
-[% inc pat="dup.*" fill="py sh out" %]
+[%inc dup.py %]
+[%inc dup.sh %]
 
 More importantly,
 our new approach scales to very large sets of files:

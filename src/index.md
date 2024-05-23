@@ -121,4 +121,12 @@ We have long accepted that software can and should be critiqued by asking if it 
 
 ## About the Author
 
-[% credits %]
+**Greg Wilson** has worked in industry and academia for 35 years
+and is the author, co-author, or editor of several books,
+including *Beautiful Code*,
+*The Architecture of Open Source Applications*,
+*JavaScript for Data Science*,
+*Teaching Tech Together*,
+and *Research Software Engineering with Python*.
+He was the co-founder and first Executive Director of Software Carpentry
+and received ACM SIGSOFT's Influential Educator Award in 2020.

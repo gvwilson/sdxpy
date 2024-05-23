@@ -1,4 +1,5 @@
 ---
+title: "Introduction"
 abstract: >
     The best way to learn design is to study examples,
     and the best programs to use as examples are the ones programmers use every day.
@@ -146,19 +147,19 @@ finding the balance is what we mean by "design".
 
 We display Python source code like this:
 
-[% inc file="python_sample.py" %]
+[%inc python_sample.py %]
 
 and Unix shell commands like this:
 {: .continue}
 
-[% inc file="shell_sample.sh" %]
+[%inc shell_sample.sh %]
 
 Data files and program output are shown like this:
 {: .continue}
 
-[% inc file="data_sample.yml" %]
+[%inc data_sample.yml %]
 
-[% inc file="output_sample.out" %]
+[%inc output_sample.out %]
 
 We use `...` to show where lines have been omitted,
 and occasionally break lines in unnatural ways to make them fit on the page.
@@ -254,7 +255,7 @@ and to the creators of
 [pip][pip],
 [Python][python],
 [Remark][remark],
-[WAVE][webaim_wave],
+[WAVE][wave],
 and many other open source tools:
 if we all give a little,
 we all get a lot.

@@ -1,594 +1,578 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="repo" content="https://github.com/gvwilson/sdxpy">
-  <meta name="build_date" content="2024-04-28">
-  <meta name="template" content="slides">
-  <meta name="major" content="db">
-  
-  <link rel="icon" type="image/x-icon" href="../../favicon.ico">
-  <link rel="stylesheet" href="../../mccole.css">
-  <link rel="stylesheet" href="../../tango.css">
+    <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="../../logo.svg">
+<link rel="stylesheet" href="../../tango.css" type="text/css">
+<link rel="stylesheet" href="../../mccole.css" type="text/css">
+<title>Software Design by Example &middot; A Database</title>
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [['\\(', '\\)']]
+    }
+  };
+</script>
+<script
+  type="text/javascript"
+  id="MathJax-script"
+  async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+</script>
+
   <script defer data-domain="third-bit.com" src="https://plausible.io/js/plausible.js"></script>
-  <script>
-    MathJax = {
-      tex: {
-        inlineMath: [['\\(', '\\)']]
-      }
-    };
-  </script>
-  <script
-    type="text/javascript"
-    id="MathJax-script"
-    async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
-  </script>
-  <script defer src="../../mccole.js"></script>
-  <title>Software Design by Example: A Database</title>
-</head>
 
+
+    <script src="../../slides.js" defer></script>
+    <link rel="stylesheet" href="../../slides.css">
+  </head>
   <body>
-    <textarea id="source">
-
-class: slide-title
-
-<p>
-  <a href="https://third-bit.com/sdxpy/">Software Design by Example</a>
-</p>
-<h1>A Database</h1>
-<div class="bottom">
-  <a href="../">chapter</a>
+<div class="row notex">
+  <div class="col-12 center">
+    <h1>A Database</h1>
+    <p class="subtitle">Software Design by Example</p>
+  </div>
 </div>
-
----
-
-
-## The Problem
-
--   Persisting objects (<a class="x-ref" href="../../persist/">Chapter 16</a>) lets us save and restore program state
-
--   But we often want fast lookup *without* reloading all the data
-
--   And interoperability across languages
-
--   Create a simple <a class="gl-ref" href="../../glossary/#gl:log_structured_db" title="A database to which data can only be appended, i.e., existing records cannot be overwritten." markdown="1">log-structured database</a>
-
----
-
-## Starting Point
-
--   A simple <a class="gl-ref" href="../../glossary/#gl:key_value_store" title="A simple form of database in which each record can only be accessed by a single key." markdown="1">key-value store</a> that lets us look things up
-
--   User must provide a function that gets key from record
-
-```py
-class Database:
-    def __init__(self, key_func):
-        """Initialize with function to get key."""
-        self._key_func = key_func
-
-    def add(self, record):
-        """Store the given record."""
-        raise NotImplementedError("add")
-
-    def get(self, key):
-        """Return record associated with key or None."""
-        raise NotImplementedError("get")
-```
-
-
----
-
-## Just a Dictionary
-
--   Store in memory using a dictionary
-
-```py
-from interface_original import Database
-
-class JustDict(Database):
-    def __init__(self, key_func):
-        super().__init__(key_func)
-        self._data = {}
-
-    def add(self, record):
-        key = self._key_func(record)
-        self._data[key] = record
-
-    def get(self, key):
-        return self._data.get(key, None)
-```
-
-
--   Lets us start writing tests
-
----
-
-## Experimental Records
-
-```py
-class BasicRec:
-    MAX_NAME_LEN = 6     # length of name in chars
-    TIMESTAMP_LEN = 8    # length of timestamp in chars
-    MAX_READING = 10     # maximum reading value
-    MAX_READING_LEN = 2  # length of reading in chars
-    MAX_READINGS_NUM = 2 # maximum number of readings
-
-    @staticmethod
-    def key(record):
-        assert isinstance(record, BasicRec)
-        return record._name
-
-    def __init__(self, name, timestamp, readings):
-        assert 0 < len(name) <= self.MAX_NAME_LEN
-        assert 0 <= len(readings) <= self.MAX_READINGS_NUM
-        assert all((0 <= r <= self.MAX_READING) for r in readings)
-        self._name = name
-        self._timestamp = timestamp
-        self._readings = readings
-
-```
-
-
----
-
-## Test Fixtures
-
--   Use the `pytest.fixture` decorator from <a class="x-ref" href="../../func/">Chapter 8</a>
-
-```py
-@pytest.fixture
-def db():
-    return JustDict(BasicExperiment.key)
-
-@pytest.fixture
-def ex01():
-    return BasicExperiment("ex01", 12345, [1, 2])
-
-@pytest.fixture
-def ex02():
-    return BasicExperiment("ex02", 67890, [3, 4])
-```
-
-
----
-
-## Tests
-
-```py
-def test_construct(db):
-    assert db
-
-def test_get_nothing_from_empty_db(db):
-    assert db.get("something") is None
-
-def test_add_then_get(db, ex01):
-    db.add(ex01)
-    assert db.get("ex01") == ex01
-
-def test_add_two_then_get_both(db, ex01, ex02):
-    db.add(ex01)
-    db.add(ex02)
-    assert db.get("ex01") == ex01
-    assert db.get("ex02") == ex02
-
-def test_add_then_overwrite(db, ex01):
-    db.add(ex01)
-    ex01._timestamp = 67890
-    db.add(ex01)
-    assert db.get("ex01") == ex01
-```
-
-
----
-
-## Refactor Interface
-
--   We're going to need other record manipulation functions
-
--   So save the record class instead of the key function
-
-```py
-class Database:
-    def __init__(self, record_cls):
-        """Initialize with data manipulation functions."""
-        self._record_cls = record_cls
-
-    def add(self, record):
-        """Store the given record."""
-        raise NotImplementedError("add")
-
-    def get(self, key):
-        """Return record associated with key or None."""
-        raise NotImplementedError("get")
-```
-
-
----
-
-## Refactor Database
-
--   Corresponding change to use a <a class="gl-ref" href="../../glossary/#gl:static_method" title="A function that is defined within a class but does not require either the class itself or an instance of the class as a parameter." markdown="1">static method</a>
-    of the record class
-
-```py
-from interface import Database
-
-class JustDictRefactored(Database):
-    def __init__(self, record_cls):
-        super().__init__(record_cls)
-        self._data = {}
-
-    def add(self, record):
-        key = self._record_cls.key(record)
-        self._data[key] = record
-
-    def get(self, key):
-        return self._data.get(key, None)
-```
-
-
----
-
-## Saving Records
-
--   Records must know how to pack and unpack themselves
-
--   Start by calculating the size of each
-
-```py
-class Experiment(BasicRec):
-    RECORD_LEN = BasicRec.MAX_NAME_LEN + 1 \
-        + BasicRec.TIMESTAMP_LEN + 1 \
-        + (BasicRec.MAX_READING_LEN * BasicRec.MAX_READINGS_NUM) \
-        + (BasicRec.MAX_READINGS_NUM - 1)
-
-    @staticmethod
-    def size():
-        return Experiment.RECORD_LEN
-```
-
-
----
-
-## Packing
-
-```py
-@staticmethod
-def pack(record):
-    assert isinstance(record, Experiment)
-    readings = "\0".join(str(r) for r in record._readings)
-    result = f"{record._name}\0{record._timestamp}\0{readings}"
-    if len(result) < Experiment.RECORD_LEN:
-        result += "\0" * (Experiment.RECORD_LEN - len(result))
-    return result
-```
-
-
--   Save as strings with <a class="gl-ref" href="../../glossary/#gl:null_byte" title="A byte with the value zero. Null bytes are used to mark the ends of strings in C and C++, and are sometimes used to fill unused space in fixed-size binary records." markdown="1">null byte</a> `\0` between them
-
--   A real implementation would pack as binary (<a class="x-ref" href="../../binary/">Chapter 17</a>)
-
----
-
-## Unpacking
-
-```py
-@staticmethod
-def unpack(raw):
-    assert isinstance(raw, str)
-    parts = raw.split("\0")
-    name = parts[0]
-    timestamp = int(parts[1])
-    readings = [int(r) for r in parts[2:] if len(r)]
-    return Experiment(name, timestamp, readings)
-```
-
-
--   Note: this doesn't handle strings with null bytes
-
-    -   A real implementation would etc.
-
---
-
--   Methods for packing and unpacking multiple records are straightforward
-
----
-
-## A File-Backed Database
-
-<figure>
+<hr>
+<h2>The Problem</h2>
+<ul>
+<li>
+<p>Persisting objects (<a href="../../persist/">Chapter&nbsp;16</a>) lets us save and restore program state</p>
+</li>
+<li>
+<p>But we often want fast lookup <em>without</em> reloading all the data</p>
+</li>
+<li>
+<p>And interoperability across languages</p>
+</li>
+<li>
+<p>Create a simple <a class="gl-ref" href="../../glossary/#log_structured_db" markdown="1">log-structured database</a></p>
+</li>
+</ul>
+<hr />
+<h2>Starting Point</h2>
+<ul>
+<li>
+<p>A simple <a class="gl-ref" href="../../glossary/#key_value_store" markdown="1">key-value store</a> that lets us look things up</p>
+</li>
+<li>
+<p>User must provide a function that gets key from record</p>
+</li>
+</ul>
+<div class="language-py" title="interface_original.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Database</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key_func</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize with function to get key.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_key_func</span> <span class="o">=</span> <span class="n">key_func</span>
+
+    <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Store the given record.&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;add&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return record associated with key or None.&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;get&quot;</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Just a Dictionary</h2>
+<ul>
+<li>Store in memory using a dictionary</li>
+</ul>
+<div class="language-py" title="just_dict_original.py">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">interface_original</span> <span class="kn">import</span> <span class="n">Database</span>
+
+<span class="k">class</span> <span class="nc">JustDict</span><span class="p">(</span><span class="n">Database</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key_func</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">key_func</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record</span><span class="p">):</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_key_func</span><span class="p">(</span><span class="n">record</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">record</span>
+
+    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<ul>
+<li>Lets us start writing tests</li>
+</ul>
+<hr />
+<h2>Experimental Records</h2>
+<div class="language-py" title="record_original.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">BasicRec</span><span class="p">:</span>
+    <span class="n">MAX_NAME_LEN</span> <span class="o">=</span> <span class="mi">6</span>     <span class="c1"># length of name in chars</span>
+    <span class="n">TIMESTAMP_LEN</span> <span class="o">=</span> <span class="mi">8</span>    <span class="c1"># length of timestamp in chars</span>
+    <span class="n">MAX_READING</span> <span class="o">=</span> <span class="mi">10</span>     <span class="c1"># maximum reading value</span>
+    <span class="n">MAX_READING_LEN</span> <span class="o">=</span> <span class="mi">2</span>  <span class="c1"># length of reading in chars</span>
+    <span class="n">MAX_READINGS_NUM</span> <span class="o">=</span> <span class="mi">2</span> <span class="c1"># maximum number of readings</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">key</span><span class="p">(</span><span class="n">record</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">record</span><span class="p">,</span> <span class="n">BasicRec</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">record</span><span class="o">.</span><span class="n">_name</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">timestamp</span><span class="p">,</span> <span class="n">readings</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="mi">0</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">MAX_NAME_LEN</span>
+        <span class="k">assert</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">readings</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">MAX_READINGS_NUM</span>
+        <span class="k">assert</span> <span class="nb">all</span><span class="p">((</span><span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">r</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">MAX_READING</span><span class="p">)</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">readings</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_timestamp</span> <span class="o">=</span> <span class="n">timestamp</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_readings</span> <span class="o">=</span> <span class="n">readings</span>
+
+    <span class="c1"># [omit]</span>
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">joined</span> <span class="o">=</span> <span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">r</span><span class="p">)</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_readings</span><span class="p">)</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_name</span><span class="si">}</span><span class="s2">(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_timestamp</span><span class="si">}</span><span class="s2">)[</span><span class="si">{</span><span class="n">joined</span><span class="si">}</span><span class="s2">]&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">)</span> <span class="ow">and</span> \
+            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">_name</span><span class="p">)</span> <span class="ow">and</span> \
+            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_timestamp</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">_timestamp</span><span class="p">)</span> <span class="ow">and</span> \
+            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_readings</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">_readings</span><span class="p">)</span>
+    <span class="c1"># [/omit]</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Test Fixtures</h2>
+<ul>
+<li>Use the <code>pytest.fixture</code> decorator from <a href="../../func/">Chapter&nbsp;8</a></li>
+</ul>
+<div class="language-py" title="test_db_original.py">
+<div class="highlight"><pre><span></span><code><span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span>
+<span class="k">def</span> <span class="nf">db</span><span class="p">():</span>
+    <span class="k">return</span> <span class="n">JustDict</span><span class="p">(</span><span class="n">BasicExperiment</span><span class="o">.</span><span class="n">key</span><span class="p">)</span>
+
+<span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span>
+<span class="k">def</span> <span class="nf">ex01</span><span class="p">():</span>
+    <span class="k">return</span> <span class="n">BasicExperiment</span><span class="p">(</span><span class="s2">&quot;ex01&quot;</span><span class="p">,</span> <span class="mi">12345</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+
+<span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span>
+<span class="k">def</span> <span class="nf">ex02</span><span class="p">():</span>
+    <span class="k">return</span> <span class="n">BasicExperiment</span><span class="p">(</span><span class="s2">&quot;ex02&quot;</span><span class="p">,</span> <span class="mi">67890</span><span class="p">,</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">])</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Tests</h2>
+<div class="language-py" title="test_db_original.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">test_construct</span><span class="p">(</span><span class="n">db</span><span class="p">):</span>
+    <span class="k">assert</span> <span class="n">db</span>
+
+<span class="k">def</span> <span class="nf">test_get_nothing_from_empty_db</span><span class="p">(</span><span class="n">db</span><span class="p">):</span>
+    <span class="k">assert</span> <span class="n">db</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;something&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span>
+
+<span class="k">def</span> <span class="nf">test_add_then_get</span><span class="p">(</span><span class="n">db</span><span class="p">,</span> <span class="n">ex01</span><span class="p">):</span>
+    <span class="n">db</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">ex01</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">db</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ex01&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="n">ex01</span>
+
+<span class="k">def</span> <span class="nf">test_add_two_then_get_both</span><span class="p">(</span><span class="n">db</span><span class="p">,</span> <span class="n">ex01</span><span class="p">,</span> <span class="n">ex02</span><span class="p">):</span>
+    <span class="n">db</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">ex01</span><span class="p">)</span>
+    <span class="n">db</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">ex02</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">db</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ex01&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="n">ex01</span>
+    <span class="k">assert</span> <span class="n">db</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ex02&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="n">ex02</span>
+
+<span class="k">def</span> <span class="nf">test_add_then_overwrite</span><span class="p">(</span><span class="n">db</span><span class="p">,</span> <span class="n">ex01</span><span class="p">):</span>
+    <span class="n">db</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">ex01</span><span class="p">)</span>
+    <span class="n">ex01</span><span class="o">.</span><span class="n">_timestamp</span> <span class="o">=</span> <span class="mi">67890</span>
+    <span class="n">db</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">ex01</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">db</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ex01&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="n">ex01</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Refactor Interface</h2>
+<ul>
+<li>
+<p>We&rsquo;re going to need other record manipulation functions</p>
+</li>
+<li>
+<p>So save the record class instead of the key function</p>
+</li>
+</ul>
+<div class="language-py" title="interface.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Database</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_cls</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize with data manipulation functions.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_record_cls</span> <span class="o">=</span> <span class="n">record_cls</span>
+
+    <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Store the given record.&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;add&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return record associated with key or None.&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;get&quot;</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Refactor Database</h2>
+<ul>
+<li>Corresponding change to use a <a class="gl-ref" href="../../glossary/#static_method" markdown="1">static method</a>
+    of the record class</li>
+</ul>
+<div class="language-py" title="just_dict_refactored.py">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">interface</span> <span class="kn">import</span> <span class="n">Database</span>
+
+<span class="k">class</span> <span class="nc">JustDictRefactored</span><span class="p">(</span><span class="n">Database</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_cls</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">record_cls</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record</span><span class="p">):</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_record_cls</span><span class="o">.</span><span class="n">key</span><span class="p">(</span><span class="n">record</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">record</span>
+
+    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Saving Records</h2>
+<ul>
+<li>
+<p>Records must know how to pack and unpack themselves</p>
+</li>
+<li>
+<p>Start by calculating the size of each</p>
+</li>
+</ul>
+<div class="language-py" title="record.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Experiment</span><span class="p">(</span><span class="n">BasicRec</span><span class="p">):</span>
+    <span class="n">RECORD_LEN</span> <span class="o">=</span> <span class="n">BasicRec</span><span class="o">.</span><span class="n">MAX_NAME_LEN</span> <span class="o">+</span> <span class="mi">1</span> \
+        <span class="o">+</span> <span class="n">BasicRec</span><span class="o">.</span><span class="n">TIMESTAMP_LEN</span> <span class="o">+</span> <span class="mi">1</span> \
+        <span class="o">+</span> <span class="p">(</span><span class="n">BasicRec</span><span class="o">.</span><span class="n">MAX_READING_LEN</span> <span class="o">*</span> <span class="n">BasicRec</span><span class="o">.</span><span class="n">MAX_READINGS_NUM</span><span class="p">)</span> \
+        <span class="o">+</span> <span class="p">(</span><span class="n">BasicRec</span><span class="o">.</span><span class="n">MAX_READINGS_NUM</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">size</span><span class="p">():</span>
+        <span class="k">return</span> <span class="n">Experiment</span><span class="o">.</span><span class="n">RECORD_LEN</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Packing</h2>
+<div class="language-py" title="record.py">
+<div class="highlight"><pre><span></span><code>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">pack</span><span class="p">(</span><span class="n">record</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">record</span><span class="p">,</span> <span class="n">Experiment</span><span class="p">)</span>
+        <span class="n">readings</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\0</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">r</span><span class="p">)</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">record</span><span class="o">.</span><span class="n">_readings</span><span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">record</span><span class="o">.</span><span class="n">_name</span><span class="si">}</span><span class="se">\0</span><span class="si">{</span><span class="n">record</span><span class="o">.</span><span class="n">_timestamp</span><span class="si">}</span><span class="se">\0</span><span class="si">{</span><span class="n">readings</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">result</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">Experiment</span><span class="o">.</span><span class="n">RECORD_LEN</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">+=</span> <span class="s2">&quot;</span><span class="se">\0</span><span class="s2">&quot;</span> <span class="o">*</span> <span class="p">(</span><span class="n">Experiment</span><span class="o">.</span><span class="n">RECORD_LEN</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">result</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">result</span>
+</code></pre></div>
+</div>
+<ul>
+<li>
+<p>Save as strings with <a class="gl-ref" href="../../glossary/#null_byte" markdown="1">null byte</a> <code>\0</code> between them</p>
+</li>
+<li>
+<p>A real implementation would pack as binary (<a href="../../binary/">Chapter&nbsp;17</a>)</p>
+</li>
+</ul>
+<hr />
+<h2>Unpacking</h2>
+<div class="language-py" title="record.py">
+<div class="highlight"><pre><span></span><code>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">unpack</span><span class="p">(</span><span class="n">raw</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">raw</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+        <span class="n">parts</span> <span class="o">=</span> <span class="n">raw</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\0</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">parts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">timestamp</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">parts</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">readings</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">r</span><span class="p">)</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">parts</span><span class="p">[</span><span class="mi">2</span><span class="p">:]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">r</span><span class="p">)]</span>
+        <span class="k">return</span> <span class="n">Experiment</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">timestamp</span><span class="p">,</span> <span class="n">readings</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<ul>
+<li>
+<p>Note: this doesn&rsquo;t handle strings with null bytes</p>
+<ul>
+<li>A real implementation would etc.</li>
+</ul>
+</li>
+<li>
+<p>Methods for packing and unpacking multiple records are straightforward</p>
+</li>
+</ul>
+<hr />
+<h2>A File-Backed Database</h2>
+<figure id="db-single-file">
 <img src="../single_file.svg" alt="Using a single file"/>
+<figcaption>Saving the entire database in a single file.</figcaption>
 </figure>
 
+<hr />
+<h2>A File-Backed Database</h2>
+<div class="language-py" title="file_backed.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">FileBacked</span><span class="p">(</span><span class="n">Database</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_cls</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">record_cls</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_filename</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_filename</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_filename</span><span class="o">.</span><span class="n">touch</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_load</span><span class="p">()</span>
 
----
+    <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record</span><span class="p">):</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_record_cls</span><span class="o">.</span><span class="n">key</span><span class="p">(</span><span class="n">record</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">record</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_save</span><span class="p">()</span>
 
-## A File-Backed Database
+    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<ul>
+<li>Needs two <a class="gl-ref" href="../../glossary/#helper_method" markdown="1">helper methods</a></li>
+</ul>
+<hr />
+<h2>A File-Backed Database</h2>
+<div class="language-py" title="file_backed.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">_save</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">packed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_record_cls</span><span class="o">.</span><span class="n">pack_multi</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_filename</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">writer</span><span class="p">:</span>
+            <span class="n">writer</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">packed</span><span class="p">)</span>
 
-```py
-class FileBacked(Database):
-    def __init__(self, record_cls, filename):
-        super().__init__(record_cls)
-        self._filename = Path(filename)
-        if not self._filename.exists():
-            self._filename.touch()
-        self._load()
-
-    def add(self, record):
-        key = self._record_cls.key(record)
-        self._data[key] = record
-        self._save()
-
-    def get(self, key):
-        return self._data.get(key, None)
-```
-
-
--   Needs two <a class="gl-ref" href="../../glossary/#gl:helper_method" title="A method designed to be used only by other methods in the same class. Helper methods are usually created to keep other methods short and readable." markdown="1">helper methods</a>
-
----
-
-## A File-Backed Database
-
-```py
-def _save(self):
-    packed = self._record_cls.pack_multi(self._data.values())
-    with open(self._filename, "w") as writer:
-        writer.write(packed)
-
-def _load(self):
-    assert self._filename.exists()
-    with open(self._filename, "r") as reader:
-        raw = reader.read()
-    records = self._record_cls.unpack_multi(raw)
-    self._data = {self._record_cls.key(r): r for r in records}
-```
-
-
--   Still saving and loading entire database
-
--   But look at all the infrastructure we've built
-
----
-
-## Saving Blocks
-
--   Save *N* records per <a class="gl-ref" href="../../glossary/#gl:block_memory" title="A region of memory of a fixed, constant size. Data is often divided into blocks to optimize input and output at the hardware level; software is then used to convert between blocks and streams." markdown="1">block</a>
-
--   Keep the <a class="gl-ref" href="../../glossary/#gl:index_database" title="An auxiliary data structure in a database used to speed up search for some entries. An index increases memory and disk requirements but reduces search time." markdown="1">index</a> in memory
-
--   When writing, only modify one block (smaller and faster)
-
--   When reading, only load one block (ditto)
-
----
-
-## Allocating Blocks
-
-<figure>
+    <span class="k">def</span> <span class="nf">_load</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_filename</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_filename</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">reader</span><span class="p">:</span>
+            <span class="n">raw</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+        <span class="n">records</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_record_cls</span><span class="o">.</span><span class="n">unpack_multi</span><span class="p">(</span><span class="n">raw</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">=</span> <span class="p">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_record_cls</span><span class="o">.</span><span class="n">key</span><span class="p">(</span><span class="n">r</span><span class="p">):</span> <span class="n">r</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">records</span><span class="p">}</span>
+</code></pre></div>
+</div>
+<ul>
+<li>
+<p>Still saving and loading entire database</p>
+</li>
+<li>
+<p>But look at all the infrastructure we&rsquo;ve built</p>
+</li>
+</ul>
+<hr />
+<h2>Saving Blocks</h2>
+<ul>
+<li>
+<p>Save <em>N</em> records per <a class="gl-ref" href="../../glossary/#block_memory" markdown="1">block</a></p>
+</li>
+<li>
+<p>Keep the <a class="gl-ref" href="../../glossary/#index_database" markdown="1">index</a> in memory</p>
+</li>
+<li>
+<p>When writing, only modify one block (smaller and faster)</p>
+</li>
+<li>
+<p>When reading, only load one block (ditto)</p>
+</li>
+</ul>
+<hr />
+<h2>Allocating Blocks</h2>
+<figure id="db-alloc">
 <img src="../alloc.svg" alt="Mapping records to blocks"/>
+<figcaption>Mapping records to blocks.</figcaption>
 </figure>
 
-
----
-
-## Store Blocks in Memory
-
-```py
-class Blocked(Database):
-    RECORDS_PER_BLOCK = 2
-
-    @staticmethod
-    def size():
-        return Blocked.RECORDS_PER_BLOCK
-
-    def __init__(self, record_cls):
-        super().__init__(record_cls)
-        self._next = 0
-        self._index = {}
-        self._blocks = []
-
-    def num_blocks(self):
-        return len(self._blocks)
-
-    def num_records(self):
-        return len(self._index)
-```
-
-
----
-
-## Adding a Record
-
-```py
-def add(self, record):
-    key = self._record_cls.key(record)
-    seq_id = self._next_seq_id()
-    self._index[key] = seq_id
-    block_id = self._get_block_id(seq_id)
-    block = self._get_block(block_id)
-    block[seq_id] = record
-```
-
-
--   Get the sequence ID for this record
-
--   Store the key-to-sequence mapping in the index
-
--   Find or create the right block
-
--   Add the record
-
----
-
-## Getting a Record
-
-```py
-def get(self, key):
-    if key not in self._index:
-        return None
-    seq_id = self._index[key]
-    block_id = self._get_block_id(seq_id)
-    block = self._get_block(block_id)
-    return block[seq_id]
-```
-
-
--   Do we even know about this record?
-
--   Find its current sequence ID
-
--   Find the corresponding block
-
--   Get the record
-
----
-
-## Helper Methods
-
-```py
-def _next_seq_id(self):
-    seq_id = self._next
-    self._next += 1
-    return seq_id
-
-def _get_block_id(self, seq_id):
-    return seq_id // Blocked.RECORDS_PER_BLOCK
-
-def _get_block(self, block_id):
-    while block_id >= len(self._blocks):
-        self._blocks.append({})
-    return self._blocks[block_id]
-```
-
-
----
-
-## Persisting Blocks
-
--   Use inheritance to do everything described above while saving and loading blocks
-
-```py
-class BlockedFile(Blocked):
-    def __init__(self, record_cls, db_dir):
-        super().__init__(record_cls)
-        self._db_dir = Path(db_dir)
-        self._build_index()
-
-    def add(self, record):
-        super().add(record)
-        self._save(record)
-
-    def get(self, key):
-        if key not in self._index:
-            return None
-        self._load(key)
-        return super().get(key)
-```
-
-
----
-
-## Saving
-
-```py
-def _save(self, record):
-    key = self._record_cls.key(record)
-    seq_id = self._index[key]
-    block_id = self._get_block_id(seq_id)
-
-    block = self._get_block(block_id)
-    packed = self._record_cls.pack_multi(block.values())
-
-    filename = self._get_filename(block_id)
-    with open(filename, "w") as writer:
-        writer.write(''.join(packed))
-```
-
-
--  Have to pack and save all the records in the block
-
----
-
-## Loading
-
-```py
-def _load(self, key):
-    seq_id = self._index[key]
-    block_id = self._get_block_id(seq_id)
-    filename = self._get_filename(block_id)
-    self._load_block(block_id, filename)
-
-def _load_block(self, block_id, filename):
-    with open(filename, "r") as reader:
-        raw = reader.read()
-
-    records = self._record_cls.unpack_multi(raw)
-    base = self.size() * block_id
-    block = self._get_block(block_id)
-    for i, r in enumerate(records):
-        block[base + i] = r
-```
-
-
--   Unpack all the records in the block
-
----
-
-## Why Split Loading?
-
--   Need to initialize the in-memory index when restarting the database
-
-```py
-def _build_index(self):
-    seq_id = 0
-    for (block_id, filename) in enumerate(
-            sorted(self._db_dir.iterdir())
-    ):
-        self._load_block(block_id, filename)
-        for record in self._get_block(block_id).values():
-            key = self._record_cls.key(record)
-            self._index[key] = seq_id
-            seq_id += 1
-```
-
-
--   Obvious extension: save the index in another file
-
--   Would have to profile (<a class="x-ref" href="../../perf/">Chapter 15</a>) to see if this was worthwhile
-
----
-
-## Next Steps
-
--   Clean up unused files
-
--   <a class="gl-ref" href="../../glossary/#gl:compact" title="To pack data so as to remove wasted or unused space." markdown="1">Compact</a> storage periodically
-
--   Use other data structures for indexing
-
----
-
-class: summary
-
-## Summary
-
-<figure>
+<hr />
+<h2>Store Blocks in Memory</h2>
+<div class="language-py" title="blocked.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Blocked</span><span class="p">(</span><span class="n">Database</span><span class="p">):</span>
+    <span class="n">RECORDS_PER_BLOCK</span> <span class="o">=</span> <span class="mi">2</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">size</span><span class="p">():</span>
+        <span class="k">return</span> <span class="n">Blocked</span><span class="o">.</span><span class="n">RECORDS_PER_BLOCK</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_cls</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">record_cls</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_next</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_index</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_blocks</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">def</span> <span class="nf">num_blocks</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_blocks</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">num_records</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_index</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Adding a Record</h2>
+<div class="language-py" title="blocked.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record</span><span class="p">):</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_record_cls</span><span class="o">.</span><span class="n">key</span><span class="p">(</span><span class="n">record</span><span class="p">)</span>
+        <span class="n">seq_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_next_seq_id</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_index</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">seq_id</span>
+        <span class="n">block_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_block_id</span><span class="p">(</span><span class="n">seq_id</span><span class="p">)</span>
+        <span class="n">block</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_block</span><span class="p">(</span><span class="n">block_id</span><span class="p">)</span>
+        <span class="n">block</span><span class="p">[</span><span class="n">seq_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">record</span>
+</code></pre></div>
+</div>
+<ul>
+<li>
+<p>Get the sequence ID for this record</p>
+</li>
+<li>
+<p>Store the key-to-sequence mapping in the index</p>
+</li>
+<li>
+<p>Find or create the right block</p>
+</li>
+<li>
+<p>Add the record</p>
+</li>
+</ul>
+<hr />
+<h2>Getting a Record</h2>
+<div class="language-py" title="blocked.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_index</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="n">seq_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_index</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+        <span class="n">block_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_block_id</span><span class="p">(</span><span class="n">seq_id</span><span class="p">)</span>
+        <span class="n">block</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_block</span><span class="p">(</span><span class="n">block_id</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">block</span><span class="p">[</span><span class="n">seq_id</span><span class="p">]</span>
+</code></pre></div>
+</div>
+<ul>
+<li>
+<p>Do we even know about this record?</p>
+</li>
+<li>
+<p>Find its current sequence ID</p>
+</li>
+<li>
+<p>Find the corresponding block</p>
+</li>
+<li>
+<p>Get the record</p>
+</li>
+</ul>
+<hr />
+<h2>Helper Methods</h2>
+<div class="language-py" title="blocked.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">_next_seq_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">seq_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_next</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_next</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="n">seq_id</span>
+
+    <span class="k">def</span> <span class="nf">_get_block_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">seq_id</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">seq_id</span> <span class="o">//</span> <span class="n">Blocked</span><span class="o">.</span><span class="n">RECORDS_PER_BLOCK</span>
+
+    <span class="k">def</span> <span class="nf">_get_block</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">block_id</span><span class="p">):</span>
+        <span class="k">while</span> <span class="n">block_id</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_blocks</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_blocks</span><span class="o">.</span><span class="n">append</span><span class="p">({})</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_blocks</span><span class="p">[</span><span class="n">block_id</span><span class="p">]</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Persisting Blocks</h2>
+<ul>
+<li>Use inheritance to do everything described above while saving and loading blocks</li>
+</ul>
+<div class="language-py" title="blocked_file.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">BlockedFile</span><span class="p">(</span><span class="n">Blocked</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_cls</span><span class="p">,</span> <span class="n">db_dir</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">record_cls</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_db_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">db_dir</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_build_index</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">record</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_save</span><span class="p">(</span><span class="n">record</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_index</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_load</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Saving</h2>
+<div class="language-py" title="blocked_file.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">_save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record</span><span class="p">):</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_record_cls</span><span class="o">.</span><span class="n">key</span><span class="p">(</span><span class="n">record</span><span class="p">)</span>
+        <span class="n">seq_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_index</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+        <span class="n">block_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_block_id</span><span class="p">(</span><span class="n">seq_id</span><span class="p">)</span>
+
+        <span class="n">block</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_block</span><span class="p">(</span><span class="n">block_id</span><span class="p">)</span>
+        <span class="n">packed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_record_cls</span><span class="o">.</span><span class="n">pack_multi</span><span class="p">(</span><span class="n">block</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+
+        <span class="n">filename</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_filename</span><span class="p">(</span><span class="n">block_id</span><span class="p">)</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">writer</span><span class="p">:</span>
+            <span class="n">writer</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">packed</span><span class="p">))</span>
+</code></pre></div>
+</div>
+<ul>
+<li>Have to pack and save all the records in the block</li>
+</ul>
+<hr />
+<h2>Loading</h2>
+<div class="language-py" title="blocked_file.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">_load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="n">seq_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_index</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+        <span class="n">block_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_block_id</span><span class="p">(</span><span class="n">seq_id</span><span class="p">)</span>
+        <span class="n">filename</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_filename</span><span class="p">(</span><span class="n">block_id</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_load_block</span><span class="p">(</span><span class="n">block_id</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_load_block</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">block_id</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">reader</span><span class="p">:</span>
+            <span class="n">raw</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+
+        <span class="n">records</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_record_cls</span><span class="o">.</span><span class="n">unpack_multi</span><span class="p">(</span><span class="n">raw</span><span class="p">)</span>
+        <span class="n">base</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">()</span> <span class="o">*</span> <span class="n">block_id</span>
+        <span class="n">block</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_block</span><span class="p">(</span><span class="n">block_id</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">r</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">records</span><span class="p">):</span>
+            <span class="n">block</span><span class="p">[</span><span class="n">base</span> <span class="o">+</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">r</span>
+</code></pre></div>
+</div>
+<ul>
+<li>Unpack all the records in the block</li>
+</ul>
+<hr />
+<h2>Why Split Loading?</h2>
+<ul>
+<li>Need to initialize the in-memory index when restarting the database</li>
+</ul>
+<div class="language-py" title="blocked_file.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="nf">_build_index</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">seq_id</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="p">(</span><span class="n">block_id</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span>
+                <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_db_dir</span><span class="o">.</span><span class="n">iterdir</span><span class="p">())</span>
+        <span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_load_block</span><span class="p">(</span><span class="n">block_id</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">record</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_block</span><span class="p">(</span><span class="n">block_id</span><span class="p">)</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+                <span class="n">key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_record_cls</span><span class="o">.</span><span class="n">key</span><span class="p">(</span><span class="n">record</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_index</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">seq_id</span>
+                <span class="n">seq_id</span> <span class="o">+=</span> <span class="mi">1</span>
+</code></pre></div>
+</div>
+<ul>
+<li>
+<p>Obvious extension: save the index in another file</p>
+</li>
+<li>
+<p>Would have to profile (<a href="../../perf/">Chapter&nbsp;15</a>) to see if this was worthwhile</p>
+</li>
+</ul>
+<hr />
+<h2>Next Steps</h2>
+<ul>
+<li>
+<p>Clean up unused files</p>
+</li>
+<li>
+<p><a class="gl-ref" href="../../glossary/#compact" markdown="1">Compact</a> storage periodically</p>
+</li>
+<li>
+<p>Use other data structures for indexing</p>
+</li>
+</ul>
+<hr />
+<!--# class="summary" -->
+
+<h2>Summary</h2>
+<figure id="db-concept-map">
 <img src="../concept_map.svg" alt="Concept map for database"/>
+<figcaption>Concept map for a log-structured database.</figcaption>
 </figure>
-
-
-
-
-
-    </textarea>
-    <script src="../../remark-latest.min.js"></script>
-    <script>
-      var slideshow = remark.create({
-        highlightLines: true
-      })
-    </script>
   </body>
 </html>

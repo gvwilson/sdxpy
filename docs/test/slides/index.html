@@ -1,384 +1,340 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="repo" content="https://github.com/gvwilson/sdxpy">
-  <meta name="build_date" content="2024-04-28">
-  <meta name="template" content="slides">
-  <meta name="major" content="test">
-  
-  <link rel="icon" type="image/x-icon" href="../../favicon.ico">
-  <link rel="stylesheet" href="../../mccole.css">
-  <link rel="stylesheet" href="../../tango.css">
+    <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="../../logo.svg">
+<link rel="stylesheet" href="../../tango.css" type="text/css">
+<link rel="stylesheet" href="../../mccole.css" type="text/css">
+<title>Software Design by Example &middot; Running Tests</title>
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [['\\(', '\\)']]
+    }
+  };
+</script>
+<script
+  type="text/javascript"
+  id="MathJax-script"
+  async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+</script>
+
   <script defer data-domain="third-bit.com" src="https://plausible.io/js/plausible.js"></script>
-  <script>
-    MathJax = {
-      tex: {
-        inlineMath: [['\\(', '\\)']]
-      }
-    };
-  </script>
-  <script
-    type="text/javascript"
-    id="MathJax-script"
-    async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
-  </script>
-  <script defer src="../../mccole.js"></script>
-  <title>Software Design by Example: Running Tests</title>
-</head>
 
+
+    <script src="../../slides.js" defer></script>
+    <link rel="stylesheet" href="../../slides.css">
+  </head>
   <body>
-    <textarea id="source">
-
-class: slide-title
-
-<p>
-  <a href="https://third-bit.com/sdxpy/">Software Design by Example</a>
-</p>
-<h1>Running Tests</h1>
-<div class="bottom">
-  <a href="../">chapter</a>
+<div class="row notex">
+  <div class="col-12 center">
+    <h1>Running Tests</h1>
+    <p class="subtitle">Software Design by Example</p>
+  </div>
 </div>
+<hr>
+<h2>The Problem</h2>
+<ul>
+<li>Not all software needs formal testing<ul>
+<li>Check one-off data analysis script incrementally</li>
+</ul>
+</li>
+<li>But 98% of the code in <a href="https://sqlite.org/">SQLite</a> is there to test the other 2%<ul>
+<li>For which I am grateful</li>
+</ul>
+</li>
+<li>Good tools make tests easier to write<ul>
+<li>So that programmers have fewer excuses not to write them</li>
+</ul>
+</li>
+<li>This lesson build a unit testing framework like <a href="https://docs.pytest.org/">pytest</a><ul>
+<li>Most frameworks in most other languages share its design</li>
+</ul>
+</li>
+</ul>
+<hr />
+<h2>Functions in Lists</h2>
+<ul>
+<li>We can put functions in lists</li>
+</ul>
+<div class="language-py" title="func_list.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">first</span><span class="p">():</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;First&quot;</span><span class="p">)</span>
 
----
+<span class="k">def</span> <span class="nf">second</span><span class="p">():</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Second&quot;</span><span class="p">)</span>
 
+<span class="k">def</span> <span class="nf">third</span><span class="p">():</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Third&quot;</span><span class="p">)</span>
 
-## The Problem
-
--   Not all software needs formal testing
-    -   Check one-off data analysis script incrementally
--   But 98% of the code in [SQLite][sqlite] is there to test the other 2%
-    -   For which I am grateful
--   Good tools make tests easier to write
-    -   So that programmers have fewer excuses not to write them
--   This lesson build a unit testing framework like [pytest][pytest]
-    -   Most frameworks in most other languages share its design
-
----
-
-## Functions in Lists
-
--   We can put functions in lists
-
-```py
-def first():
-    print("First")
-
-def second():
-    print("Second")
-
-def third():
-    print("Third")
-
-everything = [first, second, third]
-for func in everything:
-    func()
-```
-
-
-```
-First
+<span class="n">everything</span> <span class="o">=</span> <span class="p">[</span><span class="n">first</span><span class="p">,</span> <span class="n">second</span><span class="p">,</span> <span class="n">third</span><span class="p">]</span>
+<span class="k">for</span> <span class="n">func</span> <span class="ow">in</span> <span class="n">everything</span><span class="p">:</span>
+    <span class="n">func</span><span class="p">()</span>
+</code></pre></div>
+</div>
+<div class="language-out" title="func_list.out">
+<div class="highlight"><pre><span></span><code>First
 Second
 Third
-```
+</code></pre></div>
+</div>
+<hr />
+<h2>Signatures</h2>
+<ul>
+<li>We have to know how to call the functions<ul>
+<li>They must have the same <a class="gl-ref" href="../../glossary/#signature" markdown="1">signature</a></li>
+</ul>
+</li>
+</ul>
+<div class="language-py" title="signature.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">zero</span><span class="p">():</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;zero&quot;</span><span class="p">)</span>
 
+<span class="k">def</span> <span class="nf">one</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;one&quot;</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
 
----
-
-## Signatures
-
--   We have to know how to call the functions
-    -   They must have the same <a class="gl-ref" href="../../glossary/#gl:signature" title="The ordered list of parameters and return values that specifies how a function must be called and what it returns." markdown="1">signature</a>
-
-```py
-def zero():
-    print("zero")
-
-def one(value):
-    print("one", value)
-
-for func in [zero, one]:
-    func()
-```
-
-
-```
-zero
+<span class="k">for</span> <span class="n">func</span> <span class="ow">in</span> <span class="p">[</span><span class="n">zero</span><span class="p">,</span> <span class="n">one</span><span class="p">]:</span>
+    <span class="n">func</span><span class="p">()</span>
+</code></pre></div>
+</div>
+<div class="language-out" title="signature.out">
+<div class="highlight"><pre><span></span><code>zero
 Traceback (most recent call last):
-  File "/sdx/test/signature.py", line 8, in <module>
+  File &quot;/sdx/test/signature.py&quot;, line 8, in &lt;module&gt;
     func()
-TypeError: one() missing 1 required positional argument: 'value'
-```
+TypeError: one() missing 1 required positional argument: &#39;value&#39;
+</code></pre></div>
+</div>
+<hr />
+<!--# class="aside" -->
 
+<h2>Checking</h2>
+<ul>
+<li>Use <code>type</code> to see if something is a function</li>
+</ul>
+<div class="language-py" title="type_int.py">
+<div class="highlight"><pre><span></span><code><span class="nb">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span>
+</code></pre></div>
+</div>
+<div class="language-out" title="type_int.out">
+<div class="highlight"><pre><span></span><code>&lt;class &#39;int&#39;&gt;
+</code></pre></div>
+</div>
+<div class="language-py" title="type_func.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">example</span><span class="p">():</span>
+    <span class="k">pass</span>
 
----
+<span class="nb">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">example</span><span class="p">))</span>
+</code></pre></div>
+</div>
+<div class="language-out" title="type_func.out">
+<div class="highlight"><pre><span></span><code>&lt;class &#39;function&#39;&gt;
+</code></pre></div>
+</div>
+<hr />
+<!--# class="aside" -->
 
-class: aside
+<h2>Checking</h2>
+<ul>
+<li>But built-in functions have a different type</li>
+</ul>
+<div class="language-py" title="type_len.py">
+<div class="highlight"><pre><span></span><code><span class="nb">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="nb">len</span><span class="p">))</span>
+</code></pre></div>
+</div>
+<div class="language-out" title="type_len.out">
+<div class="highlight"><pre><span></span><code>&lt;class &#39;builtin_function_or_method&#39;&gt;
+</code></pre></div>
+</div>
+<ul>
+<li>So use <code>callable</code> to check if something can be called</li>
+</ul>
+<div class="language-py" title="callable.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">example</span><span class="p">():</span>
+    <span class="k">pass</span>
 
-## Checking
+<span class="nb">print</span><span class="p">(</span><span class="nb">callable</span><span class="p">(</span><span class="n">example</span><span class="p">),</span> <span class="nb">callable</span><span class="p">(</span><span class="nb">len</span><span class="p">))</span>
+</code></pre></div>
+</div>
+<div class="language-out" title="callable.out">
+<div class="highlight"><pre><span></span><code>True True
+</code></pre></div>
+</div>
+<hr />
+<h2>Testing Terminology</h2>
+<ul>
+<li>Apply the function we want to test to a <a class="gl-ref" href="../../glossary/#fixture" markdown="1">fixture</a></li>
+<li>Compare the <a class="gl-ref" href="../../glossary/#actual_result" markdown="1">actual result</a>
+    to the <a class="gl-ref" href="../../glossary/#expected_result" markdown="1">expected result</a></li>
+<li>Possible outcomes are:<ul>
+<li><a class="gl-ref" href="../../glossary/#pass_test" markdown="1">pass</a>: the target function worked</li>
+<li><a class="gl-ref" href="../../glossary/#fail_test" markdown="1">fail</a>: the target function didn&rsquo;t do what we expected</li>
+<li><a class="gl-ref" href="../../glossary/#error_test" markdown="1">error</a>: something went wrong with the test itself</li>
+</ul>
+</li>
+<li>Typically use <code>assert</code> to check results<ul>
+<li>If condition is <code>True</code>, does nothing</li>
+<li>Otherwise, raises an <code>AssertionError</code></li>
+</ul>
+</li>
+<li>Failed assertions usually cause the program to halt<ul>
+<li>But we can catch the exception ourselves if we want</li>
+</ul>
+</li>
+</ul>
+<hr />
+<h2>A Function and Some Tests</h2>
+<div class="language-py" title="manual.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">sign</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">value</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">1</span>
+</code></pre></div>
+</div>
+<div class="language-py" title="manual.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">test_sign_negative</span><span class="p">():</span>
+    <span class="k">assert</span> <span class="n">sign</span><span class="p">(</span><span class="o">-</span><span class="mi">3</span><span class="p">)</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span>
 
--   Use `type` to see if something is a function
+<span class="k">def</span> <span class="nf">test_sign_positive</span><span class="p">():</span>
+    <span class="k">assert</span> <span class="n">sign</span><span class="p">(</span><span class="mi">19</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
 
-```py
-print(type(3))
-```
+<span class="k">def</span> <span class="nf">test_sign_zero</span><span class="p">():</span>
+    <span class="k">assert</span> <span class="n">sign</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span>
 
+<span class="k">def</span> <span class="nf">test_sign_error</span><span class="p">():</span>
+    <span class="k">assert</span> <span class="n">sgn</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>What We Want</h2>
+<div class="language-py" title="manual.py">
+<div class="highlight"><pre><span></span><code><span class="n">TESTS</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">test_sign_negative</span><span class="p">,</span>
+    <span class="n">test_sign_positive</span><span class="p">,</span>
+    <span class="n">test_sign_zero</span><span class="p">,</span>
+    <span class="n">test_sign_error</span>
+<span class="p">]</span>
 
-```
-<class 'int'>
-```
-
-
-```py
-def example():
-    pass
-
-print(type(example))
-```
-
-
-```
-<class 'function'>
-```
-
-
----
-
-class: aside
-
-## Checking
-
--   But built-in functions have a different type
-
-```py
-print(type(len))
-```
-
-
-```
-<class 'builtin_function_or_method'>
-```
-
-
--   So use `callable` to check if something can be called
-
-```py
-def example():
-    pass
-
-print(callable(example), callable(len))
-```
-
-
-```
-True True
-```
-
-
----
-
-## Testing Terminology
-
--   Apply the function we want to test to a <a class="gl-ref" href="../../glossary/#gl:fixture" title="The thing on which a test is run, such as the parameters to the function being tested or the file being processed." markdown="1">fixture</a>
--   Compare the <a class="gl-ref" href="../../glossary/#gl:actual_result" title="The value generated by running code in a test. If this matches the expected result, the test passes; if the two are different, the test fails." markdown="1">actual result</a>
-    to the <a class="gl-ref" href="../../glossary/#gl:expected_result" title="The value that a piece of software is supposed to produce when tested in a certain way, or the state in which it is supposed to leave the system." markdown="1">expected result</a>
--   Possible outcomes are:
-    -   <a class="gl-ref" href="../../glossary/#gl:pass_test" title="A test passes if the actual result matches the expected result." markdown="1">pass</a>: the target function worked
-    -   <a class="gl-ref" href="../../glossary/#gl:fail_test" title="A test fails if the actual result does not match the expected result." markdown="1">fail</a>: the target function didn't do what we expected
-    -   <a class="gl-ref" href="../../glossary/#gl:error_test" title="Signalled when something goes wrong in a unit test itself rather than in the system being tested. In this case, we do not know anything about the correctness of the system." markdown="1">error</a>: something went wrong with the test itself
--   Typically use `assert` to check results
-    -   If condition is `True`, does nothing
-    -   Otherwise, raises an `AssertionError`
--   Failed assertions usually cause the program to halt
-    -   But we can catch the exception ourselves if we want
-
----
-
-## A Function and Some Tests
-
-```py
-def sign(value):
-    if value < 0:
-        return -1
-    else:
-        return 1
-```
-
-```py
-def test_sign_negative():
-    assert sign(-3) == -1
-
-def test_sign_positive():
-    assert sign(19) == 1
-
-def test_sign_zero():
-    assert sign(0) == 0
-
-def test_sign_error():
-    assert sgn(1) == 1
-```
-
-
----
-
-## What We Want
-
-```py
-TESTS = [
-    test_sign_negative,
-    test_sign_positive,
-    test_sign_zero,
-    test_sign_error
-]
-
-run_tests(TESTS)
-```
-
-```
-pass 2
+<span class="n">run_tests</span><span class="p">(</span><span class="n">TESTS</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<div class="language-out" title="manual.out">
+<div class="highlight"><pre><span></span><code>pass 2
 fail 1
 error 1
-```
+</code></pre></div>
+</div>
+<ul>
+<li>But we have to remember to add each one to <code>TESTS</code></li>
+</ul>
+<hr />
+<h2>How Python Stores Variables</h2>
+<ul>
+<li>Python stores variables in (something very much like) a dictionary</li>
+</ul>
+<div class="language-py" title="globals.py">
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">pprint</span>
+<span class="n">pprint</span><span class="o">.</span><span class="n">pprint</span><span class="p">(</span><span class="nb">globals</span><span class="p">())</span>
+</code></pre></div>
+</div>
+<div class="language-out" title="globals.out">
+<div class="highlight"><pre><span></span><code>{&#39;__annotations__&#39;: {},
+ &#39;__builtins__&#39;: &lt;module &#39;builtins&#39; (built-in)&gt;,
+ &#39;__cached__&#39;: None,
+ &#39;__doc__&#39;: None,
+ &#39;__file__&#39;: &#39;/sdx/test/globals.py&#39;,
+ &#39;__loader__&#39;: &lt;_frozen_importlib_external.SourceFileLoader object \
+at 0x109d65290&gt;,
+ &#39;__name__&#39;: &#39;__main__&#39;,
+ &#39;__package__&#39;: None,
+ &#39;__spec__&#39;: None,
+ &#39;pprint&#39;: &lt;module &#39;pprint&#39; from \
+&#39;/sdx/conda/envs/sdxpy/lib/python3.11/pprint.py&#39;&gt;}
+</code></pre></div>
+</div>
+<hr />
+<h2>Further Proof</h2>
+<div class="language-py" title="globals_plus.py">
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">pprint</span>
+<span class="n">my_variable</span> <span class="o">=</span> <span class="mi">123</span>
+<span class="n">pprint</span><span class="o">.</span><span class="n">pprint</span><span class="p">(</span><span class="nb">globals</span><span class="p">())</span>
+</code></pre></div>
+</div>
+<div class="language-out" title="globals_plus.out">
+<div class="highlight"><pre><span></span><code>{&#39;__annotations__&#39;: {},
+ &#39;__builtins__&#39;: &lt;module &#39;builtins&#39; (built-in)&gt;,
+ &#39;__cached__&#39;: None,
+ &#39;__doc__&#39;: None,
+ &#39;__file__&#39;: &#39;/sdx/test/globals_plus.py&#39;,
+ &#39;__loader__&#39;: &lt;_frozen_importlib_external.SourceFileLoader object \
+at 0x108039290&gt;,
+ &#39;__name__&#39;: &#39;__main__&#39;,
+ &#39;__package__&#39;: None,
+ &#39;__spec__&#39;: None,
+ &#39;my_variable&#39;: 123,
+ &#39;pprint&#39;: &lt;module &#39;pprint&#39; from \
+&#39;/sdx/conda/envs/sdxpy/lib/python3.11/pprint.py&#39;&gt;}
+</code></pre></div>
+</div>
+<ul>
+<li>The function <code>locals</code> gives local variables</li>
+</ul>
+<hr />
+<h2>Introspection</h2>
+<ul>
+<li>We know how to loop over a dictionary&rsquo;s keys</li>
+</ul>
+<div class="language-py" title="find_test_funcs.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">find_tests</span><span class="p">(</span><span class="n">prefix</span><span class="p">):</span>
+    <span class="k">for</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">func</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">globals</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">prefix</span><span class="p">):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">func</span><span class="p">)</span>
 
+<span class="n">find_tests</span><span class="p">(</span><span class="s2">&quot;test_&quot;</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<div class="language-out" title="find_test_funcs.out">
+<div class="highlight"><pre><span></span><code>test_sign_negative &lt;function test_sign_negative at 0x105bcd440&gt;
+test_sign_positive &lt;function test_sign_positive at 0x105bcd4e0&gt;
+test_sign_zero &lt;function test_sign_zero at 0x105bcd580&gt;
+test_sign_error &lt;function test_sign_error at 0x105bcd620&gt;
+</code></pre></div>
+</div>
+<ul>
+<li>When we print a function, Python shows its name and address</li>
+</ul>
+<hr />
+<h2>A Better Test Runner</h2>
+<div class="language-py" title="runner.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">run_tests</span><span class="p">():</span>
+    <span class="n">results</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;pass&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;fail&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">}</span>
+    <span class="k">for</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">test</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">globals</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;test_&quot;</span><span class="p">):</span>
+            <span class="k">continue</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">test</span><span class="p">()</span>
+            <span class="n">results</span><span class="p">[</span><span class="s2">&quot;pass&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">except</span> <span class="ne">AssertionError</span><span class="p">:</span>
+            <span class="n">results</span><span class="p">[</span><span class="s2">&quot;fail&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="n">results</span><span class="p">[</span><span class="s2">&quot;error&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;pass </span><span class="si">{</span><span class="n">results</span><span class="p">[</span><span class="s1">&#39;pass&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;fail </span><span class="si">{</span><span class="n">results</span><span class="p">[</span><span class="s1">&#39;fail&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;error </span><span class="si">{</span><span class="n">results</span><span class="p">[</span><span class="s1">&#39;error&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<ul>
+<li>Really should check that tests are callable</li>
+</ul>
+<hr />
+<!--# class="summary" -->
 
--   But we have to remember to add each one to `TESTS`
-
----
-
-## How Python Stores Variables
-
--   Python stores variables in (something very much like) a dictionary
-
-```py
-import pprint
-pprint.pprint(globals())
-```
-
-
-```
-{'__annotations__': {},
- '__builtins__': <module 'builtins' (built-in)>,
- '__cached__': None,
- '__doc__': None,
- '__file__': '/sdx/test/globals.py',
- '__loader__': <_frozen_importlib_external.SourceFileLoader object \
-at 0x109d65290>,
- '__name__': '__main__',
- '__package__': None,
- '__spec__': None,
- 'pprint': <module 'pprint' from \
-'/sdx/conda/envs/sdxpy/lib/python3.11/pprint.py'>}
-```
-
-
----
-
-## Further Proof
-
-```py
-import pprint
-my_variable = 123
-pprint.pprint(globals())
-```
-
-
-```
-{'__annotations__': {},
- '__builtins__': <module 'builtins' (built-in)>,
- '__cached__': None,
- '__doc__': None,
- '__file__': '/sdx/test/globals_plus.py',
- '__loader__': <_frozen_importlib_external.SourceFileLoader object \
-at 0x108039290>,
- '__name__': '__main__',
- '__package__': None,
- '__spec__': None,
- 'my_variable': 123,
- 'pprint': <module 'pprint' from \
-'/sdx/conda/envs/sdxpy/lib/python3.11/pprint.py'>}
-```
-
-
---
-
--   The function `locals` gives local variables
-
----
-
-## Introspection
-
--   We know how to loop over a dictionary's keys
-
-```py
-def find_tests(prefix):
-    for (name, func) in globals().items():
-        if name.startswith(prefix):
-            print(name, func)
-
-find_tests("test_")
-```
-
-```
-test_sign_negative <function test_sign_negative at 0x105bcd440>
-test_sign_positive <function test_sign_positive at 0x105bcd4e0>
-test_sign_zero <function test_sign_zero at 0x105bcd580>
-test_sign_error <function test_sign_error at 0x105bcd620>
-```
-
-
---
-
--   When we print a function, Python shows its name and address
-
----
-
-## A Better Test Runner
-
-```py
-def run_tests():
-    results = {"pass": 0, "fail": 0, "error": 0}
-    for (name, test) in globals().items():
-        if not name.startswith("test_"):
-            continue
-        try:
-            test()
-            results["pass"] += 1
-        except AssertionError:
-            results["fail"] += 1
-        except Exception:
-            results["error"] += 1
-    print(f"pass {results['pass']}")
-    print(f"fail {results['fail']}")
-    print(f"error {results['error']}")
-```
-
-
---
-
--   Really should check that tests are callable
-
----
-
-class: summary
-
-## Summary
-
-<figure>
+<h2>Summary</h2>
+<figure id="test-concept-map">
 <img src="../concept_map.svg" alt="Concept map of unit testing framework"/>
+<figcaption>Concept map</figcaption>
 </figure>
-
-
-
-[pytest]: https://docs.pytest.org/
-[sqlite]: https://sqlite.org/
-
-    </textarea>
-    <script src="../../remark-latest.min.js"></script>
-    <script>
-      var slideshow = remark.create({
-        highlightLines: true
-      })
-    </script>
   </body>
 </html>

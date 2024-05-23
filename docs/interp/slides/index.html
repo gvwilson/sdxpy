@@ -1,350 +1,293 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="repo" content="https://github.com/gvwilson/sdxpy">
-  <meta name="build_date" content="2024-04-28">
-  <meta name="template" content="slides">
-  <meta name="major" content="interp">
-  
-  <link rel="icon" type="image/x-icon" href="../../favicon.ico">
-  <link rel="stylesheet" href="../../mccole.css">
-  <link rel="stylesheet" href="../../tango.css">
+    <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="../../logo.svg">
+<link rel="stylesheet" href="../../tango.css" type="text/css">
+<link rel="stylesheet" href="../../mccole.css" type="text/css">
+<title>Software Design by Example &middot; An Interpreter</title>
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [['\\(', '\\)']]
+    }
+  };
+</script>
+<script
+  type="text/javascript"
+  id="MathJax-script"
+  async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+</script>
+
   <script defer data-domain="third-bit.com" src="https://plausible.io/js/plausible.js"></script>
-  <script>
-    MathJax = {
-      tex: {
-        inlineMath: [['\\(', '\\)']]
-      }
-    };
-  </script>
-  <script
-    type="text/javascript"
-    id="MathJax-script"
-    async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
-  </script>
-  <script defer src="../../mccole.js"></script>
-  <title>Software Design by Example: An Interpreter</title>
-</head>
 
+
+    <script src="../../slides.js" defer></script>
+    <link rel="stylesheet" href="../../slides.css">
+  </head>
   <body>
-    <textarea id="source">
-
-class: slide-title
-
-<p>
-  <a href="https://third-bit.com/sdxpy/">Software Design by Example</a>
-</p>
-<h1>An Interpreter</h1>
-<div class="bottom">
-  <a href="../">chapter</a>
+<div class="row notex">
+  <div class="col-12 center">
+    <h1>An Interpreter</h1>
+    <p class="subtitle">Software Design by Example</p>
+  </div>
 </div>
+<hr>
+<h2>Background</h2>
+<ul>
+<li>Programs are just data</li>
+<li>Compilers and interpreters are just programs<ul>
+<li>Compiler: generate instructions once in advance</li>
+<li>Interpreter: generate instructions on the fly</li>
+<li>Differences are increasingly blurry in practice</li>
+</ul>
+</li>
+<li>Most have a <a class="gl-ref" href="../../glossary/#parser" markdown="1">parser</a> and a <a class="gl-ref" href="../../glossary/#runtime" markdown="1">runtime</a></li>
+<li>Look at the latter in this lesson to see how programs actually run</li>
+</ul>
+<hr />
+<h2>Representing Expressions</h2>
+<ul>
+<li>Represent simple arithmetic operations as lists</li>
+</ul>
+<div class="language-py" title="add_example.py">
+<div class="highlight"><pre><span></span><code><span class="p">[</span><span class="s2">&quot;add&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>            <span class="c1"># 1 + 2</span>
+<span class="p">[</span><span class="s2">&quot;abs&quot;</span><span class="p">,</span> <span class="o">-</span><span class="mf">3.5</span><span class="p">]</span>            <span class="c1"># abs(-3.5)</span>
+<span class="p">[</span><span class="s2">&quot;add&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;abs&quot;</span><span class="p">,</span> <span class="o">-</span><span class="mi">5</span><span class="p">],</span> <span class="mi">9</span><span class="p">]</span>  <span class="c1"># abs(-5) + 9</span>
+</code></pre></div>
+</div>
+<ul>
+<li>We use special <a class="gl-ref" href="../../glossary/#infix_notation" markdown="1">infix notation</a> like <code>1+2</code> for historical reasons</li>
+<li>Always putting the operation first makes processing easier</li>
+</ul>
+<hr />
+<h2>Evaluating Expressions</h2>
+<div class="language-py" title="expr.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">do_add</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span>
+    <span class="n">left</span> <span class="o">=</span> <span class="n">do</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">right</span> <span class="o">=</span> <span class="n">do</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">left</span> <span class="o">+</span> <span class="n">right</span>
+</code></pre></div>
+</div>
+<ul>
+<li><code>args</code> is everything <em>except</em> the name of the operation</li>
+<li>Use an as-yet-unwritten function <code>do</code> to evaluate the operands</li>
+<li>Then add their values</li>
+</ul>
+<hr />
+<h2>Evaluating Expressions</h2>
+<div class="language-py" title="expr.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">do_abs</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+    <span class="n">val</span> <span class="o">=</span> <span class="n">do</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="k">return</span> <span class="nb">abs</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<ul>
+<li>All the <code>do_</code> functions can be called interchangeably</li>
+<li>Like the unit test functions of <a href="../../test/">Chapter&nbsp;6</a></li>
+</ul>
+<hr />
+<h2>Dispatching Operations</h2>
+<ul>
+<li>Write a function that <a class="gl-ref" href="../../glossary/#dynamic_dispatch" markdown="1">dispatches</a> to actual operations</li>
+</ul>
+<div class="language-py" title="expr.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">do</span><span class="p">(</span><span class="n">expr</span><span class="p">):</span>
+    <span class="c1"># Integers evaluate to themselves.</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">expr</span>
 
----
-
-
-## Background
-
--   Programs are just data
--   Compilers and interpreters are just programs
-    -   Compiler: generate instructions once in advance
-    -   Interpreter: generate instructions on the fly
-    -   Differences are increasingly blurry in practice
--   Most have a <a class="gl-ref" href="../../glossary/#gl:parser" title="A function or program that reads text formatted according to some grammar and converts it to a data structure in memory. Every programming language has a parser that reads programs written in that language; parsers also exist for various data formats." markdown="1">parser</a> and a <a class="gl-ref" href="../../glossary/#gl:runtime" title="A program that implements the basic operations used in a programming language." markdown="1">runtime</a>
--   Look at the latter in this lesson to see how programs actually run
-
----
-
-## Representing Expressions
-
--   Represent simple arithmetic operations as lists
-
-```py
-["add", 1, 2]            # 1 + 2
-["abs", -3.5]            # abs(-3.5)
-["add", ["abs", -5], 9]  # abs(-5) + 9
-```
-
-
---
-
--   We use special <a class="gl-ref" href="../../glossary/#gl:infix_notation" title="Writing expressions with operators between operands, as in `1 + 2` to add 1 and 2." markdown="1">infix notation</a> like `1+2` for historical reasons
--   Always putting the operation first makes processing easier
-
----
-
-## Evaluating Expressions
-
-```py
-def do_add(args):
-    assert len(args) == 2
-    left = do(args[0])
-    right = do(args[1])
-    return left + right
-```
-
-
--   `args` is everything _except_ the name of the operation
--   Use an as-yet-unwritten function `do` to evaluate the operands
--   Then add their values
-
----
-
-## Evaluating Expressions
-
-```py
-def do_abs(args):
-    assert len(args) == 1
-    val = do(args[0])
-    return abs(val)
-```
-
-
--   All the `do_` functions can be called interchangeably
--   Like the unit test functions of <a class="x-ref" href="../../test/">Chapter 6</a>
-
----
-
-## Dispatching Operations
-
--   Write a function that <a class="gl-ref" href="../../glossary/#gl:dynamic_dispatch" title="To find a function or a property of an object by name while a program is running. For example, instead of getting a specific property of an object using `obj.name`, a program might use `obj[someVariable]`, where `someVariable` could hold `&quot;name&quot;` or some other property name." markdown="1">dispatches</a> to actual operations
-
-```py
-def do(expr):
-    # Integers evaluate to themselves.
-    if isinstance(expr, int):
-        return expr
-
-    # Lists trigger function calls.
-    assert isinstance(expr, list)
-    if expr[0] == "abs":
-        return do_abs(expr[1:])
-    if expr[0] == "add":
-        return do_add(expr[1:])
-    assert False, f"Unknown operation {expr[0]}"
-```
-
-
----
-
-## Dispatching Operations
-
-<figure>
+    <span class="c1"># Lists trigger function calls.</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">expr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;abs&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">do_abs</span><span class="p">(</span><span class="n">expr</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+    <span class="k">if</span> <span class="n">expr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;add&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">do_add</span><span class="p">(</span><span class="n">expr</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+    <span class="k">assert</span> <span class="kc">False</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Unknown operation </span><span class="si">{</span><span class="n">expr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Dispatching Operations</h2>
+<figure id="interp-recursive-evaluation">
 <img src="../recursive_evaluation.svg" alt="Recursive evaluation of an expression tree"/>
+<figcaption>Recursively evaluating an expression tree</figcaption>
 </figure>
 
+<hr />
+<h2>An Example</h2>
+<div class="language-tll" title="expr.tll">
+<div class="highlight"><pre><span></span><code>[&quot;add&quot;, [&quot;abs&quot;, -3], 2]
+</code></pre></div>
+</div>
+<div class="language-sh" title="expr.sh">
+<div class="highlight"><pre><span></span><code>python<span class="w"> </span>expr.py<span class="w"> </span>expr.tll
+</code></pre></div>
+</div>
+<div class="language-out" title="expr.out">
+<div class="highlight"><pre><span></span><code>=&gt; 5
+</code></pre></div>
+</div>
+<hr />
+<h2>Environments</h2>
+<ul>
+<li>Store variables in a dictionary that&rsquo;s passed to every <code>do_</code> function<ul>
+<li>Like the dictionary returned by the <code>globals</code> function</li>
+<li>An <a class="gl-ref" href="../../glossary/#environment" markdown="1">environment</a></li>
+</ul>
+</li>
+</ul>
+<div class="language-py" title="vars.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">do_abs</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+    <span class="n">val</span> <span class="o">=</span> <span class="n">do</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="k">return</span> <span class="nb">abs</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Getting Variables&rsquo; Values</h2>
+<ul>
+<li>Choices for getting variables&rsquo; values:<ol>
+<li>Assume strings are variable names</li>
+<li>Define another function that we call explicitly</li>
+</ol>
+</li>
+</ul>
+<div class="language-py" title="vars.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">do_get</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">str</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="n">env</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Unknown variable </span><span class="si">{</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="k">return</span> <span class="n">env</span><span class="p">[</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+</code></pre></div>
+</div>
+<div class="language-py" title="vars.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">do_set</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">str</span><span class="p">)</span>
+    <span class="n">value</span> <span class="o">=</span> <span class="n">do</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">env</span><span class="p">[</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="n">value</span>
+    <span class="k">return</span> <span class="n">value</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Sequencing</h2>
+<ul>
+<li>Need a way to set values before evaluating expressions</li>
+<li><code>["seq", ["set", "a", 1], ["add", ["get", "a"], 2]]</code></li>
+</ul>
+<div class="language-py" title="vars.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">do_seq</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">args</span><span class="p">:</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">do</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">result</span>
+</code></pre></div>
+</div>
+<hr />
+<!--# class="aside" -->
 
----
-
-## An Example
-
-```tll
-["add", ["abs", -3], 2]
-```
-
-
-```sh
-python expr.py expr.tll
-```
-
-
-```
-=> 5
-```
-
-
----
-
-## Environments
-
--   Store variables in a dictionary that's passed to every `do_` function
-    -   Like the dictionary returned by the `globals` function
-    -   An <a class="gl-ref" href="../../glossary/#gl:environment" title="The set of variables currently defined in a program." markdown="1">environment</a>
-
-```py
-def do_abs(env, args):
-    assert len(args) == 1
-    val = do(env, args[0])
-    return abs(val)
-```
-
-
----
-
-## Getting Variables' Values
-
--   Choices for getting variables' values:
-    1.  Assume strings are variable names
-    2.  Define another function that we call explicitly
-
-```py
-def do_get(env, args):
-    assert len(args) == 1
-    assert isinstance(args[0], str)
-    assert args[0] in env, f"Unknown variable {args[0]}"
-    return env[args[0]]
-```
-
-
-```py
-def do_set(env, args):
-    assert len(args) == 2
-    assert isinstance(args[0], str)
-    value = do(env, args[1])
-    env[args[0]] = value
-    return value
-```
-
-
----
-
-## Sequencing
-
--   Need a way to set values before evaluating expressions
--   `["seq", ["set", "a", 1], ["add", ["get", "a"], 2]]`
-
-```py
-def do_seq(env, args):
-    assert len(args) > 0
-    for item in args:
-        result = do(env, item)
-    return result
-```
-
-
----
-
-class: aside
-
-## Everything Is An Expression
-
--   Python distinguishes <a class="gl-ref" href="../../glossary/#gl:expression" title="A part of a program that produces a value, such as `1+2`." markdown="1">expressions</a> that produce values
-    from <a class="gl-ref" href="../../glossary/#gl:statement" title="A part of a program that doesn&#x27;t produce a value. `for` loops and `if` statements are statements in Python." markdown="1">statements</a> that don't
--   But it doesn't have to, and many languages don't
-
-```python
-# not actually legal Python
-result =
-    if a > 0:
-        1
-    elif a == 0:
-        0
-    else:
-        -1
-```
-
----
-
-## Doubling
-
-```tll
-[
-    "seq",
-    ["set", "a", 1],
-    ["print", "initial", ["get", "a"]],
+<h2>Everything Is An Expression</h2>
+<ul>
+<li>Python distinguishes <a class="gl-ref" href="../../glossary/#expression" markdown="1">expressions</a> that produce values
+    from <a class="gl-ref" href="../../glossary/#statement" markdown="1">statements</a> that don&rsquo;t</li>
+<li>But it doesn&rsquo;t have to, and many languages don&rsquo;t</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="c1"># not actually legal Python</span>
+<span class="n">result</span> <span class="o">=</span>
+    <span class="k">if</span> <span class="n">a</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="mi">1</span>
+    <span class="k">elif</span> <span class="n">a</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="mi">0</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="o">-</span><span class="mi">1</span>
+</code></pre></div>
+<hr />
+<h2>Doubling</h2>
+<div class="language-tll" title="doubling.tll">
+<div class="highlight"><pre><span></span><code>[
+    &quot;seq&quot;,
+    [&quot;set&quot;, &quot;a&quot;, 1],
+    [&quot;print&quot;, &quot;initial&quot;, [&quot;get&quot;, &quot;a&quot;]],
     [
-        "repeat", 4,
+        &quot;repeat&quot;, 4,
         [
-            "seq",
-            ["set", "a", ["add", ["get", "a"], ["get", "a"]]],
-	    ["if",
-		["leq", ["get", "a"], 10],
-		["print", "small", ["get", "a"]],
-		["print", "large", ["get", "a"]]
-	    ]
+            &quot;seq&quot;,
+            [&quot;set&quot;, &quot;a&quot;, [&quot;add&quot;, [&quot;get&quot;, &quot;a&quot;], [&quot;get&quot;, &quot;a&quot;]]],
+        [&quot;if&quot;,
+        [&quot;leq&quot;, [&quot;get&quot;, &quot;a&quot;], 10],
+        [&quot;print&quot;, &quot;small&quot;, [&quot;get&quot;, &quot;a&quot;]],
+        [&quot;print&quot;, &quot;large&quot;, [&quot;get&quot;, &quot;a&quot;]]
+        ]
         ]
     ]
 ]
-```
-
-
----
-
-## Doubling
-
-```
-initial 1
+</code></pre></div>
+</div>
+<hr />
+<h2>Doubling</h2>
+<div class="language-out" title="doubling.out">
+<div class="highlight"><pre><span></span><code>initial 1
 small 2
 small 4
 small 8
 large 16
-=> None
-```
+=&gt; None
+</code></pre></div>
+</div>
+<hr />
+<h2>This Is Tedious</h2>
+<div class="language-py" title="vars.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">do</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">expr</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">expr</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">expr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;abs&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">do_abs</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">expr</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+    <span class="k">if</span> <span class="n">expr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;add&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">do_add</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">expr</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+    <span class="k">if</span> <span class="n">expr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;get&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">do_get</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">expr</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+    <span class="k">if</span> <span class="n">expr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;seq&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">do_seq</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">expr</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+    <span class="k">if</span> <span class="n">expr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;set&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">do_set</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">expr</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+    <span class="k">assert</span> <span class="kc">False</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Unknown operation </span><span class="si">{</span><span class="n">expr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+</code></pre></div>
+</div>
+<ul>
+<li>But we know what to do</li>
+</ul>
+<hr />
+<h2>Introspection</h2>
+<div class="language-py" title="vars_reflect.py">
+<div class="highlight"><pre><span></span><code><span class="n">OPS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="n">name</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;do_&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">):</span> <span class="n">func</span>
+    <span class="k">for</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">func</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">globals</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;do_&quot;</span><span class="p">)</span>
+<span class="p">}</span>
+</code></pre></div>
+</div>
+<hr />
+<!--# class="aside" -->
 
+<h2>How Good Is Our Design?</h2>
+<ul>
+<li>One way to evaluate a design is to ask how <a class="gl-ref" href="../../glossary/#extensibility" markdown="1">extensible</a> it is</li>
+<li>The answer for the interpreter is &ldquo;pretty easily&rdquo;</li>
+<li>The answer for our little language is &ldquo;not at all&rdquo;</li>
+<li>We need a way to define and call functions of our own</li>
+<li>We will tackle this in <a href="../../func/">Chapter&nbsp;8</a></li>
+</ul>
+<hr />
+<!--# class="summary" -->
 
----
-
-## This Is Tedious
-
-```py
-def do(env, expr):
-    if isinstance(expr, int):
-        return expr
-    assert isinstance(expr, list)
-    if expr[0] == "abs":
-        return do_abs(env, expr[1:])
-    if expr[0] == "add":
-        return do_add(env, expr[1:])
-    if expr[0] == "get":
-        return do_get(env, expr[1:])
-    if expr[0] == "seq":
-        return do_seq(env, expr[1:])
-    if expr[0] == "set":
-        return do_set(env, expr[1:])
-    assert False, f"Unknown operation {expr[0]}"
-```
-
-
---
-
--   But we know what to do
-
----
-
-## Introspection
-
-```py
-OPS = {
-    name.replace("do_", ""): func
-    for (name, func) in globals().items()
-    if name.startswith("do_")
-}
-```
-
-
----
-
-class: aside
-
-## How Good Is Our Design?
-
--   One way to evaluate a design is to ask how <a class="gl-ref" href="../../glossary/#gl:extensibility" title="How easily new features can be added to a program or existing features can be changed." markdown="1">extensible</a> it is
--   The answer for the interpreter is "pretty easily"
--   The answer for our little language is "not at all"
--   We need a way to define and call functions of our own
--   We will tackle this in <a class="x-ref" href="../../func/">Chapter 8</a>
-
----
-
-class: summary
-
-## Summary
-
-<figure>
+<h2>Summary</h2>
+<figure id="interp-concept-map">
 <img src="../concept_map.svg" alt="Concept map"/>
+<figcaption>Concept map of interpreter</figcaption>
 </figure>
-
-
-
-
-
-    </textarea>
-    <script src="../../remark-latest.min.js"></script>
-    <script>
-      var slideshow = remark.create({
-        highlightLines: true
-      })
-    </script>
   </body>
 </html>

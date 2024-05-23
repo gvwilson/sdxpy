@@ -1,4 +1,5 @@
 ---
+title: "Binary Data"
 abstract: >
     Python and other high-level languages shield programmers from the low-level details
     of how computers actually store and manipulate data,
@@ -42,18 +43,7 @@ two's complement rolls over when going below zero like an odometer.
 For example,
 three-bit integers give us the values in [%t binary-3bit %].
 
-<div class="table" id="binary-3bit" caption="3-bit integer values using two's complement." markdown="1">
-| Base 10 | Base 2 |
-| ------- | ------ |
-| 3       | 011    |
-| 2       | 010    |
-| 1       | 001    |
-| 0       | 000    |
-| -1      | 111    |
-| -2      | 110    |
-| -3      | 101    |
-| -4      | 100    |
-</div>
+[% table slug="binary-3bit" tbl="3bit.tbl" caption="3-bit integer values using two's complement." %]
 
 We can still tell whether a number is positive or negative
 by looking at the first bit:
@@ -70,7 +60,8 @@ even if `x` is a valid number,
 
 We can write binary numbers directly in Python using the `0b` prefix:
 
-[% inc pat="binary_notation.*" fill="py out" %]
+[%inc binary_notation.py %]
+[%inc binary_notation.out %]
 
 As noted in [%x dup %],
 programmers usually use [%i "hexadecimal" %] instead:
@@ -84,18 +75,7 @@ which makes it easy to translate bits to digits and vice versa:
 for example,
 `0xF7` is `0b11110111`.
 
-<div class="table" id="binary-hex" caption="Hexadecimal digits." markdown="1">
-| Decimal | Hexadecimal | Bits | Decimal | Hexadecimal | Bits |
-| ------- | ----------- | ---- | ------- | ----------- | ---- |
-| 0       | 0           | 0000 | 8       | 8           | 1000 |
-| 1       | 1           | 0001 | 9       | 9           | 1001 |
-| 2       | 2           | 0010 | 10      | A           | 1010 |
-| 3       | 3           | 0011 | 11      | B           | 1011 |
-| 4       | 4           | 0100 | 12      | C           | 1100 |
-| 5       | 5           | 0101 | 13      | D           | 1101 |
-| 6       | 6           | 0110 | 14      | E           | 1110 |
-| 7       | 7           | 0111 | 15      | F           | 1111 |
-</div>
+[% table slug="binary-hex" tbl="hex.tbl" caption="Hexadecimal digits." %]
 
 ## Bitwise Operations {: #binary-bitops}
 
@@ -117,16 +97,7 @@ Finally,
 When these operators are applied on multi-bit values
 they work on corresponding bits independently as shown in [%t binary-ops %].
 
-<div class="table" id="binary-ops" caption="Bitwise operations." markdown="1">
-| Expression | Bitwise       | Result (bits)   | Result (decimal) |
-| ---------- | ------------- | --------------- | ---------------- |
-| `12 & 6`   | `1100 & 0110` | `0100`          | `4`              |
-| `12 | 6`   | `1100 | 0110` | `1110`          | `14`             |
-| `12 ^ 6`   | `1100 ^ 0110` | `1010`          | `10`             |
-| `~ 6`      | `~ 0110`      | `1001`          | `9`              |
-| `12 << 2`  | `1100 << 2`   | `110000`        | `48`             |
-| `12 >> 2`  | `1100 >> 2`   | `0011`          | `3`              |
-</div>
+[% table slug="binary-ops" tbl="bitwise.tbl" caption="Bitwise operations." %]
 
 We can set individual bits to 0 or 1 with these operators.
 To set a particular bit to 1,
@@ -143,7 +114,7 @@ programmers often set a single bit,
 negate it with `~`,
 and then use `&`:
 
-[% inc file="bit_mask.py" %]
+[%inc bit_mask.py %]
 
 Finally,
 Python has [%g bit_shift "bit shifting" %] operators
@@ -426,7 +397,8 @@ Here's an example:
 
 <div class="pagebreak"></div>
 
-[% inc pat="pack_unpack.*" fill="py out" %]
+[%inc pack_unpack.py %]
+[%inc pack_unpack.out %]
 
 What is `\x1f` and why is it in our data?
 If Python finds a byte in a string that doesn't correspond to a printable character,
@@ -441,15 +413,7 @@ All the other bytes are zeroes (`"\x00"`)
 because each of our integers is 32 bits long
 and the significant digits only fill one byte's worth of each.
 
-<div class="table" id="binary-formats" caption="`struct` package formats." markdown="1">
-| Format | Meaning                                               |
-|------- | ----------------------------------------------------- |
-| `"c"`  | Single character (i.e., string of length 1)           |
-| `"B"`  | Unsigned 8-bit integer with all 8 bits used for value |
-| `"h"`  | 16-bit integer                                        |
-| `"i"`  | 32-bit integer                                        |
-| `"d"`  | 64-bit float                                          |
-</div>
+[% table slug="binary-formats" tbl="formats.tbl" caption="`struct` package formats." %]
 
 The `struct` module offers a lot of different formats,
 some of which are shown in [%t binary-formats %].
@@ -465,7 +429,8 @@ only store 16 bits per sample.)
 Any format can be preceded by a count,
 so the format `"3i"` means "three integers":
 
-[% inc pat="pack_count.*" fill="py out" %]
+[%inc pack_count.py %]
+[%inc pack_count.out %]
 
 We get the wrong answer in the last call
 because we only told Python to pack five characters.
@@ -504,10 +469,10 @@ we can read it back safely,
 then use it to figure out how big our string is:
 {: .continue}
 
-[% inc file="variable_packing.py" keep="pack" %]
+[%inc variable_packing.py mark=pack %]
 
-[% inc file="variable_packing.py" keep="main" %]
-[% inc file="variable_packing.out" %]
+[%inc variable_packing.py mark=main %]
+[%inc variable_packing.out %]
 
 The unpacking function is analogous.
 We break the [%g buffer_memory "memory buffer" %]
@@ -522,14 +487,15 @@ we use the trick shown earlier
 to construct the right format on the fly
 and then unpack the string and return it.
 
-[% inc file="variable_unpacking.py" keep="main" %]
-[% inc file="variable_unpacking.out" %]
+[%inc variable_unpacking.py mark=main %]
+[%inc variable_unpacking.out %]
 
 In practice,
 programmers use the `struct` module's `calcsize` function
 to figure out how large (in bytes) the data represented by a format is:
 
-[% inc pat="calcsize.*" fill="py out" %]
+[%inc calcsize.py %]
+[%inc calcsize.out %]
 
 Binary data is to programming what chemistry is to biology:
 you don't want to spend any more time thinking at its level than you have to,

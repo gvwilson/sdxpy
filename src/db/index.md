@@ -1,4 +1,5 @@
 ---
+title: "A Database"
 abstract: >
     Almost every real-world application relies on some kind of database
     that allows code to look up data without loading everything into memory.
@@ -42,7 +43,7 @@ we have to provide a function that takes a record
 and returns its key.
 We store that function in the `Database` object for later use:
 
-[% inc file="interface_original.py" %]
+[%inc interface_original.py %]
 
 If we want a dictionary that only stores things in memory,
 we can derive a class from `Database`
@@ -50,7 +51,7 @@ that uses a dictionary with the values returned by
 the user's key function for lookup
 ([%f db-memory %]):
 
-[% inc file="just_dict_original.py" %]
+[%inc just_dict_original.py %]
 
 [% figure
    slug="db-memory"
@@ -62,7 +63,7 @@ the user's key function for lookup
 This simple class is enough to let us start writing some tests.
 Let's create a class to store experimental records:
 
-[% inc file="record_original.py" omit="omit" %]
+[%inc record_original.py omit=omit %]
 
 and use the `pytest.fixture` [%i "decorator" %] ([%x protocols %])
 to create a database and two records:
@@ -70,12 +71,12 @@ to create a database and two records:
 
 <div class="pagebreak"></div>
 
-[% inc file="test_db_original.py" keep="fixture" %]
+[%inc test_db_original.py mark=fixture %]
 
 Our first few tests are then:
 {: .continue}
 
-[% inc file="test_db_original.py" keep="test" %]
+[%inc test_db_original.py mark=test %]
 
 Our next step is to save the user's records in the database
 without tying the database to a particular type of record.
@@ -85,7 +86,7 @@ Rather than passing a second function to the database's constructor,
 we will [%i "refactor" %] the database
 so that we pass in the object that represents the record class:
 
-[% inc file="interface.py" %]
+[%inc interface.py %]
 
 We can now refactor our database
 to use a [%i "static method" %] of the record class provided to its constructor
@@ -93,7 +94,7 @@ when it needs a key:
 
 <div class="pagebreak"></div>
 
-[% inc file="just_dict_refactored.py" %]
+[%inc just_dict_refactored.py %]
 
 ## Saving Records {: #db-save}
 
@@ -106,17 +107,18 @@ but to make our test and sample output a little more readable,
 we will pack numbers as strings
 with a [%g null_byte "null byte" %] `\0` between each string:
 
-[% inc file="record.py" keep="pack" %]
+[%inc record.py mark=pack %]
 
 The corresponding method to unpack a stored record is:
 {: .continue}
 
-[% inc file="record.py" keep="unpack" %]
+[%inc record.py mark=unpack %]
 
 These records look like the example below
 (which uses `.` to show null bytes):
 
-[% inc pat="show_packed_records.*" fill="py out" %]
+[%inc show_packed_records.py %]
+[%inc show_packed_records.out %]
 
 Notice that our packing and unpacking methods are static,
 i.e.,
@@ -133,13 +135,13 @@ To finish off,
 we write methods to pack and unpack multiple records at once
 by joining and splitting single-record data:
 
-[% inc file="record.py" keep="multi" %]
+[%inc record.py mark=multi %]
 
 and give our record class a static method
 that calculates the size of a single record:
 {: .continue}
 
-[% inc file="record.py" keep="base" %]
+[%inc record.py mark=base %]
 
 <div class="callout" markdown="1">
 
@@ -165,7 +167,7 @@ come down to trading space for time or vice versa.
 We now have what we need to extend our dictionary-based implementation
 to write records to a file and load them as needed:
 
-[% inc file="file_backed.py" keep="core" %]
+[%inc file_backed.py mark=core %]
 
 This implementation stores everything in a single file,
 whose name must be provided to the database's constructor
@@ -191,7 +193,7 @@ we simply get it from the in-memory dictionary.
 
 The two helper methods we need to make this work are:
 
-[% inc file="file_backed.py" keep="helper" %]
+[%inc file_backed.py mark=helper %]
 
 It isn't very efficient—we are
 loading the entire database the first time we want a single record,
@@ -259,7 +261,7 @@ to store the sequence ID of the next record,
 `self._index` to map record IDs to sequence IDs,
 and a list `self._blocks` to store blocks:
 
-[% inc file="blocked.py" keep="class" %]
+[%inc blocked.py mark=class %]
 
 To add a record, we:
 
@@ -271,7 +273,7 @@ To add a record, we:
 
 4.  add the record.
 
-[% inc file="blocked.py" keep="add" %]
+[%inc blocked.py mark=add %]
 
 To get a record given a record ID,
 we first ask if we even have that record.
@@ -284,11 +286,11 @@ we:
 
 3.  get the record.
 
-[% inc file="blocked.py" keep="get" %]
+[%inc blocked.py mark=get %]
 
 The three helper methods that `add` and `get` rely on are:
 
-[% inc file="blocked.py" keep="helper" %]
+[%inc blocked.py mark=helper %]
 
 ## Persisting Blocks {: #db-persist}
 
@@ -299,7 +301,7 @@ In order to combine them,
 we will inherit from our block-based implementation
 and extend the `add` and `get` methods to save and load data:
 
-[% inc file="blocked_file.py" keep="class" %]
+[%inc blocked_file.py mark=class %]
 
 We will explain the call to `self._build_index()` in a few paragraphs.
 
@@ -324,17 +326,17 @@ save it,
 pack the block,
 and write the result to a file:
 
-[% inc file="blocked_file.py" keep="save" %]
+[%inc blocked_file.py mark=save %]
 
 Loading involves almost the same steps,
 but our implementation splits it into two pieces:
 
-[% inc file="blocked_file.py" keep="load" %]
+[%inc blocked_file.py mark=load %]
 
 We put the code to load a single block in a method of its own
 because we need to initialize the in-memory index when restarting the database:
 
-[% inc file="blocked_file.py" keep="index" %]
+[%inc blocked_file.py mark=index %]
 
 An obvious extension to our design is to save the index
 in a separate file
@@ -377,7 +379,7 @@ The steps in cleanup are:
 The implementation of these steps is mostly a matter of bookkeeping:
 {: .continue}
 
-[% inc file="cleanup.py" keep="cleanup" %]
+[%inc cleanup.py mark=cleanup %]
 
 This method doesn't [%g compact "compact" %] storage,
 i.e.,

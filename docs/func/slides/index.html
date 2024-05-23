@@ -1,394 +1,378 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="repo" content="https://github.com/gvwilson/sdxpy">
-  <meta name="build_date" content="2024-04-28">
-  <meta name="template" content="slides">
-  <meta name="major" content="func">
-  
-  <link rel="icon" type="image/x-icon" href="../../favicon.ico">
-  <link rel="stylesheet" href="../../mccole.css">
-  <link rel="stylesheet" href="../../tango.css">
+    <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="../../logo.svg">
+<link rel="stylesheet" href="../../tango.css" type="text/css">
+<link rel="stylesheet" href="../../mccole.css" type="text/css">
+<title>Software Design by Example &middot; Functions and Closures</title>
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [['\\(', '\\)']]
+    }
+  };
+</script>
+<script
+  type="text/javascript"
+  id="MathJax-script"
+  async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+</script>
+
   <script defer data-domain="third-bit.com" src="https://plausible.io/js/plausible.js"></script>
-  <script>
-    MathJax = {
-      tex: {
-        inlineMath: [['\\(', '\\)']]
-      }
-    };
-  </script>
-  <script
-    type="text/javascript"
-    id="MathJax-script"
-    async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
-  </script>
-  <script defer src="../../mccole.js"></script>
-  <title>Software Design by Example: Functions and Closures</title>
-</head>
 
+
+    <script src="../../slides.js" defer></script>
+    <link rel="stylesheet" href="../../slides.css">
+  </head>
   <body>
-    <textarea id="source">
-
-class: slide-title
-
-<p>
-  <a href="https://third-bit.com/sdxpy/">Software Design by Example</a>
-</p>
-<h1>Functions and Closures</h1>
-<div class="bottom">
-  <a href="../">chapter</a>
+<div class="row notex">
+  <div class="col-12 center">
+    <h1>Functions and Closures</h1>
+    <p class="subtitle">Software Design by Example</p>
+  </div>
 </div>
-
----
-
-
-## Background
-
--   The little programming language of <a class="x-ref" href="../../interp/">Chapter 7</a> isn't extensible
-
--   So add a way to define and call functions
-
--   And then look at design tactics this opens up
-
----
-
-## Definition
-
--   In Python
-
-```py
-def same(num):
-    return num
-```
-
-
--   In our little language
-
-```py
-["func", ["num"], ["get", "num"]]
-```
-
-
--   Keyword `"func"`
--   (Possibly empty) list of parameter names
--   Body
-
----
-
-## Saving Functions
-
--   A function is just another object
-
--   Assign it to a variable so we can call it later
-
-```py
-["set", "same", ["func", ["num"], ["get", "num"]]]
-```
-
-
----
-
-class: aside
-
-## Anonymous Functions
-
--   An <a class="gl-ref" href="../../glossary/#gl:anonymous_function" title="A function without a name. Languages like JavaScript make frequent use of anonymous functions; Python provides a limited form called a lambda expression." markdown="1">anonymous function</a>
-    is one that doesn't have a name
-
--   JavaScript and other languages use them frequently
-
--   Python supports limited <a class="gl-ref" href="../../glossary/#gl:lambda_expression" title="An expression that takes zero or more parameters and produces a result. A lambda expression is sometimes called an anonymous function; the name comes from the mathematical symbol λ used to represent such expressions." markdown="1">lambda expressions</a>
-
-```py
-double = lambda x: 2 * x
-double(3)
-```
-
-
----
-
-## Implementing Call
-
-```py
-["call", "same", 3]
-```
-
-
-1.  Evaluate arguments.
-
-2.  Look up the function.
-
-3.  Create a new environment.
-
-4.  Call `do` to run the function's action and captures the result.
-
-5.  Discard environment created in step 3.
-
-6.  Return the result.
-
----
-
-class: aside
-
-## Eager and Lazy
-
--   <a class="gl-ref" href="../../glossary/#gl:eager_evaluation" title="Evaluating expressions before they are used." markdown="1">Eager evaluation</a>:
-    arguments are evaluated *before* call
-
--   <a class="gl-ref" href="../../glossary/#gl:lazy_evaluation" title="Evaluating expressions only when absolutely necessary." markdown="1">Lazy evaluation</a>:
-    pass expression sub-lists into the function to be evaluated on demand
-
-    -   Gives the called function a chance to inspect or modify expressions
-        before using them
-
--   Python and most other languages (including ours) are eager
-
--   R is lazy
-
--   A design choice
-
----
-
-## The Environment
-
--   A variable `x` in a function shouldn't clobber
-    a variable with the same name in its caller
-
--   Use a list of dictionaries to implement a
-    <a class="gl-ref" href="../../glossary/#gl:call_stack" title="A data structure that stores information about the active subroutines executed." markdown="1">call stack</a>
-
--   Each dictionary called a <a class="gl-ref" href="../../glossary/#gl:stack_frame" title="A section of the call stack that records details of a single call to a specific function." markdown="1">stack frame</a>
-
--   Look down the stack to find the name
-
--   If not found, add to the current (top-most) frame
-
----
-
-## Implementing Definition
-
-```py
-def do_func(env, args):
-    assert len(args) == 2
-    params = args[0]
-    body = args[1]
-    return ["func", params, body]
-```
-
-
--   Should check that parameters are strings
-
----
-
-## Implementing Call
-
-```py
-def do_call(env, args):
-    # Set up the call.
-    assert len(args) >= 1
-    name = args[0]
-    values = [do(env, a) for a in args[1:]]
-
-    # Find the function.
-    func = env_get(env, name)
-    assert isinstance(func, list) and (func[0] == "func")
-    params, body = func[1], func[2]
-    assert len(values) == len(params)
-
-    # Run in new environment.
-    env.append(dict(zip(params, values)))
-    result = do(env, body)
-    env.pop()
-
-    # Report.
-    return result
-```
-
-
----
-
-## A Test
-
-```tll
-["seq",
-  ["set", "double",
-    ["func", ["num"],
-      ["add", ["get", "num"], ["get", "num"]]
+<hr>
+<h2>Background</h2>
+<ul>
+<li>
+<p>The little programming language of <a href="../../interp/">Chapter&nbsp;7</a> isn&rsquo;t extensible</p>
+</li>
+<li>
+<p>So add a way to define and call functions</p>
+</li>
+<li>
+<p>And then look at design tactics this opens up</p>
+</li>
+</ul>
+<hr />
+<h2>Definition</h2>
+<ul>
+<li>In Python</li>
+</ul>
+<div class="language-py" title="example_def.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">same</span><span class="p">(</span><span class="n">num</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">num</span>
+</code></pre></div>
+</div>
+<ul>
+<li>In our little language</li>
+</ul>
+<div class="language-py" title="example_def.py">
+<div class="highlight"><pre><span></span><code><span class="p">[</span><span class="s2">&quot;func&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;num&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;get&quot;</span><span class="p">,</span> <span class="s2">&quot;num&quot;</span><span class="p">]]</span>
+</code></pre></div>
+</div>
+<ul>
+<li>Keyword <code>"func"</code></li>
+<li>(Possibly empty) list of parameter names</li>
+<li>Body</li>
+</ul>
+<hr />
+<h2>Saving Functions</h2>
+<ul>
+<li>
+<p>A function is just another object</p>
+</li>
+<li>
+<p>Assign it to a variable so we can call it later</p>
+</li>
+</ul>
+<div class="language-py" title="example_def.py">
+<div class="highlight"><pre><span></span><code><span class="p">[</span><span class="s2">&quot;set&quot;</span><span class="p">,</span> <span class="s2">&quot;same&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;func&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;num&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;get&quot;</span><span class="p">,</span> <span class="s2">&quot;num&quot;</span><span class="p">]]]</span>
+</code></pre></div>
+</div>
+<hr />
+<!--# class="aside" -->
+
+<h2>Anonymous Functions</h2>
+<ul>
+<li>
+<p>An <a class="gl-ref" href="../../glossary/#anonymous_function" markdown="1">anonymous function</a>
+    is one that doesn&rsquo;t have a name</p>
+</li>
+<li>
+<p>JavaScript and other languages use them frequently</p>
+</li>
+<li>
+<p>Python supports limited <a class="gl-ref" href="../../glossary/#lambda_expression" markdown="1">lambda expressions</a></p>
+</li>
+</ul>
+<div class="language-py" title="example_def.py">
+<div class="highlight"><pre><span></span><code><span class="n">double</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">x</span>
+<span class="n">double</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Implementing Call</h2>
+<div class="language-py" title="example_def.py">
+<div class="highlight"><pre><span></span><code><span class="p">[</span><span class="s2">&quot;call&quot;</span><span class="p">,</span> <span class="s2">&quot;same&quot;</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>
+</code></pre></div>
+</div>
+<ol>
+<li>
+<p>Evaluate arguments.</p>
+</li>
+<li>
+<p>Look up the function.</p>
+</li>
+<li>
+<p>Create a new environment.</p>
+</li>
+<li>
+<p>Call <code>do</code> to run the function&rsquo;s action and captures the result.</p>
+</li>
+<li>
+<p>Discard environment created in step 3.</p>
+</li>
+<li>
+<p>Return the result.</p>
+</li>
+</ol>
+<hr />
+<!--# class="aside" -->
+
+<h2>Eager and Lazy</h2>
+<ul>
+<li>
+<p><a class="gl-ref" href="../../glossary/#eager_evaluation" markdown="1">Eager evaluation</a>:
+    arguments are evaluated <em>before</em> call</p>
+</li>
+<li>
+<p><a class="gl-ref" href="../../glossary/#lazy_evaluation" markdown="1">Lazy evaluation</a>:
+    pass expression sub-lists into the function to be evaluated on demand</p>
+<ul>
+<li>Gives the called function a chance to inspect or modify expressions
+    before using them</li>
+</ul>
+</li>
+<li>
+<p>Python and most other languages (including ours) are eager</p>
+</li>
+<li>
+<p>R is lazy</p>
+</li>
+<li>
+<p>A design choice</p>
+</li>
+</ul>
+<hr />
+<h2>The Environment</h2>
+<ul>
+<li>
+<p>A variable <code>x</code> in a function shouldn&rsquo;t clobber
+    a variable with the same name in its caller</p>
+</li>
+<li>
+<p>Use a list of dictionaries to implement a
+    <a class="gl-ref" href="../../glossary/#call_stack" markdown="1">call stack</a></p>
+</li>
+<li>
+<p>Each dictionary called a <a class="gl-ref" href="../../glossary/#stack_frame" markdown="1">stack frame</a></p>
+</li>
+<li>
+<p>Look down the stack to find the name</p>
+</li>
+<li>
+<p>If not found, add to the current (top-most) frame</p>
+</li>
+</ul>
+<hr />
+<h2>Implementing Definition</h2>
+<div class="language-py" title="func.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">do_func</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span>
+    <span class="n">params</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">body</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">return</span> <span class="p">[</span><span class="s2">&quot;func&quot;</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">body</span><span class="p">]</span>
+</code></pre></div>
+</div>
+<ul>
+<li>Should check that parameters are strings</li>
+</ul>
+<hr />
+<h2>Implementing Call</h2>
+<div class="language-py" title="func.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">do_call</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+    <span class="c1"># Set up the call.</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">1</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">values</span> <span class="o">=</span> <span class="p">[</span><span class="n">do</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">a</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">:]]</span>
+
+    <span class="c1"># Find the function.</span>
+    <span class="n">func</span> <span class="o">=</span> <span class="n">env_get</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">func</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;func&quot;</span><span class="p">)</span>
+    <span class="n">params</span><span class="p">,</span> <span class="n">body</span> <span class="o">=</span> <span class="n">func</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">func</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+
+    <span class="c1"># Run in new environment.</span>
+    <span class="n">env</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">values</span><span class="p">)))</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">do</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">body</span><span class="p">)</span>
+    <span class="n">env</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+
+    <span class="c1"># Report.</span>
+    <span class="k">return</span> <span class="n">result</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>A Test</h2>
+<div class="language-tll" title="func.tll">
+<div class="highlight"><pre><span></span><code>[&quot;seq&quot;,
+  [&quot;set&quot;, &quot;double&quot;,
+    [&quot;func&quot;, [&quot;num&quot;],
+      [&quot;add&quot;, [&quot;get&quot;, &quot;num&quot;], [&quot;get&quot;, &quot;num&quot;]]
     ]
   ],
-  ["set", "a", 1],
-  ["repeat", 4, ["seq",
-    ["set", "a", ["call", "double", ["get", "a"]]],
-    ["print", ["get", "a"]]
+  [&quot;set&quot;, &quot;a&quot;, 1],
+  [&quot;repeat&quot;, 4, [&quot;seq&quot;,
+    [&quot;set&quot;, &quot;a&quot;, [&quot;call&quot;, &quot;double&quot;, [&quot;get&quot;, &quot;a&quot;]]],
+    [&quot;print&quot;, [&quot;get&quot;, &quot;a&quot;]]
   ]]
 ]
-```
-
-
-```
-2
+</code></pre></div>
+</div>
+<div class="language-out" title="func.out">
+<div class="highlight"><pre><span></span><code>2
 4
 8
 16
-=> None
-```
-
-
----
-
-## Dynamic Scoping
-
--   Searching active stack for a variable is called
-    <a class="gl-ref" href="../../glossary/#gl:dynamic_scoping" title="To find the value of a variable by looking at what is on the call stack at the moment the lookup is done. Almost all programming languages use lexical scoping instead, since it is more predictable." markdown="1">dynamic scoping</a>
-
--   Have to trace execution to figure out what a variable might refer to
-
-```tll
-["seq",
-  ["def", "lower", [], ["get", "x"]],
-  ["def", "one", [], ["seq", ["set", "x", 1], ["call", "lower"]]],
-  ["def", "two", [], ["seq", ["set", "x", 2], ["call", "lower"]]],
-  ["print", ["call", "one"]],
-  ["print", ["call", "two"]]
+=&gt; None
+</code></pre></div>
+</div>
+<hr />
+<h2>Dynamic Scoping</h2>
+<ul>
+<li>
+<p>Searching active stack for a variable is called
+    <a class="gl-ref" href="../../glossary/#dynamic_scoping" markdown="1">dynamic scoping</a></p>
+</li>
+<li>
+<p>Have to trace execution to figure out what a variable might refer to</p>
+</li>
+</ul>
+<div class="language-tll" title="dynamic.tll">
+<div class="highlight"><pre><span></span><code>[&quot;seq&quot;,
+  [&quot;def&quot;, &quot;lower&quot;, [], [&quot;get&quot;, &quot;x&quot;]],
+  [&quot;def&quot;, &quot;one&quot;, [], [&quot;seq&quot;, [&quot;set&quot;, &quot;x&quot;, 1], [&quot;call&quot;, &quot;lower&quot;]]],
+  [&quot;def&quot;, &quot;two&quot;, [], [&quot;seq&quot;, [&quot;set&quot;, &quot;x&quot;, 2], [&quot;call&quot;, &quot;lower&quot;]]],
+  [&quot;print&quot;, [&quot;call&quot;, &quot;one&quot;]],
+  [&quot;print&quot;, [&quot;call&quot;, &quot;two&quot;]]
 ]
-```
-
-
-```
-1
+</code></pre></div>
+</div>
+<div class="language-out" title="dynamic.out">
+<div class="highlight"><pre><span></span><code>1
 2
-=> None
-```
+=&gt; None
+</code></pre></div>
+</div>
+<hr />
+<h2>Lexical Scoping</h2>
+<ul>
+<li>
+<p>Almost all languages used <a class="gl-ref" href="../../glossary/#lexical_scoping" markdown="1">lexical scoping</a></p>
+</li>
+<li>
+<p>Decide what a name refers to based on the structure of the program</p>
+</li>
+<li>
+<p>More efficient for the computer: doesn&rsquo;t have to search each time</p>
+</li>
+<li>
+<p>More efficient for the person: limits scope of reasoning</p>
+</li>
+<li>
+<p>More complicated to implement</p>
+</li>
+<li>
+<p>But enables a very powerful programming technique</p>
+</li>
+</ul>
+<hr />
+<h2>Closures</h2>
+<div class="language-py" title="closure.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">make_hidden</span><span class="p">(</span><span class="n">thing</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_inner</span><span class="p">():</span>
+        <span class="k">return</span> <span class="n">thing</span>
+    <span class="k">return</span> <span class="n">_inner</span>
 
+<span class="n">has_secret</span> <span class="o">=</span> <span class="n">make_hidden</span><span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;hidden thing is&quot;</span><span class="p">,</span> <span class="n">has_secret</span><span class="p">())</span>
+</code></pre></div>
+</div>
+<div class="language-out" title="closure.out">
+<div class="highlight"><pre><span></span><code>hidden thing is 3
+</code></pre></div>
+</div>
+<ul>
+<li>
+<p>The inner function <a class="gl-ref" href="../../glossary/#variable_capture" markdown="1">captures</a>
+    the variables in the enclosing function</p>
+</li>
+<li>
+<p>A way to make data private</p>
+</li>
+</ul>
+<hr />
+<h2>A More Useful Example</h2>
+<div class="language-py" title="adder.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">make_adder</span><span class="p">(</span><span class="n">to_add</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_inner</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">value</span> <span class="o">+</span> <span class="n">to_add</span>
+    <span class="k">return</span> <span class="n">_inner</span>
 
----
-
-## Lexical Scoping
-
--   Almost all languages used <a class="gl-ref" href="../../glossary/#gl:lexical_scoping" title="To look up the value associated with a name according to the textual structure of a program. Most programming languages use lexical scoping instead of dynamic scoping because the latter is less predictable." markdown="1">lexical scoping</a>
-
--   Decide what a name refers to based on the structure of the program
-
--   More efficient for the computer: doesn't have to search each time
-
--   More efficient for the person: limits scope of reasoning
-
--   More complicated to implement
-
--   But enables a very powerful programming technique
-
----
-
-## Closures
-
-```py
-def make_hidden(thing):
-    def _inner():
-        return thing
-    return _inner
-
-has_secret = make_hidden(1 + 2)
-print("hidden thing is", has_secret())
-```
-
-
-```
-hidden thing is 3
-```
-
-
--   The inner function <a class="gl-ref" href="../../glossary/#gl:variable_capture" title="The process by which a closure &quot;remembers&quot; the variables that were in scope when it was created." markdown="1">captures</a>
-    the variables in the enclosing function
-
--   A way to make data private
-
----
-
-## A More Useful Example
-
-```py
-def make_adder(to_add):
-    def _inner(value):
-        return value + to_add
-    return _inner
-
-adder_func = make_adder(100)
-print(adder_func(1))
-```
-
-
-```
-101
-```
-
-
---
-
-<figure>
+<span class="n">adder_func</span> <span class="o">=</span> <span class="n">make_adder</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">adder_func</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+</code></pre></div>
+</div>
+<div class="language-out" title="adder.out">
+<div class="highlight"><pre><span></span><code>101
+</code></pre></div>
+</div>
+<figure id="func-closure">
 <img src="../closure.svg" alt="Closures"/>
+<figcaption>Closures</figcaption>
 </figure>
 
+<hr />
+<h2>Objects</h2>
+<div class="language-py" title="oop.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">make_object</span><span class="p">(</span><span class="n">initial_value</span><span class="p">):</span>
+    <span class="n">private</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="n">initial_value</span><span class="p">}</span>
 
----
+    <span class="k">def</span> <span class="nf">getter</span><span class="p">():</span>
+        <span class="k">return</span> <span class="n">private</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]</span>
 
-## Objects
+    <span class="k">def</span> <span class="nf">setter</span><span class="p">(</span><span class="n">new_value</span><span class="p">):</span>
+        <span class="n">private</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_value</span>
 
-```py
-def make_object(initial_value):
-    private = {"value": initial_value}
+    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;get&quot;</span><span class="p">:</span> <span class="n">getter</span><span class="p">,</span> <span class="s2">&quot;set&quot;</span><span class="p">:</span> <span class="n">setter</span><span class="p">}</span>
 
-    def getter():
-        return private["value"]
-
-    def setter(new_value):
-        private["value"] = new_value
-
-    return {"get": getter, "set": setter}
-
-object = make_object(00)
-print("initial value", object["get"]())
-object["set"](99)
-print("object now contains", object["get"]())
-```
-
-
-```
-initial value 0
+<span class="nb">object</span> <span class="o">=</span> <span class="n">make_object</span><span class="p">(</span><span class="mi">00</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;initial value&quot;</span><span class="p">,</span> <span class="nb">object</span><span class="p">[</span><span class="s2">&quot;get&quot;</span><span class="p">]())</span>
+<span class="nb">object</span><span class="p">[</span><span class="s2">&quot;set&quot;</span><span class="p">](</span><span class="mi">99</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;object now contains&quot;</span><span class="p">,</span> <span class="nb">object</span><span class="p">[</span><span class="s2">&quot;get&quot;</span><span class="p">]())</span>
+</code></pre></div>
+</div>
+<div class="language-out" title="oop.out">
+<div class="highlight"><pre><span></span><code>initial value 0
 object now contains 99
-```
-
-
----
-
-## Objects
-
-<figure>
+</code></pre></div>
+</div>
+<hr />
+<h2>Objects</h2>
+<figure id="func-objects">
 <img src="../objects.svg" alt="Objects as closures"/>
+<figcaption>Implementing objects using closures</figcaption>
 </figure>
 
+<hr />
+<!--# class="summary" -->
 
----
-
-class: summary
-
-## Summary
-
-<figure>
+<h2>Summary</h2>
+<figure id="func-concept-map">
 <img src="../concept_map.svg" alt="Concept map of functions and closures"/>
+<figcaption>Concept map</figcaption>
 </figure>
-
-
-
-
-
-    </textarea>
-    <script src="../../remark-latest.min.js"></script>
-    <script>
-      var slideshow = remark.create({
-        highlightLines: true
-      })
-    </script>
   </body>
 </html>

@@ -1,4 +1,5 @@
 ---
+title: "An HTML Validator"
 abstract: >
     This chapter builds a tool to check the structure of web pages
     in order to show how programs can process HTML,
@@ -62,7 +63,7 @@ we specify the image file's name using the `src` attribute of the `img` tag:
 The objects that represent the nodes and text in an HTML tree
 are called the Document Object Model or [%g dom "DOM" %].
 Hundreds of tools have been written to convert HTML text to DOM;
-our favorite is a Python module called [Beautiful Soup][beautiful_soup],
+our favorite is a Python module called [Beautiful Soup][bs4],
 which can handle messy real-world documents
 as well as those that conform to every rule of the standard.
 
@@ -74,7 +75,7 @@ the text to be [%i "parser" "parsed" %]
 and a string specifying exactly what kind of parsing we want to do.
 (In practice, this is almost always `"html.parser"`.)
 
-[% inc file="parse.py" keep="main" %]
+[%inc parse.py mark=main %]
 
 `Tag` nodes have two properties `name` and `children`
 to tell us what element the tag represents
@@ -84,12 +85,12 @@ the nodes below it in the tree.
 We can therefore write a short [%i "recursion" "recursive" %] function
 to show us everything in the DOM:
 
-[% inc file="parse.py" keep="display" %]
+[%inc parse.py mark=display %]
 
 We can test this function with a short example:
 
-[% inc file="parse.py" keep="text" %]
-[% inc file="parse.out" %]
+[%inc parse.py mark=text %]
+[%inc parse.out %]
 
 In order to keep everything in one file,
 we have written the HTML "page" as a multiline Python string;
@@ -106,9 +107,9 @@ that stores the node's attributes.
 The values in this dictionary are either strings or lists of strings
 depending on whether the attribute has a single value or multiple values:
 
-[% inc file="attrs.py" keep="display" %]
-[% inc file="attrs.py" keep="text" %]
-[% inc file="attrs.out" %]
+[%inc attrs.py mark=display %]
+[%inc attrs.py mark=text %]
+[%inc attrs.out %]
 
 ## The Visitor Pattern {: #check-visitor-pattern}
 
@@ -123,17 +124,17 @@ Each time it encounters a node,
 the function adds the names of the child nodes to the appropriate set
 and then calls itself once for each child to collect their children:
 
-[% inc file="contains.py" keep="recurse" %]
+[%inc contains.py mark=recurse %]
 
 When we run our function on this page:
 
-[% inc file="page.html" %]
+[%inc page.html %]
 
 it produces this output
 (which we print in sorted order to make things easier to find):
 {: .continue}
 
-[% inc file="contains.out" %]
+[%inc contains.out %]
 
 At this point we have written several recursive functions
 that have almost exactly the same [%i "control flow" %].
@@ -150,7 +151,7 @@ one that it calls when it first encounters a node,
 one that it calls when it is finished with that node,
 and one that it calls for text ([%f check-visitor %]):
 
-[% inc file="visitor.py" keep="visitor" %]
+[%inc visitor.py mark=visitor %]
 
 We provide do-nothing implementations of the three action methods
 rather than having them [%i "raise" %] a `NotImplementedError`
@@ -170,8 +171,8 @@ and we shouldn't require people to implement things they don't need.
 Here's what our catalog builder looks like
 when re-implemented on top of our `Visitor` class:
 
-[% inc file="catalog.py" keep="visitor" %]
-[% inc file="catalog.py" keep="main" %]
+[%inc catalog.py mark=visitor %]
+[%inc catalog.py mark=main %]
 
 It is only a few lines shorter than the original,
 but the more complicated the data structure is,
@@ -183,7 +184,7 @@ To wrap up our style checker,
 let's create a [%i "manifest" %] that specifies
 which types of nodes can be children of which others:
 
-[% inc file="manifest.yml" %]
+[%inc manifest.yml %]
 
 We've chosen to use [%i "YAML" %]
 for the manifest
@@ -197,7 +198,7 @@ there are already too many in the world.
 Our `Check` class needs a [%i "constructor" %] to set everything up
 and a `_tag_enter` method to handle nodes:
 
-[% inc file="check.py" keep="check" %]
+[%inc check.py mark=check %]
 
 To run this,
 we load a manifest and an HTML document,
@@ -205,8 +206,8 @@ create a checker,
 ask the checker to visit each node,
 then print out every problematic parent-child combination it found:
 
-[% inc file="check.py" keep="main" %]
-[% inc file="check.out" %]
+[%inc check.py mark=main %]
+[%inc check.out %]
 
 The output tells us that content is supposed to be inside a `section` element,
 not directly inside the `body`,

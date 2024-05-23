@@ -1,487 +1,441 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="repo" content="https://github.com/gvwilson/sdxpy">
-  <meta name="build_date" content="2024-04-28">
-  <meta name="template" content="slides">
-  <meta name="major" content="protocols">
-  
-  <link rel="icon" type="image/x-icon" href="../../favicon.ico">
-  <link rel="stylesheet" href="../../mccole.css">
-  <link rel="stylesheet" href="../../tango.css">
+    <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="../../logo.svg">
+<link rel="stylesheet" href="../../tango.css" type="text/css">
+<link rel="stylesheet" href="../../mccole.css" type="text/css">
+<title>Software Design by Example &middot; Protocols</title>
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [['\\(', '\\)']]
+    }
+  };
+</script>
+<script
+  type="text/javascript"
+  id="MathJax-script"
+  async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+</script>
+
   <script defer data-domain="third-bit.com" src="https://plausible.io/js/plausible.js"></script>
-  <script>
-    MathJax = {
-      tex: {
-        inlineMath: [['\\(', '\\)']]
-      }
-    };
-  </script>
-  <script
-    type="text/javascript"
-    id="MathJax-script"
-    async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
-  </script>
-  <script defer src="../../mccole.js"></script>
-  <title>Software Design by Example: Protocols</title>
-</head>
 
+
+    <script src="../../slides.js" defer></script>
+    <link rel="stylesheet" href="../../slides.css">
+  </head>
   <body>
-    <textarea id="source">
-
-class: slide-title
-
-<p>
-  <a href="https://third-bit.com/sdxpy/">Software Design by Example</a>
-</p>
-<h1>Protocols</h1>
-<div class="bottom">
-  <a href="../">chapter</a>
+<div class="row notex">
+  <div class="col-12 center">
+    <h1>Protocols</h1>
+    <p class="subtitle">Software Design by Example</p>
+  </div>
 </div>
+<hr>
+<h2>The Problem</h2>
+<ul>
+<li>
+<p>Want to use some more advanced features of Python in coming examples</p>
+</li>
+<li>
+<p>Can now explain them in terms of what we&rsquo;ve seen in previous lessons</p>
+</li>
+</ul>
+<hr />
+<h2>Mock Objects</h2>
+<div class="language-py" title="mock_time.py">
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">time</span>
 
----
+<span class="k">def</span> <span class="nf">elapsed</span><span class="p">(</span><span class="n">since</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">since</span>
 
+<span class="k">def</span> <span class="nf">mock_time</span><span class="p">():</span>
+    <span class="k">return</span> <span class="mi">200</span>
 
-## The Problem
+<span class="k">def</span> <span class="nf">test_elapsed</span><span class="p">():</span>
+    <span class="n">time</span><span class="o">.</span><span class="n">time</span> <span class="o">=</span> <span class="n">mock_time</span>
+    <span class="k">assert</span> <span class="n">elapsed</span><span class="p">(</span><span class="mi">50</span><span class="p">)</span> <span class="o">==</span> <span class="mi">150</span>
+</code></pre></div>
+</div>
+<ul>
+<li>
+<p>But this changes <code>time.time</code> for <em>everything</em></p>
+</li>
+<li>
+<p>Want a reliable way to restore the original</p>
+</li>
+</ul>
+<hr />
+<h2>Callable</h2>
+<ul>
+<li>
+<p>If a function is just an object</p>
+</li>
+<li>
+<p>We can make an object that looks like a function</p>
+</li>
+</ul>
+<div class="language-py" title="callable.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Adder</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">value</span>
 
--   Want to use some more advanced features of Python in coming examples
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">arg</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">arg</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span>
 
--   Can now explain them in terms of what we've seen in previous lessons
+<span class="n">add_3</span> <span class="o">=</span> <span class="n">Adder</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">add_3</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;add_3(8): </span><span class="si">{</span><span class="n">result</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<div class="language-out" title="callable.out">
+<div class="highlight"><pre><span></span><code>add_3(8): 11
+</code></pre></div>
+</div>
+<hr />
+<h2>A Generic Replacer</h2>
+<div class="language-py" title="mock_object.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Fake</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">calls</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">func</span> <span class="o">=</span> <span class="n">func</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">value</span>
 
----
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">calls</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">])</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">func</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span>
+</code></pre></div>
+</div>
+<div class="language-py" title="mock_object.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">fakeit</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">func</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">assert</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">globals</span><span class="p">()</span>
+    <span class="n">fake</span> <span class="o">=</span> <span class="n">Fake</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+    <span class="nb">globals</span><span class="p">()[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">fake</span>
+    <span class="k">return</span> <span class="n">fake</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Replacement in Action</h2>
+<div class="language-py" title="mock_object.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">adder</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span>
 
-## Mock Objects
-
-```py
-import time
-
-def elapsed(since):
-    return time.time() - since
-
-def mock_time():
-    return 200
-
-def test_elapsed():
-    time.time = mock_time
-    assert elapsed(50) == 150
-```
-
-
--   But this changes `time.time` for *everything*
-
--   Want a reliable way to restore the original
-
----
-
-## Callable
-
--   If a function is just an object
-
--   We can make an object that looks like a function
-
-```py
-class Adder:
-    def __init__(self, value):
-        self.value = value
-
-    def __call__(self, arg):
-        return arg + self.value
-
-add_3 = Adder(3)
-result = add_3(8)
-print(f"add_3(8): {result}")
-```
-
-
-```
-add_3(8): 11
-```
-
-
----
-
-## A Generic Replacer
-
-```py
-class Fake:
-    def __init__(self, func=None, value=None):
-        self.calls = []
-        self.func = func
-        self.value = value
-
-    def __call__(self, *args, **kwargs):
-        self.calls.append([args, kwargs])
-        if self.func is not None:
-            return self.func(*args, **kwargs)
-        return self.value
-```
-
-
-```py
-def fakeit(name, func=None, value=None):
-    assert name in globals()
-    fake = Fake(func, value)
-    globals()[name] = fake
-    return fake
-```
-
-
----
-
-## Replacement in Action
-
-```py
-def adder(a, b):
-    return a + b
-
-def test_with_real_function():
-    assert adder(2, 3) == 5
-```
-
-
-```py
-def test_with_fixed_return_value():
-    fakeit("adder", value=99)
-    assert adder(2, 3) == 99
-```
-
-
--   Yes, we would usually do something more useful…
-
----
-
-## Replacement in Action
-
-<figure>
+<span class="k">def</span> <span class="nf">test_with_real_function</span><span class="p">():</span>
+    <span class="k">assert</span> <span class="n">adder</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span> <span class="o">==</span> <span class="mi">5</span>
+</code></pre></div>
+</div>
+<div class="language-py" title="mock_object.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">test_with_fixed_return_value</span><span class="p">():</span>
+    <span class="n">fakeit</span><span class="p">(</span><span class="s2">&quot;adder&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mi">99</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">adder</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span> <span class="o">==</span> <span class="mi">99</span>
+</code></pre></div>
+</div>
+<ul>
+<li>Yes, we would usually do something more useful…</li>
+</ul>
+<hr />
+<h2>Replacement in Action</h2>
+<figure id="protocols-timeline">
 <img src="../timeline.svg" alt="Timeline of mock operation"/>
+<figcaption>Timeline of mock operation.</figcaption>
 </figure>
 
+<hr />
+<h2>But Wait, There&rsquo;s More</h2>
+<ul>
+<li>Record arguments</li>
+</ul>
+<div class="language-py" title="mock_object.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">test_fake_records_calls</span><span class="p">():</span>
+    <span class="n">fake</span> <span class="o">=</span> <span class="n">fakeit</span><span class="p">(</span><span class="s2">&quot;adder&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mi">99</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">adder</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span> <span class="o">==</span> <span class="mi">99</span>
+    <span class="k">assert</span> <span class="n">adder</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span> <span class="o">==</span> <span class="mi">99</span>
+    <span class="k">assert</span> <span class="n">adder</span><span class="o">.</span><span class="n">calls</span> <span class="o">==</span> <span class="p">[[(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="p">{}],</span> <span class="p">[(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span> <span class="p">{}]]</span>
+</code></pre></div>
+</div>
+<ul>
+<li>Return a user-defined value</li>
+</ul>
+<div class="language-py" title="mock_object.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">test_fake_calculates_result</span><span class="p">():</span>
+    <span class="n">fakeit</span><span class="p">(</span><span class="s2">&quot;adder&quot;</span><span class="p">,</span> <span class="n">func</span><span class="o">=</span><span class="k">lambda</span> <span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="p">:</span> <span class="mi">10</span> <span class="o">*</span> <span class="n">left</span> <span class="o">+</span> <span class="n">right</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">adder</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span> <span class="o">==</span> <span class="mi">23</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Protocols</h2>
+<ul>
+<li>
+<p>A <a class="gl-ref" href="../../glossary/#protocol" markdown="1">protocol</a> specifies
+    how programs can tell Python to do specific things at specific moments</p>
+<ul>
+<li>
+<p><code>__init__</code> to build objects</p>
+</li>
+<li>
+<p><code>__call__</code> to emulate function call</p>
+</li>
+</ul>
+</li>
+<li>
+<p>Define <code>__enter__</code> and <code>__exit__</code> to create a <a class="gl-ref" href="../../glossary/#context_manager" markdown="1">context manager</a>
+    that a <code>with</code> statement can use</p>
+</li>
+</ul>
+<hr />
+<h2>Operation</h2>
+<div class="highlight"><pre><span></span><code><span class="k">with</span> <span class="n">C</span><span class="p">(</span><span class="err">…</span><span class="n">args</span><span class="err">…</span><span class="p">)</span> <span class="k">as</span> <span class="n">name</span><span class="p">:</span>
+    <span class="err">…</span><span class="n">do</span> <span class="n">things</span><span class="err">…</span>
+</code></pre></div>
+<ol>
+<li>Call <code>C</code>&rsquo;s constructor to create an object.</li>
+<li>Call that object&rsquo;s <code>__enter__</code> method and assign the result to <code>name</code>.</li>
+<li>Run the code inside the <code>with</code> block.</li>
+<li>
+<p>Call <code>name.__exit__()</code> when the block finishes.</p>
+</li>
+<li>
+<p><code>__enter__</code> doesn&rsquo;t need extra arguments</p>
+<ul>
+<li>Use the object&rsquo;s constructor</li>
+</ul>
+</li>
+<li>
+<p>Python calls <code>__exit__</code> with three values for error handling</p>
+</li>
+</ol>
+<hr />
+<h2>Mock With Context</h2>
+<div class="language-py" title="mock_context.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">ContextFake</span><span class="p">(</span><span class="n">Fake</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">func</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">original</span> <span class="o">=</span> <span class="kc">None</span>
 
----
+    <span class="k">def</span> <span class="fm">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="nb">globals</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">original</span> <span class="o">=</span> <span class="nb">globals</span><span class="p">()[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
+        <span class="nb">globals</span><span class="p">()[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span>
+        <span class="k">return</span> <span class="bp">self</span>
 
-## But Wait, There's More
+    <span class="k">def</span> <span class="fm">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_value</span><span class="p">,</span> <span class="n">exc_traceback</span><span class="p">):</span>
+        <span class="nb">globals</span><span class="p">()[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">original</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Wrapping Functions</h2>
+<ul>
+<li>Try writing a function that wraps another function</li>
+</ul>
+<div class="language-py" title="wrap_infinite.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">original</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;original: </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
--   Record arguments
+<span class="k">def</span> <span class="nf">logging</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;before call&quot;</span><span class="p">)</span>
+    <span class="n">original</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;after call&quot;</span><span class="p">)</span>
 
-```py
-def test_fake_records_calls():
-    fake = fakeit("adder", value=99)
-    assert adder(2, 3) == 99
-    assert adder(3, 4) == 99
-    assert adder.calls == [[(2, 3), {}], [(3, 4), {}]]
-```
-
-
--   Return a user-defined value
-
-```py
-def test_fake_calculates_result():
-    fakeit("adder", func=lambda left, right: 10 * left + right)
-    assert adder(2, 3) == 23
-```
-
-
----
-
-## Protocols
-
--   A <a class="gl-ref" href="../../glossary/#gl:protocol" title="A set of rules that something promises to obey, i.e., the contract between that thing and its users." markdown="1">protocol</a> specifies
-    how programs can tell Python to do specific things at specific moments
-
-    -   `__init__` to build objects
-
-    -   `__call__` to emulate function call
-
--   Define `__enter__` and `__exit__` to create a <a class="gl-ref" href="../../glossary/#gl:context_manager" title="An object that automatically executes some operations at the start of a code block and some other operations at the end of the block." markdown="1">context manager</a>
-    that a `with` statement can use
-
----
-
-## Operation
-
-```python
-with C(…args…) as name:
-    …do things…
-```
-
-1.  Call `C`'s constructor to create an object.
-2.  Call that object's `__enter__` method and assign the result to `name`.
-3.  Run the code inside the `with` block.
-4.  Call `name.__exit__()` when the block finishes.
-
--   `__enter__` doesn't need extra arguments
-
-    -   Use the object's constructor
-
--   Python calls `__exit__` with three values for error handling
-
----
-
-## Mock With Context
-
-```py
-class ContextFake(Fake):
-    def __init__(self, name, func=None, value=None):
-        super().__init__(func, value)
-        self.name = name
-        self.original = None
-
-    def __enter__(self):
-        assert self.name in globals()
-        self.original = globals()[self.name]
-        globals()[self.name] = self
-        return self
-
-    def __exit__(self, exc_type, exc_value, exc_traceback):
-        globals()[self.name] = self.original
-```
-
-
----
-
-## Wrapping Functions
-
--   Try writing a function that wraps another function
-
-```py
-def original(value):
-    print(f"original: {value}")
-
-def logging(value):
-    print("before call")
-    original(value)
-    print("after call")
-
-original = logging
-original("example")
-```
-
-
-```
+<span class="n">original</span> <span class="o">=</span> <span class="n">logging</span>
+<span class="n">original</span><span class="p">(</span><span class="s2">&quot;example&quot;</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<div class="language-out" title="wrap_infinite.out">
+<div class="highlight"><pre><span></span><code>before call
 before call
 before call
-before call
-```
+</code></pre></div>
+</div>
+<ul>
+<li>Well, that didn&rsquo;t work</li>
+</ul>
+<hr />
+<h2>Capture the Original</h2>
+<div class="language-py" title="wrap_capture.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">original</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;original: </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
+<span class="k">def</span> <span class="nf">logging</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_inner</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;before call&quot;</span><span class="p">)</span>
+        <span class="n">func</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;after call&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_inner</span>
 
--   Well, that didn't work
-
----
-
-## Capture the Original
-
-```py
-def original(value):
-    print(f"original: {value}")
-
-def logging(func):
-    def _inner(value):
-        print("before call")
-        func(value)
-        print("after call")
-    return _inner
-
-original = logging(original)
-original("example")
-```
-
-
-```
-before call
+<span class="n">original</span> <span class="o">=</span> <span class="n">logging</span><span class="p">(</span><span class="n">original</span><span class="p">)</span>
+<span class="n">original</span><span class="p">(</span><span class="s2">&quot;example&quot;</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<div class="language-out" title="wrap_capture.out">
+<div class="highlight"><pre><span></span><code>before call
 original: example
 after call
-```
+</code></pre></div>
+</div>
+<hr />
+<h2>Parameters</h2>
+<div class="language-py" title="wrap_param.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">original</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;original: </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
+<span class="k">def</span> <span class="nf">logging</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">label</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_inner</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;++ </span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">func</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;-- </span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_inner</span>
 
----
-
-## Parameters
-
-```py
-def original(value):
-    print(f"original: {value}")
-
-def logging(func, label):
-    def _inner(value):
-        print(f"++ {label}")
-        func(value)
-        print(f"-- {label}")
-    return _inner
-
-original = logging(original, "call")
-original("example")
-```
-
-
-```
-++ call
+<span class="n">original</span> <span class="o">=</span> <span class="n">logging</span><span class="p">(</span><span class="n">original</span><span class="p">,</span> <span class="s2">&quot;call&quot;</span><span class="p">)</span>
+<span class="n">original</span><span class="p">(</span><span class="s2">&quot;example&quot;</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<div class="language-out" title="wrap_param.out">
+<div class="highlight"><pre><span></span><code>++ call
 original: example
 -- call
-```
+</code></pre></div>
+</div>
+<hr />
+<h2>Decorators</h2>
+<div class="language-py" title="decorator_simple.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">wrap</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_inner</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;before call&quot;</span><span class="p">)</span>
+        <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;after call&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_inner</span>
 
+<span class="nd">@wrap</span>
+<span class="k">def</span> <span class="nf">original</span><span class="p">(</span><span class="n">message</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;original: </span><span class="si">{</span><span class="n">message</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
----
-
-## Decorators
-
-```py
-def wrap(func):
-    def _inner(*args):
-        print("before call")
-        func(*args)
-        print("after call")
-    return _inner
-
-@wrap
-def original(message):
-    print(f"original: {message}")
-
-original("example")
-```
-
-
-```
-before call
+<span class="n">original</span><span class="p">(</span><span class="s2">&quot;example&quot;</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<div class="language-out" title="decorator_simple.out">
+<div class="highlight"><pre><span></span><code>before call
 original: example
 after call
-```
+</code></pre></div>
+</div>
+<hr />
+<h2>Decorator Parameters</h2>
+<div class="language-py" title="decorator_param.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">wrap</span><span class="p">(</span><span class="n">label</span><span class="p">):</span>                  <span class="c1"># function returning a decorator</span>
+    <span class="k">def</span> <span class="nf">_decorate</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>          <span class="c1"># the decorator Python will apply</span>
+        <span class="k">def</span> <span class="nf">_inner</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>        <span class="c1"># the wrapped function</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;++ </span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>  <span class="c1"># &#39;label&#39; is visible because</span>
+            <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>           <span class="c1"># …it&#39;s captured in the closure</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;-- </span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>  <span class="c1"># …of &#39;_decorate&#39;</span>
+        <span class="k">return</span> <span class="n">_inner</span>
+    <span class="k">return</span> <span class="n">_decorate</span>
 
+<span class="nd">@wrap</span><span class="p">(</span><span class="s2">&quot;wrapping&quot;</span><span class="p">)</span>                 <span class="c1"># call &#39;wrap&#39; to get a decorator</span>
+<span class="k">def</span> <span class="nf">original</span><span class="p">(</span><span class="n">message</span><span class="p">):</span>            <span class="c1"># decorator applied here</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;original: </span><span class="si">{</span><span class="n">message</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
----
-
-## Decorator Parameters
-
-```py
-def wrap(label):                  # function returning a decorator
-    def _decorate(func):          # the decorator Python will apply
-        def _inner(*args):        # the wrapped function
-            print(f"++ {label}")  # 'label' is visible because
-            func(*args)           # …it's captured in the closure
-            print(f"-- {label}")  # …of '_decorate'
-        return _inner
-    return _decorate
-
-@wrap("wrapping")                 # call 'wrap' to get a decorator
-def original(message):            # decorator applied here
-    print(f"original: {message}")
-
-original("example")
-```
-
-
-```
-++ wrapping
+<span class="n">original</span><span class="p">(</span><span class="s2">&quot;example&quot;</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<div class="language-out" title="decorator_param.out">
+<div class="highlight"><pre><span></span><code>++ wrapping
 original: example
 -- wrapping
-```
+</code></pre></div>
+</div>
+<hr />
+<!--# class="aside" -->
 
+<h2>Design Flaw</h2>
+<ul>
+<li>
+<p>A decorator must take exactly one argument,
+    so how do we pass other parameters to the decorator itself?</p>
+</li>
+<li>
+<p>Simple-to-learn answer would have been to treat function being decorated
+    like <code>self</code> in method definition and call</p>
+</li>
+</ul>
+<div class="language-py" title="alternative_design.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">decorator</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">label</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_inner</span><span class="p">(</span><span class="n">arg</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;entering </span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">func</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_inner</span>
 
----
+<span class="nd">@decorator</span><span class="p">(</span><span class="s2">&quot;message&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">double</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>           <span class="c1"># equivalent to</span>
+    <span class="k">return</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">x</span>         <span class="c1"># double = decorator(double, &quot;message&quot;)</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Iteration</h2>
+<ul>
+<li>
+<p>Python calls <code>thing.__iter__</code> at the start of a <code>for</code> loop
+    to get an <a class="gl-ref" href="../../glossary/#iterator" markdown="1">iterator</a></p>
+</li>
+<li>
+<p>Calls <code>iterator.__next__</code> repeatedly to get loop items</p>
+</li>
+<li>
+<p>Stops when the iterator raises <code>StopIteration</code></p>
+</li>
+<li>
+<p>(Almost) always create a separate object
+    so that we can run nested loops on the same target</p>
+</li>
+</ul>
+<hr />
+<h2>Loop Over a List of Strings</h2>
+<div class="language-py" title="better_iterator.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">BetterIterator</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_text</span> <span class="o">=</span> <span class="n">text</span><span class="p">[:]</span>
 
-class: aside
+    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">BetterCursor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_text</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<div class="language-py" title="better_iterator.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">BetterCursor</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_text</span> <span class="o">=</span> <span class="n">text</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_row</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_col</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
 
-## Design Flaw
+    <span class="k">def</span> <span class="fm">__next__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_advance</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_row</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_text</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">StopIteration</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_text</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_row</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">_col</span><span class="p">]</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Iterator in Action</h2>
+<div class="language-py" title="test_better_iterator.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">test_naive_buffer_nested_loop</span><span class="p">():</span>
+    <span class="n">buffer</span> <span class="o">=</span> <span class="n">BetterIterator</span><span class="p">([</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">])</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">buffer</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">inner</span> <span class="ow">in</span> <span class="n">buffer</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">+=</span> <span class="n">inner</span>
+    <span class="k">assert</span> <span class="n">result</span> <span class="o">==</span> <span class="s2">&quot;abab&quot;</span>
+</code></pre></div>
+</div>
+<hr />
+<!--# class="summary" -->
 
--   A decorator must take exactly one argument,
-    so how do we pass other parameters to the decorator itself?
-
--   Simple-to-learn answer would have been to treat function being decorated
-    like `self` in method definition and call
-
-```py
-def decorator(func, label):
-    def _inner(arg):
-        print(f"entering {label}")
-        func(arg)
-    return _inner
-
-@decorator("message")
-def double(x):           # equivalent to
-    return 2 * x         # double = decorator(double, "message")
-```
-
-
----
-
-## Iteration
-
--   Python calls `thing.__iter__` at the start of a `for` loop
-    to get an <a class="gl-ref" href="../../glossary/#gl:iterator" title="A function or object that produces each value from a collection in turn for processing." markdown="1">iterator</a>
-
--   Calls `iterator.__next__` repeatedly to get loop items
-
--   Stops when the iterator raises `StopIteration`
-
--   (Almost) always create a separate object
-    so that we can run nested loops on the same target
-
----
-
-## Loop Over a List of Strings
-
-```py
-class BetterIterator:
-    def __init__(self, text):
-        self._text = text[:]
-
-    def __iter__(self):
-        return BetterCursor(self._text)
-```
-
-
-```py
-class BetterCursor:
-    def __init__(self, text):
-        self._text = text
-        self._row = 0
-        self._col = -1
-
-    def __next__(self):
-        self._advance()
-        if self._row == len(self._text):
-            raise StopIteration
-        return self._text[self._row][self._col]
-
-```
-
-
----
-
-## Iterator in Action
-
-```py
-def test_naive_buffer_nested_loop():
-    buffer = BetterIterator(["a", "b"])
-    result = ""
-    for _ in buffer:
-        for inner in buffer:
-            result += inner
-    assert result == "abab"
-```
-
-
----
-
-class: summary
-
-## Summary
-
-<figure>
+<h2>Summary</h2>
+<figure id="protocols-concept-map">
 <img src="../concept_map.svg" alt="Concept map of reflection"/>
+<figcaption>Concept map</figcaption>
 </figure>
-
-
-
-
-
-    </textarea>
-    <script src="../../remark-latest.min.js"></script>
-    <script>
-      var slideshow = remark.create({
-        highlightLines: true
-      })
-    </script>
   </body>
 </html>

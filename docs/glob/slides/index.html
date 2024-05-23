@@ -1,476 +1,515 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="repo" content="https://github.com/gvwilson/sdxpy">
-  <meta name="build_date" content="2024-04-28">
-  <meta name="template" content="slides">
-  <meta name="major" content="glob">
-  
-  <link rel="icon" type="image/x-icon" href="../../favicon.ico">
-  <link rel="stylesheet" href="../../mccole.css">
-  <link rel="stylesheet" href="../../tango.css">
+    <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="../../logo.svg">
+<link rel="stylesheet" href="../../tango.css" type="text/css">
+<link rel="stylesheet" href="../../mccole.css" type="text/css">
+<title>Software Design by Example &middot; Matching Patterns</title>
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [['\\(', '\\)']]
+    }
+  };
+</script>
+<script
+  type="text/javascript"
+  id="MathJax-script"
+  async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+</script>
+
   <script defer data-domain="third-bit.com" src="https://plausible.io/js/plausible.js"></script>
-  <script>
-    MathJax = {
-      tex: {
-        inlineMath: [['\\(', '\\)']]
-      }
-    };
-  </script>
-  <script
-    type="text/javascript"
-    id="MathJax-script"
-    async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
-  </script>
-  <script defer src="../../mccole.js"></script>
-  <title>Software Design by Example: Matching Patterns</title>
-</head>
 
+
+    <script src="../../slides.js" defer></script>
+    <link rel="stylesheet" href="../../slides.css">
+  </head>
   <body>
-    <textarea id="source">
-
-class: slide-title
-
-<p>
-  <a href="https://third-bit.com/sdxpy/">Software Design by Example</a>
-</p>
-<h1>Matching Patterns</h1>
-<div class="bottom">
-  <a href="../">chapter</a>
+<div class="row notex">
+  <div class="col-12 center">
+    <h1>Matching Patterns</h1>
+    <p class="subtitle">Software Design by Example</p>
+  </div>
 </div>
-
----
-
-
-## The Problem
-
--   `glob.glob` finds files whose names match patterns
-
--   `2023-*.{pdf,txt}` matches `2023-01.txt` and `2023-final.pdf`
-    but not `draft-2023.docx`
-
-<figure>
+<hr>
+<h2>The Problem</h2>
+<ul>
+<li>
+<p><code>glob.glob</code> finds files whose names match patterns</p>
+</li>
+<li>
+<p><code>2023-*.{pdf,txt}</code> matches <code>2023-01.txt</code> and <code>2023-final.pdf</code>
+    but not <code>draft-2023.docx</code></p>
+</li>
+</ul>
+<figure id="glob-examples">
 <img src="../examples.svg" alt="Matching examples"/>
+<figcaption>Examples of glob matching.</figcaption>
 </figure>
 
+<ul>
+<li>How does this work?</li>
+</ul>
+<hr />
+<!--# class="aside" -->
 
--   How does this work?
-
----
-
-class: aside
-
-## Why "Globbing"?
-
--   Early versions of Unix had a tool called `glob`
-
--   People used pattern matching so often
-    that it was quickly built into the shell
-
----
-
-## Write a Few Tests
-
-| Pattern | Text     | Match? || Pattern | Text     | Match? |
-| ------- | -------- | ------ || ------- | -------- | ------ |
-| abc     | "abc"    | True   || a*c     | "abc"    | True   |
-| ab      | "abc"    | False  || {a,b}   | "a"      | True   |
-| abc     | "ab"     | False  || {a,b}   | "c"      | False  |
-| *       | ""       | True   || {a,b}   | "ab"     | False  |
-| *       | "abc"    | True   || *{x,y}  | "abcx"   | True   |
-
----
-
-## Objects vs. Functions
-
--   Create matchers for particular cases instead of one big function
-
--   Some of those matchers need extra data
-
-    -   E.g., which literal characters to match
-
--   So create objects
-
----
-
-## Design Patterns
-
--   Use the <a class="gl-ref" href="../../glossary/#gl:chain_of_responsibility_pattern" title="A design pattern in which each object either handles a request or passes it on to another object." markdown="1">Chain of Responsibility</a> pattern
-
-    -   Each object matches if it can…
-
-    -   …then asks something else to try to match the rest of the text
-
-<figure>
+<h2>Why &ldquo;Globbing&rdquo;?</h2>
+<ul>
+<li>
+<p>Early versions of Unix had a tool called <code>glob</code></p>
+</li>
+<li>
+<p>People used pattern matching so often
+    that it was quickly built into the shell</p>
+</li>
+</ul>
+<hr />
+<h2>Write a Few Tests</h2>
+<table>
+<thead>
+<tr>
+<th>Pattern</th>
+<th>Text</th>
+<th>Match?</th>
+<th></th>
+<th>Pattern</th>
+<th>Text</th>
+<th>Match?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>abc</td>
+<td>&ldquo;abc&rdquo;</td>
+<td>True</td>
+<td></td>
+<td>a*c</td>
+<td>&ldquo;abc&rdquo;</td>
+<td>True</td>
+</tr>
+<tr>
+<td>ab</td>
+<td>&ldquo;abc&rdquo;</td>
+<td>False</td>
+<td></td>
+<td>{a,b}</td>
+<td>&ldquo;a&rdquo;</td>
+<td>True</td>
+</tr>
+<tr>
+<td>abc</td>
+<td>&ldquo;ab&rdquo;</td>
+<td>False</td>
+<td></td>
+<td>{a,b}</td>
+<td>&ldquo;c&rdquo;</td>
+<td>False</td>
+</tr>
+<tr>
+<td>*</td>
+<td>&rdquo;&ldquo;</td>
+<td>True</td>
+<td></td>
+<td>{a,b}</td>
+<td>&ldquo;ab&rdquo;</td>
+<td>False</td>
+</tr>
+<tr>
+<td>*</td>
+<td>&ldquo;abc&rdquo;</td>
+<td>True</td>
+<td></td>
+<td>*{x,y}</td>
+<td>&ldquo;abcx&rdquo;</td>
+<td>True</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>Objects vs. Functions</h2>
+<ul>
+<li>
+<p>Create matchers for particular cases instead of one big function</p>
+</li>
+<li>
+<p>Some of those matchers need extra data</p>
+<ul>
+<li>E.g., which literal characters to match</li>
+</ul>
+</li>
+<li>
+<p>So create objects</p>
+</li>
+</ul>
+<hr />
+<h2>Design Patterns</h2>
+<ul>
+<li>
+<p>Use the <a class="gl-ref" href="../../glossary/#chain_of_responsibility_pattern" markdown="1">Chain of Responsibility</a> pattern</p>
+<ul>
+<li>
+<p>Each object matches if it can…</p>
+</li>
+<li>
+<p>…then asks something else to try to match the rest of the text</p>
+</li>
+</ul>
+</li>
+</ul>
+<figure id="glob-chain">
 <img src="../chain.svg" alt="Chain of Responsibility"/>
+<figcaption>Matching with Chain of Responsibility.</figcaption>
 </figure>
 
+<hr />
+<h2>Matching a Literal String</h2>
+<div class="language-py" title="glob_lit.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Lit</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chars</span><span class="p">,</span> <span class="n">rest</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">chars</span> <span class="o">=</span> <span class="n">chars</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rest</span> <span class="o">=</span> <span class="n">rest</span>
 
----
+    <span class="k">def</span> <span class="nf">match</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="n">end</span> <span class="o">=</span> <span class="n">start</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">chars</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">text</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">end</span><span class="p">]</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">chars</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rest</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">rest</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">end</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">end</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<ul>
+<li><code>chars</code> is the characters to be matched</li>
+<li><code>rest</code> is the rest of the chain (or <code>None</code>)</li>
+<li><code>start</code> is needed when this isn&rsquo;t the first matcher</li>
+</ul>
+<hr />
+<h2>Testing the Matcher</h2>
+<div class="language-py" title="test_glob_lit.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">test_literal_match_entire_string</span><span class="p">():</span>
+    <span class="c1"># /abc/ matches &quot;abc&quot;</span>
+    <span class="k">assert</span> <span class="n">Lit</span><span class="p">(</span><span class="s2">&quot;abc&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s2">&quot;abc&quot;</span><span class="p">)</span>
 
-## Matching a Literal String
+<span class="k">def</span> <span class="nf">test_literal_substring_alone_no_match</span><span class="p">():</span>
+    <span class="c1"># /ab/ doesn&#39;t match &quot;abc&quot;</span>
+    <span class="k">assert</span> <span class="ow">not</span> <span class="n">Lit</span><span class="p">(</span><span class="s2">&quot;ab&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s2">&quot;abc&quot;</span><span class="p">)</span>
 
-```py
-class Lit:
-    def __init__(self, chars, rest=None):
-        self.chars = chars
-        self.rest = rest
+<span class="k">def</span> <span class="nf">test_literal_superstring_no_match</span><span class="p">():</span>
+    <span class="c1"># /abc/ doesn&#39;t match &quot;ab&quot;</span>
+    <span class="k">assert</span> <span class="ow">not</span> <span class="n">Lit</span><span class="p">(</span><span class="s2">&quot;abc&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s2">&quot;ab&quot;</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<ul>
+<li>Give tests long names to make failure reports immediately readable</li>
+</ul>
+<hr />
+<h2>Does Chaining Work?</h2>
+<ul>
+<li>
+<p>Try to find flaws in the design as early as possible</p>
+</li>
+<li>
+<p>So test chaining before writing more matchers</p>
+</li>
+</ul>
+<div class="language-py" title="test_glob_lit.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">test_literal_followed_by_literal_match</span><span class="p">():</span>
+    <span class="c1"># /a/+/b/ matches &quot;ab&quot;</span>
+    <span class="k">assert</span> <span class="n">Lit</span><span class="p">(</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="n">Lit</span><span class="p">(</span><span class="s2">&quot;b&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s2">&quot;ab&quot;</span><span class="p">)</span>
 
-    def match(self, text, start=0):
-        end = start + len(self.chars)
-        if text[start:end] != self.chars:
-            return False
-        if self.rest:
-            return self.rest.match(text, end)
-        return end == len(text)
-```
+<span class="k">def</span> <span class="nf">test_literal_followed_by_literal_no_match</span><span class="p">():</span>
+    <span class="c1"># /a/+/b/ doesn&#39;t match &quot;ac&quot;</span>
+    <span class="k">assert</span> <span class="ow">not</span> <span class="n">Lit</span><span class="p">(</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="n">Lit</span><span class="p">(</span><span class="s2">&quot;b&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s2">&quot;ac&quot;</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<hr />
+<!--# class="aside" -->
 
+<h2>Test-Driven Development</h2>
+<ul>
+<li>
+<p>Some people write tests <em>before</em> writing code to clarify the design</p>
+<ul>
+<li>And to ensure they actually write tests</li>
+</ul>
+</li>
+<li>
+<p>Research shows the order doesn&rsquo;t matter <span class="bib-ref">[<a class="bib-ref" href="../../bib/#Fucci2016">Fucci2016</a>]</span></p>
+</li>
+<li>
+<p>What <em>does</em> is alternating between short bursts of coding and testing</p>
+</li>
+</ul>
+<hr />
+<h2>Wildcards</h2>
+<ul>
+<li>
+<p><code>*</code> can match zero or more characters</p>
+</li>
+<li>
+<p>If it&rsquo;s the last matcher, it always succeeds</p>
+</li>
+<li>
+<p>Otherwise try zero characters, one, two, etc. characters</p>
+</li>
+</ul>
+<div class="language-py" title="glob_any.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Any</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rest</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rest</span> <span class="o">=</span> <span class="n">rest</span>
 
--   `chars` is the characters to be matched
--   `rest` is the rest of the chain (or `None`)
--   `start` is needed when this isn't the first matcher
+    <span class="k">def</span> <span class="nf">match</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rest</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rest</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+                <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="kc">False</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>And We Test It</h2>
+<div class="language-py" title="test_glob_any.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">test_any_matches_empty</span><span class="p">():</span>
+    <span class="c1"># /*/ matches &quot;&quot;</span>
+    <span class="k">assert</span> <span class="n">Any</span><span class="p">()</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
 
----
+<span class="k">def</span> <span class="nf">test_any_matches_entire_string</span><span class="p">():</span>
+    <span class="c1"># /*/ matches &quot;abc&quot;</span>
+    <span class="k">assert</span> <span class="n">Any</span><span class="p">()</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s2">&quot;abc&quot;</span><span class="p">)</span>
 
-## Testing the Matcher
+<span class="k">def</span> <span class="nf">test_any_matches_as_prefix</span><span class="p">():</span>
+    <span class="c1"># /*def/ matches &quot;abcdef&quot;</span>
+    <span class="k">assert</span> <span class="n">Any</span><span class="p">(</span><span class="n">Lit</span><span class="p">(</span><span class="s2">&quot;def&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s2">&quot;abcdef&quot;</span><span class="p">)</span>
 
-```py
-def test_literal_match_entire_string():
-    # /abc/ matches "abc"
-    assert Lit("abc").match("abc")
+<span class="k">def</span> <span class="nf">test_any_matches_as_suffix</span><span class="p">():</span>
+    <span class="c1"># /abc*/ matches &quot;abcdef&quot;</span>
+    <span class="k">assert</span> <span class="n">Lit</span><span class="p">(</span><span class="s2">&quot;abc&quot;</span><span class="p">,</span> <span class="n">Any</span><span class="p">())</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s2">&quot;abcdef&quot;</span><span class="p">)</span>
 
-def test_literal_substring_alone_no_match():
-    # /ab/ doesn't match "abc"
-    assert not Lit("ab").match("abc")
+<span class="k">def</span> <span class="nf">test_any_matches_interior</span><span class="p">():</span>
+    <span class="c1"># /a*c/ matches &quot;abc&quot;</span>
+    <span class="k">assert</span> <span class="n">Lit</span><span class="p">(</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="n">Any</span><span class="p">(</span><span class="n">Lit</span><span class="p">(</span><span class="s2">&quot;c&quot;</span><span class="p">)))</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s2">&quot;abc&quot;</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>Matching Alternatives</h2>
+<div class="language-py" title="glob_either.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Either</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="p">,</span> <span class="n">rest</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">left</span> <span class="o">=</span> <span class="n">left</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">right</span> <span class="o">=</span> <span class="n">right</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rest</span> <span class="o">=</span> <span class="n">rest</span>
 
-def test_literal_superstring_no_match():
-    # /abc/ doesn't match "ab"
-    assert not Lit("abc").match("ab")
-```
+    <span class="k">def</span> <span class="nf">match</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">left</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">start</span><span class="p">)</span> <span class="ow">or</span> \
+            <span class="bp">self</span><span class="o">.</span><span class="n">right</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">start</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>And We Test It</h2>
+<div class="language-py" title="test_glob_either.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">test_either_two_literals_first</span><span class="p">():</span>
+    <span class="c1"># /{a,b}/ matches &quot;a&quot;</span>
+    <span class="k">assert</span> <span class="n">Either</span><span class="p">(</span><span class="n">Lit</span><span class="p">(</span><span class="s2">&quot;a&quot;</span><span class="p">),</span> <span class="n">Lit</span><span class="p">(</span><span class="s2">&quot;b&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s2">&quot;a&quot;</span><span class="p">)</span>
 
+<span class="k">def</span> <span class="nf">test_either_two_literals_not_both</span><span class="p">():</span>
+    <span class="c1"># /{a,b}/ doesn&#39;t match &quot;ab&quot;</span>
+    <span class="k">assert</span> <span class="ow">not</span> <span class="n">Either</span><span class="p">(</span><span class="n">Lit</span><span class="p">(</span><span class="s2">&quot;a&quot;</span><span class="p">),</span> <span class="n">Lit</span><span class="p">(</span><span class="s2">&quot;b&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s2">&quot;ab&quot;</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<hr />
+<h2>But Wait…</h2>
+<div class="language-py" title="test_glob_problem.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">test_either_followed_by_literal_match</span><span class="p">():</span>
+    <span class="c1"># /{a,b}c/ matches &quot;ac&quot;</span>
+    <span class="k">assert</span> <span class="n">Either</span><span class="p">(</span><span class="n">Lit</span><span class="p">(</span><span class="s2">&quot;a&quot;</span><span class="p">),</span> <span class="n">Lit</span><span class="p">(</span><span class="s2">&quot;b&quot;</span><span class="p">),</span> <span class="n">Lit</span><span class="p">(</span><span class="s2">&quot;c&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s2">&quot;ac&quot;</span><span class="p">)</span>
 
--   Give tests long names to make failure reports immediately readable
-
----
-
-## Does Chaining Work?
-
--   Try to find flaws in the design as early as possible
-
--   So test chaining before writing more matchers
-
-```py
-def test_literal_followed_by_literal_match():
-    # /a/+/b/ matches "ab"
-    assert Lit("a", Lit("b")).match("ab")
-
-def test_literal_followed_by_literal_no_match():
-    # /a/+/b/ doesn't match "ac"
-    assert not Lit("a", Lit("b")).match("ac")
-```
-
-
----
-
-class: aside
-
-## Test-Driven Development
-
--   Some people write tests *before* writing code to clarify the design
-
-    -   And to ensure they actually write tests
-
--   Research shows the order doesn't matter <span class="bib-ref">[<a class="bib-ref" href="../../bib/#Fucci2016">Fucci2016</a>]</span>
-
--   What *does* is alternating between short bursts of coding and testing
-
----
-
-## Wildcards
-
--   `*` can match zero or more characters
-
--   If it's the last matcher, it always succeeds
-
--   Otherwise try zero characters, one, two, etc. characters
-
-```py
-class Any:
-    def __init__(self, rest=None):
-        self.rest = rest
-
-    def match(self, text, start=0):
-        if self.rest is None:
-            return True
-        for i in range(start, len(text)):
-            if self.rest.match(text, i):
-                return True
-        return False
-```
-
-
----
-
-## And We Test It
-
-
-```py
-def test_any_matches_empty():
-    # /*/ matches ""
-    assert Any().match("")
-
-def test_any_matches_entire_string():
-    # /*/ matches "abc"
-    assert Any().match("abc")
-
-def test_any_matches_as_prefix():
-    # /*def/ matches "abcdef"
-    assert Any(Lit("def")).match("abcdef")
-
-def test_any_matches_as_suffix():
-    # /abc*/ matches "abcdef"
-    assert Lit("abc", Any()).match("abcdef")
-
-def test_any_matches_interior():
-    # /a*c/ matches "abc"
-    assert Lit("a", Any(Lit("c"))).match("abc")
-```
-
-
----
-
-## Matching Alternatives
-
-```py
-class Either:
-    def __init__(self, left, right, rest=None):
-        self.left = left
-        self.right = right
-        self.rest = rest
-
-    def match(self, text, start=0):
-        return self.left.match(text, start) or \
-            self.right.match(text, start)
-```
-
-
----
-
-## And We Test It
-
-```py
-def test_either_two_literals_first():
-    # /{a,b}/ matches "a"
-    assert Either(Lit("a"), Lit("b")).match("a")
-
-def test_either_two_literals_not_both():
-    # /{a,b}/ doesn't match "ab"
-    assert not Either(Lit("a"), Lit("b")).match("ab")
-```
-
-
----
-
-## But Wait…
-
-```py
-def test_either_followed_by_literal_match():
-    # /{a,b}c/ matches "ac"
-    assert Either(Lit("a"), Lit("b"), Lit("c")).match("ac")
-
-def test_either_followed_by_literal_no_match():
-    # /{a,b}c/ doesn't match "ax"
-    assert not Either(Lit("a"), Lit("b"), Lit("c")).match("ax")
-```
-
-```
-======================= test session starts ========================
+<span class="k">def</span> <span class="nf">test_either_followed_by_literal_no_match</span><span class="p">():</span>
+    <span class="c1"># /{a,b}c/ doesn&#39;t match &quot;ax&quot;</span>
+    <span class="k">assert</span> <span class="ow">not</span> <span class="n">Either</span><span class="p">(</span><span class="n">Lit</span><span class="p">(</span><span class="s2">&quot;a&quot;</span><span class="p">),</span> <span class="n">Lit</span><span class="p">(</span><span class="s2">&quot;b&quot;</span><span class="p">),</span> <span class="n">Lit</span><span class="p">(</span><span class="s2">&quot;c&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s2">&quot;ax&quot;</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<div class="language-out" title="test_glob_problem.out">
+<div class="highlight"><pre><span></span><code>======================= test session starts ========================
 
 test_glob_problem.py F.                                      [100%]
 
 ===================== short test summary info ======================
 FAILED test_glob_problem.py::test_either_followed_by_literal_match
 =================== 1 failed, 1 passed in 0.00s ====================
-```
-
-
--   `Either` doesn't handle `rest` properly
-
----
-
-## Rethinking
-
--   We now have three matchers with the same interfaces
-    -   <a class="gl-ref" href="../../glossary/#gl:refactor" title="To rewrite existing code in order to make it simpler or more efficient without changing its functionality." markdown="1">Refactor</a> using
-        <a class="gl-ref" href="../../glossary/#gl:extract_parent_class_refactoring" title="A refactoring in which some functionality of an existing class or set of classes is moved into a newly-created parent class." markdown="1">Extract Parent Class</a>
--   The test `if self.rest is None` appears several times
-    -   Use the <a class="gl-ref" href="../../glossary/#gl:null_object_pattern" title="A design pattern in which a placeholder object is used instead of `None`. The placeholder object has the methods of the object usually used, but those methods do nothing. This pattern saves other code from having to check repeatedly for `None`." markdown="1">Null Object</a> pattern instead
-
-<figure>
+</code></pre></div>
+</div>
+<ul>
+<li><code>Either</code> doesn&rsquo;t handle <code>rest</code> properly</li>
+</ul>
+<hr />
+<h2>Rethinking</h2>
+<ul>
+<li>We now have three matchers with the same interfaces<ul>
+<li><a class="gl-ref" href="../../glossary/#refactor" markdown="1">Refactor</a> using
+    <a class="gl-ref" href="../../glossary/#extract_parent_class_refactoring" markdown="1">Extract Parent Class</a></li>
+</ul>
+</li>
+<li>The test <code>if self.rest is None</code> appears several times<ul>
+<li>Use the <a class="gl-ref" href="../../glossary/#null_object_pattern" markdown="1">Null Object</a> pattern instead</li>
+</ul>
+</li>
+</ul>
+<figure id="glob-refactoring">
 <img src="../refactoring.svg" alt="Refactoring matchers"/>
+<figcaption>Using the Extract Parent Class refactoring.</figcaption>
 </figure>
 
+<hr />
+<!--# class="aside" -->
 
----
-
-class: aside
-
-## We Didn't Invent This
-
+<h2>We Didn&rsquo;t Invent This</h2>
 <div class="center">
 <img src="../gamma-design-patterns.webp" alt="Design Patterns book cover" width="25%"/>
 <img src="../fowler-refactoring.webp" alt="Refactoring book cover" width="25%"/>
 <img src="../kerievsky-refactoring-to-patterns.webp" alt="Refactoring to Patterns book cover" width="22%"/>
 </div>
 
--   <span class="bib-ref">[<a class="bib-ref" href="../../bib/#Tichy2010">Tichy2010</a>]</span> showed that learning these patterns
-    makes people better programmers
+<ul>
+<li><span class="bib-ref">[<a class="bib-ref" href="../../bib/#Tichy2010">Tichy2010</a>]</span> showed that learning these patterns
+    makes people better programmers</li>
+</ul>
+<hr />
+<h2>The Parent Class</h2>
+<div class="language-py" title="glob_null.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Match</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rest</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rest</span> <span class="o">=</span> <span class="n">rest</span> <span class="k">if</span> <span class="n">rest</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">Null</span><span class="p">()</span>
 
----
+    <span class="k">def</span> <span class="nf">match</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">):</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_match</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<ul>
+<li>
+<p>Assume every child class has a <code>_match</code> method</p>
+</li>
+<li>
+<p>This method returns the location to continue searching</p>
+</li>
+<li>
+<p>So <code>Match.match</code> checks that we&rsquo;ve reached the end of the text</p>
+</li>
+</ul>
+<hr />
+<h2>The Null Object Class</h2>
+<div class="language-py" title="glob_null.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Null</span><span class="p">(</span><span class="n">Match</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rest</span> <span class="o">=</span> <span class="kc">None</span>
 
-## The Parent Class
+    <span class="k">def</span> <span class="nf">_match</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">start</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">start</span>
+</code></pre></div>
+</div>
+<ul>
+<li>
+<p>Must be the last one in the chain</p>
+</li>
+<li>
+<p>Doesn&rsquo;t advance the match (i.e., does nothing)</p>
+</li>
+<li>
+<p>Every other class can now delegate to its <code>next</code>
+    without checking for <code>None</code></p>
+</li>
+</ul>
+<hr />
+<h2>Refactoring Literal Matcher</h2>
+<div class="language-py" title="glob_null.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Lit</span><span class="p">(</span><span class="n">Match</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chars</span><span class="p">,</span> <span class="n">rest</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">rest</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">chars</span> <span class="o">=</span> <span class="n">chars</span>
 
-```py
-class Match:
-    def __init__(self, rest):
-        self.rest = rest if rest is not None else Null()
+    <span class="k">def</span> <span class="nf">_match</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">start</span><span class="p">):</span>
+        <span class="n">end</span> <span class="o">=</span> <span class="n">start</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">chars</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">text</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">end</span><span class="p">]</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">chars</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">rest</span><span class="o">.</span><span class="n">_match</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">end</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<ul>
+<li>Ask parent class to do common initialization</li>
+<li>Return <code>None</code> for &ldquo;no match&rdquo; or whatever <code>self.rest</code> returns<ul>
+<li>If <code>rest</code> is <code>Null</code>,
+    result will be the index after this object&rsquo;s match</li>
+</ul>
+</li>
+</ul>
+<hr />
+<h2>Refactoring Wildcard</h2>
+<div class="language-py" title="glob_null.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Any</span><span class="p">(</span><span class="n">Match</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rest</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">rest</span><span class="p">)</span>
 
-    def match(self, text):
-        result = self._match(text, 0)
-        return result == len(text)
-```
+    <span class="k">def</span> <span class="nf">_match</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">start</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">end</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rest</span><span class="o">.</span><span class="n">_match</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">end</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">end</span>
+        <span class="k">return</span> <span class="kc">None</span>
+</code></pre></div>
+</div>
+<ul>
+<li>The exercises will ask, &ldquo;Why <code>len(text) + 1</code>?&rdquo;</li>
+</ul>
+<hr />
+<h2>Refactoring Alternatives</h2>
+<div class="language-py" title="glob_null.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Either</span><span class="p">(</span><span class="n">Match</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="p">,</span> <span class="n">rest</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">rest</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">left</span> <span class="o">=</span> <span class="n">left</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">right</span> <span class="o">=</span> <span class="n">right</span>
 
+    <span class="k">def</span> <span class="nf">_match</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">start</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">pat</span> <span class="ow">in</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">left</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">right</span><span class="p">]:</span>
+            <span class="n">end</span> <span class="o">=</span> <span class="n">pat</span><span class="o">.</span><span class="n">_match</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">start</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">end</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">end</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rest</span><span class="o">.</span><span class="n">_match</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">end</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">end</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+                    <span class="k">return</span> <span class="n">end</span>
+        <span class="k">return</span> <span class="kc">None</span>
+</code></pre></div>
+</div>
+<ul>
+<li>
+<p>Looping over left and right options is simpler than
+    repeating code or writing a helper method</p>
+</li>
+<li>
+<p>Could easily be extended to any number of alternatives</p>
+</li>
+</ul>
+<hr />
+<h2>Testing</h2>
+<ul>
+<li>None of the existing tests change<ul>
+<li>None of the constructors changed</li>
+<li>Neither did the signature of <code>match</code></li>
+</ul>
+</li>
+<li>We should (should) add a couple of tests for <code>Null</code></li>
+<li>But basically we&rsquo;re done</li>
+<li>And we can easily add matchers for other kinds of patterns</li>
+</ul>
+<hr />
+<!--# class="summary" -->
 
--   Assume every child class has a `_match` method
-
--   This method returns the location to continue searching
-
--   So `Match.match` checks that we've reached the end of the text
-
----
-
-## The Null Object Class
-
-```py
-class Null(Match):
-    def __init__(self):
-        self.rest = None
-
-    def _match(self, text, start):
-        return start
-```
-
-
--   Must be the last one in the chain
-
--   Doesn't advance the match (i.e., does nothing)
-
--   Every other class can now delegate to its `next`
-    without checking for `None`
-
----
-
-## Refactoring Literal Matcher
-
-```py
-class Lit(Match):
-    def __init__(self, chars, rest=None):
-        super().__init__(rest)
-        self.chars = chars
-
-    def _match(self, text, start):
-        end = start + len(self.chars)
-        if text[start:end] != self.chars:
-            return None
-        return self.rest._match(text, end)
-```
-
-
--   Ask parent class to do common initialization
--   Return `None` for "no match" or whatever `self.rest` returns
-    -   If `rest` is `Null`,
-        result will be the index after this object's match
-
----
-
-## Refactoring Wildcard
-
-```py
-class Any(Match):
-    def __init__(self, rest=None):
-        super().__init__(rest)
-
-    def _match(self, text, start):
-        for i in range(start, len(text) + 1):
-            end = self.rest._match(text, i)
-            if end == len(text):
-                return end
-        return None
-```
-
-
--   The exercises will ask, "Why `len(text) + 1`?"
-
----
-
-## Refactoring Alternatives
-
-```py
-class Either(Match):
-    def __init__(self, left, right, rest=None):
-        super().__init__(rest)
-        self.left = left
-        self.right = right
-
-    def _match(self, text, start):
-        for pat in [self.left, self.right]:
-            end = pat._match(text, start)
-            if end is not None:
-                end = self.rest._match(text, end)
-                if end == len(text):
-                    return end
-        return None
-```
-
-
--   Looping over left and right options is simpler than
-    repeating code or writing a helper method
-
--   Could easily be extended to any number of alternatives
-
----
-
-## Testing
-
--   None of the existing tests change
-    -   None of the constructors changed
-    -   Neither did the signature of `match`
--   We should (should) add a couple of tests for `Null`
--   But basically we're done
--   And we can easily add matchers for other kinds of patterns
-
----
-
-class: summary
-
-## Summary
-
-<figure>
+<h2>Summary</h2>
+<figure id="glob-concept-map">
 <img src="../concept_map.svg" alt="Concept map of globbing"/>
+<figcaption>Concept map</figcaption>
 </figure>
-
-
-
-
-
-    </textarea>
-    <script src="../../remark-latest.min.js"></script>
-    <script>
-      var slideshow = remark.create({
-        highlightLines: true
-      })
-    </script>
   </body>
 </html>

@@ -1,4 +1,5 @@
 ---
+title: "Parsing Text"
 abstract: >
     A parser turns text that's easy for a human being to read
     into a data structure that a computer can work with.
@@ -34,13 +35,7 @@ any characters,
 a literal `.`,
 and then either a literal `pdf` or a literal `txt`.
 
-<div class="table" id="parse-grammar" caption="Glob grammar." markdown="1">
-| Meaning                   | Character       |
-| ------------------------- | --------------- |
-| Any literal character *c* | *c*             |
-| Zero or more characters   | `*`             |
-| Alternatives              | `{`*x*`,`*y*`}` |
-</div>
+[% table slug="parse-grammar" tbl="grammar.tbl" caption="Glob grammar." %]
 
 <div class="callout" markdown="1">
 
@@ -100,7 +95,7 @@ and classes are a handy way to group related functions together.
 
 The main method of our tokenizer looks like this:
 
-[% inc file="tokenizer.py" keep="tok" %]
+[%inc tokenizer.py mark=tok %]
 
 This method calls `self._setup()` at the start
 so that the tokenizer can be re-used.
@@ -116,7 +111,7 @@ As a special case,
 `self._add(None)` means "add the literal but nothing else"
 ([%f parse-tokenize %]):
 
-[% inc file="tokenizer.py" keep="add" %]
+[%inc tokenizer.py mark=add %]
 
 [% figure
    slug="parse-tokenize"
@@ -129,7 +124,7 @@ Finally,
 we work backward to initialize the tokenizer when we construct it
 and to define the set of characters that make up literals:
 
-[% inc file="tokenizer.py" keep="class" %]
+[%inc tokenizer.py mark=class %]
 
 <div class="callout" markdown="1">
 
@@ -156,7 +151,7 @@ in which each sub-list represents a single token:
 
 <div class="pagebreak"></div>
 
-[% inc file="test_tokenizer.py" keep="tests" %]
+[%inc test_tokenizer.py mark=tests %]
 
 ## Parsing {: #parse-parse}
 
@@ -169,23 +164,23 @@ Instead,
 it takes a token off the front of the list
 and figures out which method handles tokens of that kind:
 
-[% inc file="parser.py" keep="parse" %]
+[%inc parser.py mark=parse %]
 
 The handlers for `Any` and `Lit` are straightforward:
 
-[% inc file="parser.py" keep="simple" %]
+[%inc parser.py mark=simple %]
 
 `Either` is a little messier.
 We didn't save the commas,
 so we'll just pull two tokens and store them
 after checking to make sure that we actually *have* two tokens:
 
-[% inc file="parser.py" keep="either" %]
+[%inc parser.py mark=either %]
 
 An alternative approach is to take tokens from the list
 until we see an `EitherEnd` marker:
 
-[% inc file="better_parser.py" keep="either" %]
+[%inc better_parser.py mark=either %]
 
 This achieves the same thing in the two-token case
 but allows us to write alternatives with more options
@@ -193,13 +188,13 @@ without changing the code
 (assuming you solved the "Multiple Alternatives" exercise in [%x glob %]).
 Tests confirm that we're on the right track:
 
-[% inc file="test_parser.py" keep="sample" %]
+[%inc test_parser.py mark=sample %]
 
 This test assumes we can compare `Match` objects using `==`,
 just as we would compare numbers or strings.
 so we add a `__eq__` method to our classes:
 
-[% inc file="match.py" keep="equal" %]
+[%inc match.py mark=equal %]
 
 Since we're using [%i "inheritance" %] to implement our matchers,
 we write the check for equality in two parts.

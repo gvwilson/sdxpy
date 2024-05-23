@@ -1,36 +1,40 @@
-"""Generate list of thanks."""
+"""Handle thanks."""
 
+import ark
+from pathlib import Path
 import shortcodes
+import yaml
+
 import util
 
 
 @shortcodes.register("thanks")
+@util.timing
 def thanks(pargs, kwargs, node):
     """Handle [% thanks %] shortcode."""
     util.require(
         (not pargs) and (not kwargs),
-        f"Bad 'thanks' shortcode with {pargs} and {kwargs}",
+        f"Bad 'thanks' in {node.path}: '{pargs}' and '{kwargs}'",
     )
-    details = util.read_thanks()
-    if not details:
-        return ""
-    details = [_format_name(d) for d in details]
-    if len(details) == 1:
-        return details[0]
-    elif len(details) == 2:
-        return f"{details[0]} and {details[1]}"
+    filepath = Path(ark.site.home(), "info", "thanks.yml")
+    names = yaml.safe_load(filepath.read_text()) or []
+    names = [_format_name(name) for name in names]
+    if len(names) == 1:
+        return names[0]
+    elif len(names) == 2:
+        return f"{names[0]} and {names[1]}"
     else:
-        details[-1] = f"and {details[-1]}"
-        return ", ".join(details)
+        names[-1] = f"and {names[-1]}"
+        return ", ".join(names)
 
 
-def _format_name(detail):
+def _format_name(details):
     """Handle family-personal and personal-family naming."""
-    order = detail.get("order", None)
+    order = details.get("order", None)
     if order == "pf":
-        return f"{detail['personal']} {detail['family']}"
+        return f"{details['personal']} {details['family']}"
     elif order == "pmf":
-        return f"{detail['personal']} {detail['middle']} {detail['family']}"
+        return f"{details['personal']} {details['middle']} {details['family']}"
     elif order == "fp":
-        return f"{detail['family']} {detail['personal']}"
-    util.fail(f"Unknown order {order} in {detail}")
+        return f"{details['family']} {details['personal']}"
+    util.fail(f"Unknown order {order} in {details}")
