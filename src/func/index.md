@@ -174,9 +174,7 @@ and our test program and its output are:
 
 `do_call` contains the line:
 
-```py
-env.append(dict(zip(params, values)))
-```
+[%inc ex_dict_zip.py %]
 
 Working from the inside out,
 it uses the built-in function `zip`
@@ -297,9 +295,7 @@ they are as subtle as they are useful.
 
 Re-read the description of how this line in `do_call` works:
 
-```py
-env.append(dict(zip(params, values)))
-```
+[%inc ex_dict_zip.py %]
 
 and then rewrite the line using a loop to insert
 parameter names and values into a dictionary.

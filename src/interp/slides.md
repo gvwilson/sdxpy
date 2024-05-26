@@ -111,16 +111,7 @@ title: "An Interpreter"
     from [%g statement "statements" %] that don't
 -   But it doesn't have to, and many languages don't
 
-```python
-# not actually legal Python
-result =
-    if a > 0:
-        1
-    elif a == 0:
-        0
-    else:
-        -1
-```
+[%inc ex_assign_expr.py %]
 
 ---
 

@@ -433,13 +433,9 @@ with properties called `width` and `height`.
 
 ### Drawing Borders {: .exercise}
 
-1.  Modify the existing code so that elements are drawn with borders like this:
+Modify the existing code so that elements are drawn with borders like this:
 
-    ```txt
-    +----+
-    |text|
-    +----+
-    ```
+[%inc ex_box.txt %]
 
 ### Padding Elements {: .exercise}
 
@@ -452,13 +448,7 @@ Modify the existing code so that:
 For example, string `"text"` with a padding of 1 would render as:
 {: .continue}
 
-```txt
-+------+
-|      |
-| text |
-|      |
-+------+
-```
+[%inc ex_padding.txt %]
 
 where the lines show the outer border of the rendering.
 {: .continue}

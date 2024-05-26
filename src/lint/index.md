@@ -282,10 +282,7 @@ Write a linter that looks for redundant assignments to variables,
 i.e.,
 assignments that are immediately overwritten:
 
-```python
-x = 1  # redundant
-x = 2
-```
+[%inc ex_redundant.py %]
 
 (Redundant assignments are a common result of copying and pasting.)
 {: .continue}

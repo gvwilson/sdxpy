@@ -248,10 +248,7 @@ but if we modify the new copy of `fixture[0]`,
 we won't see that change reflected in `fixture[1]`,
 where we *would* have seen the change in the original data structure:
 
-```python
-shared = ["content"]
-fixture = [shared, shared]
-```
+[%inc ex_aliasing.py %]
 
 [% figure
    slug="persist-shared"
@@ -301,9 +298,7 @@ has been saved before,
 it writes a line like this:
 {: .continue}
 
-```
-alias:12345678:
-```
+[%inc ex_alias_line.txt %]
 
 where `12345678` is the object's ID.
 (The exercises will ask why the trailing colon needs to be there.)
@@ -353,10 +348,7 @@ There's one more case to check,
 and unfortunately it reveals a bug.
 The two lines:
 
-```python
-fixture = []
-fixture.append(fixture)
-```
+[%inc ex_circular.py %]
 
 create the data structure shown in [%f persist-circular %],
 in which an object contains a reference to itself.
@@ -383,10 +375,7 @@ in combination with these lines inherited from `LoadObjects`:
 Let's trace execution for the saved data:
 {: .continue}
 
-```
-list:4484025600:1
-alias:4484025600:
-```
+[%inc ex_list_alias.txt %]
 
 1.  The first line tells us that there's a list whose ID is `4484025600`
     so we `LoadObjects._list` to load a list of one element.

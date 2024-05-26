@@ -49,9 +49,7 @@ For example,
 if we want to put an image in an HTML page,
 we specify the image file's name using the `src` attribute of the `img` tag:
 
-```
-<img src="banner.png" />
-```
+[%inc ex_banner.ht %]
 
 [% figure
    slug="check-dom-tree"
@@ -265,10 +263,7 @@ in the order in which they would be traversed.
 When you are done,
 you should be able to write code like this:
 
-```python
-for node in Flatten(doc.html).result():
-    print(node)
-```
+[%inc ex_flatten.py %]
 
 ### Reporting Accessibility Violations {: .exercise}
 

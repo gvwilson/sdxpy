@@ -241,16 +241,7 @@ But it doesn't have to, and many languages don't.
 For example,
 Python could have been designed to allow this:
 
-```python
-# not actually legal Python
-result =
-    if a > 0:
-        1
-    elif a == 0:
-        0
-    else:
-        -1
-```
+[%inc ex_assign_expr.py %]
 
 </div>
 

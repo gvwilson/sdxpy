@@ -87,9 +87,7 @@ which can't know that this attribute contains
 multiple values separated by a colon.
 We should use two attributes like this:
 
-```html
-<ul z-loop="names" z-loop-var="item">
-```
+[%inc ex_use_two_var.ht %]
 
 but we decided to save ourselves a little typing.
 We should also call our attributes `data-something` instead of `z-something`
@@ -468,19 +466,7 @@ Add a directive `<div z-snippet="variable">…</div>` that saves some text in a 
 so that it can be displayed later.
 For example:
 
-```html
-<html>
-  <body>
-    <div z-snippet="prefix"><strong>Important:</strong></div>
-    <p>Expect three items</p>
-    <ul>
-      <li z-loop="item:names">
-        <span z-var="prefix"><span z-var="item"/>
-      </li>
-    </ul>
-  </body>
-</html>
-```
+[%inc ex_snippets.ht %]
 
 would print the word "Important:" in bold before each item in the list.
 {: .continue}
@@ -490,16 +476,7 @@ would print the word "Important:" in bold before each item in the list.
 Modify the template expander to handle variables defined in a YAML header in the page being processed.
 For example, if the page is:
 
-```html
----
-name: "Dorothy Johnson Vaughan"
----
-<html>
-  <body>
-    <p><span z-var="name"/></p>
-  </body>
-</html>
-```
+[%inc ex_yaml_header.ht %]
 
 will create a paragraph containing the given name.
 {: .continue}

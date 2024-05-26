@@ -227,19 +227,12 @@ Please see [%x bonus %] for extra material related to these ideas.
 
 What happens if you run this code?
 
-```python
-for name in globals():
-    print(name)
-```
+[%inc ex_loop_globals_1.py %]
 
 What happens if you run this code instead?
 {: .continue}
 
-```python
-name = None
-for name in globals():
-    print(name)
-```
+[%inc ex_loop_globals_2.py %]
 
 Why are the two different?
 {: .continue}

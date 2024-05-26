@@ -175,9 +175,7 @@ but if we then go to `http://localhost:8080` with our browser
 we see this:
 {: .continue}
 
-```
-Hello, web!
-```
+[%inc hello_web.txt %]
 
 and this in our shell:
 {: .continue}

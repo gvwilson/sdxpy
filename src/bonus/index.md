@@ -117,9 +117,7 @@ but most languages use lazy evaluation for `and` and `or` as well
 so that expressions like:
 {: .continue}
 
-```python
-thing and thing.part
-```
+[%inc ex_and_shortcut.py %]
 
 will produce `None` if `thing` is `None`
 and `reference.part` if it isn't.

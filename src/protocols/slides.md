@@ -89,10 +89,7 @@ title: "Protocols"
 
 ## Operation
 
-```python
-with C(…args…) as name:
-    …do things…
-```
+[%inc ex_with.py %]
 
 1.  Call `C`'s constructor to create an object.
 2.  Call that object's `__enter__` method and assign the result to `name`.

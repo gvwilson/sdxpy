@@ -442,9 +442,7 @@ But that doesn't mean we can't handle variable-length strings;
 it just means that we have to construct the format on the fly
 using an expression like this:
 
-```python
-format = f"{len(str)}s"
-```
+[%inc ex_dynamic_format.py %]
 
 If `str` contains the string `"example"`,
 the expression above will assign `"7s"` to `format`,

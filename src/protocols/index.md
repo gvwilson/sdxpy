@@ -144,10 +144,7 @@ The protocol for this relies on two methods called `__enter__` and `__exit__`.
 If the class is called `C`,
 then when Python executes a `with` block like this:
 
-```python
-with C(…args…) as name:
-    …do things…
-```
+[%inc ex_with.py %]
 
 it does the following ([%f protocols-context-manager %]):
 {: .continue}
@@ -372,13 +369,7 @@ but fails with an assertion error if that kind of exception is *not* raised.
 Create a context manager called `Timer` that reports how long it has been
 since a block of code started running:
 
-```python
-# your class goes here
-
-with Timer() as start:
-    # …do some lengthy operation…
-    print(start.elapsed())  # time since the start of the block
-```
+[%inc ex_timer.py %]
 
 ### Handling Empty Strings {: .exercise}
 
