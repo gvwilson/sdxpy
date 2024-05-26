@@ -45,6 +45,7 @@ chapters = [
     "undo",
     "vm",
     "debugger",
+    "fuzztest",
     "finale",
 ]
 
