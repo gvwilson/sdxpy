@@ -1,3 +1,13 @@
+---
+title: "Observers"
+abstract: >
+    FIXME
+syllabus:
+-   FIXME
+---
+
+[%fixme "create callback task runner with observer/observable" %] [%issue 83 %]
+
 -   `pull_buggy.py`
     -   doesn't update C because A->B->D and then C thinks D wasn't out of date
     -   so switch to push notifications
