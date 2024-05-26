@@ -7,24 +7,31 @@ class Obs(ABC):
         self._required = 0
         self._current = 0
         self._queue = queue
+        self._notifier = None
+        self._received = []
 
     def watch(self, other):
-        other.add_observer(self)
-        self._required += 1
-        return self
+        if other.add_observer(self):
+            self._required += 1
 
     def add_observer(self, observer):
         if observer not in self._observers:
             self._observers.append(observer)
+            return True
+        return False
 
-    def notify(self, source=None):
+    def notify(self, by=None, source=None):
+        if by is not None:
+            self._received.append(by)
         assert source != self, "Circular dependency!"
         self._current += 1
         if self._current >= self._required:
+            self._notifier = source if source is not None else self
             self._queue.add(self)
-            for other in self._observers:
-                other.notify(source if source is not None else self)
-            self._current = 0
+
+    def downstream(self):
+        for other in self._observers:
+            other.notify(self, self._notifier)
 
     def stale(self):
         return False
@@ -59,14 +66,27 @@ class Node(Obs):
 
 class Queue:
     def __init__(self):
-        self._items = []
+        self._pending = []
+        self._complete = []
+        self._cause = []
 
     def add(self, thing):
-        self._items.append(thing)
+        self._pending.append(thing)
 
-    def run(self):
-        while self._items:
-            self._items.pop(0).action()
+    def run(self, verbose=False):
+        while self._pending or self._complete:
+            while self._pending:
+                obj = self._pending.pop(0)
+                if verbose:
+                    print(f'{obj._message} action')
+                self._cause.append((obj._message, [x._message for x in obj._received]))
+                obj.action()
+                self._complete.append(obj)
+            while self._complete:
+                obj = self._complete.pop(0)
+                if verbose:
+                    print(f'{obj._message} complete')
+                obj.downstream()
 
 
 if __name__ == "__main__":
@@ -81,3 +101,4 @@ if __name__ == "__main__":
     c.watch(d)
     d.notify()
     queue.run()
+    print(queue._cause)
