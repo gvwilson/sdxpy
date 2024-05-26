@@ -202,24 +202,65 @@ All contributors are required to abide by our Code of Conduct
 
 Here's what people said about the JavaScript version of this book [%b Wilson2022a %]:
 
--   [Jessica Kerr][kerr_jessica]:
-    "*Software Design by Example* is the book I'll recommend to every new dev…
-    It is nice to you.
-    It wants you to succeed…
-    It's a bridge from 'learn to program' to working programmer."
+-   [Alberto Bacchelli][bacchelli_alberto]:
+    I've been using this book to teach software design to an undergraduate class of 250 students,
+    and the students and I love it!
+    The positive impact of the book is evident from the improvements in student grades
+    and the quality of their practical assignments,
+    reflecting the substantial learning that's taking place.
+    It's been a joy to see them feel so equipped and inspired.
+
+-   [Naomi Ceder][ceder_naomi]:
+    This is my new favorite book on the art of writing software.
+    There is so much  to like about it—the way it leads the reader to explore and develop their understanding,
+    the choice of projects and examples,
+    the clarity of the instruction,
+    the Creative Commons license,
+    and much more.
+    It will be my first recommendation for people looking to really learn professional development,
+    either on their own or in a classroom setting.
+
+-   [Julia Ferraioli][ferraioli_julia]:
+    Blending computer science with sound software engineering practices (with citations!)
+    is difficult enough on its own,
+    but this book guides the reader through practical design patterns that they can put into practice.
+    The addition of historic anecdotes gives readers extra context for what they've learned
+    and brings theory back to practice.
+
+-   [Jennifer Moore][moore_jennifer]:
+    The book is an excellent guide for anyone going from "just programming" to building larger projects.
+    It's like a choose-your-own adventure,
+    but the adventure is learning to build very complex software as a composition of much simpler patterns.
 
 -   [Jenn Schiffer][schiffer_jenn]:
-    "I am v much enjoying gvwilson's book *Software Design by Example*.
-    It makes me miss teaching, it would be such a fun text to use!"
+    This book is both a great refresher if you've not worked with Python in a long time,
+    or your next textbook if you know just enough to be a little dangerous and want to level up.
+    The exercises being tool-based means the experience gained will instantly feel applicable
+    to whatever you end up using the language for.
 
--   [Emily Gorcenski][gorcenski_emily]:
-    "There's a lot of books on programming
-    but fewer books that couple software development with effective and practical use of tools,
-    presenting a language not as a main course but as a part of an engineering ecosystem.
-    Greg Wilson's book hits all the right notes in bringing together theory, pragmatism, and best practices."
+-   [Sue Smith][smith_sue]:
+    I know I can share this book with folk in the confidence that
+    they'll get a guided experience that's both accessible and comprehensive,
+    leaving them with real world software skills.
+    Teaching using examples makes the techniques meaningful and tangible to the learner
+    which is in itself a great motivator,
+    and the use of tooling examples is a bonus.
 
--   [Danielle Navarro][navarro_danielle]:
-    "The book is really bloody lovely."
+-   [Chelsea Troy][troy_chelsea]:
+    Rather than stacking up isolated examples divorced from practical use cases,
+    this book teaches concepts the way we use them: in collaboration with one another.
+    Filled with both pragmatic advice and juicy historical nuggets,
+    this book just might manage to do the thing I've tried to do in classrooms for half a decade:
+    transfer basic engineering skills
+    while conveying what it's like to manage complex software projects.
+
+-   [Hazel Weakly][weakly_hazel]:
+    This is an absolutely marvelous book.
+    Very rarely do insightful diagrams,
+    contentious syntax disambiguation,
+    and thoughtful attention to how humans learn and absorb information come together in a coherent package like this.
+    It is exactly the sort of book I wish I'd had at the start of my programming journey;
+    it would've saved me from countless lessons learned the hard way.
 
 ## Acknowledgments {: #intro-acknowledgments}
 
