@@ -1,4 +1,4 @@
-from z3 import Bool, Implies, Not, Solver, sat, unsat
+from z3 import Bool, Solver, sat
 
 def report(title, result):
     print(f"{title}: {result}")
