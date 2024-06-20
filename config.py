@@ -46,6 +46,7 @@ chapters = [
     "vm",
     "debugger",
     "docs",
+    "cache",
     "concur",
     "finale",
 ]
