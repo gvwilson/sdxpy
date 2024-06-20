@@ -56,10 +56,13 @@ def _add_glossary_to_index(lookup):
     inverted = {entry["key"]: entry for entry in util.load_glossary()}
     for (slug, keys) in ark.site.config["_terms_"].items():
         for k in keys:
-            t = inverted[k][lang]["term"]
-            if t not in lookup:
-                lookup[t] = set()
-            lookup[t].add(slug)
+            try:
+                t = inverted[k][lang]["term"]
+                if t not in lookup:
+                    lookup[t] = set()
+                lookup[t].add(slug)
+            except KeyError as exc:
+                util.fail(f"key {k} not found in glossary")
 
 
 def _invert_index():

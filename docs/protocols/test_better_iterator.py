@@ -1,4 +1,3 @@
-import pytest
 from better_iterator import BetterIterator
 
 def gather(buffer):

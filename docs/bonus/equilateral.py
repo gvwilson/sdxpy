@@ -1,4 +1,4 @@
-from z3 import Int, And, Or, Solver
+from z3 import Int, And, Solver
 
 # [setup]
 A = Int("A")

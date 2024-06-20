@@ -1,5 +1,4 @@
 import curses
-import sys
 
 from util import COL, ROW, start
 from move_cursor import Cursor

@@ -40,7 +40,7 @@ class FindUnusedVariables(ast.NodeVisitor):
         elif isinstance(node.ctx, ast.Store):
             self.stack[-1].store.add(node.id)
         else:
-            assert False, f"Unknown context"
+            assert False, "Unknown context"
         self.generic_visit(node)
 
     # [/name]
