@@ -28,7 +28,6 @@ class Buffer:
         return result
 
     def scroll(self, row, col):
-        old = self._top
         if (row == self._top - 1) and self._top > 0:
             self._top -= 1
         elif (row == self._bottom()) and \
