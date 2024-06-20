@@ -1,7 +1,7 @@
 import curses
 import sys
 
-from util import open_log, log, make_lines
+from util import open_log, make_lines
 
 # [window]
 class Window:
