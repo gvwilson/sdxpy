@@ -13,9 +13,9 @@ class FileHandler(socketserver.BaseRequestHandler):
             print(f"...server received {len(latest)} bytes")
             data += latest
             if len(latest) < CHUNK_SIZE:
-                print(f"...server breaking")
+                print("...server breaking")
                 break
-        print(f"server finished received, about to reply")
+        print("server finished received, about to reply")
         self.request.sendall(bytes(f"{len(data)}", "utf-8"))
 # [/class]
 

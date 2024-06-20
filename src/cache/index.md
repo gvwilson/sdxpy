@@ -1,5 +1,7 @@
 ---
 title: "A File Cache"
+abstract: >
+    FIXME
 syllabus:
 -   Software systems often use caches to store a subset of files in order to use less disk space.
 -   Caching systems can replace actual files with placeholders containing metadata.
@@ -58,7 +60,7 @@ we could define a class for this,
 but since instances of that class are just passive data records,
 we use a [%g named_tuple "named tuple" %] instead:
 
-[% inc file="index_base.py" keep="tuple" %]
+[%inc index_base.py mark=tuple %]
 
 Next,
 we create an [%g abstract_class "abstract class" %]
@@ -67,7 +69,7 @@ but doesn't actually implement them—or rather,
 only implements the ones that can be defined in terms of lower-level operations
 that derived class will implement:
 
-[% inc file="index_base.py" keep="class" %]
+[%inc index_base.py mark=class %]
 
 The methods of `IndexBase` can:
 {: .continue}
@@ -84,14 +86,14 @@ and save the index.
 Their definitions are:
 {: .continue}
 
-[% inc file="index_base.py" keep="abstract" %]
+[%inc index_base.py mark=abstract %]
 
 Finally,
 we define a function `current_time`
 that returns a time we can use in an index record.
 Doing this gives us something that will be easy to mock for testing:
 
-[% inc file="index_base.py" keep="time" %]
+[%inc index_base.py mark=time %]
 
 <div class="callout" markdown="1">
 
@@ -129,7 +131,7 @@ let's implement a concrete index class that stores data in a CSV file.
 and that it contains an index file,
 then reads that file and turns its contents into `CacheEntry` records:
 
-[% inc file="index_csv.py" keep="load" %]
+[%inc index_csv.py mark=load %]
 
 [% figure
    slug="cache-methods"
@@ -144,7 +146,7 @@ and then writes each record to the index file.
 This method automatically creates the index file
 if it doesn't already exist:
 
-[% inc file="index_csv.py" keep="save" %]
+[%inc index_csv.py mark=save %]
 
 Finally,
 we need to write `_initialize_index`,
@@ -154,31 +156,31 @@ While we're doing that,
 we'll define the name for the index file
 and write a helper method that produces its full path:
 
-[% inc file="index_csv.py" keep="helper" %]
+[%inc index_csv.py mark=helper %]
 
 Time to do some testing.
-As in [%x backup %],
+As in [%x archive %],
 we will use [pyfakefs][pyfakefs] instead of creating files on disk
 and pytest's `fixture` decorator to set things up:
 
-[% inc file="test_index_csv.py" keep="setup" %]
+[%inc test_index_csv.py mark=setup %]
 
 If we create a new cache,
 it should be empty:
 
-[% inc file="test_index_csv.py" keep="new" %]
+[%inc test_index_csv.py mark=new %]
 
 If we add an entry,
 it should still be there when we reload the index:
 {: .continue}
 
-[% inc file="test_index_csv.py" keep="save" %]
+[%inc test_index_csv.py mark=save %]
 
 And if we check whether or not something is in the index,
 the answer should be "yes" for things we've added
 and "no" for things we haven't:
 
-[% inc file="test_index_csv.py" keep="check" %]
+[%inc test_index_csv.py mark=check %]
 
 ## A Local Cache {: #cache-local}
 
@@ -187,7 +189,7 @@ Just as `IndexBase` defined the behavior every cache index must have,
 As the listing below shows,
 it is less than three dozen lines long:
 
-[% inc file="cache_base.py" keep="class" %]
+[%inc cache_base.py mark=class %]
 
 `CacheBase` encapsulates several design decisions.
 Cached files are named <code><em>identifier</em>.cache</code>,
@@ -215,13 +217,13 @@ we can create a class called `CacheFilesystem`
 that copies files to the local cache
 but doesn't actually archive them anywhere:
 
-[% inc file="cache_filesystem.py" keep="class" %]
+[%inc cache_filesystem.py mark=class %]
 
 A file archiving system that doesn't actually archive files
 isn't particularly useful in practice,
 but it enables us to write some useful tests.
 Developers often create
-a [%i "minimum testable class" %][%g minimum_testable_class "minimum testable class" %][%/i%]
+a [%g minimum_testable_class "minimum testable class" %]
 for this reason.
 Just as creating an abstract base class that implements operations
 in terms of a small number of methods
@@ -235,20 +237,20 @@ By now our testing should look familiar.
 We create a fixture for the filesystem as a whole
 and another for the cache:
 
-[% inc file="test_cache_filesystem.py" keep="setup" %]
+[%inc test_cache_filesystem.py mark=setup %]
 
 and then write a test to check that
 if we haven't ever added files to the cache,
 no files are present:
 {: .continue}
 
-[% inc file="test_cache_filesystem.py" keep="empty" %]
+[%inc test_cache_filesystem.py mark=empty %]
 
 We can then start testing that (for example)
 if we add two files with different names,
 the cache contains two files:
 
-[% inc file="test_cache_filesystem.py" keep="two" %]
+[%inc test_cache_filesystem.py mark=two %]
 
 ## A Limited Cache {: #cache-limit}
 
@@ -290,7 +292,7 @@ Our new class `CacheLimited` needs:
 
 Its constructor is therefore:
 
-[% inc file="cache_limited.py" keep="constructor" %]
+[%inc cache_limited.py mark=constructor %]
 
 At this point we are going to do something that
 we said earlier we wouldn't need to do.
@@ -311,22 +313,22 @@ if we add a file when the cache is full,
 -   add the new file to the cache; and
 -   add it to archival storage.
 
-[% inc file="cache_limited.py" keep="get" %]
+[%inc cache_limited.py mark=get %]
 
 The method that ensures the cache has space for a new file
 checks the cache's size
 and removes a file if necessary:
 
-[% inc file="cache_limited.py" keep="ensure" %]
+[%inc cache_limited.py mark=ensure %]
 
 We also need to implement `_add`
 to handle the case of adding an entirely new file
 
-[% inc file="cache_limited.py" keep="add" %]
+[%inc cache_limited.py mark=add %]
 
 The tests for `CacheLimited` look like those we've written before:
 
-[% inc file="test_cache_limited.py" keep="example" %]
+[%inc test_cache_limited.py mark=example %]
 
 One difference is that they check the archive directory
 as well as the cache directory.
@@ -350,7 +352,7 @@ users will never need to see these or remember them.
 Python provides an `open` function for opening files,
 so we will create a `cache_open` function to open cached files:
 
-[% inc file="cache_io.py" keep="open" %]
+[%inc cache_io.py mark=open %]
 
 If the actual file is called `a.txt`,
 this function looks for `a.txt.cache`,
@@ -369,12 +371,12 @@ Given the name of a local file that the user wants to cache,
 this function saves it in the cache
 and constructs a placeholder file:
 
-[% inc file="cache_io.py" keep="save" %]
+[%inc cache_io.py mark=save %]
 
 These two functions work as designed,
 but neither should be used in production.
 The problem is that neither guarantees
-[%i "atomic operation" %][%g atomic_operation "atomic operation" %][%/i%]:
+[%g atomic_operation "atomic operation" %]:
 in both cases,
 if something goes wrong part-way through the function,
 the caching system can be left in an inconsistent state.
@@ -449,7 +451,7 @@ and so that the function can be used in `with` statements.
 
 ### Storing files remotely {: .exercise}
 
-1.  Create a small web server ([%x server%]) that accepts
+1.  Create a small web server ([%x http %]) that accepts
     file upload and file download requests.
 1.  Modify the cache so that it sends new files to the server
     and downloads files from the server on demand.

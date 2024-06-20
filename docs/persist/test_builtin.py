@@ -100,7 +100,7 @@ def test_save_set_flat():
 
 def test_load_bool_single():
     fixture = StringIO("bool:True\n")
-    assert load(fixture) == True
+    assert load(fixture) is True
 
 
 def test_load_dict_empty():

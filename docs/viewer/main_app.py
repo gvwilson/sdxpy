@@ -1,7 +1,6 @@
 import curses
-import sys
 
-from util import COL, ROW, start
+from util import start
 from cursor_const import Window
 from move_cursor import Cursor
 

@@ -1,5 +1,4 @@
 import curses
-import sys
 
 from util import ROW, COL, start
 from clip_cursor import ClipBuffer
@@ -52,7 +51,6 @@ class ViewportBuffer(ClipBuffer):
 
     # [scroll]
     def scroll(self, row, col):
-        old = self._top
         if (row == self._top - 1) and self._top > 0:
             self._top -= 1
         elif (row == self._bottom()) and \

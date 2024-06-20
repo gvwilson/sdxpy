@@ -12,9 +12,9 @@ class LoggingHandler(socketserver.BaseRequestHandler):
             self.debug(f"...server received {len(latest)} bytes")
             data += latest
             if len(latest) < BLOCK_SIZE:
-                self.debug(f"...server breaking")
+                self.debug("...server breaking")
                 break
-        self.debug(f"server finished received, about to reply")
+        self.debug("server finished received, about to reply")
         self.request.sendall(bytes(f"{len(data)}", "utf-8"))
 
     # [debug]
