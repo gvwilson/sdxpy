@@ -19,7 +19,7 @@ text = """<html>
 # [/text]
 
 # [main]
-from bs4 import BeautifulSoup, NavigableString, Tag
+from bs4 import BeautifulSoup, NavigableString
 
 doc = BeautifulSoup(text, "html.parser")
 display(doc)

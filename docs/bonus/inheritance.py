@@ -1,6 +1,5 @@
 import ast
 import sys
-from collections import Counter
 
 
 # [init]

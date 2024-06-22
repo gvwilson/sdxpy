@@ -1,5 +1,4 @@
 import curses
-import sys
 
 from util import start
 from cursor_const import Window
