@@ -1,4 +1,4 @@
-from z3 import sat, unsat
+from z3 import sat
 
 # [setup]
 from z3 import Bool, Solver
