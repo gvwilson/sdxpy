@@ -4,7 +4,6 @@ import sys
 
 import markdown
 from doc_extract import Extract
-from markdown.extensions import Extension
 
 # [format]
 HEADING = {"module": "#", "class": "##", "function": "##"}

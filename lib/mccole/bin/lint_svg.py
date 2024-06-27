@@ -2,7 +2,6 @@
 
 import argparse
 import re
-import sys
 from xml.dom import minidom
 
 DEFAULT_SIZE = "14"
