@@ -3,8 +3,14 @@ from naive_hash import naive_hash
 
 
 def same_bytes(left_name, right_name):
-    left_bytes = open(left_name, "rb").read()
-    right_bytes = open(right_name, "rb").read()
+    left_file = open(left_name, "rb")
+    left_bytes = left_name.read()
+
+    right_file = open(right_name, "rb")
+    right_bytes = right_name.read()
+
+    left_file.close()
+    right_file.close()
     return left_bytes == right_bytes
 
 
