@@ -1,4 +1,4 @@
-from z3 import Bool, Implies, Not, Solver, sat, unsat
+from z3 import Bool
 
 A = Bool("A")
 B = Bool("B")

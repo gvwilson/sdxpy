@@ -238,9 +238,9 @@ def collect_title(node, metadata):
     front = frontmatter.loads(node.text)
     title = front.get("title", None)
     if len(node.path) == 1:
-        metadata["index"][node.slug] = front["title"]
+        metadata["index"][node.slug] = title
     elif (len(node.path) == 2) and node.slug == "slides":
-        metadata["slides"][node.parent.slug] = front["title"]
+        metadata["slides"][node.parent.slug] = title
 
 
 def collect_xref(pargs, kwargs, found):

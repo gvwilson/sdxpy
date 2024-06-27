@@ -1,5 +1,3 @@
-import sys
-
 from architecture import OPS, VMState
 from vm_extend import VirtualMachineExtend
 
