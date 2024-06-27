@@ -11,6 +11,7 @@ def same_bytes(left_name, right_name):
 
   left_file.close()
   right_file.close()
+  
   return left_bytes == right_bytes
 
 
