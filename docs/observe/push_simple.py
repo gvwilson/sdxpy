@@ -8,13 +8,14 @@ class Obs(ABC):
         self._current = 0
 
     def watch(self, other):
-        other.add_observer(self)
-        self._required += 1
-        return self
+        if other.add_observer(self):
+            self._required += 1
 
     def add_observer(self, observer):
         if observer not in self._observers:
             self._observers.append(observer)
+            return True
+        return False
 
     def notify(self):
         self._current += 1
@@ -22,7 +23,6 @@ class Obs(ABC):
             self.action()
             for other in self._observers:
                 other.notify()
-            self._current = 0
 
     def stale(self):
         return False
@@ -65,4 +65,3 @@ if __name__ == "__main__":
     b.watch(d)
     c.watch(d)
     d.notify()
-

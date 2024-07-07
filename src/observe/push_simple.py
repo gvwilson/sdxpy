@@ -3,19 +3,26 @@ from abc import ABC, abstractmethod
 
 class Obs(ABC):
     def __init__(self):
-        self._watching = []
+        self._observers = []
+        self._required = 0
+        self._current = 0
 
     def watch(self, other):
-        if other not in self._watching:
-            self._watching.append(other)
-        return self
+        if other.add_observer(self):
+            self._required += 1
 
-    def sync(self):
-        act = [other.sync() for other in self._watching]
-        act = any(act) or self.stale()
-        if act:
+    def add_observer(self, observer):
+        if observer not in self._observers:
+            self._observers.append(observer)
+            return True
+        return False
+
+    def notify(self):
+        self._current += 1
+        if self._current >= self._required:
             self.action()
-        return act
+            for other in self._observers:
+                other.notify()
 
     def stale(self):
         return False
@@ -57,5 +64,4 @@ if __name__ == "__main__":
     a.watch(c)
     b.watch(d)
     c.watch(d)
-    a.sync()
-
+    d.notify()

@@ -9,13 +9,14 @@ class Obs(ABC):
         self._queue = queue
 
     def watch(self, other):
-        other.add_observer(self)
-        self._required += 1
-        return self
+        if other.add_observer(self):
+            self._required += 1
 
     def add_observer(self, observer):
         if observer not in self._observers:
             self._observers.append(observer)
+            return True
+        return False
 
     def notify(self, source=None):
         assert source != self, "Circular dependency!"
@@ -24,7 +25,6 @@ class Obs(ABC):
             self._queue.add(self)
             for other in self._observers:
                 other.notify(source if source is not None else self)
-            self._current = 0
 
     def stale(self):
         return False
