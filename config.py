@@ -47,6 +47,7 @@ chapters = [
     "debugger",
     "docgen",
     "cache",
+    "orm",
     "concur",
     "finale",
 ]
