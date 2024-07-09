@@ -70,13 +70,13 @@ def _extract(node, filepath, mark, omit):
     suffix = filepath.suffix.lstrip(".")
     if suffix not in COMMENT:
         return text
-    text = _extract_mark(text, suffix, mark)
+    text = _extract_mark(node, text, suffix, mark)
     if omit:
-        text = _extract_omit(text, suffix, omit)
+        text = _extract_omit(node, text, suffix, omit)
     return text
 
 
-def _extract_mark(text, suffix, mark):
+def _extract_mark(node, text, suffix, mark):
     """Extract marked text."""
     comment = COMMENT[suffix]
     before = f"{comment} [{mark}]"
@@ -86,15 +86,13 @@ def _extract_mark(text, suffix, mark):
     if before_in and after_in:
         text = text.split(before)[1].split(after)[0]
     elif before_in or after_in:
-        util.fail(
-            f"Mis-matched mark in {node.path}: '{mark}' in '{filepath}'"
-        )
+        util.fail(f"Mis-matched mark '{mark}' in '{node.slug}'")
     else:
-        util.warn(f"No mark in {node.slug}: '{mark}' in '{filepath}'")
+        util.warn(f"No mark in {node.slug}: '{mark}'")
     return text
 
 
-def _extract_omit(text, suffix, omit):
+def _extract_omit(node, text, suffix, omit):
     """Delete text to be omitted."""
     comment = COMMENT[suffix]
     before = f"{comment} [{omit}]"
@@ -104,11 +102,9 @@ def _extract_omit(text, suffix, omit):
     if before_in and after_in:
         text = text.split(before)[0].rstrip() + "\n" + text.split(after)[1]
     elif before_in or after_in:
-        util.fail(
-            f"Mis-matched omit in {node.path}: '{omit}' in '{filepath}'"
-        )
+        util.fail(f"Mis-matched omit in {node.path}: '{omit}'")
     else:
-        util.warn(f"No omit in {node.slug}: '{omit}' in '{filepath}'")
+        util.warn(f"No omit in {node.slug}: '{omit}'")
     return text
 
 

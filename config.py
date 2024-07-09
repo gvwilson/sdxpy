@@ -45,7 +45,12 @@ chapters = [
     "undo",
     "vm",
     "debugger",
+    "observe",
+    "docgen",
     "compress",
+    "cache",
+    "orm",
+    "concur",
     "finale",
 ]
 

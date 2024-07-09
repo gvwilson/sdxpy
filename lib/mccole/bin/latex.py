@@ -166,7 +166,7 @@ def at_figure(info, node, accum, begin):
 def at_h1(info, node, accum, begin):
     """Handle <h1>…</h1>."""
     if begin:
-        accum.append(rf"\chapter{{")
+        accum.append(r"\chapter{")
     else:
         accum.extend([rf"}}\label{{{info["slug"]}}}", "\n"])
     return True
@@ -251,7 +251,7 @@ def at_table(info, node, accum, begin):
     if node.thead:
         headers = node.thead.tr.find_all("th")
         head = do_table_row(info, node.thead.tr, "th")
-        rows = [head, *rows]
+        rows = [headers, *rows]
 
     accum.extend([
         "\n\\vspace{\\baselineskip}\n",

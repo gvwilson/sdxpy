@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="../logo.svg">
+<link rel="stylesheet" href="../tango.css" type="text/css">
+<link rel="stylesheet" href="../mccole.css" type="text/css">
+<title>Software Design by Example &middot; Generating Documentation</title>
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [['\\(', '\\)']]
+    }
+  };
+</script>
+<script
+  type="text/javascript"
+  id="MathJax-script"
+  async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+</script>
+
+  <script defer data-domain="third-bit.com" src="https://plausible.io/js/plausible.js"></script>
+
+
+  </head>
+  <body>
+    <div class="row">
+      <div class="sidebar">
+        <p>
+  
+  <a href="https://www.routledge.com/Software-Design-by-Example-A-Tool-Based-Introduction-with-Python/Wilson/p/book/9781032725215"><img src="../sdxpy-cover.png" alt="Book cover" class="bookcover" /></a>
+  
+</p>
+
+<div class="screen-reader-only">
+  <a href="#printable">Skip to content</a>
+</div>
+
+<ol class="toc-chapters"><li><a href="../intro/">Introduction</a></li><li><a href="../oop/">Objects and Classes</a></li><li><a href="../dup/">Finding Duplicate Files</a></li><li><a href="../glob/">Matching Patterns</a></li><li><a href="../parse/">Parsing Text</a></li><li><a href="../test/">Running Tests</a></li><li><a href="../interp/">An Interpreter</a></li><li><a href="../func/">Functions and Closures</a></li><li><a href="../protocols/">Protocols</a></li><li><a href="../archive/">A File Archiver</a></li><li><a href="../check/">An HTML Validator</a></li><li><a href="../template/">A Template Expander</a></li><li><a href="../lint/">A Code Linter</a></li><li><a href="../layout/">Page Layout</a></li><li><a href="../perf/">Performance Profiling</a></li><li><a href="../persist/">Object Persistence</a></li><li><a href="../binary/">Binary Data</a></li><li><a href="../db/">A Database</a></li><li><a href="../build/">A Build Manager</a></li><li><a href="../pack/">A Package Manager</a></li><li><a href="../ftp/">Transferring Files</a></li><li><a href="../http/">Serving Web Pages</a></li><li><a href="../viewer/">A File Viewer</a></li><li><a href="../undo/">Undo and Redo</a></li><li><a href="../vm/">A Virtual Machine</a></li><li><a href="../debugger/">A Debugger</a></li><li><a href="../observe/">Observers</a></li><li><a href="../docgen/">Generating Documentation</a></li><li><a href="../compress/">File Compression</a></li><li><a href="../cache/">A File Cache</a></li><li><a href="../orm/">Object-Relational Mapper</a></li><li><a href="../concur/">Concurrency</a></li><li><a href="../finale/">Conclusion</a></li></ol>
+<ol class="toc-appendices"><li><a href="../bib/">Bibliography</a></li><li><a href="../bonus/">Bonus Material</a></li><li><a href="../syllabus/">Syllabus</a></li><li><a href="../license/">License</a></li><li><a href="../conduct/">Code of Conduct</a></li><li><a href="../contrib/">Contributing</a></li><li><a href="../glossary/">Glossary</a></li><li><a href="../colophon/">Colophon</a></li><li><a href="../contents/">Index</a></li></ol>
+
+
+<p><a href="../sdxpy-examples.zip" type="application/zip">download examples</a></p>
+
+
+<p><a href="https://github.com/gvwilson/sdxpy">GitHub repository</a></p>
+
+      </div>
+      <div id="printable" class="contents bordered">
+	<main>
+	  <div class="row notex">
+  <div class="col-12 center">
+    
+      <h1>Generating Documentation</h1>
+    
+  </div>
+</div>
+
+	  
+<nav class="row-always notex">
+  <div class="col-1 left">
+    <a href="../observe/" title="previous" class="undecorated">&#8678;</a>
+  </div>
+  <div class="col-10 center">
+    <a href="../" title="home" class="undecorated">&#9737;</a>
+  </div>
+  <div class="col-1 right">
+    <a href="../compress/" title="next" class="undecorated">&#8680;</a>
+  </div>
+</nav>
+
+
+	  <ul class="keypoints">
+<li>FIXME</li>
+<li>Instructions are just numbers but may be represented as assembly code.</li>
+<li>Instructions may refer to registers, memory, both, or neither.</li>
+<li>A processor usually executes instructions in order but may jump to another location based on whether a conditional is true or false.</li>
+</ul>
+	  <p class="terms">Terms defined: 
+<a class="gl-ref" href="../glossary/#unparsing" markdown="1">unparsing</a>
+</p>
+	  <p>Many programmers believe they&rsquo;re more likely to write documentation and keep it up to date
+if it is close to the code.
+Tools that extract specially-formatted comments from code and turn them into documentation
+have been around since at least the 1980s;
+both <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a href="https://www.mkdocs.org/">MkDocs</a> are popular ones for Python.</p>
+<p>Generating documentation isn&rsquo;t the same as checking code style,
+but they share some tooling.
+Let&rsquo;s start by building a <code>NodeVisitor</code> that extracts and saves docstrings:</p>
+<div class="language-py" title="doc_extract.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Extract</span><span class="p">(</span><span class="n">ast</span><span class="o">.</span><span class="n">NodeVisitor</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Extraction class.&quot;&quot;&quot;</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">extract</span><span class="p">(</span><span class="n">filenames</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Entry-level method.&quot;&quot;&quot;</span>
+        <span class="n">extracter</span> <span class="o">=</span> <span class="n">Extract</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">filename</span> <span class="ow">in</span> <span class="n">filenames</span><span class="p">:</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">reader</span><span class="p">:</span>
+                <span class="n">source</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+                <span class="n">tree</span> <span class="o">=</span> <span class="n">ast</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+                <span class="n">module_name</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span><span class="o">.</span><span class="n">stem</span>
+                <span class="n">extracter</span><span class="o">.</span><span class="n">extract_from</span><span class="p">(</span><span class="n">module_name</span><span class="p">,</span> <span class="n">tree</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">extracter</span><span class="o">.</span><span class="n">seen</span>
+</code></pre></div>
+</div>
+<p>The code to create a stack,
+extract docstrings,
+and save them in a dictionary should look familiar by now:</p>
+<div class="language-py" title="doc_extract.py">
+<div class="highlight"><pre><span></span><code>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Constructor.&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stack</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">seen</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">def</span> <span class="nf">visit_ClassDef</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get docstring from class.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s2">&quot;class&quot;</span><span class="p">,</span> <span class="n">node</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">node</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">generic_visit</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stack</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">extract_from</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module_name</span><span class="p">,</span> <span class="n">tree</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Start extraction for a module.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s2">&quot;module&quot;</span><span class="p">,</span> <span class="n">module_name</span><span class="p">,</span> <span class="n">tree</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stack</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kind</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Save information about a docstring.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stack</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="n">docstring</span> <span class="o">=</span> <span class="n">ast</span><span class="o">.</span><span class="n">get_docstring</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">seen</span><span class="p">[</span><span class="s2">&quot;.&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stack</span><span class="p">)]</span> <span class="o">=</span> <span class="p">(</span><span class="n">kind</span><span class="p">,</span> <span class="n">docstring</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<p>To format the docstrings,
+we create a Markdown page with module, class, and function names as headers:</p>
+<div class="language-py" title="doc_format.py">
+<div class="highlight"><pre><span></span><code><span class="n">HEADING</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;module&quot;</span><span class="p">:</span> <span class="s2">&quot;#&quot;</span><span class="p">,</span> <span class="s2">&quot;class&quot;</span><span class="p">:</span> <span class="s2">&quot;##&quot;</span><span class="p">,</span> <span class="s2">&quot;function&quot;</span><span class="p">:</span> <span class="s2">&quot;##&quot;</span><span class="p">}</span>
+
+<span class="n">MISSING</span> <span class="o">=</span> <span class="s2">&quot;**No documentation.**&quot;</span>
+
+
+<span class="k">def</span> <span class="nf">format</span><span class="p">(</span><span class="n">docstrings</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert dictionary of docstrings to HTML page.&quot;&quot;&quot;</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="p">(</span><span class="n">kind</span><span class="p">,</span> <span class="n">docstring</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">docstrings</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+        <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">make_heading</span><span class="p">(</span><span class="n">kind</span><span class="p">,</span> <span class="n">key</span><span class="p">))</span>
+        <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">docstring</span> <span class="k">if</span> <span class="n">docstring</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">MISSING</span><span class="p">)</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">markdown</span><span class="o">.</span><span class="n">markdown</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">extensions</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;markdown.extensions.extra&quot;</span><span class="p">])</span>
+
+
+<span class="k">def</span> <span class="nf">format_key</span><span class="p">(</span><span class="n">key</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">key</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">,</span> <span class="s2">&quot;-&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;\_&quot;</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">make_heading</span><span class="p">(</span><span class="n">kind</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">HEADING</span><span class="p">[</span><span class="n">kind</span><span class="p">]</span><span class="si">}</span><span class="s2"> `</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">` </span><span class="se">{{</span><span class="s2">: #</span><span class="si">{</span><span class="n">format_key</span><span class="p">(</span><span class="n">key</span><span class="p">)</span><span class="si">}</span><span class="se">}}</span><span class="s2">&quot;</span>
+</code></pre></div>
+</div>
+<p>If our input file looks like this:</p>
+<div class="language-py" title="doc_sample.py">
+<div class="highlight"><pre><span></span><code><span class="sd">&quot;&quot;&quot;Docstring for module.&quot;&quot;&quot;</span>
+
+
+<span class="k">def</span> <span class="nf">function</span><span class="p">(</span><span class="n">param</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Docstring for function.&quot;&quot;&quot;</span>
+
+
+<span class="k">def</span> <span class="nf">undocumented</span><span class="p">(</span><span class="n">param</span><span class="p">):</span>
+    <span class="k">pass</span>
+
+
+<span class="k">class</span> <span class="nc">Sample</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Docstring for class.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Docstring for constructor.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+
+    <span class="k">def</span> <span class="nf">rename</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_name</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Docstring for method.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">new_name</span>
+</code></pre></div>
+</div>
+<p class="continue">then our output is:</p>
+<div class="language-out" title="doc_sample.out">
+<div class="highlight"><pre><span></span><code>&lt;h1 id=&quot;doc_sample&quot;&gt;&lt;code&gt;doc_sample&lt;/code&gt;&lt;/h1&gt;
+&lt;p&gt;Docstring for module.&lt;/p&gt;
+&lt;h2 id=&quot;doc_sample-Sample&quot;&gt;&lt;code&gt;doc_sample.Sample&lt;/code&gt;&lt;/h2&gt;
+&lt;p&gt;Docstring for class.&lt;/p&gt;
+&lt;h2 id=&quot;doc_sample-Sample-__init__&quot;&gt;&lt;code&gt;doc_sample.Sample.__init__&lt;/code&gt;&lt;/h2&gt;
+&lt;p&gt;Docstring for constructor.&lt;/p&gt;
+&lt;h2 id=&quot;doc_sample-Sample-rename&quot;&gt;&lt;code&gt;doc_sample.Sample.rename&lt;/code&gt;&lt;/h2&gt;
+&lt;p&gt;Docstring for method.&lt;/p&gt;
+&lt;h2 id=&quot;doc_sample-function&quot;&gt;&lt;code&gt;doc_sample.function&lt;/code&gt;&lt;/h2&gt;
+&lt;p&gt;Docstring for function.&lt;/p&gt;
+&lt;h2 id=&quot;doc_sample-undocumented&quot;&gt;&lt;code&gt;doc_sample.undocumented&lt;/code&gt;&lt;/h2&gt;
+&lt;p&gt;&lt;strong&gt;No documentation.&lt;/strong&gt;&lt;/p&gt;
+</code></pre></div>
+</div>
+<h2 id="codegen-modify">Modifying Code</h2>
+<p>An AST is a data structure like any other,
+which means we can modify it as well as inspecting it.
+Let&rsquo;s start with this short program:</p>
+<div class="language-py" title="double_and_print.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">double</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="k">return</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">x</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">double</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span>
+</code></pre></div>
+</div>
+<p>Its AST has two top-level nodes:
+one for the function definition and one for the <code>print</code> statement.
+We can duplicate the second of these and then <a class="gl-ref" href="../glossary/#unparsing" markdown="1">unparse</a> the AST
+to produce a new program:</p>
+<div class="language-py" title="unparse.py">
+<div class="highlight"><pre><span></span><code><span class="n">code</span> <span class="o">=</span> <span class="n">ast</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">original</span><span class="p">)</span>
+<span class="n">print_stmt</span> <span class="o">=</span> <span class="n">code</span><span class="o">.</span><span class="n">body</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+<span class="n">code</span><span class="o">.</span><span class="n">body</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">print_stmt</span><span class="p">)</span>
+<span class="n">modified</span> <span class="o">=</span> <span class="n">ast</span><span class="o">.</span><span class="n">unparse</span><span class="p">(</span><span class="n">code</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<div class="language-out" title="unparse_modified.out">
+<div class="highlight"><pre><span></span><code>def double(x):
+    return 2 * x
+print(double(3))
+print(double(3))
+</code></pre></div>
+</div>
+<p>To run our machine-generated program,
+we have to compile the AST to bytecode
+and tell Python to evaluate the result:</p>
+<div class="language-py" title="unparse.py">
+<div class="highlight"><pre><span></span><code><span class="n">bytecode</span> <span class="o">=</span> <span class="nb">compile</span><span class="p">(</span><span class="n">code</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="s2">&quot;example&quot;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;exec&quot;</span><span class="p">)</span>
+<span class="n">exec</span><span class="p">(</span><span class="n">bytecode</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<div class="language-out" title="unparse_exec.out">
+<div class="highlight"><pre><span></span><code>6
+6
+</code></pre></div>
+</div>
+<p>Duplicating a <code>print</code> statement isn&rsquo;t particularly useful,
+but other applications of this technique let us do some powerful things.
+Let&rsquo;s have another look at how Python represents a function call.
+Our example is:</p>
+<div class="language-py" title="call.py">
+<div class="highlight"><pre><span></span><code><span class="n">count</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<p class="continue">We parse it like this:</p>
+<div class="language-py" title="inject.py">
+<div class="highlight"><pre><span></span><code><span class="n">call_code</span> <span class="o">=</span> <span class="n">ast</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">call</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<p class="continue">and get this AST:</p>
+<div class="language-out" title="inject_parse.out">
+<div class="highlight"><pre><span></span><code>Module(
+  body=[
+    Expr(
+      value=Call(
+        func=Name(id=&#39;count&#39;, ctx=Load()),
+        args=[
+          Constant(value=&#39;name&#39;)],
+        keywords=[]))],
+  type_ignores=[])
+</code></pre></div>
+</div>
+<p>But we don&rsquo;t have to parse text to create an AST:
+it&rsquo;s just a bunch of objects,
+so we can construct one by hand
+that mirrors the structure shown above:</p>
+<div class="language-py" title="inject.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">make_count</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">ast</span><span class="o">.</span><span class="n">Expr</span><span class="p">(</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="n">ast</span><span class="o">.</span><span class="n">Call</span><span class="p">(</span>
+            <span class="n">func</span><span class="o">=</span><span class="n">ast</span><span class="o">.</span><span class="n">Name</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="s2">&quot;count&quot;</span><span class="p">,</span> <span class="n">ctx</span><span class="o">=</span><span class="n">ast</span><span class="o">.</span><span class="n">Load</span><span class="p">()),</span>
+            <span class="n">args</span><span class="o">=</span><span class="p">[</span><span class="n">ast</span><span class="o">.</span><span class="n">Constant</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="n">name</span><span class="p">)],</span>
+            <span class="n">keywords</span><span class="o">=</span><span class="p">[]</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
+<span class="n">constructed</span> <span class="o">=</span> <span class="n">make_count</span><span class="p">(</span><span class="s2">&quot;test&quot;</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<div class="language-out" title="inject_make.out">
+<div class="highlight"><pre><span></span><code>Expr(
+  value=Call(
+    func=Name(id=&#39;count&#39;, ctx=Load()),
+    args=[
+      Constant(value=&#39;test&#39;)],
+    keywords=[]))
+</code></pre></div>
+</div>
+<p>Alternatively,
+we can find existing function definitions
+and modify them programmatically:</p>
+<div class="language-py" title="inject.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">modify</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+    <span class="n">code</span> <span class="o">=</span> <span class="n">ast</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">ast</span><span class="o">.</span><span class="n">walk</span><span class="p">(</span><span class="n">code</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">FunctionDef</span><span class="p">):</span>
+            <span class="n">node</span><span class="o">.</span><span class="n">body</span> <span class="o">=</span> <span class="p">[</span><span class="n">make_count</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">name</span><span class="p">),</span> <span class="o">*</span><span class="n">node</span><span class="o">.</span><span class="n">body</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">ast</span><span class="o">.</span><span class="n">unparse</span><span class="p">(</span><span class="n">code</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<p>To try this out,
+here&rsquo;s a program that adds and doubles numbers:</p>
+<div class="language-py" title="add_double.py">
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">left</span> <span class="o">+</span> <span class="n">right</span>
+
+<span class="k">def</span> <span class="nf">double</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">add</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+
+<span class="n">add</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="n">double</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<p class="continue">The modified version is:</p>
+<div class="language-out" title="inject_modified.out">
+<div class="highlight"><pre><span></span><code>def add(left, right):
+    count(&#39;add&#39;)
+    return left + right
+
+def double(x):
+    count(&#39;double&#39;)
+    return add(x, x)
+add(1, 2)
+double(3)
+</code></pre></div>
+</div>
+<p>So what exactly is <code>call</code>?
+We want a &ldquo;function&rdquo; that keeps track of
+how many times it has been passed different strings,
+so we define a class with a <code>__call__</code> method
+so that its instances can be used like functions:</p>
+<div class="language-py" title="inject.py">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">CountCalls</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">count</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">count</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+</code></pre></div>
+</div>
+<p>Finally,
+when we&rsquo;re evaluating the bytecode generated from our modified AST,
+we pass in a dictionary of variable names and values
+that we want to have in scope.
+The result is exactly what we would get if we had defined all of this in the usual way:</p>
+<div class="language-py" title="inject.py">
+<div class="highlight"><pre><span></span><code><span class="n">call_counter</span> <span class="o">=</span> <span class="n">CountCalls</span><span class="p">()</span>
+<span class="n">bytecode</span> <span class="o">=</span> <span class="nb">compile</span><span class="p">(</span><span class="n">modified</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="s2">&quot;example&quot;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;exec&quot;</span><span class="p">)</span>
+<span class="n">exec</span><span class="p">(</span><span class="n">bytecode</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;count&quot;</span><span class="p">:</span> <span class="n">call_counter</span><span class="p">})</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">call_counter</span><span class="o">.</span><span class="n">count</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<div class="language-out" title="inject_exec.out">
+<div class="highlight"><pre><span></span><code>Counter({&#39;add&#39;: 2, &#39;double&#39;: 1})
+</code></pre></div>
+</div>
+<div class="callout">
+<h3>There&rsquo;s Such a Thing as &ldquo;Too Clever&rdquo;</h3>
+<p>Modifying code dynamically is the most powerful technique shown in this book.
+It is also the least comprehensible:
+as soon as the code you read and the code that&rsquo;s run can differ in arbitrary ways,
+you have a maintenance headache and a security nightmare.
+Limited forms of program modification,
+such as Python&rsquo;s <a href="https://docs.python.org/3/reference/datamodel.html#metaclasses">metaclasses</a> or decorators
+give most of the power with only some of the headaches;
+please use those rather than the magic shown above.</p>
+</div>
+<h2>Exercises</h2>
+<h3 class="exercise">Name Conversion</h3>
+<p>Write a tool that find functions with pothole_case names
+and replaces them with CamelCase names,
+then saves the resulting program as a legal Python file.</p>
+	</main>
+	<footer>
+  © 2024 <a href="https://third-bit.com/">Greg Wilson</a>
+  &middot;
+  <a href="../">home</a>
+  &middot;
+  <a href="https://github.com/gvwilson/sdxpy">repository</a>
+  &middot;
+  <a href="../license/">license</a>
+  &middot;
+  <a href="mailto:gvwilson@third-bit.com">contact</a>
+</footer>
+
+      </div>
+    </div>
+  </body>
+</html>
