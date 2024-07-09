@@ -18,3 +18,5 @@ syllabus:
 -   Look at statistics
     -   `frequencies.py
     -   Lots of words only occur once (long tail)
+-   Switch to [Lempel-Ziv-Storer-Szymanski][lzss]
+    -   Use [this tutorial][lzss_tutorial] by [Tim Cogan][cogan_tim]
