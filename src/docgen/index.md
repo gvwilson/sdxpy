@@ -58,7 +58,7 @@ to produce a new program:
 [%inc unparse_modified.out %]
 
 To run our machine-generated program,
-we have to compile the AST to [%g bytecode "bytecode" %]
+we have to compile the AST to bytecode
 and tell Python to evaluate the result:
 
 [%inc unparse.py mark=exec %]
@@ -131,7 +131,7 @@ It is also the least comprehensible:
 as soon as the code you read and the code that's run can differ in arbitrary ways,
 you have a maintenance headache and a security nightmare.
 Limited forms of program modification,
-such as Python's [metaclasses][py_metaclass] or [%g decorator "decorators" %]
+such as Python's [metaclasses][py_metaclass] or decorators
 give most of the power with only some of the headaches;
 please use those rather than the magic shown above.
 

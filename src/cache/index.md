@@ -37,8 +37,7 @@ and downloaded on demand.
 Since the data file might be shared between several projects,
 it is usually not downloaded into any particular project.
 Instead,
-it is stored in a [%g cache "cache" %]
-that all projects have access to.
+it is stored in a cache that all projects have access to.
 If the cache gets too large,
 files in it can be deleted
 and re-downloaded later.
@@ -63,8 +62,7 @@ we use a [%g named_tuple "named tuple" %] instead:
 [%inc index_base.py mark=tuple %]
 
 Next,
-we create an [%g abstract_class "abstract class" %]
-that defines the operation an index can do,
+we create an abstract class that defines the operation an index can do,
 but doesn't actually implement them—or rather,
 only implements the ones that can be defined in terms of lower-level operations
 that derived class will implement:
@@ -109,7 +107,7 @@ rather than something under the user's control.
 The price for this decision is that files' "names" are meaningless.
 Whether we use sequence numbers or hashes,
 remembering that `health_records.csv` is file 177234
-increases the [%g cognitive_load "cognitive load" %] on our users.
+increases the cognitive load on our users.
 
 </div>
 
@@ -362,8 +360,7 @@ and opens that file for reading.
 We don't allow users to open files for writing,
 since that would almost certainly put the file's contents
 out of step with its identifier.
-This restriction is similar to Python's requirement that
-dictionaries' keys be [%g immutable "immutable" %];
+This restriction is similar to Python's requirement that dictionaries' keys be immutable;
 we will explore alternatives in the exercises.
 
 `cache_save` is the complement to `cache_open`.
@@ -375,8 +372,7 @@ and constructs a placeholder file:
 
 These two functions work as designed,
 but neither should be used in production.
-The problem is that neither guarantees
-[%g atomic_operation "atomic operation" %]:
+The problem is that neither function works atomically:
 in both cases,
 if something goes wrong part-way through the function,
 the caching system can be left in an inconsistent state.
@@ -445,9 +441,9 @@ deleting placeholders as it does so.
 
 ### Reading cached files {: .exercise}
 
-Modify `cache_open` so that files can be opened in binary mode
-and so that the function can be used in `with` statements.
-(Hint: look up [%g context_manager "context manager" %].)
+1.  Modify `cache_open` so that files can be opened in binary mode.
+2.  Modify it again so that the function can be used as a context manager
+    in `with` statements.
 
 ### Storing files remotely {: .exercise}
 
