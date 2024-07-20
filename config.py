@@ -79,7 +79,6 @@ copy = [
     "*.sh",
     "*.svg",
     "*.tll",
-    "*.tll",
     "*.txt",
     "*.webp",
     "*.xml",
