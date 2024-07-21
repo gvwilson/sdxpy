@@ -4,6 +4,7 @@ import argparse
 import ark
 from bs4 import BeautifulSoup, NavigableString, Tag
 from collections import Counter
+import frontmatter
 import importlib.util
 from pathlib import Path
 import re
@@ -45,7 +46,8 @@ def main():
     links = check_redundant_links(options)
     check_colophon(options, links)
 
-    found = collect_all()
+    found, metadata = collect_all()
+    check_metadata(metadata)
     for func in [
         check_bib,
         check_fig,
@@ -122,6 +124,19 @@ def check_inc(options, found):
     compare_keys("inc", expected, found["inc"])
 
 
+def check_metadata(metadata):
+    """Check index and slides metadata."""
+    index_keys = set(metadata["index"].keys())
+    slides_keys = set(metadata["slides"].keys())
+    unmatched = index_keys.symmetric_difference(slides_keys)
+    if unmatched:
+        print(f"unmatched index/slides slugs: {', '.join(sorted(unmatched))}")
+    matched = index_keys.intersection(slides_keys)
+    errors = {key for key in matched if metadata["index"][key] != metadata["slides"][key]}
+    if errors:
+        print(f"mis-matched title(s): {', '.join(errors)}")
+
+
 def check_redundant_links(options):
     """Look for redundant link definitions."""
     links = yaml.safe_load(Path(options.root, "info", "links.yml").read_text()) or []
@@ -164,10 +179,14 @@ def collect_all():
         "tbl_ref": {},
         "xref": {},
     }
+    metadata = {
+        "index": {},
+        "slides": {},
+    }
     ark.nodes.root().walk(
-        lambda node: collect_visitor(node, parser, collected)
+        lambda node: collect_visitor(node, parser, collected, metadata)
     )
-    return collected
+    return collected, metadata
 
 
 def collect_bib(pargs, kwargs, found):
@@ -213,13 +232,25 @@ def collect_tbl_ref(pargs, kwargs, found):
     found["tbl_ref"].add(pargs[0])
 
 
+def collect_title(node, metadata):
+    if not node.path:
+        return
+    front = frontmatter.loads(node.text)
+    title = front.get("title", None)
+    if len(node.path) == 1:
+        metadata["index"][node.slug] = title
+    elif (len(node.path) == 2) and node.slug == "slides":
+        metadata["slides"][node.parent.slug] = title
+
+
 def collect_xref(pargs, kwargs, found):
     """Collect data from a cross-reference shortcode."""
     found["xref"].add(pargs[0])
 
 
-def collect_visitor(node, parser, collected):
+def collect_visitor(node, parser, collected, metadata):
     """Visit each node, collecting data."""
+    collect_title(node, metadata)
     if Path(node.filepath).name != "index.md":
         return
     found = {key: set() for key in collected.keys()}

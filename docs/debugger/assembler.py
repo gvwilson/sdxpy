@@ -34,11 +34,11 @@ class Assembler:
             fields = [a.strip() for a in alloc.split(":")]
             assert len(fields) == 2, f"Invalid allocation directive '{alloc}'"
             lbl, num_words_text = fields
-            assert lbl not in labels, f"Duplicate label '{label}' in data allocation"
+            assert lbl not in labels, f"Duplicate label '{lbl}' in data allocation"
             num_words = int(num_words_text)
             assert (
                 base_of_data + num_words
-            ) < RAM_LEN, f"Allocation '{label}' requires too much memory"
+            ) < RAM_LEN, f"Allocation '{lbl}' requires too much memory"
             labels[lbl] = base_of_data
             base_of_data += num_words
 

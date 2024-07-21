@@ -3,7 +3,7 @@ import curses
 from buffer import Buffer
 from cursor import Cursor
 from window import Window
-from util import ROW, COL, setup
+from util import ROW, setup
 
 class App:
     TRANSLATE = {

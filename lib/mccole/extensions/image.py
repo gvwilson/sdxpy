@@ -2,7 +2,6 @@
 
 from textwrap import dedent
 
-import ark
 import shortcodes
 import util
 

@@ -1,7 +1,6 @@
 import curses
-import sys
 
-from util import open_log, log, make_lines, start, ROW, COL
+from util import start, ROW, COL
 
 # [window]
 class Window:
