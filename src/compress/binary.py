@@ -39,6 +39,6 @@ def decompress(packed):
 
 if __name__ == "__main__":
     if sys.argv[1] == "c":
-        print(len(compress(sys.stdin.read())))
+        sys.stdout.buffer.write(compress(sys.stdin.read()))
     elif sys.argv[1] == "d":
         print(len(decompress(sys.stdin.read())))
