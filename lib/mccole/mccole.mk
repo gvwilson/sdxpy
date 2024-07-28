@@ -105,15 +105,30 @@ ${TMP_BIB}: ${INFO_BIB}
 ## lint: check project
 .PHONY: lint
 lint:
+	@make lint_theme
+	@make lint_svg
+	@make lint_html
+
+## lint_theme: check theme aspects of project
+.PHONY: lint_theme
+lint_theme:
 	@python ${THEME_BIN}/lint.py \
 	--dom ${ROOT}/lib/mccole/dom.yml \
 	--exclude Makefile slides.html \
 	--htmldir ${ROOT}/docs \
 	--root ${ROOT} \
 	--skipslides
+
+## lint_svg: check diagrams
+.PHONY: lint_svg
+lint_svg:
 	@python ${THEME_BIN}/lint_svg.py ${FONT_FAMILY} ${FONT_SIZE} \
 	--width ${SVG_WIDTH} \
 	--files ${SRC_SVG}
+
+## lint_html: check HTML validity
+.PHONY: lint_html
+lint_html:
 	@html5validator --root ${ROOT}/docs ${DOCS_PAGES} \
 	--ignore \
 	'Attribute "ix-key" not allowed on element "span"' \
