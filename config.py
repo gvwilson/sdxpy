@@ -10,12 +10,13 @@ author = {
 }
 lang = "en"
 highlight = "tango.css"
-plausible = "third-bit.com"
+# plausible = "third-bit.com"
 archive = f"{slug}-examples.zip"
 isbn = "978-1032725253"
 hardcopy = "https://www.routledge.com/Software-Design-by-Example-A-Tool-Based-Introduction-with-Python/Wilson/p/book/9781032725215"
 cover = f"{slug}-cover.png"
 timing = False
+version = 1
 
 # Chapters.
 chapters = [

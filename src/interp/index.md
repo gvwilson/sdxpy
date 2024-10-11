@@ -1,5 +1,6 @@
 ---
 title: "An Interpreter"
+version: 1
 abstract: >
     A program in memory is just a data structure,
     each of whose elements triggers some operation in the interpreter that's executing it.

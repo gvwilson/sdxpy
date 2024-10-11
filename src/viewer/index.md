@@ -1,5 +1,6 @@
 ---
 title: "A File Viewer"
+version: 1
 abstract: >
     Even simple editors like Notepad and Nano do a lot of things:
     moving a cursor,

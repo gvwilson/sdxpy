@@ -1,5 +1,6 @@
 ---
 title: "A Code Linter"
+version: 1
 abstract: >
     This chapter brings together pieces from the preceding few lessons
     to show how one program can check the structure of another.

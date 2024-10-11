@@ -1,5 +1,6 @@
 ---
 title: "File Compression"
+version: 2
 abstract: >
     FIXME
 syllabus:

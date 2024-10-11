@@ -1,5 +1,6 @@
 ---
 title: "Generating Documentation"
+version: 2
 abstract: >
     FIXME
 syllabus:

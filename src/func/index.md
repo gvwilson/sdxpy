@@ -1,5 +1,6 @@
 ---
 title: "Functions and Closures"
+version: 1
 abstract: >
     This chapter extends the little interpreter of the previous one
     to allow users to define functions of their own.

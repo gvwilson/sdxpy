@@ -1,5 +1,6 @@
 ---
 title: "Performance Profiling"
+version: 1
 abstract: >
     This chapter implements the kind of multi-column table frequently used in data science
     in two different ways

@@ -1,5 +1,6 @@
 ---
 title: "A File Archiver"
+version: 1
 abstract: >
     Most programmers would agree that once they have a text editor
     and a way to run their programs,

@@ -1,5 +1,6 @@
 ---
 title: "An HTML Validator"
+version: 1
 abstract: >
     This chapter builds a tool to check the structure of web pages
     in order to show how programs can process HTML,

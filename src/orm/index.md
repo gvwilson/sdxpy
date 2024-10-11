@@ -1,5 +1,6 @@
 ---
 title: "Object-Relational Mapper"
+version: 2
 abstract: >
     FIXME
 syllabus:

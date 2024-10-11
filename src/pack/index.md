@@ -1,5 +1,6 @@
 ---
 title: "A Package Manager"
+version: 1
 abstract: >
     Most languages have an online archive from which people can download packages,
     each of which has a name, one or more versions, and a list of dependencies.

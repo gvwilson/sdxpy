@@ -1,5 +1,6 @@
 ---
 title: "A File Cache"
+version: 2
 abstract: >
     FIXME
 syllabus:

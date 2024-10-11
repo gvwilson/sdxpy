@@ -1,5 +1,6 @@
 ---
 title: "Object Persistence"
+version: 1
 abstract: >
     Some simple kinds of data can be saved as lines of text,
     but more complex data structures require a framework capable of handling aliasing and circularity.

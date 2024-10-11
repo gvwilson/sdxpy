@@ -1,5 +1,6 @@
 ---
 title: "A Build Manager"
+version: 1
 abstract: >
     Programmers frequently need to chain operations together
     so that if one file is updated,

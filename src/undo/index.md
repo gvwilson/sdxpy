@@ -1,5 +1,6 @@
 ---
 title: "Undo and Redo"
+version: 1
 abstract: >
     Viewing text files is useful,
     but we'd like to be able to edit them as well.

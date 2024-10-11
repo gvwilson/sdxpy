@@ -1,5 +1,6 @@
 ---
 title: "Page Layout"
+version: 1
 abstract: >
     Browsers, e-book readers, and text editors all rely on some kind of layout engine
     that takes text and formatting instructions as input

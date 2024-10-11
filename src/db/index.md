@@ -1,5 +1,6 @@
 ---
 title: "A Database"
+version: 1
 abstract: >
     Almost every real-world application relies on some kind of database
     that allows code to look up data without loading everything into memory.

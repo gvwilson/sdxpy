@@ -1,5 +1,6 @@
 ---
 title: "Matching Patterns"
+version: 1
 abstract: >
     Pattern-matching is ubiquitous in computer programs.
     Whether we are selecting a set of files to open

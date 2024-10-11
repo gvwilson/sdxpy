@@ -1,5 +1,6 @@
 ---
 title: "Objects and Classes"
+version: 1
 abstract: >
     Object-oriented programming was invented to solve two problems:
     what is a natural way to represent real-world "things" in code,

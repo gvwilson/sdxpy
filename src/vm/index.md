@@ -1,5 +1,6 @@
 ---
 title: "A Virtual Machine"
+version: 1
 abstract: >
     The standard version of Python is implemented in C,
     but C is compiled to instructions for a particular processor.

@@ -1,5 +1,6 @@
 ---
 title: "Serving Web Pages"
+version: 1
 abstract: >
     The Hypertext Transfer Protocol (HTTP) defines a way for programs to exchange data over the web.
     Clients (such as browsers) send requests to servers,

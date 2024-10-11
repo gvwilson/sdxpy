@@ -1,5 +1,6 @@
 ---
 title: "Finding Duplicate Files"
+version: 1
 abstract: >
     The naïve way to find duplicated files is to compare each file to all the others,
     but that is unworkably slow for large sets of files.

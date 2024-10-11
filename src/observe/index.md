@@ -1,5 +1,6 @@
 ---
 title: "Observers"
+version: 2
 abstract: >
     FIXME
 syllabus:

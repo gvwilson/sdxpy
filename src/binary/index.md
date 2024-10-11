@@ -1,5 +1,6 @@
 ---
 title: "Binary Data"
+version: 1
 abstract: >
     Python and other high-level languages shield programmers from the low-level details
     of how computers actually store and manipulate data,

@@ -1,5 +1,6 @@
 ---
 title: "Parsing Text"
+version: 1
 abstract: >
     A parser turns text that's easy for a human being to read
     into a data structure that a computer can work with.

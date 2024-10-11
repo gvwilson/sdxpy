@@ -1,5 +1,6 @@
 ---
 title: "Concurrency"
+version: 2
 abstract: >
     FIXME
 syllabus:

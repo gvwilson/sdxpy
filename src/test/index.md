@@ -1,5 +1,6 @@
 ---
 title: "Running Tests"
+version: 1
 abstract: >
     Every programming language has tools to collect tests, run them, and report their results.
     This chapter shows how such tools are built,

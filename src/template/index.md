@@ -1,5 +1,6 @@
 ---
 title: "A Template Expander"
+version: 1
 abstract: >
     Writing and updating HTML pages by hand is time-consuming and error-prone,
     so most modern websites use some kind of static site generator (SSG)

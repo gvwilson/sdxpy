@@ -1,5 +1,6 @@
 ---
 title: "A Debugger"
+version: 1
 abstract: >
     Debuggers are as much a part of good programmers' working lives as version control
     but are taught far less often.
