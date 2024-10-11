@@ -329,5 +329,5 @@ title: "A File Viewer"
    slug="viewer-concept-map"
    img="concept_map.svg"
    alt="Concept map of file viewer"
-   caption="Concept map"
+   caption="Concept map."
 %]

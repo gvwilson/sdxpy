@@ -279,5 +279,5 @@ title: "Binary Data"
    slug="binary-concept-map"
    img="concept_map.svg"
    alt="Concept map for binary data"
-   caption="Concepts for binary data."
+   caption="Concept map."
 %]

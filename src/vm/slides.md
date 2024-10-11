@@ -222,5 +222,5 @@ title: "A Virtual Machine"
    slug="vm-concept-map"
    img="concept_map.svg"
    alt="Concept map for virtual machine and assembler"
-   caption="Concept map for virtual machine and assembler."
+   caption="Concept map."
 %]

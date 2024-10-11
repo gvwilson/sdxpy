@@ -261,5 +261,5 @@ title: "Matching Patterns"
    slug="glob-concept-map"
    img="concept_map.svg"
    alt="Concept map of globbing"
-   caption="Concept map"
+   caption="Concept map."
 %]

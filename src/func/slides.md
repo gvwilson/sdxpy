@@ -210,5 +210,5 @@ title: "Functions and Closures"
    slug="func-concept-map"
    img="concept_map.svg"
    alt="Concept map of functions and closures"
-   caption="Concept map"
+   caption="Concept map."
 %]

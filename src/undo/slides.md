@@ -234,5 +234,5 @@ title: "Undo and Redo"
    slug="undo-concept-map"
    img="concept_map.svg"
    alt="Concept map of undo"
-   caption="Concept map"
+   caption="Concept map."
 %]

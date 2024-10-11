@@ -160,5 +160,5 @@ title: "Object Persistence"
    slug="persist-concept-map"
    img="concept_map.svg"
    alt="Concept map of persistence"
-   caption="Concept map"
+   caption="Concept map."
 %]

@@ -252,5 +252,5 @@ title: "A Database"
    slug="db-concept-map"
    img="concept_map.svg"
    alt="Concept map for database"
-   caption="Concept map for a log-structured database."
+   caption="Concept map."
 %]

@@ -190,5 +190,5 @@ title: "A Build Manager"
    slug="build-concept-map"
    img="concept_map.svg"
    alt="Concept map of build manager"
-   caption="Concept map"
+   caption="Concept map."
 %]

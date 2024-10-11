@@ -237,5 +237,5 @@ title: "Performance Profiling"
    slug="perf-concept-map"
    img="concept_map.svg"
    alt="Concept map of performance profiling"
-   caption="Concept map"
+   caption="Concept map."
 %]

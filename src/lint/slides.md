@@ -163,5 +163,5 @@ title: "A Code Linter"
    slug="lint-concept-map"
    img="concept_map.svg"
    alt="Concept map for code manipulation"
-   caption="Concepts for code manipulation."
+   caption="Concept map."
 %]

@@ -143,5 +143,5 @@ title: "Running Tests"
    slug="test-concept-map"
    img="concept_map.svg"
    alt="Concept map of unit testing framework"
-   caption="Concept map"
+   caption="Concept map."
 %]

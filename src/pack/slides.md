@@ -288,5 +288,5 @@ title: "A Package Manager"
    slug="pack-concept-map"
    img="concept_map.svg"
    alt="Concept map for package manager."
-   caption="Concepts for package manager."
+   caption="Concept map."
 %]

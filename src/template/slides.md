@@ -239,5 +239,5 @@ title: "A Template Expander"
    slug="template-concept-map"
    img="concept_map.svg"
    alt="Concept map for page templates"
-   caption="Concept map for templating HTML pages."
+   caption="Concept map."
 %]

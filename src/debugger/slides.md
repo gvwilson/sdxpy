@@ -259,5 +259,5 @@ title: "A Debugger"
    slug="debugger-concept-map"
    img="concept_map.svg"
    alt="Concept map for debugger"
-   caption="Concepts for debugger."
+   caption="Concept map."
 %]

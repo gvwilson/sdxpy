@@ -161,5 +161,5 @@ title: "An Interpreter"
    slug="interp-concept-map"
    img="concept_map.svg"
    alt="Concept map"
-   caption="Concept map of interpreter"
+   caption="Concept map."
 %]

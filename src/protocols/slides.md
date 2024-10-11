@@ -199,5 +199,5 @@ title: "Protocols"
    slug="protocols-concept-map"
    img="concept_map.svg"
    alt="Concept map of reflection"
-   caption="Concept map"
+   caption="Concept map."
 %]

@@ -219,5 +219,5 @@ title: "Page Layout"
    slug="layout-concept-map"
    img="concept_map.svg"
    alt="Concept map for page layout"
-   caption="Page layout concept map."
+   caption="Concept map."
 %]

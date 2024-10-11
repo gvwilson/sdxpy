@@ -210,5 +210,5 @@ title: "An HTML Validator"
    slug="check-concept-map"
    img="concept_map.svg"
    alt="Concept map for checking HTML"
-   caption="Concept map for checking HTML using the Visitor pattern."
+   caption="Concept map."
 %]

@@ -200,5 +200,5 @@ title: "Transferring Files"
    slug="ftp-concept-map"
    img="concept_map.svg"
    alt="Concept map of web server"
-   caption="Concept map"
+   caption="Concept map."
 %]

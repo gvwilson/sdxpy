@@ -267,5 +267,5 @@ title: "Finding Duplicate Files"
    slug="dup-concept-map"
    img="concept_map.svg"
    alt="Concept map for finding duplicate files"
-   caption="Concept map for duplicate file detection with hashing."
+   caption="Concept map."
 %]

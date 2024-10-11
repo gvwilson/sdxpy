@@ -191,5 +191,5 @@ title: "Serving Web Pages"
    slug="http-concept-map"
    img="concept_map.svg"
    alt="HTTP concept map"
-   caption="HTTP concept map."
+   caption="Concept map."
 %]

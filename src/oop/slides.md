@@ -202,3 +202,16 @@ title: "Objects and Classes"
 
 [%inc inherit_constructor.py mark=call %]
 [%inc inherit_constructor.out %]
+
+---
+
+<!--# class="summary" -->
+
+## Summary	       
+
+[% figure
+   slug="oop-concept-map"
+   img="concept_map.svg"
+   alt="Concept map of objects and classes"
+   caption="Concept map."
+%]

@@ -184,5 +184,5 @@ title: "Parsing Text"
    slug="parse-concept-map"
    img="concept_map.svg"
    alt="Concept map of parsing"
-   caption="Concept map"
+   caption="Concept map."
 %]
