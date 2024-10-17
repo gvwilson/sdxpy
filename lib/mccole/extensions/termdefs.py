@@ -21,7 +21,7 @@ def termdefs(node):
     terms = [_make_ref(node, glossary, lang, key) for key in sorted(keys)]
     terms = [t for t in terms if t is not None]
     terms = ", ".join(terms)
-    return f'<p class="terms">{util.kind('defined')}: \n{terms}\n</p>'
+    return f'<p class="terms">{util.kind("defined")}: \n{terms}\n</p>'
 
 
 def _make_ref(node, glossary, lang, key):
