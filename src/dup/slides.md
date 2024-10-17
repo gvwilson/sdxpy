@@ -130,8 +130,6 @@ title: "Finding Duplicate Files"
 
 -   Want all hash codes to be equally likely
 
-    -   Large file groups are disproportionately expensive
-
 -   Hash each line of the novel *Dracula* and plot distribution
 
 [% figure
@@ -146,8 +144,6 @@ title: "Finding Duplicate Files"
 ## After a Little Digging…
 
 -   Our text file uses a blank line to separate paragraphs
-
--   So it's no surprise that 0 is the most common hash code
 
 -   Look at the distribution of hash codes of *unique* lines
 
