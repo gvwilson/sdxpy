@@ -48,6 +48,7 @@ chapters = [
     "debugger",
     "observe",
     "docgen",
+    "search",
     "compress",
     "cache",
     "orm",
