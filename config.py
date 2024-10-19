@@ -51,7 +51,7 @@ chapters = [
     "search",
     "compress",
     "cache",
-    "orm",
+    "query",
     "concur",
     "finale",
 ]

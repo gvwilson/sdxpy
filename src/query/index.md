@@ -1,5 +1,5 @@
 ---
-title: "Object-Relational Mapper"
+title: "A Query Builder"
 version: 2
 abstract: >
     FIXME
@@ -7,7 +7,7 @@ syllabus:
 -   FIXME
 ---
 
-[%fixme "create object-relational mapper" %] [%issue 45 %]
+[%fixme "create query builder" %] [%issue 45 %]
 
 -   SQL requires parts of query in an odd order
 -   So create [%g active_record "active records" %] using the [%g builder_pattern "Builder" %] pattern
