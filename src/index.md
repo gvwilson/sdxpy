@@ -96,7 +96,7 @@ Most languages have an online archive from which people can download packages, e
 A typical web application is made up of clients that send messages to servers and then wait for them to respond. This chapter shows how they work at a low level by building a simple low-level client-server program to move files from one machine to another.
 
 **[Chapter 22: Serving Web Pages](@root/http/).**
-The Hypertext Transfer Protocol (HTTP) defines a way for programs to exchange data over the web. Clients (such as browsers) send requests to servers, which respond by copying files from disk, pulling records from a database, or in any of dozens of other days. This chapter shows how to build a simple web server that understands the basics of HTTP and how to test programs of this kind.
+The Hypertext Transfer Protocol (HTTP) defines a way for programs to exchange data over the web. Clients (such as browsers) send requests to servers, which respond by copying files from disk, pulling records from a database, or in any of dozens of other ways. This chapter shows how to build a simple web server that understands the basics of HTTP and how to test programs of this kind.
 
 **[Chapter 23: A File Viewer](@root/viewer/).**
 Even simple editors like Notepad and Nano do a lot of things: moving a cursor, inserting and deleting characters, and more. This is too much to fit into one lesson, so this chapter builds a tool for viewing files, which the next chapters extends to create an editor with undo and redo.
