@@ -67,7 +67,7 @@ We can write binary numbers directly in Python using the `0b` prefix:
 As noted in [%x dup %],
 programmers usually use [%i "hexadecimal" %] instead:
 the digits 0–9 have the usual meaning,
-and the letters A–F (or a–f) are used to represent the digits 11–15.
+and the letters A–F (or a–f) are used to represent the digits 10–15.
 We signal that we're using hexadecimal with a `0x` prefix,
 so `0xF7` is \\( (15×16)+7 \\) or 247 base 10.
 Each hexadecimal digit corresponds to four bits ([%t binary-hex %]),
