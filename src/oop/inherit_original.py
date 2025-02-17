@@ -39,7 +39,7 @@ class Circle(Shape):
         return math.pi * self.radius ** 2
 
 # [use]
-examples = [Square("sq", 3), Circle("ci", 2)]
+examples = [Square("sq", 2), Circle("ci", 3)]
 for ex in examples:
     n = ex.name
     d = ex.density(5)

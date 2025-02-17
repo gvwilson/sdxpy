@@ -44,7 +44,7 @@ def circle_new(name, radius):
 def call(thing, method_name):
     return thing["_class"][method_name](thing)
 
-examples = [square_new("sq", 3), circle_new("ci", 2)]
+examples = [square_new("sq", 2), circle_new("ci", 3)]
 for ex in examples:
     n = ex["name"]
     p = call(ex, "perimeter")

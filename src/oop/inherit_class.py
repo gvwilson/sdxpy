@@ -73,7 +73,7 @@ def find(cls, method_name):
 # [/search]
 
 # [use]
-examples = [square_new("sq", 3), circle_new("ci", 2)]
+examples = [square_new("sq", 2), circle_new("ci", 3)]
 for ex in examples:
     n = ex["name"]
     d = call(ex, "density", 5)
