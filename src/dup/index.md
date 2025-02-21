@@ -117,7 +117,7 @@ so the total work will be roughly \\( O(g(N/g)^2) \\)
 Simplifying,
 this is \\( N^2/g \\),
 so as the number of groups grows,
-and the overall running time should decrease
+the overall running time should decrease
 ([%f dup-hash-group %]).
 
 [% figure
@@ -184,7 +184,7 @@ Now that we can hash files,
 we can build a dictionary with hash codes as keys
 and sets of filenames as values.
 The code that does this is shown below;
-each time it calculate a hash code,
+each time it calculates a hash code,
 it checks to see if that value has been seen before.
 If not,
 it creates a new entry in the `groups` dictionary
