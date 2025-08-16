@@ -56,7 +56,7 @@ def call(thing, method_name, *args):
 # [/call]
 
 # [example]
-examples = [square_new("sq", 3), circle_new("ci", 2)]
+examples = [square_new("sq", 2), circle_new("ci", 3)]
 for ex in examples:
     result = call(ex, "larger", 10)
     print(f"is {ex['name']} larger? {result}")

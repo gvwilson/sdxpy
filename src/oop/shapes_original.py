@@ -37,7 +37,7 @@ class Circle(Shape):
 # [/concrete]
 
 # [poly]
-examples = [Square("sq", 3), Circle("ci", 2)]
+examples = [Square("sq", 2), Circle("ci", 3)]
 for thing in examples:
     n = thing.name
     p = thing.perimeter()

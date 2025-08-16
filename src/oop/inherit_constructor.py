@@ -77,7 +77,7 @@ def call(thing, method_name, *args):
     return method(thing, *args)
 
 # [call]
-examples = [make(Square, "sq", 3), make(Circle, "ci", 2)]
+examples = [make(Square, "sq", 2), make(Circle, "ci", 3)]
 for ex in examples:
     n = ex["name"]
     d = call(ex, "density", 5)
