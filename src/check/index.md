@@ -252,7 +252,7 @@ make your report more readable.
 ### Eliminating Newlines {: .exercise}
 
 Write a visitor that deletes any text nodes from a document
-that only contains newline characters.
+that only contain newline characters.
 Do you need to make any changes to `Visitor`,
 or can you implement this using the class as it is?
 
@@ -297,6 +297,6 @@ Write a program that checks the ordering of headings in a page:
 Modify the checking tool so that it reports
 the full path for style violations when it finds a problem,
 e.g.,
-reports 'div.div.p`
+reports `div.div.p`
 (meaning "a paragraph in a div in another div")
 instead of just `p`.
