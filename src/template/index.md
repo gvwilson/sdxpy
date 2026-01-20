@@ -164,7 +164,7 @@ This approach is different from that of the visitor in [%x check %],
 where we defined do-nothing methods so that derived classes could override
 only the ones they needed.
 
-The `Expander` class is specialization of `Visitor`
+The `Expander` class is a specialization of `Visitor`
 that uses an `Env` to keep track of variables.
 It imports handlers for each type of special node—we will explore those in a moment—and
 saves them along with a newly-created environment and a list of strings

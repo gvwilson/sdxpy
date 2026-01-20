@@ -130,7 +130,7 @@ This lookup-and-call process is called [%g dynamic_dispatch "dynamic dispatch" %
 since the program decides who to give work to on the fly.
 It leads to a situation where `do` calls a function like `do_add`,
 which in turn calls `do`,
-which may then call `do_add` (or something other function)
+which may then call `do_add` (or some other function)
 and so on ([%f interp-recursive-evaluation %]).
 Having a function call itself either directly or indirectly is called [%i "recursion" %],
 which has a reputation for being hard to understand.

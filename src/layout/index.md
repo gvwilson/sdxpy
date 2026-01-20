@@ -183,7 +183,7 @@ to draw objects correctly regardless of their order.)
 %]
 
 Our "screen" is a list of lists of characters,
-with one inner list for each a row on the screen.
+with one inner list for each row on the screen.
 (We use lists rather than strings
 so that we can overwrite characters in place.)
 
