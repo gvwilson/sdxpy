@@ -1,2 +1,0 @@
-# Stop immediately.
-hlt

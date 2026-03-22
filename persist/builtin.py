@@ -1,0 +1,90 @@
+# mccole:save
+def save(writer, thing):
+    if isinstance(thing, bool):
+        print(f"bool:{thing}", file=writer)
+
+    elif isinstance(thing, float):
+        print(f"float:{thing}", file=writer)
+
+    elif isinstance(thing, int):
+        print(f"int:{thing}", file=writer)
+
+    # mccole:extras
+    # mccole:save_str
+    elif isinstance(thing, str):
+        lines = thing.split("\n")
+        print(f"str:{len(lines)}", file=writer)
+        for line in lines:
+            print(line, file=writer)
+    # mccole:/save_str
+
+    # mccole:save_list
+    elif isinstance(thing, list):
+        print(f"list:{len(thing)}", file=writer)
+        for item in thing:
+            save(writer, item)
+    # mccole:/save_list
+
+    # mccole:save_set
+    elif isinstance(thing, set):
+        print(f"set:{len(thing)}", file=writer)
+        for item in thing:
+            save(writer, item)
+    # mccole:/save_set
+
+    # mccole:save_dict
+    elif isinstance(thing, dict):
+        print(f"dict:{len(thing)}", file=writer)
+        for (key, value) in thing.items():
+            save(writer, key)
+            save(writer, value)
+    # mccole:/save_dict
+    # mccole:/extras
+    else:
+        raise ValueError(f"unknown type of thing {type(thing)}")
+# mccole:/save
+
+# mccole:load
+def load(reader):
+    line = reader.readline()[:-1]
+    assert line, "Nothing to read"
+    fields = line.split(":", maxsplit=1)
+    assert len(fields) == 2, f"Badly-formed line {line}"
+    key, value = fields
+
+    if key == "bool":
+        names = {"True": True, "False": False}
+        assert value in names, f"Unknown Boolean {value}"
+        return names[value]
+
+    elif key == "float":
+        return float(value)
+
+    elif key == "int":
+        return int(value)
+
+    # mccole:extras
+    elif key == "str":
+        lines = [reader.readline()[:-1] for _ in range(int(value))]
+        return "\n".join(lines)
+
+    # mccole:load_list
+    elif key == "list":
+        return [load(reader) for _ in range(int(value))]
+    # mccole:/load_list
+
+    elif key == "set":
+        return {load(reader) for _ in range(int(value))}
+
+    elif key == "dict":
+        result = {}
+        for _ in range(int(value)):
+            k = load(reader)
+            v = load(reader)
+            result[k] = v
+        return result
+
+    # mccole:/extras
+    else:
+        raise ValueError(f"unknown type of thing {line}")
+# mccole:/load
