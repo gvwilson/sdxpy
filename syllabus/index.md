@@ -213,24 +213,12 @@ title: "Syllabus"
 -   Debuggers usually implement breakpoints by temporarily replacing actual instructions with special ones.
 -   Using lookup tables for function or method dispatch makes programs easier to extend.
 
-## [Observers](@/observe/)
-
--   FIXME
-
 ## [Generating Documentation](@/docgen/)
 
 -   FIXME
 -   Instructions are just numbers but may be represented as assembly code.
 -   Instructions may refer to registers, memory, both, or neither.
 -   A processor usually executes instructions in order but may jump to another location based on whether a conditional is true or false.
-
-## [Search](@/search/)
-
--   FIXME
-
-## [File Compression](@/compress/)
-
--   FIXME
 
 ## [A File Cache](@/cache/)
 
@@ -239,14 +227,6 @@ title: "Syllabus"
 -   Object-oriented systems are often implemented in stages to break large design problems into smaller, more manageable ones.
 -   In a good design, derived classes only have to override a few (preferably none) of the methods implemented in parent classes.
 -   Implementing a minimum testable class allows early testing of core functionality.
-
-## [A Query Builder](@/query/)
-
--   FIXME
-
-## [Concurrency](@/concur/)
-
--   FIXME
 
 ## [Conclusion](@/finale/)
 
