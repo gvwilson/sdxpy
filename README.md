@@ -22,6 +22,9 @@ and better able to use them well.
   </div>
 </div>
 
+<div class="row" markdown="1">
+<div class="col-6" markdown="1">
+
 ## Chapters
 
 <div id="lessons" markdown="1">
@@ -58,6 +61,9 @@ and better able to use them well.
 1.  [Conclusion](@/finale/)
 </div>
 
+</div>
+<div class="col-6" markdown="1">
+
 ## Appendices
 
 <div id="appendices" markdown="1">
@@ -68,6 +74,9 @@ and better able to use them well.
 1.  [Code of Conduct](@/conduct/)
 1.  [Contributing](@/contrib/)
 1.  [Glossary](@/glossary/)
+</div>
+
+</div>
 </div>
 
 ## In Detail
@@ -159,33 +168,20 @@ and better able to use them well.
   *This one's for Mike and Jon: I'm glad you always found time to chat.*
 </div>
 
-## About the Author
+## Acknowledgments {: #acknowledgments}
 
-Greg Wilson has worked in industry and academia for 35 years
-and is the author, co-author, or editor of several books,
-including *Beautiful Code*,
-*The Architecture of Open Source Applications*,
-*JavaScript for Data Science*,
-*Teaching Tech Together*,
-and *Research Software Engineering with Python*.
+[Greg Wilson][wilson-greg] is a programmer, author, and educator based in Toronto, Canada.
 He was the co-founder and first Executive Director of Software Carpentry
 and received ACM SIGSOFT's Influential Educator Award in 2020.
 
-## Contributing
+<p class="center">
+  <em>
+    start where you are
+    &middot;
+    use what you have
+    &middot;
+    help who you can
+  </em>
+</p>
 
-Help of all kinds is welcome—we are very grateful for the following:
-
-1.  Fixes for mistakes in the code, the descriptions, or the formatting.
-    All of the examples run and all of the tests pass,
-    that doesn't guarantee they're correct.
-
-1.  Reports of continuity errors,
-    e.g.,
-    places where a concept is used before it is explained.
-
-1.  Suggestions for new diagrams, or for ways to improve existing ones.
-
-1.  New or clearer summary points for each chapter's syllabus.
-
-1.  More or better exercises.
-    "This is too hard" or "this is unclear" helps as well.
+[wilson-greg]: https://third-bit.com/
