@@ -170,6 +170,10 @@ and better able to use them well.
 
 ## Acknowledgments {: #acknowledgments}
 
+All of thi material is available under an [open license](@/license/),
+and contributions through our [repository][repo] are welcome.
+All participants are required to respect our [Code of Conduct](@/conduct/).
+
 [Greg Wilson][wilson-greg] is a programmer, author, and educator based in Toronto, Canada.
 He was the co-founder and first Executive Director of Software Carpentry
 and received ACM SIGSOFT's Influential Educator Award in 2020.
@@ -184,4 +188,5 @@ and received ACM SIGSOFT's Influential Educator Award in 2020.
   </em>
 </p>
 
+[repo]: https://github.com/gvwilson/sdxpy
 [wilson-greg]: https://third-bit.com/
