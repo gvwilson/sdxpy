@@ -121,14 +121,14 @@ the points that are left represent legal combinations.
 %]
 
 How much work is it to check all of these possibilities?
-Our example has \\( 3×3×2=18 \\) combinations.
+Our example has $ 3×3×2=18 $ combinations.
 If we were to add another package to the mix with two versions,
 the [%g search_space "search space" %] would double;
 add another,
 and it would double again,
-which means that if each package has approximately \\( c \\) version
-and there are \\( N \\) packages,
-the [%i "big-oh notation" "work grows" %] as \\( O(c^N) \\).
+which means that if each package has approximately $ c $ version
+and there are $ N $ packages,
+the [%i "big-oh notation" "work grows" %] as $ O(c^N) $.
 This exponential behavior is called
 [%g combinatorial_explosion "combinatorial explosion" %],
 and it makes brute-force solutions impractical even for small problems.

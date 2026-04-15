@@ -27,9 +27,9 @@ and shows how to work with data at this level.
 
 Let's start by looking at how integers are stored.
 The natural way to do this with ones and zeroes uses base 2,
-so 1001 in binary is \\( (1×8)+(0×4)+(0×2)+(1×1) \\) or 9 base 10.
+so 1001 in binary is $ (1×8)+(0×4)+(0×2)+(1×1) $ or 9 base 10.
 We can handle negative numbers by reserving the top bit for the sign,
-so that 01001 is \\( +9 \\) and 11001 is \\( -9 \\).
+so that 01001 is $ +9 $ and 11001 is $ -9 $.
 
 This representation has two drawbacks.
 The less important one is that it gives us two zeroes,
@@ -52,7 +52,7 @@ negative numbers have 1, positive numbers have 0.
 However,
 two's complement is asymmetric:
 since 0 counts as a positive number,
-numbers go from \\( -4 \\) to \\( 3 \\), or \\( -16 \\) to \\( 15 \\), and so on.
+numbers go from $ -4 $ to $ 3 $, or $ -16 $ to $ 15 $, and so on.
 As a result,
 even if `x` is a valid number,
 `-x` may not be.
@@ -68,7 +68,7 @@ programmers usually use [%i "hexadecimal" %] instead:
 the digits 0–9 have the usual meaning,
 and the letters A–F (or a–f) are used to represent the digits 10–15.
 We signal that we're using hexadecimal with a `0x` prefix,
-so `0xF7` is \\( (15×16)+7 \\) or 247 base 10.
+so `0xF7` is $ (15×16)+7 $ or 247 base 10.
 Each hexadecimal digit corresponds to four bits ([%t binary-hex %]),
 so two hexadecimal digits are exactly one byte,
 which makes it easy to translate bits to digits and vice versa:
@@ -131,11 +131,11 @@ so `17 >> 3` is 2.
 
 But what if the top bit of an integer changes from 1 to 0 or vice versa as a result of shifting?
 If we're using two's complement,
-then the bits `1111` represent the value \\( -1 \\);
-if we shift right we get `0111` which is \\( 7 \\).
+then the bits `1111` represent the value $ -1 $;
+if we shift right we get `0111` which is $ 7 $.
 Similarly,
 if we shift `0111` to the left we get `1110` (assuming we fill in the bottom with 0),
-which is \\( -6 \\).
+which is $ -6 $.
 
 Different languages deal with this problem in different ways.
 Python always fills with zeroes,
@@ -231,13 +231,13 @@ to represent the character whose code point is 1789:
 Since UTF-8 uses a varying number of bytes per character,
 the only way to get to a particular character in a string
 is to scan the string from the beginning,
-which means that indexing a string is \\( O(N) \\).
+which means that indexing a string is $ O(N) $.
 However,
 when Python loads text into memory,
 it converts the variable-length encoding to a fixed-length encoding,
 with the same number of bytes per character.
 This allows it to jump directly to any character in the string in constant time,
-which a computer scientist would say is \\( O(1) \\).
+which a computer scientist would say is $ O(1) $.
 
 </div>
 
@@ -335,7 +335,7 @@ Fortran stores all the values in an array side by side in memory
 Writing this to disk is easy:
 if the array starts at location L in memory and has N values,
 each of which is B bytes long,
-we just copy the bytes from \\( L \\) to \\( L+NB-1 \\) to the file.
+we just copy the bytes from $ L $ to $ L+NB-1 $ to the file.
 
 [% figure
    slug="binary-arrays"
@@ -404,7 +404,7 @@ it prints a 2-digit [%g escape_sequence "escape sequence" %] in hexadecimal.
 Python is therefore telling us that
 our string contains the eight bytes
 `['\x1f', '\x00', '\x00', '\x00', 'A', '\x00', '\x00', '\x00']`.
-`1F` in hex is \\( (1×16^1)+(15×16^0) \\), or 31;
+`1F` in hex is $ (1×16^1)+(15×16^0) $, or 31;
 `'A'` is our 65,
 because the ASCII code for an upper-case letter A is the decimal value 65.
 All the other bytes are zeroes (`"\x00"`)

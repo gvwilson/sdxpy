@@ -334,10 +334,10 @@ What happens if it sends exactly `CHUNK_SIZE` bytes or `CHUNK_SIZE+1` bytes?
 
 ### Efficiency 
 
-Suppose a client sends \\( N \\) chunks of data to a server.
-The current implementation will copy the first chunk \\( N-1 \\) times,
-the second chunk \\( N-2 \\) times, and so on,
-so that the total copying work is \\( O(N^2) \\).
+Suppose a client sends $ N $ chunks of data to a server.
+The current implementation will copy the first chunk $ N-1 $ times,
+the second chunk $ N-2 $ times, and so on,
+so that the total copying work is $ O(N^2) $.
 Modify the server so that it collects chunks in a list
 and concatenates them at the end instead.
 

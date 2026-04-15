@@ -252,12 +252,12 @@ to create a closure that captures the arguments:
 [%inc decorator_param.out %]
 
 Decorators didn't need to be this complicated.
-In order to define a method that takes \\( N \\) parameters in Python,
-we have to write a function of \\( N+1 \\) parameters,
+In order to define a method that takes $ N $ parameters in Python,
+we have to write a function of $ N+1 $ parameters,
 the first of which represents the object for which the method is being called.
 Python could have done the same thing with decorators,
 i.e.,
-allowed people to define a function of \\( N+1 \\) parameters
+allowed people to define a function of $ N+1 $ parameters
 and have `@` fill in the first automatically:
 
 [%inc alternative_design.py %]
@@ -379,7 +379,7 @@ so that iterating over the list `["a", ""]` produces `["a"]`.
 ### An Even Better Cursor 
 
 Rewrite the `BetterCursor` class
-so that it initializes `self._row` to 0 and `self._col` to \\( -1 \\)
+so that it initializes `self._row` to 0 and `self._col` to $ -1 $
 and always calls `self._advance()` as the first action in `self.__next__`.
 (You will need to make a few other changes as well.)
 Do you think this implementation is simpler than the one presented in this chapter?

@@ -36,7 +36,7 @@ lint:
 
 ## site: build documentation
 site:
-	@mccole build --src . --dst docs
+	@mccole build --math --src . --dst docs
 	@touch docs/.nojekyll
 
 ## serve: serve documentation

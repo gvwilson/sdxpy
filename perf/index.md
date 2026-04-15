@@ -361,7 +361,7 @@ is called [%g parameter_sweeping "parameter sweeping" %]:
 [%inc timing.py mark=sweep %]
 
 The results are shown in [%t perf-timing %] and [%f perf-analysis %].
-For a \\( 1000 \times 1000 \\) dataframe,
+For a $ 1000 \times 1000 $ dataframe,
 selection is over 250 times faster with column-wise storage than with row-wise,
 while filtering is 1.8 times slower.
 

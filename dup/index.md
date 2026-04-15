@@ -24,14 +24,14 @@ so we must compare their contents,
 but this will be slow if we have a lot of files.
 
 We can estimate how slow "slow" will be with a simple calculation.
-\\( N \\) objects can be paired in \\( N(N-1) \\) ways.
+$ N $ objects can be paired in $ N(N-1) $ ways.
 If we remove duplicate pairings
 (i.e., if we count A-B and B-A as one pair)
-then there are \\( N(N-1)/2 = (N^2 - N)/2 \\) distinct pairs.
-As \\( N \\) gets large,
-this value is approximately proportional to \\( N^2 \\).
+then there are $ N(N-1)/2 = (N^2 - N)/2 $ distinct pairs.
+As $ N $ gets large,
+this value is approximately proportional to $ N^2 $.
 A computer scientist would say that
-the [%g time_complexity "time complexity" %] of our algorithm is \\( O(N^2) \\),
+the [%g time_complexity "time complexity" %] of our algorithm is $ O(N^2) $,
 which is pronounced "[%g big_oh "big-oh" %] of N squared".
 In simpler terms,
 when the number of files doubles,
@@ -52,7 +52,7 @@ then we can avoid byte-by-byte comparisons entirely.
 
 ## Getting Started {: #dup-start}
 
-We'll start by implementing the inefficient \\( N^2 \\) approach
+We'll start by implementing the inefficient $ N^2 $ approach
 so that we can compare our later designs to it.
 The short program below takes a list of filenames from the command line,
 finds duplicates,
@@ -110,12 +110,12 @@ that depends only on the file's contents
 and then only compare files that have the same identifier,
 i.e.,
 that *might* be equal.
-If files are evenly divided into \\( g \\) groups
-then each group will contain roughly \\( N/g \\) files,
-so the total work will be roughly \\( O(g(N/g)^2) \\)
-(i.e., \\( g \\) groups times \\( (N/g)^2 \\) comparisons within each group).
+If files are evenly divided into $ g $ groups
+then each group will contain roughly $ N/g $ files,
+so the total work will be roughly $ O(g(N/g)^2) $
+(i.e., $ g $ groups times $ (N/g)^2 $ comparisons within each group).
 Simplifying,
-this is \\( N^2/g \\),
+this is $ N^2/g $,
 so as the number of groups grows,
 the overall running time should decrease
 ([%f dup-hash-group %]).
@@ -202,12 +202,12 @@ to find duplicates within each group:
 
 ## Better Hashing {: #dup-hash}
 
-Let's go back to the formula \\( O(N^2/g) \\)
+Let's go back to the formula $ O(N^2/g) $
 that tells us how much work we have to do
-if we have divided \\( N \\) files between \\( g \\) groups.
+if we have divided $ N $ files between $ g $ groups.
 If we have exactly as many groups as files—i.e.,
-if \\( g \\) is equal to \\( N \\)—then
-the work to process \\( N \\) files would be \\( O(N^2/N) = O(N) \\),
+if $ g $ is equal to $ N $—then
+the work to process $ N $ files would be $ O(N^2/N) = O(N) $,
 which means that the work will be proportional to the number of files.
 We have to read each file at least once anyway,
 so we can't possibly do better than this,
@@ -231,7 +231,7 @@ Given some bytes as input,
 this function produces a 256-bit hash,
 which is normally written as a 64-character [%g hexadecimal "hexadecimal" %] string.
 This uses the letters A-F (or a-f) to represent the digits from 10 to 15,
-so that (for example) `3D5` is \\((3×16^2)+(13×16^1)+(5×16^0)\\), or 981 in decimal:
+so that (for example) `3D5` is $(3×16^2)+(13×16^1)+(5×16^0)$, or 981 in decimal:
 
 [%inc using_sha256.py mark=example %]
 [%inc using_sha256.out %]
@@ -241,11 +241,11 @@ so that (for example) `3D5` is \\((3×16^2)+(13×16^1)+(5×16^0)\\), or 981 in d
 ### The Birthday Problem
 
 The odds that two people share a birthday are 1/365 (ignoring February 29).
-The odds that they *don't* are therefore \\( 364/365 \\).
+The odds that they *don't* are therefore $ 364/365 $.
 When we add a third person,
 the odds that they don't share a birthday
-with either of the preceding two people are \\( 363/365 \\),
-so the overall odds that nobody shares a birthday are \\( (364/365)×(363/365) \\).
+with either of the preceding two people are $ 363/365 $,
+so the overall odds that nobody shares a birthday are $ (364/365)×(363/365) $.
 If we keep going,
 there's a 50% chance of two people sharing a birthday in a group of just 23 people,
 and a 99.9% chance with 70 people.
@@ -253,7 +253,7 @@ and a 99.9% chance with 70 people.
 The same math can tell us how many files we need to hash
 before there's a 50% chance of a [%g hash_collision "collision" %] with a 256-bit hash.
 According to [Wikipedia][birthday_problem],
-the answer is approximately \\( 4{\times}10^{38} \\) files.
+the answer is approximately $ 4{\times}10^{38} $ files.
 We're willing to take that risk.
 
 </div>
