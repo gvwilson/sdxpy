@@ -170,7 +170,7 @@ and better able to use them well.
 
 ## Acknowledgments {: #acknowledgments}
 
-All of thi material is available under an [open license](@/license/),
+All of this material is available under an [open license](@/license/),
 and contributions through our [repository][repo] are welcome.
 All participants are required to respect our [Code of Conduct](@/conduct/).
 
