@@ -1,6 +1,6 @@
 ---
 title: "A Simple Filesystem"
-version: 1
+version: 2
 abstract: >
     Every program reads and writes files, but very few programmers know
     what happens between opening a file and reading from it.
