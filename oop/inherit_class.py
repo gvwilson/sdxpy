@@ -69,7 +69,7 @@ def find(cls, method_name):
         if method_name in cls:
             return cls[method_name]
         cls = cls["_parent"]
-    raise NotImplementedError("method_name")
+    raise NotImplementedError(method_name)
 # mccole:/search
 
 # mccole:use
