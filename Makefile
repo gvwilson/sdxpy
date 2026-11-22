@@ -1,4 +1,23 @@
-all: commands
+.PHONY: commands site serve check bib clean pdf
+
+BIB=bibliography/references.bib
+BIN=mccole
+DOCS=docs
+LUA=pandoc lua
+LINKS=mccole/links.md
+GLOSSARY=glossary/index.qmd
+MD_SRC=$(wildcard *.qmd) $(wildcard */*.qmd)
+QUARTO=quarto
+SLIDES_SRC=$(wildcard slides.qmd) $(wildcard */slides.qmd)
+SLIDES_DST=$(patsubst %.qmd,${DOCS}/%.html,${SLIDES_SRC})
+SLIDES_FLAGS=\
+  -f markdown \
+  -t revealjs \
+  -s \
+  -V theme=simple \
+  -V slideNumber=true \
+  --css=mccole/slides.css \
+  --lua-filter=mccole/inc-pandoc.lua
 
 ## commands: show available commands (*)
 commands:
@@ -6,42 +25,57 @@ commands:
 	| sed -e 's/## //g' \
 	| column -t -s ':'
 
-## check: check HTML
-.PHONY: check
-check:
-	@mccole check --src . --dst docs --files '*.jpg' '*.png' '*.svg'
-
-## clean: clean up
-clean:
-	@rm -rf ./dist
-	@find . -path ./.venv -prune -o -type d -name __pycache__ -exec rm -rf {} +
-	@find . -path ./.venv -prune -o -type d -name .ruff_cache -exec rm -rf {} +
-	@find . -path ./.venv -prune -o -type f -name '*~' -exec rm {} +
-
-## fix: fix code issues
-fix:
-	@ruff check --fix ${LESSONS}
-
-## format: format code
-format:
-	@ruff format ${LESSONS}
-
-## lint: run all code checks
-lint:
-	@make check
-	@make types
-
-## site: build documentation
+## site: render HTML with Quarto
 site:
-	@mccole build --math --src . --dst docs
-	@touch docs/.nojekyll
+	${QUARTO} render --to html
+	@mkdir -p ${DOCS}/mccole
+	@cp mccole/book.css ${DOCS}/mccole
+	touch ${DOCS}/.nojekyll
 
-## serve: serve documentation
+## pdf: render PDF with Quarto
+pdf:
+	mkdir -p pdf
+	${QUARTO} render --to pdf --output-dir=pdf
+
+## serve: preview the site locally
 serve:
-	python -m http.server -d docs
+	${QUARTO} preview
 
-## examples: regenerate example output
-examples: ${EXAMPLES_OUT}
+## publish: publish the site
+publish:
+	${LUA} ${BIN}/publish.lua docs ${OUT} ${EXTRA}
 
-%.txt: %.py
-	python $< ${SEED} > $@
+## slides: rebuild just the slides
+slides: ${SLIDES_DST}
+
+${DOCS}/%.html: %.qmd
+	@mkdir -p $(@D)
+	pandoc $< ${SLIDES_FLAGS} -o $@
+	@mkdir -p ${DOCS}/mccole
+	@cp mccole/slides.css ${DOCS}/mccole/slides.css
+	@sed -i '' '/simple\.css/d' $@
+	@sed -i '' 's:mccole/slides.css:../mccole/slides.css:g' $@
+
+## check: check structure, spelling, etc.
+check: check-bib check-links check-glossary check-typos
+
+## check-bib: check bibliography
+check-bib:
+	@${LUA} ${BIN}/check-bib.lua ${BIB} ${MD_SRC}
+
+## check-links: check Markdown links
+check-links:
+	@${LUA} ${BIN}/check-links.lua ${LINKS} ${MD_SRC}
+
+## check-glossary: check glossary references
+check-glossary:
+	@${LUA} ${BIN}/check-glossary.lua ${GLOSSARY} ${MD_SRC}
+
+## check-typos: check spelling
+check-typos:
+	@typos -c mccole/typos.toml ${MD_SRC} ${SLIDES_SRC}
+
+## clean: remove generated and cache files
+clean:
+	rm -rf .quarto _book
+	find . -type f -name '*~' -delete

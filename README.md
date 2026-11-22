@@ -4,7 +4,7 @@
 
 <div class="row">
   <div class="col-4">
-    <img src="@/_static/sdxpy-cover.png" class="img-90" alt="book cover">
+    <img src="images/sdxpy-cover.png" class="img-90" alt="book cover">
   </div>
   <div class="col-8" markdown="1">
 The best way to learn design in any field is to study examples,

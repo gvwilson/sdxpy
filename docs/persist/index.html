@@ -1,122 +1,557 @@
 <!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
-<html lang="en">
-<head>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Object Persistence</title>
-<meta content="Software Design by Example" name="description"/>
-<link href="../_static/favicon.ico" rel="icon" type="image/x-icon"/>
-<link href="../_static/pygments.css" rel="stylesheet" type="text/css"/>
-<link href="../_static/chota.css" rel="stylesheet" type="text/css"/>
-<link href="../_static/mccole.css" rel="stylesheet" type="text/css"/>
-<link crossorigin="anonymous" href="https://cdn.jsdelivr.net/npm/katex@0.15.1/dist/katex.min.css" integrity="sha384-R4558gYOUz8mP9YWpZJjofhk+zx0AS11p36HnD2ZKj/6JR5z27gSSULCNHIRReVs" rel="stylesheet"/>
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.11.9">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>16&nbsp; Object Persistence – Software Design by Example</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+/* CSS for citations */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+}
+.hanging-indent div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}</style>
+
+
+<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../">
+<link href="../binary/index.html" rel="next">
+<link href="../perf/index.html" rel="prev">
+<script src="../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../site_libs/quarto-html/scrollable-regions/scrollable-regions.js" type="module"></script>
+<script src="../site_libs/quarto-html/popper.min.js"></script>
+<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-63b5708e65d6cd79cd7618c58d0c21e7.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../site_libs/bootstrap/bootstrap-01a495efc5497ac6e3f5457e7ed18e65.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "sidebar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "start",
+  "type": "textbox",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+
+<link rel="stylesheet" href="../mccole/book.css">
 </head>
-<body>
-<a class="skip-link" href="#main-content">Skip to main content</a>
-<nav aria-label="Site navigation" class="nav">
-<div class="nav-left">
-<a class="brand" href="../">sdxpy</a>
-<div class="dropdown">
-<button aria-controls="nav-lessons" aria-haspopup="true">Lessons</button>
-<ul class="dropdown-content" id="nav-lessons">
-<li><a href="../intro/">Introduction</a></li>
-<li><a href="../oop/">Objects and Classes</a></li>
-<li><a href="../dup/">Finding Duplicate Files</a></li>
-<li><a href="../glob/">Matching Patterns</a></li>
-<li><a href="../parse/">Parsing Text</a></li>
-<li><a href="../test/">Running Tests</a></li>
-<li><a href="../interp/">An Interpreter</a></li>
-<li><a href="../func/">Functions and Closures</a></li>
-<li><a href="../protocols/">Protocols</a></li>
-<li><a href="../archive/">A File Archiver</a></li>
-<li><a href="../check/">An HTML Validator</a></li>
-<li><a href="../template/">A Template Expander</a></li>
-<li><a href="../lint/">A Code Linter</a></li>
-<li><a href="../layout/">Page Layout</a></li>
-<li><a href="../perf/">Performance Profiling</a></li>
-<li><a class="active" href="../persist/">Object Persistence</a></li>
-<li><a href="../binary/">Binary Data</a></li>
-<li><a href="../db/">A Database</a></li>
-<li><a href="../build/">A Build Manager</a></li>
-<li><a href="../pack/">A Package Manager</a></li>
-<li><a href="../ftp/">Transferring Files</a></li>
-<li><a href="../http/">Serving Web Pages</a></li>
-<li><a href="../viewer/">A File Viewer</a></li>
-<li><a href="../undo/">Undo and Redo</a></li>
-<li><a href="../vm/">A Virtual Machine</a></li>
-<li><a href="../debugger/">A Debugger</a></li>
-<li><a href="../finale/">Conclusion</a></li>
-</ul>
+
+<body class="nav-sidebar floating quarto-light"><a id="quarto-skip-link" class="visually-hidden-focusable" href="#quarto-document-content">Skip to main content</a>
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+  <nav class="quarto-secondary-nav" aria-label="Toolbar">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="Breadcrumbs"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../persist/index.html"><span class="chapter-number">16</span>&nbsp; <span class="chapter-title">Object Persistence</span></a></li></ol></nav>
+        <a class="flex-grow-1" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+      <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto" aria-label="Site">
+    <div class="pt-lg-2 mt-2 text-left sidebar-header">
+    <div class="sidebar-title mb-0 py-0">
+      <a href="../">Software Design by Example</a> 
+        <div class="sidebar-tools-main">
+    <a href="https://github.com/gvwilson/sdxpy" title="Source Code" class="quarto-navigation-tool px-1" aria-label="Source Code"><i class="bi bi-github"></i></a>
 </div>
-<div class="dropdown">
-<button aria-controls="nav-slides" aria-haspopup="true">Slides</button>
-<ul class="dropdown-content" id="nav-slides">
-<li><a href="../intro/slides.html">Introduction</a></li>
-<li><a href="../oop/slides.html">Objects and Classes</a></li>
-<li><a href="../dup/slides.html">Finding Duplicate Files</a></li>
-<li><a href="../glob/slides.html">Matching Patterns</a></li>
-<li><a href="../parse/slides.html">Parsing Text</a></li>
-<li><a href="../test/slides.html">Running Tests</a></li>
-<li><a href="../interp/slides.html">An Interpreter</a></li>
-<li><a href="../func/slides.html">Functions and Closures</a></li>
-<li><a href="../protocols/slides.html">Protocols</a></li>
-<li><a href="../archive/slides.html">A File Archiver</a></li>
-<li><a href="../check/slides.html">An HTML Validator</a></li>
-<li><a href="../template/slides.html">A Template Expander</a></li>
-<li><a href="../lint/slides.html">A Code Linter</a></li>
-<li><a href="../layout/slides.html">Page Layout</a></li>
-<li><a href="../perf/slides.html">Performance Profiling</a></li>
-<li><a href="../persist/slides.html">Object Persistence</a></li>
-<li><a href="../binary/slides.html">Binary Data</a></li>
-<li><a href="../db/slides.html">A Database</a></li>
-<li><a href="../build/slides.html">A Build Manager</a></li>
-<li><a href="../pack/slides.html">A Package Manager</a></li>
-<li><a href="../ftp/slides.html">Transferring Files</a></li>
-<li><a href="../http/slides.html">Serving Web Pages</a></li>
-<li><a href="../viewer/slides.html">A File Viewer</a></li>
-<li><a href="../undo/slides.html">Undo and Redo</a></li>
-<li><a href="../vm/slides.html">A Virtual Machine</a></li>
-<li><a href="../debugger/slides.html">A Debugger</a></li>
-<li><a href="../finale/slides.html">Conclusion</a></li>
-</ul>
-</div>
-<div class="dropdown">
-<button aria-controls="nav-appendices" aria-haspopup="true">Appendices</button>
-<ul class="dropdown-content" id="nav-appendices">
-<li><a href="../license/">License</a></li>
-<li><a href="../conduct/">Code of Conduct</a></li>
-<li><a href="../contributing/">Contributing</a></li>
-<li><a href="../bibliography/">Bibliography</a></li>
-<li><a href="../glossary/">Glossary</a></li>
-<li><a href="../syllabus/">Syllabus</a></li>
-<li><a href="../bonus/">Bonus Material</a></li>
-<li><a href="../observe/">Observers</a></li>
-<li><a href="../docgen/">Generating Documentation</a></li>
-<li><a href="../cache/">A File Cache</a></li>
-<li><a href="../concur/">Concurrency</a></li>
-<li><a href="../mapreduce/">MapReduce</a></li>
-<li><a href="../msgque/">A Publish-Subscribe Message Queue</a></li>
-<li><a href="../worksteal/">A Work-Stealing Scheduler</a></li>
-<li><a href="../tracing/">Distributed Tracing</a></li>
-<li><a href="../crdt/">Conflict-Free Replicated Data Types</a></li>
-<li><a href="../oauth/">OAuth</a></li>
-<li><a href="../distlock/">Distributed Locks</a></li>
-<li><a href="../torrent/">BitTorrent</a></li>
-<li><a href="../eventual/">Eventually Consistent Key-Value Store</a></li>
-<li><a href="../saga/">The Saga Pattern</a></li>
-<li><a href="../tcp/">TCP</a></li>
-<li><a href="../dns/">DNS</a></li>
-<li><a href="../ntp/">NTP</a></li>
-<li><a href="../fs/">A Filesystem</a></li>
-</ul>
-</div>
-<a href="https://github.com/gvwilson/sdxpy">Repository</a>
-</div>
+    </div>
+      </div>
+        <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Search"></div>
+        </div>
+        </div>
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Overview</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../intro/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">1</span>&nbsp; <span class="chapter-title">Introduction</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../oop/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">Objects and Classes</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../dup/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">3</span>&nbsp; <span class="chapter-title">Finding Duplicate Files</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../glob/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">Matching Patterns</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../parse/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">Parsing Text</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../test/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">6</span>&nbsp; <span class="chapter-title">Running Tests</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../interp/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">7</span>&nbsp; <span class="chapter-title">An Interpreter</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../func/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">8</span>&nbsp; <span class="chapter-title">Functions and Closures</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../protocols/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">9</span>&nbsp; <span class="chapter-title">Protocols</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../archive/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">10</span>&nbsp; <span class="chapter-title">A File Archiver</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../check/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">11</span>&nbsp; <span class="chapter-title">An HTML Validator</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../template/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">12</span>&nbsp; <span class="chapter-title">A Template Expander</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../lint/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">13</span>&nbsp; <span class="chapter-title">A Code Linter</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../layout/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">14</span>&nbsp; <span class="chapter-title">Page Layout</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../perf/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">15</span>&nbsp; <span class="chapter-title">Performance Profiling</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../persist/index.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text"><span class="chapter-number">16</span>&nbsp; <span class="chapter-title">Object Persistence</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../binary/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">17</span>&nbsp; <span class="chapter-title">Binary Data</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../db/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">18</span>&nbsp; <span class="chapter-title">A Database</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../build/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">19</span>&nbsp; <span class="chapter-title">A Build Manager</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../pack/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">20</span>&nbsp; <span class="chapter-title">A Package Manager</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../ftp/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">21</span>&nbsp; <span class="chapter-title">Transferring Files</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../http/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">22</span>&nbsp; <span class="chapter-title">Serving Web Pages</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../viewer/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">23</span>&nbsp; <span class="chapter-title">A File Viewer</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../undo/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">24</span>&nbsp; <span class="chapter-title">Undo and Redo</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../vm/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">25</span>&nbsp; <span class="chapter-title">A Virtual Machine</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../debugger/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">26</span>&nbsp; <span class="chapter-title">A Debugger</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../finale/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">27</span>&nbsp; <span class="chapter-title">Conclusion</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <button type="button" class="sidebar-item-text sidebar-item-toggle sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" aria-controls="quarto-sidebar-section-1" aria-expanded="true">
+ <span class="menu-text" id="quarto-sidebar-section-1-label">Appendices</span><i class="bi bi-chevron-right" aria-hidden="true"></i></button>
+      </div>
+      <ul id="quarto-sidebar-section-1" aria-labelledby="quarto-sidebar-section-1-label" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../license/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">A</span>&nbsp; <span class="chapter-title">License</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../conduct/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">B</span>&nbsp; <span class="chapter-title">Code of Conduct</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../contributing/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">C</span>&nbsp; <span class="chapter-title">Contributing</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../bibliography/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">D</span>&nbsp; <span class="chapter-title">Bibliography</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../glossary/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">E</span>&nbsp; <span class="chapter-title">Glossary</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../syllabus/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">F</span>&nbsp; <span class="chapter-title">Syllabus</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../bonus/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">G</span>&nbsp; <span class="chapter-title">Bonus Material</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../observe/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">H</span>&nbsp; <span class="chapter-title">Observers</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../docgen/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">I</span>&nbsp; <span class="chapter-title">Generating Documentation</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../cache/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">J</span>&nbsp; <span class="chapter-title">A File Cache</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../concur/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">K</span>&nbsp; <span class="chapter-title">Concurrency</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../mapreduce/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">L</span>&nbsp; <span class="chapter-title">MapReduce Framework</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../msgque/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">M</span>&nbsp; <span class="chapter-title">A Publish-Subscribe Message Queue</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../worksteal/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">N</span>&nbsp; <span class="chapter-title">A Work-Stealing Scheduler</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../tracing/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">O</span>&nbsp; <span class="chapter-title">Distributed Tracing</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../crdt/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">P</span>&nbsp; <span class="chapter-title">Conflict-Free Replicated Data Types</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../oauth/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">Q</span>&nbsp; <span class="chapter-title">OAuth</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../distlock/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">R</span>&nbsp; <span class="chapter-title">Distributed Lock Manager</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../torrent/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">S</span>&nbsp; <span class="chapter-title">BitTorrent Protocol</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../eventual/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">T</span>&nbsp; <span class="chapter-title">Eventually Consistent Key-Value Store</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../saga/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">U</span>&nbsp; <span class="chapter-title">The Saga Pattern</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../tcp/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">V</span>&nbsp; <span class="chapter-title">Building TCP on UDP</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../dns/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">W</span>&nbsp; <span class="chapter-title">Domain Name System (DNS)</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../ntp/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">X</span>&nbsp; <span class="chapter-title">Network Time Protocol (NTP)</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../fs/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">Y</span>&nbsp; <span class="chapter-title">A Simple Filesystem</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../slides/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">Z</span>&nbsp; <span class="chapter-title">Slides</span></span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+    </ul>
+    </div>
 </nav>
-<main id="main-content">
-<h1>Object Persistence</h1>
-<div aria-label="Learning objectives" class="syllabus" role="note">
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" aria-labelledby="toc-title" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#persist-builtin" id="toc-persist-builtin" class="nav-link active" data-scroll-target="#persist-builtin"><span class="header-section-number">16.1</span> Built-in Types</a></li>
+  <li><a href="#persist-oop" id="toc-persist-oop" class="nav-link" data-scroll-target="#persist-oop"><span class="header-section-number">16.2</span> Converting to Classes</a></li>
+  <li><a href="#persist-aliasing" id="toc-persist-aliasing" class="nav-link" data-scroll-target="#persist-aliasing"><span class="header-section-number">16.3</span> Aliasing</a></li>
+  <li><a href="#persist-summary" id="toc-persist-summary" class="nav-link" data-scroll-target="#persist-summary"><span class="header-section-number">16.4</span> Summary</a></li>
+  <li><a href="#persist-exercises" id="toc-persist-exercises" class="nav-link" data-scroll-target="#persist-exercises"><span class="header-section-number">16.5</span> Exercises</a>
+  <ul class="collapse">
+  <li><a href="#dangling-colon" id="toc-dangling-colon" class="nav-link" data-scroll-target="#dangling-colon"><span class="header-section-number">16.5.1</span> Dangling Colon</a></li>
+  <li><a href="#versioning" id="toc-versioning" class="nav-link" data-scroll-target="#versioning"><span class="header-section-number">16.5.2</span> Versioning</a></li>
+  <li><a href="#strings" id="toc-strings" class="nav-link" data-scroll-target="#strings"><span class="header-section-number">16.5.3</span> Strings</a></li>
+  <li><a href="#who-calculates" id="toc-who-calculates" class="nav-link" data-scroll-target="#who-calculates"><span class="header-section-number">16.5.4</span> Who Calculates?</a></li>
+  <li><a href="#using-globals" id="toc-using-globals" class="nav-link" data-scroll-target="#using-globals"><span class="header-section-number">16.5.5</span> Using Globals</a></li>
+  </ul></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content" tabindex="-1">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title"><span id="sec-persist" class="quarto-section-identifier"><span class="chapter-number">16</span>&nbsp; <span class="chapter-title">Object Persistence</span></span></h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<div class="syllabus">
 <ul>
 <li>A persistence framework saves and restores objects.</li>
 <li>Persistence must handle aliasing and circularity.</li>
@@ -124,183 +559,85 @@
 <li>Software designs should be open for extension but closed for modification.</li>
 </ul>
 </div>
-<p>Version control can keep track of our files,
-but what should we put in them?
-Plain text works well for things like this chapter,
-but the data structures used to represent HTML (<a class="xref" href="../check/">Chapter 11</a>)
-or the state of a game
-aren't easy to represent in prose.</p>
-<p>Another option is to store objects,
-i.e.,
-to save a list of dictionaries as-is
-rather than flattering it into rows and columns.
-Python's <a href="https://docs.python.org/3/library/pickle.html"><code>pickle</code></a> module does this in a Python-specific way,
-while the <a href="https://docs.python.org/3/library/json.html"><code>json</code></a> module saves some kinds of data as text formatted like JavaScript objects.
-As odd as it may seem,
-this has become a cross-language standard.</p>
-<p>The phrase "some kinds of data" is the most important part of the preceding paragraph.
-Since programs can define new <span class="ix-ref" data-ix-key="class" id="ix-persist-1">classes</span>,
-a <a class="gl-ref" href="../glossary/#persistence">persistence framework</a>
-has to choose one of the following:</p>
-<ol>
-<li>
-<p>Only handle built-in types,
-    or even more strictly,
-    only handle types that are common across many languages,
-    so that data saved by Python can be read by JavaScript and vice versa.</p>
-</li>
-<li>
-<p>Provide a way for programs to convert from user-defined types
-    to built-in types
-    and then save those.
-    This option is less restrictive than the first
-    but can lead to some information being lost.
-    For example,
-    if instances of a program's <code>User</code> class are saved as dictionaries,
-    the program that reads data may wind up with dictionaries instead of users.</p>
-</li>
-<li>
-<p>Save class definitions as well as objects' values
-    so that when a program reads saved data
-    it can reconstruct the classes
-    and then create fully functional instances of them.
-    This choice is the most powerful,
-    but it is also the hardest to implement,
-    particularly across languages.
-    It is also the riskiest:
-    if a program is running third-party code in order to restore objects,
-    it has to trust that code not to do anything malicious.</p>
-</li>
+<p>Version control can keep track of our files, but what should we put in them? Plain text works well for things like this chapter, but the data structures used to represent HTML (<a href="../check/index.html" class="quarto-xref"><span>Chapter 11</span></a>) or the state of a game aren’t easy to represent in prose.</p>
+<p>Another option is to store objects, i.e., to save a list of dictionaries as-is rather than flattering it into rows and columns. Python’s <a href="https://docs.python.org/3/library/pickle.html"><code>pickle</code></a> module does this in a Python-specific way, while the <a href="https://docs.python.org/3/library/json.html"><code>json</code></a> module saves some kinds of data as text formatted like JavaScript objects. As odd as it may seem, this has become a cross-language standard.</p>
+<p>The phrase “some kinds of data” is the most important part of the preceding paragraph. Since programs can define new classes, a <a href="../glossary/index.html#persistence">persistence framework</a> has to choose one of the following:</p>
+<ol type="1">
+<li><p>Only handle built-in types, or even more strictly, only handle types that are common across many languages, so that data saved by Python can be read by JavaScript and vice versa.</p></li>
+<li><p>Provide a way for programs to convert from user-defined types to built-in types and then save those. This option is less restrictive than the first but can lead to some information being lost. For example, if instances of a program’s <code>User</code> class are saved as dictionaries, the program that reads data may wind up with dictionaries instead of users.</p></li>
+<li><p>Save class definitions as well as objects’ values so that when a program reads saved data it can reconstruct the classes and then create fully functional instances of them. This choice is the most powerful, but it is also the hardest to implement, particularly across languages. It is also the riskiest: if a program is running third-party code in order to restore objects, it has to trust that code not to do anything malicious.</p></li>
 </ol>
-<p>This chapter starts by implementing the first option (built-in types only),
-then extends it to handle objects that the data structure refers to in several places
-(which JSON does not).
-To keep parsing and testing simple,
-our framework will store everything as text with one value per line;
-we will look at non-text options in <a class="xref" href="../binary/">Chapter 17</a>,
-and at how to handle user-defined types in <a class="xref" href="../bonus/">Appendix G</a>.</p>
-<h2 id="persist-builtin">Built-in Types</h2>
-<p>The first thing we need to do is specify our data format.
-We will store each <a class="gl-ref" href="../glossary/#atomic_value">atomic value</a> on a line of its own
-with a type name and a value separated by a colon:</p>
-<div data-inc="format.txt"><span aria-label="Source: persist/format.txt" class="inc-path" role="img" tabindex="0" title="persist/format.txt">i</span><div class="codehilite"><pre class="" tabindex="0"><span></span><code>bool:True
+<p>This chapter starts by implementing the first option (built-in types only), then extends it to handle objects that the data structure refers to in several places (which JSON does not). To keep parsing and testing simple, our framework will store everything as text with one value per line; we will look at non-text options in <a href="../binary/index.html" class="quarto-xref"><span>Chapter 17</span></a>, and at how to handle user-defined types in <a href="../bonus/index.html" class="quarto-xref"><span>Appendix G</span></a>.</p>
+<section id="persist-builtin" class="level2" data-number="16.1">
+<h2 data-number="16.1" class="anchored" data-anchor-id="persist-builtin"><span class="header-section-number">16.1</span> Built-in Types</h2>
+<p>The first thing we need to do is specify our data format. We will store each <a href="../glossary/index.html#atomic_value">atomic value</a> on a line of its own with a type name and a value separated by a colon:</p>
+<pre><code>bool:True
 int:123
-</code></pre></div>
-</div>
-<p>Since we are storing things as text,
-we have to handle strings carefully:
-for example,
-we might need to save the string <code>"str:something"</code>
-and later be able to tell that it <em>isn't</em> the string <code>"something"</code>.
-We do this by splitting strings on newline characters
-and saving the number of lines,
-followed by the actual data:</p>
-<div data-inc="multiline_input.txt"><span aria-label="Source: persist/multiline_input.txt" class="inc-path" role="img" tabindex="0" title="persist/multiline_input.txt">i</span><div class="codehilite"><pre class="" tabindex="0"><span></span><code># input
+</code></pre>
+<p>Since we are storing things as text, we have to handle strings carefully: for example, we might need to save the string <code>"str:something"</code> and later be able to tell that it <em>isn’t</em> the string <code>"something"</code>. We do this by splitting strings on newline characters and saving the number of lines, followed by the actual data:</p>
+<pre><code># input
 this is
 two lines
-</code></pre></div>
-</div>
-<div data-inc="multiline_output.txt"><span aria-label="Source: persist/multiline_output.txt" class="inc-path" role="img" tabindex="0" title="persist/multiline_output.txt">i</span><div class="codehilite"><pre class="" tabindex="0"><span></span><code># output
+</code></pre>
+<pre><code># output
 str:2
 this is
 two lines
-</code></pre></div>
+</code></pre>
+<p>The function <code>save</code> handles three of Python’s built-in types to start with:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> save(writer, thing):</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="bu">isinstance</span>(thing, <span class="bu">bool</span>):</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"bool:</span><span class="sc">{</span>thing<span class="sc">}</span><span class="ss">"</span>, <span class="bu">file</span><span class="op">=</span>writer)</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">elif</span> <span class="bu">isinstance</span>(thing, <span class="bu">float</span>):</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"float:</span><span class="sc">{</span>thing<span class="sc">}</span><span class="ss">"</span>, <span class="bu">file</span><span class="op">=</span>writer)</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">elif</span> <span class="bu">isinstance</span>(thing, <span class="bu">int</span>):</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"int:</span><span class="sc">{</span>thing<span class="sc">}</span><span class="ss">"</span>, <span class="bu">file</span><span class="op">=</span>writer)</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>        <span class="cf">raise</span> <span class="pp">ValueError</span>(<span class="ss">f"unknown type of thing </span><span class="sc">{</span><span class="bu">type</span>(thing)<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>The function that loads data starts by reading a single line, stripping off the newline at the end (which is added automatically by the <code>print</code> statement in <code>save</code>), and then splitting the line on colons. After checking that there are two fields, it uses the type name in the first field to decide how to handle the second:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> load(reader):</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    line <span class="op">=</span> reader.readline()[:<span class="op">-</span><span class="dv">1</span>]</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> line, <span class="st">"Nothing to read"</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    fields <span class="op">=</span> line.split(<span class="st">":"</span>, maxsplit<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> <span class="bu">len</span>(fields) <span class="op">==</span> <span class="dv">2</span>, <span class="ss">f"Badly-formed line </span><span class="sc">{</span>line<span class="sc">}</span><span class="ss">"</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    key, value <span class="op">=</span> fields</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> key <span class="op">==</span> <span class="st">"bool"</span>:</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>        names <span class="op">=</span> {<span class="st">"True"</span>: <span class="va">True</span>, <span class="st">"False"</span>: <span class="va">False</span>}</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">assert</span> value <span class="kw">in</span> names, <span class="ss">f"Unknown Boolean </span><span class="sc">{</span>value<span class="sc">}</span><span class="ss">"</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> names[value]</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">elif</span> key <span class="op">==</span> <span class="st">"float"</span>:</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="bu">float</span>(value)</span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>    <span class="cf">elif</span> key <span class="op">==</span> <span class="st">"int"</span>:</span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="bu">int</span>(value)</span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>        <span class="cf">raise</span> <span class="pp">ValueError</span>(<span class="ss">f"unknown type of thing </span><span class="sc">{</span>line<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Saving a list is almost as easy: we save the number of items in the list, and then save each item with a recursive call to <code>save</code>. For example, the list <code>[55, True, 2.71]</code> is saved as shown in <a href="#fig-persist-lists" class="quarto-xref">Figure&nbsp;<span>16.1</span></a>. The code to do this is:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>while to load a list, we just read the specified number of items:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="fig-persist-lists" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-persist-lists-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="lists.svg" class="img-fluid figure-img">
 </div>
-<p>The function <code>save</code> handles three of Python's built-in types to start with:</p>
-<div data-inc="builtin.py" data-mark="save" data-omit="extras"><span aria-label="Source: persist/builtin.py" class="inc-path" role="img" tabindex="0" title="persist/builtin.py">i</span><div class="codehilite"><pre class="" tabindex="0"><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">save</span><span class="p">(</span><span class="n">writer</span><span class="p">,</span> <span class="n">thing</span><span class="p">):</span>
-    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">thing</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"bool:</span><span class="si">{</span><span class="n">thing</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">writer</span><span class="p">)</span>
-
-    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">thing</span><span class="p">,</span> <span class="nb">float</span><span class="p">):</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"float:</span><span class="si">{</span><span class="n">thing</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">writer</span><span class="p">)</span>
-
-    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">thing</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"int:</span><span class="si">{</span><span class="n">thing</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">writer</span><span class="p">)</span>
-
-<span class="c1"># ...29 lines not shown...</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"unknown type of thing </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">thing</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-</code></pre></div>
-</div>
-<p>The function that loads data starts by reading a single line,
-stripping off the newline at the end
-(which is added automatically by the <code>print</code> statement in <code>save</code>),
-and then splitting the line on colons.
-After checking that there are two fields,
-it uses the type name in the first field
-to decide how to handle the second:</p>
-<div data-inc="builtin.py" data-mark="load" data-omit="extras"><span aria-label="Source: persist/builtin.py" class="inc-path" role="img" tabindex="0" title="persist/builtin.py">i</span><div class="codehilite"><pre class="" tabindex="0"><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="n">reader</span><span class="p">):</span>
-    <span class="n">line</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">readline</span><span class="p">()[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-    <span class="k">assert</span> <span class="n">line</span><span class="p">,</span> <span class="s2">"Nothing to read"</span>
-    <span class="n">fields</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">":"</span><span class="p">,</span> <span class="n">maxsplit</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">fields</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"Badly-formed line </span><span class="si">{</span><span class="n">line</span><span class="si">}</span><span class="s2">"</span>
-    <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="o">=</span> <span class="n">fields</span>
-
-    <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">"bool"</span><span class="p">:</span>
-        <span class="n">names</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"True"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">"False"</span><span class="p">:</span> <span class="kc">False</span><span class="p">}</span>
-        <span class="k">assert</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">names</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"Unknown Boolean </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">"</span>
-        <span class="k">return</span> <span class="n">names</span><span class="p">[</span><span class="n">value</span><span class="p">]</span>
-
-    <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">"float"</span><span class="p">:</span>
-        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
-
-    <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">"int"</span><span class="p">:</span>
-        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
-
-<span class="c1"># ...20 lines not shown...</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"unknown type of thing </span><span class="si">{</span><span class="n">line</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-</code></pre></div>
-</div>
-<p>Saving a list is almost as easy:
-we save the number of items in the list,
-and then save each item
-with a <span class="ix-ref" data-ix-key="recursion" id="ix-persist-2">recursive</span> call to <code>save</code>.
-For example,
-the list <code>[55, True, 2.71]</code> is saved as shown in <a class="fig-ref" href="#f:persist-lists">Figure 1</a>.
-The code to do this is:</p>
-<div data-inc="builtin.py" data-mark="save_list"><span aria-label="Source: persist/builtin.py" class="inc-path" role="img" tabindex="0" title="persist/builtin.py">i</span><div class="codehilite"><pre class="" tabindex="0"><span></span><code>    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">thing</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"list:</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">thing</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">writer</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">thing</span><span class="p">:</span>
-            <span class="n">save</span><span class="p">(</span><span class="n">writer</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span>
-</code></pre></div>
-</div>
-<p>while to load a list,
-we just read the specified number of items:</p>
-<div data-inc="builtin.py" data-mark="load_list"><span aria-label="Source: persist/builtin.py" class="inc-path" role="img" tabindex="0" title="persist/builtin.py">i</span><div class="codehilite"><pre class="" tabindex="0"><span></span><code>    <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">"list"</span><span class="p">:</span>
-        <span class="k">return</span> <span class="p">[</span><span class="n">load</span><span class="p">(</span><span class="n">reader</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">value</span><span class="p">))]</span>
-</code></pre></div>
-</div>
-<figure id="f:persist-lists">
-<img alt="Saving lists" src="lists.svg"/>
-<figcaption>Figure 1: Saving nested data structures.</figcaption>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-persist-lists-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;16.1: Saving nested data structures.
+</figcaption>
 </figure>
-<p>Notice that <code>save</code> and <code>load</code> don't need to know
-what kinds of values are in the list.
-Each recursive call advances the input or output stream
-by precisely as many lines as it needs to.
-As a result,
-this approach should handle empty lists and nested lists without any extra work.</p>
-<p>Our functions handle sets in exactly the same way as lists;
-the only difference is using the keyword <code>set</code> instead of the keyword <code>list</code>
-in the opening line.
-To save a <span class="ix-ref" data-ix-key="dictionary" id="ix-persist-3">dictionary</span>,
-we save the number of entries
-and then save each key and value in turn:</p>
-<div data-inc="builtin.py" data-mark="save_dict"><span aria-label="Source: persist/builtin.py" class="inc-path" role="img" tabindex="0" title="persist/builtin.py">i</span><div class="codehilite"><pre class="" tabindex="0"><span></span><code>    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">thing</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"dict:</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">thing</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">writer</span><span class="p">)</span>
-        <span class="k">for</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span> <span class="ow">in</span> <span class="n">thing</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="n">save</span><span class="p">(</span><span class="n">writer</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
-            <span class="n">save</span><span class="p">(</span><span class="n">writer</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
-</code></pre></div>
 </div>
-<p>The code to load a dictionary is analogous.
-With this machinery in place,
-we can save our first data structure:</p>
-<div data-inc="save_builtin.py" data-mark="save"><span aria-label="Source: persist/save_builtin.py" class="inc-path" role="img" tabindex="0" title="persist/save_builtin.py">i</span><div class="codehilite"><pre class="" tabindex="0"><span></span><code><span class="n">save</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="p">,</span> <span class="p">[</span><span class="kc">False</span><span class="p">,</span> <span class="mf">3.14</span><span class="p">,</span> <span class="s2">"hello"</span><span class="p">,</span> <span class="p">{</span><span class="s2">"left"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">"right"</span><span class="p">:</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]}])</span>
-</code></pre></div>
-</div>
-<div data-inc="save_builtin.out"><span aria-label="Source: persist/save_builtin.out" class="inc-path" role="img" tabindex="0" title="persist/save_builtin.out">i</span><div class="codehilite"><pre class="" tabindex="0"><span></span><code>list:4
+<p>Notice that <code>save</code> and <code>load</code> don’t need to know what kinds of values are in the list. Each recursive call advances the input or output stream by precisely as many lines as it needs to. As a result, this approach should handle empty lists and nested lists without any extra work.</p>
+<p>Our functions handle sets in exactly the same way as lists; the only difference is using the keyword <code>set</code> instead of the keyword <code>list</code> in the opening line. To save a dictionary, we save the number of entries and then save each key and value in turn:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>The code to load a dictionary is analogous. With this machinery in place, we can save our first data structure:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>save(sys.stdout, [<span class="va">False</span>, <span class="fl">3.14</span>, <span class="st">"hello"</span>, {<span class="st">"left"</span>: <span class="dv">1</span>, <span class="st">"right"</span>: [<span class="dv">2</span>, <span class="dv">3</span>]}])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre><code>list:4
 bool:False
 float:3.14
 str:1
@@ -314,456 +651,727 @@ right
 list:2
 int:2
 int:3
-</code></pre></div>
-</div>
-<p>We now need to write some unit tests.
-We will use two tricks when doing this:</p>
-<ol>
-<li>
-<p>The <code>StringIO</code> class from Python's <a href="https://docs.python.org/3/library/io.html"><code>io</code></a> module
-    allows us to read from strings and write to them
-    using the functions we normally use to read and write files.
-    Using this lets us run our tests
-    without creating lots of little files as a side effect.</p>
-</li>
-<li>
-<p>The <code>dedent</code> function from Python's <a href="https://docs.python.org/3/library/textwrap.html"><code>textwrap</code></a> module
-    removes leading indentation from the body of a string.
-    As the example below shows,
-    <code>dedent</code> allows us to indent a <span class="ix-ref" data-ix-key="fixture" id="ix-persist-4">fixture</span>
-    the same way we indent our Python code,
-    which makes the test easier to read.</p>
-</li>
+</code></pre>
+<p>We now need to write some unit tests. We will use two tricks when doing this:</p>
+<ol type="1">
+<li><p>The <code>StringIO</code> class from Python’s <a href="https://docs.python.org/3/library/io.html"><code>io</code></a> module allows us to read from strings and write to them using the functions we normally use to read and write files. Using this lets us run our tests without creating lots of little files as a side effect.</p></li>
+<li><p>The <code>dedent</code> function from Python’s <a href="https://docs.python.org/3/library/textwrap.html"><code>textwrap</code></a> module removes leading indentation from the body of a string. As the example below shows, <code>dedent</code> allows us to indent a fixture the same way we indent our Python code, which makes the test easier to read.</p></li>
 </ol>
-<div data-inc="test_builtin.py" data-mark="test_save_list_flat"><span aria-label="Source: persist/test_builtin.py" class="inc-path" role="img" tabindex="0" title="persist/test_builtin.py">i</span><div class="codehilite"><pre class="" tabindex="0"><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">test_save_list_flat</span><span class="p">():</span>
-    <span class="n">fixture</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="kc">False</span><span class="p">]</span>
-    <span class="n">expected</span> <span class="o">=</span> <span class="n">dedent</span><span class="p">(</span><span class="s2">"""</span><span class="se">\</span>
-<span class="s2">    list:2</span>
-<span class="s2">    int:0</span>
-<span class="s2">    bool:False</span>
-<span class="s2">    """</span><span class="p">)</span>
-    <span class="n">output</span> <span class="o">=</span> <span class="n">StringIO</span><span class="p">()</span>
-    <span class="n">save</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">fixture</span><span class="p">)</span>
-    <span class="k">assert</span> <span class="n">output</span><span class="o">.</span><span class="n">getvalue</span><span class="p">()</span> <span class="o">==</span> <span class="n">expected</span>
-</code></pre></div>
-</div>
-<h2 id="persist-oop">Converting to Classes</h2>
-<p>The <code>save</code> and <code>load</code> functions we built in the previous section work,
-but as we were extending them
-we had to modify their internals
-every time we wanted to do something new.</p>
-<p>The <a class="gl-ref" href="../glossary/#open_closed_principle">Open-Closed Principle</a> states that
-software should be open for extension but closed for modification,
-i.e., that it should be possible to extend functionality
-without having to rewrite existing code.
-This allows old code to use new code,
-but only if our design permits the kinds of extensions people are going to want to make.
-(Even then,
-it often leads to deep class hierarchies
-that can be hard for the next programmer to understand.)
-Since we can't anticipate everything,
-it is normal to have to revise a design the first two or three times we try to extend it.
-As [<a class="bib-ref" href="../bibliography/#Brand1995">Brand1995</a>] said of buildings,
-the things we make learn how to do things better as we use them.</p>
-<p>In this case,
-we can follow the Open-Closed Principle by rewriting our functions as classes
-and by using yet another form of <span class="ix-ref" data-ix-key="dynamic dispatch" id="ix-persist-5">dynamic dispatch</span> to handle each item
-so that we don't have to modify a multi-way <code>if</code> statement
-each time we add a new capability.
-If we have an object <code>obj</code>,
-then <code>hasattr(obj, "name")</code> tells us whether that object has an attribute called <code>"name"</code>.
-If it does,
-<code>getattr(obj, "name")</code> returns that attribute's value;
-if that attribute happens to be a method,
-we can then call it like a function:</p>
-<div data-inc="attr.py"><span aria-label="Source: persist/attr.py" class="inc-path" role="img" tabindex="0" title="persist/attr.py">i</span><div class="codehilite"><pre class="" tabindex="0"><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">Example</span><span class="p">:</span>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">label</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">label</span> <span class="o">=</span> <span class="n">label</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_size</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="p">)</span>
-
-<span class="n">ex</span> <span class="o">=</span> <span class="n">Example</span><span class="p">(</span><span class="s2">"thing"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">"ex has missing"</span><span class="p">,</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ex</span><span class="p">,</span> <span class="s2">"missing"</span><span class="p">))</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">"ex has label"</span><span class="p">,</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ex</span><span class="p">,</span> <span class="s2">"label"</span><span class="p">),</span> <span class="s2">"with value"</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">ex</span><span class="p">,</span> <span class="s2">"label"</span><span class="p">))</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">"ex has get_size"</span><span class="p">,</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ex</span><span class="p">,</span> <span class="s2">"get_size"</span><span class="p">))</span>
-<span class="n">method</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">ex</span><span class="p">,</span> <span class="s2">"get_size"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">"result of calling method"</span><span class="p">,</span> <span class="n">method</span><span class="p">())</span>
-</code></pre></div>
-</div>
-<div data-inc="attr.out"><span aria-label="Source: persist/attr.out" class="inc-path" role="img" tabindex="0" title="persist/attr.out">i</span><div class="codehilite"><pre class="" tabindex="0"><span></span><code>ex has missing False
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_save_list_flat():</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>    fixture <span class="op">=</span> [<span class="dv">0</span>, <span class="va">False</span>]</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    expected <span class="op">=</span> dedent(<span class="st">"""</span><span class="op">\</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="st">    list:2</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a><span class="st">    int:0</span></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a><span class="st">    bool:False</span></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a><span class="st">    """</span>)</span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>    output <span class="op">=</span> StringIO()</span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>    save(output, fixture)</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> output.getvalue() <span class="op">==</span> expected</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="persist-oop" class="level2" data-number="16.2">
+<h2 data-number="16.2" class="anchored" data-anchor-id="persist-oop"><span class="header-section-number">16.2</span> Converting to Classes</h2>
+<p>The <code>save</code> and <code>load</code> functions we built in the previous section work, but as we were extending them we had to modify their internals every time we wanted to do something new.</p>
+<p>The <a href="../glossary/index.html#open_closed_principle">Open-Closed Principle</a> states that software should be open for extension but closed for modification, i.e., that it should be possible to extend functionality without having to rewrite existing code. This allows old code to use new code, but only if our design permits the kinds of extensions people are going to want to make. (Even then, it often leads to deep class hierarchies that can be hard for the next programmer to understand.) Since we can’t anticipate everything, it is normal to have to revise a design the first two or three times we try to extend it. As <span class="citation" data-cites="Brand1995">(<a href="../bibliography/index.html#ref-Brand1995" role="doc-biblioref">Brand 1995</a>)</span> said of buildings, the things we make learn how to do things better as we use them.</p>
+<p>In this case, we can follow the Open-Closed Principle by rewriting our functions as classes and by using yet another form of dynamic dispatch to handle each item so that we don’t have to modify a multi-way <code>if</code> statement each time we add a new capability. If we have an object <code>obj</code>, then <code>hasattr(obj, "name")</code> tells us whether that object has an attribute called <code>"name"</code>. If it does, <code>getattr(obj, "name")</code> returns that attribute’s value; if that attribute happens to be a method, we can then call it like a function:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Example:</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, label):</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.label <span class="op">=</span> label</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> get_size(<span class="va">self</span>):</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="bu">len</span>(<span class="va">self</span>.label)</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>ex <span class="op">=</span> Example(<span class="st">"thing"</span>)</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"ex has missing"</span>, <span class="bu">hasattr</span>(ex, <span class="st">"missing"</span>))</span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"ex has label"</span>, <span class="bu">hasattr</span>(ex, <span class="st">"label"</span>), <span class="st">"with value"</span>, <span class="bu">getattr</span>(ex, <span class="st">"label"</span>))</span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"ex has get_size"</span>, <span class="bu">hasattr</span>(ex, <span class="st">"get_size"</span>))</span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>method <span class="op">=</span> <span class="bu">getattr</span>(ex, <span class="st">"get_size"</span>)</span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"result of calling method"</span>, method())</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre><code>ex has missing False
 ex has label True with value thing
 ex has get_size True
 result of calling method 5
-</code></pre></div>
+</code></pre>
+<p>Using this, the core of our saving class is:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> SaveObjects:</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, writer):</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.writer <span class="op">=</span> writer</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> save(<span class="va">self</span>, thing):</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>        typename <span class="op">=</span> <span class="bu">type</span>(thing).<span class="va">__name__</span></span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>        method <span class="op">=</span> <span class="ss">f"save_</span><span class="sc">{</span>typename<span class="sc">}</span><span class="ss">"</span></span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">assert</span> <span class="bu">hasattr</span>(<span class="va">self</span>, method), <span class="op">\</span></span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>            <span class="ss">f"Unknown object type </span><span class="sc">{</span>typename<span class="sc">}</span><span class="ss">"</span></span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>        <span class="bu">getattr</span>(<span class="va">self</span>, method)(thing)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>We have called this class <code>SaveObjects</code> instead of just <code>Save</code> because we are going to create other variations on it. <code>SaveObjects.save</code> figures out which method to call to save a particular thing by constructing a name based on the thing’s type, checking whether that method exists, and then calling it. As in the previous example of dynamic dispatch, the methods that handle specific items must all have the same signature so that they can be called interchangeably. For example, the methods that write integers and strings are:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><code>LoadObjects.load</code> combines dynamic dispatch with the string handling of our original <code>load</code> function:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>The methods that load individual items are even simpler. For example, we load a floating-point number like this:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="persist-aliasing" class="level2" data-number="16.3">
+<h2 data-number="16.3" class="anchored" data-anchor-id="persist-aliasing"><span class="header-section-number">16.3</span> Aliasing</h2>
+<p>Consider the two lines of code below, which created the data structure shown in <a href="#fig-persist-shared" class="quarto-xref">Figure&nbsp;<span>16.2</span></a>. If we save this structure and then reload it using what we have built so far, we will wind up with two copies of the list containing the string <code>"content"</code> instead of one. This won’t be a problem if we only ever read the reloaded data, but if we modify the new copy of <code>fixture[0]</code>, we won’t see that change reflected in <code>fixture[1]</code>, where we <em>would</em> have seen the change in the original data structure:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>shared <span class="op">=</span> [<span class="st">"content"</span>]</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>fixture <span class="op">=</span> [shared, shared]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="fig-persist-shared" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-persist-shared-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="shared.svg" class="img-fluid figure-img">
 </div>
-<p>Using this,
-the core of our saving class is:</p>
-<div data-inc="objects.py" data-mark="save"><span aria-label="Source: persist/objects.py" class="inc-path" role="img" tabindex="0" title="persist/objects.py">i</span><div class="codehilite"><pre class="" tabindex="0"><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">SaveObjects</span><span class="p">:</span>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">writer</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">writer</span> <span class="o">=</span> <span class="n">writer</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">thing</span><span class="p">):</span>
-        <span class="n">typename</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">thing</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span>
-        <span class="n">method</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"save_</span><span class="si">{</span><span class="n">typename</span><span class="si">}</span><span class="s2">"</span>
-        <span class="k">assert</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">),</span> \
-            <span class="sa">f</span><span class="s2">"Unknown object type </span><span class="si">{</span><span class="n">typename</span><span class="si">}</span><span class="s2">"</span>
-        <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">)(</span><span class="n">thing</span><span class="p">)</span>
-</code></pre></div>
-</div>
-<p>We have called this class <code>SaveObjects</code> instead of just <code>Save</code>
-because we are going to create other variations on it.
-<code>SaveObjects.save</code> figures out which <span class="ix-ref" data-ix-key="method" id="ix-persist-6">method</span> to call
-to save a particular thing
-by constructing a name based on the thing's type,
-checking whether that method exists,
-and then calling it.
-As in the previous example of dynamic dispatch,
-the methods that handle specific items
-must all have the same <span class="ix-ref" data-ix-key="signature" id="ix-persist-7">signature</span>
-so that they can be called interchangeably.
-For example,
-the methods that write integers and strings are:</p>
-<div data-inc="objects.py" data-mark="save_examples"><span aria-label="Source: persist/objects.py" class="inc-path" role="img" tabindex="0" title="persist/objects.py">i</span><div class="codehilite"><pre class="" tabindex="0"><span></span><code>    <span class="k">def</span><span class="w"> </span><span class="nf">save_int</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">thing</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_write</span><span class="p">(</span><span class="s2">"int"</span><span class="p">,</span> <span class="n">thing</span><span class="p">)</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">save_str</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">thing</span><span class="p">):</span>
-        <span class="n">lines</span> <span class="o">=</span> <span class="n">thing</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_write</span><span class="p">(</span><span class="s2">"str"</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">lines</span><span class="p">))</span>
-        <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">writer</span><span class="p">)</span>
-</code></pre></div>
-</div>
-<p><code>LoadObjects.load</code> combines dynamic dispatch with
-the string handling of our original <code>load</code> function:</p>
-<div data-inc="objects.py" data-mark="load"><span aria-label="Source: persist/objects.py" class="inc-path" role="img" tabindex="0" title="persist/objects.py">i</span><div class="codehilite"><pre class="" tabindex="0"><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">LoadObjects</span><span class="p">:</span>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reader</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">reader</span> <span class="o">=</span> <span class="n">reader</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">line</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reader</span><span class="o">.</span><span class="n">readline</span><span class="p">()[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-        <span class="k">assert</span> <span class="n">line</span><span class="p">,</span> <span class="s2">"Nothing to read"</span>
-        <span class="n">fields</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">":"</span><span class="p">,</span> <span class="n">maxsplit</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">fields</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"Badly-formed line </span><span class="si">{</span><span class="n">line</span><span class="si">}</span><span class="s2">"</span>
-        <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="o">=</span> <span class="n">fields</span>
-        <span class="n">method</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"load_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">"</span>
-        <span class="k">assert</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">),</span> <span class="sa">f</span><span class="s2">"Unknown object type </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">"</span>
-        <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">)(</span><span class="n">value</span><span class="p">)</span>
-</code></pre></div>
-</div>
-<p>The methods that load individual items are even simpler.
-For example,
-we load a floating-point number like this:</p>
-<div data-inc="objects.py" data-mark="load_float"><span aria-label="Source: persist/objects.py" class="inc-path" role="img" tabindex="0" title="persist/objects.py">i</span><div class="codehilite"><pre class="" tabindex="0"><span></span><code>    <span class="k">def</span><span class="w"> </span><span class="nf">load_float</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
-</code></pre></div>
-</div>
-<h2 id="persist-aliasing">Aliasing</h2>
-<p>Consider the two lines of code below,
-which created the data structure shown in <a class="fig-ref" href="#f:persist-shared">Figure 2</a>.
-If we save this structure and then reload it
-using what we have built so far,
-we will wind up with two copies of the list containing the string <code>"content"</code>
-instead of one.
-This won't be a problem if we only ever read the reloaded data,
-but if we modify the new copy of <code>fixture[0]</code>,
-we won't see that change reflected in <code>fixture[1]</code>,
-where we <em>would</em> have seen the change in the original data structure:</p>
-<div data-inc="ex_aliasing.py"><span aria-label="Source: persist/ex_aliasing.py" class="inc-path" role="img" tabindex="0" title="persist/ex_aliasing.py">i</span><div class="codehilite"><pre class="" tabindex="0"><span></span><code><span class="n">shared</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"content"</span><span class="p">]</span>
-<span class="n">fixture</span> <span class="o">=</span> <span class="p">[</span><span class="n">shared</span><span class="p">,</span> <span class="n">shared</span><span class="p">]</span>
-</code></pre></div>
-</div>
-<figure id="f:persist-shared">
-<img alt="Saving aliased data incorrectly" src="shared.svg"/>
-<figcaption>Figure 2: Saving aliased data without respecting aliases.</figcaption>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-persist-shared-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;16.2: Saving aliased data without respecting aliases.
+</figcaption>
 </figure>
-<p>The problem is that the list <code>shared</code> is <span class="ix-ref" data-ix-key="alias" id="ix-persist-8">aliased</span>,
-i.e.,
-there are two or more references to it.
-To reconstruct the original data correctly,
-we need to:</p>
-<ol>
-<li>
-<p>keep track of everything we have saved;</p>
-</li>
-<li>
-<p>save a marker instead of the object itself
-    when we try to save it a second time;
-    and</p>
-</li>
-<li>
-<p>reverse this process when loading data.</p>
-</li>
+</div>
+<p>The problem is that the list <code>shared</code> is aliased, i.e., there are two or more references to it. To reconstruct the original data correctly, we need to:</p>
+<ol type="1">
+<li><p>keep track of everything we have saved;</p></li>
+<li><p>save a marker instead of the object itself when we try to save it a second time; and</p></li>
+<li><p>reverse this process when loading data.</p></li>
 </ol>
-<p>We can keep track of the things we have saved
-using Python's built-in <code>id</code> function,
-which returns a unique ID for every object in the program.
-For example,
-even if two lists contain exactly the same values,
-<code>id</code> will report different IDs for those lists
-because they're stored in different locations in memory.
-We can use this to:</p>
-<ol>
-<li>
-<p>store the IDs of all the objects we've already saved
-    in a set, and then</p>
-</li>
-<li>
-<p>write a special entry with the keyword <code>alias</code>
-    and its unique ID
-    when we see an object for the second time.</p>
-</li>
+<p>We can keep track of the things we have saved using Python’s built-in <code>id</code> function, which returns a unique ID for every object in the program. For example, even if two lists contain exactly the same values, <code>id</code> will report different IDs for those lists because they’re stored in different locations in memory. We can use this to:</p>
+<ol type="1">
+<li><p>store the IDs of all the objects we’ve already saved in a set, and then</p></li>
+<li><p>write a special entry with the keyword <code>alias</code> and its unique ID when we see an object for the second time.</p></li>
 </ol>
-<p>Here's the start of <code>SaveAlias</code>:</p>
-<div data-inc="aliasing_wrong.py" data-mark="save"><span aria-label="Source: persist/aliasing_wrong.py" class="inc-path" role="img" tabindex="0" title="persist/aliasing_wrong.py">i</span><div class="codehilite"><pre class="" tabindex="0"><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">SaveAlias</span><span class="p">(</span><span class="n">SaveObjects</span><span class="p">):</span>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">writer</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">writer</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">seen</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">thing</span><span class="p">):</span>
-        <span class="n">thing_id</span> <span class="o">=</span> <span class="nb">id</span><span class="p">(</span><span class="n">thing</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">thing_id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">seen</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_write</span><span class="p">(</span><span class="s2">"alias"</span><span class="p">,</span> <span class="n">thing_id</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span>
-            <span class="k">return</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">seen</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="nb">id</span><span class="p">(</span><span class="n">thing</span><span class="p">))</span>
-        <span class="n">typename</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">thing</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span>
-        <span class="n">method</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"save_</span><span class="si">{</span><span class="n">typename</span><span class="si">}</span><span class="s2">"</span>
-        <span class="k">assert</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">),</span> <span class="sa">f</span><span class="s2">"Unknown object type </span><span class="si">{</span><span class="n">typename</span><span class="si">}</span><span class="s2">"</span>
-        <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">)(</span><span class="n">thing</span><span class="p">)</span>
-</code></pre></div>
-</div>
-<p>Its constructor creates an empty set of IDs seen so far.
-If <code>SaveAlias.save</code> notices that the object it's about to save
-has been saved before,
-it writes a line like this:</p>
-<div data-inc="ex_alias_line.txt"><span aria-label="Source: persist/ex_alias_line.txt" class="inc-path" role="img" tabindex="0" title="persist/ex_alias_line.txt">i</span><div class="codehilite"><pre class="" tabindex="0"><span></span><code>alias:12345678:
-</code></pre></div>
-</div>
-<p>where <code>12345678</code> is the object's ID.
-(The exercises will ask why the trailing colon needs to be there.)
-If the object hasn't been seen before,
-<code>SaveAlias</code> saves the object's type,
-its ID,
-and either its value or its length:</p>
-<div data-inc="aliasing_wrong.py" data-mark="save_list"><span aria-label="Source: persist/aliasing_wrong.py" class="inc-path" role="img" tabindex="0" title="persist/aliasing_wrong.py">i</span><div class="codehilite"><pre class="" tabindex="0"><span></span><code>    <span class="k">def</span><span class="w"> </span><span class="nf">save_list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">thing</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_write</span><span class="p">(</span><span class="s2">"list"</span><span class="p">,</span> <span class="nb">id</span><span class="p">(</span><span class="n">thing</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">thing</span><span class="p">))</span>
-        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">thing</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
-</code></pre></div>
-</div>
-<p><code>SaveAlias._list</code> is a little different from <code>SaveObjects._list</code>
-because it has to save each object's identifier
-along with its type and its value or length.
-Our <code>LoadAlias</code> class needs a similar change compared to <code>LoadObjects</code>.
-The first version is shown below;
-as we will see,
-it contains a subtle bug:</p>
-<div data-inc="aliasing_wrong.py" data-mark="load"><span aria-label="Source: persist/aliasing_wrong.py" class="inc-path" role="img" tabindex="0" title="persist/aliasing_wrong.py">i</span><div class="codehilite"><pre class="" tabindex="0"><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">LoadAlias</span><span class="p">(</span><span class="n">LoadObjects</span><span class="p">):</span>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reader</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">reader</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">seen</span> <span class="o">=</span> <span class="p">{}</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">line</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reader</span><span class="o">.</span><span class="n">readline</span><span class="p">()[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-        <span class="k">assert</span> <span class="n">line</span><span class="p">,</span> <span class="s2">"Nothing to read"</span>
-        <span class="n">fields</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">":"</span><span class="p">,</span> <span class="n">maxsplit</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">fields</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"Badly-formed line </span><span class="si">{</span><span class="n">line</span><span class="si">}</span><span class="s2">"</span>
-        <span class="n">key</span><span class="p">,</span> <span class="n">ident</span><span class="p">,</span> <span class="n">value</span> <span class="o">=</span> <span class="n">fields</span>
-
-        <span class="c1"># the lines below contain a bug</span>
-        <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">"alias"</span><span class="p">:</span>
-            <span class="k">assert</span> <span class="n">ident</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">seen</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">seen</span><span class="p">[</span><span class="n">ident</span><span class="p">]</span>
-
-        <span class="n">method</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"load_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">"</span>
-        <span class="k">assert</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">),</span> <span class="sa">f</span><span class="s2">"Unknown object type </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">"</span>
-        <span class="n">result</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">)(</span><span class="n">value</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">seen</span><span class="p">[</span><span class="n">ident</span><span class="p">]</span> <span class="o">=</span> <span class="n">result</span>
-        <span class="k">return</span> <span class="n">result</span>
-</code></pre></div>
-</div>
+<p>Here’s the start of <code>SaveAlias</code>:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Its constructor creates an empty set of IDs seen so far. If <code>SaveAlias.save</code> notices that the object it’s about to save has been saved before, it writes a line like this:</p>
+<pre><code>alias:12345678:
+</code></pre>
+<p>where <code>12345678</code> is the object’s ID. (The exercises will ask why the trailing colon needs to be there.) If the object hasn’t been seen before, <code>SaveAlias</code> saves the object’s type, its ID, and either its value or its length:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><code>SaveAlias._list</code> is a little different from <code>SaveObjects._list</code> because it has to save each object’s identifier along with its type and its value or length. Our <code>LoadAlias</code> class needs a similar change compared to <code>LoadObjects</code>. The first version is shown below; as we will see, it contains a subtle bug:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> LoadAlias(LoadObjects):</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, reader):</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>        <span class="bu">super</span>().<span class="fu">__init__</span>(reader)</span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.seen <span class="op">=</span> {}</span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> load(<span class="va">self</span>):</span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>        line <span class="op">=</span> <span class="va">self</span>.reader.readline()[:<span class="op">-</span><span class="dv">1</span>]</span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">assert</span> line, <span class="st">"Nothing to read"</span></span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a>        fields <span class="op">=</span> line.split(<span class="st">":"</span>, maxsplit<span class="op">=</span><span class="dv">2</span>)</span>
+<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">assert</span> <span class="bu">len</span>(fields) <span class="op">==</span> <span class="dv">3</span>, <span class="ss">f"Badly-formed line </span><span class="sc">{</span>line<span class="sc">}</span><span class="ss">"</span></span>
+<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a>        key, ident, value <span class="op">=</span> fields</span>
+<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-13"><a href="#cb22-13" aria-hidden="true" tabindex="-1"></a>        <span class="co"># the lines below contain a bug</span></span>
+<span id="cb22-14"><a href="#cb22-14" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> key <span class="op">==</span> <span class="st">"alias"</span>:</span>
+<span id="cb22-15"><a href="#cb22-15" aria-hidden="true" tabindex="-1"></a>            <span class="cf">assert</span> ident <span class="kw">in</span> <span class="va">self</span>.seen</span>
+<span id="cb22-16"><a href="#cb22-16" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="va">self</span>.seen[ident]</span>
+<span id="cb22-17"><a href="#cb22-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-18"><a href="#cb22-18" aria-hidden="true" tabindex="-1"></a>        method <span class="op">=</span> <span class="ss">f"load_</span><span class="sc">{</span>key<span class="sc">}</span><span class="ss">"</span></span>
+<span id="cb22-19"><a href="#cb22-19" aria-hidden="true" tabindex="-1"></a>        <span class="cf">assert</span> <span class="bu">hasattr</span>(<span class="va">self</span>, method), <span class="ss">f"Unknown object type </span><span class="sc">{</span>key<span class="sc">}</span><span class="ss">"</span></span>
+<span id="cb22-20"><a href="#cb22-20" aria-hidden="true" tabindex="-1"></a>        result <span class="op">=</span> <span class="bu">getattr</span>(<span class="va">self</span>, method)(value)</span>
+<span id="cb22-21"><a href="#cb22-21" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.seen[ident] <span class="op">=</span> result</span>
+<span id="cb22-22"><a href="#cb22-22" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> result</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>The first test of our new code is:</p>
-<div data-inc="test_aliasing_wrong.py" data-mark="no_aliasing"><span aria-label="Source: persist/test_aliasing_wrong.py" class="inc-path" role="img" tabindex="0" title="persist/test_aliasing_wrong.py">i</span><div class="codehilite"><pre class="" tabindex="0"><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">test_aliasing_no_aliasing</span><span class="p">():</span>
-    <span class="n">fixture</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"a"</span><span class="p">,</span> <span class="p">{</span><span class="s2">"b"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="mi">7</span><span class="p">:</span> <span class="p">{</span><span class="s2">"c"</span><span class="p">:</span> <span class="s2">"d"</span><span class="p">}}]</span>
-    <span class="k">assert</span> <span class="n">roundtrip</span><span class="p">(</span><span class="n">fixture</span><span class="p">)</span> <span class="o">==</span> <span class="n">fixture</span>
-</code></pre></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_aliasing_no_aliasing():</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>    fixture <span class="op">=</span> [<span class="st">"a"</span>, {<span class="st">"b"</span>: <span class="va">True</span>, <span class="dv">7</span>: {<span class="st">"c"</span>: <span class="st">"d"</span>}}]</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> roundtrip(fixture) <span class="op">==</span> fixture</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>which uses this helper function:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb24"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> roundtrip(fixture):</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>    writer <span class="op">=</span> StringIO()</span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>    SaveAlias(writer).save(fixture)</span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>    reader <span class="op">=</span> StringIO(writer.getvalue())</span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> LoadAlias(reader).load()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>There isn’t any aliasing in the test case, but that’s deliberate: we want to make sure we haven’t broken code that was working before we move on. Here’s a test that actually includes some aliasing:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_aliasing_shared_child():</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>    shared <span class="op">=</span> [<span class="st">"content"</span>]</span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>    fixture <span class="op">=</span> [shared, shared]</span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>    result <span class="op">=</span> roundtrip(fixture)</span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> result <span class="op">==</span> fixture</span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> <span class="bu">id</span>(result[<span class="dv">0</span>]) <span class="op">==</span> <span class="bu">id</span>(result[<span class="dv">1</span>])</span>
+<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a>    result[<span class="dv">0</span>][<span class="dv">0</span>] <span class="op">=</span> <span class="st">"changed"</span></span>
+<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> result[<span class="dv">1</span>][<span class="dv">0</span>] <span class="op">==</span> <span class="st">"changed"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>It checks that the aliased sub-list is actually aliased after the data is restored, then checks that changes to the sub-list through one alias show up through the other. The second check ought to be redundant, but it’s still comforting.</p>
+<p>There’s one more case to check, and unfortunately it reveals a bug. The two lines:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb26"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>fixture <span class="op">=</span> []</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>fixture.append(fixture)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>create the data structure shown in <a href="#fig-persist-circular" class="quarto-xref">Figure&nbsp;<span>16.3</span></a>, in which an object contains a reference to itself. Our code ought to handle this case but doesn’t: when we try to read in the saved data, <code>LoadAlias.load</code> sees the <code>alias</code> line but then says it can’t find the object being referred to.</p>
+<div id="fig-persist-circular" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-persist-circular-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="circular.svg" class="img-fluid figure-img">
 </div>
-<p>which uses this <span class="ix-ref" data-ix-key="helper function" id="ix-persist-9">helper function</span>:</p>
-<div data-inc="test_aliasing_wrong.py" data-mark="roundtrip"><span aria-label="Source: persist/test_aliasing_wrong.py" class="inc-path" role="img" tabindex="0" title="persist/test_aliasing_wrong.py">i</span><div class="codehilite"><pre class="" tabindex="0"><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">roundtrip</span><span class="p">(</span><span class="n">fixture</span><span class="p">):</span>
-    <span class="n">writer</span> <span class="o">=</span> <span class="n">StringIO</span><span class="p">()</span>
-    <span class="n">SaveAlias</span><span class="p">(</span><span class="n">writer</span><span class="p">)</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">fixture</span><span class="p">)</span>
-    <span class="n">reader</span> <span class="o">=</span> <span class="n">StringIO</span><span class="p">(</span><span class="n">writer</span><span class="o">.</span><span class="n">getvalue</span><span class="p">())</span>
-    <span class="k">return</span> <span class="n">LoadAlias</span><span class="p">(</span><span class="n">reader</span><span class="p">)</span><span class="o">.</span><span class="n">load</span><span class="p">()</span>
-</code></pre></div>
-</div>
-<p>There isn't any aliasing in the test case,
-but that's deliberate:
-we want to make sure we haven't broken code that was working
-before we move on.
-Here's a test that actually includes some aliasing:</p>
-<div data-inc="test_aliasing_wrong.py" data-mark="shared"><span aria-label="Source: persist/test_aliasing_wrong.py" class="inc-path" role="img" tabindex="0" title="persist/test_aliasing_wrong.py">i</span><div class="codehilite"><pre class="" tabindex="0"><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">test_aliasing_shared_child</span><span class="p">():</span>
-    <span class="n">shared</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"content"</span><span class="p">]</span>
-    <span class="n">fixture</span> <span class="o">=</span> <span class="p">[</span><span class="n">shared</span><span class="p">,</span> <span class="n">shared</span><span class="p">]</span>
-    <span class="n">result</span> <span class="o">=</span> <span class="n">roundtrip</span><span class="p">(</span><span class="n">fixture</span><span class="p">)</span>
-    <span class="k">assert</span> <span class="n">result</span> <span class="o">==</span> <span class="n">fixture</span>
-    <span class="k">assert</span> <span class="nb">id</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">==</span> <span class="nb">id</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
-    <span class="n">result</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"changed"</span>
-    <span class="k">assert</span> <span class="n">result</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"changed"</span>
-</code></pre></div>
-</div>
-<p>It checks that the aliased sub-list is actually aliased after the data is restored,
-then checks that changes to the sub-list through one alias show up through the other.
-The second check ought to be redundant,
-but it's still comforting.</p>
-<p>There's one more case to check,
-and unfortunately it reveals a bug.
-The two lines:</p>
-<div data-inc="ex_circular.py"><span aria-label="Source: persist/ex_circular.py" class="inc-path" role="img" tabindex="0" title="persist/ex_circular.py">i</span><div class="codehilite"><pre class="" tabindex="0"><span></span><code><span class="n">fixture</span> <span class="o">=</span> <span class="p">[]</span>
-<span class="n">fixture</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fixture</span><span class="p">)</span>
-</code></pre></div>
-</div>
-<p>create the data structure shown in <a class="fig-ref" href="#f:persist-circular">Figure 3</a>,
-in which an object contains a reference to itself.
-Our code ought to handle this case but doesn't:
-when we try to read in the saved data,
-<code>LoadAlias.load</code> sees the <code>alias</code> line
-but then says it can't find the object being referred to.</p>
-<figure id="f:persist-circular">
-<img alt="A circular data structure" src="circular.svg"/>
-<figcaption>Figure 3: A data structure that contains a reference to itself.</figcaption>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-persist-circular-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;16.3: A data structure that contains a reference to itself.
+</figcaption>
 </figure>
-<p>The problem is these lines in <code>LoadAlias.load</code>
-marked as containing a bug,
-in combination with these lines inherited from <code>LoadObjects</code>:</p>
-<div data-inc="objects.py" data-mark="load_list"><span aria-label="Source: persist/objects.py" class="inc-path" role="img" tabindex="0" title="persist/objects.py">i</span><div class="codehilite"><pre class="" tabindex="0"><span></span><code>    <span class="k">def</span><span class="w"> </span><span class="nf">load_list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-        <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">load</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">value</span><span class="p">))]</span>
-</code></pre></div>
 </div>
-<p>Let's trace execution for the saved data:</p>
-<div data-inc="ex_list_alias.txt"><span aria-label="Source: persist/ex_list_alias.txt" class="inc-path" role="img" tabindex="0" title="persist/ex_list_alias.txt">i</span><div class="codehilite"><pre class="" tabindex="0"><span></span><code>list:4484025600:1
+<p>The problem is these lines in <code>LoadAlias.load</code> marked as containing a bug, in combination with these lines inherited from <code>LoadObjects</code>:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb27"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Let’s trace execution for the saved data:</p>
+<pre><code>list:4484025600:1
 alias:4484025600:
-</code></pre></div>
-</div>
-<ol>
-<li>
-<p>The first line tells us that there's a list whose ID is <code>4484025600</code>
-    so we <code>LoadObjects._list</code> to load a list of one element.</p>
-</li>
-<li>
-<p><code>LoadObjects._list</code> called <code>LoadAlias.load</code> recursively to load that one element.</p>
-</li>
-<li>
-<p><code>LoadAlias.load</code> reads the second line of saved data,
-    which tells it to re-use the data whose ID is <code>4484025600</code>.
-    But <code>LoadObjects._list</code> hasn't created that list yet—it
-    is still reading the elements—so
-    <code>LoadAlias.load</code> hasn't added the list to <code>seen</code>.</p>
-</li>
+</code></pre>
+<ol type="1">
+<li><p>The first line tells us that there’s a list whose ID is <code>4484025600</code> so we <code>LoadObjects._list</code> to load a list of one element.</p></li>
+<li><p><code>LoadObjects._list</code> called <code>LoadAlias.load</code> recursively to load that one element.</p></li>
+<li><p><code>LoadAlias.load</code> reads the second line of saved data, which tells it to re-use the data whose ID is <code>4484025600</code>. But <code>LoadObjects._list</code> hasn’t created that list yet—it is still reading the elements—so <code>LoadAlias.load</code> hasn’t added the list to <code>seen</code>.</p></li>
 </ol>
-<p>The solution is to reorder the operations,
-which unfortunately means writing new versions
-of all the methods defined in <code>LoadObjects</code>.
-The new implementation of <code>_list</code> is:</p>
-<div data-inc="aliasing.py" data-mark="load_list"><span aria-label="Source: persist/aliasing.py" class="inc-path" role="img" tabindex="0" title="persist/aliasing.py">i</span><div class="codehilite"><pre class="" tabindex="0"><span></span><code>    <span class="k">def</span><span class="w"> </span><span class="nf">load_list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ident</span><span class="p">,</span> <span class="n">length</span><span class="p">):</span>
-        <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">seen</span><span class="p">[</span><span class="n">ident</span><span class="p">]</span> <span class="o">=</span> <span class="n">result</span>
-        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">length</span><span class="p">)):</span>
-            <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">load</span><span class="p">())</span>
-        <span class="k">return</span> <span class="n">result</span>
-</code></pre></div>
-</div>
-<p>This method creates the list it's going to return,
-adds that list to the <code>seen</code> dictionary immediately,
-and <em>then</em> loads list items recursively.
-We have to pass it the ID of the list
-to use as the key in <code>seen</code>,
-and we have to use a loop rather than
-a <a class="gl-ref" href="../glossary/#list_comprehension">list comprehension</a>,
-but the changes to <code>save_set</code> and <code>save_dict</code> follow exactly the same pattern.</p>
-<div data-inc="save_aliasing.py" data-mark="save"><span aria-label="Source: persist/save_aliasing.py" class="inc-path" role="img" tabindex="0" title="persist/save_aliasing.py">i</span><div class="codehilite"><pre class="" tabindex="0"><span></span><code><span class="n">word</span> <span class="o">=</span> <span class="s2">"word"</span>
-<span class="n">child</span> <span class="o">=</span> <span class="p">[</span><span class="n">word</span><span class="p">,</span> <span class="n">word</span><span class="p">]</span>
-<span class="n">parent</span> <span class="o">=</span> <span class="p">[]</span>
-<span class="n">parent</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
-<span class="n">parent</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
-
-<span class="n">saver</span> <span class="o">=</span> <span class="n">SaveAlias</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="p">)</span>
-<span class="n">saver</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
-</code></pre></div>
-</div>
-<div data-inc="save_aliasing.out"><span aria-label="Source: persist/save_aliasing.out" class="inc-path" role="img" tabindex="0" title="persist/save_aliasing.out">i</span><div class="codehilite"><pre class="" tabindex="0"><span></span><code>list:4539747200:2
+<p>The solution is to reorder the operations, which unfortunately means writing new versions of all the methods defined in <code>LoadObjects</code>. The new implementation of <code>_list</code> is:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb29"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>This method creates the list it’s going to return, adds that list to the <code>seen</code> dictionary immediately, and <em>then</em> loads list items recursively. We have to pass it the ID of the list to use as the key in <code>seen</code>, and we have to use a loop rather than a <a href="../glossary/index.html#list_comprehension">list comprehension</a>, but the changes to <code>save_set</code> and <code>save_dict</code> follow exactly the same pattern.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb30"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>word <span class="op">=</span> <span class="st">"word"</span></span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>child <span class="op">=</span> [word, word]</span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>parent <span class="op">=</span> []</span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>parent.append(parent)</span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>parent.append(child)</span>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a>saver <span class="op">=</span> SaveAlias(sys.stdout)</span>
+<span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a>saver.save(parent)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre><code>list:4539747200:2
 alias:4539747200:
 list:4539552960:2
 str:4539552048:1
 word
 alias:4539552048:
-</code></pre></div>
+</code></pre>
+</section>
+<section id="persist-summary" class="level2" data-number="16.4">
+<h2 data-number="16.4" class="anchored" data-anchor-id="persist-summary"><span class="header-section-number">16.4</span> Summary</h2>
+<p><a href="#fig-persist-concept-map" class="quarto-xref">Figure&nbsp;<span>16.4</span></a> summarizes the ideas introduced in this chapter, while <a href="../bonus/index.html" class="quarto-xref"><span>Appendix G</span></a> shows how to extend our framework to handle user-defined classes.</p>
+<div id="fig-persist-concept-map" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-persist-concept-map-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="concept_map.svg" class="img-fluid figure-img">
 </div>
-<h2 id="persist-summary">Summary</h2>
-<p><a class="fig-ref" href="#f:persist-concept-map">Figure 4</a> summarizes the ideas introduced in this chapter,
-while <a class="xref" href="../bonus/">Appendix G</a> shows how to extend our framework
-to handle user-defined classes.</p>
-<figure id="f:persist-concept-map">
-<img alt="Concept map for persistence" src="concept_map.svg"/>
-<figcaption>Figure 4: Concepts for persistence.</figcaption>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-persist-concept-map-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;16.4: Concepts for persistence.
+</figcaption>
 </figure>
-<section aria-label="Exercises" class="exercises">
-<h2 id="persist-exercises">Exercises</h2>
-<h3>Dangling Colon</h3>
-<p>Why is there a colon at the end of the line <code>alias:12345678:</code>
-when we create an alias marker?</p>
-<h3>Versioning</h3>
-<p>We now have several versions of our data storage format.
-Early versions of our code can't read the archives created by later ones,
-and later ones can't read the archives created early on
-(which used two fields per line rather than three).
-This problem comes up all the time in long-lived libraries and applications,
-and the usual solution is to include some sort of version marker
-at the start of each archive
-to indicate what version of the software created it
-(and therefore how it should be read).
-Modify the code we have written so far to do this.</p>
-<h3>Strings</h3>
-<p>Modify the framework so that strings are stored using escape characters like <code>\n</code>
-instead of being split across several lines.</p>
-<h3>Who Calculates?</h3>
-<p>Why doesn't <code>LoadAlias.load</code> calculate object IDs?
-Why does it use the IDs saved in the archive instead?</p>
-<h3>Using Globals</h3>
-<p>The lesson on unit testing introduced the function <code>globals</code>,
-which can be used to look up everything defined at the top level of a program.</p>
-<ol>
-<li>
-<p>Modify the persistence framework so that
-    it looks for <code>save_</code> and <code>load_</code> functions using <code>globals</code>.</p>
-</li>
-<li>
-<p>Why is this a bad idea?</p>
-</li>
+</div>
+<section class="exercises">
+</section>
+<section id="persist-exercises" class="level2" data-number="16.5">
+<h2 data-number="16.5" class="anchored" data-anchor-id="persist-exercises"><span class="header-section-number">16.5</span> Exercises</h2>
+<section id="dangling-colon" class="level3" data-number="16.5.1">
+<h3 data-number="16.5.1" class="anchored" data-anchor-id="dangling-colon"><span class="header-section-number">16.5.1</span> Dangling Colon</h3>
+<p>Why is there a colon at the end of the line <code>alias:12345678:</code> when we create an alias marker?</p>
+</section>
+<section id="versioning" class="level3" data-number="16.5.2">
+<h3 data-number="16.5.2" class="anchored" data-anchor-id="versioning"><span class="header-section-number">16.5.2</span> Versioning</h3>
+<p>We now have several versions of our data storage format. Early versions of our code can’t read the archives created by later ones, and later ones can’t read the archives created early on (which used two fields per line rather than three). This problem comes up all the time in long-lived libraries and applications, and the usual solution is to include some sort of version marker at the start of each archive to indicate what version of the software created it (and therefore how it should be read). Modify the code we have written so far to do this.</p>
+</section>
+<section id="strings" class="level3" data-number="16.5.3">
+<h3 data-number="16.5.3" class="anchored" data-anchor-id="strings"><span class="header-section-number">16.5.3</span> Strings</h3>
+<p>Modify the framework so that strings are stored using escape characters like <code>\n</code> instead of being split across several lines.</p>
+</section>
+<section id="who-calculates" class="level3" data-number="16.5.4">
+<h3 data-number="16.5.4" class="anchored" data-anchor-id="who-calculates"><span class="header-section-number">16.5.4</span> Who Calculates?</h3>
+<p>Why doesn’t <code>LoadAlias.load</code> calculate object IDs? Why does it use the IDs saved in the archive instead?</p>
+</section>
+<section id="using-globals" class="level3" data-number="16.5.5">
+<h3 data-number="16.5.5" class="anchored" data-anchor-id="using-globals"><span class="header-section-number">16.5.5</span> Using Globals</h3>
+<p>The lesson on unit testing introduced the function <code>globals</code>, which can be used to look up everything defined at the top level of a program.</p>
+<ol type="1">
+<li><p>Modify the persistence framework so that it looks for <code>save_</code> and <code>load_</code> functions using <code>globals</code>.</p></li>
+<li><p>Why is this a bad idea?</p></li>
 </ol>
 </section>
-</main>
-<footer aria-label="Page navigation">
-<div class="row">
-<div class="col-3 left">
-<span aria-hidden="true">⇐</span> <a href="../perf">Performance Profiling</a>
-</div>
-<div class="col-6 center">
-<a href="../">sdxpy</a>
-	  ©
-	  <a href="../#acknowledgments">the authors</a>
-</div>
-<div class="col-3 right">
-<a href="../binary">Binary Data</a> <span aria-hidden="true">⇒</span>
+
+
+<div id="refs" class="references csl-bib-body hanging-indent" role="list" style="display: none">
+<div id="ref-Brand1995" class="csl-entry" role="listitem">
+Brand, Stewart. 1995. <em>How Buildings Learn: What Happens After They’re Built</em>. Penguin USA. ISBN 9780140139969.
 </div>
 </div>
-</footer>
-<script crossorigin="anonymous" defer="" src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
-<script crossorigin="anonymous" defer="" onload="renderMathInElement(document.body, {
-        delimiters: [
-          {left: '$$', right: '$$', display: true},
-          {left: '$',  right: '$',  display: false}
-        ]
-      });" src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
-</body>
-</html>
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+      window.quartoDecorateExternalLinks = function (root) {
+     var links = (root || window.document).querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+          if (!link.classList.contains('no-external-icon')) {
+          }
+        }
+      }
+      };
+      window.quartoDecorateExternalLinks(window.document);
+    // Esc closes the popup (WCAG 1.4.13) and focus leaving both trigger and
+    // popup closes it (WCAG 2.4.11); tippy handles neither for interactive popups.
+    const hideOnEscAndFocusOut = {
+      name: 'hideOnEscAndFocusOut',
+      defaultValue: true,
+      fn(instance) {
+        const dismiss = () => {
+          // A show scheduled by the trigger delay would otherwise reopen it
+          instance.clearDelayTimeouts();
+          instance.hide();
+        };
+        const onKeyDown = (event) => {
+          if (event.key !== 'Escape') {
+            return;
+          }
+          // Keep Esc from also reaching page handlers (e.g. reveal.js overview),
+          // except an open reveal.js slide menu, which Esc should close too.
+          // The menu handles keys only when its keyboard option is on.
+          const menuHandlesEsc = window.Reveal?.getPlugin?.('menu')?.isOpen() &&
+            window.Reveal.getConfig().menu?.keyboard !== false;
+          if (!menuHandlesEsc) {
+            event.stopPropagation();
+          }
+          if (instance.popper.contains(window.document.activeElement)) {
+            // Disabled while refocusing so the focus trigger does not reopen it
+            instance.disable();
+            instance.reference.focus();
+            instance.enable();
+          }
+          dismiss();
+        };
+        const onFocusOut = (event) => {
+          const target = event.relatedTarget;
+          if (target && !instance.reference.contains(target) &&
+              !instance.popper.contains(target)) {
+            dismiss();
+          }
+        };
+        // On the trigger too: a click trigger (code-annotations: select) has no
+        // blur handling. Attached for the instance's lifetime so leaving the
+        // trigger also cancels a show still pending on the trigger delay.
+        instance.reference.addEventListener('focusout', onFocusOut);
+        return {
+          onShow() {
+            window.document.addEventListener('keydown', onKeyDown, true);
+            instance.popper.addEventListener('focusout', onFocusOut);
+          },
+          onHide() {
+            window.document.removeEventListener('keydown', onKeyDown, true);
+            instance.popper.removeEventListener('focusout', onFocusOut);
+          },
+          onDestroy() {
+            instance.reference.removeEventListener('focusout', onFocusOut);
+          },
+        };
+      },
+    };
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+        plugins: [hideOnEscAndFocusOut],
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          // Each band is positioned against its own containing block, which is
+          // not the offsetParent of the lines, so place it from client rects.
+          const placeBand = (band, firstEl, lastEl, codeBlock) => {
+            const container = band.offsetParent;
+            if (container === null) {
+              return;
+            }
+            const containerRect = container.getBoundingClientRect();
+            // Reveal.js scales slides with a transform, so convert client
+            // pixels back to the CSS pixels of the container.
+            const scale = containerRect.height / container.offsetHeight || 1;
+            const firstRect = firstEl.getBoundingClientRect();
+            const lastRect = lastEl.getBoundingClientRect();
+            const top = (firstRect.top - containerRect.top) / scale - container.clientTop + container.scrollTop;
+            const height = (lastRect.bottom - firstRect.top) / scale;
+            band.style.top = top - 2 + "px";
+            band.style.height = height + 4 + "px";
+            if (codeBlock) {
+              // Without the copy button wrapper, the containing block is wider
+              // than the code block, so span the code block explicitly.
+              const blockRect = codeBlock.getBoundingClientRect();
+              band.style.left = (blockRect.left - containerRect.left) / scale - container.clientLeft + container.scrollLeft + "px";
+              band.style.width = blockRect.width / scale + "px";
+            }
+          };
+          if (lineIds.length > 0) {
+            const el = window.document.getElementById(lineIds[0]);
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const parent = el.parentElement.parentElement;
+            // cook up a div (if necessary) and position it
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            placeBand(div, el, lastEl, parent.closest("div.sourceCode") || parent);
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            placeBand(gutterDiv, el, lastEl);
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+  <script type="application/javascript">
+  window.quartoScrollableRegionsLabels = {"code":"Scrollable code","output":"Scrollable output"};
+  </script>
+<nav class="page-navigation" aria-label="Page">
+  <div class="nav-page nav-page-previous">
+      <a href="../perf/index.html" class="pagination-link" aria-label="Performance Profiling">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text"><span class="chapter-number">15</span>&nbsp; <span class="chapter-title">Performance Profiling</span></span>
+      </a>          
+  </div>
+  <div class="nav-page nav-page-next">
+      <a href="../binary/index.html" class="pagination-link" aria-label="Binary Data">
+        <span class="nav-page-text"><span class="chapter-number">17</span>&nbsp; <span class="chapter-title">Binary Data</span></span> <i class="bi bi-arrow-right-short"></i>
+      </a>
+  </div>
+</nav>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

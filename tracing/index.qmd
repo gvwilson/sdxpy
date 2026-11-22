@@ -1,0 +1,307 @@
+---
+abstract-text: 'FIXME
+
+  '
+syllabus:
+- Explain what a span and a trace are, and describe how spans form a tree that represents
+  a distributed call graph.
+- Describe how a decorator can add tracing to a function without modifying the function's
+  body.
+- Explain what head-based sampling is, how it reduces overhead, and what class of
+  problems it cannot detect.
+- Explain how trace context is propagated across service boundaries and why a module-level
+  variable is not sufficient in a concurrent service.
+---
+
+# Distributed Tracing {#sec-tracing}
+
+::: {.syllabus}
+- Explain what a span and a trace are, and describe how spans form a tree that represents a distributed call graph.
+- Describe how a decorator can add tracing to a function without modifying the function's body.
+- Explain what head-based sampling is, how it reduces overhead, and what class of problems it cannot detect.
+- Explain how trace context is propagated across service boundaries and why a module-level variable is not sufficient in a concurrent service.
+:::
+
+**In Development**
+
+If a monolithic application is slow,
+we can profile a single process to find out why.
+In a {{< g microservice "microservices" >}} architecture,
+however,
+a single request may touch many services,
+each of which may cause multiple database queries and external API calls.
+This makes it a lot harder to figure out exactly what's going on.
+
+Distributed tracing solves this by tracking requests as they flow through the system.
+A tracing systems assigns each request a unique ID,
+which that request carries through every service it touches.
+Each service operation records the work it does
+along with timing information and other metadata.
+Collecting and combining these records allows the tracing framework
+to understand dependencies between services
+and identify bottlenecks.
+
+Distributed tracing has two key elements:
+
+-   A {{< g span "span" >}} represents a single unit of work.
+    Spans form a tree with its origin in a {{< g root-span "root span" >}};
+    this tree represents the (distributed) call graph.
+
+-   A {{< g trace "trace" >}} is complete journey of a request through the system,
+    and is identified by a unique trace ID.
+    A single trace may contain many spans.
+
+{{< g context-propagation "Context propagation" >}} means
+passing trace and span IDs between services so that they can be correlated.
+Trace and span IDs are often propagated using {{< g http-header "HTTP headers" >}}:
+
+```
+X-Trace-Id: abc123
+X-Span-Id: def456
+X-Parent-Span-Id: ghi789
+```
+
+Tracing systems often use {{< g sampling "sampling" >}}
+to record only a fraction of traces.
+Doing this means that some questions cannot be answered after the fact,
+but sampling reduces storage costs and,
+more importantly,
+prevents the tracing system from overwhelming the network.
+
+Finally, tags and logs are metadata attached to spans for debugging.
+Tags are values used for filtering and searching,
+such as the {{< g http-status-code "HTTP status code" >}},
+while logs are timestamped events such as a {{< g cache-miss "cache miss" >}}
+or retry attempt.
+
+## A Minimum Viable Decorator {#tracing-decorator}
+
+Suppose we want to write a method `handle_request()`
+that performs some work in `do_work()`
+in a traceable way.
+If we add the tracing code directly in `handle_request()`
+we wind up with something like this:
+
+{{< inc tracing/long_winded.py mark=service >}}
+
+That is 15 lines of tracing code for a simple function,
+and those lines would have to be copied into every function we want to trace.
+A better approach is to define a {{< g decorator "decorator" >}}
+that adds tracing for us so that we can write:
+
+{{< inc tracing/short_winded.py mark=service >}}
+
+A minimum viable version of that decorator needs to do the following:
+
+1.  Check for active traces.
+    If no trace context exists or sampling is disabled,
+    it just calls the function normally.
+2.  Create a child span whose parent is the current span (if there is one).
+3.  Propagate trace context for nested calls.
+4.  Handle errors, i.e., catch exceptions and tag spans with error information.
+5.  Clean up by finishing the current span and restoring the previous context.
+
+None of this is particularly hard,
+but it does require a fair bit of code.
+First,
+we create a {{< g singleton "singleton" >}} to hold the active trace context
+and the {{< g trace-collector "collector" >}} where completed spans are to be sent.
+(In production,
+we would use {{< g thread-local-storage "thread-local storage" >}}
+or {{< g async-context-vars "async context variables" >}} to storage this data.)
+
+{{< inc tracing/tracing_decorators.py mark=storage >}}
+
+We can now define the tracing decorator itself.
+It's long,
+but all of the steps are fairly straightforward:
+
+{{< inc tracing/tracing_decorators.py mark=traced >}}
+
+## Data Types {#tracing-types}
+
+We now need to double back and define the core types for distributed tracing.
+`TraceContext` propagates between services:
+
+{{< inc tracing/tracing_types.py mark=context >}}
+
+`Span` tracks individual operations,
+and has methods for adding tags and log entries
+and to mark the span as completed:
+
+{{< inc tracing/tracing_types.py mark=span >}}
+
+Finally, `Trace` aggregates spans,
+and has methods for adding spans and getting the overall duration of the trace:
+
+{{< inc tracing/tracing_types.py mark=trace >}}
+
+## Trace Collector
+
+The collector is an active process
+that receives spans from services and assembles them into traces.
+When it runs,
+it repeatedly gets a span from its incoming queue and processes it:
+
+{{< inc tracing/trace_collector.py mark=collector >}}
+
+To process a new span,
+the collector either adds it to an existing trace
+or creates a new one.
+If the trace is now complete,
+the collector moves it from the active set into the completed set:
+
+{{< inc tracing/trace_collector.py mark=process >}}
+
+## A Simple Service {#tracing-service}
+
+With all this machinery in place,
+tracing a microservice is relatively straightforward:
+
+{{< inc tracing/simple_service.py mark=simple >}}
+
+`handle_request` is automatically traced;
+`process_data` is also traced and becomes a child span.
+No spans are created manually,
+and error handling is automatic.
+
+The client creates the root span manually (since it initiates the trace):
+
+{{< inc tracing/ex_decorators.py mark=client >}}
+
+The output shows that we are capturing what we wanted to:
+
+{{< inc tracing/ex_decorators.out >}}
+
+## Useful Data {#tracing-useful}
+
+The code we just built commits a cardinal sin:
+it generates data in an undocumented, hard-to-parse ASCII format.
+In most cases trace data will be consumed by other programs,
+which will summarize and reorganize it
+to make it comprehensible to human beings.
+To support that,
+we should always generate data in a structured format such as JSON,
+and use a standard {{< g schema "schema" >}} instead of creating one of our own.
+
+The [OpenTelemetry](@opentelemetry) standard defines such a schema,
+but it is notoriously complex.
+The simplified subset generated by `json_collector.py` has:
+
+-   a single resource per trace (OpenTelemetry supports multiple);
+-   a single scope per resource (again, OpenTelemetry supports multiple);
+-   one kind of span instead of the six that OpenTelemetry offers;
+-   no links between spans; and
+-   simplified status codes.
+
+Even with these simplifications,
+a simple example like the one below produces over 300 lines of pretty-printed output:
+
+{{< inc tracing/ex_json.py mark=client >}}
+
+A sample clause of this JSON looks like this:
+
+{{< inc tracing/ex_json.out head=52 >}}
+
+It isn't something anyone would browse for fun,
+but (hopefully) everything needed to track down problems is there.
+
+## Sampling {#tracing-sampling}
+
+Recording every trace in a high-traffic system is prohibitively expensive.
+A service processing 10,000 requests per second produces 10,000 root spans per second,
+plus all their children.
+Sampling records only a fraction of traces and discards the rest.
+
+Head-based sampling decides at the *start* of a trace—before any spans are created—
+whether to record it:
+
+{{< inc tracing/sampled_tracer.py mark=sampler >}}
+
+The sampling decision is made once and propagated with the trace context.
+Every service in the chain checks `ctx` before creating a span:
+if `ctx` is `None`, no span is created, so unsampled requests have zero tracing overhead.
+
+## Cross-Service Propagation {#tracing-propagation}
+
+The basic tracer stores context in a module-level variable.
+This works in a single process but breaks across service boundaries.
+The only correct way to propagate context between services is to include it
+in the request itself—conventionally as HTTP headers.
+
+`PropagatedRequest` carries the trace context as a field:
+
+{{< inc tracing/sampled_tracer.py mark=propagated_context >}}
+
+`SampledService` reads the context from the request and passes a child context
+to any downstream service it calls:
+
+{{< inc tracing/sampled_tracer.py mark=sampled_service >}}
+
+**Thread safety and `contextvars`:**
+In the basic tracer, `Storage` is a module-level singleton.
+In a real async service, many coroutines run concurrently in the same process.
+If two requests are being processed at the same time, both would read and write
+the same `Storage._current_context`, causing one request's context to leak into the other.
+
+Python's `contextvars.ContextVar` solves this:
+each asyncio task automatically gets its own copy of a `ContextVar`.
+When a new task is created (e.g., by `asyncio.create_task`), it inherits
+the parent task's context at the moment of creation.
+This means you can `set` a `ContextVar` in a request handler without
+affecting any other concurrent request handler.
+The pattern is:
+
+```python
+from contextvars import ContextVar
+
+_active_context: ContextVar[TraceContext | None] = ContextVar(
+    "_active_context", default=None
+)
+
+# In a traced function:
+token = _active_context.set(new_context)
+try:
+    await some_work()
+finally:
+    _active_context.reset(token)   # restores previous value in this task
+```
+
+Our simulation uses a single event loop with cooperative scheduling,
+so module-level state is safe.
+But any production tracing library must use `ContextVar` (or thread-local storage)
+to be correct under real concurrency.
+
+<section class="exercises" markdown="1">
+## Exercises {#tracing-exercises}
+
+1.  Run the basic decorator example and count how many spans are produced.
+    Now wrap the client in a sampler with rate=0.5 and run 10 requests.
+    On average, how many traces are recorded?
+    What is the variance?
+    Why might a 50% sample rate still miss the single slowest request?
+
+2.  The `SampledService` creates a child context and passes it to downstream services.
+    Add a third service (Database) as a downstream of the second service.
+    Run a sampled trace and verify that the span tree has three levels:
+    Client → Service A → Service B → Database.
+    Print the `parent_span_id` of each span to confirm the chain.
+
+3.  The basic tracer stores context in a module-level variable.
+    Write a scenario that demonstrates the concurrency bug:
+    start two requests at the same time and print the `trace_id` that each service sees.
+    Do both requests always see their own `trace_id`?
+    (Hint: since asimpy is single-threaded, you may need to add a yield point.)
+
+4.  Tail-based sampling buffers all spans for a trace and decides whether to keep them
+    only after the root span completes (allowing it to always record slow requests).
+    Sketch the data structure needed to buffer spans until the root span finishes.
+    What is the maximum memory cost per in-flight request?
+
+5.  The JSON collector (in `json_collector.py`) generates over 300 lines of output
+    for a simple example.
+    Write a summary function that takes the collector's completed traces and prints,
+    for each trace: total duration, number of spans, and the name of the slowest span.
+    (Starter: iterate `collector.completed_traces` and use `Trace.duration()`.)
+
+</section>

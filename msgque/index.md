@@ -96,7 +96,7 @@ Real publishers would react to external events (like HTTP requests or database c
 but timed generation works well for simulation.
 
 Notice that we inherit from `Process`, which is asimpy's base class for active components.
-As described in [the appendix](@/asimpy/),
+As described in the appendix,
 the `init()` method is called during construction to set up our state,
 while `run()` creates the coroutine that defines the publisher's behavior.
 

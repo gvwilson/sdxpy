@@ -1,122 +1,593 @@
 <!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
-<html lang="en">
-<head>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Performance Profiling</title>
-<meta content="Software Design by Example" name="description"/>
-<link href="../_static/favicon.ico" rel="icon" type="image/x-icon"/>
-<link href="../_static/pygments.css" rel="stylesheet" type="text/css"/>
-<link href="../_static/chota.css" rel="stylesheet" type="text/css"/>
-<link href="../_static/mccole.css" rel="stylesheet" type="text/css"/>
-<link crossorigin="anonymous" href="https://cdn.jsdelivr.net/npm/katex@0.15.1/dist/katex.min.css" integrity="sha384-R4558gYOUz8mP9YWpZJjofhk+zx0AS11p36HnD2ZKj/6JR5z27gSSULCNHIRReVs" rel="stylesheet"/>
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.11.9">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>15&nbsp; Performance Profiling – Software Design by Example</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+/* CSS for citations */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+}
+.hanging-indent div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}</style>
+
+
+<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../">
+<link href="../persist/index.html" rel="next">
+<link href="../layout/index.html" rel="prev">
+<script src="../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../site_libs/quarto-html/scrollable-regions/scrollable-regions.js" type="module"></script>
+<script src="../site_libs/quarto-html/popper.min.js"></script>
+<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-63b5708e65d6cd79cd7618c58d0c21e7.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../site_libs/bootstrap/bootstrap-01a495efc5497ac6e3f5457e7ed18e65.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "sidebar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "start",
+  "type": "textbox",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-chtml.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../mccole/book.css">
 </head>
-<body>
-<a class="skip-link" href="#main-content">Skip to main content</a>
-<nav aria-label="Site navigation" class="nav">
-<div class="nav-left">
-<a class="brand" href="../">sdxpy</a>
-<div class="dropdown">
-<button aria-controls="nav-lessons" aria-haspopup="true">Lessons</button>
-<ul class="dropdown-content" id="nav-lessons">
-<li><a href="../intro/">Introduction</a></li>
-<li><a href="../oop/">Objects and Classes</a></li>
-<li><a href="../dup/">Finding Duplicate Files</a></li>
-<li><a href="../glob/">Matching Patterns</a></li>
-<li><a href="../parse/">Parsing Text</a></li>
-<li><a href="../test/">Running Tests</a></li>
-<li><a href="../interp/">An Interpreter</a></li>
-<li><a href="../func/">Functions and Closures</a></li>
-<li><a href="../protocols/">Protocols</a></li>
-<li><a href="../archive/">A File Archiver</a></li>
-<li><a href="../check/">An HTML Validator</a></li>
-<li><a href="../template/">A Template Expander</a></li>
-<li><a href="../lint/">A Code Linter</a></li>
-<li><a href="../layout/">Page Layout</a></li>
-<li><a class="active" href="../perf/">Performance Profiling</a></li>
-<li><a href="../persist/">Object Persistence</a></li>
-<li><a href="../binary/">Binary Data</a></li>
-<li><a href="../db/">A Database</a></li>
-<li><a href="../build/">A Build Manager</a></li>
-<li><a href="../pack/">A Package Manager</a></li>
-<li><a href="../ftp/">Transferring Files</a></li>
-<li><a href="../http/">Serving Web Pages</a></li>
-<li><a href="../viewer/">A File Viewer</a></li>
-<li><a href="../undo/">Undo and Redo</a></li>
-<li><a href="../vm/">A Virtual Machine</a></li>
-<li><a href="../debugger/">A Debugger</a></li>
-<li><a href="../finale/">Conclusion</a></li>
-</ul>
+
+<body class="nav-sidebar floating quarto-light"><a id="quarto-skip-link" class="visually-hidden-focusable" href="#quarto-document-content">Skip to main content</a>
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+  <nav class="quarto-secondary-nav" aria-label="Toolbar">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="Breadcrumbs"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../perf/index.html"><span class="chapter-number">15</span>&nbsp; <span class="chapter-title">Performance Profiling</span></a></li></ol></nav>
+        <a class="flex-grow-1" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+      <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto" aria-label="Site">
+    <div class="pt-lg-2 mt-2 text-left sidebar-header">
+    <div class="sidebar-title mb-0 py-0">
+      <a href="../">Software Design by Example</a> 
+        <div class="sidebar-tools-main">
+    <a href="https://github.com/gvwilson/sdxpy" title="Source Code" class="quarto-navigation-tool px-1" aria-label="Source Code"><i class="bi bi-github"></i></a>
 </div>
-<div class="dropdown">
-<button aria-controls="nav-slides" aria-haspopup="true">Slides</button>
-<ul class="dropdown-content" id="nav-slides">
-<li><a href="../intro/slides.html">Introduction</a></li>
-<li><a href="../oop/slides.html">Objects and Classes</a></li>
-<li><a href="../dup/slides.html">Finding Duplicate Files</a></li>
-<li><a href="../glob/slides.html">Matching Patterns</a></li>
-<li><a href="../parse/slides.html">Parsing Text</a></li>
-<li><a href="../test/slides.html">Running Tests</a></li>
-<li><a href="../interp/slides.html">An Interpreter</a></li>
-<li><a href="../func/slides.html">Functions and Closures</a></li>
-<li><a href="../protocols/slides.html">Protocols</a></li>
-<li><a href="../archive/slides.html">A File Archiver</a></li>
-<li><a href="../check/slides.html">An HTML Validator</a></li>
-<li><a href="../template/slides.html">A Template Expander</a></li>
-<li><a href="../lint/slides.html">A Code Linter</a></li>
-<li><a href="../layout/slides.html">Page Layout</a></li>
-<li><a href="../perf/slides.html">Performance Profiling</a></li>
-<li><a href="../persist/slides.html">Object Persistence</a></li>
-<li><a href="../binary/slides.html">Binary Data</a></li>
-<li><a href="../db/slides.html">A Database</a></li>
-<li><a href="../build/slides.html">A Build Manager</a></li>
-<li><a href="../pack/slides.html">A Package Manager</a></li>
-<li><a href="../ftp/slides.html">Transferring Files</a></li>
-<li><a href="../http/slides.html">Serving Web Pages</a></li>
-<li><a href="../viewer/slides.html">A File Viewer</a></li>
-<li><a href="../undo/slides.html">Undo and Redo</a></li>
-<li><a href="../vm/slides.html">A Virtual Machine</a></li>
-<li><a href="../debugger/slides.html">A Debugger</a></li>
-<li><a href="../finale/slides.html">Conclusion</a></li>
-</ul>
-</div>
-<div class="dropdown">
-<button aria-controls="nav-appendices" aria-haspopup="true">Appendices</button>
-<ul class="dropdown-content" id="nav-appendices">
-<li><a href="../license/">License</a></li>
-<li><a href="../conduct/">Code of Conduct</a></li>
-<li><a href="../contributing/">Contributing</a></li>
-<li><a href="../bibliography/">Bibliography</a></li>
-<li><a href="../glossary/">Glossary</a></li>
-<li><a href="../syllabus/">Syllabus</a></li>
-<li><a href="../bonus/">Bonus Material</a></li>
-<li><a href="../observe/">Observers</a></li>
-<li><a href="../docgen/">Generating Documentation</a></li>
-<li><a href="../cache/">A File Cache</a></li>
-<li><a href="../concur/">Concurrency</a></li>
-<li><a href="../mapreduce/">MapReduce</a></li>
-<li><a href="../msgque/">A Publish-Subscribe Message Queue</a></li>
-<li><a href="../worksteal/">A Work-Stealing Scheduler</a></li>
-<li><a href="../tracing/">Distributed Tracing</a></li>
-<li><a href="../crdt/">Conflict-Free Replicated Data Types</a></li>
-<li><a href="../oauth/">OAuth</a></li>
-<li><a href="../distlock/">Distributed Locks</a></li>
-<li><a href="../torrent/">BitTorrent</a></li>
-<li><a href="../eventual/">Eventually Consistent Key-Value Store</a></li>
-<li><a href="../saga/">The Saga Pattern</a></li>
-<li><a href="../tcp/">TCP</a></li>
-<li><a href="../dns/">DNS</a></li>
-<li><a href="../ntp/">NTP</a></li>
-<li><a href="../fs/">A Filesystem</a></li>
-</ul>
-</div>
-<a href="https://github.com/gvwilson/sdxpy">Repository</a>
-</div>
+    </div>
+      </div>
+        <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Search"></div>
+        </div>
+        </div>
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Overview</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../intro/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">1</span>&nbsp; <span class="chapter-title">Introduction</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../oop/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">Objects and Classes</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../dup/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">3</span>&nbsp; <span class="chapter-title">Finding Duplicate Files</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../glob/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">Matching Patterns</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../parse/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">Parsing Text</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../test/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">6</span>&nbsp; <span class="chapter-title">Running Tests</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../interp/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">7</span>&nbsp; <span class="chapter-title">An Interpreter</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../func/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">8</span>&nbsp; <span class="chapter-title">Functions and Closures</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../protocols/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">9</span>&nbsp; <span class="chapter-title">Protocols</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../archive/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">10</span>&nbsp; <span class="chapter-title">A File Archiver</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../check/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">11</span>&nbsp; <span class="chapter-title">An HTML Validator</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../template/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">12</span>&nbsp; <span class="chapter-title">A Template Expander</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../lint/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">13</span>&nbsp; <span class="chapter-title">A Code Linter</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../layout/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">14</span>&nbsp; <span class="chapter-title">Page Layout</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../perf/index.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text"><span class="chapter-number">15</span>&nbsp; <span class="chapter-title">Performance Profiling</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../persist/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">16</span>&nbsp; <span class="chapter-title">Object Persistence</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../binary/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">17</span>&nbsp; <span class="chapter-title">Binary Data</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../db/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">18</span>&nbsp; <span class="chapter-title">A Database</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../build/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">19</span>&nbsp; <span class="chapter-title">A Build Manager</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../pack/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">20</span>&nbsp; <span class="chapter-title">A Package Manager</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../ftp/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">21</span>&nbsp; <span class="chapter-title">Transferring Files</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../http/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">22</span>&nbsp; <span class="chapter-title">Serving Web Pages</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../viewer/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">23</span>&nbsp; <span class="chapter-title">A File Viewer</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../undo/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">24</span>&nbsp; <span class="chapter-title">Undo and Redo</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../vm/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">25</span>&nbsp; <span class="chapter-title">A Virtual Machine</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../debugger/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">26</span>&nbsp; <span class="chapter-title">A Debugger</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../finale/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">27</span>&nbsp; <span class="chapter-title">Conclusion</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <button type="button" class="sidebar-item-text sidebar-item-toggle sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" aria-controls="quarto-sidebar-section-1" aria-expanded="true">
+ <span class="menu-text" id="quarto-sidebar-section-1-label">Appendices</span><i class="bi bi-chevron-right" aria-hidden="true"></i></button>
+      </div>
+      <ul id="quarto-sidebar-section-1" aria-labelledby="quarto-sidebar-section-1-label" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../license/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">A</span>&nbsp; <span class="chapter-title">License</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../conduct/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">B</span>&nbsp; <span class="chapter-title">Code of Conduct</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../contributing/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">C</span>&nbsp; <span class="chapter-title">Contributing</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../bibliography/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">D</span>&nbsp; <span class="chapter-title">Bibliography</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../glossary/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">E</span>&nbsp; <span class="chapter-title">Glossary</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../syllabus/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">F</span>&nbsp; <span class="chapter-title">Syllabus</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../bonus/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">G</span>&nbsp; <span class="chapter-title">Bonus Material</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../observe/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">H</span>&nbsp; <span class="chapter-title">Observers</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../docgen/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">I</span>&nbsp; <span class="chapter-title">Generating Documentation</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../cache/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">J</span>&nbsp; <span class="chapter-title">A File Cache</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../concur/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">K</span>&nbsp; <span class="chapter-title">Concurrency</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../mapreduce/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">L</span>&nbsp; <span class="chapter-title">MapReduce Framework</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../msgque/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">M</span>&nbsp; <span class="chapter-title">A Publish-Subscribe Message Queue</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../worksteal/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">N</span>&nbsp; <span class="chapter-title">A Work-Stealing Scheduler</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../tracing/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">O</span>&nbsp; <span class="chapter-title">Distributed Tracing</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../crdt/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">P</span>&nbsp; <span class="chapter-title">Conflict-Free Replicated Data Types</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../oauth/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">Q</span>&nbsp; <span class="chapter-title">OAuth</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../distlock/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">R</span>&nbsp; <span class="chapter-title">Distributed Lock Manager</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../torrent/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">S</span>&nbsp; <span class="chapter-title">BitTorrent Protocol</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../eventual/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">T</span>&nbsp; <span class="chapter-title">Eventually Consistent Key-Value Store</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../saga/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">U</span>&nbsp; <span class="chapter-title">The Saga Pattern</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../tcp/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">V</span>&nbsp; <span class="chapter-title">Building TCP on UDP</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../dns/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">W</span>&nbsp; <span class="chapter-title">Domain Name System (DNS)</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../ntp/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">X</span>&nbsp; <span class="chapter-title">Network Time Protocol (NTP)</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../fs/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">Y</span>&nbsp; <span class="chapter-title">A Simple Filesystem</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../slides/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">Z</span>&nbsp; <span class="chapter-title">Slides</span></span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+    </ul>
+    </div>
 </nav>
-<main id="main-content">
-<h1>Performance Profiling</h1>
-<div aria-label="Learning objectives" class="syllabus" role="note">
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" aria-labelledby="toc-title" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#perf-options" id="toc-perf-options" class="nav-link active" data-scroll-target="#perf-options"><span class="header-section-number">15.1</span> Options</a></li>
+  <li><a href="#perf-row" id="toc-perf-row" class="nav-link" data-scroll-target="#perf-row"><span class="header-section-number">15.2</span> Row-Wise Storage</a></li>
+  <li><a href="#perf-col" id="toc-perf-col" class="nav-link" data-scroll-target="#perf-col"><span class="header-section-number">15.3</span> Column-Wise Storage</a></li>
+  <li><a href="#perf-performance" id="toc-perf-performance" class="nav-link" data-scroll-target="#perf-performance"><span class="header-section-number">15.4</span> Performance</a></li>
+  <li><a href="#perf-summary" id="toc-perf-summary" class="nav-link" data-scroll-target="#perf-summary"><span class="header-section-number">15.5</span> Summary</a></li>
+  <li><a href="#perf-exercises" id="toc-perf-exercises" class="nav-link" data-scroll-target="#perf-exercises"><span class="header-section-number">15.6</span> Exercises</a>
+  <ul class="collapse">
+  <li><a href="#more-efficient-filtering" id="toc-more-efficient-filtering" class="nav-link" data-scroll-target="#more-efficient-filtering"><span class="header-section-number">15.6.1</span> More Efficient Filtering</a></li>
+  <li><a href="#empty-dataframes" id="toc-empty-dataframes" class="nav-link" data-scroll-target="#empty-dataframes"><span class="header-section-number">15.6.2</span> Empty Dataframes</a></li>
+  <li><a href="#unified-constructors" id="toc-unified-constructors" class="nav-link" data-scroll-target="#unified-constructors"><span class="header-section-number">15.6.3</span> Unified Constructors</a></li>
+  <li><a href="#fixture-functions" id="toc-fixture-functions" class="nav-link" data-scroll-target="#fixture-functions"><span class="header-section-number">15.6.4</span> Fixture Functions</a></li>
+  <li><a href="#using-arrays" id="toc-using-arrays" class="nav-link" data-scroll-target="#using-arrays"><span class="header-section-number">15.6.5</span> Using Arrays</a></li>
+  <li><a href="#crossover" id="toc-crossover" class="nav-link" data-scroll-target="#crossover"><span class="header-section-number">15.6.6</span> Crossover</a></li>
+  <li><a href="#conversion" id="toc-conversion" class="nav-link" data-scroll-target="#conversion"><span class="header-section-number">15.6.7</span> Conversion</a></li>
+  <li><a href="#filtering-by-strings" id="toc-filtering-by-strings" class="nav-link" data-scroll-target="#filtering-by-strings"><span class="header-section-number">15.6.8</span> Filtering by Strings</a></li>
+  <li><a href="#inspection" id="toc-inspection" class="nav-link" data-scroll-target="#inspection"><span class="header-section-number">15.6.9</span> Inspection</a></li>
+  <li><a href="#join-performance" id="toc-join-performance" class="nav-link" data-scroll-target="#join-performance"><span class="header-section-number">15.6.10</span> Join Performance</a></li>
+  <li><a href="#join-optimization" id="toc-join-optimization" class="nav-link" data-scroll-target="#join-optimization"><span class="header-section-number">15.6.11</span> Join Optimization</a></li>
+  </ul></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content" tabindex="-1">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title"><span id="sec-perf" class="quarto-section-identifier"><span class="chapter-number">15</span>&nbsp; <span class="chapter-title">Performance Profiling</span></span></h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<div class="syllabus">
 <ul>
 <li>Create abstract classes to specify interfaces.</li>
 <li>Store two-dimensional data as rows or as columns.</li>
@@ -124,471 +595,268 @@
 <li>Measure performance to evaluate engineering tradeoffs.</li>
 </ul>
 </div>
-<p>One peril of publishing a book online is obsessing over analytics.
-How many people visited the site today?
-Which pages did they look at, and for how long?
-Whether we use <span class="ix-ref" data-ix-key="Excel" id="ix-perf-1">Excel</span>, <span class="ix-ref" data-ix-key="SQL" id="ix-perf-2">SQL</span>, or Python,
-we will almost certainly be analyzing tables
-with named columns and multiple rows.
-Such tables are called <a class="gl-ref" href="../glossary/#dataframe">dataframes</a>,
-and their performance is important when we are working with large data sets.
-This chapter therefore implements dataframes in two ways
-and shows how to compare their performance.</p>
-<h2 id="perf-options">Options</h2>
-<p>To start,
-let's create an <span class="ix-ref" data-ix-key="abstract class" id="ix-perf-3">abstract class</span>
-that defines the methods our dataframe classes will support.
-This class requires <span class="ix-ref" data-ix-key="concrete class" id="ix-perf-4">concrete classes</span>
-to implement the methods shown below:</p>
-<div data-inc="df_base.py"><span aria-label="Source: perf/df_base.py" class="inc-path" role="img" tabindex="0" title="perf/df_base.py">i</span><div class="codehilite"><pre class="" tabindex="0"><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">DataFrame</span><span class="p">:</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">ncol</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Report the number of columns."""</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">nrow</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Report the number of rows."""</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">cols</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Return the set of column names."""</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">eq</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Check equality with another dataframe."""</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">col</span><span class="p">,</span> <span class="n">row</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Get a scalar value."""</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">select</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">names</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Select a named subset of columns."""</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">filter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Select a subset of rows by testing values."""</span>
-</code></pre></div>
+<p>One peril of publishing a book online is obsessing over analytics. How many people visited the site today? Which pages did they look at, and for how long? Whether we use Excel, SQL, or Python, we will almost certainly be analyzing tables with named columns and multiple rows. Such tables are called <a href="../glossary/index.html#dataframe">dataframes</a>, and their performance is important when we are working with large data sets. This chapter therefore implements dataframes in two ways and shows how to compare their performance.</p>
+<section id="perf-options" class="level2" data-number="15.1">
+<h2 data-number="15.1" class="anchored" data-anchor-id="perf-options"><span class="header-section-number">15.1</span> Options</h2>
+<p>To start, let’s create an abstract class that defines the methods our dataframe classes will support. This class requires concrete classes to implement the methods shown below:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> DataFrame:</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> ncol(<span class="va">self</span>):</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Report the number of columns."""</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> nrow(<span class="va">self</span>):</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Report the number of rows."""</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> cols(<span class="va">self</span>):</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Return the set of column names."""</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> eq(<span class="va">self</span>, other):</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Check equality with another dataframe."""</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> get(<span class="va">self</span>, col, row):</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Get a scalar value."""</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> select(<span class="va">self</span>, <span class="op">*</span>names):</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Select a named subset of columns."""</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="bu">filter</span>(<span class="va">self</span>, func):</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Select a subset of rows by testing values."""</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="callout callout-style-simple callout-none no-icon callout-titled" data-markdown="1">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon no-icon"></i>
 </div>
-<div class="callout">
-<h3>Docstrings Are Enough</h3>
-<p>Every method in Python needs a body,
-so many programmers will write <code>pass</code> (Python's "do nothing" statement).
-However,
-a <a class="gl-ref" href="../glossary/#docstring">docstring</a> also counts as a body,
-so if we write those (which we should)
-there's no need to write <code>pass</code>.</p>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">None</span>Docstrings Are Enough
 </div>
-<p>For our first usable implementation,
-we will derive a class <code>DfRow</code> that uses
-<a class="gl-ref" href="../glossary/#row_wise">row-wise</a> storage
-(<a class="fig-ref" href="#f:perf-row-storage">Figure 1</a>).
-The dataframe is stored as a list of dictionaries,
-each of which represents a row.
-All of the dictionaries must have the same keys
-so that the concept of "column" is meaningful,
-and the values associated with a particular key must all have the same type.</p>
-<figure id="f:perf-row-storage">
-<img alt="Row-wise storage" src="row_storage.svg"/>
-<figcaption>Figure 1: Storing a dataframe's data in rows.</figcaption>
+</div>
+<div class="callout-body-container callout-body">
+<p>Every method in Python needs a body, so many programmers will write <code>pass</code> (Python’s “do nothing” statement). However, a <a href="../glossary/index.html#docstring">docstring</a> also counts as a body, so if we write those (which we should) there’s no need to write <code>pass</code>.</p>
+</div>
+</div>
+<p>For our first usable implementation, we will derive a class <code>DfRow</code> that uses <a href="../glossary/index.html#row_wise">row-wise</a> storage (<a href="#fig-perf-row-storage" class="quarto-xref">Figure&nbsp;<span>15.1</span></a>). The dataframe is stored as a list of dictionaries, each of which represents a row. All of the dictionaries must have the same keys so that the concept of “column” is meaningful, and the values associated with a particular key must all have the same type.</p>
+<div id="fig-perf-row-storage" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-perf-row-storage-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="row_storage.svg" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-perf-row-storage-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;15.1: Storing a dataframe’s data in rows.
+</figcaption>
 </figure>
-<p>Our second implementation,
-<code>DfCol</code>,
-will use <a class="gl-ref" href="../glossary/#column_wise">column-wise</a> storage
-(<a class="fig-ref" href="#f:perf-col-storage">Figure 2</a>).
-Each column is stored as a list of values,
-all of which are of the same type.
-The dataframe itself is a dictionary of such lists,
-all of which have the same length
-so that there are no holes in any of the rows.
-How we store the data determines which methods are easy to implement
-and which are hard,
-and which are fast or slow.</p>
-<figure id="f:perf-col-storage">
-<img alt="Column-wise storage" src="col_storage.svg"/>
-<figcaption>Figure 2: Storing a dataframe's data in columns.</figcaption>
+</div>
+<p>Our second implementation, <code>DfCol</code>, will use <a href="../glossary/index.html#column_wise">column-wise</a> storage (<a href="#fig-perf-col-storage" class="quarto-xref">Figure&nbsp;<span>15.2</span></a>). Each column is stored as a list of values, all of which are of the same type. The dataframe itself is a dictionary of such lists, all of which have the same length so that there are no holes in any of the rows. How we store the data determines which methods are easy to implement and which are hard, and which are fast or slow.</p>
+<div id="fig-perf-col-storage" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-perf-col-storage-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="col_storage.svg" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-perf-col-storage-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;15.2: Storing a dataframe’s data in columns.
+</figcaption>
 </figure>
-<h2 id="perf-row">Row-Wise Storage</h2>
-<p>We start by deriving <code>DfRow</code> from <code>DataFrame</code> and writing its constructor,
-which takes a list of dictionaries as an argument,
-checks that they're consistent with each other,
-and saves them:</p>
-<div data-inc="df_row.py" data-mark="top"><span aria-label="Source: perf/df_row.py" class="inc-path" role="img" tabindex="0" title="perf/df_row.py">i</span><div class="codehilite"><pre class="" tabindex="0"><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">df_base</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataFrame</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">util</span><span class="w"> </span><span class="kn">import</span> <span class="n">dict_match</span>
-
-<span class="k">class</span><span class="w"> </span><span class="nc">DfRow</span><span class="p">(</span><span class="n">DataFrame</span><span class="p">):</span>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rows</span><span class="p">):</span>
-        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">rows</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
-        <span class="k">assert</span> <span class="nb">all</span><span class="p">(</span><span class="n">dict_match</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">rows</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">=</span> <span class="n">rows</span>
-</code></pre></div>
 </div>
-<p>The <span class="ix-ref" data-ix-key="helper function" id="ix-perf-5">helper function</span> to check that a bunch of dictionaries
-all have the same keys and the same types of values associated with those keys is:</p>
-<div data-inc="util.py" data-mark="match"><span aria-label="Source: perf/util.py" class="inc-path" role="img" tabindex="0" title="perf/util.py">i</span><div class="codehilite"><pre class="" tabindex="0"><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">dict_match</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">prototype</span><span class="p">):</span>
-    <span class="k">if</span> <span class="nb">set</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">!=</span> <span class="nb">set</span><span class="p">(</span><span class="n">prototype</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
-        <span class="k">return</span> <span class="kc">False</span>
-    <span class="k">return</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">prototype</span><span class="p">[</span><span class="n">k</span><span class="p">])</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">d</span><span class="p">)</span>
-</code></pre></div>
+</section>
+<section id="perf-row" class="level2" data-number="15.2">
+<h2 data-number="15.2" class="anchored" data-anchor-id="perf-row"><span class="header-section-number">15.2</span> Row-Wise Storage</h2>
+<p>We start by deriving <code>DfRow</code> from <code>DataFrame</code> and writing its constructor, which takes a list of dictionaries as an argument, checks that they’re consistent with each other, and saves them:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>The helper function to check that a bunch of dictionaries all have the same keys and the same types of values associated with those keys is:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> dict_match(d, prototype):</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="bu">set</span>(d.keys()) <span class="op">!=</span> <span class="bu">set</span>(prototype.keys()):</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">False</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="bu">all</span>(<span class="bu">isinstance</span>(d[k], prototype[k]) <span class="cf">for</span> k <span class="kw">in</span> d)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Notice that <code>DfRow</code>’s constructor compares all of the rows against the first row. Doing this means that we can’t create an empty dataframe, i.e., one that has no rows. This restriction wasn’t part of our original design: it’s an accident of implementation that might surprise our users. It’s OK not to fix this while we’re prototyping, but we will look at ways to address it in the exercises.</p>
+<p>Four of the methods required by <code>DataFrame</code> are easy to implement on top of row-wise storage, though once again our implementation assumes there is at least one row:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Checking equality is also relatively simple. Two dataframes are the same if they have exactly the same columns and the same values in every column:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Notice that we use <code>other.cols()</code> and <code>other.get()</code> rather than reaching into the other dataframe. We are planning to implement dataframes in several different ways, and we might want to compare instances of those different implementations. Since they might have different internal data structures, the only safe way to do this is to rely on the interface defined in the base class.</p>
+<p>Our final operations are selection, which returns a subset of the original dataframe’s columns, and filtering, which returns a subset of its rows. Since we don’t know how many columns the user might want, we give the <code>select</code> method a single parameter <code>*names</code> that will capture zero or more positional arguments. We then build a new list of dictionaries that only contain the fields with those names (<a href="#fig-perf-row-select" class="quarto-xref">Figure&nbsp;<span>15.3</span></a>):</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="fig-perf-row-select" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-perf-row-select-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="row_select.svg" class="img-fluid figure-img">
 </div>
-<p>Notice that <code>DfRow</code>'s constructor compares all of the rows against the first row.
-Doing this means that we can't create an empty dataframe,
-i.e.,
-one that has no rows.
-This restriction wasn't part of our original design:
-it's an accident of implementation that might surprise our users.
-It's OK not to fix this while we're prototyping,
-but we will look at ways to address it in the exercises.</p>
-<p>Four of the methods required by <code>DataFrame</code> are easy to implement
-on top of row-wise storage,
-though once again our implementation assumes there is at least one row:</p>
-<div data-inc="df_row.py" data-mark="simple"><span aria-label="Source: perf/df_row.py" class="inc-path" role="img" tabindex="0" title="perf/df_row.py">i</span><div class="codehilite"><pre class="" tabindex="0"><span></span><code>    <span class="k">def</span><span class="w"> </span><span class="nf">ncol</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">nrow</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">)</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">cols</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">col</span><span class="p">,</span> <span class="n">row</span><span class="p">):</span>
-        <span class="k">assert</span> <span class="n">col</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="k">assert</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">row</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">[</span><span class="n">row</span><span class="p">][</span><span class="n">col</span><span class="p">]</span>
-</code></pre></div>
-</div>
-<p>Checking equality is also relatively simple.
-Two dataframes are the same if they have exactly the same columns
-and the same values in every column:</p>
-<div data-inc="df_row.py" data-mark="equal"><span aria-label="Source: perf/df_row.py" class="inc-path" role="img" tabindex="0" title="perf/df_row.py">i</span><div class="codehilite"><pre class="" tabindex="0"><span></span><code>    <span class="k">def</span><span class="w"> </span><span class="nf">eq</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
-        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">DataFrame</span><span class="p">)</span>
-        <span class="k">for</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">row</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">):</span>
-            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">row</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">other</span><span class="o">.</span><span class="n">cols</span><span class="p">():</span>
-                    <span class="k">return</span> <span class="kc">False</span>
-                <span class="k">if</span> <span class="n">row</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">!=</span> <span class="n">other</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
-                    <span class="k">return</span> <span class="kc">False</span>
-        <span class="k">return</span> <span class="kc">True</span>
-</code></pre></div>
-</div>
-<p>Notice that we use <code>other.cols()</code> and <code>other.get()</code>
-rather than reaching into the other dataframe.
-We are planning to implement dataframes in several different ways,
-and we might want to compare instances of those different implementations.
-Since they might have different internal data structures,
-the only safe way to do this is
-to rely on the interface defined in the <span class="ix-ref" data-ix-key="base class" id="ix-perf-6">base class</span>.</p>
-<p>Our final operations are selection,
-which returns a subset of the original dataframe's columns,
-and filtering,
-which returns a subset of its rows.
-Since we don't know how many columns the user might want,
-we give the <code>select</code> method a single parameter <code>*names</code>
-that will capture zero or more positional arguments.
-We then build a new list of dictionaries
-that only contain the fields with those names (<a class="fig-ref" href="#f:perf-row-select">Figure 3</a>):</p>
-<div data-inc="df_row.py" data-mark="select"><span aria-label="Source: perf/df_row.py" class="inc-path" role="img" tabindex="0" title="perf/df_row.py">i</span><div class="codehilite"><pre class="" tabindex="0"><span></span><code>    <span class="k">def</span><span class="w"> </span><span class="nf">select</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">names</span><span class="p">):</span>
-        <span class="k">assert</span> <span class="nb">all</span><span class="p">(</span><span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">names</span><span class="p">)</span>
-        <span class="n">rows</span> <span class="o">=</span> <span class="p">[{</span><span class="n">key</span><span class="p">:</span> <span class="n">r</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">names</span><span class="p">}</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">]</span>
-        <span class="k">return</span> <span class="n">DfRow</span><span class="p">(</span><span class="n">rows</span><span class="p">)</span>
-</code></pre></div>
-</div>
-<figure id="f:perf-row-select">
-<img alt="Row-wise select" src="row_select.svg"/>
-<figcaption>Figure 3: Selecting columns from data stored as rows.</figcaption>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-perf-row-select-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;15.3: Selecting columns from data stored as rows.
+</figcaption>
 </figure>
-<p>We now need to decide how to filter rows.
-Typical filtering conditions include,
-"Keep rows where <code>red</code> is non-zero,"
-"Keep rows where <code>red</code> is greater than <code>green</code>,"
-and, "Keep rows where <code>red+green</code> is within 10% of <code>blue</code>."
-Rather than trying to anticipate every possible rule,
-we require users to define functions
-whose parameters match the names of the table's columns.
-For example,
-if we have this test <span class="ix-ref" data-ix-key="fixture" id="ix-perf-7">fixture</span>:</p>
-<div data-inc="test_df_row.py" data-mark="fixture"><span aria-label="Source: perf/test_df_row.py" class="inc-path" role="img" tabindex="0" title="perf/test_df_row.py">i</span><div class="codehilite"><pre class="" tabindex="0"><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">odd_even</span><span class="p">():</span>
-    <span class="k">return</span> <span class="n">DfRow</span><span class="p">([{</span><span class="s2">"a"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">"b"</span><span class="p">:</span> <span class="mi">3</span><span class="p">},</span> <span class="p">{</span><span class="s2">"a"</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">"b"</span><span class="p">:</span> <span class="mi">4</span><span class="p">}])</span>
-</code></pre></div>
 </div>
+<p>We now need to decide how to filter rows. Typical filtering conditions include, “Keep rows where <code>red</code> is non-zero,” “Keep rows where <code>red</code> is greater than <code>green</code>,” and, “Keep rows where <code>red+green</code> is within 10% of <code>blue</code>.” Rather than trying to anticipate every possible rule, we require users to define functions whose parameters match the names of the table’s columns. For example, if we have this test fixture:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> odd_even():</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> DfRow([{<span class="st">"a"</span>: <span class="dv">1</span>, <span class="st">"b"</span>: <span class="dv">3</span>}, {<span class="st">"a"</span>: <span class="dv">2</span>, <span class="st">"b"</span>: <span class="dv">4</span>}])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>then we should be able to write this test:</p>
-<div data-inc="test_df_row.py" data-mark="filter"><span aria-label="Source: perf/test_df_row.py" class="inc-path" role="img" tabindex="0" title="perf/test_df_row.py">i</span><div class="codehilite"><pre class="" tabindex="0"><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">test_filter</span><span class="p">():</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">odd</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
-        <span class="k">return</span> <span class="p">(</span><span class="n">a</span> <span class="o">%</span> <span class="mi">2</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
-
-    <span class="n">df</span> <span class="o">=</span> <span class="n">odd_even</span><span class="p">()</span>
-    <span class="k">assert</span> <span class="n">df</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">odd</span><span class="p">)</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="n">DfRow</span><span class="p">([{</span><span class="s2">"a"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">"b"</span><span class="p">:</span> <span class="mi">3</span><span class="p">}]))</span>
-</code></pre></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_filter():</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> odd(a, b):</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> (a <span class="op">%</span> <span class="dv">2</span>) <span class="op">==</span> <span class="dv">1</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    df <span class="op">=</span> odd_even()</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> df.<span class="bu">filter</span>(odd).eq(DfRow([{<span class="st">"a"</span>: <span class="dv">1</span>, <span class="st">"b"</span>: <span class="dv">3</span>}]))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>We can implement this by using <code>**</code> to spread the row across the function’s parameters (<a href="../oop/index.html" class="quarto-xref"><span>Chapter 2</span></a>). If there are keys in the row that don’t match parameters in the function or vice versa, Python will throw an exception, but that’s probably what we want. Using this, the implementation of <code>DfRow.filter</code> is:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Notice that the dataframe created by <code>filter</code> re-uses the rows of the original dataframe (<a href="#fig-perf-row-filter" class="quarto-xref">Figure&nbsp;<span>15.4</span></a>). This is safe and efficient as long as dataframes are <a href="../glossary/index.html#immutable">immutable</a>, i.e., as long as their contents are never changed in place. Most dataframe libraries work this way: while recycling memory can save a little time, it usually also makes bugs much harder to track down.</p>
+<div id="fig-perf-row-filter" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-perf-row-filter-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="row_filter.svg" class="img-fluid figure-img">
 </div>
-<p>We can implement this  by using <code>**</code> to <span class="ix-ref" data-ix-key="spread" id="ix-perf-8">spread</span> the row
-across the function's parameters (<a class="xref" href="../oop/">Chapter 2</a>).
-If there are keys in the row that don't match parameters in the function
-or vice versa,
-Python will throw an exception,
-but that's probably what we want.
-Using this,
-the implementation of <code>DfRow.filter</code> is:</p>
-<div data-inc="df_row.py" data-mark="filter"><span aria-label="Source: perf/df_row.py" class="inc-path" role="img" tabindex="0" title="perf/df_row.py">i</span><div class="codehilite"><pre class="" tabindex="0"><span></span><code>    <span class="k">def</span><span class="w"> </span><span class="nf">filter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">):</span>
-        <span class="n">result</span> <span class="o">=</span> <span class="p">[</span><span class="n">r</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="k">if</span> <span class="n">func</span><span class="p">(</span><span class="o">**</span><span class="n">r</span><span class="p">)]</span>
-        <span class="k">return</span> <span class="n">DfRow</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
-</code></pre></div>
-</div>
-<p>Notice that the dataframe created by <code>filter</code>
-re-uses the rows of the original dataframe (<a class="fig-ref" href="#f:perf-row-filter">Figure 4</a>).
-This is safe and efficient as long as dataframes are <a class="gl-ref" href="../glossary/#immutable">immutable</a>,
-i.e.,
-as long as their contents are never changed in place.
-Most dataframe libraries work this way:
-while recycling memory can save a little time,
-it usually also makes bugs much harder to track down.</p>
-<figure id="f:perf-row-filter">
-<img alt="Row-wise filtering" src="row_filter.svg"/>
-<figcaption>Figure 4: Filtering data stored as rows.</figcaption>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-perf-row-filter-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;15.4: Filtering data stored as rows.
+</figcaption>
 </figure>
-<h2 id="perf-col">Column-Wise Storage</h2>
-<p>Having done all of this thinking,
-our column-wise dataframe class is somewhat easier to write.
-We start as before with its constructor:</p>
-<div data-inc="df_col.py" data-mark="top"><span aria-label="Source: perf/df_col.py" class="inc-path" role="img" tabindex="0" title="perf/df_col.py">i</span><div class="codehilite"><pre class="" tabindex="0"><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">df_base</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataFrame</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">util</span><span class="w"> </span><span class="kn">import</span> <span class="n">all_eq</span>
-
-<span class="k">class</span><span class="w"> </span><span class="nc">DfCol</span><span class="p">(</span><span class="n">DataFrame</span><span class="p">):</span>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
-        <span class="k">assert</span> <span class="n">all_eq</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="n">k</span><span class="p">])</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
-            <span class="k">assert</span> <span class="n">all_eq</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">=</span> <span class="n">kwargs</span>
-</code></pre></div>
 </div>
-<p>and use a helper function <code>all_eq</code> to check that
-all of the values in any column have the same types:</p>
-<div data-inc="util.py" data-mark="eq"><span aria-label="Source: perf/util.py" class="inc-path" role="img" tabindex="0" title="perf/util.py">i</span><div class="codehilite"><pre class="" tabindex="0"><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">all_eq</span><span class="p">(</span><span class="o">*</span><span class="n">values</span><span class="p">):</span>
-    <span class="k">return</span> <span class="p">(</span><span class="ow">not</span> <span class="n">values</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">all</span><span class="p">(</span><span class="n">v</span> <span class="o">==</span> <span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">values</span><span class="p">)</span>
-</code></pre></div>
+</section>
+<section id="perf-col" class="level2" data-number="15.3">
+<h2 data-number="15.3" class="anchored" data-anchor-id="perf-col"><span class="header-section-number">15.3</span> Column-Wise Storage</h2>
+<p>Having done all of this thinking, our column-wise dataframe class is somewhat easier to write. We start as before with its constructor:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>and use a helper function <code>all_eq</code> to check that all of the values in any column have the same types:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> all_eq(<span class="op">*</span>values):</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> (<span class="kw">not</span> values) <span class="kw">or</span> <span class="bu">all</span>(v <span class="op">==</span> values[<span class="dv">0</span>] <span class="cf">for</span> v <span class="kw">in</span> values)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="callout callout-style-simple callout-none no-icon callout-titled" data-markdown="1">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon no-icon"></i>
 </div>
-<div class="callout">
-<h3>One Allowable Difference</h3>
-<p>Notice that <code>DfCol</code>'s constructor does <em>not</em> have the same <span class="ix-ref" data-ix-key="signature" id="ix-perf-9">signature</span>
-as <code>DfRow</code>'s.
-At some point in our code we have to decide which of the two classes to construct.
-If we design our code well,
-that decision will be made in exactly one place
-and everything else will rely solely on the common interface defined by <code>DataFrame</code>.
-But since we have to type a different class name at the point of construction,
-it's OK for the constructors to be different.</p>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">None</span>One Allowable Difference
 </div>
-<p>The four methods that were simple to write for <code>DfRow</code>
-are equally simple to write for <code>DfCol</code>,
-though once again our prototype implementation accidentally disallows empty dataframes:</p>
-<div data-inc="df_col.py" data-mark="simple"><span aria-label="Source: perf/df_col.py" class="inc-path" role="img" tabindex="0" title="perf/df_col.py">i</span><div class="codehilite"><pre class="" tabindex="0"><span></span><code>    <span class="k">def</span><span class="w"> </span><span class="nf">ncol</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">)</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">nrow</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">n</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">keys</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">[</span><span class="n">n</span><span class="p">])</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">cols</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">col</span><span class="p">,</span> <span class="n">row</span><span class="p">):</span>
-        <span class="k">assert</span> <span class="n">col</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span>
-        <span class="k">assert</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">row</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">[</span><span class="n">col</span><span class="p">])</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">[</span><span class="n">col</span><span class="p">][</span><span class="n">row</span><span class="p">]</span>
-</code></pre></div>
 </div>
-<p>As with <code>DfRow</code>,
-the method that checks equality relies on the internal details of its own class
-but uses the interface defined by <code>DataFrame</code> to access the other object:</p>
-<div data-inc="df_col.py" data-mark="equal"><span aria-label="Source: perf/df_col.py" class="inc-path" role="img" tabindex="0" title="perf/df_col.py">i</span><div class="codehilite"><pre class="" tabindex="0"><span></span><code>    <span class="k">def</span><span class="w"> </span><span class="nf">eq</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
-        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">DataFrame</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">n</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">other</span><span class="o">.</span><span class="n">cols</span><span class="p">():</span>
-                <span class="k">return</span> <span class="kc">False</span>
-            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">[</span><span class="n">n</span><span class="p">])):</span>
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span> <span class="o">!=</span> <span class="n">other</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
-                    <span class="k">return</span> <span class="kc">False</span>
-        <span class="k">return</span> <span class="kc">True</span>
-</code></pre></div>
+<div class="callout-body-container callout-body">
+<p>Notice that <code>DfCol</code>’s constructor does <em>not</em> have the same signature as <code>DfRow</code>’s. At some point in our code we have to decide which of the two classes to construct. If we design our code well, that decision will be made in exactly one place and everything else will rely solely on the common interface defined by <code>DataFrame</code>. But since we have to type a different class name at the point of construction, it’s OK for the constructors to be different.</p>
 </div>
-<p>To select columns,
-we pick the ones named by the caller
-and use them to create a new dataframe.
-Again,
-this recycles the existing storage
-(<a class="fig-ref" href="#f:perf-col-select">Figure 5</a>):</p>
-<div data-inc="df_col.py" data-mark="select"><span aria-label="Source: perf/df_col.py" class="inc-path" role="img" tabindex="0" title="perf/df_col.py">i</span><div class="codehilite"><pre class="" tabindex="0"><span></span><code>    <span class="k">def</span><span class="w"> </span><span class="nf">select</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">names</span><span class="p">):</span>
-        <span class="k">assert</span> <span class="nb">all</span><span class="p">(</span><span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">names</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">DfCol</span><span class="p">(</span><span class="o">**</span><span class="p">{</span><span class="n">n</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">names</span><span class="p">})</span>
-</code></pre></div>
 </div>
-<figure id="f:perf-col-select">
-<img alt="Column-wise selection" src="col_select.svg"/>
-<figcaption>Figure 5: Column-wise selection.</figcaption>
+<p>The four methods that were simple to write for <code>DfRow</code> are equally simple to write for <code>DfCol</code>, though once again our prototype implementation accidentally disallows empty dataframes:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>As with <code>DfRow</code>, the method that checks equality relies on the internal details of its own class but uses the interface defined by <code>DataFrame</code> to access the other object:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>To select columns, we pick the ones named by the caller and use them to create a new dataframe. Again, this recycles the existing storage (<a href="#fig-perf-col-select" class="quarto-xref">Figure&nbsp;<span>15.5</span></a>):</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="fig-perf-col-select" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-perf-col-select-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="col_select.svg" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-perf-col-select-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;15.5: Column-wise selection.
+</figcaption>
 </figure>
-<p>Finally,
-we need to filter the rows of a column-wise dataframe.
-Doing this is complex:
-since values are stored in columns,
-we have to extract the ones belonging to each row
-to pass them into the user-defined filter function
-(<a class="fig-ref" href="#f:perf-col-filter">Figure 6</a>).
-And if that wasn't enough,
-we want to do this solely for the columns that the user's function needs.</p>
-<figure id="f:perf-col-filter">
-<img alt="Packing column values into rows" src="col_filter.svg"/>
-<figcaption>Figure 6: Extracting values from columns to create temporary rows.</figcaption>
+</div>
+<p>Finally, we need to filter the rows of a column-wise dataframe. Doing this is complex: since values are stored in columns, we have to extract the ones belonging to each row to pass them into the user-defined filter function (<a href="#fig-perf-col-filter" class="quarto-xref">Figure&nbsp;<span>15.6</span></a>). And if that wasn’t enough, we want to do this solely for the columns that the user’s function needs.</p>
+<div id="fig-perf-col-filter" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-perf-col-filter-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="col_filter.svg" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-perf-col-filter-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;15.6: Extracting values from columns to create temporary rows.
+</figcaption>
 </figure>
-<p>For now,
-we will solve this problem
-by requiring the user-defined filter function to define <span class="ix-ref" data-ix-key="parameter" id="ix-perf-10">parameters</span>
-to match all of the dataframe's columns
-regardless of whether they are used for filtering or not.
-We will then build a temporary dictionary with all the values in a "row"
-(i.e.,
-the corresponding values across all columns)
-and use <code>**</code> to spread it across the filter function.
-<a class="xref" href="../bonus/">Appendix G</a> looks at a safer, but more complex, way to do this.</p>
-<div data-inc="df_col.py" data-mark="filter"><span aria-label="Source: perf/df_col.py" class="inc-path" role="img" tabindex="0" title="perf/df_col.py">i</span><div class="codehilite"><pre class="" tabindex="0"><span></span><code>    <span class="k">def</span><span class="w"> </span><span class="nf">filter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">):</span>
-        <span class="n">result</span> <span class="o">=</span> <span class="p">{</span><span class="n">n</span><span class="p">:</span> <span class="p">[]</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">}</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nrow</span><span class="p">()):</span>
-            <span class="n">args</span> <span class="o">=</span> <span class="p">{</span><span class="n">n</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">}</span>
-            <span class="k">if</span> <span class="n">func</span><span class="p">(</span><span class="o">**</span><span class="n">args</span><span class="p">):</span>
-                <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">:</span>
-                    <span class="n">result</span><span class="p">[</span><span class="n">n</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="n">i</span><span class="p">])</span>
-        <span class="k">return</span> <span class="n">DfCol</span><span class="p">(</span><span class="o">**</span><span class="n">result</span><span class="p">)</span>
-</code></pre></div>
 </div>
-<p>Time to write some tests.
-This one checks that we can construct a dataframe with some values:</p>
-<div data-inc="test_df_col.py" data-mark="test_two_pairs"><span aria-label="Source: perf/test_df_col.py" class="inc-path" role="img" tabindex="0" title="perf/test_df_col.py">i</span><div class="codehilite"><pre class="" tabindex="0"><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">test_construct_with_two_pairs</span><span class="p">():</span>
-    <span class="n">df</span> <span class="o">=</span> <span class="n">DfCol</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">b</span><span class="o">=</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">])</span>
-    <span class="k">assert</span> <span class="n">df</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"a"</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
-    <span class="k">assert</span> <span class="n">df</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"a"</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span>
-    <span class="k">assert</span> <span class="n">df</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"b"</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span>
-    <span class="k">assert</span> <span class="n">df</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"b"</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">==</span> <span class="mi">4</span>
-</code></pre></div>
-</div>
+<p>For now, we will solve this problem by requiring the user-defined filter function to define parameters to match all of the dataframe’s columns regardless of whether they are used for filtering or not. We will then build a temporary dictionary with all the values in a “row” (i.e., the corresponding values across all columns) and use <code>**</code> to spread it across the filter function. <a href="../bonus/index.html" class="quarto-xref"><span>Appendix G</span></a> looks at a safer, but more complex, way to do this.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Time to write some tests. This one checks that we can construct a dataframe with some values:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_construct_with_two_pairs():</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>    df <span class="op">=</span> DfCol(a<span class="op">=</span>[<span class="dv">1</span>, <span class="dv">2</span>], b<span class="op">=</span>[<span class="dv">3</span>, <span class="dv">4</span>])</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> df.get(<span class="st">"a"</span>, <span class="dv">0</span>) <span class="op">==</span> <span class="dv">1</span></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> df.get(<span class="st">"a"</span>, <span class="dv">1</span>) <span class="op">==</span> <span class="dv">2</span></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> df.get(<span class="st">"b"</span>, <span class="dv">0</span>) <span class="op">==</span> <span class="dv">3</span></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> df.get(<span class="st">"b"</span>, <span class="dv">1</span>) <span class="op">==</span> <span class="dv">4</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>while this one checks that <code>filter</code> works correctly:</p>
-<div data-inc="test_df_col.py" data-mark="test_filter"><span aria-label="Source: perf/test_df_col.py" class="inc-path" role="img" tabindex="0" title="perf/test_df_col.py">i</span><div class="codehilite"><pre class="" tabindex="0"><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">test_filter</span><span class="p">():</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">odd</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
-        <span class="k">return</span> <span class="p">(</span><span class="n">a</span> <span class="o">%</span> <span class="mi">2</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
-
-    <span class="n">df</span> <span class="o">=</span> <span class="n">DfCol</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">b</span><span class="o">=</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">])</span>
-    <span class="k">assert</span> <span class="n">df</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">odd</span><span class="p">)</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="n">DfCol</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">b</span><span class="o">=</span><span class="p">[</span><span class="mi">3</span><span class="p">]))</span>
-</code></pre></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_filter():</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> odd(a, b):</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> (a <span class="op">%</span> <span class="dv">2</span>) <span class="op">==</span> <span class="dv">1</span></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>    df <span class="op">=</span> DfCol(a<span class="op">=</span>[<span class="dv">1</span>, <span class="dv">2</span>], b<span class="op">=</span>[<span class="dv">3</span>, <span class="dv">4</span>])</span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> df.<span class="bu">filter</span>(odd).eq(DfCol(a<span class="op">=</span>[<span class="dv">1</span>], b<span class="op">=</span>[<span class="dv">3</span>]))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="perf-performance" class="level2" data-number="15.4">
+<h2 data-number="15.4" class="anchored" data-anchor-id="perf-performance"><span class="header-section-number">15.4</span> Performance</h2>
+<p>Our two implementations of dataframes have identical interfaces, so how can we choose which to use?</p>
+<div class="callout callout-style-simple callout-none no-icon callout-titled" data-markdown="1">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon no-icon"></i>
 </div>
-<h2 id="perf-performance">Performance</h2>
-<p>Our two implementations of dataframes have identical interfaces,
-so how can we choose which to use?</p>
-<div class="callout">
-<h3>Transactions vs. Analysis</h3>
-<p>Regardless of data volumes,
-different storage schemes are better (or worse) for different kinds of work.
-<a class="gl-ref" href="../glossary/#oltp">Online transaction processing</a> (OLTP)
-refers to adding or querying individual records,
-such as online sales.
-<a class="gl-ref" href="../glossary/#olap">Online analytical processing</a> (OLAP),
-on the other hand,
-processes selected columns of a table in bulk to do things like find averages over time.
-Row-wise storage is usually best for OLTP,
-but column-wise storage is better suited for OLAP.
-If data volumes are large,
-<a class="gl-ref" href="../glossary/#data_engineer">data engineers</a> will sometimes run two databases in parallel,
-using <a class="gl-ref" href="../glossary/#batch_processing">batch processing</a> jobs
-to copy new or updated records from the OLTP databases over to the OLAP database.</p>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">None</span>Transactions vs.&nbsp;Analysis
 </div>
-<p>To compare the speed of these classes,
-let's write a short program to create dataframes of each kind
-and time how long it takes to select their columns and filter their rows.
-To keep things simple,
-we will create dataframes whose columns are called <code>label_1</code>, <code>label_2</code>, and so on,
-and whose values are all integers in the range 0–9.
-A thorough set of <a class="gl-ref" href="../glossary/#benchmark">benchmarks</a>
-would create columns with other datatypes as well,
-but this example is enough to illustrate the technique.</p>
-<div data-inc="timing.py" data-mark="create"><span aria-label="Source: perf/timing.py" class="inc-path" role="img" tabindex="0" title="perf/timing.py">i</span><div class="codehilite"><pre class="" tabindex="0"><span></span><code><span class="n">RANGE</span> <span class="o">=</span> <span class="mi">10</span>
-
-<span class="k">def</span><span class="w"> </span><span class="nf">make_col</span><span class="p">(</span><span class="n">nrow</span><span class="p">,</span> <span class="n">ncol</span><span class="p">):</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">_col</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">start</span><span class="p">):</span>
-        <span class="k">return</span> <span class="p">[((</span><span class="n">start</span> <span class="o">+</span> <span class="n">i</span><span class="p">)</span> <span class="o">%</span> <span class="n">RANGE</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">)]</span>
-    <span class="n">fill</span> <span class="o">=</span> <span class="p">{</span><span class="sa">f</span><span class="s2">"label_</span><span class="si">{</span><span class="n">c</span><span class="si">}</span><span class="s2">"</span><span class="p">:</span> <span class="n">_col</span><span class="p">(</span><span class="n">nrow</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ncol</span><span class="p">)}</span>
-    <span class="k">return</span> <span class="n">DfCol</span><span class="p">(</span><span class="o">**</span><span class="n">fill</span><span class="p">)</span>
-
-<span class="k">def</span><span class="w"> </span><span class="nf">make_row</span><span class="p">(</span><span class="n">nrow</span><span class="p">,</span> <span class="n">ncol</span><span class="p">):</span>
-    <span class="n">labels</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"label_</span><span class="si">{</span><span class="n">c</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ncol</span><span class="p">)]</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">_row</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>
-        <span class="k">return</span> <span class="p">{</span>
-            <span class="n">c</span><span class="p">:</span> <span class="p">((</span><span class="n">r</span> <span class="o">+</span> <span class="n">i</span><span class="p">)</span> <span class="o">%</span> <span class="n">RANGE</span><span class="p">)</span> <span class="k">for</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">labels</span><span class="p">)</span>
-        <span class="p">}</span>
-    <span class="n">fill</span> <span class="o">=</span> <span class="p">[</span><span class="n">_row</span><span class="p">(</span><span class="n">r</span><span class="p">)</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nrow</span><span class="p">)]</span>
-    <span class="k">return</span> <span class="n">DfRow</span><span class="p">(</span><span class="n">fill</span><span class="p">)</span>
-</code></pre></div>
 </div>
-<p>To time <code>filter</code>,
-we arbitrarily decide to keep rows with an even value in the first column:</p>
-<div data-inc="timing.py" data-mark="filter"><span aria-label="Source: perf/timing.py" class="inc-path" role="img" tabindex="0" title="perf/timing.py">i</span><div class="codehilite"><pre class="" tabindex="0"><span></span><code><span class="n">FILTER</span> <span class="o">=</span> <span class="mi">2</span>
-
-<span class="k">def</span><span class="w"> </span><span class="nf">time_filter</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">f</span><span class="p">(</span><span class="n">label_0</span><span class="p">,</span> <span class="o">**</span><span class="n">args</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">label_0</span> <span class="o">%</span> <span class="n">FILTER</span> <span class="o">==</span> <span class="mi">1</span>
-    <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-    <span class="n">df</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start</span>
-</code></pre></div>
+<div class="callout-body-container callout-body">
+<p>Regardless of data volumes, different storage schemes are better (or worse) for different kinds of work. <a href="../glossary/index.html#oltp">Online transaction processing</a> (OLTP) refers to adding or querying individual records, such as online sales. <a href="../glossary/index.html#olap">Online analytical processing</a> (OLAP), on the other hand, processes selected columns of a table in bulk to do things like find averages over time. Row-wise storage is usually best for OLTP, but column-wise storage is better suited for OLAP. If data volumes are large, <a href="../glossary/index.html#data_engineer">data engineers</a> will sometimes run two databases in parallel, using <a href="../glossary/index.html#batch_processing">batch processing</a> jobs to copy new or updated records from the OLTP databases over to the OLAP database.</p>
 </div>
-<p>Since <code>DfCol</code> and <code>DfRow</code> derive from the same base class,
-<code>time_filter</code> doesn't care which we give it.
-Again,
-if we were doing this for real,
-we would look at actual programs
-to see what fraction of rows filtering usually kept and simulate that.</p>
-<p>To time <code>select</code>,
-we arbitrarily decide to keep one-third of the columns:</p>
-<div data-inc="timing.py" data-mark="select"><span aria-label="Source: perf/timing.py" class="inc-path" role="img" tabindex="0" title="perf/timing.py">i</span><div class="codehilite"><pre class="" tabindex="0"><span></span><code><span class="n">SELECT</span> <span class="o">=</span> <span class="mi">3</span>
-
-<span class="k">def</span><span class="w"> </span><span class="nf">time_select</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
-    <span class="n">indices</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">ncol</span><span class="p">())</span> <span class="k">if</span> <span class="p">((</span><span class="n">i</span> <span class="o">%</span> <span class="n">SELECT</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)]</span>
-    <span class="n">labels</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"label_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">indices</span><span class="p">]</span>
-    <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-    <span class="n">df</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="o">*</span><span class="n">labels</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start</span>
-</code></pre></div>
 </div>
-<p>Finally,
-we write a function that takes a list of strings like <code>3x3</code> or <code>100x20</code>,
-creates dataframes of each size,
-times operations,
-and reports the results.
-We call this function <code>sweep</code> because
-executing code multiple times with different parameters to measure performance
-is called <a class="gl-ref" href="../glossary/#parameter_sweeping">parameter sweeping</a>:</p>
-<div data-inc="timing.py" data-mark="sweep"><span aria-label="Source: perf/timing.py" class="inc-path" role="img" tabindex="0" title="perf/timing.py">i</span><div class="codehilite"><pre class="" tabindex="0"><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">sweep</span><span class="p">(</span><span class="n">sizes</span><span class="p">):</span>
-    <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">for</span> <span class="p">(</span><span class="n">nrow</span><span class="p">,</span> <span class="n">ncol</span><span class="p">)</span> <span class="ow">in</span> <span class="n">sizes</span><span class="p">:</span>
-        <span class="n">df_col</span> <span class="o">=</span> <span class="n">make_col</span><span class="p">(</span><span class="n">nrow</span><span class="p">,</span> <span class="n">ncol</span><span class="p">)</span>
-        <span class="n">df_row</span> <span class="o">=</span> <span class="n">make_row</span><span class="p">(</span><span class="n">nrow</span><span class="p">,</span> <span class="n">ncol</span><span class="p">)</span>
-        <span class="n">times</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="n">time_filter</span><span class="p">(</span><span class="n">df_col</span><span class="p">),</span>
-            <span class="n">time_select</span><span class="p">(</span><span class="n">df_col</span><span class="p">),</span>
-            <span class="n">time_filter</span><span class="p">(</span><span class="n">df_row</span><span class="p">),</span>
-            <span class="n">time_select</span><span class="p">(</span><span class="n">df_row</span><span class="p">),</span>
-        <span class="p">]</span>
-        <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">nrow</span><span class="p">,</span> <span class="n">ncol</span><span class="p">,</span> <span class="o">*</span><span class="n">times</span><span class="p">])</span>
-    <span class="k">return</span> <span class="n">result</span>
-</code></pre></div>
-</div>
-<p>The results are shown in <a class="tbl-ref" href="#t:perf-timing">Table 1</a> and <a class="fig-ref" href="#f:perf-analysis">Figure 7</a>.
-For a $ 1000 \times 1000 $ dataframe,
-selection is over 250 times faster with column-wise storage than with row-wise,
-while filtering is 1.8 times slower.</p>
-<div data-caption="Dataframe timings." id="t:perf-timing">
-<table><caption>Table 1: Dataframe timings.</caption>
+<p>To compare the speed of these classes, let’s write a short program to create dataframes of each kind and time how long it takes to select their columns and filter their rows. To keep things simple, we will create dataframes whose columns are called <code>label_1</code>, <code>label_2</code>, and so on, and whose values are all integers in the range 0–9. A thorough set of <a href="../glossary/index.html#benchmark">benchmarks</a> would create columns with other datatypes as well, but this example is enough to illustrate the technique.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>RANGE <span class="op">=</span> <span class="dv">10</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> make_col(nrow, ncol):</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _col(n, start):</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> [((start <span class="op">+</span> i) <span class="op">%</span> RANGE) <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(n)]</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>    fill <span class="op">=</span> {<span class="ss">f"label_</span><span class="sc">{</span>c<span class="sc">}</span><span class="ss">"</span>: _col(nrow, c) <span class="cf">for</span> c <span class="kw">in</span> <span class="bu">range</span>(ncol)}</span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> DfCol(<span class="op">**</span>fill)</span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> make_row(nrow, ncol):</span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>    labels <span class="op">=</span> [<span class="ss">f"label_</span><span class="sc">{</span>c<span class="sc">}</span><span class="ss">"</span> <span class="cf">for</span> c <span class="kw">in</span> <span class="bu">range</span>(ncol)]</span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _row(r):</span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> {</span>
+<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a>            c: ((r <span class="op">+</span> i) <span class="op">%</span> RANGE) <span class="cf">for</span> (i, c) <span class="kw">in</span> <span class="bu">enumerate</span>(labels)</span>
+<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a>        }</span>
+<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a>    fill <span class="op">=</span> [_row(r) <span class="cf">for</span> r <span class="kw">in</span> <span class="bu">range</span>(nrow)]</span>
+<span id="cb18-16"><a href="#cb18-16" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> DfRow(fill)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>To time <code>filter</code>, we arbitrarily decide to keep rows with an even value in the first column:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>FILTER <span class="op">=</span> <span class="dv">2</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> time_filter(df):</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> f(label_0, <span class="op">**</span>args):</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> label_0 <span class="op">%</span> FILTER <span class="op">==</span> <span class="dv">1</span></span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>    start <span class="op">=</span> time.time()</span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>    df.<span class="bu">filter</span>(f)</span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> time.time() <span class="op">-</span> start</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Since <code>DfCol</code> and <code>DfRow</code> derive from the same base class, <code>time_filter</code> doesn’t care which we give it. Again, if we were doing this for real, we would look at actual programs to see what fraction of rows filtering usually kept and simulate that.</p>
+<p>To time <code>select</code>, we arbitrarily decide to keep one-third of the columns:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>SELECT <span class="op">=</span> <span class="dv">3</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> time_select(df):</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>    indices <span class="op">=</span> [i <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(df.ncol()) <span class="cf">if</span> ((i <span class="op">%</span> SELECT) <span class="op">==</span> <span class="dv">0</span>)]</span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>    labels <span class="op">=</span> [<span class="ss">f"label_</span><span class="sc">{</span>i<span class="sc">}</span><span class="ss">"</span> <span class="cf">for</span> i <span class="kw">in</span> indices]</span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>    start <span class="op">=</span> time.time()</span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>    df.select(<span class="op">*</span>labels)</span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> time.time() <span class="op">-</span> start</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Finally, we write a function that takes a list of strings like <code>3x3</code> or <code>100x20</code>, creates dataframes of each size, times operations, and reports the results. We call this function <code>sweep</code> because executing code multiple times with different parameters to measure performance is called <a href="../glossary/index.html#parameter_sweeping">parameter sweeping</a>:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> sweep(sizes):</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>    result <span class="op">=</span> []</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> (nrow, ncol) <span class="kw">in</span> sizes:</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>        df_col <span class="op">=</span> make_col(nrow, ncol)</span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>        df_row <span class="op">=</span> make_row(nrow, ncol)</span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>        times <span class="op">=</span> [</span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>            time_filter(df_col),</span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>            time_select(df_col),</span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>            time_filter(df_row),</span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a>            time_select(df_row),</span>
+<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a>        ]</span>
+<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a>        result.append([nrow, ncol, <span class="op">*</span>times])</span>
+<span id="cb21-13"><a href="#cb21-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> result</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>The results are shown in <a href="#tbl-perf-timing" class="quarto-xref">Table&nbsp;<span>15.1</span></a> and <a href="#fig-perf-analysis" class="quarto-xref">Figure&nbsp;<span>15.7</span></a>. For a <span class="math inline">\(1000 \times 1000\)</span> dataframe, selection is over 250 times faster with column-wise storage than with row-wise, while filtering is 1.8 times slower.</p>
+<div id="tbl-perf-timing" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-perf-timing-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;15.1: Dataframe timings.
+</figcaption>
+<div aria-describedby="tbl-perf-timing-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<table class="caption-top table">
 <thead>
-<tr>
-<th scope="col">nrow</th>
-<th scope="col">ncol</th>
-<th scope="col">filter col</th>
-<th scope="col">select col</th>
-<th scope="col">filter row</th>
-<th scope="col">select row</th>
+<tr class="header">
+<th>nrow</th>
+<th>ncol</th>
+<th>filter col</th>
+<th>select col</th>
+<th>filter row</th>
+<th>select row</th>
 </tr>
 </thead>
 <tbody>
-<tr>
+<tr class="odd">
 <td>10</td>
 <td>10</td>
 <td>8.87e-05</td>
@@ -596,7 +864,7 @@ while filtering is 1.8 times slower.</p>
 <td>4.41e-05</td>
 <td>2.50e-05</td>
 </tr>
-<tr>
+<tr class="even">
 <td>100</td>
 <td>100</td>
 <td>0.00275</td>
@@ -604,7 +872,7 @@ while filtering is 1.8 times slower.</p>
 <td>0.00140</td>
 <td>8.76e</td>
 </tr>
-<tr>
+<tr class="odd">
 <td>1000</td>
 <td>1000</td>
 <td>0.146</td>
@@ -612,7 +880,7 @@ while filtering is 1.8 times slower.</p>
 <td>0.0787</td>
 <td>0.0508</td>
 </tr>
-<tr>
+<tr class="even">
 <td>10000</td>
 <td>10000</td>
 <td>19.0</td>
@@ -623,19 +891,22 @@ while filtering is 1.8 times slower.</p>
 </tbody>
 </table>
 </div>
-<figure id="f:perf-analysis">
-<img alt="Performance curves" src="analysis.svg"/>
-<figcaption>Figure 7: Relative performance of row-wise and column-wise storage.</figcaption>
 </figure>
-<p>We can get much more insight by <a class="gl-ref" href="../glossary/#profiling">profiling</a> our code
-using Python <a href="https://docs.python.org/3/library/profile.html"><code>cProfile</code></a> module,
-which collects detailed information on how long each function runs
-and reports the result:</p>
-<div data-inc="profile.sh"><span aria-label="Source: perf/profile.sh" class="inc-path" role="img" tabindex="0" title="perf/profile.sh">i</span><div class="codehilite"><pre class="" tabindex="0"><span></span><code>python<span class="w"> </span>-m<span class="w"> </span>cProfile<span class="w"> </span>--sort<span class="o">=</span>tottime<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>timing.py<span class="w"> </span>--silent<span class="w"> </span>10x10<span class="w"> </span>50x50<span class="w"> </span>100x100<span class="w"> </span>500x500<span class="w"> </span>1000x1000
-</code></pre></div>
 </div>
-<div data-head="10" data-inc="profile.out"><span aria-label="Source: perf/profile.out" class="inc-path" role="img" tabindex="0" title="perf/profile.out">i</span><div class="codehilite"><pre class="" tabindex="0"><span></span><code>         3007281 function calls (3003108 primitive calls) in 2.120 seconds
+<div id="fig-perf-analysis" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-perf-analysis-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="analysis.svg" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-perf-analysis-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;15.7: Relative performance of row-wise and column-wise storage.
+</figcaption>
+</figure>
+</div>
+<p>We can get much more insight by <a href="../glossary/index.html#profiling">profiling</a> our code using Python <a href="https://docs.python.org/3/library/profile.html"><code>cProfile</code></a> module, which collects detailed information on how long each function runs and reports the result:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb22"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> <span class="at">-m</span> cProfile <span class="at">--sort</span><span class="op">=</span>tottime <span class="dt">\</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>  timing.py <span class="at">--silent</span> 10x10 50x50 100x100 500x500 1000x1000</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre><code>         3007281 function calls (3003108 primitive calls) in 2.120 seconds
 
    Ordered by: internal time
 
@@ -644,277 +915,712 @@ and reports the result:</p>
         5    0.271    0.054    0.521    0.104 df_col.py:50(filter)
      1660    0.261    0.000    0.261    0.000 timing.py:20(&lt;dictcomp&gt;)
 8066/3916    0.213    0.000    1.056    0.000 {built-in method builtins.all}
-     1660    0.191    0.000    0.191    0.000 df_col.py:53(&lt;dictcomp&gt;)
-</code></pre></div>
+     1660    0.191    0.000    0.191    0.000 df_col.py:53(&lt;dictcomp&gt;)</code></pre>
+<p>The profiler’s output tells us the number of times each function or method was called, the total time spent in those calls (which is what we care about most), the time spent per call, and the cumulative time spent in that call and all the things it calls. We can see right away that the <code>dict_match</code> function that checks the consistency of the rows in a row-oriented dataframe is eating up a lot of time. It’s only called in the constructor, but since we’re constructing a new dataframe for each <code>filter</code> and <code>select</code>, removing that safety check would speed things up.</p>
+<p>Looking down a little further, the dictionary comprehension in <code>DfCol.filter</code> takes a lot of time as well. That isn’t surprising: we’re copying the values out of the columns into a temporary dictionary for every row when we filter, and building all those temporary dictionaries adds up to a lot of time.</p>
+</section>
+<section id="perf-summary" class="level2" data-number="15.5">
+<h2 data-number="15.5" class="anchored" data-anchor-id="perf-summary"><span class="header-section-number">15.5</span> Summary</h2>
+<p><a href="#fig-perf-concept-map" class="quarto-xref">Figure&nbsp;<span>15.8</span></a> summarizes the key ideas introduced in this chapter. The most important is that experiments can help us decide how to implement key features of our software, but the results of those experiments depend on exactly what we measure. Good software designers collect and analyze data all the time to find out whether one website design works better than another <span class="citation" data-cites="Kohavi2020">(<a href="../bibliography/index.html#ref-Kohavi2020" role="doc-biblioref">Kohavi et al. 2020</a>)</span> or to improve the performance of CPUs <span class="citation" data-cites="Patterson2017">(<a href="../bibliography/index.html#ref-Patterson2017" role="doc-biblioref">Patterson and Hennessy 2017</a>)</span>. A few simple experiments like these can save weeks or months of misguided effort.</p>
+<div id="fig-perf-concept-map" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-perf-concept-map-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="concept_map.svg" class="img-fluid figure-img">
 </div>
-<p>The profiler's output tells us
-the number of times each function or method was called,
-the total time spent in those calls (which is what we care about most),
-the time spent per call,
-and the cumulative time spent in that call and all the things it calls.
-We can see right away that the <code>dict_match</code> function
-that checks the consistency of the rows in a row-oriented dataframe
-is eating up a lot of time.
-It's only called in the constructor,
-but since we're constructing a new dataframe for each <code>filter</code> and <code>select</code>,
-removing that safety check would speed things up.</p>
-<p>Looking down a little further,
-the <span class="ix-ref" data-ix-key="dictionary comprehension" id="ix-perf-11">dictionary comprehension</span> in <code>DfCol.filter</code> takes a lot of time as well.
-That isn't surprising:
-we're copying the values out of the columns into a temporary dictionary
-for every row when we filter,
-and building all those temporary dictionaries adds up to a lot of time.</p>
-<h2 id="perf-summary">Summary</h2>
-<p><a class="fig-ref" href="#f:perf-concept-map">Figure 8</a> summarizes the key ideas introduced in this chapter.
-The most important is that experiments can help us decide
-how to implement key features of our software,
-but the results of those experiments depend on
-exactly what we measure.
-Good software designers collect and analyze data all the time
-to find out whether one website design works better than another [<a class="bib-ref" href="../bibliography/#Kohavi2020">Kohavi2020</a>]
-or to improve the performance of CPUs [<a class="bib-ref" href="../bibliography/#Patterson2017">Patterson2017</a>].
-A few simple experiments like these can save weeks or months of misguided effort.</p>
-<figure id="f:perf-concept-map">
-<img alt="Concept map for dataframes" src="concept_map.svg"/>
-<figcaption>Figure 8: Concepts for dataframes.</figcaption>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-perf-concept-map-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;15.8: Concepts for dataframes.
+</figcaption>
 </figure>
-<section aria-label="Exercises" class="exercises">
-<h2 id="perf-exercises">Exercises</h2>
-<h3>More Efficient Filtering</h3>
-<p>Derive a class from <code>DfCol</code> and override its <code>filter</code> method
-so that the user-defined filtering functions take zero or more columns
-and a row index called <code>i_row</code> as parameters
-and return <code>True</code> or <code>False</code> to signal whether the row passes the test.</p>
-<ol>
-<li>
-<p>How much faster does this make filtering?</p>
-</li>
-<li>
-<p>When would it be useful for filtering functions
-    to take no column at all as parameters?</p>
-</li>
+</div>
+<section class="exercises">
+</section>
+<section id="perf-exercises" class="level2" data-number="15.6">
+<h2 data-number="15.6" class="anchored" data-anchor-id="perf-exercises"><span class="header-section-number">15.6</span> Exercises</h2>
+<section id="more-efficient-filtering" class="level3" data-number="15.6.1">
+<h3 data-number="15.6.1" class="anchored" data-anchor-id="more-efficient-filtering"><span class="header-section-number">15.6.1</span> More Efficient Filtering</h3>
+<p>Derive a class from <code>DfCol</code> and override its <code>filter</code> method so that the user-defined filtering functions take zero or more columns and a row index called <code>i_row</code> as parameters and return <code>True</code> or <code>False</code> to signal whether the row passes the test.</p>
+<ol type="1">
+<li><p>How much faster does this make filtering?</p></li>
+<li><p>When would it be useful for filtering functions to take no column at all as parameters?</p></li>
 </ol>
-<h3>Empty Dataframes</h3>
-<p>An empty dataframe is as reasonable and as useful as an empty string or an empty list.
-<code>DfCol</code> can represent this,
-but <code>DfRow</code> cannot:
-if the list of dictionaries is empty,
-we cannot ask for column names.
-Derive another dataframe class from <code>DF</code> that uses row-wise storage
-but can represent a dataframe with no rows.</p>
-<h3>Unified Constructors</h3>
-<p>Modify the constructors of <code>DfRow</code> and <code>DfCol</code> to have the same signatures.
-Where and why might this be useful?</p>
-<h3>Fixture Functions</h3>
-<p>Read the documentation for the <code>@fixture</code> <span class="ix-ref" data-ix-key="decorator" id="ix-perf-12">decorator</span> in <a href="https://docs.pytest.org/">pytest</a>
-and modify the tests in this chapter to use it.</p>
-<h3>Using Arrays</h3>
-<p>Derive another dataframe class from <code>DF</code>
-that uses Python's <a href="https://docs.python.org/3/library/array.html"><code>array</code></a> module for column-wise storage.
-How does it perform compared to other implementations?</p>
-<h3>Crossover</h3>
-<ol>
-<li>
-<p>At what ratio of filter operations to select operations
-    are <code>DfRow</code> and <code>DfCol</code> equally fast?
-    (Your answer may depend on the size of the dataframe.)</p>
-</li>
-<li>
-<p>How does the relative performance of the two classes change
-    if tables have a fixed number of columns (such as 10 or 20)
-    but an increasing numbers of rows?
-    Is this scenario more realistic?</p>
-</li>
+</section>
+<section id="empty-dataframes" class="level3" data-number="15.6.2">
+<h3 data-number="15.6.2" class="anchored" data-anchor-id="empty-dataframes"><span class="header-section-number">15.6.2</span> Empty Dataframes</h3>
+<p>An empty dataframe is as reasonable and as useful as an empty string or an empty list. <code>DfCol</code> can represent this, but <code>DfRow</code> cannot: if the list of dictionaries is empty, we cannot ask for column names. Derive another dataframe class from <code>DF</code> that uses row-wise storage but can represent a dataframe with no rows.</p>
+</section>
+<section id="unified-constructors" class="level3" data-number="15.6.3">
+<h3 data-number="15.6.3" class="anchored" data-anchor-id="unified-constructors"><span class="header-section-number">15.6.3</span> Unified Constructors</h3>
+<p>Modify the constructors of <code>DfRow</code> and <code>DfCol</code> to have the same signatures. Where and why might this be useful?</p>
+</section>
+<section id="fixture-functions" class="level3" data-number="15.6.4">
+<h3 data-number="15.6.4" class="anchored" data-anchor-id="fixture-functions"><span class="header-section-number">15.6.4</span> Fixture Functions</h3>
+<p>Read the documentation for the <code>@fixture</code> decorator in <a href="https://docs.pytest.org/">pytest</a> and modify the tests in this chapter to use it.</p>
+</section>
+<section id="using-arrays" class="level3" data-number="15.6.5">
+<h3 data-number="15.6.5" class="anchored" data-anchor-id="using-arrays"><span class="header-section-number">15.6.5</span> Using Arrays</h3>
+<p>Derive another dataframe class from <code>DF</code> that uses Python’s <a href="https://docs.python.org/3/library/array.html"><code>array</code></a> module for column-wise storage. How does it perform compared to other implementations?</p>
+</section>
+<section id="crossover" class="level3" data-number="15.6.6">
+<h3 data-number="15.6.6" class="anchored" data-anchor-id="crossover"><span class="header-section-number">15.6.6</span> Crossover</h3>
+<ol type="1">
+<li><p>At what ratio of filter operations to select operations are <code>DfRow</code> and <code>DfCol</code> equally fast? (Your answer may depend on the size of the dataframe.)</p></li>
+<li><p>How does the relative performance of the two classes change if tables have a fixed number of columns (such as 10 or 20) but an increasing numbers of rows? Is this scenario more realistic?</p></li>
 </ol>
-<h3>Conversion</h3>
-<p>Write a function to convert a <code>DfRow</code> into a <code>DfCol</code>
-and another to do the opposite.
-Which one is faster?
-How does the difference in performance depend on
-the size and shape of the dataframes being converted?</p>
-<h3>Filtering by Strings</h3>
-<p>Modify the comparison of filter and select to work with tables
-that contain columns of strings instead of columns of numbers
-and see how that changes performance.
-For testing,
-create random 4-letter strings using the characters A-Z
-and then filter by:</p>
+</section>
+<section id="conversion" class="level3" data-number="15.6.7">
+<h3 data-number="15.6.7" class="anchored" data-anchor-id="conversion"><span class="header-section-number">15.6.7</span> Conversion</h3>
+<p>Write a function to convert a <code>DfRow</code> into a <code>DfCol</code> and another to do the opposite. Which one is faster? How does the difference in performance depend on the size and shape of the dataframes being converted?</p>
+</section>
+<section id="filtering-by-strings" class="level3" data-number="15.6.8">
+<h3 data-number="15.6.8" class="anchored" data-anchor-id="filtering-by-strings"><span class="header-section-number">15.6.8</span> Filtering by Strings</h3>
+<p>Modify the comparison of filter and select to work with tables that contain columns of strings instead of columns of numbers and see how that changes performance. For testing, create random 4-letter strings using the characters A-Z and then filter by:</p>
 <ul>
 <li>an exact match,</li>
 <li>strings starting with a specific character, and</li>
 <li>strings that contain a specific character.</li>
 </ul>
-<h3>Inspection</h3>
-<p>Rewrite <code>DfCol.filter</code> using Python's <a href="https://docs.python.org/3/library/inspect.html"><code>inspect</code></a> module
-so that users' filtering functions
-only need to define parameters for the columns of interest.</p>
-<h3>Join Performance</h3>
-<p>A <span class="ix-ref" data-ix-key="join" id="ix-perf-13">join</span> combines data from two tables based on matching keys.
-For example,
-if the two tables are:</p>
-<table>
+</section>
+<section id="inspection" class="level3" data-number="15.6.9">
+<h3 data-number="15.6.9" class="anchored" data-anchor-id="inspection"><span class="header-section-number">15.6.9</span> Inspection</h3>
+<p>Rewrite <code>DfCol.filter</code> using Python’s <a href="https://docs.python.org/3/library/inspect.html"><code>inspect</code></a> module so that users’ filtering functions only need to define parameters for the columns of interest.</p>
+</section>
+<section id="join-performance" class="level3" data-number="15.6.10">
+<h3 data-number="15.6.10" class="anchored" data-anchor-id="join-performance"><span class="header-section-number">15.6.10</span> Join Performance</h3>
+<p>A join combines data from two tables based on matching keys. For example, if the two tables are:</p>
+<table class="caption-top table">
 <thead>
-<tr>
-<th scope="col">Key</th>
-<th scope="col">Left</th>
+<tr class="header">
+<th>Key</th>
+<th>Left</th>
 </tr>
 </thead>
 <tbody>
-<tr>
+<tr class="odd">
 <td>A</td>
 <td>a1</td>
 </tr>
-<tr>
+<tr class="even">
 <td>B</td>
 <td>b1</td>
 </tr>
-<tr>
+<tr class="odd">
 <td>C</td>
 <td>c1</td>
 </tr>
 </tbody>
 </table>
 <p>and:</p>
-<table>
+<table class="caption-top table">
 <thead>
-<tr>
-<th scope="col">Key</th>
-<th scope="col">Right</th>
+<tr class="header">
+<th>Key</th>
+<th>Right</th>
 </tr>
 </thead>
 <tbody>
-<tr>
+<tr class="odd">
 <td>A</td>
 <td>a2</td>
 </tr>
-<tr>
+<tr class="even">
 <td>A</td>
 <td>a3</td>
 </tr>
-<tr>
+<tr class="odd">
 <td>B</td>
 <td>b2</td>
 </tr>
 </tbody>
 </table>
 <p>then the join is:</p>
-<table>
+<table class="caption-top table">
 <thead>
-<tr>
-<th scope="col">Key</th>
-<th scope="col">Left</th>
-<th scope="col">Right</th>
+<tr class="header">
+<th>Key</th>
+<th>Left</th>
+<th>Right</th>
 </tr>
 </thead>
 <tbody>
-<tr>
+<tr class="odd">
 <td>A</td>
 <td>a1</td>
 <td>a2</td>
 </tr>
-<tr>
+<tr class="even">
 <td>A</td>
 <td>a1</td>
 <td>a3</td>
 </tr>
-<tr>
+<tr class="odd">
 <td>B</td>
 <td>b1</td>
 <td>b2</td>
 </tr>
 </tbody>
 </table>
-<p>Write a test to compare the performance of row-wise vs. column-wise storage
-when joining two tables based on matching numeric keys.
-Does the answer depend on the fraction of keys that match?</p>
-<h3>Join Optimization</h3>
-<p>The simplest way to <a class="gl-ref" href="../glossary/#join">join</a> two tables is
-to look for matching keys using a double loop.
-An alternative is to build an <a class="gl-ref" href="../glossary/#index_database">index</a> for each table
-and then use it to construct matches.
-For example, suppose the tables are:</p>
-<table>
+<p>Write a test to compare the performance of row-wise vs.&nbsp;column-wise storage when joining two tables based on matching numeric keys. Does the answer depend on the fraction of keys that match?</p>
+</section>
+<section id="join-optimization" class="level3" data-number="15.6.11">
+<h3 data-number="15.6.11" class="anchored" data-anchor-id="join-optimization"><span class="header-section-number">15.6.11</span> Join Optimization</h3>
+<p>The simplest way to <a href="../glossary/index.html#join">join</a> two tables is to look for matching keys using a double loop. An alternative is to build an <a href="../glossary/index.html#index_database">index</a> for each table and then use it to construct matches. For example, suppose the tables are:</p>
+<table class="caption-top table">
 <thead>
-<tr>
-<th scope="col">Key</th>
-<th scope="col">Left</th>
+<tr class="header">
+<th>Key</th>
+<th>Left</th>
 </tr>
 </thead>
 <tbody>
-<tr>
+<tr class="odd">
 <td>A</td>
 <td>a1</td>
 </tr>
-<tr>
+<tr class="even">
 <td>B</td>
 <td>b1</td>
 </tr>
-<tr>
+<tr class="odd">
 <td>C</td>
 <td>c1</td>
 </tr>
 </tbody>
 </table>
 <p>and:</p>
-<table>
+<table class="caption-top table">
 <thead>
-<tr>
-<th scope="col">Key</th>
-<th scope="col">Right</th>
+<tr class="header">
+<th>Key</th>
+<th>Right</th>
 </tr>
 </thead>
 <tbody>
-<tr>
+<tr class="odd">
 <td>A</td>
 <td>a2</td>
 </tr>
-<tr>
+<tr class="even">
 <td>A</td>
 <td>a3</td>
 </tr>
-<tr>
+<tr class="odd">
 <td>B</td>
 <td>b2</td>
 </tr>
 </tbody>
 </table>
 <p>The first step is to create a <code>Map</code> showing where each key is found in the first table:</p>
-<div data-inc="ex_map_1.py"><span aria-label="Source: perf/ex_map_1.py" class="inc-path" role="img" tabindex="0" title="perf/ex_map_1.py">i</span><div class="codehilite"><pre class="" tabindex="0"><span></span><code><span class="p">{</span><span class="s2">"A"</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s2">"B"</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="s2">"C"</span><span class="p">:</span> <span class="p">[</span><span class="mi">2</span><span class="p">]}</span>
-</code></pre></div>
-</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb24"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>{<span class="st">"A"</span>: [<span class="dv">0</span>], <span class="st">"B"</span>: [<span class="dv">1</span>], <span class="st">"C"</span>: [<span class="dv">2</span>]}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>The second step is to create a similar <code>Map</code> for the second table:</p>
-<div data-inc="ex_map_2.py"><span aria-label="Source: perf/ex_map_2.py" class="inc-path" role="img" tabindex="0" title="perf/ex_map_2.py">i</span><div class="codehilite"><pre class="" tabindex="0"><span></span><code><span class="p">{</span><span class="s2">"A"</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="s2">"B"</span><span class="p">:</span> <span class="p">[</span><span class="mi">2</span><span class="p">]}</span>
-</code></pre></div>
-</div>
-<p>We can then loop over the keys in one of the maps,
-look up values in the second map,
-and construct all of the matches.</p>
-<p>Write a function that joins two tables this way.
-Is it faster or slower than using a double loop?
-How does the answer depend on the number of keys and the fraction that match?</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>{<span class="st">"A"</span>: [<span class="dv">0</span>, <span class="dv">1</span>], <span class="st">"B"</span>: [<span class="dv">2</span>]}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>We can then loop over the keys in one of the maps, look up values in the second map, and construct all of the matches.</p>
+<p>Write a function that joins two tables this way. Is it faster or slower than using a double loop? How does the answer depend on the number of keys and the fraction that match?</p>
 </section>
-</main>
-<footer aria-label="Page navigation">
-<div class="row">
-<div class="col-3 left">
-<span aria-hidden="true">⇐</span> <a href="../layout">Page Layout</a>
+
+
+<div id="refs" class="references csl-bib-body hanging-indent" role="list" style="display: none">
+<div id="ref-Kohavi2020" class="csl-entry" role="listitem">
+Kohavi, Ron, Diane Tang, and Ya Xu. 2020. <em>Trustworthy Online Controlled Experiments: A Practical Guide to a/b Testing</em>. Cambridge University Press. ISBN 9781108724265.
 </div>
-<div class="col-6 center">
-<a href="../">sdxpy</a>
-	  ©
-	  <a href="../#acknowledgments">the authors</a>
-</div>
-<div class="col-3 right">
-<a href="../persist">Object Persistence</a> <span aria-hidden="true">⇒</span>
+<div id="ref-Patterson2017" class="csl-entry" role="listitem">
+Patterson, David A., and John L. Hennessy. 2017. <em>Computer Organization and Design: The Hardware/Software Interface</em>. Morgan Kaufmann. ISBN 9780128122754.
 </div>
 </div>
-</footer>
-<script crossorigin="anonymous" defer="" src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
-<script crossorigin="anonymous" defer="" onload="renderMathInElement(document.body, {
-        delimiters: [
-          {left: '$$', right: '$$', display: true},
-          {left: '$',  right: '$',  display: false}
-        ]
-      });" src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
-</body>
-</html>
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+      window.quartoDecorateExternalLinks = function (root) {
+     var links = (root || window.document).querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+          if (!link.classList.contains('no-external-icon')) {
+          }
+        }
+      }
+      };
+      window.quartoDecorateExternalLinks(window.document);
+    // Esc closes the popup (WCAG 1.4.13) and focus leaving both trigger and
+    // popup closes it (WCAG 2.4.11); tippy handles neither for interactive popups.
+    const hideOnEscAndFocusOut = {
+      name: 'hideOnEscAndFocusOut',
+      defaultValue: true,
+      fn(instance) {
+        const dismiss = () => {
+          // A show scheduled by the trigger delay would otherwise reopen it
+          instance.clearDelayTimeouts();
+          instance.hide();
+        };
+        const onKeyDown = (event) => {
+          if (event.key !== 'Escape') {
+            return;
+          }
+          // Keep Esc from also reaching page handlers (e.g. reveal.js overview),
+          // except an open reveal.js slide menu, which Esc should close too.
+          // The menu handles keys only when its keyboard option is on.
+          const menuHandlesEsc = window.Reveal?.getPlugin?.('menu')?.isOpen() &&
+            window.Reveal.getConfig().menu?.keyboard !== false;
+          if (!menuHandlesEsc) {
+            event.stopPropagation();
+          }
+          if (instance.popper.contains(window.document.activeElement)) {
+            // Disabled while refocusing so the focus trigger does not reopen it
+            instance.disable();
+            instance.reference.focus();
+            instance.enable();
+          }
+          dismiss();
+        };
+        const onFocusOut = (event) => {
+          const target = event.relatedTarget;
+          if (target && !instance.reference.contains(target) &&
+              !instance.popper.contains(target)) {
+            dismiss();
+          }
+        };
+        // On the trigger too: a click trigger (code-annotations: select) has no
+        // blur handling. Attached for the instance's lifetime so leaving the
+        // trigger also cancels a show still pending on the trigger delay.
+        instance.reference.addEventListener('focusout', onFocusOut);
+        return {
+          onShow() {
+            window.document.addEventListener('keydown', onKeyDown, true);
+            instance.popper.addEventListener('focusout', onFocusOut);
+          },
+          onHide() {
+            window.document.removeEventListener('keydown', onKeyDown, true);
+            instance.popper.removeEventListener('focusout', onFocusOut);
+          },
+          onDestroy() {
+            instance.reference.removeEventListener('focusout', onFocusOut);
+          },
+        };
+      },
+    };
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+        plugins: [hideOnEscAndFocusOut],
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          // Each band is positioned against its own containing block, which is
+          // not the offsetParent of the lines, so place it from client rects.
+          const placeBand = (band, firstEl, lastEl, codeBlock) => {
+            const container = band.offsetParent;
+            if (container === null) {
+              return;
+            }
+            const containerRect = container.getBoundingClientRect();
+            // Reveal.js scales slides with a transform, so convert client
+            // pixels back to the CSS pixels of the container.
+            const scale = containerRect.height / container.offsetHeight || 1;
+            const firstRect = firstEl.getBoundingClientRect();
+            const lastRect = lastEl.getBoundingClientRect();
+            const top = (firstRect.top - containerRect.top) / scale - container.clientTop + container.scrollTop;
+            const height = (lastRect.bottom - firstRect.top) / scale;
+            band.style.top = top - 2 + "px";
+            band.style.height = height + 4 + "px";
+            if (codeBlock) {
+              // Without the copy button wrapper, the containing block is wider
+              // than the code block, so span the code block explicitly.
+              const blockRect = codeBlock.getBoundingClientRect();
+              band.style.left = (blockRect.left - containerRect.left) / scale - container.clientLeft + container.scrollLeft + "px";
+              band.style.width = blockRect.width / scale + "px";
+            }
+          };
+          if (lineIds.length > 0) {
+            const el = window.document.getElementById(lineIds[0]);
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const parent = el.parentElement.parentElement;
+            // cook up a div (if necessary) and position it
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            placeBand(div, el, lastEl, parent.closest("div.sourceCode") || parent);
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            placeBand(gutterDiv, el, lastEl);
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+  <script type="application/javascript">
+  window.quartoScrollableRegionsLabels = {"code":"Scrollable code","output":"Scrollable output"};
+  </script>
+<nav class="page-navigation" aria-label="Page">
+  <div class="nav-page nav-page-previous">
+      <a href="../layout/index.html" class="pagination-link" aria-label="Page Layout">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text"><span class="chapter-number">14</span>&nbsp; <span class="chapter-title">Page Layout</span></span>
+      </a>          
+  </div>
+  <div class="nav-page nav-page-next">
+      <a href="../persist/index.html" class="pagination-link" aria-label="Object Persistence">
+        <span class="nav-page-text"><span class="chapter-number">16</span>&nbsp; <span class="chapter-title">Object Persistence</span></span> <i class="bi bi-arrow-right-short"></i>
+      </a>
+  </div>
+</nav>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

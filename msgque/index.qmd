@@ -1,0 +1,353 @@
+---
+abstract-text: 'FIXME
+
+  '
+syllabus:
+- Explain what decoupling means in a pub-sub system and why it makes producers and
+  consumers easier to scale independently.
+- Describe the three backpressure strategies (drop, block, signal) and the trade-offs
+  each one makes between throughput and message loss.
+- Explain why acknowledgment-based delivery gives at-least-once semantics and what
+  subscribers must do to handle duplicate messages safely.
+- Compare round-robin and partition-based consumer group assignment and explain why
+  the choice affects message ordering guarantees.
+---
+
+# A Publish-Subscribe Message Queue {#sec-msgque}
+
+::: {.syllabus}
+- Explain what decoupling means in a pub-sub system and why it makes producers and consumers easier to scale independently.
+- Describe the three backpressure strategies (drop, block, signal) and the trade-offs each one makes between throughput and message loss.
+- Explain why acknowledgment-based delivery gives at-least-once semantics and what subscribers must do to handle duplicate messages safely.
+- Compare round-robin and partition-based consumer group assignment and explain why the choice affects message ordering guarantees.
+:::
+
+**In Development**
+
+When a web server processes an order,
+it might need to notify the inventory system,
+trigger an email,
+update analytics,
+and log the transaction.
+If the web server calls each of these services directly,
+a failure in any one could block the entire operation.
+This is where message queues come in.
+
+Systems like [RabbitMQ](@rabbitmq), [Apache Kafka](@kafka), and [Amazon SQS](@amazon-sqs)
+decouple message producers from consumers.
+A publisher sends messages to a named topic without knowing who (if anyone) will receive them.
+Subscribers express interest in topics and then receive messages asynchronously,
+processing them at their own pace.
+
+This lesson shows how to build a message delivery service using
+the {{< g publish-subscribe "publish-subscribe pattern" >}}.
+The {{< g message-broker "message broker" >}} keeps track of which subscribers are interested in which topics.
+When a message arrives,
+it delivers it to them.
+This is called {{< g fan-out "fan-out" >}}:
+one message can reach many consumers.
+
+Publish-subscribe is popular because
+it {{< g decoupling "decouples" >}} publishers and subscribers.
+They don't need to know about each other:
+they only share knowledge of topic names,
+which allows us to add more of either without modifying existing code.
+In addition,
+the broker provides {{< g buffer "buffering" >}}:
+if consumers are slow or temporarily unavailable,
+messages wait rather than being lost.
+
+## Our Implementation {#msgque-impl}
+
+Our first implementation has three main components:
+publishers that send messages,
+a broker that routes messages to topics,
+and subscribers that receive and process messages.
+We start by defining a {{< g dataclass "dataclass" >}} to store a single message:
+
+{{< inc msgque/message.py mark=message >}}
+
+Each message belongs to a topic like "orders" or "user-activity",
+and has some content, a unique ID, and a timestamp.
+Messages in a real system would contain structured data (e.g., as {{< g json "JSON" >}}),
+but strings are sufficient for our example.
+
+The broker stores a dictionary called `topics` mapping topics to lists of queues:
+
+{{< inc msgque/broker.py mark=broker >}}
+
+<div class="callout" markdown="1">
+
+`MessageBroker` isn't an active `Process`,
+but it needs the [asimpy](@asimpy) `Environment` to construct `Queue` objects.
+We have also given it counters to record the number of of messages published and delivered.
+
+</div>
+
+When someone wants to be notified of messages,
+it registers itself and gets a queue in return:
+
+{{< inc msgque/broker.py mark=subscribe >}}
+
+Using separate queues per subscriber ensures that a slow consumer doesn't block others,
+which is a key property of the pattern.
+Real-world message queue implementations would drop messages when queues fill up;
+we will look at this later.
+
+When a message is published,
+the broker looks up the topic and places the message in each subscriber's queue:
+
+{{< inc msgque/broker.py mark=publish >}}
+
+To test this,
+let's create a publisher that sends messages to a specific topic at some rate:
+
+{{< inc msgque/publisher.py mark=publisher >}}
+
+Real publishers would react to external events (like HTTP requests or database changes),
+but timed generation works well for simulation.
+
+Notice that we inherit from `Process`, which is asimpy's base class for active components.
+As described in the appendix,
+the `init()` method is called during construction to set up our state,
+while `run()` creates the coroutine that defines the publisher's behavior.
+
+Finally, our simulated subscribers receive and process messages:
+
+{{< inc msgque/subscriber.py mark=subscriber >}}
+
+<div class="callout" markdown="1">
+
+`Subscriber` uses [asimpy](@asimpy)'s `FirstOf` to wait on multiple queues simultaneously.
+Whichever queue has a message first will complete,
+and all other requests will be canceled.
+This is more elegant than {{< g round-robin-polling "round-robin polling" >}}.
+Real implementations use event-driven APIs or threads,
+but `FirstOf` captures the same semantics.
+
+</div>
+
+## Running a Simulation {#msgque-sim}
+
+Let's create a scenario with multiple publishers and subscribers to see the system in action:
+
+{{< inc msgque/ex_simple.py mark=simulate >}}
+
+The output shows messages being published and consumed asynchronously:
+
+{{< inc msgque/ex_simple.out head=10 tail=6 >}}
+
+Notice how the fast `Inventory` service keeps up with orders,
+while the slow `Email` service falls behind:
+this is the buffering we mentioned earlier.
+At the same time,
+the `Analytics` service receives messages from multiple topics,
+demonstrating how subscribers can aggregate different event streams.
+
+## Backpressure and Flow Control {#msgque-back}
+
+So far, our broker uses unbounded queues that grow indefinitely.
+This works in simulation but fails in production:
+if publishers produce faster than subscribers consume,
+queues will eventually exhaust memory and crash the system.
+The solution is {{< g backpressure "backpressure" >}}:
+a mechanism where slow consumers signal upstream components to slow down.
+Backpressure is fundamental to building robust distributed systems.
+Without it, a single slow consumer can cause cascading failures.
+
+There are several strategies for implementing backpressure:
+
+Bounded queues with blocking
+:   Publishers block when queues are full, naturally slowing them down.
+    This provides strong backpressure but can cause publishers to stall.
+
+Bounded queues with dropping
+:   When queues are full, new messages are dropped.
+    This keeps the system running but loses data.
+    This strategy is usually combined with metric collection and reporting
+    so that operators know data is being lost.
+
+Adaptive rate limiting
+:   Publishers monitor queue sizes or delivery failures and dynamically adjust their publishing rate.
+    This is more complex but provides smoother behavior under heavy load.
+
+Priority-based dropping
+:   When backpressure occurs, the system drops low-priority messages first
+    in order to preserve critical data.
+
+Let's implement bounded queues with message dropping and adaptive rate limiting.
+The constructor takes an extra parameter `max_queue_size`:
+
+{{< inc msgque/backpressure_broker.py mark=backpressure >}}
+
+It uses this value to initialize queues:
+
+{{< inc msgque/backpressure_broker.py mark=subscribe >}}
+
+When a queue is full,
+`publish()` drops the message for that subscriber
+and returns `False` to signal backpressure to the publisher:
+
+{{< inc msgque/backpressure_broker.py mark=publish >}}
+
+Now we need a publisher that responds to backpressure.
+Its constructor needs two new parameters:
+a base interval to wait before re-trying a message,
+and a {{< g backoff-multiplier "backoff multiplier" >}}
+that tells it how to increase the interval if repeated attempts to publish fail:
+
+{{< inc msgque/backpressure_publisher.py mark=init >}}
+
+The publisher's `run()` method uses these two parameters to implement
+{{< g exponential-backoff "exponential backoff" >}},
+which is one of the most important concepts in distributed systems.
+If an attempt to publish a message fails,
+the publisher increases its interval between messages.
+If publishing succeeds,
+on the other hand,
+it gradually reduces the interval back to the base rate.
+This creates a {{< g negative-feedback-loop "negative feedback loop" >}} that stabilizes the system under load.
+
+Let's see backpressure in action with one fast publisher,
+one that's slow,
+and and a deliberately small queue size:
+
+{{< inc msgque/ex_backpressure.py mark=sim >}}
+
+The full output shows that the publisher starts fast
+but encounter backpressure as the slow subscriber's queue fills.
+The publisher adapts by slowing down,
+and the system reaches equilibrium where the publishing rate matches the consumption rate.
+
+{{< inc msgque/ex_backpressure.out head=10 tail=7 >}}
+
+## Message Priority {#msgque-priority}
+
+In most real systems, not all messages are equal.
+As the system becomes overloaded,
+we might want to preserve high-priority messages while dropping low-priority ones.
+To implement this,
+we start by adding a `priority` field to our messages:
+
+{{< inc msgque/priority_backpressure.py mark=message >}}
+
+When we publish a message,
+we check queue-by-queue to see if there's room.
+If not,
+we either evict a lower-priority message or discard the one that just arrived:
+
+{{< inc msgque/priority_backpressure.py mark=publish >}}
+
+This implementation uses [asimpy](@asimpy)'s {{< g priority-queue "priority queue" >}} class
+to manage efficient eviction of low-priority messages.
+
+## Delivery Guarantees {#msgque-delivery}
+
+Different message delivery systems provide different kinds of delivery guarantees:
+
+{{< g exactly-once "Exactly-once" >}} delivery
+:   This is the strongest guarantee: each message is processed exactly once.
+    It is surprisingly difficult to achieve in distributed systems due to failures and network issues.
+
+{{< g at-most-once "At-most-once" >}} delivery
+:   This ensures that messages are delivered zero or one times,
+    i.e., are never duplicated, but possibly lost.
+    This is achieved by dropping messages when queues are full or when subscribers are unavailable.
+    It's the weakest guarantee but the simplest and fastest to implement.
+
+{{< g at-least-once "At-least-once" >}} delivery
+:   This ensures every message is delivered, possibly multiple times.
+    It acknowledgments: the broker keeps messages until subscribers confirm receipt.
+    If a subscriber crashes before acknowledging,
+    the broker redelivers to another subscriber or retries.
+
+We can extend our broker to support at-least-once delivery with acknowledgments.
+First,
+we add an acknowledgment ID field to each message:
+
+{{< inc msgque/ack_broker.py mark=message >}}
+
+Next,
+we have the broker keep track of how long to wait for acknowledgments
+and of outstanding acknowledgments:
+
+{{< inc msgque/ack_broker.py mark=broker >}}
+
+When a message is published, the broker schedules a callback to check if it was acknowledged.
+The lambda captures the acknowledgment ID and calls `_check_ack()` after the timeout:
+
+{{< inc msgque/ack_broker.py mark=publish >}}
+
+A subscriber using this broker calls `broker.acknowledge(message.ack_id)`
+after successfully processing a message.
+Messages not acknowledged within the timeout are redelivered.
+
+{{< inc msgque/ack_broker.py mark=acknowledge >}}
+
+At-least-once delivery makes redelivery possible,
+so subscribers must be prepared to receive the same message more than once.
+This is the **idempotence requirement**: processing a message twice must have the same effect as processing it once.
+
+Consider a subscriber that increments a counter in a database when it receives an "order placed" message.
+If the broker redelivers the message because the subscriber crashed before acknowledging,
+the counter will be incremented a second time, double-counting the order.
+The fix is to make the operation idempotent: check whether the order ID has already been processed
+before incrementing, and skip the increment if so.
+This "exactly-once processing" pattern—at-least-once delivery plus idempotent consumers—
+is the standard way to achieve reliable message processing in production systems.
+Exactly-once delivery at the broker level is theoretically possible but requires distributed transactions,
+which are expensive and rarely worth the cost compared to idempotent consumers.
+
+## Consumer Groups and Load Balancing {#msgque-balance}
+
+In production systems,
+multiple instances of the same subscriber type often share the workload.
+This is called a {{< g consumer-group "consumer group" >}}:
+messages on a topic are distributed among group members rather than duplicated to each.
+Here's a simple implementation:
+
+{{< inc msgque/consumer_group.py mark=consumer >}}
+
+It relies on helper process `_Distributor` to do the work:
+
+{{< inc msgque/consumer_group.py mark=distributor >}}
+
+This consumer group receives messages from the broker on a single queue,
+then distributes them round-robin to individual consumers' queues.
+Each consumer in the group processes a subset of the messages in parallel with its peers.
+Real systems use more sophisticated load balancing algorithms,
+such as weighted distribution,
+least-loaded routing,
+or partition-based assignment.
+
+<section class="exercises" markdown="1">
+## Exercises {#msgque-exercises}
+
+1.  In the backpressure simulation, what happens if you increase the publisher's
+    base interval to match the subscriber's processing time?
+    What if you set the queue size to 1?
+    Run both variations and describe the equilibrium behavior in each case.
+
+2.  The priority broker evicts low-priority messages when the queue is full.
+    Add a counter to track how many messages of each priority level were dropped.
+    Run a simulation where the publisher sends equal numbers of high- and low-priority messages.
+    What fraction of each priority level was dropped?
+    (Starter: add `dropped_by_priority: dict` to the broker's `init`.)
+
+3.  A subscriber crashes after dequeuing a message but before acknowledging it.
+    In the acknowledgment broker, what happens to that message?
+    Trace through `ack_broker.py` to find where the timeout fires and what it does.
+    What would happen if the subscriber crashed again on the redelivered message?
+
+4.  The consumer group uses round-robin distribution.
+    Write a simulation where one consumer in a group is 10x slower than the others
+    (it takes 10 time units to process each message instead of 1).
+    Does round-robin distribute load evenly in this case?
+    Propose a least-loaded distribution strategy and describe what state the distributor would need to track.
+
+5.  The current broker does not persist messages to disk.
+    If the broker process crashes, all queued messages are lost.
+    Describe the changes needed to support durable messaging (messages survive broker restarts).
+    What is the performance cost of each change?
+
+</section>

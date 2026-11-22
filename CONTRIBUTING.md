@@ -40,9 +40,9 @@ Can I contribute a chapter?
     -   A discrete event simulator to show people how tools like [SimPy][simpy] work
         and to explore co-operative concurrency using generators.
     -   An issue-tracking system, mostly to show how workflow management and authentication work.
-    -   Another build system that uses publish/subscribe instead of the top-down approach of [%x build %].
+    -   Another build system that uses publish/subscribe instead of the top-down approach of [A Build Manager](@/build/).
     -   A fuzz tester that uses some of the ideas from [Zeller2023].
-    -   A package installer to complement the package manager of [%x pack %].
+    -   A package installer to complement the package manager of [A Package Manager](@/pack/).
     -   A file compression tool like `zip`.
     -   A database that uses B-trees instead of a log for storage.
 

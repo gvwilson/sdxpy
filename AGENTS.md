@@ -3,7 +3,7 @@ This repo is driven through Bram. The canonical worklist gate is the conventions
 
 Quick summary so you can act in this turn:
 
-- `<state>/` below is Bram's state folder: `.bram/` if it exists, else `resources/`.
+- `<state>/` below is Bram's state folder: `.bram/`.
 - First response to a change request must be **(a)** a clarifying question, **(b)** a proposal — write the prose to `<state>/worklist-drafts/<id>.md` (sections `# Before` and `# After`), then add a metadata-only item to `<state>/worklist.json` with non-empty `id` and `file`/`files` (no `before` / `after` inline — the guard rejects them), or **(c)** read-only investigation explicitly prefaced *"I don't yet have enough context to propose; I need to check X first"* — and the very next action after that check must be the proposal write, not narration of a plan.
 - For XMLUI questions or non-obvious markup choices, ask the XMLUI MCP server's how-to search first (`xmlui_search_howto`), then component docs (`xmlui_component_docs`) for exact props, events and methods, and only then examples, as a fallback or to confirm local style.
 - File edits and shell writes on paths not covered by a proposed/applied worklist item are blocked at runtime, whatever the tool (`apply_patch`, `Write`/`Edit`, `write_file`/`edit_file`, shell redirects, `mcp__filesystem__*`). Antigravity's guard doesn't yet see an MCP tool named `mcp_<server>_<tool>`, but the rule still applies to it. Following the convention avoids hitting that wall.

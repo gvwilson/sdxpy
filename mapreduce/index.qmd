@@ -1,0 +1,265 @@
+---
+abstract-text: 'FIXME
+
+  '
+syllabus:
+- Describe the five phases of MapReduce (input split, map, shuffle, reduce, output)
+  and explain what happens in each phase.
+- Explain what a combiner does, when it is safe to use one, and why it reduces network
+  traffic.
+- Explain why MapReduce handles worker failures transparently and what assumption
+  makes re-execution safe.
+- Identify the kinds of problems MapReduce handles poorly and explain why iterative
+  algorithms are a poor fit.
+---
+
+# MapReduce Framework {#sec-mapreduce}
+
+::: {.syllabus}
+- Describe the five phases of MapReduce (input split, map, shuffle, reduce, output) and explain what happens in each phase.
+- Explain what a combiner does, when it is safe to use one, and why it reduces network traffic.
+- Explain why MapReduce handles worker failures transparently and what assumption makes re-execution safe.
+- Identify the kinds of problems MapReduce handles poorly and explain why iterative algorithms are a poor fit.
+:::
+
+**In Development**
+
+[@Dean2004] introduced the MapReduce framework,
+which allowed programmers to perform many different data processing tasks
+by using two abstractions called (as you might guess) map and reduce.
+[Hadoop](@hadoop), [Apache Spark](@apache-spark), and other tools
+embody the same model,
+which is a good starting point for learning about distributed systems.
+
+## The MapReduce Pattern {#mapreduce-pattern}
+
+MapReduce works by breaking computation into two phases.
+The *map* phase transforms input records independently,
+while the subsequent *reduce* phase combines results that have the same key.
+Between these phases the framework handles shuffling data across machines,
+sorting by key,
+and managing failures.
+Each MapReduce computation consists of:
+
+1.  Input splitting: the input data is divided into chunks.
+1.  Map phase: a user-supplied function is applied to each input record to produce key-value pairs.
+1.  Shuffle: all values with the same key are grouped together and distributed to reducers.
+1.  Reduce phase: the values associated with each key are processed to produce the final results.
+1.  Output: the results are saved somewhere.
+
+In order for this to work,
+map operations must be independent,
+i.e.,
+there cannot be any shared state
+so that the operations can be done anywhere, in any order.
+Similarly,
+the reduce operations must be associative and commutative
+so that they can be applied in any order.
+These two constraints enable parallelism and fault tolerance.
+
+## Word Count {#mapreduce-wordcount}
+
+Let's start by showing how MapReduce is used,
+and then show how it is implemented.
+The classic MapReduce example counts how often each word occurs in a document.
+
+{{< inc mapreduce/ex_word_count.py >}}
+
+As this example shows,
+the programmer writes two simple functions and runs a process to coordinate them.
+The framework handles distribution, parallelization, and aggregation.
+
+## Core Data Structures {#mapreduce-datastructures}
+
+Let's start with some dataclasses to represent the data flowing through the framework.
+Input will be split into chunks for the map phase:
+
+{{< inc mapreduce/mr_types.py mark=map >}}
+
+Intermediate data will be partitioned for reducers:
+
+{{< inc mapreduce/mr_types.py mark=intermediate >}}
+
+And finally,
+intermediate chunks will be reduced:
+
+{{< inc mapreduce/mr_types.py mark=reduce >}}
+
+<div class="callout" markdown="1">
+
+The initial implementation of MapReduce contained a subtle bug.
+Python's built-in function `hash` generates a {{< g hash-code "hash code" >}}
+from a chunk of data.
+That value is partially randomized:
+it is the same within any run of a program,
+but may differ from one run to the next.
+This meant that different runs of our simulations
+sent different chunks of data to different places,
+which in turn meant that runs weren't reproducible.
+To fix this,
+we introduced our own hashing function:
+
+{{< inc mapreduce/mr_types.py mark=hash >}}
+
+</div>
+
+## Worker Implementation {#mapreduce-worker}
+
+Worker processes execute both map and reduce tasks.
+Each has a unique worker ID,
+a queue of incoming tasks,
+and a reference to the overall work coordinator:
+
+{{< inc mapreduce/mr_worker.py mark=worker >}}
+
+The code shown above also records a few simple statistics
+and can simulate failure with a specified probability;
+we will use this last propery when we look at fault tolerance.
+
+When a worker runs,
+it repeatedly gets a task from its queue and executes it.
+If there's a simulated failure,
+the worker reports that back to the coordinator instead:
+
+{{< inc mapreduce/mr_worker.py mark=run >}}
+
+Each map task consists of one or more records.
+For simplicity's sake we assume each record needs the same processing time,
+so after waiting that long,
+the worker partitions the results
+and sends them back to the coordinator:
+
+{{< inc mapreduce/mr_worker.py mark=map >}}
+
+Reducing works the same way:
+
+{{< inc mapreduce/mr_worker.py mark=reduce >}}
+
+## MapReduce Coordinator {#mapreduce-coordinator}
+
+The coordinator manages the entire lifecycle:
+splitting input, dispatching tasks, collecting results, and handling failures by re-executing failed tasks.
+
+{{< inc mapreduce/mr_coordinator.py >}}
+
+Note that `run()` returns a coroutine by returning the result of `_execute()`;
+this coroutine is awaited by the `Process` that the user writes.
+
+## Combiner Functions {#mapreduce-combiner}
+
+A combiner is a local reduce that runs on each mapper's output before shuffling
+in order to reduce network traffic.
+Doing this can dramatically improve performance for operations like summation or counting.
+
+To see why, consider the word-count example with the input "the cat sat on the mat".
+Without a combiner, the mapper for this chunk emits six intermediate pairs:
+`("the", 1), ("cat", 1), ("sat", 1), ("on", 1), ("the", 1), ("mat", 1)`.
+All six travel over the network to the reducers.
+
+With a combiner that runs the same reduce function locally,
+the mapper first reduces these to `("the", 2), ("cat", 1), ("sat", 1), ("on", 1), ("mat", 1)`.
+Now only five pairs cross the network, and the saving grows with repetition:
+for a chunk of 10,000 words with a vocabulary of 500, the combiner might reduce 10,000 pairs
+to 500, a 20x reduction in network traffic.
+
+A combiner is only correct when the reduce function is commutative and associative
+(the same requirement as the reduce phase itself).
+Summation, counting, max, and min all qualify.
+Average does not—`average(average(1,2), 3)` ≠ `average(1,2,3)`—so a combiner cannot be used
+for averages without keeping both the sum and count separately.
+
+{{< inc mapreduce/coordinator_with_combiner.py >}}
+
+## Handling Stragglers with Speculative Execution {#mapreduce-speculative}
+
+Some workers may be stragglers due to hardware issues or resource contention.
+MapReduce can accommodate this by launching backup copies of slow tasks.
+The first copy to complete wins,
+while others are discarded.
+This is called {{< g speculative-execution "speculative execution" >}},
+and ensures that one slow worker doesn't delay the entire job.
+
+{{< inc mapreduce/speculative_coordinator.py >}}
+
+## Fault Tolerance Simulation {#mapreduce-fault}
+
+A simple extension of speculative execution is {{< g fault-tolerance "fault tolerance" >}}:
+the framework automatically retries failed tasks,
+ensuring that computation completes despite failures.
+
+{{< inc mapreduce/ex_fault_tolerance.py >}}
+
+## In the Real World {#mapreduce-real}
+
+MapReduce's limitations led to the next-generation systems described in the introduction.
+First, MapReduce writes intermediate data to disk between phases.
+This is expensive for iterative algorithms of the kind used in machine learning,
+and becomes more so when complex computation require multiple MapReduce jobs to be chained together.
+
+Second, MapReduce has no data sharing:
+there is no way to cache intermediate results in memory across jobs,
+which can lead to redundant computation.
+Finally, MapReduce is designed for batch processing:
+real-time stream processing requires a different approach.
+
+Even with these shortcomings,
+MapReduce demonstrates how to build scalable distributed computation through simple abstractions.
+The key principles are:
+
+1.  Partitioning: data is automatically partitioned and distributed.
+1.  Independent processing: Map tasks don't communicate, and reduce tasks are independent.
+1.  Fault tolerance: Idempotent operations make it safe to re-execute tasks.
+1.  Simplicity: Programmers write two functions, and the framework handles everything else.
+
+## A Note on Hashing and Reproducibility {#mapreduce-hashing}
+
+The `IntermediateData.partition` method assigns each key to a reducer
+using a hash function.
+An earlier version of this code used Python's built-in `hash()`,
+which meant that the examples produced different output every time they were run
+even when `random.seed()` was called with the same value.
+The reason is that Python randomizes string hashing on startup:
+the environment variable `PYTHONHASHSEED` is set to a different random value
+each time the interpreter starts,
+so `hash("the")` returns a different integer in every process.
+This is a security measure to prevent hash collision attacks,
+but it means that `hash()` is not suitable for partitioning
+when reproducibility matters.
+The fix is to use `hashlib.md5` (or another deterministic hash function)
+to convert keys to integers.
+The result is not affected by `PYTHONHASHSEED`,
+so the examples produce the same output every time.
+
+<section class="exercises" markdown="1">
+## Exercises {#mapreduce-exercises}
+
+1.  Run the word-count example twice without calling `random.seed()`.
+    Do the results change between runs?
+    Now add `random.seed(42)` before the simulation and run it again.
+    Are the results now reproducible?
+    Why or why not—is the hash function the only source of non-determinism?
+
+2.  The combiner reduces network traffic by pre-aggregating mapper output.
+    Modify the word-count example to count how many key-value pairs the mapper produces
+    and how many it would produce after combining.
+    Use a corpus of 1000 words with a vocabulary of 50 distinct words
+    and measure the reduction factor.
+
+3.  The current implementation retries failed tasks until they succeed.
+    What happens if a task always fails (e.g., because the input data is corrupt)?
+    Add a maximum retry count to the coordinator and have it report a permanent failure
+    after three attempts.
+    (Starter: add a `retry_count: dict` to `MRCoordinator.__init__` and increment it in the failure handler.)
+
+4.  Speculative execution launches a backup copy of a slow task.
+    What happens if both the original and the backup succeed at almost the same time?
+    Trace through `speculative_coordinator.py` to find where duplicate results are handled.
+    Is there a window where the coordinator could accept both?
+
+5.  MapReduce is described as unsuitable for iterative algorithms.
+    Sketch how you would compute PageRank (which requires iterating until convergence)
+    using multiple MapReduce jobs chained together.
+    How many jobs would be needed for 10 iterations?
+    What is the overhead compared to a system that keeps data in memory between iterations?
+
+</section>

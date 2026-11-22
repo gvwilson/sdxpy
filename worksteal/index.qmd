@@ -1,0 +1,251 @@
+---
+abstract-text: 'FIXME
+
+  '
+syllabus:
+- Explain why a single centralized task queue becomes a bottleneck at high worker
+  counts and how per-worker deques address this.
+- Describe the asymmetry between owner operations (push/pop from one end) and thief
+  operations (steal from the other end) and explain why this asymmetry matters.
+- Explain why a real work-stealing deque requires atomic operations and careful memory
+  ordering, and why a Python list is not sufficient.
+- Describe what livelock looks like in a work-stealing system and identify at least
+  one strategy to prevent it.
+---
+
+# A Work-Stealing Scheduler {#sec-worksteal}
+
+::: {.syllabus}
+- Explain why a single centralized task queue becomes a bottleneck at high worker counts and how per-worker deques address this.
+- Describe the asymmetry between owner operations (push/pop from one end) and thief operations (steal from the other end) and explain why this asymmetry matters.
+- Explain why a real work-stealing deque requires atomic operations and careful memory ordering, and why a Python list is not sufficient.
+- Describe what livelock looks like in a work-stealing system and identify at least one strategy to prevent it.
+:::
+
+**In Development**
+
+How do you distribute work
+When you have hundreds or thousands of tasks to execute and a handful of CPU cores?
+A naïve approach is to use a single queue,
+but this creates a bottleneck,
+since every worker must compete for access to that queue.
+
+A {{< g work-stealing "work-stealing" >}} scheduler solves this problem through decentralization.
+Each worker maintains a local {{< g deque "deque" >}} of tasks.
+Workers execute tasks from one end of their own deque,
+but if a worker runs out of tasks it can take some from the other end of another worker's deque.
+This design minimizes {{< g contention "contention" >}} while providing some {{< g load-balancing "load balancing" >}},
+and appears throughout high-performance computing.
+[Go's runtime scheduler](@go-scheduler) uses is to distribute goroutines across threads,
+Java's [fork/join framework](@java-fork-join) enables parallel divide-and-conquer algorithms,
+and [Tokio](@tokio) (Rust's async runtime) uses it to schedule {{< g future "futures" >}} across worker threads.
+
+## The Work-Stealing Pattern {#worksteal-pattern}
+
+A work-stealing system has five parts:
+
+1.  Each worker has a local deque of tasks.
+1.  Those tasks are independent of each other.
+1.  Workers pop tasks from the private end of their deque.
+1.  Idle workers take tasks from the public end of other workers' deques.
+1.  Running tasks can create new child tasks.
+
+The key idea is asymmetry:
+the owning worker operates on one end of their deque
+(usually called the bottom)
+while other workers (called thieves) steal from its other end (the top).
+This reduces contention because owners and thieves don't compete for the same task
+unless the queue is almost empty.
+
+Let's start with the task representation:
+
+{{< inc worksteal/task.py mark=task >}}
+
+Each task has an ID,
+a duration to simulate CPU-bound work,
+and an optional parent task ID for tracking task dependencies.
+
+Each worker maintains a deque.
+In our simulation, we'll use a simple list-based deque:
+
+{{< inc worksteal/worker_deque.py mark=deque >}}
+
+A production system would use something more sophisticated than a simple Python list
+to manage the deque,
+but our simulation focuses on the algorithmic pattern rather than low-level synchronization.
+
+A worker executes tasks from its local deque and steals when idle.
+We start by setting up its members:
+
+{{< inc worksteal/worker.py mark=worker >}}
+
+and then define its behavior:
+
+{{< inc worksteal/worker.py mark=run >}}
+
+As the code above shows,
+the worker continuously tries to execute tasks.
+If its local deque is empty,
+it attempts to steal from other workers.
+If stealing fails,
+it waits briefly before trying again.
+
+Executing a task is relatively straightforward:
+
+{{< inc worksteal/worker.py mark=execute >}}
+
+Stealing a task from another worker is somewhat more interesting.
+The most important part is that we randomize the order in which we check the workers
+in order to spread the load as evenly as possible:
+
+{{< inc worksteal/worker.py mark=steal >}}
+
+## The Scheduler {#worksteal-scheduler}
+
+The scheduler coordinates workers and provides task submission:
+
+{{< inc worksteal/scheduler.py mark=scheduler >}}
+
+We can create a simple simulation with load imbalance to see it in action:
+
+{{< inc worksteal/ex_basic_ws.py mark=sim >}}
+
+The output shows workers executing tasks and stealing from each other when they run out of local work.
+The steal rate shows how much load balancing occurred:
+
+{{< inc worksteal/ex_basic_ws.out head=10 tail=7 >}}
+
+## Nested Task Spawning {#worksteal-spawn}
+
+A common extension of work-stealing is
+to support {{< g divide-and-conquer "divide-and-conquer" >}} algorithms
+by allowing tasks to spawn subtasks.
+To explore this,
+we can create a task generator:
+
+{{< inc worksteal/task_generator.py mark=gen >}}
+
+and then create a worker that spawns subtasks with some random probability
+(in our case, 30%):
+
+{{< inc worksteal/worker_with_spawning.py mark=spawner >}}
+
+The final step is to write a scheduler that creates these workers:
+
+{{< inc worksteal/scheduler_with_spawning.py mark=scheduler >}}
+
+Our simulation looks similar to our first one:
+
+{{< inc worksteal/ex_spawning.py mark=sim >}}
+
+Its output shows that spawning helps balance the load
+even with irregular task creation:
+
+{{< inc worksteal/ex_spawning.out head=20 tail=8 >}}
+
+## Load Balancing Strategies {#worksteal-balance}
+
+What effect does target selection strategy have on performance?
+To find out,
+we can create a worker that uses adaptive target selection,
+i.e.,
+that steals tasks from the largest of its peers' queues:
+
+{{< inc worksteal/adaptive_worker.py mark=worker >}}
+
+Unsurprisingly,
+this leads to better load balancing:
+
+{{< inc worksteal/ex_adaptive.out head=20 tail=8 >}}
+
+## Task Granularity {#worksteal-granularity}
+
+The {{< g granularity "granularity" >}} of tasks—i.e.,
+how much work is in each one—has a big impact on performance.
+Many small tasks create lots of scheduling overhead,
+while a few large tasks cause load imbalance.
+Using the code we have written so far,
+we can easily experiment with the effect of changing task size:
+
+{{< inc worksteal/ex_granularity.out >}}
+
+## Parent-Child Join {#worksteal-join}
+
+The current workers spawn child tasks and move on immediately.
+For divide-and-conquer algorithms,
+the parent usually needs to wait for all children to finish before it can complete its own work—
+this is the {{< g fork-join "fork-join" >}} pattern.
+
+`JoiningWorker` implements this by suspending the parent at the join point
+and resuming it only when all children have signaled completion:
+
+{{< inc worksteal/joining_worker.py mark=joining >}}
+
+Each child posts to the parent's join queue when it finishes;
+the parent counts down to zero and then resumes.
+
+**Hidden complexity:** In a real multi-threaded work-stealing runtime
+(Go's goroutine scheduler, Java's ForkJoin, Tokio in Rust),
+the parent cannot simply `await` a queue—
+doing so would block the OS thread, preventing that thread from stealing and running other tasks.
+Instead, the runtime saves the parent's continuation (the code to run after the join)
+and suspends the parent without blocking the thread.
+The thread is free to steal and execute other tasks while the parent waits.
+When the last child completes, it decrements an atomic counter;
+if the counter reaches zero, it schedules the parent's continuation back onto the deque.
+This requires lock-free atomic operations on the counter and careful memory ordering
+to ensure the parent sees all of the children's writes before it resumes.
+Our simulation sidesteps all of this with asimpy's event-driven, single-threaded model,
+but students building a real scheduler must address it.
+
+## Preventing Livelock {#worksteal-livelock}
+
+Our implementations demonstrate the core concepts of work stealing,
+but production systems go further.
+In particular,
+they try to prevent {{< g livelock "livelock" >}} by limiting how long a worker searches for victims,
+and use exponential backoff rather than spinning continuously when trying to steal work.
+
+Livelock in work-stealing looks like this:
+all workers are simultaneously idle (no local tasks),
+all try to steal from each other at the same instant,
+all fail (because everyone is already popping from the top),
+all wait and retry,
+and the cycle repeats.
+The fix is:
+(1) cap the number of steal attempts per idle cycle so workers don't spin-steal forever, and
+(2) use exponential backoff—after each failed steal attempt, wait twice as long before trying again.
+The backoff period is bounded (typically at 1–10 ms) so a newly available task is still noticed quickly.
+
+<section class="exercises" markdown="1">
+## Exercises {#worksteal-exercises}
+
+1.  In the basic simulation, vary the number of workers from 2 to 8
+    while keeping the total number of tasks fixed at 20.
+    How does the steal rate change?
+    At what worker count does adding more workers stop helping?
+
+2.  The deque uses a Python list,
+    which would require a lock if multiple threads accessed it simultaneously.
+    Find the `push_bottom`, `pop_bottom`, and `steal_top` methods in `worker_deque.py`.
+    For each method, identify which operation would be unsafe if two threads called it concurrently
+    without a lock (e.g., what can go wrong if `steal_top` and `pop_bottom` run at the same time?).
+
+3.  Run the joining worker simulation.
+    Find a task in the output where the parent waits for children.
+    How much longer does the parent take to complete compared to what it would take without children?
+    What determines the critical path length when tasks have children?
+
+4.  Add exponential backoff to the basic worker's steal loop.
+    After each failed steal attempt, double the wait time (starting at 0.05, capped at 0.5).
+    Reset the wait time to 0.05 on a successful steal.
+    Compare the total simulation time and idle time against the baseline.
+    (Starter: add `backoff = 0.05` to the worker's `init` and update it in `try_steal`.)
+
+5.  The adaptive worker steals from the largest queue.
+    Compare its steal count and total simulation time against the random-target worker
+    on a workload where tasks arrive in bursts (e.g., all tasks for worker 0 arrive at t=0,
+    all tasks for worker 1 arrive at t=5).
+    Does adaptive selection help or hurt in this case?
+
+</section>

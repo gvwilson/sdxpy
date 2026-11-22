@@ -1,0 +1,228 @@
+---
+abstract-text: 'FIXME
+
+  '
+syllabus:
+- Explain the swarming property of BitTorrent and why adding more downloaders increases
+  available upload capacity.
+- Describe the rarest-first piece selection strategy and explain why it maintains
+  piece diversity in the swarm.
+- Explain how the choking and optimistic-unchoking algorithm implements tit-for-tat
+  without a central enforcer.
+- Describe how SHA-1 piece verification protects against corrupted or malicious data
+  from untrusted peers.
+---
+
+# BitTorrent Protocol {#sec-torrent}
+
+::: {.syllabus}
+- Explain the swarming property of BitTorrent and why adding more downloaders increases available upload capacity.
+- Describe the rarest-first piece selection strategy and explain why it maintains piece diversity in the swarm.
+- Explain how the choking and optimistic-unchoking algorithm implements tit-for-tat without a central enforcer.
+- Describe how SHA-1 piece verification protects against corrupted or malicious data from untrusted peers.
+:::
+
+**In Development**
+
+When you download a large Linux distribution ISO, a game update, or a software package, you might be using BitTorrent without even knowing it. BitTorrent revolutionized file sharing by turning traditional client-server downloads upside down: instead of downloading from a single server, you download pieces from dozens of peers simultaneously. The more popular a file, the faster it downloads—a property called "swarming" that makes BitTorrent uniquely efficient for distributing large files.
+
+BitTorrent emerged in 2001 as a solution to a fundamental problem: how do you distribute large files to millions of people without overwhelming your servers? Traditional HTTP downloads create a bottleneck—the server's upload bandwidth limits how many people can download simultaneously. BitTorrent solves this by having downloaders help each other: as soon as you download a piece, you can share it with others. This creates a distributed system where upload capacity scales with demand.
+
+This pattern powers countless systems: Linux distributions use BitTorrent for ISO distribution, game companies use it for patches and updates, academic institutions share datasets, and content delivery networks use BitTorrent-inspired protocols for video streaming. Understanding BitTorrent reveals fundamental principles of peer-to-peer systems, incentive design, and distributed consensus.
+
+## The BitTorrent Architecture
+
+BitTorrent involves several components working together:
+
+1. **Torrent file**: Metadata describing the file(s) to download, including piece hashes and tracker URL
+2. **Tracker**: Coordinates peers by providing lists of other peers in the swarm
+3. **Peers**: Clients downloading and uploading pieces simultaneously
+4. **Seeders**: Peers who have the complete file and only upload
+5. **Leechers**: Peers who are still downloading
+
+The protocol works through these steps:
+
+1. **Obtain torrent file**: Contains metadata and tracker URL
+2. **Contact tracker**: Get list of peers in the swarm
+3. **Connect to peers**: Establish TCP connections with multiple peers
+4. **Exchange piece information**: Tell peers what you have, learn what they have
+5. **Download pieces**: Request rarest pieces first to maximize availability
+6. **Upload to others**: Share pieces you've downloaded to maintain good standing
+7. **Verify integrity**: Check each piece against SHA-1 hash from torrent
+8. **Become seeder**: Continue uploading after completing download
+
+The key insight is **tit-for-tat**: peers upload to those who upload to them. This creates incentives for cooperation without central enforcement.
+
+## Core Data Structures
+
+Let's start with the fundamental types.
+The file types describe pieces and torrent metadata:
+
+{{< inc torrent/bittorrent_types.py mark=file_types >}}
+
+The message types describe the protocol exchanges between peers and tracker:
+
+{{< inc torrent/bittorrent_types.py mark=message_types >}}
+
+These structures represent the protocol's messages and state. The bitfield is particularly important—it compactly represents which pieces a peer has.
+
+## Tracker Implementation
+
+The tracker coordinates the swarm by maintaining a list of active peers.
+The class and its constructor set up the request queue and swarm registry:
+
+{{< inc torrent/tracker.py mark=tracker_init >}}
+
+When a peer announces itself, `handle_request` updates the swarm and returns a list of known peers:
+
+{{< inc torrent/tracker.py mark=tracker_handle >}}
+
+The tracker is stateless—it just maintains the current list of peers. In production, trackers often use UDP for efficiency and can handle millions of peers.
+
+## Simplified Peer
+
+The peer is the heart of BitTorrent—it downloads pieces, uploads to others, and manages connections.
+The constructor stores the peer's identity, piece inventory, and connections to other peers:
+
+{{< inc torrent/simplified_peer.py mark=peer_init >}}
+
+The `run` method announces to the tracker, then loops through download rounds until all pieces are obtained:
+
+{{< inc torrent/simplified_peer.py mark=peer_run >}}
+
+Each download round selects pieces to request using rarest-first ordering, then attempts to download from available peers:
+
+{{< inc torrent/simplified_peer.py mark=peer_download_round >}}
+
+`_download_from_peer` applies the tit-for-tat rule—only downloading from a peer if it has uploaded to us recently—and on success updates piece state and broadcasts a HAVE message:
+
+{{< inc torrent/simplified_peer.py mark=peer_download_from >}}
+
+This simplified version captures the essence of BitTorrent without all the protocol complexity.
+
+## Basic Simulation
+
+Let's see BitTorrent in action:
+
+{{< inc torrent/example_basic_bittorrent.py mark=basicexample >}}
+
+This shows how pieces propagate through the swarm—early peers help later peers, distributing the upload burden.
+
+## Key BitTorrent Concepts
+
+### Rarest First
+
+Peers prioritize downloading the rarest pieces in the swarm. This ensures piece diversity—if everyone downloads common pieces, rare pieces might disappear if the only seeder leaves.
+
+### Tit-for-Tat
+
+Peers upload to those who upload to them. This creates incentive for cooperation without central enforcement. Peers who don't upload ("leechers") get poor download speeds.
+
+### Optimistic Unchoking
+
+Periodically upload to a random peer who isn't uploading to you. This gives new peers a chance to join the ecosystem and discover faster peers.
+
+### Choking Algorithm
+
+Peers limit uploads to their top 4-5 uploaders. This maximizes efficiency by focusing bandwidth on productive connections rather than spreading it thin.
+
+`ChokingPeer` implements the full choking/unchoking algorithm:
+
+{{< inc torrent/choking_peer.py mark=upload_record >}}
+
+{{< inc torrent/choking_peer.py mark=choking_peer >}}
+
+The `rechoke` method re-evaluates who gets upload slots based on recent upload history,
+and `rotate_optimistic` gives new peers a chance to prove themselves:
+
+{{< inc torrent/choking_peer.py mark=unchoke_logic >}}
+
+Piece verification checks each downloaded piece against the SHA-1 hash in the torrent metadata:
+
+{{< inc torrent/choking_peer.py mark=piece_verification >}}
+
+### End Game Mode
+
+When almost complete, aggressively request remaining pieces from all peers. Cancel duplicate requests when pieces arrive. This prevents the last few pieces from taking disproportionately long.
+
+## DHT (Distributed Hash Table)
+
+Modern BitTorrent doesn't require trackers. DHT creates a distributed database where peers can find other peers without a central server:
+
+- Uses Kademlia algorithm
+- Each peer stores information about nearby peers in ID space
+- Provides tracker-like functionality in decentralized manner
+- Resilient to tracker failures or censorship
+
+## Security and Privacy
+
+BitTorrent has several security considerations:
+
+**Protocol Encryption**: Obfuscates traffic to bypass ISP throttling
+
+**PEX (Peer Exchange)**: Peers share peer lists directly, reducing tracker dependency
+
+**Magnet Links**: Reference torrents by info hash without needing .torrent file
+
+**Private Trackers**: Require authentication, track ratios, encourage seeding
+
+**Copyright Concerns**: BitTorrent is neutral technology but can distribute copyrighted content
+
+## Real-World Applications
+
+Beyond file sharing, BitTorrent's principles appear in:
+
+**Content Delivery**: Twitter uses BitTorrent-inspired Murder for deploying code to servers
+
+**Software Distribution**: Linux distributions, game updates, software patches
+
+**Live Streaming**: Peer-assisted streaming reduces server load
+
+**Blockchain**: Bitcoin and Ethereum use gossip protocols inspired by P2P systems
+
+**IPFS**: InterPlanetary File System uses BitTorrent-like chunking and distribution
+
+## Conclusion
+
+BitTorrent demonstrates how to build efficient distributed systems through clever incentive design. The key principles are:
+
+1. **Decentralization**: No single point of failure or bottleneck
+2. **Swarming**: More demand creates more supply
+3. **Incentive alignment**: Tit-for-tat encourages cooperation
+4. **Piece verification**: Cryptographic hashes ensure integrity
+5. **Rarest first**: Maintains piece diversity in the swarm
+
+These patterns extend beyond file sharing to distributed databases, content delivery networks, and peer-to-peer systems generally. Understanding BitTorrent provides insight into how to coordinate distributed resources without central control—a fundamental challenge in distributed systems.
+
+Our simulation captures the essence of BitTorrent: pieces flowing through a swarm, rarest-first selection, and peers helping each other. While production BitTorrent adds complexity—TCP connection management, detailed choking algorithms, DHT—the core ideas we've demonstrated remain central to how BitTorrent achieves its remarkable efficiency.
+
+<section class="exercises" markdown="1">
+## Exercises {#torrent-exercises}
+
+1.  Run the basic simulation with 1 seeder and 4 peers.
+    Look at the download times for each peer.
+    Now change the simulation to start with 2 seeders.
+    By how much does the total download time decrease?
+    Why doesn't adding a second seeder halve the download time?
+
+2.  In `simplified_peer.py`, the rarest-first selection sorts pieces by how many peers have them.
+    Change the selection to most common first (reverse the sort order) and run the simulation.
+    What happens to the swarm over time?
+    Which pieces are at risk of disappearing if the only seeder leaves?
+
+3.  The `ChokingPeer` rejects pieces that fail hash verification.
+    Modify the simulation to occasionally corrupt a piece (flip one byte) before the hash check.
+    What fraction of downloads succeed on the first try?
+    How many total download attempts are needed to get all pieces?
+
+4.  Optimistic unchoking gives new peers a chance to start downloading.
+    Simulate a swarm where all peers start at the same time with no pieces.
+    With optimistic unchoking disabled, can the swarm make any progress?
+    With it enabled, how many rounds does it take before the first piece propagates?
+
+5.  A "free-rider" downloads pieces but never uploads.
+    In the choking algorithm, what happens to a free-rider's upload record?
+    Will it ever be unchoked by the top-4 mechanism?
+    Under what circumstances might it receive pieces anyway, and is this a design flaw?
+
+</section>
