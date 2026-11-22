@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="generator" content="pandoc">
+  <title>A Package Manager</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+  <link rel="stylesheet" href="https://unpkg.com/reveal.js@^5/dist/reset.css">
+  <link rel="stylesheet" href="https://unpkg.com/reveal.js@^5/dist/reveal.css">
+  <style>
+    .reveal .sourceCode {  /* see #7635 */
+      overflow: visible;
+    }
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="../mccole/slides.css"/>
+</head>
+<body>
+  <div class="reveal">
+    <div class="slides">
+
+<section id="title-slide">
+  <h1 class="title">A Package Manager</h1>
+</section>
+
+<section class="slide level2">
+
+<section class="slide">
+</section>
+<section id="the-problem" class="slide level2">
+<h2>The Problem</h2>
+<ul>
+<li><p>Packages and their dependencies change over time</p></li>
+<li><p>If A and B require different versions of C it might not be
+possible to use A and B together</p></li>
+<li><p>Need a systematic way to find globally-consistent sets of
+packages</p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="identifying-versions" class="slide level2">
+<h2>Identifying Versions</h2>
+<ul>
+<li><p>[%g semantic_versioning “Semantic versioning” %] uses three
+integers <code>X.Y.Z</code></p>
+<ul>
+<li><p><code>X</code> is the major version (breaking changes)</p></li>
+<li><p><code>Y</code> is the minor version (new features)</p></li>
+<li><p><code>Z</code> is the [%g patch “patch” %] (bug fixes)</p></li>
+</ul></li>
+<li><p>Notation</p>
+<ul>
+<li><p><code>&gt;=1.2.3</code> means “any version from 1.2.3
+onward”</p></li>
+<li><p><code>&lt;4</code> means “any version before 4.anything”</p></li>
+<li><p><code>1.0-3.1</code> means “any version in the specified
+range”</p></li>
+</ul></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="a-simplified-version" class="slide level2">
+<h2>A Simplified Version</h2>
+<p>[%inc triple.json %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="multiple-dimensions" class="slide level2">
+<h2>Multiple Dimensions</h2>
+<ul>
+<li><p>Imagine a multi-dimensional grid with one axis per
+package</p></li>
+<li><p>Possible combinations are points in this grid</p></li>
+</ul>
+<p>[% figure slug=“pack-allowable” img=“allowable.svg” alt=“Allowable
+versions” caption=“Finding allowable combinations of package versions.”
+%]</p>
+<ul>
+<li>But how do we find the legal ones?</li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="estimate-work" class="slide level2">
+<h2>Estimate Work</h2>
+<ul>
+<li><p>Our example has 3×3×2=18 combinations</p></li>
+<li><p>Adding one more package with two versions doubles the [%g
+search_space “search space” %]</p></li>
+<li><p>A [%g combinatorial_explosion “combinatorial explosion”
+%]</p></li>
+<li><p>Brute force solutions are impractical even for small
+problems</p></li>
+<li><p>But worth implementing as a starting point and for
+testing</p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="brute-force" class="slide level2">
+<h2>Brute Force</h2>
+<ul>
+<li><p>Generate all possible combinations of package versions</p></li>
+<li><p>Then eliminate ones that aren’t compatible with the
+manifest</p></li>
+</ul>
+<p>[%inc exhaustive.py mark=main %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="generating-possibilities" class="slide level2">
+<h2>Generating Possibilities</h2>
+<ul>
+<li><p>Create a list of the available versions of each package</p></li>
+<li><p>Generate their [%g cross_product “cross product” %]</p></li>
+</ul>
+<p>[%inc exhaustive.py mark=possible %]</p>
+<p>[% figure slug=“pack-product” img=“product.svg” alt=“Generating a
+cross-product” caption=“Generating all possible combinations of items.”
+%]</p>
+</section>
+<section class="slide">
+</section>
+<section id="checking-validity" class="slide level2">
+<h2>Checking Validity</h2>
+<ul>
+<li><p>Compare every entry X against every other entry Y</p></li>
+<li><p>If they are the same package, keep looking</p></li>
+<li><p>If package X’s requirements say nothing about package Y, keep
+searching</p></li>
+<li><p>If X <em>does</em> depend on Y but this particular version of X
+doesn’t list this particular version of Y as a dependency, rule out this
+combination</p></li>
+<li><p>If combination is still a candidate, add to list</p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="checking-validity-1" class="slide level2">
+<h2>Checking Validity</h2>
+<p>[%inc exhaustive.py mark=compatible %]</p>
+<ul>
+<li>Finds 3 valid combinations among our 18 possibilities</li>
+</ul>
+<p>[%inc exhaustive.out %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="manual-generation" class="slide level2">
+<h2>Manual Generation</h2>
+<ul>
+<li>Create our own cross-product function in preparation for doing
+something more efficient</li>
+</ul>
+<p>[%inc manual.py mark=start %]</p>
+<ul>
+<li><p>Create a list of lists of available versions</p></li>
+<li><p>Create an empty accumulator</p></li>
+<li><p>Do some magic</p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="manual-generation-1" class="slide level2">
+<h2>Manual Generation</h2>
+<ul>
+<li><p>Each call to <code>_make_possible</code> handles one package’s
+worth of work</p></li>
+<li><p>Loop over available versions of current package</p></li>
+<li><p>Add that package to the combination in progress</p></li>
+<li><p>If more packages, recurse</p></li>
+<li><p>Otherwise, append to accumulator</p></li>
+</ul>
+<p>[%inc manual.py mark=make %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="incremental-search" class="slide level2">
+<h2>Incremental Search</h2>
+<ul>
+<li><p>Generate-and-discard is inefficient</p></li>
+<li><p>Stop immediately if a partial combination of packages is
+illegal</p></li>
+</ul>
+<p>[%inc incremental.py mark=main %]</p>
+<ul>
+<li><code>reverse</code> to allow experimentation</li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="finding-possibilities" class="slide level2">
+<h2>Finding Possibilities</h2>
+<p>[%inc incremental.py mark=find %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="finding-possibilities-1" class="slide level2">
+<h2>Finding Possibilities</h2>
+<ol type="1">
+<li><p>The manifest that tells us what’s compatible with what.</p></li>
+<li><p>The names of the packages we’ve haven’t considered yet.</p></li>
+<li><p>An accumulator to hold all the valid combinations we’ve found so
+far.</p></li>
+<li><p>The partially-completed combination we’re going to extend
+next.</p></li>
+<li><p>A count of the number of combinations we’ve considered so far,
+which we will use as a measure of efficiency.</p></li>
+</ol>
+</section>
+<section class="slide">
+</section>
+<section id="savings" class="slide level2">
+<h2>Savings</h2>
+<ul>
+<li>We only create 11 candidates instead of 18</li>
+</ul>
+<p>[%inc incremental.sh %] [%inc incremental.out %]</p>
+<ul>
+<li>Reversing the order cuts it to 9</li>
+</ul>
+<p>[%inc incremental_reverse.sh %] [%inc incremental_reverse.out %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="using-a-theorem-prover" class="slide level2">
+<h2>Using a Theorem Prover</h2>
+<ul>
+<li><p>An automated theorem prover can do much better</p>
+<ul>
+<li>But the algorithms quickly become very complex</li>
+</ul></li>
+<li><p>Prove that a set of logical propositions (e.g., dependencies) are
+satisfiable</p></li>
+<li><p>We will use the [Z3 theorem prover][z3]</p>
+<ul>
+<li>Whose documentation is unfortunately a barrier to entry</li>
+</ul></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="using-z3" class="slide level2">
+<h2>Using Z3</h2>
+<p>[%inc z3_equal.py mark=setup %]</p>
+<ul>
+<li><p><code>A</code>, <code>B</code>, and <code>C</code> don’t have
+values</p></li>
+<li><p>Instead, each represents the set of possible Boolean
+values</p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="using-z3-1" class="slide level2">
+<h2>Using Z3</h2>
+<ul>
+<li>Specify constraints such as <code>A == B</code></li>
+</ul>
+<p>[%inc z3_equal.py mark=solve %]</p>
+<ul>
+<li>Then ask Z3 to find a [%g model “model” %] that satisfies those
+constraints</li>
+</ul>
+<p>[%inc z3_equal.out %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="unsatisfiable" class="slide level2">
+<h2>Unsatisfiable</h2>
+<ul>
+<li>Require <code>A</code> to equal <code>B</code> and <code>B</code> to
+equal <code>C</code> but <code>A</code> and <code>C</code> to be
+unequal</li>
+</ul>
+<p>[%inc z3_unequal.py mark=solve %] [%inc z3_unequal.out %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="packaging" class="slide level2">
+<h2>Packaging</h2>
+<ul>
+<li>Represent our package versions</li>
+</ul>
+<p>[%inc z3_triple.py mark=setup %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="packaging-1" class="slide level2">
+<h2>Packaging</h2>
+<ul>
+<li>We want one version of <code>A</code></li>
+</ul>
+<p>[%inc z3_triple.py mark=top %]</p>
+<ul>
+<li>But the versions of <code>A</code> are mutually exclusive</li>
+</ul>
+<p>[%inc z3_triple.py mark=exclusive %]</p>
+<ul>
+<li>Do the same for <code>B</code> and <code>C</code></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="dependencies" class="slide level2">
+<h2>Dependencies</h2>
+<ul>
+<li>Add inter-package dependencies and solve</li>
+</ul>
+<p>[%inc z3_triple.py mark=depends %] [%inc z3_triple.out %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="summary" class="slide level2">
+<h2>Summary</h2>
+<p>[% figure slug=“pack-concept-map” img=“concept_map.svg” alt=“Concept
+map for package manager.” caption=“Concept map.” %]</p>
+</section>
+</section>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/reveal.js@^5/dist/reveal.js"></script>
+
+  <!-- reveal.js plugins -->
+  <script src="https://unpkg.com/reveal.js@^5/plugin/notes/notes.js"></script>
+  <script src="https://unpkg.com/reveal.js@^5/plugin/search/search.js"></script>
+  <script src="https://unpkg.com/reveal.js@^5/plugin/zoom/zoom.js"></script>
+
+  <script>
+
+      // Full list of configuration options available at:
+      // https://revealjs.com/config/
+      Reveal.initialize({
+        // Display controls in the bottom right corner
+        controls: true,
+
+        // Help the user learn the controls by providing hints, for example by
+        // bouncing the down arrow when they first encounter a vertical slide
+        controlsTutorial: true,
+
+        // Determines where controls appear, "edges" or "bottom-right"
+        controlsLayout: 'bottom-right',
+
+        // Visibility rule for backwards navigation arrows; "faded", "hidden"
+        // or "visible"
+        controlsBackArrows: 'faded',
+
+        // Display a presentation progress bar
+        progress: true,
+
+        // Display the page number of the current slide
+        slideNumber: true,
+
+        // 'all', 'print', or 'speaker'
+        showSlideNumber: 'all',
+
+        // Add the current slide number to the URL hash so that reloading the
+        // page/copying the URL will return you to the same slide
+        hash: true,
+
+        // Start with 1 for the hash rather than 0
+        hashOneBasedIndex: false,
+
+        // Flags if we should monitor the hash and change slides accordingly
+        respondToHashChanges: true,
+
+        // Push each slide change to the browser history
+        history: false,
+
+        // Enable keyboard shortcuts for navigation
+        keyboard: true,
+
+        // Enable the slide overview mode
+        overview: true,
+
+        // Disables the default reveal.js slide layout (scaling and centering)
+        // so that you can use custom CSS layout
+        disableLayout: false,
+
+        // Vertical centering of slides
+        center: true,
+
+        // Enables touch navigation on devices with touch input
+        touch: true,
+
+        // Loop the presentation
+        loop: false,
+
+        // Change the presentation direction to be RTL
+        rtl: false,
+
+        // see https://revealjs.com/vertical-slides/#navigation-mode
+        navigationMode: 'default',
+
+        // Randomizes the order of slides each time the presentation loads
+        shuffle: false,
+
+        // Turns fragments on and off globally
+        fragments: true,
+
+        // Flags whether to include the current fragment in the URL,
+        // so that reloading brings you to the same fragment position
+        fragmentInURL: true,
+
+        // Flags if the presentation is running in an embedded mode,
+        // i.e. contained within a limited portion of the screen
+        embedded: false,
+
+        // Flags if we should show a help overlay when the questionmark
+        // key is pressed
+        help: true,
+
+        // Flags if it should be possible to pause the presentation (blackout)
+        pause: true,
+
+        // Flags if speaker notes should be visible to all viewers
+        showNotes: false,
+
+        // Global override for autoplaying embedded media (null/true/false)
+        autoPlayMedia: null,
+
+        // Global override for preloading lazy-loaded iframes (null/true/false)
+        preloadIframes: null,
+
+        // Number of milliseconds between automatically proceeding to the
+        // next slide, disabled when set to 0, this value can be overwritten
+        // by using a data-autoslide attribute on your slides
+        autoSlide: 0,
+
+        // Stop auto-sliding after user input
+        autoSlideStoppable: true,
+
+        // Use this method for navigation when auto-sliding
+        autoSlideMethod: null,
+
+        // Specify the average time in seconds that you think you will spend
+        // presenting each slide. This is used to show a pacing timer in the
+        // speaker view
+        defaultTiming: null,
+
+        // Enable slide navigation via mouse wheel
+        mouseWheel: false,
+
+        // The display mode that will be used to show slides
+        display: 'block',
+
+        // Hide cursor if inactive
+        hideInactiveCursor: true,
+
+        // Time before the cursor is hidden (in ms)
+        hideCursorTime: 5000,
+
+        // Opens links in an iframe preview overlay
+        previewLinks: false,
+
+        // Transition style (none/fade/slide/convex/concave/zoom)
+        transition: 'slide',
+
+        // Transition speed (default/fast/slow)
+        transitionSpeed: 'default',
+
+        // Transition style for full page slide backgrounds
+        // (none/fade/slide/convex/concave/zoom)
+        backgroundTransition: 'fade',
+
+        // Number of slides away from the current that are visible
+        viewDistance: 3,
+
+        // Number of slides away from the current that are visible on mobile
+        // devices. It is advisable to set this to a lower number than
+        // viewDistance in order to save resources.
+        mobileViewDistance: 2,
+
+        // reveal.js plugins
+        plugins: [
+          RevealNotes,
+          RevealSearch,
+          RevealZoom
+        ]
+      });
+    </script>
+    </body>
+</html>

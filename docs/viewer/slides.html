@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="generator" content="pandoc">
+  <title>A File Viewer</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+  <link rel="stylesheet" href="https://unpkg.com/reveal.js@^5/dist/reset.css">
+  <link rel="stylesheet" href="https://unpkg.com/reveal.js@^5/dist/reveal.css">
+  <style>
+    .reveal .sourceCode {  /* see #7635 */
+      overflow: visible;
+    }
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="../mccole/slides.css"/>
+</head>
+<body>
+  <div class="reveal">
+    <div class="slides">
+
+<section id="title-slide">
+  <h1 class="title">A File Viewer</h1>
+</section>
+
+<section class="slide level2">
+
+<section class="slide">
+</section>
+<section id="the-problem" class="slide level2">
+<h2>The Problem</h2>
+<ul>
+<li><p>We have been editing a lot of files</p></li>
+<li><p>How can we display a text file in a window?</p></li>
+<li><p>How can we move around in that file?</p></li>
+<li><p>How we can change it will be the topic of [%x undo %]</p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="curses" class="slide level2">
+<h2>Curses</h2>
+<p>[%inc first_curses.py %]</p>
+<ul>
+<li><p>The [curses][py_curses] library handles interaction with a text
+terminal</p></li>
+<li><p><code>curses.wrapper</code> takes a function of a single
+argument</p></li>
+<li><p>Does setup, then calls that function with a standard
+screen</p></li>
+<li><p>This program just gobbles keystrokes: stop it with
+Ctrl-C</p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="debugging" class="slide level2">
+<h2>Debugging</h2>
+<ul>
+<li><p>Printing messages or single-stepping with a debugger is
+tricky</p></li>
+<li><p>Create a simple logging function</p></li>
+</ul>
+<p>[%inc util.py mark=log %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="debugging-1" class="slide level2">
+<h2>Debugging</h2>
+<p>[%inc logging_curses.py mark=show %]</p>
+<ul>
+<li><p>Print representation of characters to file (so that
+<code>\n</code> shows up)</p></li>
+<li><p>Exit cleanly</p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="showing-lines" class="slide level2">
+<h2>Showing Lines</h2>
+<p>[%inc show_lines.py mark=main %]</p>
+<ul>
+<li><p>Screen coordinates put (0, 0) in the upper left</p></li>
+<li><p>And use (y, x) rather than (x, y)</p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="showing-lines-1" class="slide level2">
+<h2>Showing Lines</h2>
+<p>[%inc show_lines.py mark=run %]</p>
+<ul>
+<li><p>Make lines for testing rather than showing file</p></li>
+<li><p>Open the log file</p></li>
+<li><p>Use <code>lambda</code> to make a one-parameter function for
+<code>curses.wrapper</code></p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="making-lines" class="slide level2">
+<h2>Making Lines</h2>
+<p>[%inc util.py mark=lines %] [%inc make_lines.out %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="windowing" class="slide level2">
+<h2>Windowing</h2>
+<ul>
+<li><p>Run program with 100 lines (or anything else larger than
+screen)</p></li>
+<li><p><code>_curses.error: addwstr() returned ERR</code> because trying
+to draw outside screen</p></li>
+<li><p>So create a <code>Window</code> class that knows how big the
+screen is</p></li>
+</ul>
+<p>[%inc use_window.py mark=window %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="windowing-1" class="slide level2">
+<h2>Windowing</h2>
+<p>[%inc use_window.py mark=main %]</p>
+<ul>
+<li><p>Can’t create <code>Window</code> before calling
+<code>curses.wrapper</code> because it needs the screen</p></li>
+<li><p>[%g delayed_construction “Delayed construction” %]</p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="optimization" class="slide level2">
+<h2>Optimization</h2>
+<ul>
+<li><p><code>Window</code> re-draws everything after every
+keystroke</p></li>
+<li><p>Fast enough that people (usually) won’t notice</p></li>
+<li><p>But an obvious target for optimization</p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="sizing-the-window" class="slide level2">
+<h2>Sizing the Window</h2>
+<ul>
+<li><p>Allow users to specify how big the window appears to be</p></li>
+<li><p>Helps with testing</p></li>
+</ul>
+<p>[%inc size_window.py mark=window %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="two-dimensions" class="slide level2">
+<h2>Two Dimensions</h2>
+<ul>
+<li><p>Use <code>ROW</code> and <code>COL</code> instead of 0 and 1 (or
+<code>R</code> and <code>C</code>)</p></li>
+<li><p>Should really create an [%g enumeration “enumeration” %]</p></li>
+</ul>
+<p>[%inc util.py mark=coord %] [%inc cursor_const.py mark=window
+omit=omit %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="moving-the-cursor" class="slide level2">
+<h2>Moving the Cursor</h2>
+<p>[%inc move_cursor.py mark=cursor %]</p>
+<ul>
+<li><code>Cursor.pos</code> returns location as tuple so caller can’t
+modify it</li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="moving-the-cursor-1" class="slide level2">
+<h2>Moving the Cursor</h2>
+<p>[%inc move_cursor.py mark=main %]</p>
+<ul>
+<li><p>[%g spread “Spread” %] position into
+<code>stdscr.move</code></p></li>
+<li><p>Screen’s <code>getkey</code> method returns names of cursor
+keys</p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="boom" class="slide level2">
+<h2>Boom</h2>
+<ul>
+<li><p>We can move right or below text</p></li>
+<li><p>And blow up when moving off left of screen or off top with
+<code>_curses.error: wmove() returned ERR</code></p></li>
+<li><p>Do some [%g refactor “refactoring” %] before fixing this
+problem</p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="application-class" class="slide level2">
+<h2>Application Class</h2>
+<ul>
+<li><p>Create an object with a <code>__call__</code> method</p></li>
+<li><p>Fool <code>curses.wrapper</code> into thinking we have given it a
+function</p></li>
+</ul>
+<p>[%inc main_app.py mark=main %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="application-class-1" class="slide level2">
+<h2>Application Class</h2>
+<p>[%inc main_app.py mark=run %] [%inc main_app.py mark=launch %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="dispatching-keystrokes" class="slide level2">
+<h2>Dispatching Keystrokes</h2>
+<ul>
+<li>Find and call key handlers via [%g dynamic_dispatch “dynamic
+dispatch” %]</li>
+</ul>
+<p>[%inc dispatch_keys.py mark=interact %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="dispatching-keystrokes-1" class="slide level2">
+<h2>Dispatching Keystrokes</h2>
+<p>[%inc dispatch_keys.py mark=main %]</p>
+<ul>
+<li><p>Use a member variable <code>self._running</code> so that every
+other method <em>doesn’t</em> have to return a “keep running”
+flag</p></li>
+<li><p>Add <code>TRANSLATE</code> to turn things like Ctrl-X into
+strings <code>CONTROL_X</code></p>
+<ul>
+<li>Got the value by looking in our log file</li>
+</ul></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="inheritance" class="slide level2">
+<h2>Inheritance</h2>
+<ul>
+<li><p><code>DispatchApp</code> is a child of <code>MainApp</code> so
+that we can recycle initialization</p></li>
+<li><p><code>DispatchApp.__init__</code> [%g upcall “upcalls” %] to
+<code>MainApp.__init__</code></p></li>
+<li><p>Probably wouldn’t create multiple classes in a real program, but
+simplifies exposition when teaching</p></li>
+<li><p>Had to move some earlier code around when writing later classes
+to make everything work cleanly</p></li>
+<li><p><em>This is normal</em></p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="managing-the-buffer" class="slide level2">
+<h2>Managing the Buffer</h2>
+<p>[%inc buffer_class.py mark=buffer %]</p>
+<ul>
+<li><p>Doesn’t do much yet, but will later keep track of viewable
+region</p></li>
+<li><p>Makes a copy of <code>lines</code> so that other code can’t
+change its internals</p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="changing-the-application" class="slide level2">
+<h2>Changing the Application</h2>
+<p>[%inc buffer_class.py mark=app %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="factory-methods" class="slide level2">
+<h2>Factory Methods</h2>
+<ul>
+<li><p>Want to re-use as much of <code>BufferApp</code> as
+possible</p></li>
+<li><p>If <code>setup</code> calls constructors to create window,
+buffer, and cursor, we have to rewrite it each time</p></li>
+<li><p>Putting constructor calls in [%g factory_method “factory methods”
+%] allows us to override them one by one</p></li>
+<li><p>Could pass classes into <code>BufferApp</code>
+constructor…</p></li>
+<li><p>…but later on, these objects will need to reference each
+other</p></li>
+<li><p>Again, moving things around like this is normal</p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="clipping" class="slide level2">
+<h2>Clipping</h2>
+<p>[%inc clip_cursor.py mark=cursor %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="clipping-1" class="slide level2">
+<h2>Clipping</h2>
+<p>[%inc clip_cursor.py mark=other %]</p>
+<ul>
+<li><p>Add methods to the buffer</p></li>
+<li><p>Construct different cursor and buffer objects without changing
+anything else in the application</p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="a-bug" class="slide level2">
+<h2>A Bug</h2>
+<ul>
+<li>Move to end of line and go up to shorter line leaves cursor outside
+the text</li>
+</ul>
+<p>[%inc clip_fixed.py mark=cursor %]</p>
+<ul>
+<li>Good design if there’s one obvious place to make a change</li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="viewport" class="slide level2">
+<h2>Viewport</h2>
+<ul>
+<li><p>Can still move below the window because cursor is in buffer space
+not window space</p></li>
+<li><p>What if the buffer is bigger than the window?</p></li>
+<li><p>Need a [%g viewport “viewport” %] to track the currently-visible
+portion of the buffer</p>
+<ul>
+<li>Do vertical here and leave horizontal for exercises</li>
+</ul></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="buffer" class="slide level2">
+<h2>Buffer</h2>
+<p>[%inc viewport.py mark=buffer %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="buffer-1" class="slide level2">
+<h2>Buffer</h2>
+<p>[%inc viewport.py mark=transform %] [%inc viewport.py mark=scroll
+%]</p>
+</section>
+<section class="slide">
+</section>
+<section id="application" class="slide level2">
+<h2>Application</h2>
+<p>[%inc viewport.py mark=app %]</p>
+<ul>
+<li><p>Transform buffer coordinates into screen coordinates</p></li>
+<li><p>This class is where we need separate factory methods</p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="cursor" class="slide level2">
+<h2>Cursor</h2>
+<p>[%inc viewport.py mark=cursor %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="summary" class="slide level2">
+<h2>Summary</h2>
+<p>[% figure slug=“viewer-concept-map” img=“concept_map.svg”
+alt=“Concept map of file viewer” caption=“Concept map.” %]</p>
+</section>
+</section>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/reveal.js@^5/dist/reveal.js"></script>
+
+  <!-- reveal.js plugins -->
+  <script src="https://unpkg.com/reveal.js@^5/plugin/notes/notes.js"></script>
+  <script src="https://unpkg.com/reveal.js@^5/plugin/search/search.js"></script>
+  <script src="https://unpkg.com/reveal.js@^5/plugin/zoom/zoom.js"></script>
+
+  <script>
+
+      // Full list of configuration options available at:
+      // https://revealjs.com/config/
+      Reveal.initialize({
+        // Display controls in the bottom right corner
+        controls: true,
+
+        // Help the user learn the controls by providing hints, for example by
+        // bouncing the down arrow when they first encounter a vertical slide
+        controlsTutorial: true,
+
+        // Determines where controls appear, "edges" or "bottom-right"
+        controlsLayout: 'bottom-right',
+
+        // Visibility rule for backwards navigation arrows; "faded", "hidden"
+        // or "visible"
+        controlsBackArrows: 'faded',
+
+        // Display a presentation progress bar
+        progress: true,
+
+        // Display the page number of the current slide
+        slideNumber: true,
+
+        // 'all', 'print', or 'speaker'
+        showSlideNumber: 'all',
+
+        // Add the current slide number to the URL hash so that reloading the
+        // page/copying the URL will return you to the same slide
+        hash: true,
+
+        // Start with 1 for the hash rather than 0
+        hashOneBasedIndex: false,
+
+        // Flags if we should monitor the hash and change slides accordingly
+        respondToHashChanges: true,
+
+        // Push each slide change to the browser history
+        history: false,
+
+        // Enable keyboard shortcuts for navigation
+        keyboard: true,
+
+        // Enable the slide overview mode
+        overview: true,
+
+        // Disables the default reveal.js slide layout (scaling and centering)
+        // so that you can use custom CSS layout
+        disableLayout: false,
+
+        // Vertical centering of slides
+        center: true,
+
+        // Enables touch navigation on devices with touch input
+        touch: true,
+
+        // Loop the presentation
+        loop: false,
+
+        // Change the presentation direction to be RTL
+        rtl: false,
+
+        // see https://revealjs.com/vertical-slides/#navigation-mode
+        navigationMode: 'default',
+
+        // Randomizes the order of slides each time the presentation loads
+        shuffle: false,
+
+        // Turns fragments on and off globally
+        fragments: true,
+
+        // Flags whether to include the current fragment in the URL,
+        // so that reloading brings you to the same fragment position
+        fragmentInURL: true,
+
+        // Flags if the presentation is running in an embedded mode,
+        // i.e. contained within a limited portion of the screen
+        embedded: false,
+
+        // Flags if we should show a help overlay when the questionmark
+        // key is pressed
+        help: true,
+
+        // Flags if it should be possible to pause the presentation (blackout)
+        pause: true,
+
+        // Flags if speaker notes should be visible to all viewers
+        showNotes: false,
+
+        // Global override for autoplaying embedded media (null/true/false)
+        autoPlayMedia: null,
+
+        // Global override for preloading lazy-loaded iframes (null/true/false)
+        preloadIframes: null,
+
+        // Number of milliseconds between automatically proceeding to the
+        // next slide, disabled when set to 0, this value can be overwritten
+        // by using a data-autoslide attribute on your slides
+        autoSlide: 0,
+
+        // Stop auto-sliding after user input
+        autoSlideStoppable: true,
+
+        // Use this method for navigation when auto-sliding
+        autoSlideMethod: null,
+
+        // Specify the average time in seconds that you think you will spend
+        // presenting each slide. This is used to show a pacing timer in the
+        // speaker view
+        defaultTiming: null,
+
+        // Enable slide navigation via mouse wheel
+        mouseWheel: false,
+
+        // The display mode that will be used to show slides
+        display: 'block',
+
+        // Hide cursor if inactive
+        hideInactiveCursor: true,
+
+        // Time before the cursor is hidden (in ms)
+        hideCursorTime: 5000,
+
+        // Opens links in an iframe preview overlay
+        previewLinks: false,
+
+        // Transition style (none/fade/slide/convex/concave/zoom)
+        transition: 'slide',
+
+        // Transition speed (default/fast/slow)
+        transitionSpeed: 'default',
+
+        // Transition style for full page slide backgrounds
+        // (none/fade/slide/convex/concave/zoom)
+        backgroundTransition: 'fade',
+
+        // Number of slides away from the current that are visible
+        viewDistance: 3,
+
+        // Number of slides away from the current that are visible on mobile
+        // devices. It is advisable to set this to a lower number than
+        // viewDistance in order to save resources.
+        mobileViewDistance: 2,
+
+        // reveal.js plugins
+        plugins: [
+          RevealNotes,
+          RevealSearch,
+          RevealZoom
+        ]
+      });
+    </script>
+    </body>
+</html>

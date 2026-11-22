@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="generator" content="pandoc">
+  <title>Parsing Text</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+  <link rel="stylesheet" href="https://unpkg.com/reveal.js@^5/dist/reset.css">
+  <link rel="stylesheet" href="https://unpkg.com/reveal.js@^5/dist/reveal.css">
+  <style>
+    .reveal .sourceCode {  /* see #7635 */
+      overflow: visible;
+    }
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="../mccole/slides.css"/>
+</head>
+<body>
+  <div class="reveal">
+    <div class="slides">
+
+<section id="title-slide">
+  <h1 class="title">Parsing Text</h1>
+</section>
+
+<section class="slide level2">
+
+<section class="slide">
+</section>
+<section id="the-problem" class="slide level2">
+<h2>The Problem</h2>
+<ul>
+<li><p><code>"2023-*{pdf,txt}"</code> is easier to read and write than
+<code>Lit("2023-", Any(Either("pdf", "txt")))</code></p></li>
+<li><p>How can we translate the former into the latter?</p></li>
+</ul>
+<ol type="1">
+<li><p>Group characters into [%g token “tokens” %]</p></li>
+<li><p>Use tokens to create an [%g abstract_syntax_tree “abstract syntax
+tree” %]</p></li>
+</ol>
+<p>[% figure slug=“parse-pipeline” img=“pipeline.svg” alt=“Parsing
+pipeline” caption=“Stages in parsing pipeline.” %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="cases" class="slide level2">
+<h2>Cases</h2>
+<ul>
+<li><p>Characters like <code>{</code> and <code>*</code> can be
+processed immediately</p></li>
+<li><p>But “regular” characters need to be accumulated</p>
+<ul>
+<li><p><code>Lit("abc")</code> rather than
+<code>Lit("a", Lit("b", Lit("c")))</code></p></li>
+<li><p>When we encounter a special character or ‘}’, we close the
+current literal token</p></li>
+</ul></li>
+<li><p>The <code>,</code> character closes a literal but doesn’t produce
+a token</p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="a-bit-more-design" class="slide level2">
+<h2>A Bit More Design</h2>
+<ul>
+<li><p>The result is the final (flat) list of tokens</p></li>
+<li><p>We could pass around a list and append to it</p></li>
+<li><p>But we also need to know the characters in each
+<code>Literal</code> and the options in each
+<code>Either</code></p></li>
+<li><p>So create a class rather than a function</p>
+<ul>
+<li>Easier than carrying state around explicitly</li>
+</ul></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="tokenizer" class="slide level2">
+<h2>Tokenizer</h2>
+<p>[%inc tokenizer.py mark=tok %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="tokenizer-1" class="slide level2">
+<h2>Tokenizer</h2>
+<ul>
+<li><p>Call <code>self._setup()</code> at the start so that the
+tokenizer can be re-used</p></li>
+<li><p><em>Don’t</em> call <code>self._add()</code> for regular
+characters</p>
+<ul>
+<li><p>Add literals when we see special characters</p></li>
+<li><p>And after all the input has been parsed</p></li>
+</ul></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="adding-tokens" class="slide level2">
+<h2>Adding Tokens</h2>
+<p>[%inc tokenizer.py mark=add %]</p>
+<ul>
+<li><code>self._add(None)</code> means “add the literal but nothing
+else”</li>
+</ul>
+<p>[% figure slug=“parse-tokenize” img=“tokenize.svg” alt=“Tokenizing”
+caption=“Steps in tokenizing a string.” %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="testing" class="slide level2">
+<h2>Testing</h2>
+<p>[%inc test_tokenizer.py mark=tests %]</p>
+<ul>
+<li>Each sub-list represents one token</li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="parsing" class="slide level2">
+<h2>Parsing</h2>
+<p>[%inc parser.py mark=parse %]</p>
+<ul>
+<li><p><code>front[0]</code> is the token’s name, <code>front[1:]</code>
+is any other data</p></li>
+<li><p><code>back</code> is the remaining tokens</p></li>
+<li><p>Look for a <code>_parse_<em>thing</em></code> method to handle
+each token</p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="introspection-and-dispatch" class="slide level2">
+<h2>Introspection and Dispatch</h2>
+<ul>
+<li><p>while it is running</p></li>
+<li><p>rather than a long chain of <code>if</code> statements</p></li>
+<li><p>These are powerful techniques and we use them frequently</p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="fill-in-the-simple-stuff" class="slide level2">
+<h2>Fill in the Simple Stuff</h2>
+<p>[%inc parser.py mark=simple %]</p>
+<ul>
+<li>Hardest part is making sure to name them properly so that
+<code>_parse</code> can find them</li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="either-is-messy" class="slide level2">
+<h2><code>Either</code> is Messy</h2>
+<p>[%inc parser.py mark=either %]</p>
+<ul>
+<li>Remember, we didn’t save the commas</li>
+<li>It really should pull things from <code>back</code> until it hits
+<code>EitherEnd</code></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="a-better-implementation" class="slide level2">
+<h2>A Better Implementation</h2>
+<p>[%inc better_parser.py mark=either %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="testing-1" class="slide level2">
+<h2>Testing</h2>
+<p>[%inc test_parser.py mark=sample %]</p>
+<ul>
+<li>But this assumes we can compare <code>Match</code> objects</li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="theyre-just-methods" class="slide level2">
+<h2>They’re Just Methods</h2>
+<ul>
+<li><code>a == b</code> is “just” <code>a.__eq__(b)</code></li>
+<li>Python calls them to perform “built-in” operations</li>
+<li>Parent <code>Match</code> class does shared work
+<ul>
+<li>E.g., make sure objects have the same [%g concrete_class “concrete
+class” %]</li>
+</ul></li>
+<li>Child method (if any) does details
+<ul>
+<li>E.g., make sure two <code>Lit</code> objects are checking for the
+same text</li>
+</ul></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="infrastructure" class="slide level2">
+<h2>Infrastructure</h2>
+<p>[%inc match.py mark=equal %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="summary" class="slide level2">
+<h2>Summary</h2>
+<p>[% figure slug=“parse-concept-map” img=“concept_map.svg” alt=“Concept
+map of parsing” caption=“Concept map.” %]</p>
+</section>
+</section>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/reveal.js@^5/dist/reveal.js"></script>
+
+  <!-- reveal.js plugins -->
+  <script src="https://unpkg.com/reveal.js@^5/plugin/notes/notes.js"></script>
+  <script src="https://unpkg.com/reveal.js@^5/plugin/search/search.js"></script>
+  <script src="https://unpkg.com/reveal.js@^5/plugin/zoom/zoom.js"></script>
+
+  <script>
+
+      // Full list of configuration options available at:
+      // https://revealjs.com/config/
+      Reveal.initialize({
+        // Display controls in the bottom right corner
+        controls: true,
+
+        // Help the user learn the controls by providing hints, for example by
+        // bouncing the down arrow when they first encounter a vertical slide
+        controlsTutorial: true,
+
+        // Determines where controls appear, "edges" or "bottom-right"
+        controlsLayout: 'bottom-right',
+
+        // Visibility rule for backwards navigation arrows; "faded", "hidden"
+        // or "visible"
+        controlsBackArrows: 'faded',
+
+        // Display a presentation progress bar
+        progress: true,
+
+        // Display the page number of the current slide
+        slideNumber: true,
+
+        // 'all', 'print', or 'speaker'
+        showSlideNumber: 'all',
+
+        // Add the current slide number to the URL hash so that reloading the
+        // page/copying the URL will return you to the same slide
+        hash: true,
+
+        // Start with 1 for the hash rather than 0
+        hashOneBasedIndex: false,
+
+        // Flags if we should monitor the hash and change slides accordingly
+        respondToHashChanges: true,
+
+        // Push each slide change to the browser history
+        history: false,
+
+        // Enable keyboard shortcuts for navigation
+        keyboard: true,
+
+        // Enable the slide overview mode
+        overview: true,
+
+        // Disables the default reveal.js slide layout (scaling and centering)
+        // so that you can use custom CSS layout
+        disableLayout: false,
+
+        // Vertical centering of slides
+        center: true,
+
+        // Enables touch navigation on devices with touch input
+        touch: true,
+
+        // Loop the presentation
+        loop: false,
+
+        // Change the presentation direction to be RTL
+        rtl: false,
+
+        // see https://revealjs.com/vertical-slides/#navigation-mode
+        navigationMode: 'default',
+
+        // Randomizes the order of slides each time the presentation loads
+        shuffle: false,
+
+        // Turns fragments on and off globally
+        fragments: true,
+
+        // Flags whether to include the current fragment in the URL,
+        // so that reloading brings you to the same fragment position
+        fragmentInURL: true,
+
+        // Flags if the presentation is running in an embedded mode,
+        // i.e. contained within a limited portion of the screen
+        embedded: false,
+
+        // Flags if we should show a help overlay when the questionmark
+        // key is pressed
+        help: true,
+
+        // Flags if it should be possible to pause the presentation (blackout)
+        pause: true,
+
+        // Flags if speaker notes should be visible to all viewers
+        showNotes: false,
+
+        // Global override for autoplaying embedded media (null/true/false)
+        autoPlayMedia: null,
+
+        // Global override for preloading lazy-loaded iframes (null/true/false)
+        preloadIframes: null,
+
+        // Number of milliseconds between automatically proceeding to the
+        // next slide, disabled when set to 0, this value can be overwritten
+        // by using a data-autoslide attribute on your slides
+        autoSlide: 0,
+
+        // Stop auto-sliding after user input
+        autoSlideStoppable: true,
+
+        // Use this method for navigation when auto-sliding
+        autoSlideMethod: null,
+
+        // Specify the average time in seconds that you think you will spend
+        // presenting each slide. This is used to show a pacing timer in the
+        // speaker view
+        defaultTiming: null,
+
+        // Enable slide navigation via mouse wheel
+        mouseWheel: false,
+
+        // The display mode that will be used to show slides
+        display: 'block',
+
+        // Hide cursor if inactive
+        hideInactiveCursor: true,
+
+        // Time before the cursor is hidden (in ms)
+        hideCursorTime: 5000,
+
+        // Opens links in an iframe preview overlay
+        previewLinks: false,
+
+        // Transition style (none/fade/slide/convex/concave/zoom)
+        transition: 'slide',
+
+        // Transition speed (default/fast/slow)
+        transitionSpeed: 'default',
+
+        // Transition style for full page slide backgrounds
+        // (none/fade/slide/convex/concave/zoom)
+        backgroundTransition: 'fade',
+
+        // Number of slides away from the current that are visible
+        viewDistance: 3,
+
+        // Number of slides away from the current that are visible on mobile
+        // devices. It is advisable to set this to a lower number than
+        // viewDistance in order to save resources.
+        mobileViewDistance: 2,
+
+        // reveal.js plugins
+        plugins: [
+          RevealNotes,
+          RevealSearch,
+          RevealZoom
+        ]
+      });
+    </script>
+    </body>
+</html>

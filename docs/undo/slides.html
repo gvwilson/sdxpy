@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="generator" content="pandoc">
+  <title>Undo and Redo</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+  <link rel="stylesheet" href="https://unpkg.com/reveal.js@^5/dist/reset.css">
+  <link rel="stylesheet" href="https://unpkg.com/reveal.js@^5/dist/reveal.css">
+  <style>
+    .reveal .sourceCode {  /* see #7635 */
+      overflow: visible;
+    }
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="../mccole/slides.css"/>
+</head>
+<body>
+  <div class="reveal">
+    <div class="slides">
+
+<section id="title-slide">
+  <h1 class="title">Undo and Redo</h1>
+</section>
+
+<section class="slide level2">
+
+<section class="slide">
+</section>
+<section id="the-problem" class="slide level2">
+<h2>The Problem</h2>
+<ul>
+<li><p>Want to change files as well as viewing them</p></li>
+<li><p>So modify the file viewer of [%x viewer %] to allow
+editing</p></li>
+<li><p>And since people make mistakes when editing, implement
+undo</p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="starting-point" class="slide level2">
+<h2>Starting Point</h2>
+<ul>
+<li><p><code>Window</code> can draw lines and report its size</p></li>
+<li><p><code>Buffer</code> stores lines of text, keeps track of a
+viewport, and transforms buffer coordinates to screen
+coordinates</p></li>
+<li><p><code>Cursor</code> knows its position in the buffer and can move
+up, down, left, and right</p></li>
+<li><p><code>App</code> makes a window, a buffer, and a cursor, then
+maps keys to actions</p></li>
+</ul>
+<p>[% figure slug=“undo-classes” img=“classes.svg” alt=“Classes in file
+viewer” caption=“Relationships between classes in file viewer” %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="a-headless-screen" class="slide level2">
+<h2>A Headless Screen</h2>
+<ul>
+<li><p>Create a [%g headless “headless” %] screen for testing</p></li>
+<li><p>Store current state of display in rectangular grid</p></li>
+<li><p>Take a list of keystrokes (for simulation)</p>
+<ul>
+<li>Would have made more sense for <code>App</code> to have a method
+that gets keystrokes</li>
+</ul></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="a-headless-screen-1" class="slide level2">
+<h2>A Headless Screen</h2>
+<p>[%inc headless.py mark=screen %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="bad-but-necessary" class="slide level2">
+<h2>Bad But Necessary</h2>
+<ul>
+<li>Also need to define <code>HeadlessWindow</code> to take a size and
+pass it to the screen</li>
+</ul>
+<p>[%inc headless.py mark=window %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="logging" class="slide level2">
+<h2>Logging</h2>
+<ul>
+<li>Record keys, cursor position, and screen contents for testing</li>
+</ul>
+<p>[%inc headless.py mark=app %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="testing" class="slide level2">
+<h2>Testing</h2>
+<p>[%inc test_headless.py mark=example %]</p>
+<ul>
+<li>Last key is always <code>CONTROL_X</code> (exit)</li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="insertion-and-deletion" class="slide level2">
+<h2>Insertion and Deletion</h2>
+<p>[%inc insert_delete.py mark=buffer %]</p>
+<ul>
+<li><p>Delete character <em>under</em> the cursor, not to the
+left</p></li>
+<li><p>A little defensive programming as well</p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="application" class="slide level2">
+<h2>Application</h2>
+<p>[%inc insert_delete.py mark=app %]</p>
+<p>[%inc insert_delete.py mark=action %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="application-1" class="slide level2">
+<h2>Application</h2>
+<p>[%inc insert_delete.py mark=dispatch %]</p>
+<ul>
+<li>Add <code>_get_key</code> to return family (generic) and key
+(specific)</li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="testing-1" class="slide level2">
+<h2>Testing</h2>
+<ul>
+<li>Write a function to make the fixture and run the test</li>
+</ul>
+<p>[%inc test_insert_delete.py mark=fixture %]</p>
+<ul>
+<li>Tests are straightforward</li>
+</ul>
+<p>[%inc test_insert_delete.py mark=example %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="edge-case" class="slide level2">
+<h2>Edge Case</h2>
+<ul>
+<li>Can’t delete when in an empty screen</li>
+</ul>
+<p>[%inc test_insert_delete.py mark=empty %]</p>
+<ul>
+<li>Our focus is implementing undo, so leave this for an exercise</li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="recording-history" class="slide level2">
+<h2>Recording History</h2>
+<ul>
+<li><p>In order to undo things we have to:</p>
+<ol type="1">
+<li><p>keep track of <em>actions</em> and reverse them, or</p></li>
+<li><p>keep track of <em>state</em> and restore it</p></li>
+</ol></li>
+<li><p>Recording actions requires less space but can be trickier to
+implement</p></li>
+<li><p>Have actions append entries to a log</p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="the-simple-approach" class="slide level2">
+<h2>The Simple Approach</h2>
+<p>[%inc history.py mark=app %]</p>
+<ul>
+<li><p>What about undoing cursor movement?</p></li>
+<li><p>And do we write an interpreter for these log records?</p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="verbs-as-nouns" class="slide level2">
+<h2>Verbs as Nouns</h2>
+<ul>
+<li><p>Use the [%g command_pattern “Command” %] design pattern</p></li>
+<li><p>Each action (verb) is an object (noun) with methods to go forward
+and backward</p></li>
+<li><p>Every action is derived from an abstract base class</p></li>
+</ul>
+<p>[%inc action.py mark=Action %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="insertion" class="slide level2">
+<h2>Insertion</h2>
+<p>[%inc action.py mark=Insert %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="deletion" class="slide level2">
+<h2>Deletion</h2>
+<p>[%inc action.py mark=Delete %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="movement" class="slide level2">
+<h2>Movement</h2>
+<p>[%inc action.py mark=Move %]</p>
+<ul>
+<li>Give <code>Cursor</code> methods to move in a particular direction
+(by name) and move to a particular location</li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="application-2" class="slide level2">
+<h2>Application</h2>
+<p>[%inc action.py mark=interact %]</p>
+<ul>
+<li><p>Create the action object</p></li>
+<li><p>Call its <code>.do</code> method</p></li>
+<li><p>Modify all action methods to take a key to simplify the code a
+little</p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="application-3" class="slide level2">
+<h2>Application</h2>
+<p>[%inc action.py mark=actions %]</p>
+<ul>
+<li><p>And it <em>almost</em> works!</p></li>
+<li><p>Our first implementation of <code>Undo</code> creates an infinite
+loop because it puts itself on the undo stack and then does the action
+on the top of the stack</p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="finally" class="slide level2">
+<h2>Finally</h2>
+<ul>
+<li><p>Modify <code>Action</code> to have a <code>.save</code> method
+that returns <code>True</code></p></li>
+<li><p>Override in <code>Undo</code></p></li>
+</ul>
+<p>[%inc undoable.py mark=Undo %]</p>
+<ul>
+<li>Only add object to undo stack if <code>.save</code> is
+<code>True</code>
+<ul>
+<li>Could define <code>Action.post_action</code> to add the action to
+the undo stack</li>
+</ul></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="summary" class="slide level2">
+<h2>Summary</h2>
+<p>[% figure slug=“undo-concept-map” img=“concept_map.svg” alt=“Concept
+map of undo” caption=“Concept map.” %]</p>
+</section>
+</section>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/reveal.js@^5/dist/reveal.js"></script>
+
+  <!-- reveal.js plugins -->
+  <script src="https://unpkg.com/reveal.js@^5/plugin/notes/notes.js"></script>
+  <script src="https://unpkg.com/reveal.js@^5/plugin/search/search.js"></script>
+  <script src="https://unpkg.com/reveal.js@^5/plugin/zoom/zoom.js"></script>
+
+  <script>
+
+      // Full list of configuration options available at:
+      // https://revealjs.com/config/
+      Reveal.initialize({
+        // Display controls in the bottom right corner
+        controls: true,
+
+        // Help the user learn the controls by providing hints, for example by
+        // bouncing the down arrow when they first encounter a vertical slide
+        controlsTutorial: true,
+
+        // Determines where controls appear, "edges" or "bottom-right"
+        controlsLayout: 'bottom-right',
+
+        // Visibility rule for backwards navigation arrows; "faded", "hidden"
+        // or "visible"
+        controlsBackArrows: 'faded',
+
+        // Display a presentation progress bar
+        progress: true,
+
+        // Display the page number of the current slide
+        slideNumber: true,
+
+        // 'all', 'print', or 'speaker'
+        showSlideNumber: 'all',
+
+        // Add the current slide number to the URL hash so that reloading the
+        // page/copying the URL will return you to the same slide
+        hash: true,
+
+        // Start with 1 for the hash rather than 0
+        hashOneBasedIndex: false,
+
+        // Flags if we should monitor the hash and change slides accordingly
+        respondToHashChanges: true,
+
+        // Push each slide change to the browser history
+        history: false,
+
+        // Enable keyboard shortcuts for navigation
+        keyboard: true,
+
+        // Enable the slide overview mode
+        overview: true,
+
+        // Disables the default reveal.js slide layout (scaling and centering)
+        // so that you can use custom CSS layout
+        disableLayout: false,
+
+        // Vertical centering of slides
+        center: true,
+
+        // Enables touch navigation on devices with touch input
+        touch: true,
+
+        // Loop the presentation
+        loop: false,
+
+        // Change the presentation direction to be RTL
+        rtl: false,
+
+        // see https://revealjs.com/vertical-slides/#navigation-mode
+        navigationMode: 'default',
+
+        // Randomizes the order of slides each time the presentation loads
+        shuffle: false,
+
+        // Turns fragments on and off globally
+        fragments: true,
+
+        // Flags whether to include the current fragment in the URL,
+        // so that reloading brings you to the same fragment position
+        fragmentInURL: true,
+
+        // Flags if the presentation is running in an embedded mode,
+        // i.e. contained within a limited portion of the screen
+        embedded: false,
+
+        // Flags if we should show a help overlay when the questionmark
+        // key is pressed
+        help: true,
+
+        // Flags if it should be possible to pause the presentation (blackout)
+        pause: true,
+
+        // Flags if speaker notes should be visible to all viewers
+        showNotes: false,
+
+        // Global override for autoplaying embedded media (null/true/false)
+        autoPlayMedia: null,
+
+        // Global override for preloading lazy-loaded iframes (null/true/false)
+        preloadIframes: null,
+
+        // Number of milliseconds between automatically proceeding to the
+        // next slide, disabled when set to 0, this value can be overwritten
+        // by using a data-autoslide attribute on your slides
+        autoSlide: 0,
+
+        // Stop auto-sliding after user input
+        autoSlideStoppable: true,
+
+        // Use this method for navigation when auto-sliding
+        autoSlideMethod: null,
+
+        // Specify the average time in seconds that you think you will spend
+        // presenting each slide. This is used to show a pacing timer in the
+        // speaker view
+        defaultTiming: null,
+
+        // Enable slide navigation via mouse wheel
+        mouseWheel: false,
+
+        // The display mode that will be used to show slides
+        display: 'block',
+
+        // Hide cursor if inactive
+        hideInactiveCursor: true,
+
+        // Time before the cursor is hidden (in ms)
+        hideCursorTime: 5000,
+
+        // Opens links in an iframe preview overlay
+        previewLinks: false,
+
+        // Transition style (none/fade/slide/convex/concave/zoom)
+        transition: 'slide',
+
+        // Transition speed (default/fast/slow)
+        transitionSpeed: 'default',
+
+        // Transition style for full page slide backgrounds
+        // (none/fade/slide/convex/concave/zoom)
+        backgroundTransition: 'fade',
+
+        // Number of slides away from the current that are visible
+        viewDistance: 3,
+
+        // Number of slides away from the current that are visible on mobile
+        // devices. It is advisable to set this to a lower number than
+        // viewDistance in order to save resources.
+        mobileViewDistance: 2,
+
+        // reveal.js plugins
+        plugins: [
+          RevealNotes,
+          RevealSearch,
+          RevealZoom
+        ]
+      });
+    </script>
+    </body>
+</html>

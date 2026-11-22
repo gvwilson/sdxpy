@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="generator" content="pandoc">
+  <title>A Code Linter</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+  <link rel="stylesheet" href="https://unpkg.com/reveal.js@^5/dist/reset.css">
+  <link rel="stylesheet" href="https://unpkg.com/reveal.js@^5/dist/reveal.css">
+  <style>
+    .reveal .sourceCode {  /* see #7635 */
+      overflow: visible;
+    }
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="../mccole/slides.css"/>
+</head>
+<body>
+  <div class="reveal">
+    <div class="slides">
+
+<section id="title-slide">
+  <h1 class="title">A Code Linter</h1>
+</section>
+
+<section class="slide level2">
+
+<section class="slide">
+</section>
+<section id="the-problem" class="slide level2">
+<h2>The Problem</h2>
+<ul>
+<li><p>Want to check that our code follows style rules</p></li>
+<li><p>And doesn’t do things that are likely to be bugs</p></li>
+<li><p>Build a [%g linter “linters” %]</p>
+<ul>
+<li>Checks for “fluff” in code</li>
+</ul></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="programs-as-trees" class="slide level2">
+<h2>Programs as Trees</h2>
+<ul>
+<li><p>[%x check %] represented HTML as a [%g dom “DOM tree” %]</p></li>
+<li><p>We can represent code as an [%g abstract_syntax_tree “abstract
+syntax tree” %] (AST)</p></li>
+<li><p>Each node represents a syntactic element in the program</p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="programs-as-trees-1" class="slide level2">
+<h2>Programs as Trees</h2>
+<p>[%inc simple.py %]</p>
+<p>[% figure slug=“lint-ast-simple” img=“ast_simple.svg” alt=“Simple
+AST” caption=“The abstract syntax tree for a simple Python program.”
+%]</p>
+</section>
+<section class="slide">
+</section>
+<section id="building-trees" class="slide level2">
+<h2>Building Trees</h2>
+<p>[%inc dump_ast.py %] [%inc dump_ast_simple.out head=“10” %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="finding-things" class="slide level2">
+<h2>Finding Things</h2>
+<ul>
+<li><p>Could walk the tree to find <code>FunctionDef</code> nodes and
+record their <code>name</code> properties</p></li>
+<li><p>But each node has a different structure, so we would have to
+write a recursive function for each type of node</p></li>
+<li><p>[<code>ast</code>][py_ast] module’s <code>ast.NodeVisitor</code>
+implements the [%g visitor_pattern “Visitor” %] pattern</p></li>
+<li><p>Each time it reaches a node of type <code>Thing</code>, it looks
+for a method <code>visit_Thing</code></p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="collecting-names" class="slide level2">
+<h2>Collecting Names</h2>
+<p>[%inc walk_ast.py mark=class %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="collecting-names-1" class="slide level2">
+<h2>Collecting Names</h2>
+<ol type="1">
+<li><p><code>CollectNames</code> constructors invokes
+<code>NodeVisitor</code> constructor before doing anything else</p></li>
+<li><p><code>visit_Assign</code> and <code>visit_FunctionDef</code> must
+call <code>self.generic_visit(node)</code> explicitly to
+recurse</p></li>
+<li><p><code>position</code> methods uses the fact that every AST node
+remembers where it came from</p></li>
+</ol>
+</section>
+<section class="slide">
+</section>
+<section id="collecting-names-2" class="slide level2">
+<h2>Collecting Names</h2>
+<p>[%inc walk_ast.py mark=main %] [%inc walk_ast.sh %] [%inc
+walk_ast.out %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="what-does-this-do" class="slide level2">
+<h2>What Does This Do?</h2>
+<p>[%inc has_duplicate_keys.py %]</p>
+<ol type="1">
+<li>An error</li>
+<li>Keeps the first</li>
+<li>Keeps the last</li>
+<li>Concatenates</li>
+</ol>
+<p>[%inc has_duplicate_keys.out %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="finding-duplicate-keys" class="slide level2">
+<h2>Finding Duplicate Keys</h2>
+<p>[%inc find_duplicate_keys.py mark=class %] [%inc
+find_duplicate_keys.out %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="false-negatives" class="slide level2">
+<h2>False Negatives</h2>
+<ul>
+<li>Our duplicate finder only detects constants</li>
+</ul>
+<p>[%inc function_keys.py %]</p>
+<ul>
+<li>Fundamental theoretical result in computer science is that it’s
+impossible to build a general-purpose algorithm that predicts the output
+of a program</li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="finding-unused-variables" class="slide level2">
+<h2>Finding Unused Variables</h2>
+<ul>
+<li><p>Not wrong, but clutter makes code harder to read</p></li>
+<li><p>Have to take [%g scope “scope” %] into account</p></li>
+<li><p>So keep a stack of scopes</p></li>
+</ul>
+<p>[%inc find_unused_variables.py mark=class %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="recording-scope" class="slide level2">
+<h2>Recording Scope</h2>
+<ul>
+<li>Use <code>namedtuple</code> from Python’s standard library</li>
+</ul>
+<p>[%inc find_unused_variables.py mark=scope %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="bucketing" class="slide level2">
+<h2>Bucketing</h2>
+<ul>
+<li><p>If the variable’s value is being read, <code>node.ctx</code>
+(short for “context”) is an instance of <code>Load</code></p></li>
+<li><p>If the variable is being written to, <code>node.ctx</code> is an
+instance of <code>Store</code></p></li>
+</ul>
+<p>[%inc find_unused_variables.py mark=name %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="and-finally" class="slide level2">
+<h2>And Finally…</h2>
+<p>[%inc find_unused_variables.py mark=search %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="summary" class="slide level2">
+<h2>Summary</h2>
+<p>[% figure slug=“lint-concept-map” img=“concept_map.svg” alt=“Concept
+map for code manipulation” caption=“Concept map.” %]</p>
+</section>
+</section>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/reveal.js@^5/dist/reveal.js"></script>
+
+  <!-- reveal.js plugins -->
+  <script src="https://unpkg.com/reveal.js@^5/plugin/notes/notes.js"></script>
+  <script src="https://unpkg.com/reveal.js@^5/plugin/search/search.js"></script>
+  <script src="https://unpkg.com/reveal.js@^5/plugin/zoom/zoom.js"></script>
+
+  <script>
+
+      // Full list of configuration options available at:
+      // https://revealjs.com/config/
+      Reveal.initialize({
+        // Display controls in the bottom right corner
+        controls: true,
+
+        // Help the user learn the controls by providing hints, for example by
+        // bouncing the down arrow when they first encounter a vertical slide
+        controlsTutorial: true,
+
+        // Determines where controls appear, "edges" or "bottom-right"
+        controlsLayout: 'bottom-right',
+
+        // Visibility rule for backwards navigation arrows; "faded", "hidden"
+        // or "visible"
+        controlsBackArrows: 'faded',
+
+        // Display a presentation progress bar
+        progress: true,
+
+        // Display the page number of the current slide
+        slideNumber: true,
+
+        // 'all', 'print', or 'speaker'
+        showSlideNumber: 'all',
+
+        // Add the current slide number to the URL hash so that reloading the
+        // page/copying the URL will return you to the same slide
+        hash: true,
+
+        // Start with 1 for the hash rather than 0
+        hashOneBasedIndex: false,
+
+        // Flags if we should monitor the hash and change slides accordingly
+        respondToHashChanges: true,
+
+        // Push each slide change to the browser history
+        history: false,
+
+        // Enable keyboard shortcuts for navigation
+        keyboard: true,
+
+        // Enable the slide overview mode
+        overview: true,
+
+        // Disables the default reveal.js slide layout (scaling and centering)
+        // so that you can use custom CSS layout
+        disableLayout: false,
+
+        // Vertical centering of slides
+        center: true,
+
+        // Enables touch navigation on devices with touch input
+        touch: true,
+
+        // Loop the presentation
+        loop: false,
+
+        // Change the presentation direction to be RTL
+        rtl: false,
+
+        // see https://revealjs.com/vertical-slides/#navigation-mode
+        navigationMode: 'default',
+
+        // Randomizes the order of slides each time the presentation loads
+        shuffle: false,
+
+        // Turns fragments on and off globally
+        fragments: true,
+
+        // Flags whether to include the current fragment in the URL,
+        // so that reloading brings you to the same fragment position
+        fragmentInURL: true,
+
+        // Flags if the presentation is running in an embedded mode,
+        // i.e. contained within a limited portion of the screen
+        embedded: false,
+
+        // Flags if we should show a help overlay when the questionmark
+        // key is pressed
+        help: true,
+
+        // Flags if it should be possible to pause the presentation (blackout)
+        pause: true,
+
+        // Flags if speaker notes should be visible to all viewers
+        showNotes: false,
+
+        // Global override for autoplaying embedded media (null/true/false)
+        autoPlayMedia: null,
+
+        // Global override for preloading lazy-loaded iframes (null/true/false)
+        preloadIframes: null,
+
+        // Number of milliseconds between automatically proceeding to the
+        // next slide, disabled when set to 0, this value can be overwritten
+        // by using a data-autoslide attribute on your slides
+        autoSlide: 0,
+
+        // Stop auto-sliding after user input
+        autoSlideStoppable: true,
+
+        // Use this method for navigation when auto-sliding
+        autoSlideMethod: null,
+
+        // Specify the average time in seconds that you think you will spend
+        // presenting each slide. This is used to show a pacing timer in the
+        // speaker view
+        defaultTiming: null,
+
+        // Enable slide navigation via mouse wheel
+        mouseWheel: false,
+
+        // The display mode that will be used to show slides
+        display: 'block',
+
+        // Hide cursor if inactive
+        hideInactiveCursor: true,
+
+        // Time before the cursor is hidden (in ms)
+        hideCursorTime: 5000,
+
+        // Opens links in an iframe preview overlay
+        previewLinks: false,
+
+        // Transition style (none/fade/slide/convex/concave/zoom)
+        transition: 'slide',
+
+        // Transition speed (default/fast/slow)
+        transitionSpeed: 'default',
+
+        // Transition style for full page slide backgrounds
+        // (none/fade/slide/convex/concave/zoom)
+        backgroundTransition: 'fade',
+
+        // Number of slides away from the current that are visible
+        viewDistance: 3,
+
+        // Number of slides away from the current that are visible on mobile
+        // devices. It is advisable to set this to a lower number than
+        // viewDistance in order to save resources.
+        mobileViewDistance: 2,
+
+        // reveal.js plugins
+        plugins: [
+          RevealNotes,
+          RevealSearch,
+          RevealZoom
+        ]
+      });
+    </script>
+    </body>
+</html>

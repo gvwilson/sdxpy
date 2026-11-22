@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="generator" content="pandoc">
+  <title>A Build Manager</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+  <link rel="stylesheet" href="https://unpkg.com/reveal.js@^5/dist/reset.css">
+  <link rel="stylesheet" href="https://unpkg.com/reveal.js@^5/dist/reveal.css">
+  <style>
+    .reveal .sourceCode {  /* see #7635 */
+      overflow: visible;
+    }
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="../mccole/slides.css"/>
+</head>
+<body>
+  <div class="reveal">
+    <div class="slides">
+
+<section id="title-slide">
+  <h1 class="title">A Build Manager</h1>
+</section>
+
+<section class="slide level2">
+
+<section class="slide">
+</section>
+<section id="the-problem" class="slide level2">
+<h2>The Problem</h2>
+<ul>
+<li><p><code>plot.py</code> produces <code>result.svg</code> from
+<code>collated.csv</code></p></li>
+<li><p><code>analyze.py</code> produces <code>collated.csv</code> from
+<code>samples.csv</code> and <code>controls.csv</code></p></li>
+<li><p>Both <code>samples.csv</code> and <code>controls.csv</code>
+depends on <code>normalize.py</code> and <code>raw.csv</code>, but
+<code>normalize.py</code> takes a long time to run</p></li>
+<li><p>How can we regenerate the files we need, but only when we need
+them?</p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="make" class="slide level2">
+<h2>Make</h2>
+<ul>
+<li><p>[%g build_manager “Build managers” %] keep track of which files
+depend on which</p>
+<ul>
+<li><p>First tool of this kind was [Make][gnu_make]</p></li>
+<li><p>Many others now exist (e.g., [Snakemake][snakemake])</p></li>
+</ul></li>
+<li><p>If a [%g build_target “target” %] is [%g build_stale “stale” %]
+with respect to any of its [%g dependency “dependencies” %], run a [%g
+build_recipe “recipe” %] to refresh it</p></li>
+<li><p>Run recipes in order</p></li>
+<li><p>Run each recipe at most once</p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="terminology" class="slide level2">
+<h2>Terminology</h2>
+<ul>
+<li><p>Targets and dependencies must form a [%g dag “directed acyclic
+graph” %]</p></li>
+<li><p>A [%g topological_order “topological ordering” %] of a graph
+arranges nodes so that each one comes after everything it depends
+on</p></li>
+</ul>
+<p>[% figure slug=“build-dependencies” img=“dependencies.svg”
+alt=“Dependencies in a four-node graph” caption=“Dependencies and
+topological order” %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="representing-rules" class="slide level2">
+<h2>Representing Rules</h2>
+<ol type="1">
+<li>Invent a special-purpose syntax
+<ul>
+<li>Fits the problem</li>
+<li>But you need a parser, auto-complete, a debugger, etc.</li>
+</ul></li>
+<li>Use existing syntax
+<ul>
+<li>Get tooling for free</li>
+<li>But the semantics are invisible to those tools</li>
+</ul></li>
+</ol>
+<ul>
+<li>We will use JSON</li>
+</ul>
+<p>[%inc double_linear_dep.json %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="top-down-design" class="slide level2">
+<h2>Top-Down Design</h2>
+<ul>
+<li>Start with the big picture</li>
+</ul>
+<p>[%inc build_simple.py mark=main %]</p>
+<ol type="1">
+<li>Get the configuration</li>
+<li>Figure out the update order</li>
+<li>Refresh each file (for now, just print action)</li>
+</ol>
+</section>
+<section class="slide">
+</section>
+<section id="configuration" class="slide level2">
+<h2>Configuration</h2>
+<p>[%inc build_simple.py mark=config %]</p>
+<ul>
+<li>Use a dictionary comprehension
+<ul>
+<li>Key is node name (for lookup)</li>
+<li>Value contains rule and dependencies</li>
+</ul></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="check-and-build" class="slide level2">
+<h2>Check and Build</h2>
+<p>[%inc build_simple.py mark=check %]</p>
+<p>[% figure slug=“build-diamond” img=“diamond.svg” alt=“Representing
+graph” caption=“Representing dependency graph” %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="topological-sorting" class="slide level2">
+<h2>Topological Sorting</h2>
+<p>[% figure slug=“build-topo-sort” img=“topo_sort.svg” alt=“Trace of
+topological sorting” caption=“Topological sort” %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="topological-sorting-1" class="slide level2">
+<h2>Topological Sorting</h2>
+<p>[%inc build_simple.py mark=sort %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="testing" class="slide level2">
+<h2>Testing</h2>
+<p>[%inc double_linear_dep.json %] [%inc double_linear_dep.out %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="critique" class="slide level2">
+<h2>Critique</h2>
+<ol type="1">
+<li>Configuration might not come directly from a JSON file
+<ul>
+<li>So modify constructor to take config as input</li>
+</ul></li>
+<li>Printing actions to the screen isn’t very useful
+<ul>
+<li>So collect them and return an ordered list of commands</li>
+</ul></li>
+<li><code>assert</code> isn’t a friendly way to handle user errors
+<ul>
+<li>Raise <code>ValueError</code></li>
+</ul></li>
+<li>Topological sort isn’t [% g stable_sort “stable” %]
+<ul>
+<li><code>dict</code> is ordered but <code>set</code> is not</li>
+<li>So sort node names when appending</li>
+</ul></li>
+<li>We might want to add other keys to rules
+<ul>
+<li>So put that check in a separate method we can override</li>
+</ul></li>
+</ol>
+</section>
+<section class="slide">
+</section>
+<section id="revise-the-big-picture" class="slide level2">
+<h2>Revise the Big Picture</h2>
+<p>[%inc build_better.py mark=main %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="revise-configuration" class="slide level2">
+<h2>Revise Configuration</h2>
+<p>[%inc build_better.py mark=config %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="revise-topological-sort" class="slide level2">
+<h2>Revise Topological Sort</h2>
+<p>[%inc build_better.py mark=sort %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="now-its-testable" class="slide level2">
+<h2>Now It’s Testable</h2>
+<p>[%inc test_build_better.py mark=test_circular %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="now-its-testable-1" class="slide level2">
+<h2>Now It’s Testable</h2>
+<p>[%inc test_build_better.py mark=test_no_dep %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="and-extensible" class="slide level2">
+<h2>And Extensible</h2>
+<p>[%inc build_time.py mark=class %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="more-testing" class="slide level2">
+<h2>More Testing</h2>
+<p>[%inc test_build_time.py mark=tests %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="summary" class="slide level2">
+<h2>Summary</h2>
+<p>[% figure slug=“build-concept-map” img=“concept_map.svg” alt=“Concept
+map of build manager” caption=“Concept map.” %]</p>
+</section>
+</section>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/reveal.js@^5/dist/reveal.js"></script>
+
+  <!-- reveal.js plugins -->
+  <script src="https://unpkg.com/reveal.js@^5/plugin/notes/notes.js"></script>
+  <script src="https://unpkg.com/reveal.js@^5/plugin/search/search.js"></script>
+  <script src="https://unpkg.com/reveal.js@^5/plugin/zoom/zoom.js"></script>
+
+  <script>
+
+      // Full list of configuration options available at:
+      // https://revealjs.com/config/
+      Reveal.initialize({
+        // Display controls in the bottom right corner
+        controls: true,
+
+        // Help the user learn the controls by providing hints, for example by
+        // bouncing the down arrow when they first encounter a vertical slide
+        controlsTutorial: true,
+
+        // Determines where controls appear, "edges" or "bottom-right"
+        controlsLayout: 'bottom-right',
+
+        // Visibility rule for backwards navigation arrows; "faded", "hidden"
+        // or "visible"
+        controlsBackArrows: 'faded',
+
+        // Display a presentation progress bar
+        progress: true,
+
+        // Display the page number of the current slide
+        slideNumber: true,
+
+        // 'all', 'print', or 'speaker'
+        showSlideNumber: 'all',
+
+        // Add the current slide number to the URL hash so that reloading the
+        // page/copying the URL will return you to the same slide
+        hash: true,
+
+        // Start with 1 for the hash rather than 0
+        hashOneBasedIndex: false,
+
+        // Flags if we should monitor the hash and change slides accordingly
+        respondToHashChanges: true,
+
+        // Push each slide change to the browser history
+        history: false,
+
+        // Enable keyboard shortcuts for navigation
+        keyboard: true,
+
+        // Enable the slide overview mode
+        overview: true,
+
+        // Disables the default reveal.js slide layout (scaling and centering)
+        // so that you can use custom CSS layout
+        disableLayout: false,
+
+        // Vertical centering of slides
+        center: true,
+
+        // Enables touch navigation on devices with touch input
+        touch: true,
+
+        // Loop the presentation
+        loop: false,
+
+        // Change the presentation direction to be RTL
+        rtl: false,
+
+        // see https://revealjs.com/vertical-slides/#navigation-mode
+        navigationMode: 'default',
+
+        // Randomizes the order of slides each time the presentation loads
+        shuffle: false,
+
+        // Turns fragments on and off globally
+        fragments: true,
+
+        // Flags whether to include the current fragment in the URL,
+        // so that reloading brings you to the same fragment position
+        fragmentInURL: true,
+
+        // Flags if the presentation is running in an embedded mode,
+        // i.e. contained within a limited portion of the screen
+        embedded: false,
+
+        // Flags if we should show a help overlay when the questionmark
+        // key is pressed
+        help: true,
+
+        // Flags if it should be possible to pause the presentation (blackout)
+        pause: true,
+
+        // Flags if speaker notes should be visible to all viewers
+        showNotes: false,
+
+        // Global override for autoplaying embedded media (null/true/false)
+        autoPlayMedia: null,
+
+        // Global override for preloading lazy-loaded iframes (null/true/false)
+        preloadIframes: null,
+
+        // Number of milliseconds between automatically proceeding to the
+        // next slide, disabled when set to 0, this value can be overwritten
+        // by using a data-autoslide attribute on your slides
+        autoSlide: 0,
+
+        // Stop auto-sliding after user input
+        autoSlideStoppable: true,
+
+        // Use this method for navigation when auto-sliding
+        autoSlideMethod: null,
+
+        // Specify the average time in seconds that you think you will spend
+        // presenting each slide. This is used to show a pacing timer in the
+        // speaker view
+        defaultTiming: null,
+
+        // Enable slide navigation via mouse wheel
+        mouseWheel: false,
+
+        // The display mode that will be used to show slides
+        display: 'block',
+
+        // Hide cursor if inactive
+        hideInactiveCursor: true,
+
+        // Time before the cursor is hidden (in ms)
+        hideCursorTime: 5000,
+
+        // Opens links in an iframe preview overlay
+        previewLinks: false,
+
+        // Transition style (none/fade/slide/convex/concave/zoom)
+        transition: 'slide',
+
+        // Transition speed (default/fast/slow)
+        transitionSpeed: 'default',
+
+        // Transition style for full page slide backgrounds
+        // (none/fade/slide/convex/concave/zoom)
+        backgroundTransition: 'fade',
+
+        // Number of slides away from the current that are visible
+        viewDistance: 3,
+
+        // Number of slides away from the current that are visible on mobile
+        // devices. It is advisable to set this to a lower number than
+        // viewDistance in order to save resources.
+        mobileViewDistance: 2,
+
+        // reveal.js plugins
+        plugins: [
+          RevealNotes,
+          RevealSearch,
+          RevealZoom
+        ]
+      });
+    </script>
+    </body>
+</html>

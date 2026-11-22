@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="generator" content="pandoc">
+  <title>Finding Duplicate Files</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+  <link rel="stylesheet" href="https://unpkg.com/reveal.js@^5/dist/reset.css">
+  <link rel="stylesheet" href="https://unpkg.com/reveal.js@^5/dist/reveal.css">
+  <style>
+    .reveal .sourceCode {  /* see #7635 */
+      overflow: visible;
+    }
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="../mccole/slides.css"/>
+</head>
+<body>
+  <div class="reveal">
+    <div class="slides">
+
+<section id="title-slide">
+  <h1 class="title">Finding Duplicate Files</h1>
+</section>
+
+<section class="slide level2">
+
+<section class="slide">
+</section>
+<section id="overview" class="slide level2">
+<h2>Overview</h2>
+<ul>
+<li><p>We want to find duplicate files, but can’t rely on their
+names</p></li>
+<li><p>Comparing pairs of files byte by byte is slow</p>
+<ul>
+<li>And gets slower per file as the number of files grows</li>
+</ul></li>
+<li><p>Better approach:</p>
+<ul>
+<li><p>Calculate an identifier for each file that depends on its
+content</p></li>
+<li><p>Group files with the same identifier and compare those</p></li>
+</ul></li>
+<li><p>Even better: calculate identifiers so that if two files have the
+same ID, they’re guaranteed to have the same content</p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="start-simple" class="slide level2">
+<h2>Start Simple</h2>
+<ul>
+<li><p>Take filenames as command-line arguments</p></li>
+<li><p>Generate and print a list of duplicate pairs</p></li>
+</ul>
+<p>[%inc brute_force_1.py mark=main %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="byte-by-byte" class="slide level2">
+<h2>Byte by Byte</h2>
+<p>[%inc brute_force_1.py mark=bytes %]</p>
+<ul>
+<li><p><code>open(filename, "r")</code> opens a file for reading
+characters</p></li>
+<li><p>But images, audio clips, etc. aren’t character data</p></li>
+<li><p>So use <code>open(filename, “r<strong>b</strong>”)</code> to open
+in [% g binary_mode “binary mode” %]</p>
+<ul>
+<li>Look at the difference in more detail in [%x binary %]</li>
+</ul></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="test-case" class="slide level2">
+<h2>Test Case</h2>
+<ul>
+<li>Create a <code>tests</code> directory with six files</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th><code>a1.txt</code></th>
+<th><code>a2.txt</code></th>
+<th><code>a3.txt</code></th>
+<th><code>b1.txt</code></th>
+<th><code>b2.txt</code></th>
+<th><code>c1.txt</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>aaa</td>
+<td>aaa</td>
+<td>aaa</td>
+<td>bb</td>
+<td>bb</td>
+<td>c</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><p>Expect the three <code>a</code> files and the two <code>b</code>
+files to be reported as duplicates</p></li>
+<li><p>No particular reason for these tests—we just have to start
+somewhere</p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="test-output" class="slide level2">
+<h2>Test Output</h2>
+<p>[%inc brute_force_1.sh %] [%inc brute_force_1.out %]</p>
+<ul>
+<li>Oops</li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="revise-our-approach" class="slide level2">
+<h2>Revise Our Approach</h2>
+<p>[%inc brute_force_2.py mark=dup %]</p>
+<p>[% figure slug=“dup-triangle” img=“triangle.svg” alt=“Looping over
+distinct combinations” caption=“Scoping the inner loop to produce unique
+combinations.” %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="algorithmic-complexity" class="slide level2">
+<h2>Algorithmic Complexity</h2>
+<ul>
+<li><p>\( N \) objects can be paired in \( N(N-1)/2 \) ways</p></li>
+<li><p>So for very large \( N \), work is proportional to \( N^2
+\)</p></li>
+<li><p>Computer scientist would say “[%g time_complexity ”time
+complexity” %] is \( O(N^2) \)”</p>
+<ul>
+<li>Pronounced “[%g big_oh ”big-oh” %] of N squared”</li>
+</ul></li>
+<li><p>In practice, this means that the time per file increases as the
+number of files increases</p></li>
+<li><p>Sometimes unavoidable, but in this case there’s a better
+way</p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="grouping-files" class="slide level2">
+<h2>Grouping Files</h2>
+<ul>
+<li><p>Process each file once to produce a short identifier</p></li>
+<li><p>I.e., use a [% g hash_function “hash function” %] to produce a [%
+g hash_code “hash code” %]</p></li>
+<li><p>Only compare files with the same identifier</p></li>
+</ul>
+<p>[% figure slug=“dup-hash-group” img=“hash_group.svg” alt=“Grouping by
+hash code” caption=“Grouping by hash code reduces comparisons from 15 to
+4.” %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="naive-hashing" class="slide level2">
+<h2>Naive Hashing</h2>
+<ul>
+<li>Bytes are just numbers</li>
+</ul>
+<p>[%inc naive_hash.py mark=hash %]</p>
+<p>[%inc naive_hash.py mark=example %]</p>
+<p>[%inc naive_hash.out %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="how-good-is-this" class="slide level2">
+<h2>How Good Is This?</h2>
+<ul>
+<li><p>Want all hash codes to be equally likely</p></li>
+<li><p>Hash each line of the novel <em>Dracula</em> and plot
+distribution</p></li>
+</ul>
+<p>[% figure slug=“dup-naive-dracula” img=“naive_dracula.svg” alt=“Hash
+codes of <em>Dracula</em>” caption=“Distribution of hash codes per line
+in <em>Dracula</em>.” %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="after-a-little-digging" class="slide level2">
+<h2>After a Little Digging…</h2>
+<ul>
+<li><p>Our text file uses a blank line to separate paragraphs</p></li>
+<li><p>Look at the distribution of hash codes of <em>unique</em>
+lines</p></li>
+</ul>
+<p>[% figure slug=“dup-naive-dracula-unique”
+img=“naive_dracula_unique.svg” alt=“Hash codes of unique lines of
+<em>Dracula</em>” caption=“Distribution of hash codes per unique line in
+<em>Dracula</em>.” %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="modifying-our-program" class="slide level2">
+<h2>Modifying Our Program</h2>
+<ul>
+<li>Build a dictionary with hash codes as keys and sets of files as
+values</li>
+</ul>
+<p>[%inc grouped.py mark=group %]</p>
+<ul>
+<li>If we haven’t seen this key before, add it with an empty value</li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="modifying-our-program-1" class="slide level2">
+<h2>Modifying Our Program</h2>
+<ul>
+<li>We can re-use most of the previous code</li>
+</ul>
+<p>[%inc grouped.py mark=main %]</p>
+<p>[%inc grouped.out %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="but-we-can-do-better" class="slide level2">
+<h2>But We Can Do Better</h2>
+<ul>
+<li><p>Use a [%g cryptographic_hash_function “cryptographic hash
+function” %]</p>
+<ul>
+<li><p>Output is completely deterministic</p></li>
+<li><p>But also unpredictable</p></li>
+<li><p>And distributed like a uniform random variable</p></li>
+</ul></li>
+<li><p>Output depends on <em>order</em> of input as well as
+<em>value</em></p>
+<ul>
+<li>With overwhelming probability, any change in input will produce a
+different output</li>
+</ul></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="we-dont-need-groups" class="slide level2">
+<h2>We Don’t Need Groups</h2>
+<ul>
+<li><p>Odds that two people don’t share a birthday are \( 364/365
+\)</p></li>
+<li><p>Odds that three people don’t have are \( (364/365) {} (363/365)
+\)</p></li>
+<li><p>There’s a 50% chance of two people sharing a birthday in a group
+of 23 people and a 99.9% chance with 70 people</p></li>
+<li><p>How many files do we need to hash before there’s a 50% chance of
+a [%g hash_collision “collision” %] with a 256-bit hash?</p></li>
+<li><p>Answer is “approximately \( 4{}10^{38} \) files”</p></li>
+<li><p>We’re willing to take that risk</p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="sha-256-example" class="slide level2">
+<h2>SHA-256 Example</h2>
+<p>[%inc using_sha256.py mark=example %]</p>
+<p>[%inc using_sha256.out %]</p>
+<ul>
+<li><code>hexdigest</code> gives [%g hexadecimal “hexadecimal” %]
+representation of 256-bit hash code</li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="duplicate-finder" class="slide level2">
+<h2>Duplicate Finder</h2>
+<p>[%inc dup.py %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="duplicate-finder-1" class="slide level2">
+<h2>Duplicate Finder</h2>
+<p>[%inc dup.sh %] [%inc dup.out %]</p>
+<ul>
+<li><p>Runtime is \(O(N)\), i.e., fixed time per file</p></li>
+<li><p>Which is as good as it can possibly be</p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="learning-debt" class="slide level2">
+<h2>Learning Debt</h2>
+<ul>
+<li><p>What else can we use hashing for?</p>
+<ul>
+<li><p>Dictionaries</p></li>
+<li><p>Version control</p></li>
+</ul></li>
+<li><p>How can we test our duplicate finder?</p></li>
+<li><p>How can we make sure the code follows style guidelines?</p></li>
+<li><p>How can we package it for others to use?</p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="summary" class="slide level2">
+<h2>Summary</h2>
+<p>[% figure slug=“dup-concept-map” img=“concept_map.svg” alt=“Concept
+map for finding duplicate files” caption=“Concept map.” %]</p>
+</section>
+</section>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/reveal.js@^5/dist/reveal.js"></script>
+
+  <!-- reveal.js plugins -->
+  <script src="https://unpkg.com/reveal.js@^5/plugin/notes/notes.js"></script>
+  <script src="https://unpkg.com/reveal.js@^5/plugin/search/search.js"></script>
+  <script src="https://unpkg.com/reveal.js@^5/plugin/zoom/zoom.js"></script>
+
+  <script>
+
+      // Full list of configuration options available at:
+      // https://revealjs.com/config/
+      Reveal.initialize({
+        // Display controls in the bottom right corner
+        controls: true,
+
+        // Help the user learn the controls by providing hints, for example by
+        // bouncing the down arrow when they first encounter a vertical slide
+        controlsTutorial: true,
+
+        // Determines where controls appear, "edges" or "bottom-right"
+        controlsLayout: 'bottom-right',
+
+        // Visibility rule for backwards navigation arrows; "faded", "hidden"
+        // or "visible"
+        controlsBackArrows: 'faded',
+
+        // Display a presentation progress bar
+        progress: true,
+
+        // Display the page number of the current slide
+        slideNumber: true,
+
+        // 'all', 'print', or 'speaker'
+        showSlideNumber: 'all',
+
+        // Add the current slide number to the URL hash so that reloading the
+        // page/copying the URL will return you to the same slide
+        hash: true,
+
+        // Start with 1 for the hash rather than 0
+        hashOneBasedIndex: false,
+
+        // Flags if we should monitor the hash and change slides accordingly
+        respondToHashChanges: true,
+
+        // Push each slide change to the browser history
+        history: false,
+
+        // Enable keyboard shortcuts for navigation
+        keyboard: true,
+
+        // Enable the slide overview mode
+        overview: true,
+
+        // Disables the default reveal.js slide layout (scaling and centering)
+        // so that you can use custom CSS layout
+        disableLayout: false,
+
+        // Vertical centering of slides
+        center: true,
+
+        // Enables touch navigation on devices with touch input
+        touch: true,
+
+        // Loop the presentation
+        loop: false,
+
+        // Change the presentation direction to be RTL
+        rtl: false,
+
+        // see https://revealjs.com/vertical-slides/#navigation-mode
+        navigationMode: 'default',
+
+        // Randomizes the order of slides each time the presentation loads
+        shuffle: false,
+
+        // Turns fragments on and off globally
+        fragments: true,
+
+        // Flags whether to include the current fragment in the URL,
+        // so that reloading brings you to the same fragment position
+        fragmentInURL: true,
+
+        // Flags if the presentation is running in an embedded mode,
+        // i.e. contained within a limited portion of the screen
+        embedded: false,
+
+        // Flags if we should show a help overlay when the questionmark
+        // key is pressed
+        help: true,
+
+        // Flags if it should be possible to pause the presentation (blackout)
+        pause: true,
+
+        // Flags if speaker notes should be visible to all viewers
+        showNotes: false,
+
+        // Global override for autoplaying embedded media (null/true/false)
+        autoPlayMedia: null,
+
+        // Global override for preloading lazy-loaded iframes (null/true/false)
+        preloadIframes: null,
+
+        // Number of milliseconds between automatically proceeding to the
+        // next slide, disabled when set to 0, this value can be overwritten
+        // by using a data-autoslide attribute on your slides
+        autoSlide: 0,
+
+        // Stop auto-sliding after user input
+        autoSlideStoppable: true,
+
+        // Use this method for navigation when auto-sliding
+        autoSlideMethod: null,
+
+        // Specify the average time in seconds that you think you will spend
+        // presenting each slide. This is used to show a pacing timer in the
+        // speaker view
+        defaultTiming: null,
+
+        // Enable slide navigation via mouse wheel
+        mouseWheel: false,
+
+        // The display mode that will be used to show slides
+        display: 'block',
+
+        // Hide cursor if inactive
+        hideInactiveCursor: true,
+
+        // Time before the cursor is hidden (in ms)
+        hideCursorTime: 5000,
+
+        // Opens links in an iframe preview overlay
+        previewLinks: false,
+
+        // Transition style (none/fade/slide/convex/concave/zoom)
+        transition: 'slide',
+
+        // Transition speed (default/fast/slow)
+        transitionSpeed: 'default',
+
+        // Transition style for full page slide backgrounds
+        // (none/fade/slide/convex/concave/zoom)
+        backgroundTransition: 'fade',
+
+        // Number of slides away from the current that are visible
+        viewDistance: 3,
+
+        // Number of slides away from the current that are visible on mobile
+        // devices. It is advisable to set this to a lower number than
+        // viewDistance in order to save resources.
+        mobileViewDistance: 2,
+
+        // reveal.js plugins
+        plugins: [
+          RevealNotes,
+          RevealSearch,
+          RevealZoom
+        ]
+      });
+    </script>
+    </body>
+</html>

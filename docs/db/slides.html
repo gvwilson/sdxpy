@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="generator" content="pandoc">
+  <title>A Database</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+  <link rel="stylesheet" href="https://unpkg.com/reveal.js@^5/dist/reset.css">
+  <link rel="stylesheet" href="https://unpkg.com/reveal.js@^5/dist/reveal.css">
+  <style>
+    .reveal .sourceCode {  /* see #7635 */
+      overflow: visible;
+    }
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="../mccole/slides.css"/>
+</head>
+<body>
+  <div class="reveal">
+    <div class="slides">
+
+<section id="title-slide">
+  <h1 class="title">A Database</h1>
+</section>
+
+<section class="slide level2">
+
+<section class="slide">
+</section>
+<section id="the-problem" class="slide level2">
+<h2>The Problem</h2>
+<ul>
+<li><p>Persisting objects ([%x persist %]) lets us save and restore
+program state</p></li>
+<li><p>But we often want fast lookup <em>without</em> reloading all the
+data</p></li>
+<li><p>And interoperability across languages</p></li>
+<li><p>Create a simple [%g log_structured_db “log-structured database”
+%]</p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="starting-point" class="slide level2">
+<h2>Starting Point</h2>
+<ul>
+<li><p>A simple [%g key_value_store “key-value store” %] that lets us
+look things up</p></li>
+<li><p>User must provide a function that gets key from record</p></li>
+</ul>
+<p>[%inc interface_original.py %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="just-a-dictionary" class="slide level2">
+<h2>Just a Dictionary</h2>
+<ul>
+<li>Store in memory using a dictionary</li>
+</ul>
+<p>[%inc just_dict_original.py %]</p>
+<ul>
+<li>Lets us start writing tests</li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="experimental-records" class="slide level2">
+<h2>Experimental Records</h2>
+<p>[%inc record_original.py omit=omit %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="test-fixtures" class="slide level2">
+<h2>Test Fixtures</h2>
+<ul>
+<li>Use the <code>pytest.fixture</code> decorator from [%x func %]</li>
+</ul>
+<p>[%inc test_db_original.py mark=fixture %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="tests" class="slide level2">
+<h2>Tests</h2>
+<p>[%inc test_db_original.py mark=test %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="refactor-interface" class="slide level2">
+<h2>Refactor Interface</h2>
+<ul>
+<li><p>We’re going to need other record manipulation functions</p></li>
+<li><p>So save the record class instead of the key function</p></li>
+</ul>
+<p>[%inc interface.py %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="refactor-database" class="slide level2">
+<h2>Refactor Database</h2>
+<ul>
+<li>Corresponding change to use a [%g static_method “static method” %]
+of the record class</li>
+</ul>
+<p>[%inc just_dict_refactored.py %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="saving-records" class="slide level2">
+<h2>Saving Records</h2>
+<ul>
+<li><p>Records must know how to pack and unpack themselves</p></li>
+<li><p>Start by calculating the size of each</p></li>
+</ul>
+<p>[%inc record.py mark=base %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="packing" class="slide level2">
+<h2>Packing</h2>
+<p>[%inc record.py mark=pack %]</p>
+<ul>
+<li><p>Save as strings with [%g null_byte “null byte” %] <code>\0</code>
+between them</p></li>
+<li><p>A real implementation would pack as binary ([%x binary
+%])</p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="unpacking" class="slide level2">
+<h2>Unpacking</h2>
+<p>[%inc record.py mark=unpack %]</p>
+<ul>
+<li><p>Note: this doesn’t handle strings with null bytes</p>
+<ul>
+<li>A real implementation would etc.</li>
+</ul></li>
+<li><p>Methods for packing and unpacking multiple records are
+straightforward</p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="a-file-backed-database" class="slide level2">
+<h2>A File-Backed Database</h2>
+<p>[% figure slug=“db-single-file” img=“single_file.svg” alt=“Using a
+single file” caption=“Saving the entire database in a single file.”
+%]</p>
+</section>
+<section class="slide">
+</section>
+<section id="a-file-backed-database-1" class="slide level2">
+<h2>A File-Backed Database</h2>
+<p>[%inc file_backed.py mark=core %]</p>
+<ul>
+<li>Needs two [%g helper_method “helper methods” %]</li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="a-file-backed-database-2" class="slide level2">
+<h2>A File-Backed Database</h2>
+<p>[%inc file_backed.py mark=helper %]</p>
+<ul>
+<li><p>Still saving and loading entire database</p></li>
+<li><p>But look at all the infrastructure we’ve built</p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="saving-blocks" class="slide level2">
+<h2>Saving Blocks</h2>
+<ul>
+<li><p>Save <em>N</em> records per [%g block_memory “block” %]</p></li>
+<li><p>Keep the [%g index_database “index” %] in memory</p></li>
+<li><p>When writing, only modify one block (smaller and faster)</p></li>
+<li><p>When reading, only load one block (ditto)</p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="allocating-blocks" class="slide level2">
+<h2>Allocating Blocks</h2>
+<p>[% figure slug=“db-alloc” img=“alloc.svg” alt=“Mapping records to
+blocks” caption=“Mapping records to blocks.” %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="store-blocks-in-memory" class="slide level2">
+<h2>Store Blocks in Memory</h2>
+<p>[%inc blocked.py mark=class %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="adding-a-record" class="slide level2">
+<h2>Adding a Record</h2>
+<p>[%inc blocked.py mark=add %]</p>
+<ul>
+<li><p>Get the sequence ID for this record</p></li>
+<li><p>Store the key-to-sequence mapping in the index</p></li>
+<li><p>Find or create the right block</p></li>
+<li><p>Add the record</p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="getting-a-record" class="slide level2">
+<h2>Getting a Record</h2>
+<p>[%inc blocked.py mark=get %]</p>
+<ul>
+<li><p>Do we even know about this record?</p></li>
+<li><p>Find its current sequence ID</p></li>
+<li><p>Find the corresponding block</p></li>
+<li><p>Get the record</p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="helper-methods" class="slide level2">
+<h2>Helper Methods</h2>
+<p>[%inc blocked.py mark=helper %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="persisting-blocks" class="slide level2">
+<h2>Persisting Blocks</h2>
+<ul>
+<li>Use inheritance to do everything described above while saving and
+loading blocks</li>
+</ul>
+<p>[%inc blocked_file.py mark=class %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="saving" class="slide level2">
+<h2>Saving</h2>
+<p>[%inc blocked_file.py mark=save %]</p>
+<ul>
+<li>Have to pack and save all the records in the block</li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="loading" class="slide level2">
+<h2>Loading</h2>
+<p>[%inc blocked_file.py mark=load %]</p>
+<ul>
+<li>Unpack all the records in the block</li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="why-split-loading" class="slide level2">
+<h2>Why Split Loading?</h2>
+<ul>
+<li>Need to initialize the in-memory index when restarting the
+database</li>
+</ul>
+<p>[%inc blocked_file.py mark=index %]</p>
+<ul>
+<li><p>Obvious extension: save the index in another file</p></li>
+<li><p>Would have to profile ([%x perf %]) to see if this was
+worthwhile</p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="next-steps" class="slide level2">
+<h2>Next Steps</h2>
+<ul>
+<li><p>Clean up unused files</p></li>
+<li><p>[%g compact “Compact” %] storage periodically</p></li>
+<li><p>Use other data structures for indexing</p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="summary" class="slide level2">
+<h2>Summary</h2>
+<p>[% figure slug=“db-concept-map” img=“concept_map.svg” alt=“Concept
+map for database” caption=“Concept map.” %]</p>
+</section>
+</section>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/reveal.js@^5/dist/reveal.js"></script>
+
+  <!-- reveal.js plugins -->
+  <script src="https://unpkg.com/reveal.js@^5/plugin/notes/notes.js"></script>
+  <script src="https://unpkg.com/reveal.js@^5/plugin/search/search.js"></script>
+  <script src="https://unpkg.com/reveal.js@^5/plugin/zoom/zoom.js"></script>
+
+  <script>
+
+      // Full list of configuration options available at:
+      // https://revealjs.com/config/
+      Reveal.initialize({
+        // Display controls in the bottom right corner
+        controls: true,
+
+        // Help the user learn the controls by providing hints, for example by
+        // bouncing the down arrow when they first encounter a vertical slide
+        controlsTutorial: true,
+
+        // Determines where controls appear, "edges" or "bottom-right"
+        controlsLayout: 'bottom-right',
+
+        // Visibility rule for backwards navigation arrows; "faded", "hidden"
+        // or "visible"
+        controlsBackArrows: 'faded',
+
+        // Display a presentation progress bar
+        progress: true,
+
+        // Display the page number of the current slide
+        slideNumber: true,
+
+        // 'all', 'print', or 'speaker'
+        showSlideNumber: 'all',
+
+        // Add the current slide number to the URL hash so that reloading the
+        // page/copying the URL will return you to the same slide
+        hash: true,
+
+        // Start with 1 for the hash rather than 0
+        hashOneBasedIndex: false,
+
+        // Flags if we should monitor the hash and change slides accordingly
+        respondToHashChanges: true,
+
+        // Push each slide change to the browser history
+        history: false,
+
+        // Enable keyboard shortcuts for navigation
+        keyboard: true,
+
+        // Enable the slide overview mode
+        overview: true,
+
+        // Disables the default reveal.js slide layout (scaling and centering)
+        // so that you can use custom CSS layout
+        disableLayout: false,
+
+        // Vertical centering of slides
+        center: true,
+
+        // Enables touch navigation on devices with touch input
+        touch: true,
+
+        // Loop the presentation
+        loop: false,
+
+        // Change the presentation direction to be RTL
+        rtl: false,
+
+        // see https://revealjs.com/vertical-slides/#navigation-mode
+        navigationMode: 'default',
+
+        // Randomizes the order of slides each time the presentation loads
+        shuffle: false,
+
+        // Turns fragments on and off globally
+        fragments: true,
+
+        // Flags whether to include the current fragment in the URL,
+        // so that reloading brings you to the same fragment position
+        fragmentInURL: true,
+
+        // Flags if the presentation is running in an embedded mode,
+        // i.e. contained within a limited portion of the screen
+        embedded: false,
+
+        // Flags if we should show a help overlay when the questionmark
+        // key is pressed
+        help: true,
+
+        // Flags if it should be possible to pause the presentation (blackout)
+        pause: true,
+
+        // Flags if speaker notes should be visible to all viewers
+        showNotes: false,
+
+        // Global override for autoplaying embedded media (null/true/false)
+        autoPlayMedia: null,
+
+        // Global override for preloading lazy-loaded iframes (null/true/false)
+        preloadIframes: null,
+
+        // Number of milliseconds between automatically proceeding to the
+        // next slide, disabled when set to 0, this value can be overwritten
+        // by using a data-autoslide attribute on your slides
+        autoSlide: 0,
+
+        // Stop auto-sliding after user input
+        autoSlideStoppable: true,
+
+        // Use this method for navigation when auto-sliding
+        autoSlideMethod: null,
+
+        // Specify the average time in seconds that you think you will spend
+        // presenting each slide. This is used to show a pacing timer in the
+        // speaker view
+        defaultTiming: null,
+
+        // Enable slide navigation via mouse wheel
+        mouseWheel: false,
+
+        // The display mode that will be used to show slides
+        display: 'block',
+
+        // Hide cursor if inactive
+        hideInactiveCursor: true,
+
+        // Time before the cursor is hidden (in ms)
+        hideCursorTime: 5000,
+
+        // Opens links in an iframe preview overlay
+        previewLinks: false,
+
+        // Transition style (none/fade/slide/convex/concave/zoom)
+        transition: 'slide',
+
+        // Transition speed (default/fast/slow)
+        transitionSpeed: 'default',
+
+        // Transition style for full page slide backgrounds
+        // (none/fade/slide/convex/concave/zoom)
+        backgroundTransition: 'fade',
+
+        // Number of slides away from the current that are visible
+        viewDistance: 3,
+
+        // Number of slides away from the current that are visible on mobile
+        // devices. It is advisable to set this to a lower number than
+        // viewDistance in order to save resources.
+        mobileViewDistance: 2,
+
+        // reveal.js plugins
+        plugins: [
+          RevealNotes,
+          RevealSearch,
+          RevealZoom
+        ]
+      });
+    </script>
+    </body>
+</html>

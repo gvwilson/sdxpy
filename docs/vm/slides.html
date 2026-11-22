@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="generator" content="pandoc">
+  <title>A Virtual Machine</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+  <link rel="stylesheet" href="https://unpkg.com/reveal.js@^5/dist/reset.css">
+  <link rel="stylesheet" href="https://unpkg.com/reveal.js@^5/dist/reveal.css">
+  <style>
+    .reveal .sourceCode {  /* see #7635 */
+      overflow: visible;
+    }
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="../mccole/slides.css"/>
+</head>
+<body>
+  <div class="reveal">
+    <div class="slides">
+
+<section id="title-slide">
+  <h1 class="title">A Virtual Machine</h1>
+</section>
+
+<section class="slide level2">
+
+<section class="slide">
+</section>
+<section id="the-problem" class="slide level2">
+<h2>The Problem</h2>
+<ul>
+<li><p>Still a lot of magic in the interpreter of [%x interp %]</p></li>
+<li><p>Build something that mimics hardware more closely</p></li>
+<li><p>See [%b Nisan2021 %] for a fuller description</p></li>
+<li><p>Or play [Human Resource Machine][human_resource_machine]</p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="architecture" class="slide level2">
+<h2>Architecture</h2>
+<ul>
+<li>Our [%g virtual_machine “virtual machine” %] (VM)</li>
+</ul>
+<p>[% figure slug=“vm-architecture” img=“architecture.svg” alt=“Virtual
+machine architecture” caption=“Architecture of the virtual machine.”
+%]</p>
+</section>
+<section class="slide">
+</section>
+<section id="architecture-1" class="slide level2">
+<h2>Architecture</h2>
+<ol type="1">
+<li><p>[%g instruction_pointer “Instruction pointer” %] (IP) holds the
+address of the next instruction</p>
+<ul>
+<li>Automatically initialized to 0, so every program must start
+there</li>
+</ul></li>
+<li><p>Instructions can access [%g register_hardware “registers” %] R0
+to R3 directly</p>
+<ul>
+<li>No memory-to-memory operations</li>
+</ul></li>
+<li><p>256 [%g word_memory “words” %] of memory</p>
+<ul>
+<li>Addresses fit in a single byte</li>
+</ul></li>
+</ol>
+</section>
+<section class="slide">
+</section>
+<section id="what-it-can-do" class="slide level2">
+<h2>What It Can Do</h2>
+<ul>
+<li><p>[%g instruction_set “Instruction set” %] defines what the
+processor can do</p></li>
+<li><p>Each instruction is 3 bytes</p></li>
+<li><p>[%g op_code “op code” %] fits in one byte</p></li>
+<li><p>May have zero, one, or two single-byte operands</p>
+<ul>
+<li>Could use variable-length instructions, but that would complicate
+the VM</li>
+</ul></li>
+<li><p>Each operand is a register identifier, a constant, or an
+address</p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="writing-instructions" class="slide level2">
+<h2>Writing Instructions</h2>
+<ul>
+<li><p>Instructions are numbers,</p></li>
+<li><p>Write them in [%g assembly_code “assembly code” %] for
+readability</p></li>
+</ul>
+<div class="small">
+<table>
+<tr>
+<th>
+Name
+</th>
+<th>
+Code
+</th>
+<th>
+Format
+</th>
+<th>
+Action
+</th>
+<th>
+Example
+</th>
+</tr>
+<tr>
+<td>
+<code>hlt</code>
+</td>
+<td>
+1
+</td>
+<td>
+<code>–</code>
+</td>
+<td>
+Halt program
+</td>
+<td>
+<code>hlt</code>
+</td>
+</tr>
+<tr>
+<td>
+<code>ldc</code>
+</td>
+<td>
+2
+</td>
+<td>
+<code>rv</code>
+</td>
+<td>
+Load constant
+</td>
+<td>
+<code>ldc R0 123</code>
+</td>
+</tr>
+<tr>
+<td>
+<code>ldr</code>
+</td>
+<td>
+3
+</td>
+<td>
+<code>rr</code>
+</td>
+<td>
+Load register
+</td>
+<td>
+<code>ldr R0 R1</code>
+</td>
+</tr>
+<tr>
+<td>
+<code>add</code>
+</td>
+<td>
+6
+</td>
+<td>
+<code>rr</code>
+</td>
+<td>
+Add
+</td>
+<td>
+<code>add R0 R1</code>
+</td>
+</tr>
+<tr>
+<td>
+<code>bne</code>
+</td>
+<td>
+9
+</td>
+<td>
+<code>rv</code>
+</td>
+<td>
+Branch if not equal
+</td>
+<td>
+<code>bne R0 123</code>
+</td>
+</tr>
+<tr>
+<td>
+<code>prr</code>
+</td>
+<td>
+10
+</td>
+<td>
+<code>r-</code>
+</td>
+<td>
+Print register
+</td>
+<td>
+<code>prr R0</code>
+</td>
+</tr>
+</table>
+</div>
+</section>
+<section class="slide">
+</section>
+<section id="details" class="slide level2">
+<h2>Details</h2>
+<p>[%inc architecture.py %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="vm-class" class="slide level2">
+<h2>VM Class</h2>
+<p>[%inc vm.py mark=init %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="fetching-and-unpacking" class="slide level2">
+<h2>Fetching and Unpacking</h2>
+<p>[%inc vm.py mark=fetch %]</p>
+<ul>
+<li>Use [%g bitwise_operation “bitwise operations” %] to get bytes out
+of integer</li>
+</ul>
+<p>[% figure slug=“vm-unpacking” img=“unpacking.svg” alt=“Unpacking
+instructions” caption=“Using bitwise operations to unpack instructions.”
+%]</p>
+</section>
+<section class="slide">
+</section>
+<section id="running-a-program" class="slide level2">
+<h2>Running a Program</h2>
+<p>[%inc vm.py mark=run omit=skip %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="sample-instructions" class="slide level2">
+<h2>Sample Instructions</h2>
+<ul>
+<li>Store a value</li>
+</ul>
+<p>[%inc vm.py mark=store %]</p>
+<ul>
+<li>Addition</li>
+</ul>
+<p>[%inc vm.py mark=add %]</p>
+<ul>
+<li>[%g conditional_jump “Conditional jump” %]</li>
+</ul>
+<p>[%inc vm.py mark=beq %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="writing-programs" class="slide level2">
+<h2>Writing Programs</h2>
+<ul>
+<li>Hexadecimal</li>
+</ul>
+<p>[%inc print_r1.mx %]</p>
+<ul>
+<li>Assembly code</li>
+</ul>
+<p>[%inc print_r1.as %]</p>
+<ul>
+<li>Write an [%g assembler “assembler” %] to the latter into the
+former</li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="labels" class="slide level2">
+<h2>Labels</h2>
+<ul>
+<li><p>Instruction set doesn’t have names for addresses</p></li>
+<li><p>But we want [%g label_address “labels” %] for
+readability</p></li>
+</ul>
+<p>[%inc count_up.as %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="counting-up" class="slide level2">
+<h2>Counting Up</h2>
+<p>[%inc count_up.out %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="counting-up-1" class="slide level2">
+<h2>Counting Up</h2>
+<p>[% figure slug=“vm-count-up” img=“count_up.svg” alt=“Counting from 0
+to 2” caption=“Flowchart of assembly language program to count up from 0
+to 2.” %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="counting-up-2" class="slide level2">
+<h2>Counting Up</h2>
+<p>[% figure slug=“vm-count-trace” img=“count_trace.svg” alt=“Trace
+counting program” caption=“Tracing registers and memory values for a
+simple counting program.” %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="assembler-class" class="slide level2">
+<h2>Assembler Class</h2>
+<p>[%inc assembler.py mark=class %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="resolving-labels" class="slide level2">
+<h2>Resolving Labels</h2>
+<p>[%inc assembler.py mark=labels %]</p>
+<ul>
+<li>Either save label <em>or</em> increment current address</li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="compiling-an-instruction" class="slide level2">
+<h2>Compiling an Instruction</h2>
+<p>[%inc assembler.py mark=compile %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="converting-a-value" class="slide level2">
+<h2>Converting a Value</h2>
+<ul>
+<li><p>Look up label’s address if value starts with
+<code>@</code></p></li>
+<li><p>Convert value to number if it doesn’t</p></li>
+</ul>
+<p>[%inc assembler.py mark=value %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="summary" class="slide level2">
+<h2>Summary</h2>
+<p>[% figure slug=“vm-concept-map” img=“concept_map.svg” alt=“Concept
+map for virtual machine and assembler” caption=“Concept map.” %]</p>
+</section>
+</section>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/reveal.js@^5/dist/reveal.js"></script>
+
+  <!-- reveal.js plugins -->
+  <script src="https://unpkg.com/reveal.js@^5/plugin/notes/notes.js"></script>
+  <script src="https://unpkg.com/reveal.js@^5/plugin/search/search.js"></script>
+  <script src="https://unpkg.com/reveal.js@^5/plugin/zoom/zoom.js"></script>
+
+  <script>
+
+      // Full list of configuration options available at:
+      // https://revealjs.com/config/
+      Reveal.initialize({
+        // Display controls in the bottom right corner
+        controls: true,
+
+        // Help the user learn the controls by providing hints, for example by
+        // bouncing the down arrow when they first encounter a vertical slide
+        controlsTutorial: true,
+
+        // Determines where controls appear, "edges" or "bottom-right"
+        controlsLayout: 'bottom-right',
+
+        // Visibility rule for backwards navigation arrows; "faded", "hidden"
+        // or "visible"
+        controlsBackArrows: 'faded',
+
+        // Display a presentation progress bar
+        progress: true,
+
+        // Display the page number of the current slide
+        slideNumber: true,
+
+        // 'all', 'print', or 'speaker'
+        showSlideNumber: 'all',
+
+        // Add the current slide number to the URL hash so that reloading the
+        // page/copying the URL will return you to the same slide
+        hash: true,
+
+        // Start with 1 for the hash rather than 0
+        hashOneBasedIndex: false,
+
+        // Flags if we should monitor the hash and change slides accordingly
+        respondToHashChanges: true,
+
+        // Push each slide change to the browser history
+        history: false,
+
+        // Enable keyboard shortcuts for navigation
+        keyboard: true,
+
+        // Enable the slide overview mode
+        overview: true,
+
+        // Disables the default reveal.js slide layout (scaling and centering)
+        // so that you can use custom CSS layout
+        disableLayout: false,
+
+        // Vertical centering of slides
+        center: true,
+
+        // Enables touch navigation on devices with touch input
+        touch: true,
+
+        // Loop the presentation
+        loop: false,
+
+        // Change the presentation direction to be RTL
+        rtl: false,
+
+        // see https://revealjs.com/vertical-slides/#navigation-mode
+        navigationMode: 'default',
+
+        // Randomizes the order of slides each time the presentation loads
+        shuffle: false,
+
+        // Turns fragments on and off globally
+        fragments: true,
+
+        // Flags whether to include the current fragment in the URL,
+        // so that reloading brings you to the same fragment position
+        fragmentInURL: true,
+
+        // Flags if the presentation is running in an embedded mode,
+        // i.e. contained within a limited portion of the screen
+        embedded: false,
+
+        // Flags if we should show a help overlay when the questionmark
+        // key is pressed
+        help: true,
+
+        // Flags if it should be possible to pause the presentation (blackout)
+        pause: true,
+
+        // Flags if speaker notes should be visible to all viewers
+        showNotes: false,
+
+        // Global override for autoplaying embedded media (null/true/false)
+        autoPlayMedia: null,
+
+        // Global override for preloading lazy-loaded iframes (null/true/false)
+        preloadIframes: null,
+
+        // Number of milliseconds between automatically proceeding to the
+        // next slide, disabled when set to 0, this value can be overwritten
+        // by using a data-autoslide attribute on your slides
+        autoSlide: 0,
+
+        // Stop auto-sliding after user input
+        autoSlideStoppable: true,
+
+        // Use this method for navigation when auto-sliding
+        autoSlideMethod: null,
+
+        // Specify the average time in seconds that you think you will spend
+        // presenting each slide. This is used to show a pacing timer in the
+        // speaker view
+        defaultTiming: null,
+
+        // Enable slide navigation via mouse wheel
+        mouseWheel: false,
+
+        // The display mode that will be used to show slides
+        display: 'block',
+
+        // Hide cursor if inactive
+        hideInactiveCursor: true,
+
+        // Time before the cursor is hidden (in ms)
+        hideCursorTime: 5000,
+
+        // Opens links in an iframe preview overlay
+        previewLinks: false,
+
+        // Transition style (none/fade/slide/convex/concave/zoom)
+        transition: 'slide',
+
+        // Transition speed (default/fast/slow)
+        transitionSpeed: 'default',
+
+        // Transition style for full page slide backgrounds
+        // (none/fade/slide/convex/concave/zoom)
+        backgroundTransition: 'fade',
+
+        // Number of slides away from the current that are visible
+        viewDistance: 3,
+
+        // Number of slides away from the current that are visible on mobile
+        // devices. It is advisable to set this to a lower number than
+        // viewDistance in order to save resources.
+        mobileViewDistance: 2,
+
+        // reveal.js plugins
+        plugins: [
+          RevealNotes,
+          RevealSearch,
+          RevealZoom
+        ]
+      });
+    </script>
+    </body>
+</html>

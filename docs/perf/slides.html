@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="generator" content="pandoc">
+  <title>Performance Profiling</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+  <link rel="stylesheet" href="https://unpkg.com/reveal.js@^5/dist/reset.css">
+  <link rel="stylesheet" href="https://unpkg.com/reveal.js@^5/dist/reveal.css">
+  <style>
+    .reveal .sourceCode {  /* see #7635 */
+      overflow: visible;
+    }
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="../mccole/slides.css"/>
+</head>
+<body>
+  <div class="reveal">
+    <div class="slides">
+
+<section id="title-slide">
+  <h1 class="title">Performance Profiling</h1>
+</section>
+
+<section class="slide level2">
+
+<section class="slide">
+</section>
+<section id="the-problem" class="slide level2">
+<h2>The Problem</h2>
+<ul>
+<li><p>We can build dataframes several different ways</p></li>
+<li><p>Which will be most efficient?</p></li>
+<li><p>Find out by doing experiments</p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="what-can-dataframes-do" class="slide level2">
+<h2>What Can Dataframes Do?</h2>
+<p>[%inc df_base.py %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="row-wise-storage" class="slide level2">
+<h2>Row-wise Storage</h2>
+<ul>
+<li>A list of dictionaries</li>
+</ul>
+<p>[% figure slug=“perf-row-storage” img=“row_storage.svg” alt=“Row-wise
+storage” caption=“Row-wise storage of a dataframe” %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="column-wise-storage" class="slide level2">
+<h2>Column-wise Storage</h2>
+<ul>
+<li>A dictionary of lists</li>
+</ul>
+<p>[% figure slug=“perf-col-storage” img=“col_storage.svg”
+alt=“Column-wise storage” caption=“Column-wise storage of a dataframe”
+%]</p>
+</section>
+<section class="slide">
+</section>
+<section id="row-wise-starting" class="slide level2">
+<h2>Row-wise: Starting</h2>
+<p>[%inc df_row.py mark=top %] [%inc util.py mark=match %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="row-wise-operations" class="slide level2">
+<h2>Row-wise Operations</h2>
+<p>[%inc df_row.py mark=simple %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="row-wise-equality" class="slide level2">
+<h2>Row-wise Equality</h2>
+<p>[%inc df_row.py mark=equal %]</p>
+<ul>
+<li>Don’t rely on implementation details of the other dataframe</li>
+<li>We might want to compare this dataframe with one that’s stored a
+different way</li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="row-wise-selection" class="slide level2">
+<h2>Row-wise Selection</h2>
+<p>[%inc df_row.py mark=select %]</p>
+<p>[% figure slug=“perf-row-select” img=“row_select.svg” alt=“Row-wise
+selection” caption=“Row-wise selection” %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="how-to-filter" class="slide level2">
+<h2>How to Filter?</h2>
+<ul>
+<li><p>User provides <code>func(red, green)</code> returning
+<code>True</code> or <code>False</code></p></li>
+<li><p>Need to match column names with parameters</p></li>
+</ul>
+<p>[%inc test_df_row.py mark=fixture %] [%inc test_df_row.py mark=filter
+%]</p>
+</section>
+<section class="slide">
+</section>
+<section id="how-to-call" class="slide level2">
+<h2>How to Call?</h2>
+<ul>
+<li>Use <code>**</code> to [%g spread “spread” %] the row</li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="row-wise-filter" class="slide level2">
+<h2>Row-wise Filter</h2>
+<p>[%inc df_row.py mark=filter %]</p>
+<ul>
+<li><p>Spread the rows out to match</p></li>
+<li><p>Convert the result to a row-wise dataframe</p></li>
+</ul>
+<p>[% figure slug=“perf-row-filter” img=“row_filter.svg” alt=“Row-wise
+filtering” caption=“Row-wise filtering” %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="column-wise-starting" class="slide level2">
+<h2>Column-Wise: Starting</h2>
+<p>[%inc df_col.py mark=top %] [%inc util.py mark=eq %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="column-wise-operations" class="slide level2">
+<h2>Column-wise Operations</h2>
+<p>[%inc df_col.py mark=simple %]</p>
+<ul>
+<li>Doesn’t allow for empty dataframes</li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="column-wise-selection" class="slide level2">
+<h2>Column-wise Selection</h2>
+<p>[%inc df_col.py mark=select %]</p>
+<p>[% figure slug=“perf-col-select” img=“col_select.svg”
+alt=“Column-wise selection” caption=“Column-wise selection” %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="column-wise-filter" class="slide level2">
+<h2>Column-wise Filter</h2>
+<p>[%inc df_col.py mark=filter %]</p>
+<p>[% figure slug=“perf-col-filter” img=“col_filter.svg”
+alt=“Column-wise filter” caption=“Column-wise selection” %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="how-to-compare" class="slide level2">
+<h2>How to Compare?</h2>
+<ul>
+<li><p>Select is (probably) fast for column-wise but slow for
+row-wise</p></li>
+<li><p>Filter is (probably) slower for column-wise than for
+row-wise</p></li>
+<li><p>Overall performance will depend on the ratio of selects to
+filters</p></li>
+<li><p>So we do experiments</p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="experimental-setup" class="slide level2">
+<h2>Experimental Setup</h2>
+<p>[%inc timing.py mark=create %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="experimental-setup-1" class="slide level2">
+<h2>Experimental Setup</h2>
+<p>[%inc make.out %]</p>
+<p>[%inc timing.py mark=filter %]</p>
+<ul>
+<li>Should vary the filtering criteria, the proportion of rows kept,
+etc.</li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="so-which-is-better" class="slide level2">
+<h2>So Which Is Better?</h2>
+<table>
+<thead>
+<tr>
+<th style="text-align: right;">nrow</th>
+<th style="text-align: right;">ncol</th>
+<th style="text-align: right;">filter_col</th>
+<th style="text-align: right;">select_col</th>
+<th style="text-align: right;">filter_row</th>
+<th style="text-align: right;">select_row</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">7.8e-05</td>
+<td style="text-align: right;">8.8e-06</td>
+<td style="text-align: right;">3.7e-05</td>
+<td style="text-align: right;">2.1e-05</td>
+</tr>
+<tr>
+<td style="text-align: right;">50</td>
+<td style="text-align: right;">50</td>
+<td style="text-align: right;">6.0e-4</td>
+<td style="text-align: right;">1.9e-05</td>
+<td style="text-align: right;">3.4e-4</td>
+<td style="text-align: right;">2.4e-4</td>
+</tr>
+<tr>
+<td style="text-align: right;">100</td>
+<td style="text-align: right;">100</td>
+<td style="text-align: right;">2.2e-3</td>
+<td style="text-align: right;">3.5e-05</td>
+<td style="text-align: right;">1.3e-3</td>
+<td style="text-align: right;">8.4e-4</td>
+</tr>
+<tr>
+<td style="text-align: right;">500</td>
+<td style="text-align: right;">500</td>
+<td style="text-align: right;">0.05</td>
+<td style="text-align: right;">1.5e-4</td>
+<td style="text-align: right;">0.03</td>
+<td style="text-align: right;">0.02</td>
+</tr>
+<tr>
+<td style="text-align: right;">1000</td>
+<td style="text-align: right;">1000</td>
+<td style="text-align: right;">0.21</td>
+<td style="text-align: right;">3.0e-4</td>
+<td style="text-align: right;">0.12</td>
+<td style="text-align: right;">0.08</td>
+</tr>
+<tr>
+<td style="text-align: right;">5000</td>
+<td style="text-align: right;">5000</td>
+<td style="text-align: right;">6.6</td>
+<td style="text-align: right;">1.5e-3</td>
+<td style="text-align: right;">3.5</td>
+<td style="text-align: right;">2.1</td>
+</tr>
+<tr>
+<td style="text-align: right;">10000</td>
+<td style="text-align: right;">10000</td>
+<td style="text-align: right;">25.4</td>
+<td style="text-align: right;">3.0e-3</td>
+<td style="text-align: right;">14.0</td>
+<td style="text-align: right;">8.8</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section class="slide">
+</section>
+<section id="so-which-is-better-1" class="slide level2">
+<h2>So Which Is Better?</h2>
+<p>[% figure slug=“perf-analysis” img=“analysis.svg” alt=“Comparing
+performance” caption=“Comparing performance empirically” %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="use-tools" class="slide level2">
+<h2>Use Tools</h2>
+<ul>
+<li>A [%g profiler “profiler” %] measures where a program spends its
+time</li>
+</ul>
+<p>[%inc profile.sh %] [%inc profile.out head=“10” %]</p>
+<ul>
+<li>Uh, what is line 7 of <code>util.py</code> doing?</li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="the-offending-lines" class="slide level2">
+<h2>The Offending Lines</h2>
+<ul>
+<li><p>A quarter of our total runtime is calling <code>dict_match</code>
+to check that all the rows in a row-wise dataframe have the same types
+for the same keys</p></li>
+<li><p>Surely we can do better…</p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="summary" class="slide level2">
+<h2>Summary</h2>
+<p>[% figure slug=“perf-concept-map” img=“concept_map.svg” alt=“Concept
+map of performance profiling” caption=“Concept map.” %]</p>
+</section>
+</section>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/reveal.js@^5/dist/reveal.js"></script>
+
+  <!-- reveal.js plugins -->
+  <script src="https://unpkg.com/reveal.js@^5/plugin/notes/notes.js"></script>
+  <script src="https://unpkg.com/reveal.js@^5/plugin/search/search.js"></script>
+  <script src="https://unpkg.com/reveal.js@^5/plugin/zoom/zoom.js"></script>
+
+  <script>
+
+      // Full list of configuration options available at:
+      // https://revealjs.com/config/
+      Reveal.initialize({
+        // Display controls in the bottom right corner
+        controls: true,
+
+        // Help the user learn the controls by providing hints, for example by
+        // bouncing the down arrow when they first encounter a vertical slide
+        controlsTutorial: true,
+
+        // Determines where controls appear, "edges" or "bottom-right"
+        controlsLayout: 'bottom-right',
+
+        // Visibility rule for backwards navigation arrows; "faded", "hidden"
+        // or "visible"
+        controlsBackArrows: 'faded',
+
+        // Display a presentation progress bar
+        progress: true,
+
+        // Display the page number of the current slide
+        slideNumber: true,
+
+        // 'all', 'print', or 'speaker'
+        showSlideNumber: 'all',
+
+        // Add the current slide number to the URL hash so that reloading the
+        // page/copying the URL will return you to the same slide
+        hash: true,
+
+        // Start with 1 for the hash rather than 0
+        hashOneBasedIndex: false,
+
+        // Flags if we should monitor the hash and change slides accordingly
+        respondToHashChanges: true,
+
+        // Push each slide change to the browser history
+        history: false,
+
+        // Enable keyboard shortcuts for navigation
+        keyboard: true,
+
+        // Enable the slide overview mode
+        overview: true,
+
+        // Disables the default reveal.js slide layout (scaling and centering)
+        // so that you can use custom CSS layout
+        disableLayout: false,
+
+        // Vertical centering of slides
+        center: true,
+
+        // Enables touch navigation on devices with touch input
+        touch: true,
+
+        // Loop the presentation
+        loop: false,
+
+        // Change the presentation direction to be RTL
+        rtl: false,
+
+        // see https://revealjs.com/vertical-slides/#navigation-mode
+        navigationMode: 'default',
+
+        // Randomizes the order of slides each time the presentation loads
+        shuffle: false,
+
+        // Turns fragments on and off globally
+        fragments: true,
+
+        // Flags whether to include the current fragment in the URL,
+        // so that reloading brings you to the same fragment position
+        fragmentInURL: true,
+
+        // Flags if the presentation is running in an embedded mode,
+        // i.e. contained within a limited portion of the screen
+        embedded: false,
+
+        // Flags if we should show a help overlay when the questionmark
+        // key is pressed
+        help: true,
+
+        // Flags if it should be possible to pause the presentation (blackout)
+        pause: true,
+
+        // Flags if speaker notes should be visible to all viewers
+        showNotes: false,
+
+        // Global override for autoplaying embedded media (null/true/false)
+        autoPlayMedia: null,
+
+        // Global override for preloading lazy-loaded iframes (null/true/false)
+        preloadIframes: null,
+
+        // Number of milliseconds between automatically proceeding to the
+        // next slide, disabled when set to 0, this value can be overwritten
+        // by using a data-autoslide attribute on your slides
+        autoSlide: 0,
+
+        // Stop auto-sliding after user input
+        autoSlideStoppable: true,
+
+        // Use this method for navigation when auto-sliding
+        autoSlideMethod: null,
+
+        // Specify the average time in seconds that you think you will spend
+        // presenting each slide. This is used to show a pacing timer in the
+        // speaker view
+        defaultTiming: null,
+
+        // Enable slide navigation via mouse wheel
+        mouseWheel: false,
+
+        // The display mode that will be used to show slides
+        display: 'block',
+
+        // Hide cursor if inactive
+        hideInactiveCursor: true,
+
+        // Time before the cursor is hidden (in ms)
+        hideCursorTime: 5000,
+
+        // Opens links in an iframe preview overlay
+        previewLinks: false,
+
+        // Transition style (none/fade/slide/convex/concave/zoom)
+        transition: 'slide',
+
+        // Transition speed (default/fast/slow)
+        transitionSpeed: 'default',
+
+        // Transition style for full page slide backgrounds
+        // (none/fade/slide/convex/concave/zoom)
+        backgroundTransition: 'fade',
+
+        // Number of slides away from the current that are visible
+        viewDistance: 3,
+
+        // Number of slides away from the current that are visible on mobile
+        // devices. It is advisable to set this to a lower number than
+        // viewDistance in order to save resources.
+        mobileViewDistance: 2,
+
+        // reveal.js plugins
+        plugins: [
+          RevealNotes,
+          RevealSearch,
+          RevealZoom
+        ]
+      });
+    </script>
+    </body>
+</html>

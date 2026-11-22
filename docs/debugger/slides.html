@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="generator" content="pandoc">
+  <title>A Debugger</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+  <link rel="stylesheet" href="https://unpkg.com/reveal.js@^5/dist/reset.css">
+  <link rel="stylesheet" href="https://unpkg.com/reveal.js@^5/dist/reveal.css">
+  <style>
+    .reveal .sourceCode {  /* see #7635 */
+      overflow: visible;
+    }
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="../mccole/slides.css"/>
+</head>
+<body>
+  <div class="reveal">
+    <div class="slides">
+
+<section id="title-slide">
+  <h1 class="title">A Debugger</h1>
+</section>
+
+<section class="slide level2">
+
+<section class="slide">
+</section>
+<section id="the-problem" class="slide level2">
+<h2>The Problem</h2>
+<ul>
+<li><p>Tracing execution with <code>print</code> statements is
+tedious</p></li>
+<li><p>And impossible (or nearly so) in some situations</p></li>
+<li><p>Single-stepping/breakpoint debugger is far more
+effective</p></li>
+<li><p>Build one to understand how they work</p></li>
+<li><p>And to show how to test interactive applications</p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="preparation" class="slide level2">
+<h2>Preparation</h2>
+<ul>
+<li><p>We will want non-interactive input and output for
+testing</p></li>
+<li><p>So [%g refactor “refactor” %] the virtual machine of [%x vm
+%]</p></li>
+<li><p>Pass an output stream (by default
+<code>sys.stdout</code>)</p></li>
+</ul>
+<p>[%inc vm_base.py mark=init %]</p>
+<ul>
+<li>Replace every <code>print</code> with a call to
+<code>self.write</code></li>
+</ul>
+<p>[%inc vm_base.py mark=write %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="getting-input" class="slide level2">
+<h2>Getting Input</h2>
+<ul>
+<li>Similarly, don’t use <code>input</code> function directly</li>
+</ul>
+<p>[%inc vm_step.py mark=init %]</p>
+<p>[%inc vm_step.py mark=read %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="enumerating-state" class="slide level2">
+<h2>Enumerating State</h2>
+<ul>
+<li><p>Old VM was either running or finished</p></li>
+<li><p>New one has a third state: single-stepping</p></li>
+<li><p>So define an [%g enumeration “enumeration” %]</p></li>
+</ul>
+<p>[%inc architecture.py mark=state %]</p>
+<ul>
+<li>Safer than using strings (which can be mis-spelled)</li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="running" class="slide level2">
+<h2>Running</h2>
+<ul>
+<li><p>New <code>run</code> method starts in <code>STEPPING</code>
+state</p>
+<ul>
+<li>If it started in <code>RUNNING</code> we could never tell it to do
+otherwise</li>
+</ul></li>
+</ul>
+<p>[%inc vm_step.py mark=run %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="interaction-cases" class="slide level2">
+<h2>Interaction Cases</h2>
+<ol type="1">
+<li><p>Empty line: go around again</p></li>
+<li><p>[%g disassemble “Disassemble” %] current instruction or show
+memory: do that and go around again</p></li>
+<li><p>Quit: change state to <code>FINISHED</code>.</p></li>
+<li><p>Run normally: change state to <code>RUNNING</code></p></li>
+<li><p>Single-step: exit loop without changing state</p></li>
+</ol>
+</section>
+<section class="slide">
+</section>
+<section id="disassembling" class="slide level2">
+<h2>Disassembling</h2>
+<p>[%inc vm_step.py mark=lookup %]</p>
+<ul>
+<li><p>If we type in the number-to-instruction lookup table, it will
+eventually fall out of step</p></li>
+<li><p>So build it from architecture description</p></li>
+</ul>
+<p>[% figure slug=“debugger-table” img=“table.svg” alt=“Building a
+consistent lookup table” caption=“Building a consistent lookup table.”
+%]</p>
+</section>
+<section class="slide">
+</section>
+<section id="capturing-output" class="slide level2">
+<h2>Capturing Output</h2>
+<ul>
+<li><p>Has to be an object with a <code>write</code> method</p></li>
+<li><p>But can save what it’s given for later inspection</p></li>
+</ul>
+<p>[%inc test_vm.py mark=writer %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="providing-input" class="slide level2">
+<h2>Providing Input</h2>
+<ul>
+<li><p>Need a “function” that takes a prompt and returns a
+string</p></li>
+<li><p>Create a class with a <code>__call__</code> method that “reads”
+from a list</p></li>
+</ul>
+<p>[%inc test_vm.py mark=reader %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="testing-disassembly" class="slide level2">
+<h2>Testing Disassembly</h2>
+<p>[%inc test_vm.py mark=disassemble %]</p>
+<ol type="1">
+<li>Create program (just a <code>hlt</code> instruction)</li>
+<li>Create a <code>Reader</code> with the commands <code>"d"</code> and
+<code>"q"</code></li>
+<li>Create a <code>Writer</code> to capture output</li>
+<li>Run the program</li>
+<li>Check that the output is correct</li>
+</ol>
+</section>
+<section class="slide">
+</section>
+<section id="is-it-worth-it" class="slide level2">
+<h2>Is It Worth It?</h2>
+<ul>
+<li><p>Yes</p></li>
+<li><p>Test that the debugger can single-step three times and then
+quit</p></li>
+</ul>
+<p>[%inc test_vm.py mark=print %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="other-tools" class="slide level2">
+<h2>Other Tools</h2>
+<ul>
+<li><p>[Expect][expect] often used to script command-line
+applications</p>
+<ul>
+<li>Can be used through the [pexpect][pexpect] module</li>
+</ul></li>
+<li><p>[Selenium][selenium] and [Cypress][cypress] for browser-based
+applications</p>
+<ul>
+<li>Simulate mouse clicks, window resizing, etc.</li>
+</ul></li>
+<li><p>Harder to set up and use than a simple
+<code>assert</code></p></li>
+<li><p>But so are the things they’re testing</p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="extensibility" class="slide level2">
+<h2>Extensibility</h2>
+<ul>
+<li><p>Move every interactive operation to a method</p></li>
+<li><p>Return Boolean to signal whether debugger should stay in
+interactive mode</p></li>
+</ul>
+<p>[%inc vm_extend.py mark=memory %]</p>
+<p>[%inc vm_extend.py mark=step %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="extensibility-1" class="slide level2">
+<h2>Extensibility</h2>
+<ul>
+<li>Modify <code>interact</code> to choose operations from a lookup
+table</li>
+</ul>
+<p>[%inc vm_extend.py mark=interact %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="extensibility-2" class="slide level2">
+<h2>Extensibility</h2>
+<ul>
+<li>Build the table in the constructor</li>
+</ul>
+<p>[%inc vm_extend.py mark=init %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="stop-here" class="slide level2">
+<h2>Stop Here</h2>
+<ul>
+<li><p>A [%g breakpoint “breakpoint” %] tells the computer to stop at a
+particular instruction</p>
+<ul>
+<li>A [%g conditional_breakpoint “conditional breakpoint” %] stops if a
+condition is true</li>
+</ul></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="breakpoint-sets" class="slide level2">
+<h2>Breakpoint Sets</h2>
+<ul>
+<li>Design #1: store breakpoint addresses in a set for <code>run</code>
+to check</li>
+</ul>
+<p>[% figure slug=“debugger-beside” img=“beside.svg” alt=“Storing
+breakpoint addresses beside the program” caption=“Storing breakpoints
+beside the program.” %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="what-hardware-does" class="slide level2">
+<h2>What Hardware Does</h2>
+<ul>
+<li><p>Replace actual instruction with new <code>brk</code>
+instruction</p></li>
+<li><p>Look up the real instruction when we hit a
+<code>brk</code></p></li>
+</ul>
+<p>[% figure slug=“debugger-break” img=“break.svg” alt=“Inserting
+breakpoint instructions” caption=“Inserting breakpoints into a program.”
+%]</p>
+</section>
+<section class="slide">
+</section>
+<section id="add-commands" class="slide level2">
+<h2>Add Commands</h2>
+<ul>
+<li><p>Rely on parent class to initialize most of the table</p></li>
+<li><p>Then add more entries</p></li>
+</ul>
+<p>[%inc vm_break.py mark=init %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="setting-and-clearing" class="slide level2">
+<h2>Setting and Clearing</h2>
+<p>[%inc vm_break.py mark=add %]</p>
+<p>[%inc vm_break.py mark=clear %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="running-1" class="slide level2">
+<h2>Running</h2>
+<p>[%inc vm_break.py mark=run %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="summary" class="slide level2">
+<h2>Summary</h2>
+<p>[% figure slug=“debugger-concept-map” img=“concept_map.svg”
+alt=“Concept map for debugger” caption=“Concept map.” %]</p>
+</section>
+</section>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/reveal.js@^5/dist/reveal.js"></script>
+
+  <!-- reveal.js plugins -->
+  <script src="https://unpkg.com/reveal.js@^5/plugin/notes/notes.js"></script>
+  <script src="https://unpkg.com/reveal.js@^5/plugin/search/search.js"></script>
+  <script src="https://unpkg.com/reveal.js@^5/plugin/zoom/zoom.js"></script>
+
+  <script>
+
+      // Full list of configuration options available at:
+      // https://revealjs.com/config/
+      Reveal.initialize({
+        // Display controls in the bottom right corner
+        controls: true,
+
+        // Help the user learn the controls by providing hints, for example by
+        // bouncing the down arrow when they first encounter a vertical slide
+        controlsTutorial: true,
+
+        // Determines where controls appear, "edges" or "bottom-right"
+        controlsLayout: 'bottom-right',
+
+        // Visibility rule for backwards navigation arrows; "faded", "hidden"
+        // or "visible"
+        controlsBackArrows: 'faded',
+
+        // Display a presentation progress bar
+        progress: true,
+
+        // Display the page number of the current slide
+        slideNumber: true,
+
+        // 'all', 'print', or 'speaker'
+        showSlideNumber: 'all',
+
+        // Add the current slide number to the URL hash so that reloading the
+        // page/copying the URL will return you to the same slide
+        hash: true,
+
+        // Start with 1 for the hash rather than 0
+        hashOneBasedIndex: false,
+
+        // Flags if we should monitor the hash and change slides accordingly
+        respondToHashChanges: true,
+
+        // Push each slide change to the browser history
+        history: false,
+
+        // Enable keyboard shortcuts for navigation
+        keyboard: true,
+
+        // Enable the slide overview mode
+        overview: true,
+
+        // Disables the default reveal.js slide layout (scaling and centering)
+        // so that you can use custom CSS layout
+        disableLayout: false,
+
+        // Vertical centering of slides
+        center: true,
+
+        // Enables touch navigation on devices with touch input
+        touch: true,
+
+        // Loop the presentation
+        loop: false,
+
+        // Change the presentation direction to be RTL
+        rtl: false,
+
+        // see https://revealjs.com/vertical-slides/#navigation-mode
+        navigationMode: 'default',
+
+        // Randomizes the order of slides each time the presentation loads
+        shuffle: false,
+
+        // Turns fragments on and off globally
+        fragments: true,
+
+        // Flags whether to include the current fragment in the URL,
+        // so that reloading brings you to the same fragment position
+        fragmentInURL: true,
+
+        // Flags if the presentation is running in an embedded mode,
+        // i.e. contained within a limited portion of the screen
+        embedded: false,
+
+        // Flags if we should show a help overlay when the questionmark
+        // key is pressed
+        help: true,
+
+        // Flags if it should be possible to pause the presentation (blackout)
+        pause: true,
+
+        // Flags if speaker notes should be visible to all viewers
+        showNotes: false,
+
+        // Global override for autoplaying embedded media (null/true/false)
+        autoPlayMedia: null,
+
+        // Global override for preloading lazy-loaded iframes (null/true/false)
+        preloadIframes: null,
+
+        // Number of milliseconds between automatically proceeding to the
+        // next slide, disabled when set to 0, this value can be overwritten
+        // by using a data-autoslide attribute on your slides
+        autoSlide: 0,
+
+        // Stop auto-sliding after user input
+        autoSlideStoppable: true,
+
+        // Use this method for navigation when auto-sliding
+        autoSlideMethod: null,
+
+        // Specify the average time in seconds that you think you will spend
+        // presenting each slide. This is used to show a pacing timer in the
+        // speaker view
+        defaultTiming: null,
+
+        // Enable slide navigation via mouse wheel
+        mouseWheel: false,
+
+        // The display mode that will be used to show slides
+        display: 'block',
+
+        // Hide cursor if inactive
+        hideInactiveCursor: true,
+
+        // Time before the cursor is hidden (in ms)
+        hideCursorTime: 5000,
+
+        // Opens links in an iframe preview overlay
+        previewLinks: false,
+
+        // Transition style (none/fade/slide/convex/concave/zoom)
+        transition: 'slide',
+
+        // Transition speed (default/fast/slow)
+        transitionSpeed: 'default',
+
+        // Transition style for full page slide backgrounds
+        // (none/fade/slide/convex/concave/zoom)
+        backgroundTransition: 'fade',
+
+        // Number of slides away from the current that are visible
+        viewDistance: 3,
+
+        // Number of slides away from the current that are visible on mobile
+        // devices. It is advisable to set this to a lower number than
+        // viewDistance in order to save resources.
+        mobileViewDistance: 2,
+
+        // reveal.js plugins
+        plugins: [
+          RevealNotes,
+          RevealSearch,
+          RevealZoom
+        ]
+      });
+    </script>
+    </body>
+</html>

@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="generator" content="pandoc">
+  <title>A File Archiver</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+  <link rel="stylesheet" href="https://unpkg.com/reveal.js@^5/dist/reset.css">
+  <link rel="stylesheet" href="https://unpkg.com/reveal.js@^5/dist/reveal.css">
+  <style>
+    .reveal .sourceCode {  /* see #7635 */
+      overflow: visible;
+    }
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="../mccole/slides.css"/>
+</head>
+<body>
+  <div class="reveal">
+    <div class="slides">
+
+<section id="title-slide">
+  <h1 class="title">A File Archiver</h1>
+</section>
+
+<section class="slide level2">
+
+<section class="slide">
+</section>
+<section id="the-problem" class="slide level2">
+<h2>The Problem</h2>
+<ul>
+<li><p>Want to save snapshots of work in progress</p></li>
+<li><p>Create a simple [%g version_control_system “version control
+system” %]</p></li>
+<li><p>And show how to test it using mock objects ([%x protocols
+%])</p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="design" class="slide level2">
+<h2>Design</h2>
+<ul>
+<li><p>Wasteful to store the same file repeatedly</p></li>
+<li><p>So if the file’s hash is <code>abcd1234</code>, save it as
+<code>abcd1234.bck</code></p>
+<ul>
+<li>Handles renaming</li>
+</ul></li>
+<li><p>Then create a [%g manifest “manifest” %] to show what unique
+blocks of bytes had what names when</p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="storage" class="slide level2">
+<h2>Storage</h2>
+<p>[% figure slug=“archive-storage” img=“storage.svg” alt=“Backup file
+storage” caption=“Organization of backup file storage.” %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="finding-and-hashing" class="slide level2">
+<h2>Finding and Hashing</h2>
+<ul>
+<li>Use globbing ([%x glob %]) and hashing ([%x dup %])</li>
+</ul>
+<p>[%inc hash_all.py mark=func %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="finding-and-hashing-1" class="slide level2">
+<h2>Finding and Hashing</h2>
+<p>[%inc sample_dir.out %] [%inc hash_all.sh %] [%inc hash_all.out
+%]</p>
+</section>
+<section class="slide">
+</section>
+<section id="testing" class="slide level2">
+<h2>Testing</h2>
+<ul>
+<li><p>Obvious approach is to create lots of files and
+directories</p></li>
+<li><p>But we want to test what happens when they change, which makes
+things complicated to maintain</p></li>
+<li><p>Use a [%g mock_object “mock object” %] ([%x protocols %]) instead
+of the real filesystem</p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="faking-the-filesystem" class="slide level2">
+<h2>Faking the Filesystem</h2>
+<ul>
+<li>[pyfakefs][pyfakefs] replaces functions like <code>open</code> with
+ones that behave the same way but act on “files” stored in memory</li>
+</ul>
+<p>[% figure slug=“archive-mock-fs” img=“mock_fs.svg” alt=“Mock
+filesystem” caption=“Using a mock filesystem to simplify testing.”
+%]</p>
+<ul>
+<li><code>import pyfakefs</code> automatically creates a fixture called
+<code>fs</code></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="direct-use" class="slide level2">
+<h2>Direct Use</h2>
+<p>[%inc test_mock_fs.py %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="build-our-own-tree" class="slide level2">
+<h2>Build Our Own Tree</h2>
+<p>[%inc test_mock_tree.py %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="running-tests" class="slide level2">
+<h2>Running Tests</h2>
+<p>[%inc test_hash_all.py omit=change %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="tracking-backups" class="slide level2">
+<h2>Tracking Backups</h2>
+<ul>
+<li><p>Store backups and manifests in a directory selected by the
+user</p>
+<ul>
+<li><p>Real system would support remote storage as well</p></li>
+<li><p>Which suggests we need to design with multiple back ends in
+mind</p></li>
+</ul></li>
+<li><p>Backed-up files are <code>abcd1234.bck</code></p></li>
+<li><p>Manifests are <code>ssssssssss.csv</code>, where
+<code>ssssssssss</code> is the [%g utc “UTC” %] [%g timestamp
+“timestamp” %]</p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="race-condition" class="slide level2">
+<h2>Race Condition</h2>
+<ul>
+<li><p>Manifest naming scheme fails if we try to create two backups in
+less than one second</p></li>
+<li><p>A [%g toctou “time of check/time of use” %] [%g race_condition
+“race condition” %]</p></li>
+<li><p>May seem unlikely, but many bugs and security holes seemed
+unlikely to their creators</p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="creating-a-backup" class="slide level2">
+<h2>Creating a Backup</h2>
+<p>[%inc backup.py mark=backup %]</p>
+<ul>
+<li>An example of [%g successive_refinement “successive refinement”
+%]</li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="writing-the-manifest" class="slide level2">
+<h2>Writing the Manifest</h2>
+<ul>
+<li><p>Create the backup directory if it doesn’t already exist</p>
+<ul>
+<li>Another race condition</li>
+</ul></li>
+<li><p>Then save CSV</p></li>
+</ul>
+<p>[%inc backup.py mark=write %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="saving-files" class="slide level2">
+<h2>Saving Files</h2>
+<p>[%inc backup.py mark=copy %]</p>
+<ul>
+<li>Yet another race condition</li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="setting-up-for-testing" class="slide level2">
+<h2>Setting Up for Testing</h2>
+<p>[%inc test_backup.py mark=setup %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="a-sample-test" class="slide level2">
+<h2>A Sample Test</h2>
+<p>[%inc test_backup.py mark=test %]</p>
+<ul>
+<li><p>Trust that the hash is correct</p></li>
+<li><p>Should look inside the manifest and check that it lists files
+correctly</p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="refactoring" class="slide level2">
+<h2>Refactoring</h2>
+<ul>
+<li>Create a [%g base_class “base class” %] with the general steps</li>
+</ul>
+<p>[%inc backup_oop.py mark=base %]</p>
+<ul>
+<li><p>Derive a [%g child_class “child class” %] to do local
+archiving</p></li>
+<li><p>Convert functions we have built so far into methods</p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="refactoring-1" class="slide level2">
+<h2>Refactoring</h2>
+<ul>
+<li>Can then create the specific archiver we want</li>
+</ul>
+<p>[%inc backup_oop.py mark=create %]</p>
+<ul>
+<li>Other code can then use it <em>without knowing exactly what it’s
+doing</em></li>
+</ul>
+<p>[%inc backup_oop.py mark=use %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="summary" class="slide level2">
+<h2>Summary</h2>
+<p>[% figure slug=“archive-concept-map” img=“concept_map.svg”
+alt=“Concept map of build manager” caption=“Concept map.” %]</p>
+</section>
+</section>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/reveal.js@^5/dist/reveal.js"></script>
+
+  <!-- reveal.js plugins -->
+  <script src="https://unpkg.com/reveal.js@^5/plugin/notes/notes.js"></script>
+  <script src="https://unpkg.com/reveal.js@^5/plugin/search/search.js"></script>
+  <script src="https://unpkg.com/reveal.js@^5/plugin/zoom/zoom.js"></script>
+
+  <script>
+
+      // Full list of configuration options available at:
+      // https://revealjs.com/config/
+      Reveal.initialize({
+        // Display controls in the bottom right corner
+        controls: true,
+
+        // Help the user learn the controls by providing hints, for example by
+        // bouncing the down arrow when they first encounter a vertical slide
+        controlsTutorial: true,
+
+        // Determines where controls appear, "edges" or "bottom-right"
+        controlsLayout: 'bottom-right',
+
+        // Visibility rule for backwards navigation arrows; "faded", "hidden"
+        // or "visible"
+        controlsBackArrows: 'faded',
+
+        // Display a presentation progress bar
+        progress: true,
+
+        // Display the page number of the current slide
+        slideNumber: true,
+
+        // 'all', 'print', or 'speaker'
+        showSlideNumber: 'all',
+
+        // Add the current slide number to the URL hash so that reloading the
+        // page/copying the URL will return you to the same slide
+        hash: true,
+
+        // Start with 1 for the hash rather than 0
+        hashOneBasedIndex: false,
+
+        // Flags if we should monitor the hash and change slides accordingly
+        respondToHashChanges: true,
+
+        // Push each slide change to the browser history
+        history: false,
+
+        // Enable keyboard shortcuts for navigation
+        keyboard: true,
+
+        // Enable the slide overview mode
+        overview: true,
+
+        // Disables the default reveal.js slide layout (scaling and centering)
+        // so that you can use custom CSS layout
+        disableLayout: false,
+
+        // Vertical centering of slides
+        center: true,
+
+        // Enables touch navigation on devices with touch input
+        touch: true,
+
+        // Loop the presentation
+        loop: false,
+
+        // Change the presentation direction to be RTL
+        rtl: false,
+
+        // see https://revealjs.com/vertical-slides/#navigation-mode
+        navigationMode: 'default',
+
+        // Randomizes the order of slides each time the presentation loads
+        shuffle: false,
+
+        // Turns fragments on and off globally
+        fragments: true,
+
+        // Flags whether to include the current fragment in the URL,
+        // so that reloading brings you to the same fragment position
+        fragmentInURL: true,
+
+        // Flags if the presentation is running in an embedded mode,
+        // i.e. contained within a limited portion of the screen
+        embedded: false,
+
+        // Flags if we should show a help overlay when the questionmark
+        // key is pressed
+        help: true,
+
+        // Flags if it should be possible to pause the presentation (blackout)
+        pause: true,
+
+        // Flags if speaker notes should be visible to all viewers
+        showNotes: false,
+
+        // Global override for autoplaying embedded media (null/true/false)
+        autoPlayMedia: null,
+
+        // Global override for preloading lazy-loaded iframes (null/true/false)
+        preloadIframes: null,
+
+        // Number of milliseconds between automatically proceeding to the
+        // next slide, disabled when set to 0, this value can be overwritten
+        // by using a data-autoslide attribute on your slides
+        autoSlide: 0,
+
+        // Stop auto-sliding after user input
+        autoSlideStoppable: true,
+
+        // Use this method for navigation when auto-sliding
+        autoSlideMethod: null,
+
+        // Specify the average time in seconds that you think you will spend
+        // presenting each slide. This is used to show a pacing timer in the
+        // speaker view
+        defaultTiming: null,
+
+        // Enable slide navigation via mouse wheel
+        mouseWheel: false,
+
+        // The display mode that will be used to show slides
+        display: 'block',
+
+        // Hide cursor if inactive
+        hideInactiveCursor: true,
+
+        // Time before the cursor is hidden (in ms)
+        hideCursorTime: 5000,
+
+        // Opens links in an iframe preview overlay
+        previewLinks: false,
+
+        // Transition style (none/fade/slide/convex/concave/zoom)
+        transition: 'slide',
+
+        // Transition speed (default/fast/slow)
+        transitionSpeed: 'default',
+
+        // Transition style for full page slide backgrounds
+        // (none/fade/slide/convex/concave/zoom)
+        backgroundTransition: 'fade',
+
+        // Number of slides away from the current that are visible
+        viewDistance: 3,
+
+        // Number of slides away from the current that are visible on mobile
+        // devices. It is advisable to set this to a lower number than
+        // viewDistance in order to save resources.
+        mobileViewDistance: 2,
+
+        // reveal.js plugins
+        plugins: [
+          RevealNotes,
+          RevealSearch,
+          RevealZoom
+        ]
+      });
+    </script>
+    </body>
+</html>

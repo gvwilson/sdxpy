@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="generator" content="pandoc">
+  <title>A Template Expander</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+  <link rel="stylesheet" href="https://unpkg.com/reveal.js@^5/dist/reset.css">
+  <link rel="stylesheet" href="https://unpkg.com/reveal.js@^5/dist/reveal.css">
+  <style>
+    .reveal .sourceCode {  /* see #7635 */
+      overflow: visible;
+    }
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="../mccole/slides.css"/>
+</head>
+<body>
+  <div class="reveal">
+    <div class="slides">
+
+<section id="title-slide">
+  <h1 class="title">A Template Expander</h1>
+</section>
+
+<section class="slide level2">
+
+<section class="slide">
+</section>
+<section id="the-problem" class="slide level2">
+<h2>The Problem</h2>
+<ul>
+<li><p>Most pages on a site share some content</p></li>
+<li><p>Many pages want to be customized based on data</p></li>
+<li><p>So many sites use a templating system</p>
+<ul>
+<li>Turn data and HTML page with embedded directives into final
+page</li>
+</ul></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="design-options" class="slide level2">
+<h2>Design Options</h2>
+<ol type="1">
+<li><p>Embed commands in an existing language like [EJS][ejs]</p></li>
+<li><p>Create a mini-language with its own commands like
+[Jekyll][jekyll]</p></li>
+<li><p>Put directives in specially-named attributes in the HTML</p></li>
+</ol>
+<p>[% figure slug=“template-options” img=“design_options.svg” alt=“Three
+options for page templates” caption=“Three different ways to implement
+page templating.” %]</p>
+<ul>
+<li>We will use the third option so that we don’t have to write a
+parser</li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="what-does-done-look-like" class="slide level2">
+<h2>What Does Done Look Like?</h2>
+<p>[%inc loop.ht %]</p>
+<ul>
+<li><p><code>z-loop</code>: repeat this</p></li>
+<li><p><code>z-num</code>: a constant number</p></li>
+<li><p><code>z-var</code>: fill in a variable</p></li>
+<li><p><code>z-if</code>: conditional</p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="what-does-done-look-like-1" class="slide level2">
+<h2>What Does Done Look Like?</h2>
+<p>[%inc loop.out %]</p>
+<ul>
+<li>HTML doesn’t care about extra blank lines, so we won’t either</li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="how-do-we-call-this" class="slide level2">
+<h2>How Do We Call This?</h2>
+<ul>
+<li>Design the [%g api “API” %] of our library first</li>
+</ul>
+<p>[%inc example_call.py %]</p>
+<ul>
+<li>In real life, <code>data</code> would come from a configuration file
+or database</li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="managing-variables" class="slide level2">
+<h2>Managing Variables</h2>
+<ul>
+<li>Could use a <code>ChainMap</code>, but we’ll write our own</li>
+</ul>
+<p>[%inc env.py mark=body %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="visiting-nodes" class="slide level2">
+<h2>Visiting Nodes</h2>
+<ul>
+<li>Use the [%g visitor_pattern “Visitor” %] design pattern</li>
+</ul>
+<p>[%inc visitor.py %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="expanding-a-template" class="slide level2">
+<h2>Expanding a Template</h2>
+<p>[%inc expander.py mark=construct %]</p>
+<ul>
+<li><p>The environment</p></li>
+<li><p>Handlers for our special node types</p></li>
+<li><p>The result (strings we’ll concatenate at the end)</p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="open" class="slide level2">
+<h2>Open…</h2>
+<p>[%inc expander.py mark=open %]</p>
+<ul>
+<li><p>If this is text, “display” it</p></li>
+<li><p>If this is a special node, run a function</p></li>
+<li><p>Otherwise, show the opening tag</p></li>
+<li><p>Return value is “do we proceed”?</p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="and-close" class="slide level2">
+<h2>…and Close</h2>
+<p>[%inc expander.py mark=close %]</p>
+<ul>
+<li><p>Handlers come in open/close pairs</p>
+<ul>
+<li>Because some might need to do cleanup</li>
+</ul></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="managing-handlers" class="slide level2">
+<h2>Managing Handlers</h2>
+<p>[%inc expander.py mark=handlers %]</p>
+<ul>
+<li><p><code>hasHandler</code> looks for attributes with special
+names</p></li>
+<li><p><code>getHandler</code> gets the one we need</p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="but-whats-a-handler" class="slide level2">
+<h2>But What’s a Handler?</h2>
+<p>[%inc z_num.py %]</p>
+<ul>
+<li><p>A module with <code>open</code> and <code>close</code>
+functions</p></li>
+<li><p>None of our handlers need state, so we don’t need
+objects</p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="variables-are-similar" class="slide level2">
+<h2>Variables Are Similar</h2>
+<p>[%inc z_var.py %]</p>
+<ul>
+<li>We should think about error handling…</li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="testing" class="slide level2">
+<h2>Testing</h2>
+<p>[%inc template.py %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="static-text" class="slide level2">
+<h2>Static Text</h2>
+<ul>
+<li>If this doesn’t work, nothing else will</li>
+</ul>
+<p>[%inc static_text.ht %] [%inc static_text.out %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="constants" class="slide level2">
+<h2>Constants</h2>
+<p>[%inc single_constant.ht %] [%inc single_constant.out %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="variables" class="slide level2">
+<h2>Variables</h2>
+<p>[%inc single_variable.ht %] [%inc single_variable.out %]</p>
+<ul>
+<li>Input is a JSON file containing
+<code>{"varName": "varValue"}</code></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="conditionals" class="slide level2">
+<h2>Conditionals</h2>
+<p>[%inc z_if.py %]</p>
+<ul>
+<li><p>The handler determines whether to show this tag and go
+deeper</p></li>
+<li><p>What if the variable’s value changes between opening and
+closing?</p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="testing-1" class="slide level2">
+<h2>Testing</h2>
+<p>[%inc conditional.ht %] [%inc conditional.out %]</p>
+<ul>
+<li>With JSON <code>{"yes": True, "no": False}</code></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="loops" class="slide level2">
+<h2>Loops</h2>
+<ol type="1">
+<li><p>Create a new stack frame holding the current value of the loop
+variable</p></li>
+<li><p>Expand all of the node’s children with that stack frame in
+place</p></li>
+<li><p>Pop the stack frame to get rid of the temporary variable</p></li>
+</ol>
+</section>
+<section class="slide">
+</section>
+<section id="loops-1" class="slide level2">
+<h2>Loops</h2>
+<p>[%inc z_loop.py %]</p>
+<ul>
+<li>The most complicated handler yet</li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="testing-2" class="slide level2">
+<h2>Testing</h2>
+<p>[%inc loop.ht %] [%inc loop.out %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="next-steps" class="slide level2">
+<h2>Next Steps</h2>
+<ul>
+<li><p>The <code>z-if</code> issue might mean we need state after
+all</p></li>
+<li><p>Tackle that before going any further</p></li>
+<li><p>And figure out how to do unit testing</p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="summary" class="slide level2">
+<h2>Summary</h2>
+<p>[% figure slug=“template-concept-map” img=“concept_map.svg”
+alt=“Concept map for page templates” caption=“Concept map.” %]</p>
+</section>
+</section>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/reveal.js@^5/dist/reveal.js"></script>
+
+  <!-- reveal.js plugins -->
+  <script src="https://unpkg.com/reveal.js@^5/plugin/notes/notes.js"></script>
+  <script src="https://unpkg.com/reveal.js@^5/plugin/search/search.js"></script>
+  <script src="https://unpkg.com/reveal.js@^5/plugin/zoom/zoom.js"></script>
+
+  <script>
+
+      // Full list of configuration options available at:
+      // https://revealjs.com/config/
+      Reveal.initialize({
+        // Display controls in the bottom right corner
+        controls: true,
+
+        // Help the user learn the controls by providing hints, for example by
+        // bouncing the down arrow when they first encounter a vertical slide
+        controlsTutorial: true,
+
+        // Determines where controls appear, "edges" or "bottom-right"
+        controlsLayout: 'bottom-right',
+
+        // Visibility rule for backwards navigation arrows; "faded", "hidden"
+        // or "visible"
+        controlsBackArrows: 'faded',
+
+        // Display a presentation progress bar
+        progress: true,
+
+        // Display the page number of the current slide
+        slideNumber: true,
+
+        // 'all', 'print', or 'speaker'
+        showSlideNumber: 'all',
+
+        // Add the current slide number to the URL hash so that reloading the
+        // page/copying the URL will return you to the same slide
+        hash: true,
+
+        // Start with 1 for the hash rather than 0
+        hashOneBasedIndex: false,
+
+        // Flags if we should monitor the hash and change slides accordingly
+        respondToHashChanges: true,
+
+        // Push each slide change to the browser history
+        history: false,
+
+        // Enable keyboard shortcuts for navigation
+        keyboard: true,
+
+        // Enable the slide overview mode
+        overview: true,
+
+        // Disables the default reveal.js slide layout (scaling and centering)
+        // so that you can use custom CSS layout
+        disableLayout: false,
+
+        // Vertical centering of slides
+        center: true,
+
+        // Enables touch navigation on devices with touch input
+        touch: true,
+
+        // Loop the presentation
+        loop: false,
+
+        // Change the presentation direction to be RTL
+        rtl: false,
+
+        // see https://revealjs.com/vertical-slides/#navigation-mode
+        navigationMode: 'default',
+
+        // Randomizes the order of slides each time the presentation loads
+        shuffle: false,
+
+        // Turns fragments on and off globally
+        fragments: true,
+
+        // Flags whether to include the current fragment in the URL,
+        // so that reloading brings you to the same fragment position
+        fragmentInURL: true,
+
+        // Flags if the presentation is running in an embedded mode,
+        // i.e. contained within a limited portion of the screen
+        embedded: false,
+
+        // Flags if we should show a help overlay when the questionmark
+        // key is pressed
+        help: true,
+
+        // Flags if it should be possible to pause the presentation (blackout)
+        pause: true,
+
+        // Flags if speaker notes should be visible to all viewers
+        showNotes: false,
+
+        // Global override for autoplaying embedded media (null/true/false)
+        autoPlayMedia: null,
+
+        // Global override for preloading lazy-loaded iframes (null/true/false)
+        preloadIframes: null,
+
+        // Number of milliseconds between automatically proceeding to the
+        // next slide, disabled when set to 0, this value can be overwritten
+        // by using a data-autoslide attribute on your slides
+        autoSlide: 0,
+
+        // Stop auto-sliding after user input
+        autoSlideStoppable: true,
+
+        // Use this method for navigation when auto-sliding
+        autoSlideMethod: null,
+
+        // Specify the average time in seconds that you think you will spend
+        // presenting each slide. This is used to show a pacing timer in the
+        // speaker view
+        defaultTiming: null,
+
+        // Enable slide navigation via mouse wheel
+        mouseWheel: false,
+
+        // The display mode that will be used to show slides
+        display: 'block',
+
+        // Hide cursor if inactive
+        hideInactiveCursor: true,
+
+        // Time before the cursor is hidden (in ms)
+        hideCursorTime: 5000,
+
+        // Opens links in an iframe preview overlay
+        previewLinks: false,
+
+        // Transition style (none/fade/slide/convex/concave/zoom)
+        transition: 'slide',
+
+        // Transition speed (default/fast/slow)
+        transitionSpeed: 'default',
+
+        // Transition style for full page slide backgrounds
+        // (none/fade/slide/convex/concave/zoom)
+        backgroundTransition: 'fade',
+
+        // Number of slides away from the current that are visible
+        viewDistance: 3,
+
+        // Number of slides away from the current that are visible on mobile
+        // devices. It is advisable to set this to a lower number than
+        // viewDistance in order to save resources.
+        mobileViewDistance: 2,
+
+        // reveal.js plugins
+        plugins: [
+          RevealNotes,
+          RevealSearch,
+          RevealZoom
+        ]
+      });
+    </script>
+    </body>
+</html>

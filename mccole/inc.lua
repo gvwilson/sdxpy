@@ -1,17 +1,18 @@
--- shortcodes.lua
--- Handlers for the book's {{< ... >}} shortcodes: i, inc, issue, and fixme.
--- (The glossary {{< g >}} shortcode lives in glossary.lua.)
+-- Code include shortcode.
+--
+-- Usage: {{< inc path/to/file.py mark=name omit=name head="N" >}}
+-- Reads a file (relative to the project root) and emits a syntax-highlighted
+-- code block. With mark=, only the "# mccole:name ... # mccole:/name" region
+-- is emitted; omit= removes a marked region; head= keeps the first N lines.
 
 local root = quarto.project.directory or "."
 
--- Shortcode args arrive as strings; a missing named arg is an empty string.
 local function s(v)
   if type(v) == "string" and v ~= "" then return v end
 end
 
 local LANG = { py = "python", sh = "bash" }
 
--- The "mark" identifiers are simple [a-z_]+ names, so they need no pattern escaping.
 local function extract_region(content, mark)
   return content:match("# mccole:" .. mark .. "\n(.-)\n# mccole:/" .. mark) or ""
 end
@@ -30,14 +31,6 @@ local function head_lines(content, n)
 end
 
 return {
-  -- index entry (no-op for now): {{< i "display" "term" url="..." >}}
-  ["i"] = function(args, kwargs, meta)
-    local display = args[2] or args[1]
-    if display == nil then return pandoc.Str("") end
-    return pandoc.Str(display)
-  end,
-
-  -- code include: {{< inc path/to/file.py mark=name omit=name head="N" >}}
   ["inc"] = function(args, kwargs, meta)
     local file = s(args[1])
     local mark = s(kwargs["mark"])
@@ -53,17 +46,5 @@ return {
     local lang = LANG[ext] or ""
     local classes = (lang ~= "") and { lang } or {}
     return pandoc.Blocks({ pandoc.CodeBlock(code, pandoc.Attr("", classes, {})) })
-  end,
-
-  -- issue reference: {{< issue 123 >}}
-  ["issue"] = function(args, kwargs, meta)
-    local n = s(args[1])
-    return pandoc.Link(pandoc.Str("#" .. n), "https://github.com/gvwilson/sdxpy/issues/" .. n)
-  end,
-
-  -- fixme note: {{< fixme "text" >}}
-  ["fixme"] = function(args, kwargs, meta)
-    local text = s(args[1]) or "FIXME"
-    return pandoc.Inlines({ pandoc.Strong({ pandoc.Str("FIXME: ") }), pandoc.Str(text) })
   end,
 }

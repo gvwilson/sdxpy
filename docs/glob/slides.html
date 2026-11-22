@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="generator" content="pandoc">
+  <title>Matching Patterns</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+  <link rel="stylesheet" href="https://unpkg.com/reveal.js@^5/dist/reset.css">
+  <link rel="stylesheet" href="https://unpkg.com/reveal.js@^5/dist/reveal.css">
+  <style>
+    .reveal .sourceCode {  /* see #7635 */
+      overflow: visible;
+    }
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="../mccole/slides.css"/>
+</head>
+<body>
+  <div class="reveal">
+    <div class="slides">
+
+<section id="title-slide">
+  <h1 class="title">Matching Patterns</h1>
+</section>
+
+<section class="slide level2">
+
+<section class="slide">
+</section>
+<section id="the-problem" class="slide level2">
+<h2>The Problem</h2>
+<ul>
+<li><p><code>glob.glob</code> finds files whose names match
+patterns</p></li>
+<li><p><code>2023-*.{pdf,txt}</code> matches <code>2023-01.txt</code>
+and <code>2023-final.pdf</code> but not
+<code>draft-2023.docx</code></p></li>
+</ul>
+<p>[% figure slug=“glob-examples” img=“examples.svg” alt=“Matching
+examples” caption=“Examples of glob matching.” %]</p>
+<ul>
+<li>How does this work?</li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="why-globbing" class="slide level2">
+<h2>Why “Globbing”?</h2>
+<ul>
+<li><p>Early versions of Unix had a tool called
+<code>glob</code></p></li>
+<li><p>People used pattern matching so often that it was quickly built
+into the shell</p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="write-a-few-tests" class="slide level2">
+<h2>Write a Few Tests</h2>
+<div class="line-block">Pattern | Text | Match? || Pattern | Text |
+Match? |<br />
+——- | ——– | —— || ——- | ——– | —— |<br />
+abc | “abc” | True || a*c | “abc” | True |<br />
+ab | “abc” | False || {a,b} | “a” | True |<br />
+abc | “ab” | False || {a,b} | “c” | False |<br />
+* | “” | True || {a,b} | “ab” | False |<br />
+* | “abc” | True || *{x,y} | “abcx” | True |</div>
+</section>
+<section class="slide">
+</section>
+<section id="objects-vs.-functions" class="slide level2">
+<h2>Objects vs. Functions</h2>
+<ul>
+<li><p>Create matchers for particular cases instead of one big
+function</p></li>
+<li><p>Some of those matchers need extra data</p>
+<ul>
+<li>E.g., which literal characters to match</li>
+</ul></li>
+<li><p>So create objects</p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="design-patterns" class="slide level2">
+<h2>Design Patterns</h2>
+<ul>
+<li><p>Use the [%g chain_of_responsibility_pattern “Chain of
+Responsibility” %] pattern</p>
+<ul>
+<li><p>Each object matches if it can…</p></li>
+<li><p>…then asks something else to try to match the rest of the
+text</p></li>
+</ul></li>
+</ul>
+<p>[% figure slug=“glob-chain” img=“chain.svg” alt=“Chain of
+Responsibility” caption=“Matching with Chain of Responsibility.” %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="matching-a-literal-string" class="slide level2">
+<h2>Matching a Literal String</h2>
+<p>[%inc glob_lit.py %]</p>
+<ul>
+<li><code>chars</code> is the characters to be matched</li>
+<li><code>rest</code> is the rest of the chain (or
+<code>None</code>)</li>
+<li><code>start</code> is needed when this isn’t the first matcher</li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="testing-the-matcher" class="slide level2">
+<h2>Testing the Matcher</h2>
+<p>[%inc test_glob_lit.py mark=tests %]</p>
+<ul>
+<li>Give tests long names to make failure reports immediately
+readable</li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="does-chaining-work" class="slide level2">
+<h2>Does Chaining Work?</h2>
+<ul>
+<li><p>Try to find flaws in the design as early as possible</p></li>
+<li><p>So test chaining before writing more matchers</p></li>
+</ul>
+<p>[%inc test_glob_lit.py mark=chain %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="test-driven-development" class="slide level2">
+<h2>Test-Driven Development</h2>
+<ul>
+<li><p>Some people write tests <em>before</em> writing code to clarify
+the design</p>
+<ul>
+<li>And to ensure they actually write tests</li>
+</ul></li>
+<li><p>Research shows the order doesn’t matter [%b Fucci2016 %]</p></li>
+<li><p>What <em>does</em> is alternating between short bursts of coding
+and testing</p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="wildcards" class="slide level2">
+<h2>Wildcards</h2>
+<ul>
+<li><p><code>*</code> can match zero or more characters</p></li>
+<li><p>If it’s the last matcher, it always succeeds</p></li>
+<li><p>Otherwise try zero characters, one, two, etc. characters</p></li>
+</ul>
+<p>[%inc glob_any.py %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="and-we-test-it" class="slide level2">
+<h2>And We Test It</h2>
+<p>[%inc test_glob_any.py mark=tests %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="matching-alternatives" class="slide level2">
+<h2>Matching Alternatives</h2>
+<p>[%inc glob_either.py %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="and-we-test-it-1" class="slide level2">
+<h2>And We Test It</h2>
+<p>[%inc test_glob_either.py mark=tests %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="but-wait" class="slide level2">
+<h2>But Wait…</h2>
+<p>[%inc test_glob_problem.py mark=keep %] [%inc test_glob_problem.out
+%]</p>
+<ul>
+<li><code>Either</code> doesn’t handle <code>rest</code> properly</li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="rethinking" class="slide level2">
+<h2>Rethinking</h2>
+<ul>
+<li>We now have three matchers with the same interfaces
+<ul>
+<li>[%g refactor “Refactor” %] using [%g
+extract_parent_class_refactoring “Extract Parent Class” %]</li>
+</ul></li>
+<li>The test <code>if self.rest is None</code> appears several times
+<ul>
+<li>Use the [%g null_object_pattern “Null Object” %] pattern
+instead</li>
+</ul></li>
+</ul>
+<p>[% figure slug=“glob-refactoring” img=“refactoring.svg”
+alt=“Refactoring matchers” caption=“Using the Extract Parent Class
+refactoring.” %]</p>
+</section>
+<section class="slide">
+</section>
+<section id="the-parent-class" class="slide level2">
+<h2>The Parent Class</h2>
+<p>[%inc glob_null.py mark=parent %]</p>
+<ul>
+<li><p>Assume every child class has a <code>_match</code>
+method</p></li>
+<li><p>This method returns the location to continue searching</p></li>
+<li><p>So <code>Match.match</code> checks that we’ve reached the end of
+the text</p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="the-null-object-class" class="slide level2">
+<h2>The Null Object Class</h2>
+<p>[%inc glob_null.py mark=null %]</p>
+<ul>
+<li><p>Must be the last one in the chain</p></li>
+<li><p>Doesn’t advance the match (i.e., does nothing)</p></li>
+<li><p>Every other class can now delegate to its <code>next</code>
+without checking for <code>None</code></p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="refactoring-literal-matcher" class="slide level2">
+<h2>Refactoring Literal Matcher</h2>
+<p>[%inc glob_null.py mark=lit %]</p>
+<ul>
+<li>Ask parent class to do common initialization</li>
+<li>Return <code>None</code> for “no match” or whatever
+<code>self.rest</code> returns
+<ul>
+<li>If <code>rest</code> is <code>Null</code>, result will be the index
+after this object’s match</li>
+</ul></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="refactoring-wildcard" class="slide level2">
+<h2>Refactoring Wildcard</h2>
+<p>[%inc glob_null.py mark=any %]</p>
+<ul>
+<li>The exercises will ask, “Why <code>len(text) + 1</code>?”</li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="refactoring-alternatives" class="slide level2">
+<h2>Refactoring Alternatives</h2>
+<p>[%inc glob_null.py mark=either %]</p>
+<ul>
+<li><p>Looping over left and right options is simpler than repeating
+code or writing a helper method</p></li>
+<li><p>Could easily be extended to any number of alternatives</p></li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="testing" class="slide level2">
+<h2>Testing</h2>
+<ul>
+<li>None of the existing tests change
+<ul>
+<li>None of the constructors changed</li>
+<li>Neither did the signature of <code>match</code></li>
+</ul></li>
+<li>We should (should) add a couple of tests for <code>Null</code></li>
+<li>But basically we’re done</li>
+<li>And we can easily add matchers for other kinds of patterns</li>
+</ul>
+</section>
+<section class="slide">
+</section>
+<section id="summary" class="slide level2">
+<h2>Summary</h2>
+<p>[% figure slug=“glob-concept-map” img=“concept_map.svg” alt=“Concept
+map of globbing” caption=“Concept map.” %]</p>
+</section>
+</section>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/reveal.js@^5/dist/reveal.js"></script>
+
+  <!-- reveal.js plugins -->
+  <script src="https://unpkg.com/reveal.js@^5/plugin/notes/notes.js"></script>
+  <script src="https://unpkg.com/reveal.js@^5/plugin/search/search.js"></script>
+  <script src="https://unpkg.com/reveal.js@^5/plugin/zoom/zoom.js"></script>
+
+  <script>
+
+      // Full list of configuration options available at:
+      // https://revealjs.com/config/
+      Reveal.initialize({
+        // Display controls in the bottom right corner
+        controls: true,
+
+        // Help the user learn the controls by providing hints, for example by
+        // bouncing the down arrow when they first encounter a vertical slide
+        controlsTutorial: true,
+
+        // Determines where controls appear, "edges" or "bottom-right"
+        controlsLayout: 'bottom-right',
+
+        // Visibility rule for backwards navigation arrows; "faded", "hidden"
+        // or "visible"
+        controlsBackArrows: 'faded',
+
+        // Display a presentation progress bar
+        progress: true,
+
+        // Display the page number of the current slide
+        slideNumber: true,
+
+        // 'all', 'print', or 'speaker'
+        showSlideNumber: 'all',
+
+        // Add the current slide number to the URL hash so that reloading the
+        // page/copying the URL will return you to the same slide
+        hash: true,
+
+        // Start with 1 for the hash rather than 0
+        hashOneBasedIndex: false,
+
+        // Flags if we should monitor the hash and change slides accordingly
+        respondToHashChanges: true,
+
+        // Push each slide change to the browser history
+        history: false,
+
+        // Enable keyboard shortcuts for navigation
+        keyboard: true,
+
+        // Enable the slide overview mode
+        overview: true,
+
+        // Disables the default reveal.js slide layout (scaling and centering)
+        // so that you can use custom CSS layout
+        disableLayout: false,
+
+        // Vertical centering of slides
+        center: true,
+
+        // Enables touch navigation on devices with touch input
+        touch: true,
+
+        // Loop the presentation
+        loop: false,
+
+        // Change the presentation direction to be RTL
+        rtl: false,
+
+        // see https://revealjs.com/vertical-slides/#navigation-mode
+        navigationMode: 'default',
+
+        // Randomizes the order of slides each time the presentation loads
+        shuffle: false,
+
+        // Turns fragments on and off globally
+        fragments: true,
+
+        // Flags whether to include the current fragment in the URL,
+        // so that reloading brings you to the same fragment position
+        fragmentInURL: true,
+
+        // Flags if the presentation is running in an embedded mode,
+        // i.e. contained within a limited portion of the screen
+        embedded: false,
+
+        // Flags if we should show a help overlay when the questionmark
+        // key is pressed
+        help: true,
+
+        // Flags if it should be possible to pause the presentation (blackout)
+        pause: true,
+
+        // Flags if speaker notes should be visible to all viewers
+        showNotes: false,
+
+        // Global override for autoplaying embedded media (null/true/false)
+        autoPlayMedia: null,
+
+        // Global override for preloading lazy-loaded iframes (null/true/false)
+        preloadIframes: null,
+
+        // Number of milliseconds between automatically proceeding to the
+        // next slide, disabled when set to 0, this value can be overwritten
+        // by using a data-autoslide attribute on your slides
+        autoSlide: 0,
+
+        // Stop auto-sliding after user input
+        autoSlideStoppable: true,
+
+        // Use this method for navigation when auto-sliding
+        autoSlideMethod: null,
+
+        // Specify the average time in seconds that you think you will spend
+        // presenting each slide. This is used to show a pacing timer in the
+        // speaker view
+        defaultTiming: null,
+
+        // Enable slide navigation via mouse wheel
+        mouseWheel: false,
+
+        // The display mode that will be used to show slides
+        display: 'block',
+
+        // Hide cursor if inactive
+        hideInactiveCursor: true,
+
+        // Time before the cursor is hidden (in ms)
+        hideCursorTime: 5000,
+
+        // Opens links in an iframe preview overlay
+        previewLinks: false,
+
+        // Transition style (none/fade/slide/convex/concave/zoom)
+        transition: 'slide',
+
+        // Transition speed (default/fast/slow)
+        transitionSpeed: 'default',
+
+        // Transition style for full page slide backgrounds
+        // (none/fade/slide/convex/concave/zoom)
+        backgroundTransition: 'fade',
+
+        // Number of slides away from the current that are visible
+        viewDistance: 3,
+
+        // Number of slides away from the current that are visible on mobile
+        // devices. It is advisable to set this to a lower number than
+        // viewDistance in order to save resources.
+        mobileViewDistance: 2,
+
+        // reveal.js plugins
+        plugins: [
+          RevealNotes,
+          RevealSearch,
+          RevealZoom
+        ]
+      });
+    </script>
+    </body>
+</html>
