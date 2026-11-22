@@ -12,8 +12,9 @@
 -- The script reports keys that are used but not defined (along with the file
 -- that uses each one), keys that are defined but not used, and entries whose
 -- display text is out of alphabetical order. It also reports keys that are
--- referred to more than once (along with the files they occur in). It exits
--- with a non-zero status if any report is non-empty.
+-- referred to more than once (along with the files they occur in). A key
+-- cross-referenced inside the glossary itself (`[text](#key)`) counts as
+-- used. It exits with a non-zero status if any report is non-empty.
 
 local script_dir = arg[0] and arg[0]:match("^(.*)/") or "."
 package.path = script_dir .. "/?.lua;" .. package.path
@@ -24,15 +25,20 @@ utils.program = "check-glossary.lua"
 -- Returns the defined keys in file order, a set of those keys, and the
 -- display text of each entry in file order.
 local function read_glossary_file(path)
+  local content = utils.read_file(path)
   local order = {}
   local set = {}
   local texts = {}
-  for key, text in (utils.read_file(path)):gmatch('<span id="([%w_-]+)">([^<]*)</span>') do
+  local crossrefs = {}
+  for key, text in content:gmatch('<span id="([%w_-]+)">([^<]*)</span>') do
     order[#order + 1] = key
     set[key] = true
     texts[#texts + 1] = text
   end
-  return order, set, texts
+  for key in content:gmatch('%]%(#([%w_-]+)%)') do
+    crossrefs[key] = true
+  end
+  return order, set, texts, crossrefs
 end
 
 -- Records every glossary key referenced by a "g" shortcode in content.
@@ -117,13 +123,16 @@ if #arg < 2 then
   utils.fail("usage: lua check-glossary.lua GLOSSARY_FILE MARKDOWN_FILE...")
 end
 
-local defined_order, defined_set, display_texts = read_glossary_file(arg[1])
+local defined_order, defined_set, display_texts, crossrefs = read_glossary_file(arg[1])
 
 local markdown_files = {}
 for i = 2, #arg do
   markdown_files[#markdown_files + 1] = arg[i]
 end
 local used_set, used_files = read_markdown_files(markdown_files)
+for key in pairs(crossrefs) do
+  used_set[key] = true
+end
 
 local problems = false
 if utils.report_missing(defined_set, used_files, "used but not defined:") then
