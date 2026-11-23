@@ -1,8 +1,7 @@
 -- publish.lua
 -- Copy a rendered Quarto book into a shared site tree. The shared tree
--- keeps the Quarto scaffolding (site_libs, assets) under a consolidated
--- '../mccole/' directory one level above the book, so this script rewrites
--- every reference to those directories accordingly.
+-- keeps the mccole CSS directory one level above the book, so this script
+-- rewrites every reference to it accordingly.
 --
 -- Usage: pandoc lua mccole/publish.lua SOURCE DESTINATION [SNIPPET]
 --   SOURCE      directory of rendered HTML (e.g. 'docs')
@@ -41,9 +40,7 @@ end
 -- the shared '../mccole/' tree. Replacing the bare directory name also
 -- handles nested references.
 local function relocate(value)
-  value = value:gsub("mccole", "../mccole")
-  value = value:gsub("site_libs", "../mccole/site_libs")
-  return value
+  return value:gsub("mccole/", "../mccole/")
 end
 
 -- Rewrite every src and href attribute in the whole document in one pass.
@@ -77,12 +74,12 @@ local function copy_one(src, dst, snippet)
   end
 end
 
--- Recursively copy a directory, skipping 'assets', 'site_libs', and '.nojekyll'.
+-- Recursively copy a directory, skipping 'mccole' and '.nojekyll'.
 local function copy_tree(src_dir, dst_dir, snippet)
   local names = pandoc.system.list_directory(src_dir)
   table.sort(names)
   for _, name in ipairs(names) do
-    if name ~= "mccole" and name ~= "site_libs" then
+    if name ~= "mccole" then
       local src = join(src_dir, name)
       local dst = join(dst_dir, name)
       if is_dir(src) then
