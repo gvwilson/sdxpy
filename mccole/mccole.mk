@@ -24,7 +24,7 @@ SLIDES_FLAGS = \
   -s \
   -V theme=simple \
   -V slideNumber=true \
-  --css=mccole/slides.css \
+  --css=mccole/mccole-slides.css \
   --lua-filter=mccole/inc-pandoc.lua \
   ${SLIDES_EXTRA}
 
@@ -38,7 +38,7 @@ commands:
 site:
 	${QUARTO} render --to html
 	@mkdir -p ${DOCS}/mccole
-	@cp mccole/book.css ${DOCS}/mccole
+	@cp mccole/mccole-slides.css ${DOCS}/mccole/mccole-slides.css
 	touch ${DOCS}/.nojekyll
 
 ## pdf: render PDF with Quarto
@@ -67,9 +67,9 @@ ${DOCS}/%.html: %.qmd
 	@mkdir -p $(@D)
 	pandoc $< ${SLIDES_FLAGS} -o $@
 	@mkdir -p ${DOCS}/mccole
-	@cp mccole/slides.css ${DOCS}/mccole/slides.css
+	@cp mccole/mccole-slides.css ${DOCS}/mccole/mccole-slides.css
 	@sed -i '' '/simple\.css/d' $@
-	@sed -i '' 's:mccole/slides.css:../mccole/slides.css:g' $@
+	@sed -i '' 's:mccole/mccole-slides.css:../mccole/mccole-slides.css:g' $@
 
 ## check: check structure, spelling, etc.
 check: check-bib check-links check-glossary check-typos

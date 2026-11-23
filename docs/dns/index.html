@@ -1,533 +1,39 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head><meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>Domain Name System (DNS)</title>
+  <link rel="stylesheet" href="../mccole/mccole-book.css">
 
-<meta charset="utf-8">
-<meta name="generator" content="quarto-1.11.9">
-
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-
-
-<title>Appendix W — Domain Name System (DNS) – Software Design by Example</title>
-<style>
-/* Default styles provided by pandoc.
-** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
-*/
-span.smallcaps{font-variant: small-caps;}
-div.columns{display: flex; gap: 1.5em;}
-div.column{flex: auto;}
-@media screen {
-div.columns{gap: min(4vw, 1.5em);}
-div.column{overflow-x: auto;}
-}
-div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
-ul.task-list{list-style: none;}
-ul.task-list li input[type="checkbox"] {
-  width: 0.8em;
-  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
-  vertical-align: middle;
-}
-/* CSS for syntax highlighting */
-html { -webkit-text-size-adjust: 100%; }
-pre > code.sourceCode { white-space: pre; position: relative; }
-pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
-pre > code.sourceCode > span:empty { height: 1.2em; }
-.sourceCode { overflow: visible; }
-code.sourceCode > span { color: inherit; text-decoration: inherit; }
-div.sourceCode { margin: 1em 0; }
-pre.sourceCode { margin: 0; }
-@media screen {
-div.sourceCode { overflow: auto; }
-}
-@media print {
-pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
-}
-pre.numberSource code
-  { counter-reset: source-line 0; }
-pre.numberSource code > span
-  { position: relative; left: -4em; counter-increment: source-line; }
-pre.numberSource code > span > a:first-child::before
-  { content: counter(source-line);
-    position: relative; left: -1em; text-align: right; vertical-align: baseline;
-    border: none; display: inline-block;
-    -webkit-touch-callout: none; -webkit-user-select: none;
-    -khtml-user-select: none; -moz-user-select: none;
-    -ms-user-select: none; user-select: none;
-    padding: 0 4px; width: 4em;
-  }
-pre.numberSource { margin-left: 3em;  padding-left: 4px; }
-div.sourceCode
-  {   }
-@media screen {
-pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
-}
-</style>
-
-
-<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
-<script src="../site_libs/quarto-nav/headroom.min.js"></script>
-<script src="../site_libs/clipboard/clipboard.min.js"></script>
-<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
-<script src="../site_libs/quarto-search/fuse.min.js"></script>
-<script src="../site_libs/quarto-search/quarto-search.js"></script>
-<meta name="quarto:offset" content="../">
-<link href="../ntp/index.html" rel="next">
-<link href="../tcp/index.html" rel="prev">
-<script src="../site_libs/quarto-html/quarto.js" type="module"></script>
-<script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
-<script src="../site_libs/quarto-html/scrollable-regions/scrollable-regions.js" type="module"></script>
-<script src="../site_libs/quarto-html/popper.min.js"></script>
-<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
-<script src="../site_libs/quarto-html/anchor.min.js"></script>
-<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="../site_libs/quarto-html/quarto-syntax-highlighting-63b5708e65d6cd79cd7618c58d0c21e7.css" rel="stylesheet" id="quarto-text-highlighting-styles">
-<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
-<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../site_libs/bootstrap/bootstrap-01a495efc5497ac6e3f5457e7ed18e65.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
-<script id="quarto-search-options" type="application/json">{
-  "location": "sidebar",
-  "copy-button": false,
-  "collapse-after": 3,
-  "panel-placement": "start",
-  "type": "textbox",
-  "limit": 50,
-  "keyboard-shortcut": [
-    "f",
-    "/",
-    "s"
-  ],
-  "show-item-context": false,
-  "language": {
-    "search-no-results-text": "No results",
-    "search-matching-documents-text": "matching documents",
-    "search-copy-link-title": "Copy link to search",
-    "search-hide-matches-text": "Hide additional matches",
-    "search-more-match-text": "more match in this document",
-    "search-more-matches-text": "more matches in this document",
-    "search-clear-button-title": "Clear",
-    "search-text-placeholder": "",
-    "search-detached-cancel-button-title": "Cancel",
-    "search-submit-button-title": "Submit",
-    "search-label": "Search"
-  }
-}</script>
-
-
-<link rel="stylesheet" href="../mccole/book.css">
 </head>
-
-<body class="nav-sidebar floating quarto-light"><a id="quarto-skip-link" class="visually-hidden-focusable" href="#quarto-document-content">Skip to main content</a>
-
-<div id="quarto-search-results"></div>
-  <header id="quarto-header" class="headroom fixed-top">
-  <nav class="quarto-secondary-nav" aria-label="Toolbar">
-    <div class="container-fluid d-flex">
-      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
-        <i class="bi bi-layout-text-sidebar-reverse"></i>
-      </button>
-        <nav class="quarto-page-breadcrumbs" aria-label="Breadcrumbs"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../license/index.html">Appendices</a></li><li class="breadcrumb-item"><a href="../dns/index.html"><span class="chapter-number">W</span>&nbsp; <span class="chapter-title">Domain Name System (DNS)</span></a></li></ol></nav>
-        <a class="flex-grow-1" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
-        </a>
-      <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
-        <i class="bi bi-search"></i>
-      </button>
+<body>
+<header class="topbar">
+  <nav class="topnav">
+    <a class="topnav-item" href="../index.html">Home</a>
+    <div class="topnav-dropdown">
+      <span class="topnav-item">Chapters</span>
+      <div class="topnav-menu"><ul class="topnav-list"><li><a href="../intro/index.html">Introduction</a></li><li><a href="../oop/index.html">Objects and Classes</a></li><li><a href="../dup/index.html">Finding Duplicate Files</a></li><li><a href="../glob/index.html">Matching Patterns</a></li><li><a href="../parse/index.html">Parsing Text</a></li><li><a href="../test/index.html">Running Tests</a></li><li><a href="../interp/index.html">An Interpreter</a></li><li><a href="../func/index.html">Functions and Closures</a></li><li><a href="../protocols/index.html">Protocols</a></li><li><a href="../archive/index.html">A File Archiver</a></li><li><a href="../check/index.html">An HTML Validator</a></li><li><a href="../template/index.html">A Template Expander</a></li><li><a href="../lint/index.html">A Code Linter</a></li><li><a href="../layout/index.html">Page Layout</a></li><li><a href="../perf/index.html">Performance Profiling</a></li><li><a href="../persist/index.html">Object Persistence</a></li><li><a href="../binary/index.html">Binary Data</a></li><li><a href="../db/index.html">A Database</a></li><li><a href="../build/index.html">A Build Manager</a></li><li><a href="../pack/index.html">A Package Manager</a></li><li><a href="../ftp/index.html">Transferring Files</a></li><li><a href="../http/index.html">Serving Web Pages</a></li><li><a href="../viewer/index.html">A File Viewer</a></li><li><a href="../undo/index.html">Undo and Redo</a></li><li><a href="../vm/index.html">A Virtual Machine</a></li><li><a href="../debugger/index.html">A Debugger</a></li><li><a href="../finale/index.html">Conclusion</a></li></ul></div>
+    </div>
+    <div class="topnav-dropdown">
+      <span class="topnav-item">Appendices</span>
+      <div class="topnav-menu"><ul class="topnav-list"><li><a href="../license/index.html">License</a></li><li><a href="../conduct/index.html">Code of Conduct</a></li><li><a href="../contributing/index.html">Contributing</a></li><li><a href="../bibliography/index.html">Bibliography</a></li><li><a href="../glossary/index.html">Glossary</a></li><li><a href="../syllabus/index.html">Syllabus</a></li><li><a href="../bonus/index.html">Bonus Material</a></li><li><a href="../observe/index.html">Observers</a></li><li><a href="../docgen/index.html">Generating Documentation</a></li><li><a href="../cache/index.html">A File Cache</a></li><li><a href="../concur/index.html">Concurrency</a></li><li><a href="../mapreduce/index.html">MapReduce Framework</a></li><li><a href="../msgque/index.html">A Publish-Subscribe Message Queue</a></li><li><a href="../worksteal/index.html">A Work-Stealing Scheduler</a></li><li><a href="../tracing/index.html">Distributed Tracing</a></li><li><a href="../crdt/index.html">Conflict-Free Replicated Data Types</a></li><li><a href="../oauth/index.html">OAuth</a></li><li><a href="../distlock/index.html">Distributed Lock Manager</a></li><li><a href="../torrent/index.html">BitTorrent Protocol</a></li><li><a href="../eventual/index.html">Eventually Consistent Key-Value Store</a></li><li><a href="../saga/index.html">The Saga Pattern</a></li><li><a href="../tcp/index.html">Building TCP on UDP</a></li><li><a href="../dns/index.html">Domain Name System (DNS)</a></li><li><a href="../ntp/index.html">Network Time Protocol (NTP)</a></li><li><a href="../fs/index.html">A Simple Filesystem</a></li><li><a href="../slides/index.html">Slides</a></li></ul></div>
+    </div>
+    <div class="topnav-dropdown">
+      <span class="topnav-item">Contents</span>
+      <div class="topnav-menu"><ul>
+<li><a href="#how-dns-works" id="toc-how-dns-works"><span class="header-section-number">W.1</span> How DNS Works</a></li>
+<li><a href="#dns-impl" id="toc-dns-impl"><span class="header-section-number">W.2</span> Implementation</a></li>
+<li><a href="#dns-client" id="toc-dns-client"><span class="header-section-number">W.3</span> Clients</a></li>
+<li><a href="#running-a-simulation" id="toc-running-a-simulation"><span class="header-section-number">W.4</span> Running a Simulation</a></li>
+<li><a href="#dns-hier" id="toc-dns-hier"><span class="header-section-number">W.5</span> Hierarchical Resolution</a></li>
+<li><a href="#dns-negative" id="toc-dns-negative"><span class="header-section-number">W.6</span> Negative Caching</a></li>
+<li><a href="#real-world-considerations" id="toc-real-world-considerations"><span class="header-section-number">W.7</span> Real-World Considerations</a></li>
+<li><a href="#dns-exercises" id="toc-dns-exercises"><span class="header-section-number">W.8</span> Exercises</a></li>
+</ul></div>
     </div>
   </nav>
 </header>
-<!-- content -->
-<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article">
-<!-- sidebar -->
-  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto" aria-label="Site">
-    <div class="pt-lg-2 mt-2 text-left sidebar-header">
-    <div class="sidebar-title mb-0 py-0">
-      <a href="../">Software Design by Example</a> 
-        <div class="sidebar-tools-main">
-    <a href="https://github.com/gvwilson/sdxpy" title="Source Code" class="quarto-navigation-tool px-1" aria-label="Source Code"><i class="bi bi-github"></i></a>
-</div>
-    </div>
-      </div>
-        <div class="mt-2 flex-shrink-0 align-items-center">
-        <div class="sidebar-search">
-        <div id="quarto-search" class="" title="Search"></div>
-        </div>
-        </div>
-    <div class="sidebar-menu-container"> 
-    <ul class="list-unstyled mt-1">
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Overview</span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../intro/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">1</span>&nbsp; <span class="chapter-title">Introduction</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../oop/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">Objects and Classes</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../dup/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">3</span>&nbsp; <span class="chapter-title">Finding Duplicate Files</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../glob/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">Matching Patterns</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../parse/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">Parsing Text</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../test/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">6</span>&nbsp; <span class="chapter-title">Running Tests</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../interp/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">7</span>&nbsp; <span class="chapter-title">An Interpreter</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../func/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">8</span>&nbsp; <span class="chapter-title">Functions and Closures</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../protocols/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">9</span>&nbsp; <span class="chapter-title">Protocols</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../archive/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">10</span>&nbsp; <span class="chapter-title">A File Archiver</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../check/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">11</span>&nbsp; <span class="chapter-title">An HTML Validator</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../template/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">12</span>&nbsp; <span class="chapter-title">A Template Expander</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../lint/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">13</span>&nbsp; <span class="chapter-title">A Code Linter</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../layout/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">14</span>&nbsp; <span class="chapter-title">Page Layout</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../perf/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">15</span>&nbsp; <span class="chapter-title">Performance Profiling</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../persist/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">16</span>&nbsp; <span class="chapter-title">Object Persistence</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../binary/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">17</span>&nbsp; <span class="chapter-title">Binary Data</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../db/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">18</span>&nbsp; <span class="chapter-title">A Database</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../build/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">19</span>&nbsp; <span class="chapter-title">A Build Manager</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../pack/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">20</span>&nbsp; <span class="chapter-title">A Package Manager</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../ftp/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">21</span>&nbsp; <span class="chapter-title">Transferring Files</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../http/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">22</span>&nbsp; <span class="chapter-title">Serving Web Pages</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../viewer/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">23</span>&nbsp; <span class="chapter-title">A File Viewer</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../undo/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">24</span>&nbsp; <span class="chapter-title">Undo and Redo</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../vm/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">25</span>&nbsp; <span class="chapter-title">A Virtual Machine</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../debugger/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">26</span>&nbsp; <span class="chapter-title">A Debugger</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../finale/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">27</span>&nbsp; <span class="chapter-title">Conclusion</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item sidebar-item-section">
-      <div class="sidebar-item-container"> 
-            <button type="button" class="sidebar-item-text sidebar-item-toggle sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" aria-controls="quarto-sidebar-section-1" aria-expanded="true">
- <span class="menu-text" id="quarto-sidebar-section-1-label">Appendices</span><i class="bi bi-chevron-right" aria-hidden="true"></i></button>
-      </div>
-      <ul id="quarto-sidebar-section-1" aria-labelledby="quarto-sidebar-section-1-label" class="collapse list-unstyled sidebar-section depth1 show">  
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../license/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">A</span>&nbsp; <span class="chapter-title">License</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../conduct/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">B</span>&nbsp; <span class="chapter-title">Code of Conduct</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../contributing/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">C</span>&nbsp; <span class="chapter-title">Contributing</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../bibliography/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">D</span>&nbsp; <span class="chapter-title">Bibliography</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../glossary/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">E</span>&nbsp; <span class="chapter-title">Glossary</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../syllabus/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">F</span>&nbsp; <span class="chapter-title">Syllabus</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../bonus/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">G</span>&nbsp; <span class="chapter-title">Bonus Material</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../observe/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">H</span>&nbsp; <span class="chapter-title">Observers</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../docgen/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">I</span>&nbsp; <span class="chapter-title">Generating Documentation</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../cache/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">J</span>&nbsp; <span class="chapter-title">A File Cache</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../concur/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">K</span>&nbsp; <span class="chapter-title">Concurrency</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../mapreduce/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">L</span>&nbsp; <span class="chapter-title">MapReduce Framework</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../msgque/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">M</span>&nbsp; <span class="chapter-title">A Publish-Subscribe Message Queue</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../worksteal/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">N</span>&nbsp; <span class="chapter-title">A Work-Stealing Scheduler</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../tracing/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">O</span>&nbsp; <span class="chapter-title">Distributed Tracing</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../crdt/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">P</span>&nbsp; <span class="chapter-title">Conflict-Free Replicated Data Types</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../oauth/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">Q</span>&nbsp; <span class="chapter-title">OAuth</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../distlock/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">R</span>&nbsp; <span class="chapter-title">Distributed Lock Manager</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../torrent/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">S</span>&nbsp; <span class="chapter-title">BitTorrent Protocol</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../eventual/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">T</span>&nbsp; <span class="chapter-title">Eventually Consistent Key-Value Store</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../saga/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">U</span>&nbsp; <span class="chapter-title">The Saga Pattern</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../tcp/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">V</span>&nbsp; <span class="chapter-title">Building TCP on UDP</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../dns/index.html" class="sidebar-item-text sidebar-link active">
- <span class="menu-text"><span class="chapter-number">W</span>&nbsp; <span class="chapter-title">Domain Name System (DNS)</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../ntp/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">X</span>&nbsp; <span class="chapter-title">Network Time Protocol (NTP)</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../fs/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">Y</span>&nbsp; <span class="chapter-title">A Simple Filesystem</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../slides/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">Z</span>&nbsp; <span class="chapter-title">Slides</span></span></a>
-  </div>
-</li>
-      </ul>
-  </li>
-    </ul>
-    </div>
-</nav>
-<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
-<!-- margin-sidebar -->
-    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
-        <nav id="TOC" role="doc-toc" aria-labelledby="toc-title" class="toc-active">
-    <h2 id="toc-title">Table of contents</h2>
-   
-  <ul>
-  <li><a href="#how-dns-works" id="toc-how-dns-works" class="nav-link active" data-scroll-target="#how-dns-works"><span class="header-section-number">W.1</span> How DNS Works</a></li>
-  <li><a href="#dns-impl" id="toc-dns-impl" class="nav-link" data-scroll-target="#dns-impl"><span class="header-section-number">W.2</span> Implementation</a></li>
-  <li><a href="#dns-client" id="toc-dns-client" class="nav-link" data-scroll-target="#dns-client"><span class="header-section-number">W.3</span> Clients</a></li>
-  <li><a href="#running-a-simulation" id="toc-running-a-simulation" class="nav-link" data-scroll-target="#running-a-simulation"><span class="header-section-number">W.4</span> Running a Simulation</a></li>
-  <li><a href="#dns-hier" id="toc-dns-hier" class="nav-link" data-scroll-target="#dns-hier"><span class="header-section-number">W.5</span> Hierarchical Resolution</a></li>
-  <li><a href="#dns-negative" id="toc-dns-negative" class="nav-link" data-scroll-target="#dns-negative"><span class="header-section-number">W.6</span> Negative Caching</a></li>
-  <li><a href="#real-world-considerations" id="toc-real-world-considerations" class="nav-link" data-scroll-target="#real-world-considerations"><span class="header-section-number">W.7</span> Real-World Considerations</a></li>
-  <li><a href="#dns-exercises" id="toc-dns-exercises" class="nav-link" data-scroll-target="#dns-exercises"><span class="header-section-number">W.8</span> Exercises</a></li>
-  </ul>
-<div class="toc-actions"><ul><li><a href="https://github.com/gvwilson/sdxpy/edit/main/dns/index.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/gvwilson/sdxpy/blob/main/dns/index.qmd" class="toc-action"><i class="bi empty"></i>View source</a></li><li><a href="https://github.com/gvwilson/sdxpy/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
-    </div>
-<!-- main -->
-<main class="content" id="quarto-document-content" tabindex="-1">
-
-<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="Breadcrumbs"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../license/index.html">Appendices</a></li><li class="breadcrumb-item"><a href="../dns/index.html"><span class="chapter-number">W</span>&nbsp; <span class="chapter-title">Domain Name System (DNS)</span></a></li></ol></nav>
-<div class="quarto-title">
-<h1 class="title"><span id="sec-dns" class="quarto-section-identifier">Appendix W — Domain Name System (DNS)</span></h1>
-</div>
-
-
-
-<div class="quarto-title-meta">
-
-    
-  
-    
-  </div>
-  
-
-
-</header>
-
-
+<main class="content"><header id="title-block-header" class="quarto-title-block"></header>
+<h1 class="title">Domain Name System (DNS)</h1>
 <div class="syllabus">
 <ul>
 <li>Trace the full resolution walk from root name server to TLD to authoritative server for a domain name.</li>
@@ -538,8 +44,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <p><strong>In Development</strong></p>
 <p>Every time you visit a website or send an email, your computer translates a human-readable name like “www.example.com” into an IP addresses like “192.0.2.1”. <a href="../glossary/index.html#dns">Domain Name System</a> (DNS) is what makes this possible. DNS is a distributed database, and is one of the internet’s most critical infrastructure components. Among other things, it enables service mobility: a website can change servers and IP addresses without users noticing, because the DNS mapping can be updated.</p>
-<section id="how-dns-works" class="level2" data-number="W.1">
-<h2 data-number="W.1" class="anchored" data-anchor-id="how-dns-works"><span class="header-section-number">W.1</span> How DNS Works</h2>
+<h2 data-number="W.1" id="how-dns-works"><span class="header-section-number">W.1</span> How DNS Works</h2>
 <p>DNS is a hierarchical, distributed database that handles over a trillion queries per day. Instead of one central server knowing all domain names, which couldn’t possibly scale, the work is distributed across millions of servers organized in a tree structure:</p>
 <ul>
 <li>13 <a href="../glossary/index.html#root-server">root servers</a> (though there are actually many more physical servers).</li>
@@ -556,46 +61,40 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </ul>
 <p>This process is called recursive resolution. It scales because no single server needs to know everything. Instead, each server knows its piece of the hierarchy and where to find the next level.</p>
 <p>DNS would be unusably slow if every lookup required multiple round-trips through the hierarchy. The solution is caching: resolvers remember answers for a period referred to as <a href="../glossary/index.html#ttl">Time to Live</a> (TTL). Popular domains like wikipedia.org are cached at every level so that most queries are answered from cache in milliseconds. This ensures that root servers handle surprisingly few queries despite being at the top of the hierarchy. It is also why changing a DNS record doesn’t take effect immediately: old values persist in caches until their TTL expires.</p>
-</section>
-<section id="dns-impl" class="level2" data-number="W.2">
-<h2 data-number="W.2" class="anchored" data-anchor-id="dns-impl"><span class="header-section-number">W.2</span> Implementation</h2>
+<h2 data-number="W.2" id="dns-impl"><span class="header-section-number">W.2</span> Implementation</h2>
 <p>DNS stores different types of records. Our implementation will focus on A and CNAME records, which handle most web traffic. As in previous chapters, we start by enumerating the different types of records:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>and then define a DNS resource record:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>We also need to define the structure of queries and responses:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>The next step is to create the authoritative DNS server. The constructor registers the zone this server is authoritative for and creates its record store. <code>add_record</code> lets callers populate the zone before the simulation starts:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>The <code>run</code> loop receives queries and builds responses. If the query domain ends in this server’s zone, the server looks up the record directly; it also follows CNAME chains to resolve aliases to their target A records:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>The recursive resolver is more complex because it must cache and coordinate with authoritative servers. A <code>CacheEntry</code> wraps a record with its expiry time:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>The resolver’s constructor sets up the cache and tracks hit and miss statistics:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>The <code>run</code> loop checks the cache before forwarding to an authoritative server. On a cache miss it calls <code>_resolve_recursive</code>, then stores the results:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p><code>_check_cache</code> filters out expired entries and returns <code>None</code> on a complete miss. <code>_cache_records</code> stores records with expiry times computed from each record’s TTL:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p><code>_resolve_recursive</code> finds the authoritative server whose zone suffix matches the query domain most specifically, then forwards the query and returns the response. Each cached entry has an expiration time based on the record’s TTL.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>Our simplified resolver directly contacts authoritative servers. Real DNS resolvers walk the hierarchy starting from root servers, but the principle is the same: cache aggressively, query only when necessary.</p>
-</section>
-<section id="dns-client" class="level2" data-number="W.3">
-<h2 data-number="W.3" class="anchored" data-anchor-id="dns-client"><span class="header-section-number">W.3</span> Clients</h2>
+<h2 data-number="W.3" id="dns-client"><span class="header-section-number">W.3</span> Clients</h2>
 <p>The DNS client wraps a response queue and a query counter:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p><code>lookup</code> constructs a query, sends it to the resolver, and prints the response:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>Clients send queries to recursive resolvers and wait for responses. In real systems, clients also cache locally and can query multiple resolvers for redundancy.</p>
-</section>
-<section id="running-a-simulation" class="level2" data-number="W.4">
-<h2 data-number="W.4" class="anchored" data-anchor-id="running-a-simulation"><span class="header-section-number">W.4</span> Running a Simulation</h2>
+<h2 data-number="W.4" id="running-a-simulation"><span class="header-section-number">W.4</span> Running a Simulation</h2>
 <p>Let’s see DNS resolution in action by building a client:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>We can now create the overall simulation:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>The output shows that the first lookup of <code>www.example.com</code> is a cache miss, necessitating a query to the authoritative server, but the second lookup is a cache hit. Different domains are cache misses until they’re cached, and the cache hit rate improves as the simulation runs. In other words, the first user to look up a domain pays the full resolution cost, but subsequent users (or repeated lookups) get instant responses.</p>
 <pre><code>[0.000] client1.local: Looking up www.example.com (A)
 [0.000] resolver.isp.net: Received query for www.example.com (A)
@@ -617,36 +116,27 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 [3.030] resolver.isp.net: Cache MISS for www.another.org
 [3.030] ns1.another.org: Query for www.another.org (A) -&gt; 0 record(s)
 [3.040] client1.local: No records found for www.another.org
-
 === DNS Resolution Statistics ===
 Example.com server: 3 queries
 Another.org server: 1 queries
-
 Resolver:
   Total queries: 4
   Cache hits: 0
   Cache misses: 4
-  Cache hit rate: 0.0%
-</code></pre>
+  Cache hit rate: 0.0%</code></pre>
 <p><code>ex_hierarchy.py</code> is a more complex simulation that demonstrates several key properties of DNS, including the use of multiple resolvers, load distribution, and the effectiveness of multiple caches. Its output shows how the cache hit rate increases over time as more domains get cached.</p>
-</section>
-<section id="dns-hier" class="level2" data-number="W.5">
-<h2 data-number="W.5" class="anchored" data-anchor-id="dns-hier"><span class="header-section-number">W.5</span> Hierarchical Resolution</h2>
+<h2 data-number="W.5" id="dns-hier"><span class="header-section-number">W.5</span> Hierarchical Resolution</h2>
 <p>Our simplified resolver jumps directly to the best-matching authoritative server. Real DNS resolvers cannot do this: they only know about the root servers at startup and must walk the delegation chain to find the authoritative server for a new domain.</p>
 <p><code>HierarchicalResolver</code> implements this:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>Its <code>_walk_hierarchy</code> method starts at the root server, follows NS referrals until it reaches an authoritative server, and returns the answer:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="sourceCode" id="cb18"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>The first query for <code>www.example.com</code> requires two round-trips—one to the root, one to <code>.com</code>— before reaching <code>example.com</code>’s authoritative server. All subsequent queries for anything in <code>example.com</code> can skip this walk because the answers are cached.</p>
-</section>
-<section id="dns-negative" class="level2" data-number="W.6">
-<h2 data-number="W.6" class="anchored" data-anchor-id="dns-negative"><span class="header-section-number">W.6</span> Negative Caching</h2>
+<h2 data-number="W.6" id="dns-negative"><span class="header-section-number">W.6</span> Negative Caching</h2>
 <p>The <code>HierarchicalResolver</code> also caches negative responses (NXDOMAIN):</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>Without negative caching, every lookup of a non-existent domain (a typo, a deleted record) results in a full hierarchy walk—one round-trip to the root, one to the TLD, one to the authoritative server. Caching “this domain does not exist” for the TTL specified in the zone’s SOA record means that repeated lookups of the same nonexistent name are answered locally. This is especially important for protecting authoritative servers from DNS amplification attacks, where an attacker repeatedly queries nonexistent subdomains to exhaust server resources.</p>
-</section>
-<section id="real-world-considerations" class="level2" data-number="W.7">
-<h2 data-number="W.7" class="anchored" data-anchor-id="real-world-considerations"><span class="header-section-number">W.7</span> Real-World Considerations</h2>
+<h2 data-number="W.7" id="real-world-considerations"><span class="header-section-number">W.7</span> Real-World Considerations</h2>
 <p>Our implementation simplifies several DNS complexities:</p>
 <ul>
 <li><p>Hierarchy walking: The <code>HierarchicalResolver</code> above implements the basic walk. Real resolvers also handle glue records (A records for name servers embedded in referral responses) so they don’t need a second hierarchy walk just to resolve the name server’s IP address.</p></li>
@@ -657,9 +147,7 @@ Resolver:
 </ul>
 <p>The most important omission in our implementation, however, is security. DNS was designed without it; <a href="../glossary/index.html#dnssec">DNSSEC</a> adds cryptographic signatures to prevent spoofing and cache poisoning.</p>
 <section class="exercises">
-</section>
-<section id="dns-exercises" class="level2" data-number="W.8">
-<h2 data-number="W.8" class="anchored" data-anchor-id="dns-exercises"><span class="header-section-number">W.8</span> Exercises</h2>
+<h2 data-number="W.8" id="dns-exercises"><span class="header-section-number">W.8</span> Exercises</h2>
 <ol type="1">
 <li><p>In the basic simulation, look up the same domain three times in a row. On which lookups is the cache hit? Now look up a domain whose TTL is 1 second, wait 2 seconds, and look it up again. What happens? (Hint: check how <code>CacheEntry.is_expired</code> uses the simulation clock.)</p></li>
 <li><p>The simplified resolver matches the <em>longest</em> zone suffix. For example, <code>api.example.com</code> would match <code>example.com</code> before <code>.com</code>. Construct a test with zones <code>"."</code>, <code>"com"</code>, and <code>"example.com"</code>. Query for <code>api.example.com</code> and trace which server handles it and why.</p></li>
@@ -669,501 +157,7 @@ Resolver:
 </ol>
 </section>
 
-
-</section>
-
-</main> <!-- /main -->
-<script id="quarto-html-after-body" type="application/javascript">
-  window.document.addEventListener("DOMContentLoaded", function (event) {
-    const icon = "";
-    const anchorJS = new window.AnchorJS();
-    anchorJS.options = {
-      placement: 'right',
-      icon: icon
-    };
-    anchorJS.add('.anchored');
-    const isCodeAnnotation = (el) => {
-      for (const clz of el.classList) {
-        if (clz.startsWith('code-annotation-')) {                     
-          return true;
-        }
-      }
-      return false;
-    }
-    const onCopySuccess = function(e) {
-      // button target
-      const button = e.trigger;
-      // don't keep focus
-      button.blur();
-      // flash "checked"
-      button.classList.add('code-copy-button-checked');
-      var currentTitle = button.getAttribute("title");
-      button.setAttribute("title", "Copied!");
-      let tooltip;
-      if (window.bootstrap) {
-        button.setAttribute("data-bs-toggle", "tooltip");
-        button.setAttribute("data-bs-placement", "left");
-        button.setAttribute("data-bs-title", "Copied!");
-        tooltip = new bootstrap.Tooltip(button, 
-          { trigger: "manual", 
-            customClass: "code-copy-button-tooltip",
-            offset: [0, -8]});
-        tooltip.show();    
-      }
-      setTimeout(function() {
-        if (tooltip) {
-          tooltip.hide();
-          button.removeAttribute("data-bs-title");
-          button.removeAttribute("data-bs-toggle");
-          button.removeAttribute("data-bs-placement");
-        }
-        button.setAttribute("title", currentTitle);
-        button.classList.remove('code-copy-button-checked');
-      }, 1000);
-      // clear code selection
-      e.clearSelection();
-    }
-    const getTextToCopy = function(trigger) {
-      const outerScaffold = trigger.parentElement.cloneNode(true);
-      const codeEl = outerScaffold.querySelector('code');
-      for (const childEl of codeEl.children) {
-        if (isCodeAnnotation(childEl)) {
-          childEl.remove();
-        }
-      }
-      return codeEl.innerText;
-    }
-    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
-      text: getTextToCopy
-    });
-    clipboard.on('success', onCopySuccess);
-    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
-      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
-        text: getTextToCopy,
-        container: window.document.getElementById('quarto-embedded-source-code-modal')
-      });
-      clipboardModal.on('success', onCopySuccess);
-    }
-      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
-      var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp('/' + window.location.host + '/');
-      var isInternal = (href) => {
-          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
-      }
-      // Inspect non-navigation links and adorn them if external
-      window.quartoDecorateExternalLinks = function (root) {
-     var links = (root || window.document).querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
-      for (var i=0; i<links.length; i++) {
-        const link = links[i];
-        if (!isInternal(link.href)) {
-          // undo the damage that might have been done by quarto-nav.js in the case of
-          // links that we want to consider external
-          if (link.dataset.originalHref !== undefined) {
-            link.href = link.dataset.originalHref;
-          }
-          if (!link.classList.contains('no-external-icon')) {
-          }
-        }
-      }
-      };
-      window.quartoDecorateExternalLinks(window.document);
-    // Esc closes the popup (WCAG 1.4.13) and focus leaving both trigger and
-    // popup closes it (WCAG 2.4.11); tippy handles neither for interactive popups.
-    const hideOnEscAndFocusOut = {
-      name: 'hideOnEscAndFocusOut',
-      defaultValue: true,
-      fn(instance) {
-        const dismiss = () => {
-          // A show scheduled by the trigger delay would otherwise reopen it
-          instance.clearDelayTimeouts();
-          instance.hide();
-        };
-        const onKeyDown = (event) => {
-          if (event.key !== 'Escape') {
-            return;
-          }
-          // Keep Esc from also reaching page handlers (e.g. reveal.js overview),
-          // except an open reveal.js slide menu, which Esc should close too.
-          // The menu handles keys only when its keyboard option is on.
-          const menuHandlesEsc = window.Reveal?.getPlugin?.('menu')?.isOpen() &&
-            window.Reveal.getConfig().menu?.keyboard !== false;
-          if (!menuHandlesEsc) {
-            event.stopPropagation();
-          }
-          if (instance.popper.contains(window.document.activeElement)) {
-            // Disabled while refocusing so the focus trigger does not reopen it
-            instance.disable();
-            instance.reference.focus();
-            instance.enable();
-          }
-          dismiss();
-        };
-        const onFocusOut = (event) => {
-          const target = event.relatedTarget;
-          if (target && !instance.reference.contains(target) &&
-              !instance.popper.contains(target)) {
-            dismiss();
-          }
-        };
-        // On the trigger too: a click trigger (code-annotations: select) has no
-        // blur handling. Attached for the instance's lifetime so leaving the
-        // trigger also cancels a show still pending on the trigger delay.
-        instance.reference.addEventListener('focusout', onFocusOut);
-        return {
-          onShow() {
-            window.document.addEventListener('keydown', onKeyDown, true);
-            instance.popper.addEventListener('focusout', onFocusOut);
-          },
-          onHide() {
-            window.document.removeEventListener('keydown', onKeyDown, true);
-            instance.popper.removeEventListener('focusout', onFocusOut);
-          },
-          onDestroy() {
-            instance.reference.removeEventListener('focusout', onFocusOut);
-          },
-        };
-      },
-    };
-    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
-      const config = {
-        allowHTML: true,
-        maxWidth: 500,
-        delay: 100,
-        arrow: false,
-        appendTo: function(el) {
-            return el.parentElement;
-        },
-        interactive: true,
-        interactiveBorder: 10,
-        theme: 'quarto',
-        placement: 'bottom-start',
-        plugins: [hideOnEscAndFocusOut],
-      };
-      if (contentFn) {
-        config.content = contentFn;
-      }
-      if (onTriggerFn) {
-        config.onTrigger = onTriggerFn;
-      }
-      if (onUntriggerFn) {
-        config.onUntrigger = onUntriggerFn;
-      }
-      window.tippy(el, config); 
-    }
-    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
-    for (var i=0; i<noterefs.length; i++) {
-      const ref = noterefs[i];
-      tippyHover(ref, function() {
-        // use id or data attribute instead here
-        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
-        try { href = new URL(href).hash; } catch {}
-        const id = href.replace(/^#\/?/, "");
-        const note = window.document.getElementById(id);
-        if (note) {
-          return note.innerHTML;
-        } else {
-          return "";
-        }
-      });
-    }
-    const xrefs = window.document.querySelectorAll('a.quarto-xref');
-    const processXRef = (id, note) => {
-      // Strip column container classes
-      const stripColumnClz = (el) => {
-        el.classList.remove("page-full", "page-columns");
-        if (el.children) {
-          for (const child of el.children) {
-            stripColumnClz(child);
-          }
-        }
-      }
-      stripColumnClz(note)
-      if (id === null || id.startsWith('sec-')) {
-        // Special case sections, only their first couple elements
-        const container = document.createElement("div");
-        if (note.children && note.children.length > 2) {
-          container.appendChild(note.children[0].cloneNode(true));
-          for (let i = 1; i < note.children.length; i++) {
-            const child = note.children[i];
-            if (child.tagName === "P" && child.innerText === "") {
-              continue;
-            } else {
-              container.appendChild(child.cloneNode(true));
-              break;
-            }
-          }
-          if (window.Quarto?.typesetMath) {
-            window.Quarto.typesetMath(container);
-          }
-          return container.innerHTML
-        } else {
-          if (window.Quarto?.typesetMath) {
-            window.Quarto.typesetMath(note);
-          }
-          return note.innerHTML;
-        }
-      } else {
-        // Remove any anchor links if they are present
-        const anchorLink = note.querySelector('a.anchorjs-link');
-        if (anchorLink) {
-          anchorLink.remove();
-        }
-        if (window.Quarto?.typesetMath) {
-          window.Quarto.typesetMath(note);
-        }
-        if (note.classList.contains("callout")) {
-          return note.outerHTML;
-        } else {
-          return note.innerHTML;
-        }
-      }
-    }
-    for (var i=0; i<xrefs.length; i++) {
-      const xref = xrefs[i];
-      tippyHover(xref, undefined, function(instance) {
-        instance.disable();
-        let url = xref.getAttribute('href');
-        let hash = undefined; 
-        if (url.startsWith('#')) {
-          hash = url;
-        } else {
-          try { hash = new URL(url).hash; } catch {}
-        }
-        if (hash) {
-          const id = hash.replace(/^#\/?/, "");
-          const note = window.document.getElementById(id);
-          if (note !== null) {
-            try {
-              const html = processXRef(id, note.cloneNode(true));
-              instance.setContent(html);
-            } finally {
-              instance.enable();
-              instance.show();
-            }
-          } else {
-            // See if we can fetch this
-            fetch(url.split('#')[0])
-            .then(res => res.text())
-            .then(html => {
-              const parser = new DOMParser();
-              const htmlDoc = parser.parseFromString(html, "text/html");
-              const note = htmlDoc.getElementById(id);
-              if (note !== null) {
-                const html = processXRef(id, note);
-                instance.setContent(html);
-              } 
-            }).finally(() => {
-              instance.enable();
-              instance.show();
-            });
-          }
-        } else {
-          // See if we can fetch a full url (with no hash to target)
-          // This is a special case and we should probably do some content thinning / targeting
-          fetch(url)
-          .then(res => res.text())
-          .then(html => {
-            const parser = new DOMParser();
-            const htmlDoc = parser.parseFromString(html, "text/html");
-            const note = htmlDoc.querySelector('main.content');
-            if (note !== null) {
-              // This should only happen for chapter cross references
-              // (since there is no id in the URL)
-              // remove the first header
-              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
-                note.children[0].remove();
-              }
-              const html = processXRef(null, note);
-              instance.setContent(html);
-            } 
-          }).finally(() => {
-            instance.enable();
-            instance.show();
-          });
-        }
-      }, function(instance) {
-      });
-    }
-        let selectedAnnoteEl;
-        const selectorForAnnotation = ( cell, annotation) => {
-          let cellAttr = 'data-code-cell="' + cell + '"';
-          let lineAttr = 'data-code-annotation="' +  annotation + '"';
-          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
-          return selector;
-        }
-        const selectCodeLines = (annoteEl) => {
-          const doc = window.document;
-          const targetCell = annoteEl.getAttribute("data-target-cell");
-          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
-          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
-          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
-          const lineIds = lines.map((line) => {
-            return targetCell + "-" + line;
-          })
-          // Each band is positioned against its own containing block, which is
-          // not the offsetParent of the lines, so place it from client rects.
-          const placeBand = (band, firstEl, lastEl, codeBlock) => {
-            const container = band.offsetParent;
-            if (container === null) {
-              return;
-            }
-            const containerRect = container.getBoundingClientRect();
-            // Reveal.js scales slides with a transform, so convert client
-            // pixels back to the CSS pixels of the container.
-            const scale = containerRect.height / container.offsetHeight || 1;
-            const firstRect = firstEl.getBoundingClientRect();
-            const lastRect = lastEl.getBoundingClientRect();
-            const top = (firstRect.top - containerRect.top) / scale - container.clientTop + container.scrollTop;
-            const height = (lastRect.bottom - firstRect.top) / scale;
-            band.style.top = top - 2 + "px";
-            band.style.height = height + 4 + "px";
-            if (codeBlock) {
-              // Without the copy button wrapper, the containing block is wider
-              // than the code block, so span the code block explicitly.
-              const blockRect = codeBlock.getBoundingClientRect();
-              band.style.left = (blockRect.left - containerRect.left) / scale - container.clientLeft + container.scrollLeft + "px";
-              band.style.width = blockRect.width / scale + "px";
-            }
-          };
-          if (lineIds.length > 0) {
-            const el = window.document.getElementById(lineIds[0]);
-            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
-            const parent = el.parentElement.parentElement;
-            // cook up a div (if necessary) and position it
-            let div = window.document.getElementById("code-annotation-line-highlight");
-            if (div === null) {
-              div = window.document.createElement("div");
-              div.setAttribute("id", "code-annotation-line-highlight");
-              div.style.position = 'absolute';
-              parent.appendChild(div);
-            }
-            placeBand(div, el, lastEl, parent.closest("div.sourceCode") || parent);
-            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
-            if (gutterDiv === null) {
-              gutterDiv = window.document.createElement("div");
-              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
-              gutterDiv.style.position = 'absolute';
-              const codeCell = window.document.getElementById(targetCell);
-              const gutter = codeCell.querySelector('.code-annotation-gutter');
-              gutter.appendChild(gutterDiv);
-            }
-            placeBand(gutterDiv, el, lastEl);
-            selectedAnnoteEl = annoteEl;
-          }
-        };
-        const unselectCodeLines = () => {
-          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
-          elementsIds.forEach((elId) => {
-            const div = window.document.getElementById(elId);
-            if (div) {
-              div.remove();
-            }
-          });
-          selectedAnnoteEl = undefined;
-        };
-          // Handle positioning of the toggle
-      window.addEventListener(
-        "resize",
-        throttle(() => {
-          elRect = undefined;
-          if (selectedAnnoteEl) {
-            selectCodeLines(selectedAnnoteEl);
-          }
-        }, 10)
-      );
-      function throttle(fn, ms) {
-      let throttle = false;
-      let timer;
-        return (...args) => {
-          if(!throttle) { // first call gets through
-              fn.apply(this, args);
-              throttle = true;
-          } else { // all the others get throttled
-              if(timer) clearTimeout(timer); // cancel #2
-              timer = setTimeout(() => {
-                fn.apply(this, args);
-                timer = throttle = false;
-              }, ms);
-          }
-        };
-      }
-        // Attach click handler to the DT
-        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
-        for (const annoteDlNode of annoteDls) {
-          annoteDlNode.addEventListener('click', (event) => {
-            const clickedEl = event.target;
-            if (clickedEl !== selectedAnnoteEl) {
-              unselectCodeLines();
-              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
-              if (activeEl) {
-                activeEl.classList.remove('code-annotation-active');
-              }
-              selectCodeLines(clickedEl);
-              clickedEl.classList.add('code-annotation-active');
-            } else {
-              // Unselect the line
-              unselectCodeLines();
-              clickedEl.classList.remove('code-annotation-active');
-            }
-          });
-        }
-    const findCites = (el) => {
-      const parentEl = el.parentElement;
-      if (parentEl) {
-        const cites = parentEl.dataset.cites;
-        if (cites) {
-          return {
-            el,
-            cites: cites.split(' ')
-          };
-        } else {
-          return findCites(el.parentElement)
-        }
-      } else {
-        return undefined;
-      }
-    };
-    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
-    for (var i=0; i<bibliorefs.length; i++) {
-      const ref = bibliorefs[i];
-      const citeInfo = findCites(ref);
-      if (citeInfo) {
-        tippyHover(citeInfo.el, function() {
-          var popup = window.document.createElement('div');
-          citeInfo.cites.forEach(function(cite) {
-            var citeDiv = window.document.createElement('div');
-            citeDiv.classList.add('hanging-indent');
-            citeDiv.classList.add('csl-entry');
-            var biblioDiv = window.document.getElementById('ref-' + cite);
-            if (biblioDiv) {
-              citeDiv.innerHTML = biblioDiv.innerHTML;
-            }
-            popup.appendChild(citeDiv);
-          });
-          return popup.innerHTML;
-        });
-      }
-    }
-  });
-  </script>
-  <script type="application/javascript">
-  window.quartoScrollableRegionsLabels = {"code":"Scrollable code","output":"Scrollable output"};
-  </script>
-<nav class="page-navigation" aria-label="Page">
-  <div class="nav-page nav-page-previous">
-      <a href="../tcp/index.html" class="pagination-link" aria-label="Building TCP on UDP">
-        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text"><span class="chapter-number">V</span>&nbsp; <span class="chapter-title">Building TCP on UDP</span></span>
-      </a>          
-  </div>
-  <div class="nav-page nav-page-next">
-      <a href="../ntp/index.html" class="pagination-link" aria-label="Network Time Protocol (NTP)">
-        <span class="nav-page-text"><span class="chapter-number">X</span>&nbsp; <span class="chapter-title">Network Time Protocol (NTP)</span></span> <i class="bi bi-arrow-right-short"></i>
-      </a>
-  </div>
-</nav>
-</div> <!-- /content -->
+</main>
 
 
-
-
-<footer class="footer"><div class="nav-footer"><div class="nav-footer-center"><div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/gvwilson/sdxpy/edit/main/dns/index.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/gvwilson/sdxpy/blob/main/dns/index.qmd" class="toc-action"><i class="bi empty"></i>View source</a></li><li><a href="https://github.com/gvwilson/sdxpy/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></div></div></footer></body></html>
+</body></html>

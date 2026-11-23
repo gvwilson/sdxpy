@@ -1,571 +1,40 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head><meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>A Simple Filesystem</title>
+  <link rel="stylesheet" href="../mccole/mccole-book.css">
 
-<meta charset="utf-8">
-<meta name="generator" content="quarto-1.11.9">
-
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-
-
-<title>Appendix Y — A Simple Filesystem – Software Design by Example</title>
-<style>
-/* Default styles provided by pandoc.
-** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
-*/
-span.smallcaps{font-variant: small-caps;}
-div.columns{display: flex; gap: 1.5em;}
-div.column{flex: auto;}
-@media screen {
-div.columns{gap: min(4vw, 1.5em);}
-div.column{overflow-x: auto;}
-}
-div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
-ul.task-list{list-style: none;}
-ul.task-list li input[type="checkbox"] {
-  width: 0.8em;
-  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
-  vertical-align: middle;
-}
-/* CSS for syntax highlighting */
-html { -webkit-text-size-adjust: 100%; }
-pre > code.sourceCode { white-space: pre; position: relative; }
-pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
-pre > code.sourceCode > span:empty { height: 1.2em; }
-.sourceCode { overflow: visible; }
-code.sourceCode > span { color: inherit; text-decoration: inherit; }
-div.sourceCode { margin: 1em 0; }
-pre.sourceCode { margin: 0; }
-@media screen {
-div.sourceCode { overflow: auto; }
-}
-@media print {
-pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
-}
-pre.numberSource code
-  { counter-reset: source-line 0; }
-pre.numberSource code > span
-  { position: relative; left: -4em; counter-increment: source-line; }
-pre.numberSource code > span > a:first-child::before
-  { content: counter(source-line);
-    position: relative; left: -1em; text-align: right; vertical-align: baseline;
-    border: none; display: inline-block;
-    -webkit-touch-callout: none; -webkit-user-select: none;
-    -khtml-user-select: none; -moz-user-select: none;
-    -ms-user-select: none; user-select: none;
-    padding: 0 4px; width: 4em;
-  }
-pre.numberSource { margin-left: 3em;  padding-left: 4px; }
-div.sourceCode
-  {   }
-@media screen {
-pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
-}
-</style>
-
-
-<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
-<script src="../site_libs/quarto-nav/headroom.min.js"></script>
-<script src="../site_libs/clipboard/clipboard.min.js"></script>
-<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
-<script src="../site_libs/quarto-search/fuse.min.js"></script>
-<script src="../site_libs/quarto-search/quarto-search.js"></script>
-<meta name="quarto:offset" content="../">
-<link href="../slides/index.html" rel="next">
-<link href="../ntp/index.html" rel="prev">
-<script src="../site_libs/quarto-html/quarto.js" type="module"></script>
-<script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
-<script src="../site_libs/quarto-html/scrollable-regions/scrollable-regions.js" type="module"></script>
-<script src="../site_libs/quarto-html/popper.min.js"></script>
-<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
-<script src="../site_libs/quarto-html/anchor.min.js"></script>
-<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="../site_libs/quarto-html/quarto-syntax-highlighting-63b5708e65d6cd79cd7618c58d0c21e7.css" rel="stylesheet" id="quarto-text-highlighting-styles">
-<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
-<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../site_libs/bootstrap/bootstrap-01a495efc5497ac6e3f5457e7ed18e65.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
-<script id="quarto-search-options" type="application/json">{
-  "location": "sidebar",
-  "copy-button": false,
-  "collapse-after": 3,
-  "panel-placement": "start",
-  "type": "textbox",
-  "limit": 50,
-  "keyboard-shortcut": [
-    "f",
-    "/",
-    "s"
-  ],
-  "show-item-context": false,
-  "language": {
-    "search-no-results-text": "No results",
-    "search-matching-documents-text": "matching documents",
-    "search-copy-link-title": "Copy link to search",
-    "search-hide-matches-text": "Hide additional matches",
-    "search-more-match-text": "more match in this document",
-    "search-more-matches-text": "more matches in this document",
-    "search-clear-button-title": "Clear",
-    "search-text-placeholder": "",
-    "search-detached-cancel-button-title": "Cancel",
-    "search-submit-button-title": "Submit",
-    "search-label": "Search"
-  }
-}</script>
-
-  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
-  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-chtml.js" type="text/javascript"></script>
-
-<script type="text/javascript">
-const typesetMath = (el) => {
-  if (window.MathJax) {
-    // MathJax Typeset
-    window.MathJax.typeset([el]);
-  } else if (window.katex) {
-    // KaTeX Render
-    var mathElements = el.getElementsByClassName("math");
-    var macros = [];
-    for (var i = 0; i < mathElements.length; i++) {
-      var texText = mathElements[i].firstChild;
-      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
-        window.katex.render(texText.data, mathElements[i], {
-          displayMode: mathElements[i].classList.contains('display'),
-          throwOnError: false,
-          macros: macros,
-          fleqn: false
-        });
-      }
-    }
-  }
-}
-window.Quarto = {
-  typesetMath
-};
-</script>
-
-<link rel="stylesheet" href="../mccole/book.css">
 </head>
-
-<body class="nav-sidebar floating quarto-light"><a id="quarto-skip-link" class="visually-hidden-focusable" href="#quarto-document-content">Skip to main content</a>
-
-<div id="quarto-search-results"></div>
-  <header id="quarto-header" class="headroom fixed-top">
-  <nav class="quarto-secondary-nav" aria-label="Toolbar">
-    <div class="container-fluid d-flex">
-      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
-        <i class="bi bi-layout-text-sidebar-reverse"></i>
-      </button>
-        <nav class="quarto-page-breadcrumbs" aria-label="Breadcrumbs"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../license/index.html">Appendices</a></li><li class="breadcrumb-item"><a href="../fs/index.html"><span class="chapter-number">Y</span>&nbsp; <span class="chapter-title">A Simple Filesystem</span></a></li></ol></nav>
-        <a class="flex-grow-1" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
-        </a>
-      <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
-        <i class="bi bi-search"></i>
-      </button>
+<body>
+<header class="topbar">
+  <nav class="topnav">
+    <a class="topnav-item" href="../index.html">Home</a>
+    <div class="topnav-dropdown">
+      <span class="topnav-item">Chapters</span>
+      <div class="topnav-menu"><ul class="topnav-list"><li><a href="../intro/index.html">Introduction</a></li><li><a href="../oop/index.html">Objects and Classes</a></li><li><a href="../dup/index.html">Finding Duplicate Files</a></li><li><a href="../glob/index.html">Matching Patterns</a></li><li><a href="../parse/index.html">Parsing Text</a></li><li><a href="../test/index.html">Running Tests</a></li><li><a href="../interp/index.html">An Interpreter</a></li><li><a href="../func/index.html">Functions and Closures</a></li><li><a href="../protocols/index.html">Protocols</a></li><li><a href="../archive/index.html">A File Archiver</a></li><li><a href="../check/index.html">An HTML Validator</a></li><li><a href="../template/index.html">A Template Expander</a></li><li><a href="../lint/index.html">A Code Linter</a></li><li><a href="../layout/index.html">Page Layout</a></li><li><a href="../perf/index.html">Performance Profiling</a></li><li><a href="../persist/index.html">Object Persistence</a></li><li><a href="../binary/index.html">Binary Data</a></li><li><a href="../db/index.html">A Database</a></li><li><a href="../build/index.html">A Build Manager</a></li><li><a href="../pack/index.html">A Package Manager</a></li><li><a href="../ftp/index.html">Transferring Files</a></li><li><a href="../http/index.html">Serving Web Pages</a></li><li><a href="../viewer/index.html">A File Viewer</a></li><li><a href="../undo/index.html">Undo and Redo</a></li><li><a href="../vm/index.html">A Virtual Machine</a></li><li><a href="../debugger/index.html">A Debugger</a></li><li><a href="../finale/index.html">Conclusion</a></li></ul></div>
+    </div>
+    <div class="topnav-dropdown">
+      <span class="topnav-item">Appendices</span>
+      <div class="topnav-menu"><ul class="topnav-list"><li><a href="../license/index.html">License</a></li><li><a href="../conduct/index.html">Code of Conduct</a></li><li><a href="../contributing/index.html">Contributing</a></li><li><a href="../bibliography/index.html">Bibliography</a></li><li><a href="../glossary/index.html">Glossary</a></li><li><a href="../syllabus/index.html">Syllabus</a></li><li><a href="../bonus/index.html">Bonus Material</a></li><li><a href="../observe/index.html">Observers</a></li><li><a href="../docgen/index.html">Generating Documentation</a></li><li><a href="../cache/index.html">A File Cache</a></li><li><a href="../concur/index.html">Concurrency</a></li><li><a href="../mapreduce/index.html">MapReduce Framework</a></li><li><a href="../msgque/index.html">A Publish-Subscribe Message Queue</a></li><li><a href="../worksteal/index.html">A Work-Stealing Scheduler</a></li><li><a href="../tracing/index.html">Distributed Tracing</a></li><li><a href="../crdt/index.html">Conflict-Free Replicated Data Types</a></li><li><a href="../oauth/index.html">OAuth</a></li><li><a href="../distlock/index.html">Distributed Lock Manager</a></li><li><a href="../torrent/index.html">BitTorrent Protocol</a></li><li><a href="../eventual/index.html">Eventually Consistent Key-Value Store</a></li><li><a href="../saga/index.html">The Saga Pattern</a></li><li><a href="../tcp/index.html">Building TCP on UDP</a></li><li><a href="../dns/index.html">Domain Name System (DNS)</a></li><li><a href="../ntp/index.html">Network Time Protocol (NTP)</a></li><li><a href="../fs/index.html">A Simple Filesystem</a></li><li><a href="../slides/index.html">Slides</a></li></ul></div>
+    </div>
+    <div class="topnav-dropdown">
+      <span class="topnav-item">Contents</span>
+      <div class="topnav-menu"><ul>
+<li><a href="#fs-disk" id="toc-fs-disk"><span class="header-section-number">Y.1</span> A Disk of Bytes</a></li>
+<li><a href="#fs-super" id="toc-fs-super"><span class="header-section-number">Y.2</span> The Superblock</a></li>
+<li><a href="#fs-free" id="toc-fs-free"><span class="header-section-number">Y.3</span> Free Blocks</a></li>
+<li><a href="#fs-inode" id="toc-fs-inode"><span class="header-section-number">Y.4</span> Inodes and Files</a></li>
+<li><a href="#fs-dir" id="toc-fs-dir"><span class="header-section-number">Y.5</span> Directories</a></li>
+<li><a href="#fs-path" id="toc-fs-path"><span class="header-section-number">Y.6</span> Paths and Operations</a></li>
+<li><a href="#fs-test" id="toc-fs-test"><span class="header-section-number">Y.7</span> Testing</a></li>
+<li><a href="#fs-summary" id="toc-fs-summary"><span class="header-section-number">Y.8</span> Summary</a></li>
+<li><a href="#fs-exercises" id="toc-fs-exercises"><span class="header-section-number">Y.9</span> Exercises</a></li>
+</ul></div>
     </div>
   </nav>
 </header>
-<!-- content -->
-<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article">
-<!-- sidebar -->
-  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto" aria-label="Site">
-    <div class="pt-lg-2 mt-2 text-left sidebar-header">
-    <div class="sidebar-title mb-0 py-0">
-      <a href="../">Software Design by Example</a> 
-        <div class="sidebar-tools-main">
-    <a href="https://github.com/gvwilson/sdxpy" title="Source Code" class="quarto-navigation-tool px-1" aria-label="Source Code"><i class="bi bi-github"></i></a>
-</div>
-    </div>
-      </div>
-        <div class="mt-2 flex-shrink-0 align-items-center">
-        <div class="sidebar-search">
-        <div id="quarto-search" class="" title="Search"></div>
-        </div>
-        </div>
-    <div class="sidebar-menu-container"> 
-    <ul class="list-unstyled mt-1">
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Overview</span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../intro/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">1</span>&nbsp; <span class="chapter-title">Introduction</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../oop/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">Objects and Classes</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../dup/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">3</span>&nbsp; <span class="chapter-title">Finding Duplicate Files</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../glob/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">Matching Patterns</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../parse/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">Parsing Text</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../test/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">6</span>&nbsp; <span class="chapter-title">Running Tests</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../interp/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">7</span>&nbsp; <span class="chapter-title">An Interpreter</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../func/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">8</span>&nbsp; <span class="chapter-title">Functions and Closures</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../protocols/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">9</span>&nbsp; <span class="chapter-title">Protocols</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../archive/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">10</span>&nbsp; <span class="chapter-title">A File Archiver</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../check/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">11</span>&nbsp; <span class="chapter-title">An HTML Validator</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../template/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">12</span>&nbsp; <span class="chapter-title">A Template Expander</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../lint/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">13</span>&nbsp; <span class="chapter-title">A Code Linter</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../layout/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">14</span>&nbsp; <span class="chapter-title">Page Layout</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../perf/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">15</span>&nbsp; <span class="chapter-title">Performance Profiling</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../persist/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">16</span>&nbsp; <span class="chapter-title">Object Persistence</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../binary/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">17</span>&nbsp; <span class="chapter-title">Binary Data</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../db/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">18</span>&nbsp; <span class="chapter-title">A Database</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../build/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">19</span>&nbsp; <span class="chapter-title">A Build Manager</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../pack/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">20</span>&nbsp; <span class="chapter-title">A Package Manager</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../ftp/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">21</span>&nbsp; <span class="chapter-title">Transferring Files</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../http/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">22</span>&nbsp; <span class="chapter-title">Serving Web Pages</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../viewer/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">23</span>&nbsp; <span class="chapter-title">A File Viewer</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../undo/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">24</span>&nbsp; <span class="chapter-title">Undo and Redo</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../vm/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">25</span>&nbsp; <span class="chapter-title">A Virtual Machine</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../debugger/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">26</span>&nbsp; <span class="chapter-title">A Debugger</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../finale/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">27</span>&nbsp; <span class="chapter-title">Conclusion</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item sidebar-item-section">
-      <div class="sidebar-item-container"> 
-            <button type="button" class="sidebar-item-text sidebar-item-toggle sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" aria-controls="quarto-sidebar-section-1" aria-expanded="true">
- <span class="menu-text" id="quarto-sidebar-section-1-label">Appendices</span><i class="bi bi-chevron-right" aria-hidden="true"></i></button>
-      </div>
-      <ul id="quarto-sidebar-section-1" aria-labelledby="quarto-sidebar-section-1-label" class="collapse list-unstyled sidebar-section depth1 show">  
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../license/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">A</span>&nbsp; <span class="chapter-title">License</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../conduct/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">B</span>&nbsp; <span class="chapter-title">Code of Conduct</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../contributing/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">C</span>&nbsp; <span class="chapter-title">Contributing</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../bibliography/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">D</span>&nbsp; <span class="chapter-title">Bibliography</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../glossary/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">E</span>&nbsp; <span class="chapter-title">Glossary</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../syllabus/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">F</span>&nbsp; <span class="chapter-title">Syllabus</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../bonus/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">G</span>&nbsp; <span class="chapter-title">Bonus Material</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../observe/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">H</span>&nbsp; <span class="chapter-title">Observers</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../docgen/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">I</span>&nbsp; <span class="chapter-title">Generating Documentation</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../cache/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">J</span>&nbsp; <span class="chapter-title">A File Cache</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../concur/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">K</span>&nbsp; <span class="chapter-title">Concurrency</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../mapreduce/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">L</span>&nbsp; <span class="chapter-title">MapReduce Framework</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../msgque/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">M</span>&nbsp; <span class="chapter-title">A Publish-Subscribe Message Queue</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../worksteal/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">N</span>&nbsp; <span class="chapter-title">A Work-Stealing Scheduler</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../tracing/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">O</span>&nbsp; <span class="chapter-title">Distributed Tracing</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../crdt/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">P</span>&nbsp; <span class="chapter-title">Conflict-Free Replicated Data Types</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../oauth/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">Q</span>&nbsp; <span class="chapter-title">OAuth</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../distlock/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">R</span>&nbsp; <span class="chapter-title">Distributed Lock Manager</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../torrent/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">S</span>&nbsp; <span class="chapter-title">BitTorrent Protocol</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../eventual/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">T</span>&nbsp; <span class="chapter-title">Eventually Consistent Key-Value Store</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../saga/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">U</span>&nbsp; <span class="chapter-title">The Saga Pattern</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../tcp/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">V</span>&nbsp; <span class="chapter-title">Building TCP on UDP</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../dns/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">W</span>&nbsp; <span class="chapter-title">Domain Name System (DNS)</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../ntp/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">X</span>&nbsp; <span class="chapter-title">Network Time Protocol (NTP)</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../fs/index.html" class="sidebar-item-text sidebar-link active">
- <span class="menu-text"><span class="chapter-number">Y</span>&nbsp; <span class="chapter-title">A Simple Filesystem</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../slides/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">Z</span>&nbsp; <span class="chapter-title">Slides</span></span></a>
-  </div>
-</li>
-      </ul>
-  </li>
-    </ul>
-    </div>
-</nav>
-<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
-<!-- margin-sidebar -->
-    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
-        <nav id="TOC" role="doc-toc" aria-labelledby="toc-title" class="toc-active">
-    <h2 id="toc-title">Table of contents</h2>
-   
-  <ul>
-  <li><a href="#fs-disk" id="toc-fs-disk" class="nav-link active" data-scroll-target="#fs-disk"><span class="header-section-number">Y.1</span> A Disk of Bytes</a></li>
-  <li><a href="#fs-super" id="toc-fs-super" class="nav-link" data-scroll-target="#fs-super"><span class="header-section-number">Y.2</span> The Superblock</a></li>
-  <li><a href="#fs-free" id="toc-fs-free" class="nav-link" data-scroll-target="#fs-free"><span class="header-section-number">Y.3</span> Free Blocks</a></li>
-  <li><a href="#fs-inode" id="toc-fs-inode" class="nav-link" data-scroll-target="#fs-inode"><span class="header-section-number">Y.4</span> Inodes and Files</a></li>
-  <li><a href="#fs-dir" id="toc-fs-dir" class="nav-link" data-scroll-target="#fs-dir"><span class="header-section-number">Y.5</span> Directories</a></li>
-  <li><a href="#fs-path" id="toc-fs-path" class="nav-link" data-scroll-target="#fs-path"><span class="header-section-number">Y.6</span> Paths and Operations</a></li>
-  <li><a href="#fs-test" id="toc-fs-test" class="nav-link" data-scroll-target="#fs-test"><span class="header-section-number">Y.7</span> Testing</a></li>
-  <li><a href="#fs-summary" id="toc-fs-summary" class="nav-link" data-scroll-target="#fs-summary"><span class="header-section-number">Y.8</span> Summary</a></li>
-  <li><a href="#fs-exercises" id="toc-fs-exercises" class="nav-link" data-scroll-target="#fs-exercises"><span class="header-section-number">Y.9</span> Exercises</a>
-  <ul class="collapse">
-  <li><a href="#delete-a-directory" id="toc-delete-a-directory" class="nav-link" data-scroll-target="#delete-a-directory"><span class="header-section-number">Y.9.1</span> Delete a Directory</a></li>
-  <li><a href="#persist-the-bitmap" id="toc-persist-the-bitmap" class="nav-link" data-scroll-target="#persist-the-bitmap"><span class="header-section-number">Y.9.2</span> Persist the Bitmap</a></li>
-  <li><a href="#longer-files" id="toc-longer-files" class="nav-link" data-scroll-target="#longer-files"><span class="header-section-number">Y.9.3</span> Longer Files</a></li>
-  <li><a href="#variable-length-names" id="toc-variable-length-names" class="nav-link" data-scroll-target="#variable-length-names"><span class="header-section-number">Y.9.4</span> Variable-Length Names</a></li>
-  <li><a href="#hard-links" id="toc-hard-links" class="nav-link" data-scroll-target="#hard-links"><span class="header-section-number">Y.9.5</span> Hard Links</a></li>
-  <li><a href="#detect-a-foreign-disk" id="toc-detect-a-foreign-disk" class="nav-link" data-scroll-target="#detect-a-foreign-disk"><span class="header-section-number">Y.9.6</span> Detect a Foreign Disk</a></li>
-  </ul></li>
-  </ul>
-<div class="toc-actions"><ul><li><a href="https://github.com/gvwilson/sdxpy/edit/main/fs/index.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/gvwilson/sdxpy/blob/main/fs/index.qmd" class="toc-action"><i class="bi empty"></i>View source</a></li><li><a href="https://github.com/gvwilson/sdxpy/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
-    </div>
-<!-- main -->
-<main class="content" id="quarto-document-content" tabindex="-1">
-
-<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="Breadcrumbs"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../license/index.html">Appendices</a></li><li class="breadcrumb-item"><a href="../fs/index.html"><span class="chapter-number">Y</span>&nbsp; <span class="chapter-title">A Simple Filesystem</span></a></li></ol></nav>
-<div class="quarto-title">
-<h1 class="title"><span id="sec-fs" class="quarto-section-identifier">Appendix Y — A Simple Filesystem</span></h1>
-</div>
-
-
-
-<div class="quarto-title-meta">
-
-    
-  
-    
-  </div>
-  
-
-
-</header>
-
-
+<main class="content"><header id="title-block-header" class="quarto-title-block"></header>
+<h1 class="title">A Simple Filesystem</h1>
 <div class="syllabus">
 <ul>
 <li>A disk is just a sequence of bytes, but filesystems read and write it in fixed-size blocks.</li>
@@ -578,83 +47,61 @@ window.Quarto = {
 </div>
 <p>Every program reads and writes files, but few of us ever stop to ask what happens in between. When we open a file and then read from it, some piece of software has to figure out where our data lives on a disk, find the bytes, and hand them back to us. This chapter builds a tiny filesystem to show how that piece of software works.</p>
 <p>We will not touch a real disk. Instead, we will use an in-memory array of bytes to <em>simulate</em> one. As <a href="../binary/index.html" class="quarto-xref"><span>Chapter 17</span></a> explains, bytes are just numbers, so a <code>bytearray</code> in Python is a perfectly good stand-in for the raw storage of a physical device. The ideas we build here—blocks, superblocks, inodes, directories—are the same ones used by real filesystems such as ext4 and NTFS.</p>
-<section id="fs-disk" class="level2" data-number="Y.1">
-<h2 data-number="Y.1" class="anchored" data-anchor-id="fs-disk"><span class="header-section-number">Y.1</span> A Disk of Bytes</h2>
+<h2 data-number="Y.1" id="fs-disk"><span class="header-section-number">Y.1</span> A Disk of Bytes</h2>
 <p>A physical disk stores a long sequence of bytes, but reading and writing them one at a time would be painfully slow. Real filesystems therefore group bytes into blocks of a fixed size and always read or write whole blocks at once. Our simulated disk does the same thing:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Disk:</span>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Disk:</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""A fixed-size array of bytes divided into fixed-size blocks."""</span></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, block_size, block_count):</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.block_size <span class="op">=</span> block_size</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.block_count <span class="op">=</span> block_count</span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._data <span class="op">=</span> <span class="bu">bytearray</span>(block_size <span class="op">*</span> block_count)</span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">@property</span></span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> size(<span class="va">self</span>):</span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""The total number of bytes on the disk."""</span></span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="bu">len</span>(<span class="va">self</span>._data)</span>
-<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> read_block(<span class="va">self</span>, block_number):</span>
-<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Return the contents of a block as a ``bytes`` object."""</span></span>
-<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._check_block(block_number)</span>
-<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>        start <span class="op">=</span> block_number <span class="op">*</span> <span class="va">self</span>.block_size</span>
-<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="bu">bytes</span>(<span class="va">self</span>._data[start : start <span class="op">+</span> <span class="va">self</span>.block_size])</span>
-<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> write_block(<span class="va">self</span>, block_number, data):</span>
-<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Overwrite a block with ``data``, padding with zero bytes as needed."""</span></span>
-<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._check_block(block_number)</span>
-<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="bu">len</span>(data) <span class="op">&gt;</span> <span class="va">self</span>.block_size:</span>
-<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>            <span class="cf">raise</span> <span class="pp">ValueError</span>(<span class="st">"data does not fit in a single block"</span>)</span>
-<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>        start <span class="op">=</span> block_number <span class="op">*</span> <span class="va">self</span>.block_size</span>
-<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._data[start : start <span class="op">+</span> <span class="va">self</span>.block_size] <span class="op">=</span> <span class="st">b"</span><span class="ch">\x00</span><span class="st">"</span> <span class="op">*</span> <span class="va">self</span>.block_size</span>
-<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._data[start : start <span class="op">+</span> <span class="bu">len</span>(data)] <span class="op">=</span> data</span>
-<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _check_block(<span class="va">self</span>, block_number):</span>
-<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="kw">not</span> (<span class="dv">0</span> <span class="op">&lt;=</span> block_number <span class="op">&lt;</span> <span class="va">self</span>.block_count):</span>
-<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>            <span class="cf">raise</span> <span class="pp">ValueError</span>(<span class="ss">f"block number </span><span class="sc">{</span>block_number<span class="sc">}</span><span class="ss"> out of range"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, block_size, block_count):</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.block_size <span class="op">=</span> block_size</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.block_count <span class="op">=</span> block_count</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._data <span class="op">=</span> <span class="bu">bytearray</span>(block_size <span class="op">*</span> block_count)</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">@property</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> size(<span class="va">self</span>):</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""The total number of bytes on the disk."""</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="bu">len</span>(<span class="va">self</span>._data)</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> read_block(<span class="va">self</span>, block_number):</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Return the contents of a block as a ``bytes`` object."""</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._check_block(block_number)</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>        start <span class="op">=</span> block_number <span class="op">*</span> <span class="va">self</span>.block_size</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="bu">bytes</span>(<span class="va">self</span>._data[start : start <span class="op">+</span> <span class="va">self</span>.block_size])</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> write_block(<span class="va">self</span>, block_number, data):</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Overwrite a block with ``data``, padding with zero bytes as needed."""</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._check_block(block_number)</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="bu">len</span>(data) <span class="op">&gt;</span> <span class="va">self</span>.block_size:</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>            <span class="cf">raise</span> <span class="pp">ValueError</span>(<span class="st">"data does not fit in a single block"</span>)</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>        start <span class="op">=</span> block_number <span class="op">*</span> <span class="va">self</span>.block_size</span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._data[start : start <span class="op">+</span> <span class="va">self</span>.block_size] <span class="op">=</span> <span class="st">b"</span><span class="ch">\x00</span><span class="st">"</span> <span class="op">*</span> <span class="va">self</span>.block_size</span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._data[start : start <span class="op">+</span> <span class="bu">len</span>(data)] <span class="op">=</span> data</span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _check_block(<span class="va">self</span>, block_number):</span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="kw">not</span> (<span class="dv">0</span> <span class="op">&lt;=</span> block_number <span class="op">&lt;</span> <span class="va">self</span>.block_count):</span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>            <span class="cf">raise</span> <span class="pp">ValueError</span>(<span class="ss">f"block number </span><span class="sc">{</span>block_number<span class="sc">}</span><span class="ss"> out of range"</span>)</span></code></pre></div>
 <p>A <code>Disk</code> is just a <code>bytearray</code> of <code>block_size * block_count</code> bytes. <code>read_block</code> returns one block’s worth of bytes, and <code>write_block</code> overwrites a block, padding with zero bytes if the data we supply is shorter than a block. The <code>_check_block</code> method ensures that block numbers are in the range <code>0</code> to <code>block_count - 1</code>.</p>
-<div class="callout callout-style-simple callout-none no-icon callout-titled" data-markdown="1">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon no-icon"></i>
+<div>
+<blockquote>
+<p><strong>Why Fixed-Size Blocks?</strong></p>
+<p>Grouping bytes into blocks trades a little wasted space for simplicity and speed. If every block is the same size, we can find block <span class="math inline"><em>N</em></span>by multiplying instead of searching: it always starts at byte<span class="math inline"><em>N</em> × <em>B</em></span>, where <span class="math inline"><em>B</em></span>is the block size. The wasted space comes from files that don’t fill their last block, but the trade is almost always worthwhile.</p>
+</blockquote>
 </div>
-<div class="callout-title-container flex-fill">
-<span class="screen-reader-only">None</span>Why Fixed-Size Blocks?
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p>Grouping bytes into blocks trades a little wasted space for simplicity and speed. If every block is the same size, we can find block <span class="math inline">\(N\)</span>by multiplying instead of searching: it always starts at byte<span class="math inline">\(N \times B\)</span>, where <span class="math inline">\(B\)</span>is the block size. The wasted space comes from files that don’t fill their last block, but the trade is almost always worthwhile.</p>
-</div>
-</div>
-</section>
-<section id="fs-super" class="level2" data-number="Y.2">
-<h2 data-number="Y.2" class="anchored" data-anchor-id="fs-super"><span class="header-section-number">Y.2</span> The Superblock</h2>
+<h2 data-number="Y.2" id="fs-super"><span class="header-section-number">Y.2</span> The Superblock</h2>
 <p>The first thing our filesystem needs is a way to recognize itself. If we are handed a <code>bytearray</code> full of bytes, how do we know whether it is one of <em>our</em> filesystems or just random garbage? The answer is to store some <a href="../glossary/index.html#metadata">metadata</a> in the first block:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>BLOCK_SIZE <span class="op">=</span> <span class="dv">32</span></span>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>BLOCK_SIZE <span class="op">=</span> <span class="dv">32</span></span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>NUM_BLOCKS <span class="op">=</span> <span class="dv">64</span></span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>DISK_SIZE <span class="op">=</span> BLOCK_SIZE <span class="op">*</span> NUM_BLOCKS</span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>INODE_SIZE <span class="op">=</span> BLOCK_SIZE</span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>NUM_INODES <span class="op">=</span> <span class="dv">16</span></span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>SUPERBLOCK_BLOCK <span class="op">=</span> <span class="dv">0</span></span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>INODE_TABLE_START <span class="op">=</span> <span class="dv">1</span></span>
-<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>DATA_START <span class="op">=</span> INODE_TABLE_START <span class="op">+</span> NUM_INODES</span>
-<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>MAX_FILE_BLOCKS <span class="op">=</span> <span class="dv">6</span></span>
-<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>NAME_LEN <span class="op">=</span> <span class="dv">12</span></span>
-<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>MAGIC <span class="op">=</span> <span class="bn">0x53504653</span>  <span class="co"># the ASCII bytes "SPFS"</span></span>
-<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>SUPERBLOCK <span class="op">=</span> struct.Struct(<span class="st">"&gt;IIII"</span>)</span>
-<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>INODE <span class="op">=</span> struct.Struct(<span class="st">"&gt;IIIIIIII"</span>)</span>
-<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>DIR_ENTRY <span class="op">=</span> struct.Struct(<span class="st">"&gt;12sI"</span>)</span>
-<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>KIND_FREE <span class="op">=</span> <span class="dv">0</span></span>
-<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>KIND_FILE <span class="op">=</span> <span class="dv">1</span></span>
-<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>KIND_DIR <span class="op">=</span> <span class="dv">2</span></span>
-<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a>ROOT_INODE <span class="op">=</span> <span class="dv">0</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>INODE_SIZE <span class="op">=</span> BLOCK_SIZE</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>NUM_INODES <span class="op">=</span> <span class="dv">16</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>SUPERBLOCK_BLOCK <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>INODE_TABLE_START <span class="op">=</span> <span class="dv">1</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>DATA_START <span class="op">=</span> INODE_TABLE_START <span class="op">+</span> NUM_INODES</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>MAX_FILE_BLOCKS <span class="op">=</span> <span class="dv">6</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>NAME_LEN <span class="op">=</span> <span class="dv">12</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>MAGIC <span class="op">=</span> <span class="bn">0x53504653</span>  <span class="co"># the ASCII bytes "SPFS"</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>SUPERBLOCK <span class="op">=</span> struct.Struct(<span class="st">"&gt;IIII"</span>)</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>INODE <span class="op">=</span> struct.Struct(<span class="st">"&gt;IIIIIIII"</span>)</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>DIR_ENTRY <span class="op">=</span> struct.Struct(<span class="st">"&gt;12sI"</span>)</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>KIND_FREE <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>KIND_FILE <span class="op">=</span> <span class="dv">1</span></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>KIND_DIR <span class="op">=</span> <span class="dv">2</span></span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>ROOT_INODE <span class="op">=</span> <span class="dv">0</span></span></code></pre></div>
 <p>The constant <code>MAGIC</code> is a number chosen so that when it is packed into four bytes it spells <code>"SPFS"</code>. <code>struct.Struct</code> describes how to pack and unpack values; the format string <code>"&gt;IIII"</code> means “four unsigned 32-bit integers in big-endian order”, a topic we first met in <a href="../binary/index.html" class="quarto-xref"><span>Chapter 17</span></a>. Our superblock therefore records:</p>
 <ul>
 <li><p>the magic number used to identify the filesystem;</p></li>
@@ -662,600 +109,73 @@ window.Quarto = {
 <li><p>the number of inodes (which we will meet shortly).</p></li>
 </ul>
 <p>The <code>format</code> method writes a fresh superblock and initializes everything else:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>Formatting first clears the bitmap (which we discuss next) and marks the blocks that hold the superblock and the inode table as being in use. It then writes the superblock into block 0, fills every inode with zeros to mark it as free, and creates the root directory in inode 0.</p>
-</section>
-<section id="fs-free" class="level2" data-number="Y.3">
-<h2 data-number="Y.3" class="anchored" data-anchor-id="fs-free"><span class="header-section-number">Y.3</span> Free Blocks</h2>
+<h2 data-number="Y.3" id="fs-free"><span class="header-section-number">Y.3</span> Free Blocks</h2>
 <p>A filesystem must remember which blocks are occupied and which are available. The simplest way to do this is a bitmap: an array with one entry per block that is <code>1</code> if the block is in use and <code>0</code> if it is free.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p><code>_allocate_block</code> scans the bitmap for the first free block. <code>_free_block</code> simply marks a block as free again. <code>_allocate_inode</code> does the same job for inodes: it finds an inode whose kind is <code>KIND_FREE</code> and initializes it.</p>
-<div class="callout callout-style-simple callout-none no-icon callout-titled" data-markdown="1">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon no-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-<span class="screen-reader-only">None</span>In Memory, Not on Disk
-</div>
-</div>
-<div class="callout-body-container callout-body">
+<div>
+<blockquote>
+<p><strong>In Memory, Not on Disk</strong></p>
 <p>We keep the bitmap in a Python <code>bytearray</code> inside the <code>FileSystem</code> object. A real filesystem would store its bitmap in a reserved region of the disk so that it survives a restart. Turning our in-memory bitmap into an on-disk one is a good exercise.</p>
+</blockquote>
 </div>
-</div>
-</section>
-<section id="fs-inode" class="level2" data-number="Y.4">
-<h2 data-number="Y.4" class="anchored" data-anchor-id="fs-inode"><span class="header-section-number">Y.4</span> Inodes and Files</h2>
+<h2 data-number="Y.4" id="fs-inode"><span class="header-section-number">Y.4</span> Inodes and Files</h2>
 <p>A file is more than its contents. It also has a size, a kind (file or directory), and—crucially—a list of the blocks that hold its data. We store this <a href="../glossary/index.html#metadata">metadata</a> in a structure called an inode:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>Each inode is exactly <code>INODE_SIZE</code> bytes long, and because <code>INODE_SIZE</code> equals <code>BLOCK_SIZE</code>, one inode fits in one block. Inode<span class="math inline">\(i\)</span> therefore lives in block <code>INODE_TABLE_START + i</code>. The inode stores the file’s size, its kind, and up to <code>MAX_FILE_BLOCKS</code> block numbers.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<p>Each inode is exactly <code>INODE_SIZE</code> bytes long, and because <code>INODE_SIZE</code> equals <code>BLOCK_SIZE</code>, one inode fits in one block. Inode<span class="math inline"><em>i</em></span> therefore lives in block <code>INODE_TABLE_START + i</code>. The inode stores the file’s size, its kind, and up to <code>MAX_FILE_BLOCKS</code> block numbers.</p>
 <p>Reading and writing a file’s contents means following those block numbers:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p><code>_read_data</code> reads each block listed in the inode, joins them together, and trims the result to the file’s recorded size. <code>_write_data</code> does the reverse: it frees the file’s old blocks, allocates fresh ones, and copies the data into them one block at a time.</p>
 <p>This indirection—storing <em>pointers to</em> data rather than the data itself—is the heart of how filesystems work. The inode is small and fixed in size, but the file it describes can be larger and scattered across the disk.</p>
-</section>
-<section id="fs-dir" class="level2" data-number="Y.5">
-<h2 data-number="Y.5" class="anchored" data-anchor-id="fs-dir"><span class="header-section-number">Y.5</span> Directories</h2>
+<h2 data-number="Y.5" id="fs-dir"><span class="header-section-number">Y.5</span> Directories</h2>
 <p>If a file is “a list of blocks”, then a directory is “a file whose contents are a list of names”. Each directory entry maps a name to an inode number:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>A directory entry is 16 bytes: 12 for the name (padded with zero bytes if it is shorter) and 4 for the inode number. <code>_list_dir</code> reads the directory’s data and unpacks it into a list of <code>(name, inode)</code> pairs. <code>_dir_add</code> and <code>_dir_remove</code> add and remove entries by rewriting the directory’s contents.</p>
 <p>Notice that we never check that a directory entry is “really” a directory: to the filesystem, a directory is just a file with a particular structure. This is a small example of a larger design idea that we first met in <a href="../persist/index.html" class="quarto-xref"><span>Chapter 16</span></a>: a program is just another kind of data.</p>
-</section>
-<section id="fs-path" class="level2" data-number="Y.6">
-<h2 data-number="Y.6" class="anchored" data-anchor-id="fs-path"><span class="header-section-number">Y.6</span> Paths and Operations</h2>
+<h2 data-number="Y.6" id="fs-path"><span class="header-section-number">Y.6</span> Paths and Operations</h2>
 <p>The last piece of the puzzle is turning a path like <code>/docs/hello.txt</code> into the file it names. We do this by walking from the root directory down through each component of the path:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p><code>_lookup</code> starts at <code>ROOT_INODE</code> and, for each name in the path, looks it up in the current directory. If any component is missing, it returns <code>None</code>. <code>_split</code> separates a path into its parent directory and final name.</p>
 <p>The public methods are then straightforward compositions of the pieces we have already built:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p><code>create</code> and <code>mkdir</code> allocate an inode and add an entry to the parent directory. <code>write</code> creates the file if it doesn’t exist and then stores the data. <code>read</code>, <code>listdir</code>, and <code>remove</code> look up an inode and act on it. None of these methods is more than a few lines long because each one is standing on the shoulders of the ones below it.</p>
-</section>
-<section id="fs-test" class="level2" data-number="Y.7">
-<h2 data-number="Y.7" class="anchored" data-anchor-id="fs-test"><span class="header-section-number">Y.7</span> Testing</h2>
+<h2 data-number="Y.7" id="fs-test"><span class="header-section-number">Y.7</span> Testing</h2>
 <p>As in earlier chapters, we test our code with small examples rather than a real disk:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_write_block_pads_with_zeros():</span>
+<div class="sourceCode" id="cb10"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_write_block_pads_with_zeros():</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>    disk <span class="op">=</span> Disk(block_size<span class="op">=</span><span class="dv">16</span>, block_count<span class="op">=</span><span class="dv">4</span>)</span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    disk.write_block(<span class="dv">0</span>, <span class="st">b"hello"</span>)</span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> disk.read_block(<span class="dv">0</span>) <span class="op">==</span> <span class="st">b"hello"</span> <span class="op">+</span> <span class="st">b"</span><span class="ch">\x00</span><span class="st">"</span> <span class="op">*</span> <span class="dv">11</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> disk.read_block(<span class="dv">0</span>) <span class="op">==</span> <span class="st">b"hello"</span> <span class="op">+</span> <span class="st">b"</span><span class="ch">\x00</span><span class="st">"</span> <span class="op">*</span> <span class="dv">11</span></span></code></pre></div>
 <p>and:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> make_fs():</span>
+<div class="sourceCode" id="cb11"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> make_fs():</span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>    fs <span class="op">=</span> FileSystem()</span>
 <span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    fs.<span class="bu">format</span>()</span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> fs</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_create_and_read_file():</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> fs</span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_create_and_read_file():</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>    fs <span class="op">=</span> make_fs()</span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    fs.write(<span class="st">"/hello.txt"</span>, <span class="st">b"Hello, world!"</span>)</span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> fs.read(<span class="st">"/hello.txt"</span>) <span class="op">==</span> <span class="st">b"Hello, world!"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> fs.read(<span class="st">"/hello.txt"</span>) <span class="op">==</span> <span class="st">b"Hello, world!"</span></span></code></pre></div>
 <p>The tests create a filesystem in memory, format it, and then check that files can be created, read, overwritten, and removed. Because our “disk” is just a <code>bytearray</code>, each test runs in a few microseconds and needs no cleanup afterward.</p>
-</section>
-<section id="fs-summary" class="level2" data-number="Y.8">
-<h2 data-number="Y.8" class="anchored" data-anchor-id="fs-summary"><span class="header-section-number">Y.8</span> Summary</h2>
+<h2 data-number="Y.8" id="fs-summary"><span class="header-section-number">Y.8</span> Summary</h2>
 <p>Filesystems look complicated, but they are built from a small number of simple ideas stacked on top of each other. A disk is a sequence of bytes grouped into blocks. A superblock records how to interpret those blocks. A bitmap tracks which blocks are free. Inodes hold a file’s metadata and point to its data. Directories are files that map names to inodes. And paths are just walks from the root directory down to a particular entry.</p>
 <section class="exercises">
-</section>
-<section id="fs-exercises" class="level2" data-number="Y.9">
-<h2 data-number="Y.9" class="anchored" data-anchor-id="fs-exercises"><span class="header-section-number">Y.9</span> Exercises</h2>
-<section id="delete-a-directory" class="level3" data-number="Y.9.1">
-<h3 data-number="Y.9.1" class="anchored" data-anchor-id="delete-a-directory"><span class="header-section-number">Y.9.1</span> Delete a Directory</h3>
+<h2 data-number="Y.9" id="fs-exercises"><span class="header-section-number">Y.9</span> Exercises</h2>
+<h3 data-number="Y.9.1" id="delete-a-directory"><span class="header-section-number">Y.9.1</span> Delete a Directory</h3>
 <p>Modify <code>remove</code> so that it can delete a directory by recursively deleting everything inside it first. How do you prevent the user from accidentally deleting the root directory?</p>
-</section>
-<section id="persist-the-bitmap" class="level3" data-number="Y.9.2">
-<h3 data-number="Y.9.2" class="anchored" data-anchor-id="persist-the-bitmap"><span class="header-section-number">Y.9.2</span> Persist the Bitmap</h3>
+<h3 data-number="Y.9.2" id="persist-the-bitmap"><span class="header-section-number">Y.9.2</span> Persist the Bitmap</h3>
 <p>Store the block bitmap in a reserved block on the disk instead of keeping it in memory, and update <code>format</code> and the allocation methods to use it.</p>
-</section>
-<section id="longer-files" class="level3" data-number="Y.9.3">
-<h3 data-number="Y.9.3" class="anchored" data-anchor-id="longer-files"><span class="header-section-number">Y.9.3</span> Longer Files</h3>
+<h3 data-number="Y.9.3" id="longer-files"><span class="header-section-number">Y.9.3</span> Longer Files</h3>
 <p>Our inodes support at most <code>MAX_FILE_BLOCKS</code> data blocks. Add a single indirect block that stores the numbers of additional data blocks so that a file can grow much larger.</p>
-</section>
-<section id="variable-length-names" class="level3" data-number="Y.9.4">
-<h3 data-number="Y.9.4" class="anchored" data-anchor-id="variable-length-names"><span class="header-section-number">Y.9.4</span> Variable-Length Names</h3>
+<h3 data-number="Y.9.4" id="variable-length-names"><span class="header-section-number">Y.9.4</span> Variable-Length Names</h3>
 <p>Replace the fixed 12-byte name field in a directory entry with a length prefix and a variable-length name. What are the trade-offs between the two designs?</p>
-</section>
-<section id="hard-links" class="level3" data-number="Y.9.5">
-<h3 data-number="Y.9.5" class="anchored" data-anchor-id="hard-links"><span class="header-section-number">Y.9.5</span> Hard Links</h3>
+<h3 data-number="Y.9.5" id="hard-links"><span class="header-section-number">Y.9.5</span> Hard Links</h3>
 <p>Add a <code>link</code> operation that creates a second name for an existing inode, and modify <code>remove</code> so that an inode is freed only when its last name is removed. What does this imply about where the file’s size is stored?</p>
-</section>
-<section id="detect-a-foreign-disk" class="level3" data-number="Y.9.6">
-<h3 data-number="Y.9.6" class="anchored" data-anchor-id="detect-a-foreign-disk"><span class="header-section-number">Y.9.6</span> Detect a Foreign Disk</h3>
+<h3 data-number="Y.9.6" id="detect-a-foreign-disk"><span class="header-section-number">Y.9.6</span> Detect a Foreign Disk</h3>
 <p>Modify the constructor so that it refuses to work with a <code>Disk</code> whose magic number doesn’t match. What should happen if the magic number is missing but the disk is otherwise valid?</p>
 </section>
 
-
-</section>
-</section>
-
-</main> <!-- /main -->
-<script id="quarto-html-after-body" type="application/javascript">
-  window.document.addEventListener("DOMContentLoaded", function (event) {
-    const icon = "";
-    const anchorJS = new window.AnchorJS();
-    anchorJS.options = {
-      placement: 'right',
-      icon: icon
-    };
-    anchorJS.add('.anchored');
-    const isCodeAnnotation = (el) => {
-      for (const clz of el.classList) {
-        if (clz.startsWith('code-annotation-')) {                     
-          return true;
-        }
-      }
-      return false;
-    }
-    const onCopySuccess = function(e) {
-      // button target
-      const button = e.trigger;
-      // don't keep focus
-      button.blur();
-      // flash "checked"
-      button.classList.add('code-copy-button-checked');
-      var currentTitle = button.getAttribute("title");
-      button.setAttribute("title", "Copied!");
-      let tooltip;
-      if (window.bootstrap) {
-        button.setAttribute("data-bs-toggle", "tooltip");
-        button.setAttribute("data-bs-placement", "left");
-        button.setAttribute("data-bs-title", "Copied!");
-        tooltip = new bootstrap.Tooltip(button, 
-          { trigger: "manual", 
-            customClass: "code-copy-button-tooltip",
-            offset: [0, -8]});
-        tooltip.show();    
-      }
-      setTimeout(function() {
-        if (tooltip) {
-          tooltip.hide();
-          button.removeAttribute("data-bs-title");
-          button.removeAttribute("data-bs-toggle");
-          button.removeAttribute("data-bs-placement");
-        }
-        button.setAttribute("title", currentTitle);
-        button.classList.remove('code-copy-button-checked');
-      }, 1000);
-      // clear code selection
-      e.clearSelection();
-    }
-    const getTextToCopy = function(trigger) {
-      const outerScaffold = trigger.parentElement.cloneNode(true);
-      const codeEl = outerScaffold.querySelector('code');
-      for (const childEl of codeEl.children) {
-        if (isCodeAnnotation(childEl)) {
-          childEl.remove();
-        }
-      }
-      return codeEl.innerText;
-    }
-    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
-      text: getTextToCopy
-    });
-    clipboard.on('success', onCopySuccess);
-    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
-      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
-        text: getTextToCopy,
-        container: window.document.getElementById('quarto-embedded-source-code-modal')
-      });
-      clipboardModal.on('success', onCopySuccess);
-    }
-      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
-      var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp('/' + window.location.host + '/');
-      var isInternal = (href) => {
-          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
-      }
-      // Inspect non-navigation links and adorn them if external
-      window.quartoDecorateExternalLinks = function (root) {
-     var links = (root || window.document).querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
-      for (var i=0; i<links.length; i++) {
-        const link = links[i];
-        if (!isInternal(link.href)) {
-          // undo the damage that might have been done by quarto-nav.js in the case of
-          // links that we want to consider external
-          if (link.dataset.originalHref !== undefined) {
-            link.href = link.dataset.originalHref;
-          }
-          if (!link.classList.contains('no-external-icon')) {
-          }
-        }
-      }
-      };
-      window.quartoDecorateExternalLinks(window.document);
-    // Esc closes the popup (WCAG 1.4.13) and focus leaving both trigger and
-    // popup closes it (WCAG 2.4.11); tippy handles neither for interactive popups.
-    const hideOnEscAndFocusOut = {
-      name: 'hideOnEscAndFocusOut',
-      defaultValue: true,
-      fn(instance) {
-        const dismiss = () => {
-          // A show scheduled by the trigger delay would otherwise reopen it
-          instance.clearDelayTimeouts();
-          instance.hide();
-        };
-        const onKeyDown = (event) => {
-          if (event.key !== 'Escape') {
-            return;
-          }
-          // Keep Esc from also reaching page handlers (e.g. reveal.js overview),
-          // except an open reveal.js slide menu, which Esc should close too.
-          // The menu handles keys only when its keyboard option is on.
-          const menuHandlesEsc = window.Reveal?.getPlugin?.('menu')?.isOpen() &&
-            window.Reveal.getConfig().menu?.keyboard !== false;
-          if (!menuHandlesEsc) {
-            event.stopPropagation();
-          }
-          if (instance.popper.contains(window.document.activeElement)) {
-            // Disabled while refocusing so the focus trigger does not reopen it
-            instance.disable();
-            instance.reference.focus();
-            instance.enable();
-          }
-          dismiss();
-        };
-        const onFocusOut = (event) => {
-          const target = event.relatedTarget;
-          if (target && !instance.reference.contains(target) &&
-              !instance.popper.contains(target)) {
-            dismiss();
-          }
-        };
-        // On the trigger too: a click trigger (code-annotations: select) has no
-        // blur handling. Attached for the instance's lifetime so leaving the
-        // trigger also cancels a show still pending on the trigger delay.
-        instance.reference.addEventListener('focusout', onFocusOut);
-        return {
-          onShow() {
-            window.document.addEventListener('keydown', onKeyDown, true);
-            instance.popper.addEventListener('focusout', onFocusOut);
-          },
-          onHide() {
-            window.document.removeEventListener('keydown', onKeyDown, true);
-            instance.popper.removeEventListener('focusout', onFocusOut);
-          },
-          onDestroy() {
-            instance.reference.removeEventListener('focusout', onFocusOut);
-          },
-        };
-      },
-    };
-    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
-      const config = {
-        allowHTML: true,
-        maxWidth: 500,
-        delay: 100,
-        arrow: false,
-        appendTo: function(el) {
-            return el.parentElement;
-        },
-        interactive: true,
-        interactiveBorder: 10,
-        theme: 'quarto',
-        placement: 'bottom-start',
-        plugins: [hideOnEscAndFocusOut],
-      };
-      if (contentFn) {
-        config.content = contentFn;
-      }
-      if (onTriggerFn) {
-        config.onTrigger = onTriggerFn;
-      }
-      if (onUntriggerFn) {
-        config.onUntrigger = onUntriggerFn;
-      }
-      window.tippy(el, config); 
-    }
-    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
-    for (var i=0; i<noterefs.length; i++) {
-      const ref = noterefs[i];
-      tippyHover(ref, function() {
-        // use id or data attribute instead here
-        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
-        try { href = new URL(href).hash; } catch {}
-        const id = href.replace(/^#\/?/, "");
-        const note = window.document.getElementById(id);
-        if (note) {
-          return note.innerHTML;
-        } else {
-          return "";
-        }
-      });
-    }
-    const xrefs = window.document.querySelectorAll('a.quarto-xref');
-    const processXRef = (id, note) => {
-      // Strip column container classes
-      const stripColumnClz = (el) => {
-        el.classList.remove("page-full", "page-columns");
-        if (el.children) {
-          for (const child of el.children) {
-            stripColumnClz(child);
-          }
-        }
-      }
-      stripColumnClz(note)
-      if (id === null || id.startsWith('sec-')) {
-        // Special case sections, only their first couple elements
-        const container = document.createElement("div");
-        if (note.children && note.children.length > 2) {
-          container.appendChild(note.children[0].cloneNode(true));
-          for (let i = 1; i < note.children.length; i++) {
-            const child = note.children[i];
-            if (child.tagName === "P" && child.innerText === "") {
-              continue;
-            } else {
-              container.appendChild(child.cloneNode(true));
-              break;
-            }
-          }
-          if (window.Quarto?.typesetMath) {
-            window.Quarto.typesetMath(container);
-          }
-          return container.innerHTML
-        } else {
-          if (window.Quarto?.typesetMath) {
-            window.Quarto.typesetMath(note);
-          }
-          return note.innerHTML;
-        }
-      } else {
-        // Remove any anchor links if they are present
-        const anchorLink = note.querySelector('a.anchorjs-link');
-        if (anchorLink) {
-          anchorLink.remove();
-        }
-        if (window.Quarto?.typesetMath) {
-          window.Quarto.typesetMath(note);
-        }
-        if (note.classList.contains("callout")) {
-          return note.outerHTML;
-        } else {
-          return note.innerHTML;
-        }
-      }
-    }
-    for (var i=0; i<xrefs.length; i++) {
-      const xref = xrefs[i];
-      tippyHover(xref, undefined, function(instance) {
-        instance.disable();
-        let url = xref.getAttribute('href');
-        let hash = undefined; 
-        if (url.startsWith('#')) {
-          hash = url;
-        } else {
-          try { hash = new URL(url).hash; } catch {}
-        }
-        if (hash) {
-          const id = hash.replace(/^#\/?/, "");
-          const note = window.document.getElementById(id);
-          if (note !== null) {
-            try {
-              const html = processXRef(id, note.cloneNode(true));
-              instance.setContent(html);
-            } finally {
-              instance.enable();
-              instance.show();
-            }
-          } else {
-            // See if we can fetch this
-            fetch(url.split('#')[0])
-            .then(res => res.text())
-            .then(html => {
-              const parser = new DOMParser();
-              const htmlDoc = parser.parseFromString(html, "text/html");
-              const note = htmlDoc.getElementById(id);
-              if (note !== null) {
-                const html = processXRef(id, note);
-                instance.setContent(html);
-              } 
-            }).finally(() => {
-              instance.enable();
-              instance.show();
-            });
-          }
-        } else {
-          // See if we can fetch a full url (with no hash to target)
-          // This is a special case and we should probably do some content thinning / targeting
-          fetch(url)
-          .then(res => res.text())
-          .then(html => {
-            const parser = new DOMParser();
-            const htmlDoc = parser.parseFromString(html, "text/html");
-            const note = htmlDoc.querySelector('main.content');
-            if (note !== null) {
-              // This should only happen for chapter cross references
-              // (since there is no id in the URL)
-              // remove the first header
-              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
-                note.children[0].remove();
-              }
-              const html = processXRef(null, note);
-              instance.setContent(html);
-            } 
-          }).finally(() => {
-            instance.enable();
-            instance.show();
-          });
-        }
-      }, function(instance) {
-      });
-    }
-        let selectedAnnoteEl;
-        const selectorForAnnotation = ( cell, annotation) => {
-          let cellAttr = 'data-code-cell="' + cell + '"';
-          let lineAttr = 'data-code-annotation="' +  annotation + '"';
-          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
-          return selector;
-        }
-        const selectCodeLines = (annoteEl) => {
-          const doc = window.document;
-          const targetCell = annoteEl.getAttribute("data-target-cell");
-          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
-          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
-          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
-          const lineIds = lines.map((line) => {
-            return targetCell + "-" + line;
-          })
-          // Each band is positioned against its own containing block, which is
-          // not the offsetParent of the lines, so place it from client rects.
-          const placeBand = (band, firstEl, lastEl, codeBlock) => {
-            const container = band.offsetParent;
-            if (container === null) {
-              return;
-            }
-            const containerRect = container.getBoundingClientRect();
-            // Reveal.js scales slides with a transform, so convert client
-            // pixels back to the CSS pixels of the container.
-            const scale = containerRect.height / container.offsetHeight || 1;
-            const firstRect = firstEl.getBoundingClientRect();
-            const lastRect = lastEl.getBoundingClientRect();
-            const top = (firstRect.top - containerRect.top) / scale - container.clientTop + container.scrollTop;
-            const height = (lastRect.bottom - firstRect.top) / scale;
-            band.style.top = top - 2 + "px";
-            band.style.height = height + 4 + "px";
-            if (codeBlock) {
-              // Without the copy button wrapper, the containing block is wider
-              // than the code block, so span the code block explicitly.
-              const blockRect = codeBlock.getBoundingClientRect();
-              band.style.left = (blockRect.left - containerRect.left) / scale - container.clientLeft + container.scrollLeft + "px";
-              band.style.width = blockRect.width / scale + "px";
-            }
-          };
-          if (lineIds.length > 0) {
-            const el = window.document.getElementById(lineIds[0]);
-            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
-            const parent = el.parentElement.parentElement;
-            // cook up a div (if necessary) and position it
-            let div = window.document.getElementById("code-annotation-line-highlight");
-            if (div === null) {
-              div = window.document.createElement("div");
-              div.setAttribute("id", "code-annotation-line-highlight");
-              div.style.position = 'absolute';
-              parent.appendChild(div);
-            }
-            placeBand(div, el, lastEl, parent.closest("div.sourceCode") || parent);
-            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
-            if (gutterDiv === null) {
-              gutterDiv = window.document.createElement("div");
-              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
-              gutterDiv.style.position = 'absolute';
-              const codeCell = window.document.getElementById(targetCell);
-              const gutter = codeCell.querySelector('.code-annotation-gutter');
-              gutter.appendChild(gutterDiv);
-            }
-            placeBand(gutterDiv, el, lastEl);
-            selectedAnnoteEl = annoteEl;
-          }
-        };
-        const unselectCodeLines = () => {
-          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
-          elementsIds.forEach((elId) => {
-            const div = window.document.getElementById(elId);
-            if (div) {
-              div.remove();
-            }
-          });
-          selectedAnnoteEl = undefined;
-        };
-          // Handle positioning of the toggle
-      window.addEventListener(
-        "resize",
-        throttle(() => {
-          elRect = undefined;
-          if (selectedAnnoteEl) {
-            selectCodeLines(selectedAnnoteEl);
-          }
-        }, 10)
-      );
-      function throttle(fn, ms) {
-      let throttle = false;
-      let timer;
-        return (...args) => {
-          if(!throttle) { // first call gets through
-              fn.apply(this, args);
-              throttle = true;
-          } else { // all the others get throttled
-              if(timer) clearTimeout(timer); // cancel #2
-              timer = setTimeout(() => {
-                fn.apply(this, args);
-                timer = throttle = false;
-              }, ms);
-          }
-        };
-      }
-        // Attach click handler to the DT
-        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
-        for (const annoteDlNode of annoteDls) {
-          annoteDlNode.addEventListener('click', (event) => {
-            const clickedEl = event.target;
-            if (clickedEl !== selectedAnnoteEl) {
-              unselectCodeLines();
-              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
-              if (activeEl) {
-                activeEl.classList.remove('code-annotation-active');
-              }
-              selectCodeLines(clickedEl);
-              clickedEl.classList.add('code-annotation-active');
-            } else {
-              // Unselect the line
-              unselectCodeLines();
-              clickedEl.classList.remove('code-annotation-active');
-            }
-          });
-        }
-    const findCites = (el) => {
-      const parentEl = el.parentElement;
-      if (parentEl) {
-        const cites = parentEl.dataset.cites;
-        if (cites) {
-          return {
-            el,
-            cites: cites.split(' ')
-          };
-        } else {
-          return findCites(el.parentElement)
-        }
-      } else {
-        return undefined;
-      }
-    };
-    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
-    for (var i=0; i<bibliorefs.length; i++) {
-      const ref = bibliorefs[i];
-      const citeInfo = findCites(ref);
-      if (citeInfo) {
-        tippyHover(citeInfo.el, function() {
-          var popup = window.document.createElement('div');
-          citeInfo.cites.forEach(function(cite) {
-            var citeDiv = window.document.createElement('div');
-            citeDiv.classList.add('hanging-indent');
-            citeDiv.classList.add('csl-entry');
-            var biblioDiv = window.document.getElementById('ref-' + cite);
-            if (biblioDiv) {
-              citeDiv.innerHTML = biblioDiv.innerHTML;
-            }
-            popup.appendChild(citeDiv);
-          });
-          return popup.innerHTML;
-        });
-      }
-    }
-  });
-  </script>
-  <script type="application/javascript">
-  window.quartoScrollableRegionsLabels = {"code":"Scrollable code","output":"Scrollable output"};
-  </script>
-<nav class="page-navigation" aria-label="Page">
-  <div class="nav-page nav-page-previous">
-      <a href="../ntp/index.html" class="pagination-link" aria-label="Network Time Protocol (NTP)">
-        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text"><span class="chapter-number">X</span>&nbsp; <span class="chapter-title">Network Time Protocol (NTP)</span></span>
-      </a>          
-  </div>
-  <div class="nav-page nav-page-next">
-      <a href="../slides/index.html" class="pagination-link" aria-label="Slides">
-        <span class="nav-page-text"><span class="chapter-number">Z</span>&nbsp; <span class="chapter-title">Slides</span></span> <i class="bi bi-arrow-right-short"></i>
-      </a>
-  </div>
-</nav>
-</div> <!-- /content -->
+</main>
 
 
-
-
-<footer class="footer"><div class="nav-footer"><div class="nav-footer-center"><div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/gvwilson/sdxpy/edit/main/fs/index.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/gvwilson/sdxpy/blob/main/fs/index.qmd" class="toc-action"><i class="bi empty"></i>View source</a></li><li><a href="https://github.com/gvwilson/sdxpy/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></div></div></footer></body></html>
+</body></html>

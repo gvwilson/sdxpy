@@ -1,531 +1,37 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head><meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>Conflict-Free Replicated Data Types</title>
+  <link rel="stylesheet" href="../mccole/mccole-book.css">
 
-<meta charset="utf-8">
-<meta name="generator" content="quarto-1.11.9">
-
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-
-
-<title>Appendix P — Conflict-Free Replicated Data Types – Software Design by Example</title>
-<style>
-/* Default styles provided by pandoc.
-** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
-*/
-span.smallcaps{font-variant: small-caps;}
-div.columns{display: flex; gap: 1.5em;}
-div.column{flex: auto;}
-@media screen {
-div.columns{gap: min(4vw, 1.5em);}
-div.column{overflow-x: auto;}
-}
-div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
-ul.task-list{list-style: none;}
-ul.task-list li input[type="checkbox"] {
-  width: 0.8em;
-  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
-  vertical-align: middle;
-}
-/* CSS for syntax highlighting */
-html { -webkit-text-size-adjust: 100%; }
-pre > code.sourceCode { white-space: pre; position: relative; }
-pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
-pre > code.sourceCode > span:empty { height: 1.2em; }
-.sourceCode { overflow: visible; }
-code.sourceCode > span { color: inherit; text-decoration: inherit; }
-div.sourceCode { margin: 1em 0; }
-pre.sourceCode { margin: 0; }
-@media screen {
-div.sourceCode { overflow: auto; }
-}
-@media print {
-pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
-}
-pre.numberSource code
-  { counter-reset: source-line 0; }
-pre.numberSource code > span
-  { position: relative; left: -4em; counter-increment: source-line; }
-pre.numberSource code > span > a:first-child::before
-  { content: counter(source-line);
-    position: relative; left: -1em; text-align: right; vertical-align: baseline;
-    border: none; display: inline-block;
-    -webkit-touch-callout: none; -webkit-user-select: none;
-    -khtml-user-select: none; -moz-user-select: none;
-    -ms-user-select: none; user-select: none;
-    padding: 0 4px; width: 4em;
-  }
-pre.numberSource { margin-left: 3em;  padding-left: 4px; }
-div.sourceCode
-  {   }
-@media screen {
-pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
-}
-</style>
-
-
-<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
-<script src="../site_libs/quarto-nav/headroom.min.js"></script>
-<script src="../site_libs/clipboard/clipboard.min.js"></script>
-<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
-<script src="../site_libs/quarto-search/fuse.min.js"></script>
-<script src="../site_libs/quarto-search/quarto-search.js"></script>
-<meta name="quarto:offset" content="../">
-<link href="../oauth/index.html" rel="next">
-<link href="../tracing/index.html" rel="prev">
-<script src="../site_libs/quarto-html/quarto.js" type="module"></script>
-<script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
-<script src="../site_libs/quarto-html/scrollable-regions/scrollable-regions.js" type="module"></script>
-<script src="../site_libs/quarto-html/popper.min.js"></script>
-<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
-<script src="../site_libs/quarto-html/anchor.min.js"></script>
-<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="../site_libs/quarto-html/quarto-syntax-highlighting-63b5708e65d6cd79cd7618c58d0c21e7.css" rel="stylesheet" id="quarto-text-highlighting-styles">
-<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
-<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../site_libs/bootstrap/bootstrap-01a495efc5497ac6e3f5457e7ed18e65.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
-<script id="quarto-search-options" type="application/json">{
-  "location": "sidebar",
-  "copy-button": false,
-  "collapse-after": 3,
-  "panel-placement": "start",
-  "type": "textbox",
-  "limit": 50,
-  "keyboard-shortcut": [
-    "f",
-    "/",
-    "s"
-  ],
-  "show-item-context": false,
-  "language": {
-    "search-no-results-text": "No results",
-    "search-matching-documents-text": "matching documents",
-    "search-copy-link-title": "Copy link to search",
-    "search-hide-matches-text": "Hide additional matches",
-    "search-more-match-text": "more match in this document",
-    "search-more-matches-text": "more matches in this document",
-    "search-clear-button-title": "Clear",
-    "search-text-placeholder": "",
-    "search-detached-cancel-button-title": "Cancel",
-    "search-submit-button-title": "Submit",
-    "search-label": "Search"
-  }
-}</script>
-
-
-<link rel="stylesheet" href="../mccole/book.css">
 </head>
-
-<body class="nav-sidebar floating quarto-light"><a id="quarto-skip-link" class="visually-hidden-focusable" href="#quarto-document-content">Skip to main content</a>
-
-<div id="quarto-search-results"></div>
-  <header id="quarto-header" class="headroom fixed-top">
-  <nav class="quarto-secondary-nav" aria-label="Toolbar">
-    <div class="container-fluid d-flex">
-      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
-        <i class="bi bi-layout-text-sidebar-reverse"></i>
-      </button>
-        <nav class="quarto-page-breadcrumbs" aria-label="Breadcrumbs"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../license/index.html">Appendices</a></li><li class="breadcrumb-item"><a href="../crdt/index.html"><span class="chapter-number">P</span>&nbsp; <span class="chapter-title">Conflict-Free Replicated Data Types</span></a></li></ol></nav>
-        <a class="flex-grow-1" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
-        </a>
-      <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
-        <i class="bi bi-search"></i>
-      </button>
+<body>
+<header class="topbar">
+  <nav class="topnav">
+    <a class="topnav-item" href="../index.html">Home</a>
+    <div class="topnav-dropdown">
+      <span class="topnav-item">Chapters</span>
+      <div class="topnav-menu"><ul class="topnav-list"><li><a href="../intro/index.html">Introduction</a></li><li><a href="../oop/index.html">Objects and Classes</a></li><li><a href="../dup/index.html">Finding Duplicate Files</a></li><li><a href="../glob/index.html">Matching Patterns</a></li><li><a href="../parse/index.html">Parsing Text</a></li><li><a href="../test/index.html">Running Tests</a></li><li><a href="../interp/index.html">An Interpreter</a></li><li><a href="../func/index.html">Functions and Closures</a></li><li><a href="../protocols/index.html">Protocols</a></li><li><a href="../archive/index.html">A File Archiver</a></li><li><a href="../check/index.html">An HTML Validator</a></li><li><a href="../template/index.html">A Template Expander</a></li><li><a href="../lint/index.html">A Code Linter</a></li><li><a href="../layout/index.html">Page Layout</a></li><li><a href="../perf/index.html">Performance Profiling</a></li><li><a href="../persist/index.html">Object Persistence</a></li><li><a href="../binary/index.html">Binary Data</a></li><li><a href="../db/index.html">A Database</a></li><li><a href="../build/index.html">A Build Manager</a></li><li><a href="../pack/index.html">A Package Manager</a></li><li><a href="../ftp/index.html">Transferring Files</a></li><li><a href="../http/index.html">Serving Web Pages</a></li><li><a href="../viewer/index.html">A File Viewer</a></li><li><a href="../undo/index.html">Undo and Redo</a></li><li><a href="../vm/index.html">A Virtual Machine</a></li><li><a href="../debugger/index.html">A Debugger</a></li><li><a href="../finale/index.html">Conclusion</a></li></ul></div>
+    </div>
+    <div class="topnav-dropdown">
+      <span class="topnav-item">Appendices</span>
+      <div class="topnav-menu"><ul class="topnav-list"><li><a href="../license/index.html">License</a></li><li><a href="../conduct/index.html">Code of Conduct</a></li><li><a href="../contributing/index.html">Contributing</a></li><li><a href="../bibliography/index.html">Bibliography</a></li><li><a href="../glossary/index.html">Glossary</a></li><li><a href="../syllabus/index.html">Syllabus</a></li><li><a href="../bonus/index.html">Bonus Material</a></li><li><a href="../observe/index.html">Observers</a></li><li><a href="../docgen/index.html">Generating Documentation</a></li><li><a href="../cache/index.html">A File Cache</a></li><li><a href="../concur/index.html">Concurrency</a></li><li><a href="../mapreduce/index.html">MapReduce Framework</a></li><li><a href="../msgque/index.html">A Publish-Subscribe Message Queue</a></li><li><a href="../worksteal/index.html">A Work-Stealing Scheduler</a></li><li><a href="../tracing/index.html">Distributed Tracing</a></li><li><a href="../crdt/index.html">Conflict-Free Replicated Data Types</a></li><li><a href="../oauth/index.html">OAuth</a></li><li><a href="../distlock/index.html">Distributed Lock Manager</a></li><li><a href="../torrent/index.html">BitTorrent Protocol</a></li><li><a href="../eventual/index.html">Eventually Consistent Key-Value Store</a></li><li><a href="../saga/index.html">The Saga Pattern</a></li><li><a href="../tcp/index.html">Building TCP on UDP</a></li><li><a href="../dns/index.html">Domain Name System (DNS)</a></li><li><a href="../ntp/index.html">Network Time Protocol (NTP)</a></li><li><a href="../fs/index.html">A Simple Filesystem</a></li><li><a href="../slides/index.html">Slides</a></li></ul></div>
+    </div>
+    <div class="topnav-dropdown">
+      <span class="topnav-item">Contents</span>
+      <div class="topnav-menu"><ul>
+<li><a href="#dxdx-lww" id="toc-dxdx-lww"><span class="header-section-number">P.1</span> Last-Write-Wins Register</a></li>
+<li><a href="#crdt-counter" id="toc-crdt-counter"><span class="header-section-number">P.2</span> Counters</a></li>
+<li><a href="#crdt-orset" id="toc-crdt-orset"><span class="header-section-number">P.3</span> Observed-Remove Set (OR-Set)</a></li>
+<li><a href="#crdt-op" id="toc-crdt-op"><span class="header-section-number">P.4</span> Operation-Based CRDTs</a></li>
+<li><a href="#crdt-partition" id="toc-crdt-partition"><span class="header-section-number">P.5</span> Network Partition Simulation</a></li>
+<li><a href="#crdt-exercises" id="toc-crdt-exercises"><span class="header-section-number">P.6</span> Exercises</a></li>
+</ul></div>
     </div>
   </nav>
 </header>
-<!-- content -->
-<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article">
-<!-- sidebar -->
-  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto" aria-label="Site">
-    <div class="pt-lg-2 mt-2 text-left sidebar-header">
-    <div class="sidebar-title mb-0 py-0">
-      <a href="../">Software Design by Example</a> 
-        <div class="sidebar-tools-main">
-    <a href="https://github.com/gvwilson/sdxpy" title="Source Code" class="quarto-navigation-tool px-1" aria-label="Source Code"><i class="bi bi-github"></i></a>
-</div>
-    </div>
-      </div>
-        <div class="mt-2 flex-shrink-0 align-items-center">
-        <div class="sidebar-search">
-        <div id="quarto-search" class="" title="Search"></div>
-        </div>
-        </div>
-    <div class="sidebar-menu-container"> 
-    <ul class="list-unstyled mt-1">
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Overview</span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../intro/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">1</span>&nbsp; <span class="chapter-title">Introduction</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../oop/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">Objects and Classes</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../dup/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">3</span>&nbsp; <span class="chapter-title">Finding Duplicate Files</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../glob/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">Matching Patterns</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../parse/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">Parsing Text</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../test/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">6</span>&nbsp; <span class="chapter-title">Running Tests</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../interp/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">7</span>&nbsp; <span class="chapter-title">An Interpreter</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../func/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">8</span>&nbsp; <span class="chapter-title">Functions and Closures</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../protocols/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">9</span>&nbsp; <span class="chapter-title">Protocols</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../archive/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">10</span>&nbsp; <span class="chapter-title">A File Archiver</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../check/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">11</span>&nbsp; <span class="chapter-title">An HTML Validator</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../template/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">12</span>&nbsp; <span class="chapter-title">A Template Expander</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../lint/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">13</span>&nbsp; <span class="chapter-title">A Code Linter</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../layout/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">14</span>&nbsp; <span class="chapter-title">Page Layout</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../perf/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">15</span>&nbsp; <span class="chapter-title">Performance Profiling</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../persist/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">16</span>&nbsp; <span class="chapter-title">Object Persistence</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../binary/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">17</span>&nbsp; <span class="chapter-title">Binary Data</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../db/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">18</span>&nbsp; <span class="chapter-title">A Database</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../build/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">19</span>&nbsp; <span class="chapter-title">A Build Manager</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../pack/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">20</span>&nbsp; <span class="chapter-title">A Package Manager</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../ftp/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">21</span>&nbsp; <span class="chapter-title">Transferring Files</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../http/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">22</span>&nbsp; <span class="chapter-title">Serving Web Pages</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../viewer/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">23</span>&nbsp; <span class="chapter-title">A File Viewer</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../undo/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">24</span>&nbsp; <span class="chapter-title">Undo and Redo</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../vm/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">25</span>&nbsp; <span class="chapter-title">A Virtual Machine</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../debugger/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">26</span>&nbsp; <span class="chapter-title">A Debugger</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../finale/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">27</span>&nbsp; <span class="chapter-title">Conclusion</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item sidebar-item-section">
-      <div class="sidebar-item-container"> 
-            <button type="button" class="sidebar-item-text sidebar-item-toggle sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" aria-controls="quarto-sidebar-section-1" aria-expanded="true">
- <span class="menu-text" id="quarto-sidebar-section-1-label">Appendices</span><i class="bi bi-chevron-right" aria-hidden="true"></i></button>
-      </div>
-      <ul id="quarto-sidebar-section-1" aria-labelledby="quarto-sidebar-section-1-label" class="collapse list-unstyled sidebar-section depth1 show">  
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../license/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">A</span>&nbsp; <span class="chapter-title">License</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../conduct/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">B</span>&nbsp; <span class="chapter-title">Code of Conduct</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../contributing/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">C</span>&nbsp; <span class="chapter-title">Contributing</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../bibliography/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">D</span>&nbsp; <span class="chapter-title">Bibliography</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../glossary/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">E</span>&nbsp; <span class="chapter-title">Glossary</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../syllabus/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">F</span>&nbsp; <span class="chapter-title">Syllabus</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../bonus/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">G</span>&nbsp; <span class="chapter-title">Bonus Material</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../observe/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">H</span>&nbsp; <span class="chapter-title">Observers</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../docgen/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">I</span>&nbsp; <span class="chapter-title">Generating Documentation</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../cache/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">J</span>&nbsp; <span class="chapter-title">A File Cache</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../concur/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">K</span>&nbsp; <span class="chapter-title">Concurrency</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../mapreduce/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">L</span>&nbsp; <span class="chapter-title">MapReduce Framework</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../msgque/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">M</span>&nbsp; <span class="chapter-title">A Publish-Subscribe Message Queue</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../worksteal/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">N</span>&nbsp; <span class="chapter-title">A Work-Stealing Scheduler</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../tracing/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">O</span>&nbsp; <span class="chapter-title">Distributed Tracing</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../crdt/index.html" class="sidebar-item-text sidebar-link active">
- <span class="menu-text"><span class="chapter-number">P</span>&nbsp; <span class="chapter-title">Conflict-Free Replicated Data Types</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../oauth/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">Q</span>&nbsp; <span class="chapter-title">OAuth</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../distlock/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">R</span>&nbsp; <span class="chapter-title">Distributed Lock Manager</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../torrent/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">S</span>&nbsp; <span class="chapter-title">BitTorrent Protocol</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../eventual/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">T</span>&nbsp; <span class="chapter-title">Eventually Consistent Key-Value Store</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../saga/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">U</span>&nbsp; <span class="chapter-title">The Saga Pattern</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../tcp/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">V</span>&nbsp; <span class="chapter-title">Building TCP on UDP</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../dns/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">W</span>&nbsp; <span class="chapter-title">Domain Name System (DNS)</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../ntp/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">X</span>&nbsp; <span class="chapter-title">Network Time Protocol (NTP)</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../fs/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">Y</span>&nbsp; <span class="chapter-title">A Simple Filesystem</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../slides/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">Z</span>&nbsp; <span class="chapter-title">Slides</span></span></a>
-  </div>
-</li>
-      </ul>
-  </li>
-    </ul>
-    </div>
-</nav>
-<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
-<!-- margin-sidebar -->
-    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
-        <nav id="TOC" role="doc-toc" aria-labelledby="toc-title" class="toc-active">
-    <h2 id="toc-title">Table of contents</h2>
-   
-  <ul>
-  <li><a href="#dxdx-lww" id="toc-dxdx-lww" class="nav-link active" data-scroll-target="#dxdx-lww"><span class="header-section-number">P.1</span> Last-Write-Wins Register</a></li>
-  <li><a href="#crdt-counter" id="toc-crdt-counter" class="nav-link" data-scroll-target="#crdt-counter"><span class="header-section-number">P.2</span> Counters</a></li>
-  <li><a href="#crdt-orset" id="toc-crdt-orset" class="nav-link" data-scroll-target="#crdt-orset"><span class="header-section-number">P.3</span> Observed-Remove Set (OR-Set)</a></li>
-  <li><a href="#crdt-op" id="toc-crdt-op" class="nav-link" data-scroll-target="#crdt-op"><span class="header-section-number">P.4</span> Operation-Based CRDTs</a></li>
-  <li><a href="#crdt-partition" id="toc-crdt-partition" class="nav-link" data-scroll-target="#crdt-partition"><span class="header-section-number">P.5</span> Network Partition Simulation</a></li>
-  <li><a href="#crdt-exercises" id="toc-crdt-exercises" class="nav-link" data-scroll-target="#crdt-exercises"><span class="header-section-number">P.6</span> Exercises</a></li>
-  </ul>
-<div class="toc-actions"><ul><li><a href="https://github.com/gvwilson/sdxpy/edit/main/crdt/index.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/gvwilson/sdxpy/blob/main/crdt/index.qmd" class="toc-action"><i class="bi empty"></i>View source</a></li><li><a href="https://github.com/gvwilson/sdxpy/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
-    </div>
-<!-- main -->
-<main class="content" id="quarto-document-content" tabindex="-1">
-
-<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="Breadcrumbs"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../license/index.html">Appendices</a></li><li class="breadcrumb-item"><a href="../crdt/index.html"><span class="chapter-number">P</span>&nbsp; <span class="chapter-title">Conflict-Free Replicated Data Types</span></a></li></ol></nav>
-<div class="quarto-title">
-<h1 class="title"><span id="sec-crdt" class="quarto-section-identifier">Appendix P — Conflict-Free Replicated Data Types</span></h1>
-</div>
-
-
-
-<div class="quarto-title-meta">
-
-    
-  
-    
-  </div>
-  
-
-
-</header>
-
-
+<main class="content"><header id="title-block-header" class="quarto-title-block"></header>
+<h1 class="title">Conflict-Free Replicated Data Types</h1>
 <div class="syllabus">
 <ul>
 <li>Explain why last-write-wins registers can lose updates in concurrent systems and when that trade-off is acceptable.</li>
@@ -545,12 +51,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>The insight that CRDTs rely on is that some operations are <a href="../glossary/index.html#commutativity">commutative</a> and <a href="../glossary/index.html#associativity">associative</a>. The first property means that order doesn’t matter, i.e., that A+B = B+A. The second means that group doesnt’ matter, so (A+B)+C = A+(B+C). If the merge operation for the data type has these properties, replicas can receive updates in any order and still converge to the same state. Some approaches to implementing CRDTs also require operations to be <a href="../glossary/index.html#idempotence">idempotent</a>, which means that the operation can be applied any number of times with the same cumulative effect (just as zero can be added to a number over and over).</p>
 <p>There are two approaches to building CRDTs. In a <a href="../glossary/index.html#state-based-crdt">state-based CRDT</a>, replicas send their entire state and merge those states. State-based CRDTs are simpler to reason about, but have higher network cost because the entire state must be sent for each operation. They also require merge operations to be commutative, associate, <em>and</em> idempotent.</p>
 <p>In contrast, the replicas in <a href="../glossary/index.html#op-based-crdt">operation-based CRDTs</a> send each other <em>changes</em> in state (sometimes called <a href="../glossary/index.html#delta">deltas</a>). This reduces the network overhead, but requires exactly-once delivery of operations. Those operations must commute, but needn’t be idempotent. We will implement both approaches to understand the trade-offs.</p>
-<section id="dxdx-lww" class="level2" data-number="P.1">
-<h2 data-number="P.1" class="anchored" data-anchor-id="dxdx-lww"><span class="header-section-number">P.1</span> Last-Write-Wins Register</h2>
+<h2 data-number="P.1" id="dxdx-lww"><span class="header-section-number">P.1</span> Last-Write-Wins Register</h2>
 <p>Let’s start with the simplest CRDT: a <a href="../glossary/index.html#lww-register">last-write-wins register</a>. For values that should be overwritten (like a user’s profile name), we can use timestamps to determine which write wins.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>To see how this works, consider three replicas that randomly choose color values to share with peers:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>If we run three replicas for 10 timesteps, the output is:</p>
 <pre><code>[0] Ahmed: set 'yellow'
 [0] Baemi: set 'yellow'
@@ -567,35 +72,29 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 [10] Ahmed: set 'red'
 [10] Baemi: set 'red'
 [10] Chiti: set 'green'
-
 --- Final State
 Ahmed: LWWRegister(value=red, ts=10.00)
 Baemi: LWWRegister(value=red, ts=10.00)
-Chiti: LWWRegister(value=green, ts=10.00)
-</code></pre>
+Chiti: LWWRegister(value=green, ts=10.00)</code></pre>
 <p>Chiti’s final value is different because all three replicas wrote at time 10: Ahmed and Baemi set “red”, while Chiti set “green”. Since they all have the same timestamp, the register breaks ties by comparing replica IDs. If the simulation ran a little longer, all three copies would converg on “green” because Chiti &gt; Baemi &gt; Ahmed alphabetically.</p>
 <p>An LWW-Register has a weakness: concurrent writes to the same register result in one being lost (either the one with the earlier timestamp or with the lower replica ID). This is acceptable for some use cases (like “last edit wins” in a profile), but not for others. The key trade-off is simplicity versus data preservation. An LWW register never produces a conflict that needs manual resolution, but it also never preserves both sides of a concurrent update. This makes it a poor fit for situations where losing a write is costly, such as a shared to-do list where two people add items at the same time.</p>
-</section>
-<section id="crdt-counter" class="level2" data-number="P.2">
-<h2 data-number="P.2" class="anchored" data-anchor-id="crdt-counter"><span class="header-section-number">P.2</span> Counters</h2>
+<h2 data-number="P.2" id="crdt-counter"><span class="header-section-number">P.2</span> Counters</h2>
 <p>Another CRDT is a <a href="../glossary/index.html#grow-only-counter">grow-only counter</a> whose value can only increase. Each replica maintains a vector of counters, one per replica:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>The G-Counter works by having each replica only modify its own entry in the vector. When merging, we take the maximum of each entry. This operation is commutative, associative, and idempotent, which guarantees convergence.</p>
 <p>A G-Counter solves the problem of counting across multiple replicas that can’t always communicate. Imagine three servers tracking how many times a button has been clicked. Users hit whichever server is nearest, and the servers sync up when they can. A naive approach is to have each server keep a single integer and share its value with the other two, but this breaks because there’s no way to tell whether a value Ahmed receives from Baemi already includes Ahmed’s updates or not.</p>
 <p>In a G-Counter, each replica only increments its own entry: for example, Ahmed’s server only ever touches <code>counts["Ahmed"]</code>. This ensures that there’s never a conflict because no two replicas write to the same slot. When replicas sync, they can safely take the <code>max</code> of each slot, because a higher value always means that replica has done more increments. <code>max</code> is idempotent (applying the same sync twice is harmless), commutative (order doesn’t matter), and associative (grouping doesn’t matter), which makes it suitable for a CRDT.</p>
 <p>It’s important to note that the overall value of the G-Counter is the sum of the individual values, not their maximum or any single local value. Again, each slot tracks how many increments that specific replica has performed, so the total is how many increments have happened across all replicas.</p>
 <p>To make it concrete, consider this output:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode txt code-with-copy"><code class="sourceCode default"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>Ahmed: value=5, counts={'Ahmed': 3, 'Baemi': 2}</span>
+<div class="sourceCode" id="cb5"><pre class="sourceCode txt"><code class="sourceCode default"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>Ahmed: value=5, counts={'Ahmed': 3, 'Baemi': 2}</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>Baemi: value=5, counts={'Baemi': 3, 'Ahmed': 2}</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>Chiti: value=7, counts={'Chiti': 3, 'Ahmed': 2, 'Baemi': 2}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>Chiti: value=7, counts={'Chiti': 3, 'Ahmed': 2, 'Baemi': 2}</span></code></pre></div>
 <p>Ahmed and Baemi have synced with each other, so they agree, but neither has synced recently with Chiti. Chiti has synced with them, though, so Chiti’s view is more complete. Once all three sync, they’ll all converge to:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode txt code-with-copy"><code class="sourceCode default"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>counts={'Ahmed': 3, 'Baemi': 3, 'Chiti': 3}`</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode txt"><code class="sourceCode default"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>counts={'Ahmed': 3, 'Baemi': 3, 'Chiti': 3}`</span></code></pre></div>
 <p>with the value 9. No increments are lost, regardless of sync order or timing.</p>
 <p>A grow-only counter is limited. What if we want to be able to decrement the value? A <a href="../glossary/index.html#pn-counter">positive-negative counter</a>, or PN-Counter, uses two G-Counters: one for increments, one for decrements. This works because increments and decrements are tracked separately. Each remains monotonically increasing, so the G-Counter merge properties still apply.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</section>
-<section id="crdt-orset" class="level2" data-number="P.3">
-<h2 data-number="P.3" class="anchored" data-anchor-id="crdt-orset"><span class="header-section-number">P.3</span> Observed-Remove Set (OR-Set)</h2>
+<div class="sourceCode" id="cb7"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<h2 data-number="P.3" id="crdt-orset"><span class="header-section-number">P.3</span> Observed-Remove Set (OR-Set)</h2>
 <p>Sets are trickier to implement than counters. If Ahmed adds X and Baemi removes X concurrently, should X be in the final set?</p>
 <p>The most natural answer is “remove wins”: the element is absent. But this makes it impossible to add an element back after a concurrent remove has been received— the remove has already been applied. The OR-Set chooses “add-wins” semantics instead, by using unique tags to distinguish each add operation.</p>
 <p>When Ahmed adds element X, the OR-Set creates a unique tag (say, <code>(Ahmed, 42)</code>) and records the pair <code>(X, {(Ahmed,42)})</code>. When Baemi later removes X, the remove records <em>which tags it has seen</em>—in this case <code>(Ahmed, 42)</code>. If Chiti concurrently adds X with a new tag <code>(Chiti, 7)</code>, that tag has never been seen by Baemi’s remove. After merging all three replicas, X is still present because tag <code>(Chiti, 7)</code> was added but never removed. The element is present if and only if there exists at least one add tag that no remove has ever seen.</p>
@@ -613,9 +112,9 @@ Merge all three:
   Baemi: {} removes={(Ahmed,1)}
   Chiti: {X: {(Chiti,1)}}
   Result: X is present because (Chiti,1) was never removed.</code></pre>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>This example shows an OR-set in operation:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <pre><code>[0] Ahmed: add 'banana' -&gt; ['banana']
 [0] Baemi: add 'banana' -&gt; ['banana']
 [0] Chiti: add 'cherry' -&gt; ['cherry']
@@ -631,23 +130,19 @@ Merge all three:
 [10] Ahmed: remove 'apple' -&gt; ['banana', 'cherry']
 [10] Baemi: add 'apple' -&gt; ['apple', 'banana', 'cherry']
 [10] Chiti: add 'cherry' -&gt; ['apple', 'banana', 'cherry']
-
 --- Final State
 Ahmed: ['banana', 'cherry']
 Baemi: ['apple', 'banana', 'cherry']
-Chiti: ['apple', 'banana', 'cherry']
-</code></pre>
-</section>
-<section id="crdt-op" class="level2" data-number="P.4">
-<h2 data-number="P.4" class="anchored" data-anchor-id="crdt-op"><span class="header-section-number">P.4</span> Operation-Based CRDTs</h2>
+Chiti: ['apple', 'banana', 'cherry']</code></pre>
+<h2 data-number="P.4" id="crdt-op"><span class="header-section-number">P.4</span> Operation-Based CRDTs</h2>
 <p>While state-based CRDTs send the full state between replicas operation-based CRDTs send just the operations. Let’s implement an operation-based counter by defining a dataclass to represent a single operation:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>and then a class to use it:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>Operation-based CRDTs require reliable broadcast to ensure that every operation reaches every replica exactly once. In practice, this means tracking which operations have been delivered and handling duplicates, which is what the <code>applied_ops</code> member of the <code>OpBasedCounter</code> class above does.</p>
 <p>“Exactly once” does not mean the network must guarantee it—networks never do. Instead, the sender can re-send operations as many times as needed (achieving “at least once”), and the receiver deduplicates using the unique operation ID (<code>applied_ops</code>). Together these give “exactly once” <em>effect</em>: the operation changes state only the first time it arrives. This is why operation IDs must be globally unique (not just unique per replica) and must be stored permanently— discarding <code>applied_ops</code> would allow a re-delivered operation to be applied twice, breaking convergence.</p>
 <p>The <code>Replica</code> class below exercises this counter:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>Unlike the state-based examples that sync by merging full state, each replica creates an increment or decrement operation with a unique ID, applies it locally, and then broadcasts it to all the other replicates. The replica then drains its inbox and applies received operations, skipping duplicates via <code>op_id</code>. As the output below shows, all replicas converge to the same value because every operation is delivered to every replica exactly once:</p>
 <pre><code>[0] Ahmed: increment -&gt; 1
 [0] Baemi: increment -&gt; 1
@@ -667,24 +162,20 @@ Chiti: ['apple', 'banana', 'cherry']
 [10] Ahmed: applied inbox -&gt; 1
 [10] Baemi: applied inbox -&gt; 1
 [10] Chiti: applied inbox -&gt; 1
-
 --- Final State
 OpCounter(id=Ahmed, value=1)
 OpCounter(id=Baemi, value=1)
-OpCounter(id=Chiti, value=1)
-</code></pre>
-</section>
-<section id="crdt-partition" class="level2" data-number="P.5">
-<h2 data-number="P.5" class="anchored" data-anchor-id="crdt-partition"><span class="header-section-number">P.5</span> Network Partition Simulation</h2>
+OpCounter(id=Chiti, value=1)</code></pre>
+<h2 data-number="P.5" id="crdt-partition"><span class="header-section-number">P.5</span> Network Partition Simulation</h2>
 <p>A <a href="../glossary/index.html#network-partition">network partition</a> happens when nodes in a distributed system temporarily can’t communicate, which causes them to form isolated groups. As a result, messages sent from one part of the system may not reach another, effectively splitting the system into disconnected segments.</p>
 <p>One of CRDTs’ key benefits is <a href="../glossary/index.html#partition-tolerance">partition tolerance</a>. Let’s simulate a network partition using the <code>GCounter</code> class defined earlier. First, we create a simple dataclass to represent peers in the network:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>Next, we define a <code>Replica</code> process that repeatedly tries to synchronize with a randomly-selected peer:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>We then create a partition controller that creates and heals a partition:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="sourceCode" id="cb18"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>Finally, we create three replicas and force a break in the network at a particular time and for a particular duration:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>As the output shows, the counter recovers from the partitioning:</p>
 <pre><code>[0] Ahmed: increment -&gt; 1
 [0] Baemi: increment -&gt; 1
@@ -712,16 +203,12 @@ OpCounter(id=Chiti, value=1)
 [14] Ahmed: synced with Baemi -&gt; 11
 [14] Baemi: synced with Chiti -&gt; 11
 [14] Chiti: synced with Ahmed -&gt; 12
-
 --- Final State
 GCounter(id=Ahmed, value=11, counts={'Ahmed': 4, 'Chiti': 3, 'Baemi': 4})
 GCounter(id=Baemi, value=11, counts={'Baemi': 4, 'Chiti': 4, 'Ahmed': 3})
-GCounter(id=Chiti, value=12, counts={'Chiti': 4, 'Baemi': 4, 'Ahmed': 4})
-</code></pre>
+GCounter(id=Chiti, value=12, counts={'Chiti': 4, 'Baemi': 4, 'Ahmed': 4})</code></pre>
 <section class="exercises">
-</section>
-<section id="crdt-exercises" class="level2" data-number="P.6">
-<h2 data-number="P.6" class="anchored" data-anchor-id="crdt-exercises"><span class="header-section-number">P.6</span> Exercises</h2>
+<h2 data-number="P.6" id="crdt-exercises"><span class="header-section-number">P.6</span> Exercises</h2>
 <ol type="1">
 <li><p>The LWW-Register breaks ties by comparing replica IDs alphabetically. Change the simulation so that Chiti’s replica ID is “AAA” (alphabetically first). What is the final value after merging? Why might choosing the alphabetically last ID as the winner be a bad choice for real deployments?</p></li>
 <li><p>In the G-Counter, each replica only modifies its own slot in the vector. What happens if two replicas accidentally use the same replica ID? Trace through a scenario with two replicas both named “R1” doing one increment each and then merging. What is the final value, and why is it wrong?</p></li>
@@ -731,501 +218,7 @@ GCounter(id=Chiti, value=12, counts={'Chiti': 4, 'Baemi': 4, 'Ahmed': 4})
 </ol>
 </section>
 
-
-</section>
-
-</main> <!-- /main -->
-<script id="quarto-html-after-body" type="application/javascript">
-  window.document.addEventListener("DOMContentLoaded", function (event) {
-    const icon = "";
-    const anchorJS = new window.AnchorJS();
-    anchorJS.options = {
-      placement: 'right',
-      icon: icon
-    };
-    anchorJS.add('.anchored');
-    const isCodeAnnotation = (el) => {
-      for (const clz of el.classList) {
-        if (clz.startsWith('code-annotation-')) {                     
-          return true;
-        }
-      }
-      return false;
-    }
-    const onCopySuccess = function(e) {
-      // button target
-      const button = e.trigger;
-      // don't keep focus
-      button.blur();
-      // flash "checked"
-      button.classList.add('code-copy-button-checked');
-      var currentTitle = button.getAttribute("title");
-      button.setAttribute("title", "Copied!");
-      let tooltip;
-      if (window.bootstrap) {
-        button.setAttribute("data-bs-toggle", "tooltip");
-        button.setAttribute("data-bs-placement", "left");
-        button.setAttribute("data-bs-title", "Copied!");
-        tooltip = new bootstrap.Tooltip(button, 
-          { trigger: "manual", 
-            customClass: "code-copy-button-tooltip",
-            offset: [0, -8]});
-        tooltip.show();    
-      }
-      setTimeout(function() {
-        if (tooltip) {
-          tooltip.hide();
-          button.removeAttribute("data-bs-title");
-          button.removeAttribute("data-bs-toggle");
-          button.removeAttribute("data-bs-placement");
-        }
-        button.setAttribute("title", currentTitle);
-        button.classList.remove('code-copy-button-checked');
-      }, 1000);
-      // clear code selection
-      e.clearSelection();
-    }
-    const getTextToCopy = function(trigger) {
-      const outerScaffold = trigger.parentElement.cloneNode(true);
-      const codeEl = outerScaffold.querySelector('code');
-      for (const childEl of codeEl.children) {
-        if (isCodeAnnotation(childEl)) {
-          childEl.remove();
-        }
-      }
-      return codeEl.innerText;
-    }
-    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
-      text: getTextToCopy
-    });
-    clipboard.on('success', onCopySuccess);
-    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
-      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
-        text: getTextToCopy,
-        container: window.document.getElementById('quarto-embedded-source-code-modal')
-      });
-      clipboardModal.on('success', onCopySuccess);
-    }
-      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
-      var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp('/' + window.location.host + '/');
-      var isInternal = (href) => {
-          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
-      }
-      // Inspect non-navigation links and adorn them if external
-      window.quartoDecorateExternalLinks = function (root) {
-     var links = (root || window.document).querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
-      for (var i=0; i<links.length; i++) {
-        const link = links[i];
-        if (!isInternal(link.href)) {
-          // undo the damage that might have been done by quarto-nav.js in the case of
-          // links that we want to consider external
-          if (link.dataset.originalHref !== undefined) {
-            link.href = link.dataset.originalHref;
-          }
-          if (!link.classList.contains('no-external-icon')) {
-          }
-        }
-      }
-      };
-      window.quartoDecorateExternalLinks(window.document);
-    // Esc closes the popup (WCAG 1.4.13) and focus leaving both trigger and
-    // popup closes it (WCAG 2.4.11); tippy handles neither for interactive popups.
-    const hideOnEscAndFocusOut = {
-      name: 'hideOnEscAndFocusOut',
-      defaultValue: true,
-      fn(instance) {
-        const dismiss = () => {
-          // A show scheduled by the trigger delay would otherwise reopen it
-          instance.clearDelayTimeouts();
-          instance.hide();
-        };
-        const onKeyDown = (event) => {
-          if (event.key !== 'Escape') {
-            return;
-          }
-          // Keep Esc from also reaching page handlers (e.g. reveal.js overview),
-          // except an open reveal.js slide menu, which Esc should close too.
-          // The menu handles keys only when its keyboard option is on.
-          const menuHandlesEsc = window.Reveal?.getPlugin?.('menu')?.isOpen() &&
-            window.Reveal.getConfig().menu?.keyboard !== false;
-          if (!menuHandlesEsc) {
-            event.stopPropagation();
-          }
-          if (instance.popper.contains(window.document.activeElement)) {
-            // Disabled while refocusing so the focus trigger does not reopen it
-            instance.disable();
-            instance.reference.focus();
-            instance.enable();
-          }
-          dismiss();
-        };
-        const onFocusOut = (event) => {
-          const target = event.relatedTarget;
-          if (target && !instance.reference.contains(target) &&
-              !instance.popper.contains(target)) {
-            dismiss();
-          }
-        };
-        // On the trigger too: a click trigger (code-annotations: select) has no
-        // blur handling. Attached for the instance's lifetime so leaving the
-        // trigger also cancels a show still pending on the trigger delay.
-        instance.reference.addEventListener('focusout', onFocusOut);
-        return {
-          onShow() {
-            window.document.addEventListener('keydown', onKeyDown, true);
-            instance.popper.addEventListener('focusout', onFocusOut);
-          },
-          onHide() {
-            window.document.removeEventListener('keydown', onKeyDown, true);
-            instance.popper.removeEventListener('focusout', onFocusOut);
-          },
-          onDestroy() {
-            instance.reference.removeEventListener('focusout', onFocusOut);
-          },
-        };
-      },
-    };
-    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
-      const config = {
-        allowHTML: true,
-        maxWidth: 500,
-        delay: 100,
-        arrow: false,
-        appendTo: function(el) {
-            return el.parentElement;
-        },
-        interactive: true,
-        interactiveBorder: 10,
-        theme: 'quarto',
-        placement: 'bottom-start',
-        plugins: [hideOnEscAndFocusOut],
-      };
-      if (contentFn) {
-        config.content = contentFn;
-      }
-      if (onTriggerFn) {
-        config.onTrigger = onTriggerFn;
-      }
-      if (onUntriggerFn) {
-        config.onUntrigger = onUntriggerFn;
-      }
-      window.tippy(el, config); 
-    }
-    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
-    for (var i=0; i<noterefs.length; i++) {
-      const ref = noterefs[i];
-      tippyHover(ref, function() {
-        // use id or data attribute instead here
-        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
-        try { href = new URL(href).hash; } catch {}
-        const id = href.replace(/^#\/?/, "");
-        const note = window.document.getElementById(id);
-        if (note) {
-          return note.innerHTML;
-        } else {
-          return "";
-        }
-      });
-    }
-    const xrefs = window.document.querySelectorAll('a.quarto-xref');
-    const processXRef = (id, note) => {
-      // Strip column container classes
-      const stripColumnClz = (el) => {
-        el.classList.remove("page-full", "page-columns");
-        if (el.children) {
-          for (const child of el.children) {
-            stripColumnClz(child);
-          }
-        }
-      }
-      stripColumnClz(note)
-      if (id === null || id.startsWith('sec-')) {
-        // Special case sections, only their first couple elements
-        const container = document.createElement("div");
-        if (note.children && note.children.length > 2) {
-          container.appendChild(note.children[0].cloneNode(true));
-          for (let i = 1; i < note.children.length; i++) {
-            const child = note.children[i];
-            if (child.tagName === "P" && child.innerText === "") {
-              continue;
-            } else {
-              container.appendChild(child.cloneNode(true));
-              break;
-            }
-          }
-          if (window.Quarto?.typesetMath) {
-            window.Quarto.typesetMath(container);
-          }
-          return container.innerHTML
-        } else {
-          if (window.Quarto?.typesetMath) {
-            window.Quarto.typesetMath(note);
-          }
-          return note.innerHTML;
-        }
-      } else {
-        // Remove any anchor links if they are present
-        const anchorLink = note.querySelector('a.anchorjs-link');
-        if (anchorLink) {
-          anchorLink.remove();
-        }
-        if (window.Quarto?.typesetMath) {
-          window.Quarto.typesetMath(note);
-        }
-        if (note.classList.contains("callout")) {
-          return note.outerHTML;
-        } else {
-          return note.innerHTML;
-        }
-      }
-    }
-    for (var i=0; i<xrefs.length; i++) {
-      const xref = xrefs[i];
-      tippyHover(xref, undefined, function(instance) {
-        instance.disable();
-        let url = xref.getAttribute('href');
-        let hash = undefined; 
-        if (url.startsWith('#')) {
-          hash = url;
-        } else {
-          try { hash = new URL(url).hash; } catch {}
-        }
-        if (hash) {
-          const id = hash.replace(/^#\/?/, "");
-          const note = window.document.getElementById(id);
-          if (note !== null) {
-            try {
-              const html = processXRef(id, note.cloneNode(true));
-              instance.setContent(html);
-            } finally {
-              instance.enable();
-              instance.show();
-            }
-          } else {
-            // See if we can fetch this
-            fetch(url.split('#')[0])
-            .then(res => res.text())
-            .then(html => {
-              const parser = new DOMParser();
-              const htmlDoc = parser.parseFromString(html, "text/html");
-              const note = htmlDoc.getElementById(id);
-              if (note !== null) {
-                const html = processXRef(id, note);
-                instance.setContent(html);
-              } 
-            }).finally(() => {
-              instance.enable();
-              instance.show();
-            });
-          }
-        } else {
-          // See if we can fetch a full url (with no hash to target)
-          // This is a special case and we should probably do some content thinning / targeting
-          fetch(url)
-          .then(res => res.text())
-          .then(html => {
-            const parser = new DOMParser();
-            const htmlDoc = parser.parseFromString(html, "text/html");
-            const note = htmlDoc.querySelector('main.content');
-            if (note !== null) {
-              // This should only happen for chapter cross references
-              // (since there is no id in the URL)
-              // remove the first header
-              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
-                note.children[0].remove();
-              }
-              const html = processXRef(null, note);
-              instance.setContent(html);
-            } 
-          }).finally(() => {
-            instance.enable();
-            instance.show();
-          });
-        }
-      }, function(instance) {
-      });
-    }
-        let selectedAnnoteEl;
-        const selectorForAnnotation = ( cell, annotation) => {
-          let cellAttr = 'data-code-cell="' + cell + '"';
-          let lineAttr = 'data-code-annotation="' +  annotation + '"';
-          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
-          return selector;
-        }
-        const selectCodeLines = (annoteEl) => {
-          const doc = window.document;
-          const targetCell = annoteEl.getAttribute("data-target-cell");
-          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
-          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
-          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
-          const lineIds = lines.map((line) => {
-            return targetCell + "-" + line;
-          })
-          // Each band is positioned against its own containing block, which is
-          // not the offsetParent of the lines, so place it from client rects.
-          const placeBand = (band, firstEl, lastEl, codeBlock) => {
-            const container = band.offsetParent;
-            if (container === null) {
-              return;
-            }
-            const containerRect = container.getBoundingClientRect();
-            // Reveal.js scales slides with a transform, so convert client
-            // pixels back to the CSS pixels of the container.
-            const scale = containerRect.height / container.offsetHeight || 1;
-            const firstRect = firstEl.getBoundingClientRect();
-            const lastRect = lastEl.getBoundingClientRect();
-            const top = (firstRect.top - containerRect.top) / scale - container.clientTop + container.scrollTop;
-            const height = (lastRect.bottom - firstRect.top) / scale;
-            band.style.top = top - 2 + "px";
-            band.style.height = height + 4 + "px";
-            if (codeBlock) {
-              // Without the copy button wrapper, the containing block is wider
-              // than the code block, so span the code block explicitly.
-              const blockRect = codeBlock.getBoundingClientRect();
-              band.style.left = (blockRect.left - containerRect.left) / scale - container.clientLeft + container.scrollLeft + "px";
-              band.style.width = blockRect.width / scale + "px";
-            }
-          };
-          if (lineIds.length > 0) {
-            const el = window.document.getElementById(lineIds[0]);
-            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
-            const parent = el.parentElement.parentElement;
-            // cook up a div (if necessary) and position it
-            let div = window.document.getElementById("code-annotation-line-highlight");
-            if (div === null) {
-              div = window.document.createElement("div");
-              div.setAttribute("id", "code-annotation-line-highlight");
-              div.style.position = 'absolute';
-              parent.appendChild(div);
-            }
-            placeBand(div, el, lastEl, parent.closest("div.sourceCode") || parent);
-            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
-            if (gutterDiv === null) {
-              gutterDiv = window.document.createElement("div");
-              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
-              gutterDiv.style.position = 'absolute';
-              const codeCell = window.document.getElementById(targetCell);
-              const gutter = codeCell.querySelector('.code-annotation-gutter');
-              gutter.appendChild(gutterDiv);
-            }
-            placeBand(gutterDiv, el, lastEl);
-            selectedAnnoteEl = annoteEl;
-          }
-        };
-        const unselectCodeLines = () => {
-          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
-          elementsIds.forEach((elId) => {
-            const div = window.document.getElementById(elId);
-            if (div) {
-              div.remove();
-            }
-          });
-          selectedAnnoteEl = undefined;
-        };
-          // Handle positioning of the toggle
-      window.addEventListener(
-        "resize",
-        throttle(() => {
-          elRect = undefined;
-          if (selectedAnnoteEl) {
-            selectCodeLines(selectedAnnoteEl);
-          }
-        }, 10)
-      );
-      function throttle(fn, ms) {
-      let throttle = false;
-      let timer;
-        return (...args) => {
-          if(!throttle) { // first call gets through
-              fn.apply(this, args);
-              throttle = true;
-          } else { // all the others get throttled
-              if(timer) clearTimeout(timer); // cancel #2
-              timer = setTimeout(() => {
-                fn.apply(this, args);
-                timer = throttle = false;
-              }, ms);
-          }
-        };
-      }
-        // Attach click handler to the DT
-        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
-        for (const annoteDlNode of annoteDls) {
-          annoteDlNode.addEventListener('click', (event) => {
-            const clickedEl = event.target;
-            if (clickedEl !== selectedAnnoteEl) {
-              unselectCodeLines();
-              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
-              if (activeEl) {
-                activeEl.classList.remove('code-annotation-active');
-              }
-              selectCodeLines(clickedEl);
-              clickedEl.classList.add('code-annotation-active');
-            } else {
-              // Unselect the line
-              unselectCodeLines();
-              clickedEl.classList.remove('code-annotation-active');
-            }
-          });
-        }
-    const findCites = (el) => {
-      const parentEl = el.parentElement;
-      if (parentEl) {
-        const cites = parentEl.dataset.cites;
-        if (cites) {
-          return {
-            el,
-            cites: cites.split(' ')
-          };
-        } else {
-          return findCites(el.parentElement)
-        }
-      } else {
-        return undefined;
-      }
-    };
-    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
-    for (var i=0; i<bibliorefs.length; i++) {
-      const ref = bibliorefs[i];
-      const citeInfo = findCites(ref);
-      if (citeInfo) {
-        tippyHover(citeInfo.el, function() {
-          var popup = window.document.createElement('div');
-          citeInfo.cites.forEach(function(cite) {
-            var citeDiv = window.document.createElement('div');
-            citeDiv.classList.add('hanging-indent');
-            citeDiv.classList.add('csl-entry');
-            var biblioDiv = window.document.getElementById('ref-' + cite);
-            if (biblioDiv) {
-              citeDiv.innerHTML = biblioDiv.innerHTML;
-            }
-            popup.appendChild(citeDiv);
-          });
-          return popup.innerHTML;
-        });
-      }
-    }
-  });
-  </script>
-  <script type="application/javascript">
-  window.quartoScrollableRegionsLabels = {"code":"Scrollable code","output":"Scrollable output"};
-  </script>
-<nav class="page-navigation" aria-label="Page">
-  <div class="nav-page nav-page-previous">
-      <a href="../tracing/index.html" class="pagination-link" aria-label="Distributed Tracing">
-        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text"><span class="chapter-number">O</span>&nbsp; <span class="chapter-title">Distributed Tracing</span></span>
-      </a>          
-  </div>
-  <div class="nav-page nav-page-next">
-      <a href="../oauth/index.html" class="pagination-link" aria-label="OAuth">
-        <span class="nav-page-text"><span class="chapter-number">Q</span>&nbsp; <span class="chapter-title">OAuth</span></span> <i class="bi bi-arrow-right-short"></i>
-      </a>
-  </div>
-</nav>
-</div> <!-- /content -->
+</main>
 
 
-
-
-<footer class="footer"><div class="nav-footer"><div class="nav-footer-center"><div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/gvwilson/sdxpy/edit/main/crdt/index.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/gvwilson/sdxpy/blob/main/crdt/index.qmd" class="toc-action"><i class="bi empty"></i>View source</a></li><li><a href="https://github.com/gvwilson/sdxpy/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></div></div></footer></body></html>
+</body></html>

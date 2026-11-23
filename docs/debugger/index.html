@@ -1,543 +1,37 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head><meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>A Debugger</title>
+  <link rel="stylesheet" href="../mccole/mccole-book.css">
 
-<meta charset="utf-8">
-<meta name="generator" content="quarto-1.11.9">
-
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-
-
-<title>26&nbsp; A Debugger – Software Design by Example</title>
-<style>
-/* Default styles provided by pandoc.
-** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
-*/
-span.smallcaps{font-variant: small-caps;}
-div.columns{display: flex; gap: 1.5em;}
-div.column{flex: auto;}
-@media screen {
-div.columns{gap: min(4vw, 1.5em);}
-div.column{overflow-x: auto;}
-}
-div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
-ul.task-list{list-style: none;}
-ul.task-list li input[type="checkbox"] {
-  width: 0.8em;
-  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
-  vertical-align: middle;
-}
-/* CSS for syntax highlighting */
-html { -webkit-text-size-adjust: 100%; }
-pre > code.sourceCode { white-space: pre; position: relative; }
-pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
-pre > code.sourceCode > span:empty { height: 1.2em; }
-.sourceCode { overflow: visible; }
-code.sourceCode > span { color: inherit; text-decoration: inherit; }
-div.sourceCode { margin: 1em 0; }
-pre.sourceCode { margin: 0; }
-@media screen {
-div.sourceCode { overflow: auto; }
-}
-@media print {
-pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
-}
-pre.numberSource code
-  { counter-reset: source-line 0; }
-pre.numberSource code > span
-  { position: relative; left: -4em; counter-increment: source-line; }
-pre.numberSource code > span > a:first-child::before
-  { content: counter(source-line);
-    position: relative; left: -1em; text-align: right; vertical-align: baseline;
-    border: none; display: inline-block;
-    -webkit-touch-callout: none; -webkit-user-select: none;
-    -khtml-user-select: none; -moz-user-select: none;
-    -ms-user-select: none; user-select: none;
-    padding: 0 4px; width: 4em;
-  }
-pre.numberSource { margin-left: 3em;  padding-left: 4px; }
-div.sourceCode
-  {   }
-@media screen {
-pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
-}
-</style>
-
-
-<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
-<script src="../site_libs/quarto-nav/headroom.min.js"></script>
-<script src="../site_libs/clipboard/clipboard.min.js"></script>
-<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
-<script src="../site_libs/quarto-search/fuse.min.js"></script>
-<script src="../site_libs/quarto-search/quarto-search.js"></script>
-<meta name="quarto:offset" content="../">
-<link href="../finale/index.html" rel="next">
-<link href="../vm/index.html" rel="prev">
-<script src="../site_libs/quarto-html/quarto.js" type="module"></script>
-<script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
-<script src="../site_libs/quarto-html/scrollable-regions/scrollable-regions.js" type="module"></script>
-<script src="../site_libs/quarto-html/popper.min.js"></script>
-<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
-<script src="../site_libs/quarto-html/anchor.min.js"></script>
-<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="../site_libs/quarto-html/quarto-syntax-highlighting-63b5708e65d6cd79cd7618c58d0c21e7.css" rel="stylesheet" id="quarto-text-highlighting-styles">
-<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
-<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../site_libs/bootstrap/bootstrap-01a495efc5497ac6e3f5457e7ed18e65.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
-<script id="quarto-search-options" type="application/json">{
-  "location": "sidebar",
-  "copy-button": false,
-  "collapse-after": 3,
-  "panel-placement": "start",
-  "type": "textbox",
-  "limit": 50,
-  "keyboard-shortcut": [
-    "f",
-    "/",
-    "s"
-  ],
-  "show-item-context": false,
-  "language": {
-    "search-no-results-text": "No results",
-    "search-matching-documents-text": "matching documents",
-    "search-copy-link-title": "Copy link to search",
-    "search-hide-matches-text": "Hide additional matches",
-    "search-more-match-text": "more match in this document",
-    "search-more-matches-text": "more matches in this document",
-    "search-clear-button-title": "Clear",
-    "search-text-placeholder": "",
-    "search-detached-cancel-button-title": "Cancel",
-    "search-submit-button-title": "Submit",
-    "search-label": "Search"
-  }
-}</script>
-
-
-<link rel="stylesheet" href="../mccole/book.css">
 </head>
-
-<body class="nav-sidebar floating quarto-light"><a id="quarto-skip-link" class="visually-hidden-focusable" href="#quarto-document-content">Skip to main content</a>
-
-<div id="quarto-search-results"></div>
-  <header id="quarto-header" class="headroom fixed-top">
-  <nav class="quarto-secondary-nav" aria-label="Toolbar">
-    <div class="container-fluid d-flex">
-      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
-        <i class="bi bi-layout-text-sidebar-reverse"></i>
-      </button>
-        <nav class="quarto-page-breadcrumbs" aria-label="Breadcrumbs"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../debugger/index.html"><span class="chapter-number">26</span>&nbsp; <span class="chapter-title">A Debugger</span></a></li></ol></nav>
-        <a class="flex-grow-1" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
-        </a>
-      <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
-        <i class="bi bi-search"></i>
-      </button>
+<body>
+<header class="topbar">
+  <nav class="topnav">
+    <a class="topnav-item" href="../index.html">Home</a>
+    <div class="topnav-dropdown">
+      <span class="topnav-item">Chapters</span>
+      <div class="topnav-menu"><ul class="topnav-list"><li><a href="../intro/index.html">Introduction</a></li><li><a href="../oop/index.html">Objects and Classes</a></li><li><a href="../dup/index.html">Finding Duplicate Files</a></li><li><a href="../glob/index.html">Matching Patterns</a></li><li><a href="../parse/index.html">Parsing Text</a></li><li><a href="../test/index.html">Running Tests</a></li><li><a href="../interp/index.html">An Interpreter</a></li><li><a href="../func/index.html">Functions and Closures</a></li><li><a href="../protocols/index.html">Protocols</a></li><li><a href="../archive/index.html">A File Archiver</a></li><li><a href="../check/index.html">An HTML Validator</a></li><li><a href="../template/index.html">A Template Expander</a></li><li><a href="../lint/index.html">A Code Linter</a></li><li><a href="../layout/index.html">Page Layout</a></li><li><a href="../perf/index.html">Performance Profiling</a></li><li><a href="../persist/index.html">Object Persistence</a></li><li><a href="../binary/index.html">Binary Data</a></li><li><a href="../db/index.html">A Database</a></li><li><a href="../build/index.html">A Build Manager</a></li><li><a href="../pack/index.html">A Package Manager</a></li><li><a href="../ftp/index.html">Transferring Files</a></li><li><a href="../http/index.html">Serving Web Pages</a></li><li><a href="../viewer/index.html">A File Viewer</a></li><li><a href="../undo/index.html">Undo and Redo</a></li><li><a href="../vm/index.html">A Virtual Machine</a></li><li><a href="../debugger/index.html">A Debugger</a></li><li><a href="../finale/index.html">Conclusion</a></li></ul></div>
+    </div>
+    <div class="topnav-dropdown">
+      <span class="topnav-item">Appendices</span>
+      <div class="topnav-menu"><ul class="topnav-list"><li><a href="../license/index.html">License</a></li><li><a href="../conduct/index.html">Code of Conduct</a></li><li><a href="../contributing/index.html">Contributing</a></li><li><a href="../bibliography/index.html">Bibliography</a></li><li><a href="../glossary/index.html">Glossary</a></li><li><a href="../syllabus/index.html">Syllabus</a></li><li><a href="../bonus/index.html">Bonus Material</a></li><li><a href="../observe/index.html">Observers</a></li><li><a href="../docgen/index.html">Generating Documentation</a></li><li><a href="../cache/index.html">A File Cache</a></li><li><a href="../concur/index.html">Concurrency</a></li><li><a href="../mapreduce/index.html">MapReduce Framework</a></li><li><a href="../msgque/index.html">A Publish-Subscribe Message Queue</a></li><li><a href="../worksteal/index.html">A Work-Stealing Scheduler</a></li><li><a href="../tracing/index.html">Distributed Tracing</a></li><li><a href="../crdt/index.html">Conflict-Free Replicated Data Types</a></li><li><a href="../oauth/index.html">OAuth</a></li><li><a href="../distlock/index.html">Distributed Lock Manager</a></li><li><a href="../torrent/index.html">BitTorrent Protocol</a></li><li><a href="../eventual/index.html">Eventually Consistent Key-Value Store</a></li><li><a href="../saga/index.html">The Saga Pattern</a></li><li><a href="../tcp/index.html">Building TCP on UDP</a></li><li><a href="../dns/index.html">Domain Name System (DNS)</a></li><li><a href="../ntp/index.html">Network Time Protocol (NTP)</a></li><li><a href="../fs/index.html">A Simple Filesystem</a></li><li><a href="../slides/index.html">Slides</a></li></ul></div>
+    </div>
+    <div class="topnav-dropdown">
+      <span class="topnav-item">Contents</span>
+      <div class="topnav-menu"><ul>
+<li><a href="#debugger-step" id="toc-debugger-step"><span class="header-section-number">26.1</span> One Step at a Time</a></li>
+<li><a href="#debugger-test" id="toc-debugger-test"><span class="header-section-number">26.2</span> Testing</a></li>
+<li><a href="#debugger-extensibility" id="toc-debugger-extensibility"><span class="header-section-number">26.3</span> Extensibility</a></li>
+<li><a href="#debugger-breakpoints" id="toc-debugger-breakpoints"><span class="header-section-number">26.4</span> Breakpoints</a></li>
+<li><a href="#debugger-summary" id="toc-debugger-summary"><span class="header-section-number">26.5</span> Summary</a></li>
+<li><a href="#debugger-exercises" id="toc-debugger-exercises"><span class="header-section-number">26.6</span> Exercises</a></li>
+</ul></div>
     </div>
   </nav>
 </header>
-<!-- content -->
-<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article">
-<!-- sidebar -->
-  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto" aria-label="Site">
-    <div class="pt-lg-2 mt-2 text-left sidebar-header">
-    <div class="sidebar-title mb-0 py-0">
-      <a href="../">Software Design by Example</a> 
-        <div class="sidebar-tools-main">
-    <a href="https://github.com/gvwilson/sdxpy" title="Source Code" class="quarto-navigation-tool px-1" aria-label="Source Code"><i class="bi bi-github"></i></a>
-</div>
-    </div>
-      </div>
-        <div class="mt-2 flex-shrink-0 align-items-center">
-        <div class="sidebar-search">
-        <div id="quarto-search" class="" title="Search"></div>
-        </div>
-        </div>
-    <div class="sidebar-menu-container"> 
-    <ul class="list-unstyled mt-1">
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Overview</span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../intro/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">1</span>&nbsp; <span class="chapter-title">Introduction</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../oop/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">Objects and Classes</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../dup/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">3</span>&nbsp; <span class="chapter-title">Finding Duplicate Files</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../glob/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">Matching Patterns</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../parse/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">Parsing Text</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../test/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">6</span>&nbsp; <span class="chapter-title">Running Tests</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../interp/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">7</span>&nbsp; <span class="chapter-title">An Interpreter</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../func/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">8</span>&nbsp; <span class="chapter-title">Functions and Closures</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../protocols/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">9</span>&nbsp; <span class="chapter-title">Protocols</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../archive/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">10</span>&nbsp; <span class="chapter-title">A File Archiver</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../check/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">11</span>&nbsp; <span class="chapter-title">An HTML Validator</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../template/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">12</span>&nbsp; <span class="chapter-title">A Template Expander</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../lint/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">13</span>&nbsp; <span class="chapter-title">A Code Linter</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../layout/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">14</span>&nbsp; <span class="chapter-title">Page Layout</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../perf/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">15</span>&nbsp; <span class="chapter-title">Performance Profiling</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../persist/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">16</span>&nbsp; <span class="chapter-title">Object Persistence</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../binary/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">17</span>&nbsp; <span class="chapter-title">Binary Data</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../db/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">18</span>&nbsp; <span class="chapter-title">A Database</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../build/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">19</span>&nbsp; <span class="chapter-title">A Build Manager</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../pack/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">20</span>&nbsp; <span class="chapter-title">A Package Manager</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../ftp/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">21</span>&nbsp; <span class="chapter-title">Transferring Files</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../http/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">22</span>&nbsp; <span class="chapter-title">Serving Web Pages</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../viewer/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">23</span>&nbsp; <span class="chapter-title">A File Viewer</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../undo/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">24</span>&nbsp; <span class="chapter-title">Undo and Redo</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../vm/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">25</span>&nbsp; <span class="chapter-title">A Virtual Machine</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../debugger/index.html" class="sidebar-item-text sidebar-link active">
- <span class="menu-text"><span class="chapter-number">26</span>&nbsp; <span class="chapter-title">A Debugger</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../finale/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">27</span>&nbsp; <span class="chapter-title">Conclusion</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item sidebar-item-section">
-      <div class="sidebar-item-container"> 
-            <button type="button" class="sidebar-item-text sidebar-item-toggle sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" aria-controls="quarto-sidebar-section-1" aria-expanded="true">
- <span class="menu-text" id="quarto-sidebar-section-1-label">Appendices</span><i class="bi bi-chevron-right" aria-hidden="true"></i></button>
-      </div>
-      <ul id="quarto-sidebar-section-1" aria-labelledby="quarto-sidebar-section-1-label" class="collapse list-unstyled sidebar-section depth1 show">  
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../license/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">A</span>&nbsp; <span class="chapter-title">License</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../conduct/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">B</span>&nbsp; <span class="chapter-title">Code of Conduct</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../contributing/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">C</span>&nbsp; <span class="chapter-title">Contributing</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../bibliography/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">D</span>&nbsp; <span class="chapter-title">Bibliography</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../glossary/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">E</span>&nbsp; <span class="chapter-title">Glossary</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../syllabus/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">F</span>&nbsp; <span class="chapter-title">Syllabus</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../bonus/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">G</span>&nbsp; <span class="chapter-title">Bonus Material</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../observe/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">H</span>&nbsp; <span class="chapter-title">Observers</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../docgen/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">I</span>&nbsp; <span class="chapter-title">Generating Documentation</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../cache/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">J</span>&nbsp; <span class="chapter-title">A File Cache</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../concur/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">K</span>&nbsp; <span class="chapter-title">Concurrency</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../mapreduce/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">L</span>&nbsp; <span class="chapter-title">MapReduce Framework</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../msgque/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">M</span>&nbsp; <span class="chapter-title">A Publish-Subscribe Message Queue</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../worksteal/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">N</span>&nbsp; <span class="chapter-title">A Work-Stealing Scheduler</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../tracing/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">O</span>&nbsp; <span class="chapter-title">Distributed Tracing</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../crdt/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">P</span>&nbsp; <span class="chapter-title">Conflict-Free Replicated Data Types</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../oauth/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">Q</span>&nbsp; <span class="chapter-title">OAuth</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../distlock/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">R</span>&nbsp; <span class="chapter-title">Distributed Lock Manager</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../torrent/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">S</span>&nbsp; <span class="chapter-title">BitTorrent Protocol</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../eventual/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">T</span>&nbsp; <span class="chapter-title">Eventually Consistent Key-Value Store</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../saga/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">U</span>&nbsp; <span class="chapter-title">The Saga Pattern</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../tcp/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">V</span>&nbsp; <span class="chapter-title">Building TCP on UDP</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../dns/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">W</span>&nbsp; <span class="chapter-title">Domain Name System (DNS)</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../ntp/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">X</span>&nbsp; <span class="chapter-title">Network Time Protocol (NTP)</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../fs/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">Y</span>&nbsp; <span class="chapter-title">A Simple Filesystem</span></span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../slides/index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">Z</span>&nbsp; <span class="chapter-title">Slides</span></span></a>
-  </div>
-</li>
-      </ul>
-  </li>
-    </ul>
-    </div>
-</nav>
-<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
-<!-- margin-sidebar -->
-    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
-        <nav id="TOC" role="doc-toc" aria-labelledby="toc-title" class="toc-active">
-    <h2 id="toc-title">Table of contents</h2>
-   
-  <ul>
-  <li><a href="#debugger-step" id="toc-debugger-step" class="nav-link active" data-scroll-target="#debugger-step"><span class="header-section-number">26.1</span> One Step at a Time</a></li>
-  <li><a href="#debugger-test" id="toc-debugger-test" class="nav-link" data-scroll-target="#debugger-test"><span class="header-section-number">26.2</span> Testing</a></li>
-  <li><a href="#debugger-extensibility" id="toc-debugger-extensibility" class="nav-link" data-scroll-target="#debugger-extensibility"><span class="header-section-number">26.3</span> Extensibility</a></li>
-  <li><a href="#debugger-breakpoints" id="toc-debugger-breakpoints" class="nav-link" data-scroll-target="#debugger-breakpoints"><span class="header-section-number">26.4</span> Breakpoints</a></li>
-  <li><a href="#debugger-summary" id="toc-debugger-summary" class="nav-link" data-scroll-target="#debugger-summary"><span class="header-section-number">26.5</span> Summary</a></li>
-  <li><a href="#debugger-exercises" id="toc-debugger-exercises" class="nav-link" data-scroll-target="#debugger-exercises"><span class="header-section-number">26.6</span> Exercises</a>
-  <ul class="collapse">
-  <li><a href="#show-memory-range" id="toc-show-memory-range" class="nav-link" data-scroll-target="#show-memory-range"><span class="header-section-number">26.6.1</span> Show Memory Range</a></li>
-  <li><a href="#breakpoint-addresses" id="toc-breakpoint-addresses" class="nav-link" data-scroll-target="#breakpoint-addresses"><span class="header-section-number">26.6.2</span> Breakpoint Addresses</a></li>
-  <li><a href="#command-completion" id="toc-command-completion" class="nav-link" data-scroll-target="#command-completion"><span class="header-section-number">26.6.3</span> Command Completion</a></li>
-  <li><a href="#conditional-breakpoints" id="toc-conditional-breakpoints" class="nav-link" data-scroll-target="#conditional-breakpoints"><span class="header-section-number">26.6.4</span> Conditional Breakpoints</a></li>
-  <li><a href="#watchpoints" id="toc-watchpoints" class="nav-link" data-scroll-target="#watchpoints"><span class="header-section-number">26.6.5</span> Watchpoints</a></li>
-  <li><a href="#instruction-lookup" id="toc-instruction-lookup" class="nav-link" data-scroll-target="#instruction-lookup"><span class="header-section-number">26.6.6</span> Instruction Lookup</a></li>
-  <li><a href="#changing-memory" id="toc-changing-memory" class="nav-link" data-scroll-target="#changing-memory"><span class="header-section-number">26.6.7</span> Changing Memory</a></li>
-  <li><a href="#displaying-source" id="toc-displaying-source" class="nav-link" data-scroll-target="#displaying-source"><span class="header-section-number">26.6.8</span> Displaying Source</a></li>
-  <li><a href="#interleaving-testing" id="toc-interleaving-testing" class="nav-link" data-scroll-target="#interleaving-testing"><span class="header-section-number">26.6.9</span> Interleaving Testing</a></li>
-  <li><a href="#pattern-matching-in-tests" id="toc-pattern-matching-in-tests" class="nav-link" data-scroll-target="#pattern-matching-in-tests"><span class="header-section-number">26.6.10</span> Pattern Matching in Tests</a></li>
-  </ul></li>
-  </ul>
-<div class="toc-actions"><ul><li><a href="https://github.com/gvwilson/sdxpy/edit/main/debugger/index.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/gvwilson/sdxpy/blob/main/debugger/index.qmd" class="toc-action"><i class="bi empty"></i>View source</a></li><li><a href="https://github.com/gvwilson/sdxpy/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
-    </div>
-<!-- main -->
-<main class="content" id="quarto-document-content" tabindex="-1">
-
-<header id="title-block-header" class="quarto-title-block default">
-<div class="quarto-title">
-<h1 class="title"><span id="sec-debugger" class="quarto-section-identifier"><span class="chapter-number">26</span>&nbsp; <span class="chapter-title">A Debugger</span></span></h1>
-</div>
-
-
-
-<div class="quarto-title-meta">
-
-    
-  
-    
-  </div>
-  
-
-
-</header>
-
-
+<main class="content"><header id="title-block-header" class="quarto-title-block"></header>
+<h1 class="title">A Debugger</h1>
 <div class="syllabus">
 <ul>
 <li>Interactive programs can be tested by simulating input and recording output.</li>
@@ -547,26 +41,25 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </ul>
 </div>
 <p>We have finally come to another of the questions that sparked this book: how does a <a href="../glossary/index.html#debugger">debugger</a> work? Debuggers are as much a part of good programmers’ lives as version control but are taught far less often (in part, we believe, because it’s harder to create homework questions for them). This chapter builds a simple single-stepping debugger for the virtual machine of <a href="../vm/index.html" class="quarto-xref"><span>Chapter 25</span></a> and shows how we can test interactive applications. If you would like to go further and (much) deeper, please have a look at Sy Brand's <a href="https://blog.tartanllama.xyz/writing-a-linux-debugger-setup/">tutorial</a>.</p>
-<section id="debugger-step" class="level2" data-number="26.1">
-<h2 data-number="26.1" class="anchored" data-anchor-id="debugger-step"><span class="header-section-number">26.1</span> One Step at a Time</h2>
+<h2 data-number="26.1" id="debugger-step"><span class="header-section-number">26.1</span> One Step at a Time</h2>
 <p>Before we start work, let’s consolidate and reorganize the code in our virtual machine. The methods all work as they did before, but we’ve made a few changes to allow for future growth. The first is to pass an output stream to the constructor, which by default will be <code>sys.stdout</code>:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>We then replace every <code>print</code> statement with a call to new method called <code>write</code>. For example, the “print register” instruction calls <code>self.write</code>:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>For now, <code>write</code> just prints things to whatever output stream the virtual machine (VM) was given:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>Our virtual machine now loads a program and runs it to completion, so it’s either running or finished. We want to add a third state for single-step execution, so let’s start by adding an enumeration to <code>architecture.py</code>:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> VMState(Enum):</span>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> VMState(Enum):</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Virtual machine states."""</span></span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    FINISHED <span class="op">=</span> <span class="dv">0</span></span>
 <span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    STEPPING <span class="op">=</span> <span class="dv">1</span></span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    RUNNING <span class="op">=</span> <span class="dv">2</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    RUNNING <span class="op">=</span> <span class="dv">2</span></span></code></pre></div>
 <p>We could use strings to keep track of states, but as soon as there are more than two there are likely to be many, and having them spelled out makes it easier for the next person to find out what they can be.</p>
 <p>We are now in a better position to move forward, so we derive a new class from our refactored VM:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> VirtualMachineStep(VirtualMachineBase):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> VirtualMachineStep(VirtualMachineBase):</span></code></pre></div>
 <p>(Again, if we were writing this code under normal circumstances, we would enhance the existing class, but since we want to keep several versions around for teaching, we derive and extend.)</p>
 <p>The old <code>run</code> method kept going until the program finished. The new <code>run</code> method is necessarily more complicated. The VM is initially in the <code>STEPPING</code> state (because if we start it in the <code>RUNNING</code> state, we would never have an opportunity to interact with it to change its state). As long as the program isn’t finished, we fetch, decode, and execute the next instruction as usual, but we stop after each one if we’re single-stepping:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>The interaction method needs to handle several cases:</p>
 <ol type="1">
 <li><p>The user enters an empty line (i.e., presses return), in which case it loops around and waits for something else.</p></li>
@@ -576,14 +69,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li><p>The user wants to execute a single step, in which case the method breaks out of the loop without changing the VM’s state. <code>run</code> will then see that the VM is still in single-stepping mode and will execute a single instruction.</p></li>
 </ol>
 <p>The method that disassembles an instruction to show us what we’re about to do checks a <a href="../glossary/index.html#reverse_lookup">reverse lookup table</a> to create a printable representation of an instruction and its operands:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>We build the reverse lookup table from the <code>OPS</code> table in <code>architecture.py</code> so that it’s always in sync with the table we’re using to construct operations (<a href="#fig-debugger-table" class="quarto-xref">Figure&nbsp;<span>26.1</span></a>):</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>OPS_LOOKUP <span class="op">=</span> {value[<span class="st">"code"</span>]: key <span class="cf">for</span> key, value <span class="kw">in</span> OPS.items()}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>OPS_LOOKUP <span class="op">=</span> {value[<span class="st">"code"</span>]: key <span class="cf">for</span> key, value <span class="kw">in</span> OPS.items()}</span></code></pre></div>
 <p>If we wrote the reverse lookup table ourselves, sooner or later we’d forget to update it when updating the forward lookup table.</p>
-<div id="fig-debugger-table" class="quarto-float quarto-figure quarto-figure-center anchored">
-<figure class="quarto-float quarto-float-fig figure">
+<div id="fig-debugger-table" class="quarto-float quarto-figure quarto-figure-center">
+<figure class="quarto-float quarto-float-fig">
 <div aria-describedby="fig-debugger-table-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="table.svg" class="img-fluid figure-img">
+<img src="table.svg">
 </div>
 <figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-debugger-table-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 Figure&nbsp;26.1: Building a consistent lookup table.
@@ -591,47 +84,43 @@ Figure&nbsp;26.1: Building a consistent lookup table.
 </figure>
 </div>
 <p>But there’s a more important change in this new virtual machine. It doesn’t use Python’s built-in <code>input</code> function to get input from the user—or rather, it does, but only by default. The constructor for our single-stepping VM is:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>and its <code>read</code> method is:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>As with the <code>write</code> method introduced in the previous section, adding this wrapper method will help us with testing, which is our next topic.</p>
-</section>
-<section id="debugger-test" class="level2" data-number="26.2">
-<h2 data-number="26.2" class="anchored" data-anchor-id="debugger-test"><span class="header-section-number">26.2</span> Testing</h2>
+<h2 data-number="26.2" id="debugger-test"><span class="header-section-number">26.2</span> Testing</h2>
 <p>Our debugger is an interactive application that waits for input from the user, does something that may or may not print output, then waits again. The waiting is a problem for tools like <a href="https://docs.pytest.org/">pytest</a>, which expect the function being tested to run to completion after being launched.</p>
 <p>To make our single-stepping VM testable, we have to give it input when it wants some and capture its output for later inspection. We had a similar problem when testing the web server of <a href="../ftp/index.html" class="quarto-xref"><span>Chapter 21</span></a> and the editor of <a href="../undo/index.html" class="quarto-xref"><span>Chapter 24</span></a>, and our solution is similar: we will replace <code>input</code> and <code>print</code> with mock objects.</p>
 <p>As shown earlier, our VM uses an object with a <code>write</code> method to produce output. We can define a class which provides this method but saves messages in a list for later inspection instead of printing them:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Writer:</span>
+<div class="sourceCode" id="cb11"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Writer:</span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>):</span>
 <span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.seen <span class="op">=</span> []</span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> write(<span class="va">self</span>, <span class="op">*</span>args):</span>
-<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.seen.extend(args)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> write(<span class="va">self</span>, <span class="op">*</span>args):</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.seen.extend(args)</span></code></pre></div>
 <p>Similarly, our VM gets input from a function that takes a prompt as an argument and returns whatever the user typed. We can define a class with a <code>__call__</code> method which acts like such a function but which returns strings from a list instead of waiting for the user:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Reader:</span>
+<div class="sourceCode" id="cb12"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Reader:</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, <span class="op">*</span>args):</span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.commands <span class="op">=</span> args</span>
 <span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.index <span class="op">=</span> <span class="dv">0</span></span>
-<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__call__</span>(<span class="va">self</span>, prompt):</span>
-<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>        <span class="cf">assert</span> <span class="va">self</span>.index <span class="op">&lt;</span> <span class="bu">len</span>(<span class="va">self</span>.commands)</span>
-<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.index <span class="op">+=</span> <span class="dv">1</span></span>
-<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>.commands[<span class="va">self</span>.index <span class="op">-</span> <span class="dv">1</span>]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__call__</span>(<span class="va">self</span>, prompt):</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">assert</span> <span class="va">self</span>.index <span class="op">&lt;</span> <span class="bu">len</span>(<span class="va">self</span>.commands)</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.index <span class="op">+=</span> <span class="dv">1</span></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>.commands[<span class="va">self</span>.index <span class="op">-</span> <span class="dv">1</span>]</span></code></pre></div>
 <p>With these in hand, we can write a helper function that compiles a program, creates a virtual machine, and runs it with a mock reader and a mock writer:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> execute(source, reader, writer):</span>
+<div class="sourceCode" id="cb13"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> execute(source, reader, writer):</span>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>    program <span class="op">=</span> Assembler().assemble(source.split(<span class="st">"</span><span class="ch">\n</span><span class="st">"</span>), <span class="va">False</span>)</span>
 <span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    vm <span class="op">=</span> VM(reader, writer)</span>
 <span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    vm.initialize(program)</span>
-<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>    vm.run()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>    vm.run()</span></code></pre></div>
 <p>We can now write tests, like this one for the “disassemble” command:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_disassemble():</span>
+<div class="sourceCode" id="cb14"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_disassemble():</span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>    source <span class="op">=</span> <span class="st">"""</span></span>
 <span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="st">    hlt</span></span>
 <span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="st">    """</span></span>
 <span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>    reader <span class="op">=</span> Reader(<span class="st">"d"</span>, <span class="st">"q"</span>)</span>
 <span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>    writer <span class="op">=</span> Writer()</span>
 <span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>    execute(source, reader, writer)</span>
-<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> writer.seen <span class="op">==</span> [<span class="st">"hlt | 0 | 0</span><span class="ch">\n</span><span class="st">"</span>]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> writer.seen <span class="op">==</span> [<span class="st">"hlt | 0 | 0</span><span class="ch">\n</span><span class="st">"</span>]</span></code></pre></div>
 <p>Line by line, it:</p>
 <ol type="1">
 <li><p>Creates the program to test (which in this case consists of a single <code>hlt</code> instruction).</p></li>
@@ -647,7 +136,7 @@ Figure&nbsp;26.1: Building a consistent lookup table.
 <li><p>Executes the program.</p></li>
 <li><p>Checks that the <code>Writer</code> has only recorded one line of output, not two.</p></li>
 </ol>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_print_two_values():</span>
+<div class="sourceCode" id="cb15"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_print_two_values():</span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>    source <span class="op">=</span> <span class="st">"""</span></span>
 <span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="st">    ldc R0 55</span></span>
 <span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a><span class="st">    prr R0</span></span>
@@ -660,30 +149,26 @@ Figure&nbsp;26.1: Building a consistent lookup table.
 <span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>    execute(source, reader, writer)</span>
 <span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> writer.seen <span class="op">==</span> [</span>
 <span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a>        <span class="st">"000037</span><span class="ch">\n</span><span class="st">"</span></span>
-<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a>    ]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a>    ]</span></code></pre></div>
 <p>This test actually uncovered a bug in an earlier version of the debugger in which it would always execute one more instruction when told to quit. Interactive testing might have spotted that, but it could easily reappear; this test will warn us if it does.</p>
 <p>Our <code>Reader</code> and <code>Writer</code> aren’t good for much beyond testing our VM, but there are other tools that can simulate input and output for a wider range of applications. <a href="https://en.wikipedia.org/wiki/Expect">Expect</a> (which can be used through Python’s <a href="https://pexpect.readthedocs.io/"><code>pexpect</code></a> module) is often used to script command-line applications as well as to test them. <a href="https://www.selenium.dev/">Selenium</a> and <a href="https://www.cypress.io/">Cypress</a> do the same for browser-based applications: programmers can use them to simulate mouse clicks, window resizing, and other events, then check the contents of the page that the application produces in response. They are all more difficult to set up and use than a simple test that 1+1 is 2, but that’s because the things they do are genuinely complex. Designing applications with testing in mind—for example, routing all input and output through a single method each—helps reduce that complexity.</p>
-</section>
-<section id="debugger-extensibility" class="level2" data-number="26.3">
-<h2 data-number="26.3" class="anchored" data-anchor-id="debugger-extensibility"><span class="header-section-number">26.3</span> Extensibility</h2>
+<h2 data-number="26.3" id="debugger-extensibility"><span class="header-section-number">26.3</span> Extensibility</h2>
 <p>We are going to add one more big feature to our debugger, but before we do, let’s do some refactoring. First, we move every interactive operation into a method of its own that does something and then returns <code>True</code> if the debugger is supposed to stay in interactive mode and <code>False</code> if interaction is over. The method for showing the contents of memory is:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>while the one for advancing one step is:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>and so on. Once that’s done, we modify <code>interact</code> to choose operations from a lookup table called <code>self.handlers</code>. Its keys are the commands typed by the user, and its values are the operation methods we just created:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="sourceCode" id="cb18"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>Finally, we extend the virtual machine’s constructor to build the required lookup table. For convenience, we register the methods under both single-letter keys and longer command names:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>As in previous chapters, creating a lookup table like this makes the class easier to extend. If we want to add another command (which we will do in the next section) we just add a method to perform the operation and register it in the lookup table. So long as new commands don’t need anything more than the address of the current instruction, we never need to modify <code>interact</code> again.</p>
-</section>
-<section id="debugger-breakpoints" class="level2" data-number="26.4">
-<h2 data-number="26.4" class="anchored" data-anchor-id="debugger-breakpoints"><span class="header-section-number">26.4</span> Breakpoints</h2>
+<h2 data-number="26.4" id="debugger-breakpoints"><span class="header-section-number">26.4</span> Breakpoints</h2>
 <p>Suppose we suspect there’s a bug in our program that only occurs after several thousand lines of code have been executed. We would have to be pretty desperate to single-step through all of that even once, much less dozens of times as we’re exploring new ideas or trying new fixes. Instead, we want to set a <a href="../glossary/index.html#breakpoint">breakpoint</a> to tell the computer to stop at a particular location and drop us into the debugger. We might even use a <a href="../glossary/index.html#conditional_breakpoint">conditional breakpoint</a> that would only stop if, for example, the variable <code>x</code> was zero at that point, but we’ll leave that for the exercises.</p>
 <p>The easiest way to implement breakpoints would be to have the VM store their addresses in a set. We would then modify <code>run</code> to check that set each time it was supposed to fetch a new instruction, and stop if it was at one of those addresses (<a href="#fig-debugger-beside" class="quarto-xref">Figure&nbsp;<span>26.2</span></a>).</p>
-<div id="fig-debugger-beside" class="quarto-float quarto-figure quarto-figure-center anchored">
-<figure class="quarto-float quarto-float-fig figure">
+<div id="fig-debugger-beside" class="quarto-float quarto-figure quarto-figure-center">
+<figure class="quarto-float quarto-float-fig">
 <div aria-describedby="fig-debugger-beside-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="beside.svg" class="img-fluid figure-img">
+<img src="beside.svg">
 </div>
 <figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-debugger-beside-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 Figure&nbsp;26.2: Storing breakpoints beside the program.
@@ -691,10 +176,10 @@ Figure&nbsp;26.2: Storing breakpoints beside the program.
 </figure>
 </div>
 <p>An alternative design is to add a new instruction to our architecture called <code>brk</code>. When the user sets a breakpoint at some address, we replace the instruction at that address with a breakpoint instruction and store the original instruction in a lookup table. If the user later <a href="../glossary/index.html#clear_breakpoint">clears</a> the breakpoint, we copy the original instruction back into place, and if the VM encounters a breakpoint instruction while it is running, it drops into interactive mode (<a href="#fig-debugger-break" class="quarto-xref">Figure&nbsp;<span>26.3</span></a>).</p>
-<div id="fig-debugger-break" class="quarto-float quarto-figure quarto-figure-center anchored">
-<figure class="quarto-float quarto-float-fig figure">
+<div id="fig-debugger-break" class="quarto-float quarto-figure quarto-figure-center">
+<figure class="quarto-float quarto-float-fig">
 <div aria-describedby="fig-debugger-break-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="break.svg" class="img-fluid figure-img">
+<img src="break.svg">
 </div>
 <figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-debugger-break-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 Figure&nbsp;26.3: Inserting breakpoints into a program.
@@ -703,27 +188,25 @@ Figure&nbsp;26.3: Inserting breakpoints into a program.
 </div>
 <p>Putting breakpoints inline is more complicated than storing them beside the program, but it is how debuggers for low-level languages like C actually work. It also makes the virtual machine more efficient: instead of spending a few (actual) instructions checking a breakpoint table every time we execute an instruction, we only pay a price when we actually encounter a breakpoint. The difference isn’t important in our little toy, but little savings like this add up quickly in a real interpreter for a language like Python or JavaScript.</p>
 <p>The first step in implementing breakpoints is to add two more commands to the lookup table we created in the previous section:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="sourceCode" id="cb20"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>To add a breakpoint, we copy the instruction at the given address into the dictionary <code>self.breaks</code> and replace it with a breakpoint instruction:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="sourceCode" id="cb21"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>Notice that if there’s already a breakpoint in place, we don’t do anything. We also return <code>True</code> to tell <code>interact</code> to wait for another command from the user.</p>
 <p>Clearing a breakpoint is just as easy:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="sourceCode" id="cb22"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>We also update <code>show</code> to display any breakpoints that have been set:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="sourceCode" id="cb23"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>The implementation first calls the parent’s <code>show</code> method to display what we’ve seen so far before adding more information. Extending methods by upcalling this way saves typing and ensures that changes in the parent class automatically show up in the child class.</p>
 <p>The final step is to change <code>run</code> so that the VM actually stops at a breakpoint:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb24"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="sourceCode" id="cb24"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>The logic here is relatively straightforward. If the instruction is a breakpoint, the VM uses the original instruction from the breakpoint lookup table, then gives the user a chance to interact before executing that original instruction. Otherwise, the VM interacts with the user if it is in single-stepping mode and then carries on as before.</p>
 <p>We can test our new-and-improved VM using the tools developed earlier in this chapter, but even before we do that, the changes to <code>run</code> tell us that we should rethink some of our design. Using a lookup table for interactive commands allowed us to add commands without modifying <code>interact</code>; another lookup table would enable us to add new instructions without having to modify <code>run</code>. We will explore this in the exercises.</p>
-</section>
-<section id="debugger-summary" class="level2" data-number="26.5">
-<h2 data-number="26.5" class="anchored" data-anchor-id="debugger-summary"><span class="header-section-number">26.5</span> Summary</h2>
+<h2 data-number="26.5" id="debugger-summary"><span class="header-section-number">26.5</span> Summary</h2>
 <p><a href="#fig-debugger-concept-map" class="quarto-xref">Figure&nbsp;<span>26.4</span></a> summarizes the key ideas in this chapter.</p>
-<div id="fig-debugger-concept-map" class="quarto-float quarto-figure quarto-figure-center anchored">
-<figure class="quarto-float quarto-float-fig figure">
+<div id="fig-debugger-concept-map" class="quarto-float quarto-figure quarto-figure-center">
+<figure class="quarto-float quarto-float-fig">
 <div aria-describedby="fig-debugger-concept-map-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="concept_map.svg" class="img-fluid figure-img">
+<img src="concept_map.svg">
 </div>
 <figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-debugger-concept-map-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 Figure&nbsp;26.4: Concepts for debugger.
@@ -731,556 +214,40 @@ Figure&nbsp;26.4: Concepts for debugger.
 </figure>
 </div>
 <section class="exercises">
-</section>
-<section id="debugger-exercises" class="level2" data-number="26.6">
-<h2 data-number="26.6" class="anchored" data-anchor-id="debugger-exercises"><span class="header-section-number">26.6</span> Exercises</h2>
-<section id="show-memory-range" class="level3" data-number="26.6.1">
-<h3 data-number="26.6.1" class="anchored" data-anchor-id="show-memory-range"><span class="header-section-number">26.6.1</span> Show Memory Range</h3>
+<h2 data-number="26.6" id="debugger-exercises"><span class="header-section-number">26.6</span> Exercises</h2>
+<h3 data-number="26.6.1" id="show-memory-range"><span class="header-section-number">26.6.1</span> Show Memory Range</h3>
 <p>Modify the debugger so that if the user provides a single address to the <code>"memory"</code> command, the debugger shows the value at that address. If the user provides two addresses, on the other hand, the debugger shows all the memory between those addresses.</p>
 <ol type="1">
 <li><p>How did this change the way command lookup and execution work?</p></li>
 <li><p>Is your solution general enough to handle likely future changes without rewriting?</p></li>
 </ol>
-</section>
-<section id="breakpoint-addresses" class="level3" data-number="26.6.2">
-<h3 data-number="26.6.2" class="anchored" data-anchor-id="breakpoint-addresses"><span class="header-section-number">26.6.2</span> Breakpoint Addresses</h3>
+<h3 data-number="26.6.2" id="breakpoint-addresses"><span class="header-section-number">26.6.2</span> Breakpoint Addresses</h3>
 <p>Modify the debugger so that if the user provides a single address to the <code>"break"</code> or <code>"clear"</code> command, it sets or clears the breakpoint at that address. Did this feature require any changes beyond those made for the previous exercise?</p>
-</section>
-<section id="command-completion" class="level3" data-number="26.6.3">
-<h3 data-number="26.6.3" class="anchored" data-anchor-id="command-completion"><span class="header-section-number">26.6.3</span> Command Completion</h3>
+<h3 data-number="26.6.3" id="command-completion"><span class="header-section-number">26.6.3</span> Command Completion</h3>
 <p>Modify the debugger to recognize commands based on any number of distinct leading characters. For example, any of <code>"m"</code>, <code>"me"</code>, <code>"mem"</code>, and so on should trigger the <code>_do_memory</code> method. Programmers should <em>not</em> have to specify all these options themselves; instead, they should be able to specify the full command name and the method it corresponds to, and the VM’s constructor should take care of the rest.</p>
-</section>
-<section id="conditional-breakpoints" class="level3" data-number="26.6.4">
-<h3 data-number="26.6.4" class="anchored" data-anchor-id="conditional-breakpoints"><span class="header-section-number">26.6.4</span> Conditional Breakpoints</h3>
+<h3 data-number="26.6.4" id="conditional-breakpoints"><span class="header-section-number">26.6.4</span> Conditional Breakpoints</h3>
 <p>Modify the debugger so that users can specify conditions for breakpoints, i.e., can specify that the VM should only stop at a location if R0 contains zero or if the value at a particular location in memory is greater than 3. (This exercise is potentially very large; you may restrict the kinds of conditions the user can set to make the problem more tractable, or explore ways of using <code>eval</code> to support the general case.)</p>
-</section>
-<section id="watchpoints" class="level3" data-number="26.6.5">
-<h3 data-number="26.6.5" class="anchored" data-anchor-id="watchpoints"><span class="header-section-number">26.6.5</span> Watchpoints</h3>
+<h3 data-number="26.6.5" id="watchpoints"><span class="header-section-number">26.6.5</span> Watchpoints</h3>
 <p>Modify the debugger and VM so that the user can create <a href="../glossary/index.html#watchpoint">watchpoints</a>, i.e., can specify that the debugger should halt the VM when the value at a particular address changes. For example, if the user specifies a watchpoint for address 0x0010, then the VM automatically halts whenever a new value is stored at that location.</p>
-</section>
-<section id="instruction-lookup" class="level3" data-number="26.6.6">
-<h3 data-number="26.6.6" class="anchored" data-anchor-id="instruction-lookup"><span class="header-section-number">26.6.6</span> Instruction Lookup</h3>
+<h3 data-number="26.6.6" id="instruction-lookup"><span class="header-section-number">26.6.6</span> Instruction Lookup</h3>
 <p>Modify the virtual machine so that <code>execute</code> looks up instructions in a table in the same way as debugger commands.</p>
-</section>
-<section id="changing-memory" class="level3" data-number="26.6.7">
-<h3 data-number="26.6.7" class="anchored" data-anchor-id="changing-memory"><span class="header-section-number">26.6.7</span> Changing Memory</h3>
+<h3 data-number="26.6.7" id="changing-memory"><span class="header-section-number">26.6.7</span> Changing Memory</h3>
 <p>Modify the debugger so that users can change the values in registers or at particular addresses in memory while the program is running.</p>
-</section>
-<section id="displaying-source" class="level3" data-number="26.6.8">
-<h3 data-number="26.6.8" class="anchored" data-anchor-id="displaying-source"><span class="header-section-number">26.6.8</span> Displaying Source</h3>
+<h3 data-number="26.6.8" id="displaying-source"><span class="header-section-number">26.6.8</span> Displaying Source</h3>
 <ol type="1">
 <li><p>Modify the debugger so that when the debugger is displaying memory, it shows the assembly code instructions corresponding to particular addresses as well as the numeric codes.</p></li>
 <li><p>How can the debugger distinguish between locations that contain instructions and locations that contain data?</p></li>
 </ol>
-</section>
-<section id="interleaving-testing" class="level3" data-number="26.6.9">
-<h3 data-number="26.6.9" class="anchored" data-anchor-id="interleaving-testing"><span class="header-section-number">26.6.9</span> Interleaving Testing</h3>
+<h3 data-number="26.6.9" id="interleaving-testing"><span class="header-section-number">26.6.9</span> Interleaving Testing</h3>
 <p>Modify the testing tools developed in this chapter so that users can specify input and output as they would naturally occur, i.e., can specify one or more commands, then the output expected from those commands, then some more input and the corresponding output, and so on.</p>
-</section>
-<section id="pattern-matching-in-tests" class="level3" data-number="26.6.10">
-<h3 data-number="26.6.10" class="anchored" data-anchor-id="pattern-matching-in-tests"><span class="header-section-number">26.6.10</span> Pattern Matching in Tests</h3>
+<h3 data-number="26.6.10" id="pattern-matching-in-tests"><span class="header-section-number">26.6.10</span> Pattern Matching in Tests</h3>
 <ol type="1">
 <li><p>Tools like <a href="https://en.wikipedia.org/wiki/Expect">Expect</a> allow programmers to match output with regular expressions. Modify the testing tools developed in this chapter to do that as well.</p></li>
 <li><p>When is this useful? When is it potentially dangerous?</p></li>
 </ol>
 </section>
 
-
-</section>
-</section>
-
-</main> <!-- /main -->
-<script id="quarto-html-after-body" type="application/javascript">
-  window.document.addEventListener("DOMContentLoaded", function (event) {
-    const icon = "";
-    const anchorJS = new window.AnchorJS();
-    anchorJS.options = {
-      placement: 'right',
-      icon: icon
-    };
-    anchorJS.add('.anchored');
-    const isCodeAnnotation = (el) => {
-      for (const clz of el.classList) {
-        if (clz.startsWith('code-annotation-')) {                     
-          return true;
-        }
-      }
-      return false;
-    }
-    const onCopySuccess = function(e) {
-      // button target
-      const button = e.trigger;
-      // don't keep focus
-      button.blur();
-      // flash "checked"
-      button.classList.add('code-copy-button-checked');
-      var currentTitle = button.getAttribute("title");
-      button.setAttribute("title", "Copied!");
-      let tooltip;
-      if (window.bootstrap) {
-        button.setAttribute("data-bs-toggle", "tooltip");
-        button.setAttribute("data-bs-placement", "left");
-        button.setAttribute("data-bs-title", "Copied!");
-        tooltip = new bootstrap.Tooltip(button, 
-          { trigger: "manual", 
-            customClass: "code-copy-button-tooltip",
-            offset: [0, -8]});
-        tooltip.show();    
-      }
-      setTimeout(function() {
-        if (tooltip) {
-          tooltip.hide();
-          button.removeAttribute("data-bs-title");
-          button.removeAttribute("data-bs-toggle");
-          button.removeAttribute("data-bs-placement");
-        }
-        button.setAttribute("title", currentTitle);
-        button.classList.remove('code-copy-button-checked');
-      }, 1000);
-      // clear code selection
-      e.clearSelection();
-    }
-    const getTextToCopy = function(trigger) {
-      const outerScaffold = trigger.parentElement.cloneNode(true);
-      const codeEl = outerScaffold.querySelector('code');
-      for (const childEl of codeEl.children) {
-        if (isCodeAnnotation(childEl)) {
-          childEl.remove();
-        }
-      }
-      return codeEl.innerText;
-    }
-    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
-      text: getTextToCopy
-    });
-    clipboard.on('success', onCopySuccess);
-    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
-      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
-        text: getTextToCopy,
-        container: window.document.getElementById('quarto-embedded-source-code-modal')
-      });
-      clipboardModal.on('success', onCopySuccess);
-    }
-      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
-      var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp('/' + window.location.host + '/');
-      var isInternal = (href) => {
-          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
-      }
-      // Inspect non-navigation links and adorn them if external
-      window.quartoDecorateExternalLinks = function (root) {
-     var links = (root || window.document).querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
-      for (var i=0; i<links.length; i++) {
-        const link = links[i];
-        if (!isInternal(link.href)) {
-          // undo the damage that might have been done by quarto-nav.js in the case of
-          // links that we want to consider external
-          if (link.dataset.originalHref !== undefined) {
-            link.href = link.dataset.originalHref;
-          }
-          if (!link.classList.contains('no-external-icon')) {
-          }
-        }
-      }
-      };
-      window.quartoDecorateExternalLinks(window.document);
-    // Esc closes the popup (WCAG 1.4.13) and focus leaving both trigger and
-    // popup closes it (WCAG 2.4.11); tippy handles neither for interactive popups.
-    const hideOnEscAndFocusOut = {
-      name: 'hideOnEscAndFocusOut',
-      defaultValue: true,
-      fn(instance) {
-        const dismiss = () => {
-          // A show scheduled by the trigger delay would otherwise reopen it
-          instance.clearDelayTimeouts();
-          instance.hide();
-        };
-        const onKeyDown = (event) => {
-          if (event.key !== 'Escape') {
-            return;
-          }
-          // Keep Esc from also reaching page handlers (e.g. reveal.js overview),
-          // except an open reveal.js slide menu, which Esc should close too.
-          // The menu handles keys only when its keyboard option is on.
-          const menuHandlesEsc = window.Reveal?.getPlugin?.('menu')?.isOpen() &&
-            window.Reveal.getConfig().menu?.keyboard !== false;
-          if (!menuHandlesEsc) {
-            event.stopPropagation();
-          }
-          if (instance.popper.contains(window.document.activeElement)) {
-            // Disabled while refocusing so the focus trigger does not reopen it
-            instance.disable();
-            instance.reference.focus();
-            instance.enable();
-          }
-          dismiss();
-        };
-        const onFocusOut = (event) => {
-          const target = event.relatedTarget;
-          if (target && !instance.reference.contains(target) &&
-              !instance.popper.contains(target)) {
-            dismiss();
-          }
-        };
-        // On the trigger too: a click trigger (code-annotations: select) has no
-        // blur handling. Attached for the instance's lifetime so leaving the
-        // trigger also cancels a show still pending on the trigger delay.
-        instance.reference.addEventListener('focusout', onFocusOut);
-        return {
-          onShow() {
-            window.document.addEventListener('keydown', onKeyDown, true);
-            instance.popper.addEventListener('focusout', onFocusOut);
-          },
-          onHide() {
-            window.document.removeEventListener('keydown', onKeyDown, true);
-            instance.popper.removeEventListener('focusout', onFocusOut);
-          },
-          onDestroy() {
-            instance.reference.removeEventListener('focusout', onFocusOut);
-          },
-        };
-      },
-    };
-    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
-      const config = {
-        allowHTML: true,
-        maxWidth: 500,
-        delay: 100,
-        arrow: false,
-        appendTo: function(el) {
-            return el.parentElement;
-        },
-        interactive: true,
-        interactiveBorder: 10,
-        theme: 'quarto',
-        placement: 'bottom-start',
-        plugins: [hideOnEscAndFocusOut],
-      };
-      if (contentFn) {
-        config.content = contentFn;
-      }
-      if (onTriggerFn) {
-        config.onTrigger = onTriggerFn;
-      }
-      if (onUntriggerFn) {
-        config.onUntrigger = onUntriggerFn;
-      }
-      window.tippy(el, config); 
-    }
-    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
-    for (var i=0; i<noterefs.length; i++) {
-      const ref = noterefs[i];
-      tippyHover(ref, function() {
-        // use id or data attribute instead here
-        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
-        try { href = new URL(href).hash; } catch {}
-        const id = href.replace(/^#\/?/, "");
-        const note = window.document.getElementById(id);
-        if (note) {
-          return note.innerHTML;
-        } else {
-          return "";
-        }
-      });
-    }
-    const xrefs = window.document.querySelectorAll('a.quarto-xref');
-    const processXRef = (id, note) => {
-      // Strip column container classes
-      const stripColumnClz = (el) => {
-        el.classList.remove("page-full", "page-columns");
-        if (el.children) {
-          for (const child of el.children) {
-            stripColumnClz(child);
-          }
-        }
-      }
-      stripColumnClz(note)
-      if (id === null || id.startsWith('sec-')) {
-        // Special case sections, only their first couple elements
-        const container = document.createElement("div");
-        if (note.children && note.children.length > 2) {
-          container.appendChild(note.children[0].cloneNode(true));
-          for (let i = 1; i < note.children.length; i++) {
-            const child = note.children[i];
-            if (child.tagName === "P" && child.innerText === "") {
-              continue;
-            } else {
-              container.appendChild(child.cloneNode(true));
-              break;
-            }
-          }
-          if (window.Quarto?.typesetMath) {
-            window.Quarto.typesetMath(container);
-          }
-          return container.innerHTML
-        } else {
-          if (window.Quarto?.typesetMath) {
-            window.Quarto.typesetMath(note);
-          }
-          return note.innerHTML;
-        }
-      } else {
-        // Remove any anchor links if they are present
-        const anchorLink = note.querySelector('a.anchorjs-link');
-        if (anchorLink) {
-          anchorLink.remove();
-        }
-        if (window.Quarto?.typesetMath) {
-          window.Quarto.typesetMath(note);
-        }
-        if (note.classList.contains("callout")) {
-          return note.outerHTML;
-        } else {
-          return note.innerHTML;
-        }
-      }
-    }
-    for (var i=0; i<xrefs.length; i++) {
-      const xref = xrefs[i];
-      tippyHover(xref, undefined, function(instance) {
-        instance.disable();
-        let url = xref.getAttribute('href');
-        let hash = undefined; 
-        if (url.startsWith('#')) {
-          hash = url;
-        } else {
-          try { hash = new URL(url).hash; } catch {}
-        }
-        if (hash) {
-          const id = hash.replace(/^#\/?/, "");
-          const note = window.document.getElementById(id);
-          if (note !== null) {
-            try {
-              const html = processXRef(id, note.cloneNode(true));
-              instance.setContent(html);
-            } finally {
-              instance.enable();
-              instance.show();
-            }
-          } else {
-            // See if we can fetch this
-            fetch(url.split('#')[0])
-            .then(res => res.text())
-            .then(html => {
-              const parser = new DOMParser();
-              const htmlDoc = parser.parseFromString(html, "text/html");
-              const note = htmlDoc.getElementById(id);
-              if (note !== null) {
-                const html = processXRef(id, note);
-                instance.setContent(html);
-              } 
-            }).finally(() => {
-              instance.enable();
-              instance.show();
-            });
-          }
-        } else {
-          // See if we can fetch a full url (with no hash to target)
-          // This is a special case and we should probably do some content thinning / targeting
-          fetch(url)
-          .then(res => res.text())
-          .then(html => {
-            const parser = new DOMParser();
-            const htmlDoc = parser.parseFromString(html, "text/html");
-            const note = htmlDoc.querySelector('main.content');
-            if (note !== null) {
-              // This should only happen for chapter cross references
-              // (since there is no id in the URL)
-              // remove the first header
-              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
-                note.children[0].remove();
-              }
-              const html = processXRef(null, note);
-              instance.setContent(html);
-            } 
-          }).finally(() => {
-            instance.enable();
-            instance.show();
-          });
-        }
-      }, function(instance) {
-      });
-    }
-        let selectedAnnoteEl;
-        const selectorForAnnotation = ( cell, annotation) => {
-          let cellAttr = 'data-code-cell="' + cell + '"';
-          let lineAttr = 'data-code-annotation="' +  annotation + '"';
-          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
-          return selector;
-        }
-        const selectCodeLines = (annoteEl) => {
-          const doc = window.document;
-          const targetCell = annoteEl.getAttribute("data-target-cell");
-          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
-          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
-          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
-          const lineIds = lines.map((line) => {
-            return targetCell + "-" + line;
-          })
-          // Each band is positioned against its own containing block, which is
-          // not the offsetParent of the lines, so place it from client rects.
-          const placeBand = (band, firstEl, lastEl, codeBlock) => {
-            const container = band.offsetParent;
-            if (container === null) {
-              return;
-            }
-            const containerRect = container.getBoundingClientRect();
-            // Reveal.js scales slides with a transform, so convert client
-            // pixels back to the CSS pixels of the container.
-            const scale = containerRect.height / container.offsetHeight || 1;
-            const firstRect = firstEl.getBoundingClientRect();
-            const lastRect = lastEl.getBoundingClientRect();
-            const top = (firstRect.top - containerRect.top) / scale - container.clientTop + container.scrollTop;
-            const height = (lastRect.bottom - firstRect.top) / scale;
-            band.style.top = top - 2 + "px";
-            band.style.height = height + 4 + "px";
-            if (codeBlock) {
-              // Without the copy button wrapper, the containing block is wider
-              // than the code block, so span the code block explicitly.
-              const blockRect = codeBlock.getBoundingClientRect();
-              band.style.left = (blockRect.left - containerRect.left) / scale - container.clientLeft + container.scrollLeft + "px";
-              band.style.width = blockRect.width / scale + "px";
-            }
-          };
-          if (lineIds.length > 0) {
-            const el = window.document.getElementById(lineIds[0]);
-            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
-            const parent = el.parentElement.parentElement;
-            // cook up a div (if necessary) and position it
-            let div = window.document.getElementById("code-annotation-line-highlight");
-            if (div === null) {
-              div = window.document.createElement("div");
-              div.setAttribute("id", "code-annotation-line-highlight");
-              div.style.position = 'absolute';
-              parent.appendChild(div);
-            }
-            placeBand(div, el, lastEl, parent.closest("div.sourceCode") || parent);
-            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
-            if (gutterDiv === null) {
-              gutterDiv = window.document.createElement("div");
-              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
-              gutterDiv.style.position = 'absolute';
-              const codeCell = window.document.getElementById(targetCell);
-              const gutter = codeCell.querySelector('.code-annotation-gutter');
-              gutter.appendChild(gutterDiv);
-            }
-            placeBand(gutterDiv, el, lastEl);
-            selectedAnnoteEl = annoteEl;
-          }
-        };
-        const unselectCodeLines = () => {
-          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
-          elementsIds.forEach((elId) => {
-            const div = window.document.getElementById(elId);
-            if (div) {
-              div.remove();
-            }
-          });
-          selectedAnnoteEl = undefined;
-        };
-          // Handle positioning of the toggle
-      window.addEventListener(
-        "resize",
-        throttle(() => {
-          elRect = undefined;
-          if (selectedAnnoteEl) {
-            selectCodeLines(selectedAnnoteEl);
-          }
-        }, 10)
-      );
-      function throttle(fn, ms) {
-      let throttle = false;
-      let timer;
-        return (...args) => {
-          if(!throttle) { // first call gets through
-              fn.apply(this, args);
-              throttle = true;
-          } else { // all the others get throttled
-              if(timer) clearTimeout(timer); // cancel #2
-              timer = setTimeout(() => {
-                fn.apply(this, args);
-                timer = throttle = false;
-              }, ms);
-          }
-        };
-      }
-        // Attach click handler to the DT
-        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
-        for (const annoteDlNode of annoteDls) {
-          annoteDlNode.addEventListener('click', (event) => {
-            const clickedEl = event.target;
-            if (clickedEl !== selectedAnnoteEl) {
-              unselectCodeLines();
-              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
-              if (activeEl) {
-                activeEl.classList.remove('code-annotation-active');
-              }
-              selectCodeLines(clickedEl);
-              clickedEl.classList.add('code-annotation-active');
-            } else {
-              // Unselect the line
-              unselectCodeLines();
-              clickedEl.classList.remove('code-annotation-active');
-            }
-          });
-        }
-    const findCites = (el) => {
-      const parentEl = el.parentElement;
-      if (parentEl) {
-        const cites = parentEl.dataset.cites;
-        if (cites) {
-          return {
-            el,
-            cites: cites.split(' ')
-          };
-        } else {
-          return findCites(el.parentElement)
-        }
-      } else {
-        return undefined;
-      }
-    };
-    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
-    for (var i=0; i<bibliorefs.length; i++) {
-      const ref = bibliorefs[i];
-      const citeInfo = findCites(ref);
-      if (citeInfo) {
-        tippyHover(citeInfo.el, function() {
-          var popup = window.document.createElement('div');
-          citeInfo.cites.forEach(function(cite) {
-            var citeDiv = window.document.createElement('div');
-            citeDiv.classList.add('hanging-indent');
-            citeDiv.classList.add('csl-entry');
-            var biblioDiv = window.document.getElementById('ref-' + cite);
-            if (biblioDiv) {
-              citeDiv.innerHTML = biblioDiv.innerHTML;
-            }
-            popup.appendChild(citeDiv);
-          });
-          return popup.innerHTML;
-        });
-      }
-    }
-  });
-  </script>
-  <script type="application/javascript">
-  window.quartoScrollableRegionsLabels = {"code":"Scrollable code","output":"Scrollable output"};
-  </script>
-<nav class="page-navigation" aria-label="Page">
-  <div class="nav-page nav-page-previous">
-      <a href="../vm/index.html" class="pagination-link" aria-label="A Virtual Machine">
-        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text"><span class="chapter-number">25</span>&nbsp; <span class="chapter-title">A Virtual Machine</span></span>
-      </a>          
-  </div>
-  <div class="nav-page nav-page-next">
-      <a href="../finale/index.html" class="pagination-link" aria-label="Conclusion">
-        <span class="nav-page-text"><span class="chapter-number">27</span>&nbsp; <span class="chapter-title">Conclusion</span></span> <i class="bi bi-arrow-right-short"></i>
-      </a>
-  </div>
-</nav>
-</div> <!-- /content -->
+</main>
 
 
-
-
-<footer class="footer"><div class="nav-footer"><div class="nav-footer-center"><div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/gvwilson/sdxpy/edit/main/debugger/index.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/gvwilson/sdxpy/blob/main/debugger/index.qmd" class="toc-action"><i class="bi empty"></i>View source</a></li><li><a href="https://github.com/gvwilson/sdxpy/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></div></div></footer></body></html>
+</body></html>
