@@ -39,6 +39,7 @@ site:
 	${QUARTO} render --to html
 	@mkdir -p ${DOCS}/mccole
 	@cp mccole/mccole-slides.css ${DOCS}/mccole/mccole-slides.css
+	@if [ -d images ]; then cp -r images ${DOCS}/images; fi
 	touch ${DOCS}/.nojekyll
 
 ## pdf: render PDF with Quarto
@@ -72,7 +73,7 @@ ${DOCS}/%.html: %.qmd
 	@sed -i '' 's:mccole/mccole-slides.css:../mccole/mccole-slides.css:g' $@
 
 ## check: check structure, spelling, etc.
-check: check-bib check-links check-glossary check-typos
+check: check-bib check-links check-glossary check-formatting check-typos
 
 ## check-bib: check bibliography
 check-bib:
@@ -85,6 +86,10 @@ check-links:
 ## check-glossary: check glossary references
 check-glossary:
 	@${LUA} ${BIN}/check-glossary.lua ${GLOSSARY} ${MD_SRC}
+
+## check-formatting: check include formatting
+check-formatting:
+	@${LUA} ${BIN}/check-formatting.lua ${MD_SRC}
 
 ## check-typos: check spelling
 check-typos:
