@@ -1,56 +1,42 @@
--- inc-pandoc.lua: expand fenced code blocks with class "include".
---
--- Example:
---     ```{.include}
---     _dependencies.qmd
---     _project_audit.qmd
---     ```
---
--- Each filename is resolved relative to the file that contains the block,
--- so a bare name like `_dependencies.qmd` next to `health/slides.qmd`
--- resolves to `health/_dependencies.qmd`. Includes are not recursive.
+-- inc-pandoc.lua — expand {{< inc ... >}} shortcodes in pandoc (slides).
+-- Shared helpers live in inc-utils.lua.
 
-local function read_file(filename)
-  local f, err = io.open(filename, "r")
-  if not f then
-    error("include: cannot open '" .. filename .. "': " .. err)
+local dir = pandoc.path.directory(PANDOC_SCRIPT_FILE)
+local U = dofile(pandoc.path.join({dir, "inc-utils.lua"}))
+
+local function parse_inc(text)
+  local inner = text:match("^{{%s*<%s*inc%s+(.-)%s*>}}$")
+  if not inner then return nil end
+  local file, rest = inner:match("^(%S+)%s*(.-)$")
+  if not file then return nil end
+  local kwargs = {}
+  for k, v in rest:gmatch("([%w-]+)=([^%s]+)") do
+    kwargs[k] = v:gsub("^[\"']", ""):gsub("[\"']$", "")
   end
+  return file, kwargs
+end
 
-  local text = f:read("*a")
+function Para(el)
+  local text = pandoc.utils.stringify(el)
+  local file, kwargs = parse_inc(text)
+  if not file then return nil end
+
+  local mark = U.s(kwargs["mark"])
+  local omit = U.s(kwargs["omit"])
+  local head = tonumber(U.s(kwargs["head"]) or "")
+
+  local f = assert(io.open(file, "r"), "inc: cannot open " .. file)
+  local content = f:read("*all")
   f:close()
-  return text
-end
 
-local function trim(s)
-  return s:match("^%s*(.-)%s*$")
-end
+  local code = mark and U.extract_region(content, mark) or content
+  if omit then code = U.omit_region(code, omit) end
+  if head then code = U.head_lines(code, head) end
+  code = U.scrub_code(code)
 
-local function resolve_path(filename)
-  if pandoc.path.is_absolute(filename) then
-    return filename
-  end
+  local ext = file:match("%.([^.]+)$") or ""
+  local lang = U.LANG[ext] or ""
+  local classes = (lang ~= "") and { lang } or {}
 
-  local input = PANDOC_STATE.input_files
-  if not input or #input == 0 then
-    return filename
-  end
-
-  return pandoc.path.join({pandoc.path.directory(input[1]), filename})
-end
-
-function CodeBlock(el)
-  if not el.classes:includes("include") then
-    return nil
-  end
-
-  local blocks = pandoc.List()
-  for filename in el.text:gmatch("[^\r\n]+") do
-    filename = trim(filename)
-    if filename ~= "" then
-      local path = resolve_path(filename)
-      local doc = pandoc.read(read_file(path), "markdown")
-      blocks:extend(doc.blocks)
-    end
-  end
-  return blocks
+  return pandoc.CodeBlock(code, pandoc.Attr("", classes, {}))
 end
