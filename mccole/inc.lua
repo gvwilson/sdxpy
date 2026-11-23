@@ -30,6 +30,22 @@ local function head_lines(content, n)
   return table.concat(lines, "\n")
 end
 
+local function scrub_code(content)
+  local out = {}
+  for line in (content .. "\n"):gmatch("(.-)\n") do
+    local s = line
+    s = s:gsub("%s*#%s*BUG[^\n]*", "")            -- Python/shell: # BUG …
+    s = s:gsub("%s*//%s*BUG[^\n]*", "")           -- JavaScript:   // BUG …
+    s = s:gsub("<!%-%-%s*BUG.-%-%->", "")         -- HTML:         <!-- BUG … -->
+    s = s:gsub("/%*%s*BUG.-%*/", "")              -- CSS:          /* BUG … */
+    if s:match("^%s*%-%-.*BUG") then s = "" end   -- SQL:          -- … BUG …
+    if s:match("%S") then
+      out[#out + 1] = s
+    end
+  end
+  return table.concat(out, "\n")
+end
+
 return {
   ["inc"] = function(args, kwargs, meta)
     local file = s(args[1])
@@ -42,6 +58,7 @@ return {
     local code = mark and extract_region(content, mark) or content
     if omit then code = omit_region(code, omit) end
     if head then code = head_lines(code, head) end
+    code = scrub_code(code)
     local ext = file:match("%.([^.]+)$") or ""
     local lang = LANG[ext] or ""
     local classes = (lang ~= "") and { lang } or {}
