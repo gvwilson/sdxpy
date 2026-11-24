@@ -34,6 +34,12 @@ for _, path in ipairs(arg) do
       problems = true
     end
   end
+  for i = 1, #lines do
+    if lines[i]:match("^::::%s*{%s*%.callout") then
+      print(("%s:%d: callout uses :::: (use :::)"):format(path, i))
+      problems = true
+    end
+  end
 end
 
 if problems then
