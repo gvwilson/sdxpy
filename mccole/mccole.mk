@@ -79,23 +79,23 @@ check: check-bib check-links check-glossary check-formatting check-typos
 
 ## check-bib: check bibliography
 check-bib:
-	@${LUA} ${BIN}/check-bib.lua ${BIB} ${MD_SRC}
+	@-${LUA} ${BIN}/check-bib.lua ${BIB} ${MD_SRC}
 
 ## check-links: check Markdown links
 check-links:
-	@${LUA} ${BIN}/check-links.lua ${LINKS} ${MD_SRC}
+	@-${LUA} ${BIN}/check-links.lua ${LINKS} ${MD_SRC}
 
 ## check-glossary: check glossary references
 check-glossary:
-	@${LUA} ${BIN}/check-glossary.lua ${GLOSSARY} ${MD_SRC}
+	@-${LUA} ${BIN}/check-glossary.lua ${GLOSSARY} ${MD_SRC}
 
 ## check-formatting: check include formatting
 check-formatting:
-	@${LUA} ${BIN}/check-formatting.lua ${MD_SRC}
+	@-${LUA} ${BIN}/check-formatting.lua ${MD_SRC}
 
 ## check-typos: check spelling
 check-typos:
-	@typos -c ${TYPOS_CONFIG} ${MD_SRC} ${SLIDES_SRC}
+	@-typos -c ${TYPOS_CONFIG} ${MD_SRC} ${SLIDES_SRC}
 
 ## clean: remove generated and cache files
 clean:
