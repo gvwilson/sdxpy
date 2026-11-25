@@ -5,7 +5,7 @@ from lock_client import LockClient
 from dsdx import dsdx
 
 
-# mccole: basicexample
+# mccole:basicexample
 def main():
     env = Environment()
 
@@ -18,7 +18,7 @@ def main():
     LockClient(env, "Client3", server, "database", work_duration=4.0)
 
     env.run(until=20)
-# mccole: /basicexample
+# mccole:/basicexample
 
 
 if __name__ == "__main__":

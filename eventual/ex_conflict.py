@@ -7,7 +7,7 @@ from kv_client import KVClient
 from dsdx import dsdx
 
 
-# mccole: conflictexample
+# mccole:conflictexample
 def main():
     env = Environment()
 
@@ -55,7 +55,7 @@ def main():
     )
 
     env.run(until=10)
-# mccole: /conflictexample
+# mccole:/conflictexample
 
 
 if __name__ == "__main__":

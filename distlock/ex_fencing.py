@@ -7,7 +7,7 @@ from fenced_client import FencedClient
 from dsdx import dsdx
 
 
-# mccole: fencingexample
+# mccole:fencingexample
 def main():
     env = Environment()
 
@@ -38,7 +38,7 @@ def main():
     )
 
     env.run(until=15)
-# mccole: /fencingexample
+# mccole:/fencingexample
 
 
 if __name__ == "__main__":

@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 
 
-# mccole: task
+# mccole:task
 @dataclass
 class Task:
     """A unit of work to be executed."""
@@ -16,4 +16,4 @@ class Task:
         return f"Task({self.task_id})"
 
 
-# mccole: /task
+# mccole:/task

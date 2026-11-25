@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from tracker import Tracker
 
 
-# mccole: peer_init
+# mccole:peer_init
 class SimplifiedPeer(Process):
     """Simplified peer for simulation purposes."""
 
@@ -41,9 +41,9 @@ class SimplifiedPeer(Process):
     def is_complete(self) -> bool:
         """Check if download is complete."""
         return len(self.have_pieces) == self.metadata.total_pieces
-    # mccole: /peer_init
+    # mccole:/peer_init
 
-    # mccole: peer_run
+    # mccole:peer_run
     async def run(self) -> None:
         """Simplified download loop."""
         # Announce to tracker
@@ -65,9 +65,9 @@ class SimplifiedPeer(Process):
     async def announce(self, event: str) -> None:
         """Simplified tracker announce."""
         print(f"[{self.now:.1f}] Peer {self.peer_id}: Announcing '{event}' to tracker")
-    # mccole: /peer_run
+    # mccole:/peer_run
 
-    # mccole: peer_download_round
+    # mccole:peer_download_round
     async def download_round(self) -> None:
         """Attempt to download pieces from peers."""
         needed = [
@@ -94,9 +94,9 @@ class SimplifiedPeer(Process):
                 peer = random.choice(candidates)
                 await self.download_piece_from(peer, piece_idx)
                 break
-    # mccole: /peer_download_round
+    # mccole:/peer_download_round
 
-    # mccole: peer_download_from
+    # mccole:peer_download_from
     async def download_piece_from(self, peer: "SimplifiedPeer", piece_idx: int) -> None:
         """Download a piece from a peer."""
         # Simulate transfer time
@@ -111,4 +111,4 @@ class SimplifiedPeer(Process):
             f"from {peer.peer_id} ({len(self.have_pieces)}/"
             f"{self.metadata.total_pieces})"
         )
-    # mccole: /peer_download_from
+    # mccole:/peer_download_from

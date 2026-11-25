@@ -6,7 +6,7 @@ from tracing_types import ServiceRequest, ServiceResponse
 from tracing_decorators import Storage, traced
 
 
-# mccole: simple
+# mccole:simple
 class SimpleService(Process):
     """Service instrumented with decorators."""
 
@@ -55,4 +55,4 @@ class SimpleService(Process):
         return {"processed": True, "input": payload}
 
 
-# mccole: /simple
+# mccole:/simple

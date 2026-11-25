@@ -7,7 +7,7 @@ from subscriber import Subscriber
 from dsdx import dsdx
 
 
-# mccole: simulate
+# mccole:simulate
 def main():
     """Run a simulation of the message queue system."""
     env = Environment()
@@ -34,7 +34,7 @@ def main():
     print(f"Inventory received: {inventory.num_received}")
     print(f"Email received: {email.num_received}")
     print(f"Analytics received: {analytics.num_received}")
-# mccole: /simulate
+# mccole:/simulate
 
 
 if __name__ == "__main__":

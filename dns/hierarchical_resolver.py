@@ -11,7 +11,7 @@ from recursive_resolver import CacheEntry
 from typing import Optional
 
 
-# mccole: hier_init
+# mccole:hier_init
 class HierarchicalResolver(Process):
     """Recursive resolver that walks the hierarchy from root servers.
 
@@ -38,9 +38,9 @@ class HierarchicalResolver(Process):
         self.cache_hits = 0
         self.cache_misses = 0
         self.referrals_followed = 0
-# mccole: /hier_init
+# mccole:/hier_init
 
-    # mccole: hier_run
+    # mccole:hier_run
     async def run(self) -> None:
         """Process client DNS queries."""
         while True:
@@ -79,9 +79,9 @@ class HierarchicalResolver(Process):
                     self._cache_negative(query.domain, query.record_type)
 
             await client_queue.put(response)
-    # mccole: /hier_run
+    # mccole:/hier_run
 
-    # mccole: hier_walk
+    # mccole:hier_walk
     async def _walk_hierarchy(self, query: DNSQuery) -> DNSResponse:
         """Walk the DNS delegation hierarchy from root to authoritative server.
 
@@ -147,9 +147,9 @@ class HierarchicalResolver(Process):
         if not hasattr(self, "_known_servers"):
             self._known_servers: dict[str, Queue] = {}
         self._known_servers[zone] = server_queue
-    # mccole: /hier_walk
+    # mccole:/hier_walk
 
-    # mccole: hier_negative
+    # mccole:hier_negative
     def _cache_negative(self, domain: str, record_type: RecordType) -> None:
         """Cache a negative response (NXDOMAIN) to reduce redundant queries.
 
@@ -178,7 +178,7 @@ class HierarchicalResolver(Process):
     def _is_negative_entry(self, record: DNSRecord) -> bool:
         """Return True if this is a negative-cache sentinel record."""
         return record.value == "NXDOMAIN"
-    # mccole: /hier_negative
+    # mccole:/hier_negative
 
     def _check_cache(
         self, domain: str, record_type: RecordType

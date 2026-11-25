@@ -7,7 +7,7 @@ from oauth_client import OAuthClient
 from dsdx import dsdx
 
 
-# mccole: sim
+# mccole:sim
 def main():
     """Demonstrate basic OAuth 2.0 authorization code flow."""
     env = Environment()
@@ -39,7 +39,7 @@ def main():
 
     # Run simulation
     env.run(until=20)
-# mccole: /sim
+# mccole:/sim
 
 
 if __name__ == "__main__":

@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     from scheduler import WorkStealingScheduler
 
 
-# mccole: worker
+# mccole:worker
 class AdaptiveWorker(Worker):
     """Worker with adaptive target selection."""
 
@@ -43,4 +43,4 @@ class AdaptiveWorker(Worker):
         return None
 
 
-# mccole: /worker
+# mccole:/worker

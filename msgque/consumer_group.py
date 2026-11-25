@@ -2,7 +2,7 @@ from asimpy import Environment, Process, Queue
 from broker import MessageBroker
 
 
-# mccole: consumer
+# mccole:consumer
 class ConsumerGroup:
     """Distribute messages among multiple consumers."""
 
@@ -26,10 +26,10 @@ class ConsumerGroup:
         return self.consumers[index]
 
 
-# mccole: /consumer
+# mccole:/consumer
 
 
-# mccole: distributor
+# mccole:distributor
 class _Distributor(Process):
     """Distribute messages round-robin to consumers."""
 
@@ -47,4 +47,4 @@ class _Distributor(Process):
             self.next_dest = (self.next_dest + 1) % len(self.destinations)
 
 
-# mccole: /distributor
+# mccole:/distributor

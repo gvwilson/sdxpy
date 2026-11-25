@@ -7,15 +7,15 @@ import random
 import string
 
 
-# mccole: token_func
+# mccole:token_func
 def generate_token(prefix: str = "tok") -> str:
     """Generate a random token."""
     random_part = "".join(random.choices(string.ascii_letters + string.digits, k=16))
     return f"{prefix}_{random_part}"
-# mccole: /token_func
+# mccole:/token_func
 
 
-# mccole: message_types
+# mccole:message_types
 @dataclass
 class AuthorizationRequest:
     """Request for user authorization."""
@@ -93,10 +93,10 @@ class ResourceResponse:
         if self.success:
             return "ResourceResponse(success=True)"
         return f"ResourceResponse(error={self.error})"
-# mccole: /message_types
+# mccole:/message_types
 
 
-# mccole: internal_types
+# mccole:internal_types
 @dataclass
 class AuthorizationCode:
     """Authorization code with metadata."""
@@ -125,10 +125,10 @@ class AccessToken:
     def is_valid(self, now: float) -> bool:
         """Check if token is still valid."""
         return now < self.expires_at
-# mccole: /internal_types
+# mccole:/internal_types
 
 
-# mccole: refresh
+# mccole:refresh
 @dataclass
 class RefreshToken:
     """Refresh token for obtaining new access tokens."""
@@ -140,4 +140,4 @@ class RefreshToken:
 
     def is_valid(self, now: float) -> bool:
         return now < self.expires_at
-# mccole: /refresh
+# mccole:/refresh

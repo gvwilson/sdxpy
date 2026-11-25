@@ -2,7 +2,7 @@ from asimpy import Process, Queue
 from dns_message import DNSQuery, RecordType
 
 
-# mccole: client_init
+# mccole:client_init
 class DNSClient(Process):
     """A DNS client that performs lookups."""
 
@@ -16,9 +16,9 @@ class DNSClient(Process):
     async def run(self):
         """Override in subclass to perform lookups."""
         pass
-# mccole: /client_init
+# mccole:/client_init
 
-    # mccole: client_lookup
+    # mccole:client_lookup
     async def lookup(self, domain: str, record_type: RecordType = RecordType.A):
         """Perform a DNS lookup."""
         self.query_counter += 1
@@ -47,4 +47,4 @@ class DNSClient(Process):
             print(f"[{self.now:.3f}] {self.name}: No records found for {domain}")
 
         return response
-    # mccole: /client_lookup
+    # mccole:/client_lookup

@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from scheduler import WorkStealingScheduler
 
 
-# mccole: worker
+# mccole:worker
 class Worker(Process):
     """Worker that executes tasks with work-stealing."""
 
@@ -25,9 +25,9 @@ class Worker(Process):
         self.tasks_executed = 0
         self.tasks_stolen = 0
 
-    # mccole: /worker
+    # mccole:/worker
 
-    # mccole: run
+    # mccole:run
     async def run(self):
         """Main worker loop: execute local tasks or steal."""
         while True:
@@ -46,9 +46,9 @@ class Worker(Process):
                     # No work available anywhere, wait a bit
                     await self.timeout(0.1)
 
-    # mccole: /run
+    # mccole:/run
 
-    # mccole: execute
+    # mccole:execute
     async def execute_task(self, task: Task):
         """Execute a task."""
         self.current_task = task
@@ -65,9 +65,9 @@ class Worker(Process):
             print(f"[{self.now:.1f}] Worker {self.worker_id}: Completed {task.task_id}")
         self.current_task = None
 
-    # mccole: /execute
+    # mccole:/execute
 
-    # mccole: steal
+    # mccole:steal
     async def try_steal(self) -> Task | None:
         """Try to steal a task from another worker."""
         targets = [w for w in self.scheduler.workers if w != self]
@@ -89,4 +89,4 @@ class Worker(Process):
 
         return None
 
-    # mccole: /steal
+    # mccole:/steal

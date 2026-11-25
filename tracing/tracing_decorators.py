@@ -5,7 +5,7 @@ from typing import Any, Callable
 from tracing_types import BaseCollector, Span, TraceContext, generate_id
 
 
-# mccole: storage
+# mccole:storage
 class _StorageClass:
     """Record trace information."""
 
@@ -32,10 +32,10 @@ class _StorageClass:
 
 
 Storage = _StorageClass()
-# mccole: /storage
+# mccole:/storage
 
 
-# mccole: traced
+# mccole:traced
 def traced(operation_name: str):
     """Decorator that automatically creates spans for functions."""
 
@@ -113,10 +113,10 @@ def traced(operation_name: str):
     return decorator
 
 
-# mccole: /traced
+# mccole:/traced
 
 
-# mccole: trace_root
+# mccole:trace_root
 def trace_root(operation_name: str | None = None):
     """Decorator that creates a new trace with a root span.
 
@@ -190,7 +190,7 @@ def trace_root(operation_name: str | None = None):
     return decorator
 
 
-# mccole: /trace_root
+# mccole:/trace_root
 
 
 def add_tag(key: str, value: Any) -> None:

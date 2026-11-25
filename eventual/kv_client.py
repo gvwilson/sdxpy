@@ -6,7 +6,7 @@ from coordinator import Coordinator
 from vector_clock import VectorClock
 
 
-# mccole: kv_init
+# mccole:kv_init
 class KVClient(Process):
     """Client that reads and writes to the key-value store."""
 
@@ -36,9 +36,9 @@ class KVClient(Process):
             elif op == "read":
                 await self.read(key)
                 await self.timeout(0.5)
-    # mccole: /kv_init
+    # mccole:/kv_init
 
-    # mccole: kv_read
+    # mccole:kv_read
     async def read(self, key: str) -> Any:
         """Read a key and handle conflicts."""
         versions = await self.coordinator.read(key, self.client_id)
@@ -76,9 +76,9 @@ class KVClient(Process):
             self.context[key] = merged_clock
             print(f"[{self.now:.1f}] {self.client_id}: Resolved to {latest.value}")
             return latest.value
-    # mccole: /kv_read
+    # mccole:/kv_read
 
-    # mccole: kv_write
+    # mccole:kv_write
     async def write(self, key: str, value: Any):
         """Write a key with causal context."""
         context = self.context.get(key)
@@ -87,4 +87,4 @@ class KVClient(Process):
         self.context[key] = clock
 
         print(f"[{self.now:.1f}] {self.client_id}: Wrote {key} = {value}")
-    # mccole: /kv_write
+    # mccole:/kv_write

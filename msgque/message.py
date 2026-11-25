@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 
-# mccole: message
+# mccole:message
 @dataclass
 class Message:
     topic: str
@@ -10,4 +10,4 @@ class Message:
     timestamp: float
 
 
-# mccole: /message
+# mccole:/message

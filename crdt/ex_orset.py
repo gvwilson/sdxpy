@@ -13,7 +13,7 @@ class Peer:
     orset: ORSet
 
 
-# mccole: replica
+# mccole:replica
 NAMES = ["Ahmed", "Baemi", "Chiti"]
 ITEMS = ["apple", "banana", "cherry"]
 P_REMOVE = 0.3
@@ -55,10 +55,10 @@ class Replica(Process):
             )
 
             await self.timeout(self.sync_interval)
-# mccole: /replica
+# mccole:/replica
 
 
-# mccole: sim
+# mccole:sim
 def main():
     """Demonstrate OR-Set convergence across three replicas."""
     env = Environment()
@@ -73,7 +73,7 @@ def main():
     print("\n--- Final State")
     for r in replicas:
         print(f"{r.name}: {sorted(r.orset.value())}")
-# mccole: /sim
+# mccole:/sim
 
 
 if __name__ == "__main__":

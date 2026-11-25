@@ -6,7 +6,7 @@ from dns_message import DNSRecord, RecordType
 from dsdx import dsdx
 
 
-# mccole: loadclient
+# mccole:loadclient
 class LoadTestClient(DNSClient):
     """Client that generates load to demonstrate caching benefits."""
 
@@ -24,10 +24,10 @@ class LoadTestClient(DNSClient):
 
             # Wait before next round
             await self.timeout(2.0)
-# mccole: /loadclient
+# mccole:/loadclient
 
 
-# mccole: hierarchy
+# mccole:hierarchy
 def main():
     """Demonstrate DNS hierarchy and caching benefits."""
     env = Environment()
@@ -154,7 +154,7 @@ def main():
     print(
         f"Query reduction from caching: {(1 - (example_server.queries_served + another_server.queries_served) / (resolver1.queries_received + resolver2.queries_received)) * 100:.1f}%"
     )
-# mccole: /hierarchy
+# mccole:/hierarchy
 
 
 if __name__ == "__main__":

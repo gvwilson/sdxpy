@@ -34,7 +34,7 @@ UNCHOKE_INTERVAL = 3.0
 OPTIMISTIC_INTERVAL = 9.0
 
 
-# mccole: upload_record
+# mccole:upload_record
 @dataclass
 class UploadRecord:
     """Tracks how much a peer has uploaded to us in the recent window."""
@@ -42,10 +42,10 @@ class UploadRecord:
     peer_id: str
     bytes_received: int = 0   # bytes downloaded FROM this peer recently
     is_choked: bool = True    # are we choking this peer (refusing to upload)?
-# mccole: /upload_record
+# mccole:/upload_record
 
 
-# mccole: choking_peer
+# mccole:choking_peer
 class ChokingPeer(Process):
     """Peer with a proper choking algorithm and piece verification.
 
@@ -98,9 +98,9 @@ class ChokingPeer(Process):
             await self.timeout(1.0)
 
         print(f"[{self.now:.1f}] Peer {self.peer_id}: Download complete!")
-    # mccole: /choking_peer
+    # mccole:/choking_peer
 
-    # mccole: unchoke_logic
+    # mccole:unchoke_logic
     def rechoke(self) -> None:
         """Re-evaluate which peers to unchoke based on upload rate.
 
@@ -143,9 +143,9 @@ class ChokingPeer(Process):
                 f"[{self.now:.1f}] Peer {self.peer_id}: "
                 f"Optimistically unchoked {self.optimistic_peer}"
             )
-    # mccole: /unchoke_logic
+    # mccole:/unchoke_logic
 
-    # mccole: piece_verification
+    # mccole:piece_verification
     async def _download_round(self) -> None:
         """Download one piece using rarest-first selection."""
         needed = [
@@ -213,7 +213,7 @@ class ChokingPeer(Process):
                 f"REJECTED piece {piece_idx} from {source.peer_id} "
                 f"(hash mismatch)"
             )
-    # mccole: /piece_verification
+    # mccole:/piece_verification
 
 
 class _UnchokeTimer(Process):

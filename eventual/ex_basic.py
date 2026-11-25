@@ -7,7 +7,7 @@ from kv_client import KVClient
 from dsdx import dsdx
 
 
-# mccole: basicexample
+# mccole:basicexample
 def main():
     env = Environment()
 
@@ -46,7 +46,7 @@ def main():
     )
 
     env.run(until=10)
-# mccole: /basicexample
+# mccole:/basicexample
 
 
 if __name__ == "__main__":

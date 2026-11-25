@@ -36,6 +36,19 @@ for _, path in ipairs(arg) do
       print(("%s:%d: callout uses :::: (use :::)"):format(path, i))
       problems = true
     end
+    for text in lines[i]:gmatch("\\text%b{}") do
+      local inner = text:sub(7, -2)
+      if inner:gsub("\\_", ""):find("_", 1, true) then
+        print(("%s:%d: unescaped underscore in \\text{...}"):format(path, i))
+        problems = true
+      end
+    end
+    for tag in lines[i]:gmatch("#%s*mccole:/?([^%s]+)") do
+      if not tag:match("^[%a%d]+$") then
+        print(("%s:%d: mccole tag is not alphanumeric: '%s'"):format(path, i, tag))
+        problems = true
+      end
+    end
   end
 end
 

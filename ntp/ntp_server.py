@@ -1,7 +1,7 @@
 from asimpy import Process, Queue
 
 
-# mccole: ntpserver
+# mccole:ntpserver
 class NTPServer(Process):
     """An NTP time server that responds to client requests."""
 
@@ -44,4 +44,4 @@ class NTPServer(Process):
             await client_queue.put(message)
 
             self.requests_served += 1
-# mccole: /ntpserver
+# mccole:/ntpserver

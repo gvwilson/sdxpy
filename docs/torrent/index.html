@@ -75,9 +75,87 @@
 <p>The key insight is <strong>tit-for-tat</strong>: peers upload to those who upload to them. This creates incentives for cooperation without central enforcement.</p>
 <h2 data-number="S.2" id="core-data-structures"><span class="header-section-number">S.2</span> Core Data Structures</h2>
 <p>Let’s start with the fundamental types. The file types describe pieces and torrent metadata:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Piece:</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""A piece of the file being shared."""</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    index: <span class="bu">int</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    data: <span class="bu">bytes</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    hash_value: <span class="bu">str</span>  <span class="co"># SHA-1 hash for verification</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> verify(<span class="va">self</span>) <span class="op">-&gt;</span> <span class="bu">bool</span>:</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Verify piece integrity against hash."""</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>        computed_hash <span class="op">=</span> hashlib.sha1(<span class="va">self</span>.data).hexdigest()</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> computed_hash <span class="op">==</span> <span class="va">self</span>.hash_value</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> TorrentMetadata:</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Metadata from .torrent file."""</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>    info_hash: <span class="bu">str</span>  <span class="co"># Unique identifier for this torrent</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>    piece_length: <span class="bu">int</span>  <span class="co"># Size of each piece in bytes</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>    total_pieces: <span class="bu">int</span>  <span class="co"># Number of pieces</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>    piece_hashes: List[<span class="bu">str</span>]  <span class="co"># SHA-1 hash for each piece</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>    file_name: <span class="bu">str</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>    file_size: <span class="bu">int</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>    tracker_url: <span class="bu">str</span></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__str__</span>(<span class="va">self</span>) <span class="op">-&gt;</span> <span class="bu">str</span>:</span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="ss">f"Torrent(</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>file_name<span class="sc">}</span><span class="ss">, </span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>total_pieces<span class="sc">}</span><span class="ss"> pieces)"</span></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> PeerInfo:</span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Information about a peer."""</span></span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>    peer_id: <span class="bu">str</span></span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>    ip_address: <span class="bu">str</span></span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>    port: <span class="bu">int</span></span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__str__</span>(<span class="va">self</span>) <span class="op">-&gt;</span> <span class="bu">str</span>:</span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="ss">f"Peer(</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>peer_id<span class="sc">}</span><span class="ss">)"</span></span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__hash__</span>(<span class="va">self</span>) <span class="op">-&gt;</span> <span class="bu">int</span>:</span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="bu">hash</span>(<span class="va">self</span>.peer_id)</span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__eq__</span>(<span class="va">self</span>, other: <span class="bu">object</span>) <span class="op">-&gt;</span> <span class="bu">bool</span>:</span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="kw">not</span> <span class="bu">isinstance</span>(other, PeerInfo):</span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="va">False</span></span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>.peer_id <span class="op">==</span> other.peer_id</span></code></pre></div>
 <p>The message types describe the protocol exchanges between peers and tracker:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> TrackerRequest:</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Request to tracker."""</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    info_hash: <span class="bu">str</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    peer_id: <span class="bu">str</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    port: <span class="bu">int</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    uploaded: <span class="bu">int</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>    downloaded: <span class="bu">int</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>    left: <span class="bu">int</span>  <span class="co"># Bytes remaining to download</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>    event: <span class="bu">str</span>  <span class="co"># "started", "completed", "stopped"</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>    response_queue: Queue</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__str__</span>(<span class="va">self</span>) <span class="op">-&gt;</span> <span class="bu">str</span>:</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="ss">f"TrackerReq(peer=</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>peer_id<span class="sc">}</span><span class="ss">, event=</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>event<span class="sc">}</span><span class="ss">)"</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> TrackerResponse:</span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Response from tracker."""</span></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>    interval: <span class="bu">int</span>  <span class="co"># Seconds until next tracker request</span></span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>    peers: List[PeerInfo]</span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__str__</span>(<span class="va">self</span>) <span class="op">-&gt;</span> <span class="bu">str</span>:</span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="ss">f"TrackerResp(</span><span class="sc">{</span><span class="bu">len</span>(<span class="va">self</span>.peers)<span class="sc">}</span><span class="ss"> peers)"</span></span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> PeerMessage:</span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Message exchanged between peers."""</span></span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a>    msg_type: <span class="bu">str</span>  <span class="co"># "choke", "unchoke", "interested", "have", "request", "piece"</span></span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a>    payload: Any <span class="op">=</span> <span class="va">None</span></span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__str__</span>(<span class="va">self</span>) <span class="op">-&gt;</span> <span class="bu">str</span>:</span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="va">self</span>.msg_type <span class="op">==</span> <span class="st">"have"</span>:</span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="ss">f"Have(piece=</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>payload<span class="sc">}</span><span class="ss">)"</span></span>
+<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a>        <span class="cf">elif</span> <span class="va">self</span>.msg_type <span class="op">==</span> <span class="st">"request"</span>:</span>
+<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="ss">f"Request(piece=</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>payload<span class="sc">}</span><span class="ss">)"</span></span>
+<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a>        <span class="cf">elif</span> <span class="va">self</span>.msg_type <span class="op">==</span> <span class="st">"piece"</span>:</span>
+<span id="cb2-32"><a href="#cb2-32" aria-hidden="true" tabindex="-1"></a>            piece_idx <span class="op">=</span> <span class="va">self</span>.payload.index <span class="cf">if</span> <span class="bu">isinstance</span>(<span class="va">self</span>.payload, Piece) <span class="cf">else</span> <span class="st">"?"</span></span>
+<span id="cb2-33"><a href="#cb2-33" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="ss">f"Piece(index=</span><span class="sc">{</span>piece_idx<span class="sc">}</span><span class="ss">)"</span></span>
+<span id="cb2-34"><a href="#cb2-34" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="ss">f"Msg(</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>msg_type<span class="sc">}</span><span class="ss">)"</span></span>
+<span id="cb2-35"><a href="#cb2-35" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
+<span id="cb2-36"><a href="#cb2-36" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> BitfieldMessage:</span>
+<span id="cb2-37"><a href="#cb2-37" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Bitfield indicating which pieces a peer has."""</span></span>
+<span id="cb2-38"><a href="#cb2-38" aria-hidden="true" tabindex="-1"></a>    bitfield: List[<span class="bu">bool</span>]  <span class="co"># True if peer has piece at that index</span></span>
+<span id="cb2-39"><a href="#cb2-39" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> has_piece(<span class="va">self</span>, index: <span class="bu">int</span>) <span class="op">-&gt;</span> <span class="bu">bool</span>:</span>
+<span id="cb2-40"><a href="#cb2-40" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Check if peer has a specific piece."""</span></span>
+<span id="cb2-41"><a href="#cb2-41" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> index <span class="op">&lt;</span> <span class="bu">len</span>(<span class="va">self</span>.bitfield) <span class="kw">and</span> <span class="va">self</span>.bitfield[index]</span>
+<span id="cb2-42"><a href="#cb2-42" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__str__</span>(<span class="va">self</span>) <span class="op">-&gt;</span> <span class="bu">str</span>:</span>
+<span id="cb2-43"><a href="#cb2-43" aria-hidden="true" tabindex="-1"></a>        count <span class="op">=</span> <span class="bu">sum</span>(<span class="dv">1</span> <span class="cf">for</span> b <span class="kw">in</span> <span class="va">self</span>.bitfield <span class="cf">if</span> b)</span>
+<span id="cb2-44"><a href="#cb2-44" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="ss">f"Bitfield(</span><span class="sc">{</span>count<span class="sc">}</span><span class="ss">/</span><span class="sc">{</span><span class="bu">len</span>(<span class="va">self</span>.bitfield)<span class="sc">}</span><span class="ss"> pieces)"</span></span></code></pre></div>
 <p>These structures represent the protocol’s messages and state. The bitfield is particularly important—it compactly represents which pieces a peer has.</p>
 <h2 data-number="S.3" id="tracker-implementation"><span class="header-section-number">S.3</span> Tracker Implementation</h2>
 <p>The tracker coordinates the swarm by maintaining a list of active peers. The class and its constructor set up the request queue and swarm registry:</p>
@@ -97,7 +175,53 @@
 <p>This simplified version captures the essence of BitTorrent without all the protocol complexity.</p>
 <h2 data-number="S.5" id="basic-simulation"><span class="header-section-number">S.5</span> Basic Simulation</h2>
 <p>Let’s see BitTorrent in action:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> run_basic_bittorrent() <span class="op">-&gt;</span> <span class="va">None</span>:</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Demonstrate basic BitTorrent operation."""</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    env <span class="op">=</span> Environment()</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Create tracker</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>    tracker <span class="op">=</span> Tracker(env)</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Create torrent metadata</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>    metadata <span class="op">=</span> TorrentMetadata(</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>        info_hash<span class="op">=</span><span class="st">"abc123"</span>,</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>        piece_length<span class="op">=</span><span class="dv">256</span> <span class="op">*</span> <span class="dv">1024</span>,  <span class="co"># 256 KB pieces</span></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>        total_pieces<span class="op">=</span><span class="dv">10</span>,</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>        piece_hashes<span class="op">=</span>[<span class="st">"hash"</span> <span class="op">+</span> <span class="bu">str</span>(i) <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">10</span>)],</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>        file_name<span class="op">=</span><span class="st">"example.iso"</span>,</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>        file_size<span class="op">=</span><span class="dv">10</span> <span class="op">*</span> <span class="dv">256</span> <span class="op">*</span> <span class="dv">1024</span>,</span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>        tracker_url<span class="op">=</span><span class="st">"http://tracker.example.com:8080/announce"</span>,</span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"[</span><span class="sc">{</span>env<span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] Created </span><span class="sc">{</span>metadata<span class="sc">}</span><span class="ch">\n</span><span class="ss">"</span>)</span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Create initial seeder with all pieces</span></span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>    peers: List[SimplifiedPeer] <span class="op">=</span> []</span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a>    seeder <span class="op">=</span> SimplifiedPeer(</span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a>        env,</span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Seeder"</span>,</span>
+<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a>        metadata,</span>
+<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a>        tracker,</span>
+<span id="cb9-24"><a href="#cb9-24" aria-hidden="true" tabindex="-1"></a>        peers,</span>
+<span id="cb9-25"><a href="#cb9-25" aria-hidden="true" tabindex="-1"></a>        initial_pieces<span class="op">=</span><span class="bu">list</span>(<span class="bu">range</span>(<span class="dv">10</span>)),  <span class="co"># Has all pieces</span></span>
+<span id="cb9-26"><a href="#cb9-26" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb9-27"><a href="#cb9-27" aria-hidden="true" tabindex="-1"></a>    peers.append(seeder)</span>
+<span id="cb9-28"><a href="#cb9-28" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Create leechers with no pieces</span></span>
+<span id="cb9-29"><a href="#cb9-29" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">3</span>):</span>
+<span id="cb9-30"><a href="#cb9-30" aria-hidden="true" tabindex="-1"></a>        peer <span class="op">=</span> SimplifiedPeer(</span>
+<span id="cb9-31"><a href="#cb9-31" aria-hidden="true" tabindex="-1"></a>            env, <span class="ss">f"Peer</span><span class="sc">{</span>i <span class="op">+</span> <span class="dv">1</span><span class="sc">}</span><span class="ss">"</span>, metadata, tracker, peers, initial_pieces<span class="op">=</span>[]</span>
+<span id="cb9-32"><a href="#cb9-32" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb9-33"><a href="#cb9-33" aria-hidden="true" tabindex="-1"></a>        peers.append(peer)</span>
+<span id="cb9-34"><a href="#cb9-34" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Update peer lists</span></span>
+<span id="cb9-35"><a href="#cb9-35" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> peer <span class="kw">in</span> peers:</span>
+<span id="cb9-36"><a href="#cb9-36" aria-hidden="true" tabindex="-1"></a>        peer.other_peers <span class="op">=</span> [p <span class="cf">for</span> p <span class="kw">in</span> peers <span class="cf">if</span> p <span class="op">!=</span> peer]</span>
+<span id="cb9-37"><a href="#cb9-37" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Run simulation</span></span>
+<span id="cb9-38"><a href="#cb9-38" aria-hidden="true" tabindex="-1"></a>    env.run(until<span class="op">=</span><span class="dv">30</span>)</span>
+<span id="cb9-39"><a href="#cb9-39" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Print statistics</span></span>
+<span id="cb9-40"><a href="#cb9-40" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="sc">{</span><span class="st">'='</span> <span class="op">*</span> <span class="dv">60</span><span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb9-41"><a href="#cb9-41" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"Final Statistics:"</span>)</span>
+<span id="cb9-42"><a href="#cb9-42" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"="</span> <span class="op">*</span> <span class="dv">60</span>)</span>
+<span id="cb9-43"><a href="#cb9-43" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> peer <span class="kw">in</span> peers:</span>
+<span id="cb9-44"><a href="#cb9-44" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(</span>
+<span id="cb9-45"><a href="#cb9-45" aria-hidden="true" tabindex="-1"></a>            <span class="ss">f"</span><span class="sc">{</span>peer<span class="sc">.</span>peer_id<span class="sc">}</span><span class="ss">: Downloaded=</span><span class="sc">{</span>peer<span class="sc">.</span>downloaded_pieces<span class="sc">}</span><span class="ss">, "</span></span>
+<span id="cb9-46"><a href="#cb9-46" aria-hidden="true" tabindex="-1"></a>            <span class="ss">f"Uploaded=</span><span class="sc">{</span>peer<span class="sc">.</span>uploaded_pieces<span class="sc">}</span><span class="ss">"</span></span>
+<span id="cb9-47"><a href="#cb9-47" aria-hidden="true" tabindex="-1"></a>        )</span></code></pre></div>
 <p>This shows how pieces propagate through the swarm—early peers help later peers, distributing the upload burden.</p>
 <h2 data-number="S.6" id="key-bittorrent-concepts"><span class="header-section-number">S.6</span> Key BitTorrent Concepts</h2>
 <h3 data-number="S.6.1" id="rarest-first"><span class="header-section-number">S.6.1</span> Rarest First</h3>
@@ -109,7 +233,12 @@
 <h3 data-number="S.6.4" id="choking-algorithm"><span class="header-section-number">S.6.4</span> Choking Algorithm</h3>
 <p>Peers limit uploads to their top 4-5 uploaders. This maximizes efficiency by focusing bandwidth on productive connections rather than spreading it thin.</p>
 <p><code>ChokingPeer</code> implements the full choking/unchoking algorithm:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> UploadRecord:</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Tracks how much a peer has uploaded to us in the recent window."""</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    peer_id: <span class="bu">str</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    bytes_received: <span class="bu">int</span> <span class="op">=</span> <span class="dv">0</span>   <span class="co"># bytes downloaded FROM this peer recently</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>    is_choked: <span class="bu">bool</span> <span class="op">=</span> <span class="va">True</span>    <span class="co"># are we choking this peer (refusing to upload)?</span></span></code></pre></div>
 <div class="sourceCode" id="cb11"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>The <code>rechoke</code> method re-evaluates who gets upload slots based on recent upload history, and <code>rotate_optimistic</code> gives new peers a chance to prove themselves:</p>
 <div class="sourceCode" id="cb12"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>

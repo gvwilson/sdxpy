@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 
-# mccole: orset
+# mccole:orset
 @dataclass
 class ORSet:
     """Observed-Remove Set (state-based CRDT)."""
@@ -56,7 +56,7 @@ class ORSet:
         result.tag_counter = self.tag_counter
         return result
 
-    # mccole: /orset
+    # mccole:/orset
 
     def __str__(self):
         return f"ORSet(id={self.replica_id}, value={self.value()})"

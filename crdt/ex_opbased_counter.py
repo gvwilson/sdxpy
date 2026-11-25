@@ -18,7 +18,7 @@ class Peer:
     inbox: list = field(default_factory=list)
 
 
-# mccole: replica
+# mccole:replica
 class Replica(Process):
     """A replica that creates operations and broadcasts them to peers."""
 
@@ -61,10 +61,10 @@ class Replica(Process):
             print(f"[{self.now}] {self.name}: applied inbox -> {self.counter.value}")
 
             await self.timeout(self.interval)
-# mccole: /replica
+# mccole:/replica
 
 
-# mccole: sim
+# mccole:sim
 def main():
     """Demonstrate OpBasedCounter convergence across three replicas."""
     env = Environment()
@@ -76,7 +76,7 @@ def main():
     print("\n--- Final State")
     for p in peers:
         print(p.counter)
-# mccole: /sim
+# mccole:/sim
 
 
 if __name__ == "__main__":

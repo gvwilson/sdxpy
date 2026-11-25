@@ -7,7 +7,7 @@ from tcp_applications import TCPClient, TCPServer
 from dsdx import dsdx
 
 
-# mccole: basicexample
+# mccole:basicexample
 def main():
     env = Environment()
 
@@ -54,7 +54,7 @@ def main():
     network.print_statistics()
     client_conn.print_statistics()
     server_conn.print_statistics()
-# mccole: /basicexample
+# mccole:/basicexample
 
 
 if __name__ == "__main__":

@@ -2,7 +2,7 @@ from lock_client import LockClient
 from basic_lock_server import LockServer
 
 
-# mccole: failingclient
+# mccole:failingclient
 class FailingClient(LockClient):
     """Client that crashes while holding a lock."""
 
@@ -32,4 +32,4 @@ class FailingClient(LockClient):
         await self.timeout(self.fail_after)
         print(f"[{self.now:.1f}] {self.client_id}: CRASHED!")
         # Client stops here without releasing the lock
-# mccole: /failingclient
+# mccole:/failingclient

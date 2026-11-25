@@ -8,7 +8,7 @@ from tracing_decorators import Storage
 from dsdx import dsdx
 
 
-# mccole: client
+# mccole:client
 class SimpleClient(Process):
     """Client that initiates traced requests."""
 
@@ -67,10 +67,10 @@ class SimpleClient(Process):
         root_span.finish(self.now)
         root_span.add_tag("success", response.success)
         await self.collector.span_queue.put(root_span)
-# mccole: /client
+# mccole:/client
 
 
-# mccole: demo
+# mccole:demo
 def main() -> None:
     """Demonstrate decorator-based tracing."""
     env = Environment()
@@ -107,7 +107,7 @@ def main() -> None:
         for span in sorted(trace.spans, key=lambda s: s.start_time):
             indent = "    " if span.parent_span_id else "  "
             print(f"{indent}- {span.operation_name} ({span.duration:.3f}s)")
-# mccole: /demo
+# mccole:/demo
 
 
 if __name__ == "__main__":

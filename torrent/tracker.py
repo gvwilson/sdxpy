@@ -6,7 +6,7 @@ from bittorrent_types import TrackerRequest, TrackerResponse, PeerInfo
 import random
 
 
-# mccole: tracker_init
+# mccole:tracker_init
 class Tracker(Process):
     """BitTorrent tracker coordinating peers."""
 
@@ -26,9 +26,9 @@ class Tracker(Process):
         while True:
             request = await self.request_queue.get()
             await self.handle_request(request)
-    # mccole: /tracker_init
+    # mccole:/tracker_init
 
-    # mccole: tracker_handle
+    # mccole:tracker_handle
     async def handle_request(self, request: TrackerRequest) -> None:
         """Handle tracker announce request."""
         print(f"[{self.now:.1f}] Tracker: Received {request}")
@@ -79,4 +79,4 @@ class Tracker(Process):
             f"[{self.now:.1f}] Tracker: Sent {len(other_peers)} peers to "
             f"{request.peer_id}"
         )
-    # mccole: /tracker_handle
+    # mccole:/tracker_handle

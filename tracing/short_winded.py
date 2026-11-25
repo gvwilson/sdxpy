@@ -6,7 +6,7 @@ class GenericService:
         pass
 
 
-# mccole: service
+# mccole:service
 class Service(GenericService):
     @traced("handle_request")
     async def handle_request(self, request):
@@ -14,4 +14,4 @@ class Service(GenericService):
         return result
 
 
-# mccole: /service
+# mccole:/service

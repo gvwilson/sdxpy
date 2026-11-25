@@ -41,7 +41,7 @@ from typing import Optional
 from oauth_types import generate_token, TokenResponse
 
 
-# mccole: pkce_helpers
+# mccole:pkce_helpers
 def generate_code_verifier(length: int = 64) -> str:
     """Generate a cryptographically random code verifier.
 
@@ -68,10 +68,10 @@ def compute_code_challenge(verifier: str) -> str:
 def verify_challenge(verifier: str, stored_challenge: str) -> bool:
     """Verify that the verifier matches the stored challenge."""
     return compute_code_challenge(verifier) == stored_challenge
-# mccole: /pkce_helpers
+# mccole:/pkce_helpers
 
 
-# mccole: pkce_client
+# mccole:pkce_client
 class PKCEClient(Process):
     """OAuth client that uses PKCE for the authorization code flow.
 
@@ -180,4 +180,4 @@ class PKCEClient(Process):
             return None
 
         return response.access_token
-# mccole: /pkce_client
+# mccole:/pkce_client

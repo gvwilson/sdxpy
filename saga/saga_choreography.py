@@ -28,7 +28,7 @@ from booking_services import FlightService, HotelService, CarRentalService
 from typing import Dict, List
 
 
-# mccole: event_bus
+# mccole:event_bus
 class EventBus(Process):
     """Simple pub-sub event bus for choreography.
 
@@ -58,10 +58,10 @@ class EventBus(Process):
         subscribers = self.subscriptions.get(event.event_type, [])
         for q in subscribers:
             await q.put(event)
-# mccole: /event_bus
+# mccole:/event_bus
 
 
-# mccole: choreographed_flight
+# mccole:choreographed_flight
 class ChoreographedFlightService(Process):
     """Flight service driven by events rather than direct calls.
 
@@ -128,10 +128,10 @@ class ChoreographedFlightService(Process):
             saga_id=event.saga_id,
             data={"booking_id": booking_id},
         ))
-# mccole: /choreographed_flight
+# mccole:/choreographed_flight
 
 
-# mccole: choreographed_hotel
+# mccole:choreographed_hotel
 class ChoreographedHotelService(Process):
     """Hotel service driven by events.
 
@@ -190,10 +190,10 @@ class ChoreographedHotelService(Process):
             saga_id=event.saga_id,
             data={"booking_id": booking_id},
         ))
-# mccole: /choreographed_hotel
+# mccole:/choreographed_hotel
 
 
-# mccole: choreographed_car
+# mccole:choreographed_car
 class ChoreographedCarService(Process):
     """Car rental service driven by events.
 
@@ -230,4 +230,4 @@ class ChoreographedCarService(Process):
                 saga_id=event.saga_id,
                 data={"booking_id": booking_id},
             ))
-# mccole: /choreographed_car
+# mccole:/choreographed_car

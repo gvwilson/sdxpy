@@ -8,7 +8,7 @@ from versioned_value import VersionedValue
 from messages import ReadRequest, WriteRequest
 
 
-# mccole: coord_init
+# mccole:coord_init
 class Coordinator:
     """Coordinates read/write operations across replicas."""
 
@@ -38,9 +38,9 @@ class Coordinator:
             idx = (hash_val + i) % len(self.nodes)
             replicas.append(self.nodes[idx])
         return replicas
-    # mccole: /coord_init
+    # mccole:/coord_init
 
-    # mccole: coord_read
+    # mccole:coord_read
     async def read(self, key: str, client_id: str) -> list[VersionedValue]:
         """Read from R replicas and return all versions."""
         replicas = self._get_replicas(key)
@@ -74,9 +74,9 @@ class Coordinator:
             pass  # Simplified: skip read repair for now
 
         return merged_versions
-    # mccole: /coord_read
+    # mccole:/coord_read
 
-    # mccole: coord_write
+    # mccole:coord_write
     async def write(
         self, key: str, value: Any, context: VectorClock | None, client_id: str
     ) -> VectorClock | None:
@@ -105,9 +105,9 @@ class Coordinator:
             merged_clock.merge(clock)
 
         return merged_clock
-    # mccole: /coord_write
+    # mccole:/coord_write
 
-    # mccole: coord_merge
+    # mccole:coord_merge
     def _merge_versions(self, versions: list[VersionedValue]) -> list[VersionedValue]:
         """Merge versions, keeping only concurrent ones."""
         if not versions:
@@ -134,4 +134,4 @@ class Coordinator:
                 result.append(v1)
 
         return result
-    # mccole: /coord_merge
+    # mccole:/coord_merge

@@ -5,7 +5,7 @@ from asimpy import Process
 from scheduler import WorkStealingScheduler
 
 
-# mccole: gen
+# mccole:gen
 class TaskGenerator(Process):
     """Generates tasks including ones that spawn subtasks."""
 
@@ -20,4 +20,4 @@ class TaskGenerator(Process):
             await self.timeout(0.5)
 
 
-# mccole: /gen
+# mccole:/gen

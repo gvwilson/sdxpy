@@ -5,7 +5,7 @@ from typing import Any
 from vector_clock import VectorClock
 
 
-# mccole: versionedvalue
+# mccole:versionedvalue
 @dataclass
 class VersionedValue:
     """A value with its vector clock."""
@@ -13,7 +13,7 @@ class VersionedValue:
     value: Any
     clock: VectorClock
     timestamp: float  # For last-write-wins conflict resolution
-# mccole: /versionedvalue
+# mccole:/versionedvalue
 
     def __str__(self):
         return f"Value({self.value}, {self.clock})"

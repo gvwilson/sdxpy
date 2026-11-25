@@ -6,7 +6,7 @@ from task import Task
 from worker import Worker
 
 
-# mccole: scheduler
+# mccole:scheduler
 class WorkStealingScheduler:
     """Scheduler that coordinates work-stealing workers."""
 
@@ -48,7 +48,7 @@ class WorkStealingScheduler:
 
         return task
 
-    # mccole: /scheduler
+    # mccole:/scheduler
 
     def get_statistics(self):
         """Get scheduler statistics."""

@@ -5,7 +5,7 @@ from oauth_types import AccessToken, ResourceRequest, ResourceResponse
 from authorization_server import AuthorizationServer
 
 
-# mccole: init
+# mccole:init
 class ResourceServer(Process):
     """OAuth 2.0 resource server (protected API)."""
 
@@ -30,17 +30,17 @@ class ResourceServer(Process):
         }
 
         print(f"[{self.now:.1f}] Resource Server started")
-    # mccole: /init
+    # mccole:/init
 
-    # mccole: run
+    # mccole:run
     async def run(self):
         """Main server loop."""
         while True:
             request = await self.resource_queue.get()
             await self.handle_resource_request(request)
-    # mccole: /run
+    # mccole:/run
 
-    # mccole: handle_resource
+    # mccole:handle_resource
     async def handle_resource_request(self, request: ResourceRequest):
         """Handle API request with access token."""
         print(f"[{self.now:.1f}] ResourceServer: Received {request}")
@@ -57,9 +57,9 @@ class ResourceServer(Process):
         await request.response_queue.put(
             ResourceResponse(success=True, data=resource["data"])
         )
-    # mccole: /handle_resource
+    # mccole:/handle_resource
 
-    # mccole: validate_token
+    # mccole:validate_token
     async def _validate_token(
         self, request: ResourceRequest
     ) -> AccessToken | None:
@@ -81,9 +81,9 @@ class ResourceServer(Process):
             return None
 
         return token
-    # mccole: /validate_token
+    # mccole:/validate_token
 
-    # mccole: check_access
+    # mccole:check_access
     async def _check_resource_access(
         self, request: ResourceRequest, token: AccessToken
     ) -> dict | None:
@@ -107,4 +107,4 @@ class ResourceServer(Process):
             return None
 
         return resource
-    # mccole: /check_access
+    # mccole:/check_access

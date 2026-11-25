@@ -3,7 +3,7 @@ from basic_lock_server import LockServer, LockRequest
 from protected_resource import ProtectedResource
 
 
-# mccole: fenced_init
+# mccole:fenced_init
 class FencedClient(Process):
     """Client that uses fencing tokens when accessing resources."""
 
@@ -25,9 +25,9 @@ class FencedClient(Process):
         self.pause_duration = pause_duration
         self.initial_delay = initial_delay
         self.current_token: int = 0
-    # mccole: /fenced_init
+    # mccole:/fenced_init
 
-    # mccole: fenced_run
+    # mccole:fenced_run
     async def run(self):
         """Acquire lock and access resource with token."""
         # Potentially delay start
@@ -54,9 +54,9 @@ class FencedClient(Process):
 
         if success:
             await self.release_lock()
-    # mccole: /fenced_run
+    # mccole:/fenced_run
 
-    # mccole: fenced_acquire
+    # mccole:fenced_acquire
     async def acquire_lock(self) -> bool:
         """Acquire lock from server."""
         response_queue = Queue(self._env)
@@ -78,9 +78,9 @@ class FencedClient(Process):
             )
             return True
         return False
-    # mccole: /fenced_acquire
+    # mccole:/fenced_acquire
 
-    # mccole: fenced_release
+    # mccole:fenced_release
     async def release_lock(self):
         """Release lock."""
         response_queue = Queue(self._env)
@@ -93,4 +93,4 @@ class FencedClient(Process):
 
         await self.server.request_queue.put(request)
         await response_queue.get()
-    # mccole: /fenced_release
+    # mccole:/fenced_release

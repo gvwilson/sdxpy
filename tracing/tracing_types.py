@@ -11,7 +11,7 @@ class BaseCollector(Process):
     pass
 
 
-# mccole: context
+# mccole:context
 @dataclass
 class TraceContext:
     """Context propagated between services."""
@@ -20,13 +20,13 @@ class TraceContext:
     span_id: str
     parent_span_id: str | None = None
     baggage: dict[str, str] = field(default_factory=dict)
-    # mccole: /context
+    # mccole:/context
 
     def __str__(self) -> str:
         return f"TraceContext(trace={self.trace_id[:8]}..., span={self.span_id[:8]}...)"
 
 
-# mccole: span
+# mccole:span
 @dataclass
 class Span:
     """Represents a unit of work in a trace."""
@@ -57,14 +57,14 @@ class Span:
         self.end_time = end_time
         self.duration = end_time - self.start_time
 
-    # mccole: /span
+    # mccole:/span
 
     def __str__(self) -> str:
         status = f"{self.duration:.3f}s" if self.duration else "active"
         return f"Span({self.operation_name}, {status})"
 
 
-# mccole: trace
+# mccole:trace
 @dataclass
 class Trace:
     """Complete trace containing all spans."""
@@ -98,7 +98,7 @@ class Trace:
             return self.end_time - self.start_time
         return None
 
-    # mccole: /trace
+    # mccole:/trace
 
     def __str__(self) -> str:
         duration = self.get_duration()

@@ -2,7 +2,7 @@ from asimpy import Process, Queue
 from basic_lock_server import LockServer, LockRequest
 
 
-# mccole: client_init
+# mccole:client_init
 class LockClient(Process):
     """Client that acquires locks to access resources."""
 
@@ -20,9 +20,9 @@ class LockClient(Process):
         self.work_duration = work_duration
         self.initial_delay = initial_delay
         self.current_token: int | None = None
-    # mccole: /client_init
+    # mccole:/client_init
 
-    # mccole: client_run
+    # mccole:client_run
     async def run(self):
         """Acquire lock, do work, release lock."""
         # Possibly delay start
@@ -45,9 +45,9 @@ class LockClient(Process):
 
         # Release lock
         await self.release_lock()
-    # mccole: /client_run
+    # mccole:/client_run
 
-    # mccole: client_acquire
+    # mccole:client_acquire
     async def acquire_lock(self) -> bool:
         """Request lock from server."""
         response_queue = Queue(self._env)
@@ -65,9 +65,9 @@ class LockClient(Process):
             self.current_token = response.token
             return True
         return False
-    # mccole: /client_acquire
+    # mccole:/client_acquire
 
-    # mccole: client_release
+    # mccole:client_release
     async def release_lock(self):
         """Release lock back to server."""
         response_queue = Queue(self._env)
@@ -81,4 +81,4 @@ class LockClient(Process):
         await self.server.request_queue.put(request)
         await response_queue.get()
         self.current_token = None
-    # mccole: /client_release
+    # mccole:/client_release

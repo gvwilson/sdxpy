@@ -6,7 +6,7 @@ from replicated_lock_client import ReplicatedLockClient
 from dsdx import dsdx
 
 
-# mccole: replicatedexample
+# mccole:replicatedexample
 def main():
     env = Environment()
 
@@ -18,7 +18,7 @@ def main():
     ReplicatedLockClient(env, "Client2", manager, "resource", 2.0, initial_delay=2.0)
 
     env.run(until=15)
-# mccole: /replicatedexample
+# mccole:/replicatedexample
 
 
 if __name__ == "__main__":

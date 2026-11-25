@@ -72,20 +72,120 @@
 <p>Let’s examine each component in turn.</p>
 <h2 data-number="V.1" id="tcp-data"><span class="header-section-number">V.1</span> Data Structures</h2>
 <p>We start by defining the six types of packets our protocol will use:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> PacketType(Enum):</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Types of TCP packets."""</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    SYN <span class="op">=</span> <span class="st">"SYN"</span>  <span class="co"># Synchronize (connection establishment)</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    SYN_ACK <span class="op">=</span> <span class="st">"SYN_ACK"</span>  <span class="co"># Synchronize-Acknowledge</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    ACK <span class="op">=</span> <span class="st">"ACK"</span>  <span class="co"># Acknowledge</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    DATA <span class="op">=</span> <span class="st">"DATA"</span>  <span class="co"># Data packet</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    FIN <span class="op">=</span> <span class="st">"FIN"</span>  <span class="co"># Finish (connection teardown)</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    FIN_ACK <span class="op">=</span> <span class="st">"FIN_ACK"</span>  <span class="co"># Finish-Acknowledge</span></span></code></pre></div>
 <p>and the seven different states that a connection can be in:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> ConnectionState(Enum):</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""TCP connection states."""</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    CLOSED <span class="op">=</span> <span class="st">"CLOSED"</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    SYN_SENT <span class="op">=</span> <span class="st">"SYN_SENT"</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    SYN_RECEIVED <span class="op">=</span> <span class="st">"SYN_RECEIVED"</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    ESTABLISHED <span class="op">=</span> <span class="st">"ESTABLISHED"</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    FIN_WAIT <span class="op">=</span> <span class="st">"FIN_WAIT"</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>    CLOSE_WAIT <span class="op">=</span> <span class="st">"CLOSE_WAIT"</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>    CLOSING <span class="op">=</span> <span class="st">"CLOSING"</span></span></code></pre></div>
 <p>The <code>Packet</code> structure mirrors a real TCP/IP packet header with source and destination addressing, sequence and acknowledgment numbers, packet type, and payload data:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Packet:</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""A network packet (simulating IP + TCP)."""</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    src_addr: <span class="bu">str</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    src_port: <span class="bu">int</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    dst_addr: <span class="bu">str</span> <span class="op">|</span> <span class="va">None</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    dst_port: <span class="bu">int</span> <span class="op">|</span> <span class="va">None</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    seq_num: <span class="bu">int</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>    ack_num: <span class="bu">int</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>    packet_type: PacketType</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>    data: <span class="bu">bytes</span> <span class="op">=</span> <span class="st">b""</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>    window_size: <span class="bu">int</span> <span class="op">=</span> <span class="dv">65535</span></span></code></pre></div>
 <h2 data-number="V.2" id="tcp-network"><span class="header-section-number">V.2</span> Unreliable Network Layer</h2>
 <p>Before building TCP, we need to simulate UDP’s unreliable delivery. <code>UnreliableNetwork</code> tracks per-packet statistics and maintains a registry mapping address:port pairs to their receive queues:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> UnreliableNetwork(Process):</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Simulates unreliable packet delivery (like UDP)."""</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> init(</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>,</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>        loss_rate: <span class="bu">float</span> <span class="op">=</span> <span class="fl">0.1</span>,</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>        reorder_rate: <span class="bu">float</span> <span class="op">=</span> <span class="fl">0.05</span>,</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>        duplicate_rate: <span class="bu">float</span> <span class="op">=</span> <span class="fl">0.02</span>,</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>        delay_range: <span class="bu">tuple</span> <span class="op">=</span> (<span class="fl">0.1</span>, <span class="fl">0.5</span>),</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>    ) <span class="op">-&gt;</span> <span class="va">None</span>:</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.loss_rate <span class="op">=</span> loss_rate</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.reorder_rate <span class="op">=</span> reorder_rate</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.duplicate_rate <span class="op">=</span> duplicate_rate</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.delay_range <span class="op">=</span> delay_range</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Network endpoints (address:port -&gt; queue)</span></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.endpoints: Dict[<span class="bu">str</span>, Queue] <span class="op">=</span> {}</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Statistics</span></span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.packets_sent <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.packets_lost <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.packets_reordered <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.packets_duplicated <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(</span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>            <span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] Network: Started (loss=</span><span class="sc">{</span>loss_rate<span class="sc">:.0%}</span><span class="ss">, "</span></span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>            <span class="ss">f"reorder=</span><span class="sc">{</span>reorder_rate<span class="sc">:.0%}</span><span class="ss">)"</span></span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a>    <span class="cf">async</span> <span class="kw">def</span> run(<span class="va">self</span>) <span class="op">-&gt;</span> <span class="va">None</span>:</span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Network doesn't have a main loop - just routes packets."""</span></span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a>        <span class="cf">while</span> <span class="va">True</span>:</span>
+<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a>            <span class="cf">await</span> <span class="va">self</span>.timeout(<span class="dv">1000</span>)  <span class="co"># Sleep forever</span></span>
+<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> register_endpoint(<span class="va">self</span>, address: <span class="bu">str</span>, port: <span class="bu">int</span>, queue: Queue) <span class="op">-&gt;</span> <span class="va">None</span>:</span>
+<span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Register an endpoint to receive packets."""</span></span>
+<span id="cb4-31"><a href="#cb4-31" aria-hidden="true" tabindex="-1"></a>        endpoint_id <span class="op">=</span> <span class="ss">f"</span><span class="sc">{</span>address<span class="sc">}</span><span class="ss">:</span><span class="sc">{</span>port<span class="sc">}</span><span class="ss">"</span></span>
+<span id="cb4-32"><a href="#cb4-32" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.endpoints[endpoint_id] <span class="op">=</span> queue</span>
+<span id="cb4-33"><a href="#cb4-33" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] Network: Registered </span><span class="sc">{</span>endpoint_id<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div>
 <p><code>send_packet</code> applies the configured loss and duplication rates before calling <code>_deliver_packet</code>, which adds a random delay and optionally increases it to simulate reordering:</p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>This simulates the way packets in real networks can be lost, delayed, reordered, or duplicated. The network maintains a registry of endpoints and routes packets accordingly.</p>
 <h2 data-number="V.3" id="tcp-connection"><span class="header-section-number">V.3</span> TCP Connection</h2>
 <p>The TCP connection implements reliability over the unreliable network:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> TCPConnection(Process):</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""TCP connection with reliability over unreliable network."""</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> init(</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>,</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>        local_addr: <span class="bu">str</span>,</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>        local_port: <span class="bu">int</span>,</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>        network: <span class="st">"UnreliableNetwork"</span>,</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>        mtu: <span class="bu">int</span> <span class="op">=</span> <span class="dv">1400</span>,</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>        window_size: <span class="bu">int</span> <span class="op">=</span> <span class="dv">4</span>,</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>        timeout: <span class="bu">float</span> <span class="op">=</span> <span class="fl">2.0</span>,</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>    ) <span class="op">-&gt;</span> <span class="va">None</span>:</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.local_addr <span class="op">=</span> local_addr</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.local_port <span class="op">=</span> local_port</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.network <span class="op">=</span> network</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.mtu <span class="op">=</span> mtu  <span class="co"># Maximum transmission unit</span></span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.window_size <span class="op">=</span> window_size  <span class="co"># Sliding window size</span></span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.rto <span class="op">=</span> timeout  <span class="co"># Retransmission timeout</span></span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Connection state</span></span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.state <span class="op">=</span> ConnectionState.CLOSED</span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.remote_addr: <span class="bu">str</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span></span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.remote_port: <span class="bu">int</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span></span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Sequence numbers</span></span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.send_seq <span class="op">=</span> random.randint(<span class="dv">1000</span>, <span class="dv">9999</span>)  <span class="co"># Initial sequence number</span></span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.recv_seq <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Send buffer</span></span>
+<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.send_buffer: <span class="bu">list</span>[SegmentBuffer] <span class="op">=</span> []</span>
+<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.send_base <span class="op">=</span> <span class="va">self</span>.send_seq  <span class="co"># Oldest unacknowledged sequence</span></span>
+<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.next_seq_num <span class="op">=</span> <span class="va">self</span>.send_seq  <span class="co"># Next sequence to use</span></span>
+<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Receive buffer</span></span>
+<span id="cb6-30"><a href="#cb6-30" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.recv_buffer <span class="op">=</span> ReceiveBuffer()</span>
+<span id="cb6-31"><a href="#cb6-31" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Queues</span></span>
+<span id="cb6-32"><a href="#cb6-32" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.recv_queue: Queue <span class="op">=</span> Queue(<span class="va">self</span>._env)  <span class="co"># Incoming packets</span></span>
+<span id="cb6-33"><a href="#cb6-33" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.data_ready: Queue <span class="op">=</span> Queue(<span class="va">self</span>._env)  <span class="co"># Data for application</span></span>
+<span id="cb6-34"><a href="#cb6-34" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Register with network</span></span>
+<span id="cb6-35"><a href="#cb6-35" aria-hidden="true" tabindex="-1"></a>        network.register_endpoint(local_addr, local_port, <span class="va">self</span>.recv_queue)</span>
+<span id="cb6-36"><a href="#cb6-36" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Statistics</span></span>
+<span id="cb6-37"><a href="#cb6-37" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.bytes_sent <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb6-38"><a href="#cb6-38" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.bytes_received <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb6-39"><a href="#cb6-39" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.packets_retransmitted <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb6-40"><a href="#cb6-40" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(</span>
+<span id="cb6-41"><a href="#cb6-41" aria-hidden="true" tabindex="-1"></a>            <span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] TCP </span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>local_addr<span class="sc">}</span><span class="ss">:</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>local_port<span class="sc">}</span><span class="ss">: "</span></span>
+<span id="cb6-42"><a href="#cb6-42" aria-hidden="true" tabindex="-1"></a>            <span class="ss">f"Created (ISN=</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>send_seq<span class="sc">}</span><span class="ss">)"</span></span>
+<span id="cb6-43"><a href="#cb6-43" aria-hidden="true" tabindex="-1"></a>        )</span></code></pre></div>
 <p>The connection maintains send and receive buffers. The send buffer holds unacknowledged segments for potential retransmission. The receive buffer handles out-of-order delivery by holding segments until gaps are filled.</p>
 <p>The <code>run</code> loop reads packets from the receive queue and dispatches each one through <code>handle_packet</code>, which routes SYN, SYN-ACK, ACK, and DATA packets to the appropriate handler:</p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
@@ -107,7 +207,37 @@
 <p>The sender can have <code>window_size</code> unacknowledged packets in flight. This maintains throughput even with high latency: new packets are being sent while waiting for ACKs from earlier packets.</p>
 <h2 data-number="V.6" id="tcp-retrans"><span class="header-section-number">V.6</span> Retransmission on Timeout</h2>
 <p>If an ACK doesn’t arrive within the timeout period, the segment is retransmitted. We use a separate <code>Process</code> to simulate each retransmission timer:</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> RetransmissionTimer(Process):</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Timer process for retransmitting unacknowledged segments."""</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> init(<span class="va">self</span>, connection: <span class="st">"TCPConnection"</span>, segment: SegmentBuffer) <span class="op">-&gt;</span> <span class="va">None</span>:</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.connection <span class="op">=</span> connection</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.segment <span class="op">=</span> segment</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">async</span> <span class="kw">def</span> run(<span class="va">self</span>) <span class="op">-&gt;</span> <span class="va">None</span>:</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Wait for timeout, then retransmit if not acknowledged."""</span></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">await</span> <span class="va">self</span>.timeout(<span class="va">self</span>.connection.rto)</span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Check if still in send buffer (not yet acknowledged)</span></span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="va">self</span>.segment <span class="kw">in</span> <span class="va">self</span>.connection.send_buffer:</span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(</span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>                <span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] TCP: TIMEOUT - Retransmitting "</span></span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>                <span class="ss">f"seq=</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>segment<span class="sc">.</span>seq_num<span class="sc">}</span><span class="ss">"</span></span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a>            )</span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.connection.packets_retransmitted <span class="op">+=</span> <span class="dv">1</span></span>
+<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.segment.retransmit_count <span class="op">+=</span> <span class="dv">1</span></span>
+<span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.segment.sent_time <span class="op">=</span> <span class="va">self</span>.now</span>
+<span id="cb11-18"><a href="#cb11-18" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Retransmit</span></span>
+<span id="cb11-19"><a href="#cb11-19" aria-hidden="true" tabindex="-1"></a>            packet <span class="op">=</span> Packet(</span>
+<span id="cb11-20"><a href="#cb11-20" aria-hidden="true" tabindex="-1"></a>                src_addr<span class="op">=</span><span class="va">self</span>.connection.local_addr,</span>
+<span id="cb11-21"><a href="#cb11-21" aria-hidden="true" tabindex="-1"></a>                dst_addr<span class="op">=</span><span class="va">self</span>.connection.remote_addr,</span>
+<span id="cb11-22"><a href="#cb11-22" aria-hidden="true" tabindex="-1"></a>                src_port<span class="op">=</span><span class="va">self</span>.connection.local_port,</span>
+<span id="cb11-23"><a href="#cb11-23" aria-hidden="true" tabindex="-1"></a>                dst_port<span class="op">=</span><span class="va">self</span>.connection.remote_port,</span>
+<span id="cb11-24"><a href="#cb11-24" aria-hidden="true" tabindex="-1"></a>                seq_num<span class="op">=</span><span class="va">self</span>.segment.seq_num,</span>
+<span id="cb11-25"><a href="#cb11-25" aria-hidden="true" tabindex="-1"></a>                ack_num<span class="op">=</span><span class="va">self</span>.connection.recv_buffer.next_expected_seq,</span>
+<span id="cb11-26"><a href="#cb11-26" aria-hidden="true" tabindex="-1"></a>                packet_type<span class="op">=</span>PacketType.DATA,</span>
+<span id="cb11-27"><a href="#cb11-27" aria-hidden="true" tabindex="-1"></a>                data<span class="op">=</span><span class="va">self</span>.segment.data,</span>
+<span id="cb11-28"><a href="#cb11-28" aria-hidden="true" tabindex="-1"></a>            )</span>
+<span id="cb11-29"><a href="#cb11-29" aria-hidden="true" tabindex="-1"></a>            <span class="cf">await</span> <span class="va">self</span>.connection.network.send_packet(packet)</span>
+<span id="cb11-30"><a href="#cb11-30" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Restart timer</span></span>
+<span id="cb11-31"><a href="#cb11-31" aria-hidden="true" tabindex="-1"></a>            RetransmissionTimer(<span class="va">self</span>._env, <span class="va">self</span>.connection, <span class="va">self</span>.segment)</span></code></pre></div>
 <p>Each time we sent a segment, we create a <code>RetransmissionTimer</code>:</p>
 <div class="sourceCode" id="cb12"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># In TCPConnection.send():</span></span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="cf">await</span> <span class="va">self</span>.network.send_packet(segment)</span>
@@ -122,7 +252,29 @@
 <div class="sourceCode" id="cb13"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <h2 data-number="V.7" id="tcp-order"><span class="header-section-number">V.7</span> Handling Out-of-Order Delivery</h2>
 <p>The receive buffer handles segments arriving out of order:</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> ReceiveBuffer:</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Buffer for out-of-order received segments."""</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>    segments: <span class="bu">dict</span>[<span class="bu">int</span>, <span class="bu">bytes</span>] <span class="op">=</span> field(default_factory<span class="op">=</span><span class="bu">dict</span>)</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>    next_expected_seq: <span class="bu">int</span> <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> add_segment(<span class="va">self</span>, seq_num: <span class="bu">int</span>, data: <span class="bu">bytes</span>) <span class="op">-&gt;</span> <span class="va">None</span>:</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Add a segment to the receive buffer."""</span></span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> seq_num <span class="op">&gt;=</span> <span class="va">self</span>.next_expected_seq:</span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.segments[seq_num] <span class="op">=</span> data</span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> get_continuous_data(<span class="va">self</span>) <span class="op">-&gt;</span> <span class="bu">bytes</span>:</span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Extract continuous data starting from next_expected_seq."""</span></span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>        result <span class="op">=</span> <span class="st">b""</span></span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>        current_seq <span class="op">=</span> <span class="va">self</span>.next_expected_seq</span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>        <span class="cf">while</span> current_seq <span class="kw">in</span> <span class="va">self</span>.segments:</span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>            segment <span class="op">=</span> <span class="va">self</span>.segments.pop(current_seq)</span>
+<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a>            result <span class="op">+=</span> segment</span>
+<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a>            current_seq <span class="op">+=</span> <span class="bu">len</span>(segment)</span>
+<span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> result:</span>
+<span id="cb14-19"><a href="#cb14-19" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.next_expected_seq <span class="op">=</span> current_seq</span>
+<span id="cb14-20"><a href="#cb14-20" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> result</span>
+<span id="cb14-21"><a href="#cb14-21" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> has_data(<span class="va">self</span>) <span class="op">-&gt;</span> <span class="bu">bool</span>:</span>
+<span id="cb14-22"><a href="#cb14-22" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Check if buffer has any segments."""</span></span>
+<span id="cb14-23"><a href="#cb14-23" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="bu">len</span>(<span class="va">self</span>.segments) <span class="op">&gt;</span> <span class="dv">0</span></span></code></pre></div>
 <p>Segments are held until all gaps are filled. When a contiguous block of data is available, it’s delivered to the application in order.</p>
 <h2 data-number="V.8" id="tcp-ack"><span class="header-section-number">V.8</span> Cumulative Acknowledgments</h2>
 <p>TCP uses cumulative ACKs, i.e., each ACK indicates all data up to a sequence number has been received:</p>
@@ -130,7 +282,43 @@
 <p>A single ACK can acknowledge multiple segments. This is simpler than selective acknowledgments and works well when most data arrives in order.</p>
 <h2 data-number="V.9" id="tcp-basic"><span class="header-section-number">V.9</span> Basic Example</h2>
 <p>Let’s see TCP in action:</p>
-<div class="sourceCode" id="cb16"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> main():</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>    env <span class="op">=</span> Environment()</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"## Basic TCP Demonstration"</span>)</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"Testing TCP reliability with:"</span>)</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"  - 15% packet loss"</span>)</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"  - 10% packet reordering"</span>)</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"  - 5% packet duplication"</span>)</span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Create unreliable network</span></span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>    network <span class="op">=</span> UnreliableNetwork(</span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>        env,</span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>        loss_rate<span class="op">=</span><span class="fl">0.15</span>,  <span class="co"># 15% packet loss</span></span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>        reorder_rate<span class="op">=</span><span class="fl">0.10</span>,  <span class="co"># 10% reordering</span></span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a>        duplicate_rate<span class="op">=</span><span class="fl">0.05</span>,  <span class="co"># 5% duplication</span></span>
+<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Create server connection</span></span>
+<span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a>    server_conn <span class="op">=</span> TCPConnection(</span>
+<span id="cb16-17"><a href="#cb16-17" aria-hidden="true" tabindex="-1"></a>        env, <span class="st">"192.168.1.100"</span>, <span class="dv">8080</span>, network, window_size<span class="op">=</span><span class="dv">4</span>, timeout<span class="op">=</span><span class="fl">1.5</span></span>
+<span id="cb16-18"><a href="#cb16-18" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb16-19"><a href="#cb16-19" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Create client connection</span></span>
+<span id="cb16-20"><a href="#cb16-20" aria-hidden="true" tabindex="-1"></a>    client_conn <span class="op">=</span> TCPConnection(</span>
+<span id="cb16-21"><a href="#cb16-21" aria-hidden="true" tabindex="-1"></a>        env, <span class="st">"192.168.1.101"</span>, <span class="dv">9000</span>, network, window_size<span class="op">=</span><span class="dv">4</span>, timeout<span class="op">=</span><span class="fl">1.5</span></span>
+<span id="cb16-22"><a href="#cb16-22" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb16-23"><a href="#cb16-23" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Create applications</span></span>
+<span id="cb16-24"><a href="#cb16-24" aria-hidden="true" tabindex="-1"></a>    TCPServer(env, server_conn)</span>
+<span id="cb16-25"><a href="#cb16-25" aria-hidden="true" tabindex="-1"></a>    message <span class="op">=</span> (</span>
+<span id="cb16-26"><a href="#cb16-26" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Hello from TCP client! This message will be delivered reliably "</span></span>
+<span id="cb16-27"><a href="#cb16-27" aria-hidden="true" tabindex="-1"></a>        <span class="st">"despite packet loss, reordering, and duplication. TCP ensures "</span></span>
+<span id="cb16-28"><a href="#cb16-28" aria-hidden="true" tabindex="-1"></a>        <span class="st">"that every byte arrives in the correct order through sequence "</span></span>
+<span id="cb16-29"><a href="#cb16-29" aria-hidden="true" tabindex="-1"></a>        <span class="st">"numbers, acknowledgments, and retransmission."</span></span>
+<span id="cb16-30"><a href="#cb16-30" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb16-31"><a href="#cb16-31" aria-hidden="true" tabindex="-1"></a>    TCPClient(env, client_conn, <span class="st">"192.168.1.100"</span>, <span class="dv">8080</span>, message)</span>
+<span id="cb16-32"><a href="#cb16-32" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Run simulation</span></span>
+<span id="cb16-33"><a href="#cb16-33" aria-hidden="true" tabindex="-1"></a>    env.run(until<span class="op">=</span><span class="dv">20</span>)</span>
+<span id="cb16-34"><a href="#cb16-34" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Print statistics</span></span>
+<span id="cb16-35"><a href="#cb16-35" aria-hidden="true" tabindex="-1"></a>    network.print_statistics()</span>
+<span id="cb16-36"><a href="#cb16-36" aria-hidden="true" tabindex="-1"></a>    client_conn.print_statistics()</span>
+<span id="cb16-37"><a href="#cb16-37" aria-hidden="true" tabindex="-1"></a>    server_conn.print_statistics()</span></code></pre></div>
 <pre><code>## Basic TCP Demonstration
 Testing TCP reliability with:
   - 15% packet loss
@@ -178,7 +366,58 @@ Send buffer size: 0</code></pre>
 <p>Despite 15% packet loss and reordering, TCP successfully delivers the complete message in order.</p>
 <h2 data-number="V.10" id="tcp-highloss"><span class="header-section-number">V.10</span> High Loss Scenario</h2>
 <p>Let’s test TCP under extreme conditions:</p>
-<div class="sourceCode" id="cb18"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb18"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> main():</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>    env <span class="op">=</span> Environment()</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"## High Loss TCP Scenario"</span>)</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"Testing TCP robustness with extreme conditions:"</span>)</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"  - 40% packet loss (!!)"</span>)</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"  - 20% packet reordering"</span>)</span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"  - 10% packet duplication"</span>)</span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"  - Larger message requiring multiple segments"</span>)</span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Extremely unreliable network</span></span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>    network <span class="op">=</span> UnreliableNetwork(</span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a>        env,</span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a>        loss_rate<span class="op">=</span><span class="fl">0.40</span>,  <span class="co"># 40% packet loss!</span></span>
+<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a>        reorder_rate<span class="op">=</span><span class="fl">0.20</span>,  <span class="co"># 20% reordering</span></span>
+<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a>        duplicate_rate<span class="op">=</span><span class="fl">0.10</span>,  <span class="co"># 10% duplication</span></span>
+<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a>        delay_range<span class="op">=</span>(<span class="fl">0.2</span>, <span class="fl">0.6</span>),</span>
+<span id="cb18-16"><a href="#cb18-16" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb18-17"><a href="#cb18-17" aria-hidden="true" tabindex="-1"></a>    <span class="co"># TCP with aggressive retransmission</span></span>
+<span id="cb18-18"><a href="#cb18-18" aria-hidden="true" tabindex="-1"></a>    server_conn <span class="op">=</span> TCPConnection(</span>
+<span id="cb18-19"><a href="#cb18-19" aria-hidden="true" tabindex="-1"></a>        env,</span>
+<span id="cb18-20"><a href="#cb18-20" aria-hidden="true" tabindex="-1"></a>        <span class="st">"10.0.0.1"</span>,</span>
+<span id="cb18-21"><a href="#cb18-21" aria-hidden="true" tabindex="-1"></a>        <span class="dv">5000</span>,</span>
+<span id="cb18-22"><a href="#cb18-22" aria-hidden="true" tabindex="-1"></a>        network,</span>
+<span id="cb18-23"><a href="#cb18-23" aria-hidden="true" tabindex="-1"></a>        window_size<span class="op">=</span><span class="dv">3</span>,</span>
+<span id="cb18-24"><a href="#cb18-24" aria-hidden="true" tabindex="-1"></a>        timeout<span class="op">=</span><span class="fl">1.0</span>,  <span class="co"># Faster retransmit</span></span>
+<span id="cb18-25"><a href="#cb18-25" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb18-26"><a href="#cb18-26" aria-hidden="true" tabindex="-1"></a>    client_conn <span class="op">=</span> TCPConnection(</span>
+<span id="cb18-27"><a href="#cb18-27" aria-hidden="true" tabindex="-1"></a>        env, <span class="st">"10.0.0.2"</span>, <span class="dv">6000</span>, network, window_size<span class="op">=</span><span class="dv">3</span>, timeout<span class="op">=</span><span class="fl">1.0</span></span>
+<span id="cb18-28"><a href="#cb18-28" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb18-29"><a href="#cb18-29" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Create applications</span></span>
+<span id="cb18-30"><a href="#cb18-30" aria-hidden="true" tabindex="-1"></a>    TCPServer(env, server_conn)</span>
+<span id="cb18-31"><a href="#cb18-31" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Transfer larger message that will require multiple segments</span></span>
+<span id="cb18-32"><a href="#cb18-32" aria-hidden="true" tabindex="-1"></a>    message <span class="op">=</span> (</span>
+<span id="cb18-33"><a href="#cb18-33" aria-hidden="true" tabindex="-1"></a>        <span class="st">"This is a much longer message that will be split into multiple "</span></span>
+<span id="cb18-34"><a href="#cb18-34" aria-hidden="true" tabindex="-1"></a>        <span class="st">"TCP segments. Despite 40% packet loss - which is extremely high - "</span></span>
+<span id="cb18-35"><a href="#cb18-35" aria-hidden="true" tabindex="-1"></a>        <span class="st">"TCP will successfully deliver every byte through retransmission. "</span></span>
+<span id="cb18-36"><a href="#cb18-36" aria-hidden="true" tabindex="-1"></a>        <span class="st">"You'll see many timeouts and retransmissions, but eventually "</span></span>
+<span id="cb18-37"><a href="#cb18-37" aria-hidden="true" tabindex="-1"></a>        <span class="st">"the complete message arrives in perfect order. "</span></span>
+<span id="cb18-38"><a href="#cb18-38" aria-hidden="true" tabindex="-1"></a>    ) <span class="op">*</span> <span class="dv">5</span>  <span class="co"># Repeat 5 times</span></span>
+<span id="cb18-39"><a href="#cb18-39" aria-hidden="true" tabindex="-1"></a>    TCPClient(env, client_conn, <span class="st">"10.0.0.1"</span>, <span class="dv">5000</span>, message)</span>
+<span id="cb18-40"><a href="#cb18-40" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Run simulation (longer time for high loss)</span></span>
+<span id="cb18-41"><a href="#cb18-41" aria-hidden="true" tabindex="-1"></a>    env.run(until<span class="op">=</span><span class="dv">40</span>)</span>
+<span id="cb18-42"><a href="#cb18-42" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Print statistics</span></span>
+<span id="cb18-43"><a href="#cb18-43" aria-hidden="true" tabindex="-1"></a>    network.print_statistics()</span>
+<span id="cb18-44"><a href="#cb18-44" aria-hidden="true" tabindex="-1"></a>    client_conn.print_statistics()</span>
+<span id="cb18-45"><a href="#cb18-45" aria-hidden="true" tabindex="-1"></a>    server_conn.print_statistics()</span>
+<span id="cb18-46"><a href="#cb18-46" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Verify delivery</span></span>
+<span id="cb18-47"><a href="#cb18-47" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"## Verification:"</span>)</span>
+<span id="cb18-48"><a href="#cb18-48" aria-hidden="true" tabindex="-1"></a>    expected_bytes <span class="op">=</span> <span class="bu">len</span>(message.encode(<span class="st">"utf-8"</span>))</span>
+<span id="cb18-49"><a href="#cb18-49" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> server_conn.bytes_received <span class="op">==</span> expected_bytes:</span>
+<span id="cb18-50"><a href="#cb18-50" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"Success: All </span><span class="sc">{</span>expected_bytes<span class="sc">}</span><span class="ss"> bytes delivered correctly!"</span>)</span>
+<span id="cb18-51"><a href="#cb18-51" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span>:</span>
+<span id="cb18-52"><a href="#cb18-52" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"Incomplete: </span><span class="sc">{</span>server_conn<span class="sc">.</span>bytes_received<span class="sc">}</span><span class="ss">/</span><span class="sc">{</span>expected_bytes<span class="sc">}</span><span class="ss"> bytes"</span>)</span></code></pre></div>
 <pre><code>## High Loss TCP Scenario
 Testing TCP robustness with extreme conditions:
   - 40% packet loss (!!)
@@ -324,9 +563,132 @@ Incomplete: 0/1510 bytes</code></pre>
 <p><strong>Multiplicative Decrease</strong>: when a segment times out, halve <code>cwnd</code> and <code>ssthresh</code>. Starting slow again recovers quickly because each RTT doubles <code>cwnd</code> back to <code>ssthresh</code>.</p>
 <p><strong>Fast Retransmit</strong>: three consecutive duplicate ACKs for the same sequence number means a segment was probably lost (not just delayed). The sender retransmits immediately without waiting for the timeout— this recovers from a single drop faster than a 2-second timeout would. On a fast retransmit, <code>cwnd</code> is halved (less severe than a timeout, which resets to 1).</p>
 <p>Here is the congestion state machine:</p>
-<div class="sourceCode" id="cb21"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb21"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> CongestionState:</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Congestion window state for one TCP sender.</span></span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a><span class="co">    cwnd (congestion window):</span></span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a><span class="co">        Maximum number of unacknowledged segments allowed.</span></span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a><span class="co">    ssthresh (slow-start threshold):</span></span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a><span class="co">        cwnd below this → slow start (exponential); above → congestion avoidance (linear).</span></span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a><span class="co">    dup_ack_count:</span></span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a><span class="co">        Number of consecutive duplicate ACKs for the same sequence number.</span></span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a><span class="co">    """</span></span>
+<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a>    cwnd: <span class="bu">float</span> <span class="op">=</span> <span class="fl">1.0</span>          <span class="co"># Start with one segment</span></span>
+<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a>    ssthresh: <span class="bu">float</span> <span class="op">=</span> <span class="fl">16.0</span>     <span class="co"># Initial threshold (segments)</span></span>
+<span id="cb21-13"><a href="#cb21-13" aria-hidden="true" tabindex="-1"></a>    dup_ack_count: <span class="bu">int</span> <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb21-14"><a href="#cb21-14" aria-hidden="true" tabindex="-1"></a>    last_acked_seq: <span class="bu">int</span> <span class="op">=</span> <span class="op">-</span><span class="dv">1</span></span>
+<span id="cb21-15"><a href="#cb21-15" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> on_new_ack(<span class="va">self</span>) <span class="op">-&gt;</span> <span class="va">None</span>:</span>
+<span id="cb21-16"><a href="#cb21-16" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""A new (non-duplicate) ACK arrived: increase cwnd."""</span></span>
+<span id="cb21-17"><a href="#cb21-17" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.dup_ack_count <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb21-18"><a href="#cb21-18" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="va">self</span>.cwnd <span class="op">&lt;</span> <span class="va">self</span>.ssthresh:</span>
+<span id="cb21-19"><a href="#cb21-19" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Slow start: double cwnd each RTT (approximately 1 per ACK).</span></span>
+<span id="cb21-20"><a href="#cb21-20" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.cwnd <span class="op">+=</span> <span class="fl">1.0</span></span>
+<span id="cb21-21"><a href="#cb21-21" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb21-22"><a href="#cb21-22" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Congestion avoidance: increase by 1/cwnd per ACK ≈ +1 per RTT.</span></span>
+<span id="cb21-23"><a href="#cb21-23" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.cwnd <span class="op">+=</span> <span class="fl">1.0</span> <span class="op">/</span> <span class="va">self</span>.cwnd</span>
+<span id="cb21-24"><a href="#cb21-24" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> on_duplicate_ack(<span class="va">self</span>, seq: <span class="bu">int</span>) <span class="op">-&gt;</span> <span class="bu">bool</span>:</span>
+<span id="cb21-25"><a href="#cb21-25" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""A duplicate ACK arrived.  Returns True if fast retransmit should fire."""</span></span>
+<span id="cb21-26"><a href="#cb21-26" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> seq <span class="op">!=</span> <span class="va">self</span>.last_acked_seq:</span>
+<span id="cb21-27"><a href="#cb21-27" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.dup_ack_count <span class="op">=</span> <span class="dv">1</span></span>
+<span id="cb21-28"><a href="#cb21-28" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.last_acked_seq <span class="op">=</span> seq</span>
+<span id="cb21-29"><a href="#cb21-29" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb21-30"><a href="#cb21-30" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.dup_ack_count <span class="op">+=</span> <span class="dv">1</span></span>
+<span id="cb21-31"><a href="#cb21-31" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>.dup_ack_count <span class="op">&gt;=</span> FAST_RETRANSMIT_THRESHOLD</span>
+<span id="cb21-32"><a href="#cb21-32" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> on_timeout(<span class="va">self</span>) <span class="op">-&gt;</span> <span class="va">None</span>:</span>
+<span id="cb21-33"><a href="#cb21-33" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Timeout detected: multiplicative decrease and restart slow start."""</span></span>
+<span id="cb21-34"><a href="#cb21-34" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.ssthresh <span class="op">=</span> <span class="bu">max</span>(<span class="va">self</span>.cwnd <span class="op">/</span> <span class="fl">2.0</span>, <span class="fl">2.0</span>)</span>
+<span id="cb21-35"><a href="#cb21-35" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.cwnd <span class="op">=</span> <span class="fl">1.0</span>   <span class="co"># Back to slow start</span></span>
+<span id="cb21-36"><a href="#cb21-36" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.dup_ack_count <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb21-37"><a href="#cb21-37" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> on_fast_retransmit(<span class="va">self</span>) <span class="op">-&gt;</span> <span class="va">None</span>:</span>
+<span id="cb21-38"><a href="#cb21-38" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Three duplicate ACKs: less severe than timeout, so halve cwnd."""</span></span>
+<span id="cb21-39"><a href="#cb21-39" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.ssthresh <span class="op">=</span> <span class="bu">max</span>(<span class="va">self</span>.cwnd <span class="op">/</span> <span class="fl">2.0</span>, <span class="fl">2.0</span>)</span>
+<span id="cb21-40"><a href="#cb21-40" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.cwnd <span class="op">=</span> <span class="va">self</span>.ssthresh   <span class="co"># Stay in congestion avoidance</span></span>
+<span id="cb21-41"><a href="#cb21-41" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.dup_ack_count <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb21-42"><a href="#cb21-42" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> effective_window(<span class="va">self</span>, receiver_window: <span class="bu">int</span>) <span class="op">-&gt;</span> <span class="bu">int</span>:</span>
+<span id="cb21-43"><a href="#cb21-43" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Effective window is the min of cwnd and the receiver's advertised window."""</span></span>
+<span id="cb21-44"><a href="#cb21-44" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="bu">min</span>(<span class="bu">int</span>(<span class="va">self</span>.cwnd), receiver_window)</span></code></pre></div>
 <p>And the sender that uses it:</p>
-<div class="sourceCode" id="cb22"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb22"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> CongestionControlledSender(Process):</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""TCP sender with AIMD congestion control.</span></span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a><span class="co">    This class demonstrates how the congestion window interacts with the</span></span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a><span class="co">    retransmission timer and fast-retransmit to dynamically adjust the</span></span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a><span class="co">    sending rate.  It is intentionally separate from TCPConnection so</span></span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a><span class="co">    the congestion-control logic is easy to read in isolation.</span></span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a><span class="co">    """</span></span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> init(</span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>,</span>
+<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a>        sender_id: <span class="bu">str</span>,</span>
+<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a>        network: UnreliableNetwork,</span>
+<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a>        remote_addr: <span class="bu">str</span>,</span>
+<span id="cb22-13"><a href="#cb22-13" aria-hidden="true" tabindex="-1"></a>        remote_port: <span class="bu">int</span>,</span>
+<span id="cb22-14"><a href="#cb22-14" aria-hidden="true" tabindex="-1"></a>        data: <span class="bu">list</span>[<span class="bu">str</span>],</span>
+<span id="cb22-15"><a href="#cb22-15" aria-hidden="true" tabindex="-1"></a>    ) <span class="op">-&gt;</span> <span class="va">None</span>:</span>
+<span id="cb22-16"><a href="#cb22-16" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.sender_id <span class="op">=</span> sender_id</span>
+<span id="cb22-17"><a href="#cb22-17" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.network <span class="op">=</span> network</span>
+<span id="cb22-18"><a href="#cb22-18" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.remote_addr <span class="op">=</span> remote_addr</span>
+<span id="cb22-19"><a href="#cb22-19" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.remote_port <span class="op">=</span> remote_port</span>
+<span id="cb22-20"><a href="#cb22-20" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.data <span class="op">=</span> data</span>
+<span id="cb22-21"><a href="#cb22-21" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.local_addr <span class="op">=</span> sender_id</span>
+<span id="cb22-22"><a href="#cb22-22" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.local_port <span class="op">=</span> <span class="dv">9000</span></span>
+<span id="cb22-23"><a href="#cb22-23" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Register receive queue with the network.</span></span>
+<span id="cb22-24"><a href="#cb22-24" aria-hidden="true" tabindex="-1"></a>        receive_queue: Queue <span class="op">=</span> Queue(<span class="va">self</span>._env)</span>
+<span id="cb22-25"><a href="#cb22-25" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.network.register(<span class="va">self</span>.local_addr, <span class="va">self</span>.local_port, receive_queue)</span>
+<span id="cb22-26"><a href="#cb22-26" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.receive_queue <span class="op">=</span> receive_queue</span>
+<span id="cb22-27"><a href="#cb22-27" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.cong <span class="op">=</span> CongestionState()</span>
+<span id="cb22-28"><a href="#cb22-28" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.next_seq: <span class="bu">int</span> <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb22-29"><a href="#cb22-29" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.unacked: <span class="bu">dict</span>[<span class="bu">int</span>, <span class="bu">str</span>] <span class="op">=</span> {}   <span class="co"># seq -&gt; data</span></span>
+<span id="cb22-30"><a href="#cb22-30" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.ack_queue: Queue <span class="op">=</span> Queue(<span class="va">self</span>._env)</span>
+<span id="cb22-31"><a href="#cb22-31" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Statistics</span></span>
+<span id="cb22-32"><a href="#cb22-32" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.cwnd_history: <span class="bu">list</span>[<span class="bu">tuple</span>[<span class="bu">float</span>, <span class="bu">float</span>]] <span class="op">=</span> []</span>
+<span id="cb22-33"><a href="#cb22-33" aria-hidden="true" tabindex="-1"></a>    <span class="cf">async</span> <span class="kw">def</span> run(<span class="va">self</span>) <span class="op">-&gt;</span> <span class="va">None</span>:</span>
+<span id="cb22-34"><a href="#cb22-34" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Send all data, adapting window based on ACKs and losses."""</span></span>
+<span id="cb22-35"><a href="#cb22-35" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> chunk <span class="kw">in</span> <span class="va">self</span>.data:</span>
+<span id="cb22-36"><a href="#cb22-36" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Wait until the congestion window allows another segment in flight.</span></span>
+<span id="cb22-37"><a href="#cb22-37" aria-hidden="true" tabindex="-1"></a>            <span class="cf">while</span> <span class="bu">len</span>(<span class="va">self</span>.unacked) <span class="op">&gt;=</span> <span class="va">self</span>.cong.effective_window(<span class="dv">64</span>):</span>
+<span id="cb22-38"><a href="#cb22-38" aria-hidden="true" tabindex="-1"></a>                <span class="cf">await</span> <span class="va">self</span>.timeout(<span class="fl">0.05</span>)</span>
+<span id="cb22-39"><a href="#cb22-39" aria-hidden="true" tabindex="-1"></a>            seq <span class="op">=</span> <span class="va">self</span>.next_seq</span>
+<span id="cb22-40"><a href="#cb22-40" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.next_seq <span class="op">+=</span> <span class="dv">1</span></span>
+<span id="cb22-41"><a href="#cb22-41" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.unacked[seq] <span class="op">=</span> chunk</span>
+<span id="cb22-42"><a href="#cb22-42" aria-hidden="true" tabindex="-1"></a>            pkt <span class="op">=</span> Packet(</span>
+<span id="cb22-43"><a href="#cb22-43" aria-hidden="true" tabindex="-1"></a>                src_addr<span class="op">=</span><span class="va">self</span>.local_addr,</span>
+<span id="cb22-44"><a href="#cb22-44" aria-hidden="true" tabindex="-1"></a>                dst_addr<span class="op">=</span><span class="va">self</span>.remote_addr,</span>
+<span id="cb22-45"><a href="#cb22-45" aria-hidden="true" tabindex="-1"></a>                src_port<span class="op">=</span><span class="va">self</span>.local_port,</span>
+<span id="cb22-46"><a href="#cb22-46" aria-hidden="true" tabindex="-1"></a>                dst_port<span class="op">=</span><span class="va">self</span>.remote_port,</span>
+<span id="cb22-47"><a href="#cb22-47" aria-hidden="true" tabindex="-1"></a>                seq_num<span class="op">=</span>seq,</span>
+<span id="cb22-48"><a href="#cb22-48" aria-hidden="true" tabindex="-1"></a>                ack_num<span class="op">=</span><span class="dv">0</span>,</span>
+<span id="cb22-49"><a href="#cb22-49" aria-hidden="true" tabindex="-1"></a>                packet_type<span class="op">=</span>PacketType.DATA,</span>
+<span id="cb22-50"><a href="#cb22-50" aria-hidden="true" tabindex="-1"></a>                data<span class="op">=</span>chunk,</span>
+<span id="cb22-51"><a href="#cb22-51" aria-hidden="true" tabindex="-1"></a>            )</span>
+<span id="cb22-52"><a href="#cb22-52" aria-hidden="true" tabindex="-1"></a>            <span class="cf">await</span> <span class="va">self</span>.network.send_packet(pkt)</span>
+<span id="cb22-53"><a href="#cb22-53" aria-hidden="true" tabindex="-1"></a>            _TimeoutChecker(<span class="va">self</span>._env, <span class="va">self</span>, seq, chunk)</span>
+<span id="cb22-54"><a href="#cb22-54" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.cwnd_history.append((<span class="va">self</span>.now, <span class="va">self</span>.cong.cwnd))</span>
+<span id="cb22-55"><a href="#cb22-55" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(</span>
+<span id="cb22-56"><a href="#cb22-56" aria-hidden="true" tabindex="-1"></a>                <span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.2f}</span><span class="ss">] </span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>sender_id<span class="sc">}</span><span class="ss">: Sent seq=</span><span class="sc">{</span>seq<span class="sc">}</span><span class="ss"> "</span></span>
+<span id="cb22-57"><a href="#cb22-57" aria-hidden="true" tabindex="-1"></a>                <span class="ss">f"cwnd=</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>cong<span class="sc">.</span>cwnd<span class="sc">:.1f}</span><span class="ss"> in_flight=</span><span class="sc">{</span><span class="bu">len</span>(<span class="va">self</span>.unacked)<span class="sc">}</span><span class="ss">"</span></span>
+<span id="cb22-58"><a href="#cb22-58" aria-hidden="true" tabindex="-1"></a>            )</span>
+<span id="cb22-59"><a href="#cb22-59" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Wait for all ACKs.</span></span>
+<span id="cb22-60"><a href="#cb22-60" aria-hidden="true" tabindex="-1"></a>        <span class="cf">while</span> <span class="va">self</span>.unacked:</span>
+<span id="cb22-61"><a href="#cb22-61" aria-hidden="true" tabindex="-1"></a>            <span class="cf">await</span> <span class="va">self</span>.timeout(<span class="fl">0.1</span>)</span>
+<span id="cb22-62"><a href="#cb22-62" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.2f}</span><span class="ss">] </span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>sender_id<span class="sc">}</span><span class="ss">: All data delivered."</span>)</span>
+<span id="cb22-63"><a href="#cb22-63" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> on_ack(<span class="va">self</span>, ack_seq: <span class="bu">int</span>) <span class="op">-&gt;</span> <span class="va">None</span>:</span>
+<span id="cb22-64"><a href="#cb22-64" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Called when an ACK arrives."""</span></span>
+<span id="cb22-65"><a href="#cb22-65" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> ack_seq <span class="kw">in</span> <span class="va">self</span>.unacked:</span>
+<span id="cb22-66"><a href="#cb22-66" aria-hidden="true" tabindex="-1"></a>            <span class="kw">del</span> <span class="va">self</span>.unacked[ack_seq]</span>
+<span id="cb22-67"><a href="#cb22-67" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.cong.on_new_ack()</span>
+<span id="cb22-68"><a href="#cb22-68" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.cong.last_acked_seq <span class="op">=</span> ack_seq</span>
+<span id="cb22-69"><a href="#cb22-69" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(</span>
+<span id="cb22-70"><a href="#cb22-70" aria-hidden="true" tabindex="-1"></a>                <span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.2f}</span><span class="ss">] </span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>sender_id<span class="sc">}</span><span class="ss">: ACK seq=</span><span class="sc">{</span>ack_seq<span class="sc">}</span><span class="ss"> "</span></span>
+<span id="cb22-71"><a href="#cb22-71" aria-hidden="true" tabindex="-1"></a>                <span class="ss">f"cwnd=</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>cong<span class="sc">.</span>cwnd<span class="sc">:.1f}</span><span class="ss">"</span></span>
+<span id="cb22-72"><a href="#cb22-72" aria-hidden="true" tabindex="-1"></a>            )</span>
+<span id="cb22-73"><a href="#cb22-73" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb22-74"><a href="#cb22-74" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Duplicate ACK.</span></span>
+<span id="cb22-75"><a href="#cb22-75" aria-hidden="true" tabindex="-1"></a>            fire <span class="op">=</span> <span class="va">self</span>.cong.on_duplicate_ack(ack_seq)</span>
+<span id="cb22-76"><a href="#cb22-76" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> fire:</span>
+<span id="cb22-77"><a href="#cb22-77" aria-hidden="true" tabindex="-1"></a>                <span class="bu">print</span>(</span>
+<span id="cb22-78"><a href="#cb22-78" aria-hidden="true" tabindex="-1"></a>                    <span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.2f}</span><span class="ss">] </span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>sender_id<span class="sc">}</span><span class="ss">: "</span></span>
+<span id="cb22-79"><a href="#cb22-79" aria-hidden="true" tabindex="-1"></a>                    <span class="ss">f"3 dup ACKs for seq=</span><span class="sc">{</span>ack_seq<span class="sc">}</span><span class="ss"> — fast retransmit"</span></span>
+<span id="cb22-80"><a href="#cb22-80" aria-hidden="true" tabindex="-1"></a>                )</span>
+<span id="cb22-81"><a href="#cb22-81" aria-hidden="true" tabindex="-1"></a>                <span class="va">self</span>.cong.on_fast_retransmit()</span></code></pre></div>
 <p>AIMD is the reason the internet does not collapse under load. If all senders backed off linearly on loss, they would overshoot and undershoot repeatedly. The multiplicative decrease is aggressive enough to clear congestion quickly, while additive increase is conservative enough that multiple flows converge to equal shares.</p>
 <h2 data-number="V.13" id="real-world-considerations"><span class="header-section-number">V.13</span> Real-World Considerations</h2>
 <p>Production TCP implementations include features we’ve omitted:</p>

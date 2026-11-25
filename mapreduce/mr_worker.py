@@ -13,7 +13,7 @@ MAP_TIME = 0.1
 REDUCE_TIME = 0.1
 
 
-# mccole: worker
+# mccole:worker
 class MapReduceWorker(Process):
     """Worker that executes map and reduce tasks."""
 
@@ -30,9 +30,9 @@ class MapReduceWorker(Process):
         # Simulate failure probability
         self.failure_rate = 0.0
 
-    # mccole: /worker
+    # mccole:/worker
 
-    # mccole: run
+    # mccole:run
     async def run(self):
         """Main worker loop: fetch and execute tasks."""
         while True:
@@ -51,9 +51,9 @@ class MapReduceWorker(Process):
             elif isinstance(task, ReduceTask):
                 await self.execute_reduce(task)
 
-    # mccole: /run
+    # mccole:/run
 
-    # mccole: map
+    # mccole:map
     async def execute_map(self, task: MapTask):
         """Execute a map task."""
         self.current_task = task
@@ -87,9 +87,9 @@ class MapReduceWorker(Process):
 
         self.current_task = None
 
-    # mccole: /map
+    # mccole:/map
 
-    # mccole: reduce
+    # mccole:reduce
     async def execute_reduce(self, task: ReduceTask):
         """Execute a reduce task."""
         self.current_task = task
@@ -130,4 +130,4 @@ class MapReduceWorker(Process):
         self.current_task = None
 
 
-# mccole: /reduce
+# mccole:/reduce

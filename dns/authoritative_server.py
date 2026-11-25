@@ -2,7 +2,7 @@ from asimpy import Process, Queue
 from dns_message import DNSResponse, DNSRecord, RecordType
 
 
-# mccole: auth_init
+# mccole:auth_init
 class AuthoritativeDNSServer(Process):
     """An authoritative DNS server for a specific zone."""
 
@@ -19,9 +19,9 @@ class AuthoritativeDNSServer(Process):
         if key not in self.records:
             self.records[key] = []
         self.records[key].append(record)
-# mccole: /auth_init
+# mccole:/auth_init
 
-    # mccole: auth_run
+    # mccole:auth_run
     async def run(self):
         """Process DNS queries."""
         while True:
@@ -73,4 +73,4 @@ class AuthoritativeDNSServer(Process):
             # Send response
             await client_queue.put(response)
             self.queries_served += 1
-    # mccole: /auth_run
+    # mccole:/auth_run

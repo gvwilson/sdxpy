@@ -6,7 +6,7 @@ from scheduler import WorkStealingScheduler
 from dsdx import dsdx
 
 
-# mccole: sim
+# mccole:sim
 def main():
     """Basic work-stealing simulation."""
     env = Environment()
@@ -19,7 +19,7 @@ def main():
     env.run(until=20)
 
     scheduler.get_statistics()
-# mccole: /sim
+# mccole:/sim
 
 
 if __name__ == "__main__":

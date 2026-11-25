@@ -33,7 +33,7 @@ from unreliable_network import UnreliableNetwork
 FAST_RETRANSMIT_THRESHOLD = 3
 
 
-# mccole: cwnd_state
+# mccole:cwnd_state
 @dataclass
 class CongestionState:
     """Congestion window state for one TCP sender.
@@ -85,10 +85,10 @@ class CongestionState:
     def effective_window(self, receiver_window: int) -> int:
         """Effective window is the min of cwnd and the receiver's advertised window."""
         return min(int(self.cwnd), receiver_window)
-# mccole: /cwnd_state
+# mccole:/cwnd_state
 
 
-# mccole: cc_sender
+# mccole:cc_sender
 class CongestionControlledSender(Process):
     """TCP sender with AIMD congestion control.
 
@@ -184,7 +184,7 @@ class CongestionControlledSender(Process):
                     f"3 dup ACKs for seq={ack_seq} — fast retransmit"
                 )
                 self.cong.on_fast_retransmit()
-# mccole: /cc_sender
+# mccole:/cc_sender
 
 
 class _AckHandler(Process):

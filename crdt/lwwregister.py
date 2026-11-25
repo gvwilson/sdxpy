@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import Any
 
 
-# mccole: lww
+# mccole:lww
 @dataclass
 class LWWRegister:
     """Last-Write-Wins register (state-based CRDT)."""
@@ -32,7 +32,7 @@ class LWWRegister:
             self.timestamp = other.timestamp
             self.replica_id = other.replica_id
 
-    # mccole: /lww
+    # mccole:/lww
 
     def copy(self) -> "LWWRegister":
         """Create a copy of this register."""

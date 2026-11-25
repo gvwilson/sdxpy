@@ -7,7 +7,7 @@ from gcounter import GCounter
 from dsdx import dsdx
 
 
-# mccole: peer
+# mccole:peer
 @dataclass
 class Peer:
     name: str
@@ -16,7 +16,7 @@ class Peer:
 # mccole
 
 
-# mccole: replica
+# mccole:replica
 class Replica(Process):
     """A replica that increments and syncs, respecting partitions."""
 
@@ -45,10 +45,10 @@ class Replica(Process):
                     f"[{self.now}] {self.name}: synced with {peer.name} -> {self.counter.value()}"
                 )
             await self.timeout(self.interval)
-# mccole: /replica
+# mccole:/replica
 
 
-# mccole: partition
+# mccole:partition
 class PartitionController(Process):
     """Create and heal a network partition between two peers."""
 
@@ -70,10 +70,10 @@ class PartitionController(Process):
         self.peer_a.partitioned_from.discard(self.peer_b.name)
         self.peer_b.partitioned_from.discard(self.peer_a.name)
         print(f"[{self.now}] *** healed: {self.peer_a.name} <---> {self.peer_b.name}")
-# mccole: /partition
+# mccole:/partition
 
 
-# mccole: sim
+# mccole:sim
 NAMES = ["Ahmed", "Baemi", "Chiti"]
 
 
@@ -91,7 +91,7 @@ def main():
     print("\n--- Final State")
     for p in peers:
         print(p.counter)
-# mccole: /sim
+# mccole:/sim
 
 
 if __name__ == "__main__":

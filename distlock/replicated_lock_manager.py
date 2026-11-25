@@ -2,7 +2,7 @@ from asimpy import Environment, Queue
 from basic_lock_server import LockServer, LockRequest
 
 
-# mccole: replicated_init
+# mccole:replicated_init
 class ReplicatedLockManager:
     """Manages multiple lock servers with majority voting."""
 
@@ -17,9 +17,9 @@ class ReplicatedLockManager:
             self.servers.append(server)
 
         self.majority = (num_servers // 2) + 1
-    # mccole: /replicated_init
+    # mccole:/replicated_init
 
-    # mccole: replicated_acquire
+    # mccole:replicated_acquire
     async def acquire_lock(self, client_id: str, resource: str) -> int | None:
         """Try to acquire lock from majority of servers."""
         responses = []
@@ -60,9 +60,9 @@ class ReplicatedLockManager:
                 f"({len(successful)}/{len(self.servers)} servers)"
             )
             return None
-    # mccole: /replicated_acquire
+    # mccole:/replicated_acquire
 
-    # mccole: replicated_release
+    # mccole:replicated_release
     async def release_lock(self, client_id: str, resource: str):
         """Release lock from all servers."""
         for server in self.servers:
@@ -75,4 +75,4 @@ class ReplicatedLockManager:
             )
             await server.request_queue.put(request)
             await response_queue.get()
-    # mccole: /replicated_release
+    # mccole:/replicated_release

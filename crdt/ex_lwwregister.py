@@ -13,7 +13,7 @@ class Peer:
     register: LWWRegister
 
 
-# mccole: replica
+# mccole:replica
 NAMES = ["Ahmed", "Baemi", "Chiti"]
 VALUES = ["red", "green", "blue", "yellow"]
 
@@ -46,10 +46,10 @@ class Replica(Process):
             )
 
             await self.timeout(self.sync_interval)
-# mccole: /replica
+# mccole:/replica
 
 
-# mccole: sim
+# mccole:sim
 def main():
     """Demonstrate LWWRegister convergence across three replicas."""
     env = Environment()
@@ -66,7 +66,7 @@ def main():
     print("\n--- Final State")
     for r in replicas:
         print(f"{r.name}: {r.register}")
-# mccole: /sim
+# mccole:/sim
 
 
 if __name__ == "__main__":

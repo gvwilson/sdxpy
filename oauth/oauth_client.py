@@ -13,7 +13,7 @@ from authorization_server import AuthorizationServer
 from resource_server import ResourceServer
 
 
-# mccole: init
+# mccole:init
 class OAuthClient(Process):
     """OAuth 2.0 client application."""
 
@@ -34,9 +34,9 @@ class OAuthClient(Process):
         self.access_token: Optional[str] = None
 
         print(f"[{self.now:.1f}] Client '{client_id}' started")
-    # mccole: /init
+    # mccole:/init
 
-    # mccole: run
+    # mccole:run
     async def run(self):
         """Demonstrate complete OAuth flow."""
         # Step 1: Request authorization
@@ -67,9 +67,9 @@ class OAuthClient(Process):
         # Try accessing resource without permission
         await self.timeout(0.5)
         await self.access_resource("/api/messages")
-    # mccole: /run
+    # mccole:/run
 
-    # mccole: request_auth
+    # mccole:request_auth
     async def request_authorization(self, scopes: List[str]) -> Optional[str]:
         """Step 1: Request user authorization."""
         print(f"[{self.now:.1f}] Client: Requesting authorization for {scopes}")
@@ -95,9 +95,9 @@ class OAuthClient(Process):
 
         print(f"[{self.now:.1f}] Client: Received authorization code")
         return response.code
-    # mccole: /request_auth
+    # mccole:/request_auth
 
-    # mccole: exchange_code
+    # mccole:exchange_code
     async def exchange_code_for_token(self, code: str) -> Optional[TokenResponse]:
         """Step 2: Exchange authorization code for access token."""
         print(f"[{self.now:.1f}] Client: Exchanging code for token")
@@ -116,9 +116,9 @@ class OAuthClient(Process):
         response = await response_queue.get()
 
         return response
-    # mccole: /exchange_code
+    # mccole:/exchange_code
 
-    # mccole: access_resource
+    # mccole:access_resource
     async def access_resource(self, path: str):
         """Step 3: Access protected resource with token."""
         print(f"[{self.now:.1f}] Client: Accessing {path}")
@@ -142,4 +142,4 @@ class OAuthClient(Process):
             print(f"[{self.now:.1f}] Client: Success! Data: {response.data}")
         else:
             print(f"[{self.now:.1f}] Client: Failed - {response.error}")
-    # mccole: /access_resource
+    # mccole:/access_resource

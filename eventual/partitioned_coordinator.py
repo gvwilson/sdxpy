@@ -9,7 +9,7 @@ from versioned_value import VersionedValue
 from messages import ReadRequest, WriteRequest
 
 
-# mccole: partition_init
+# mccole:partition_init
 class PartitionedCoordinator(Coordinator):
     """Coordinator that can simulate network partitions."""
 
@@ -33,9 +33,9 @@ class PartitionedCoordinator(Coordinator):
         """Heal network partition for a node."""
         self.partitioned_nodes.discard(node_id)
         print(f"[{self.env.now:.1f}] HEALED: {node_id} is reachable")
-    # mccole: /partition_init
+    # mccole:/partition_init
 
-    # mccole: partition_read
+    # mccole:partition_read
     async def read(self, key: str, client_id: str) -> list[VersionedValue]:
         """Read, skipping partitioned nodes."""
         replicas = self._get_replicas(key)
@@ -66,9 +66,9 @@ class PartitionedCoordinator(Coordinator):
             all_versions.extend(response.versions)
 
         return self._merge_versions(all_versions)
-    # mccole: /partition_read
+    # mccole:/partition_read
 
-    # mccole: partition_write
+    # mccole:partition_write
     async def write(
         self, key: str, value: Any, context: VectorClock | None, client_id: str
     ) -> VectorClock | None:
@@ -102,4 +102,4 @@ class PartitionedCoordinator(Coordinator):
             merged_clock.merge(clock)
 
         return merged_clock
-    # mccole: /partition_write
+    # mccole:/partition_write

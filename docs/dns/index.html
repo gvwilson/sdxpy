@@ -66,20 +66,80 @@
 <p>DNS would be unusably slow if every lookup required multiple round-trips through the hierarchy. The solution is caching: resolvers remember answers for a period referred to as <a href="../glossary/index.html#ttl">Time to Live</a> (TTL). Popular domains like wikipedia.org are cached at every level so that most queries are answered from cache in milliseconds. This ensures that root servers handle surprisingly few queries despite being at the top of the hierarchy. It is also why changing a DNS record doesn’t take effect immediately: old values persist in caches until their TTL expires.</p>
 <h2 data-number="W.2" id="dns-impl"><span class="header-section-number">W.2</span> Implementation</h2>
 <p>DNS stores different types of records. Our implementation will focus on A and CNAME records, which handle most web traffic. As in previous chapters, we start by enumerating the different types of records:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> RecordType(Enum):</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""DNS record types."""</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    A <span class="op">=</span> <span class="st">"A"</span>  <span class="co"># IPv4 address</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    AAAA <span class="op">=</span> <span class="st">"AAAA"</span>  <span class="co"># IPv6 address</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    CNAME <span class="op">=</span> <span class="st">"CNAME"</span>  <span class="co"># Canonical name (alias)</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    NS <span class="op">=</span> <span class="st">"NS"</span>  <span class="co"># Name server</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    MX <span class="op">=</span> <span class="st">"MX"</span>  <span class="co"># Mail exchange</span></span></code></pre></div>
 <p>and then define a DNS resource record:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> DNSRecord:</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""A DNS resource record."""</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    name: <span class="bu">str</span>  <span class="co"># Domain name</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    value: <span class="bu">str</span>  <span class="co"># IP address, domain name, etc.</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    record_type: RecordType</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    ttl: <span class="bu">int</span> <span class="op">=</span> <span class="dv">3600</span>  <span class="co"># Time to live in seconds</span></span></code></pre></div>
 <p>We also need to define the structure of queries and responses:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
-<div class="sourceCode" id="cb4"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> DNSQuery:</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""A DNS query message."""</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    query_id: <span class="bu">int</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    domain: <span class="bu">str</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    record_type: RecordType</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> DNSResponse:</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""A DNS response message."""</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    query_id: <span class="bu">int</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    domain: <span class="bu">str</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>    record_type: RecordType</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    records: <span class="bu">list</span>[DNSRecord]</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    authoritative: <span class="bu">bool</span> <span class="op">=</span> <span class="va">False</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>    from_cache: <span class="bu">bool</span> <span class="op">=</span> <span class="va">False</span></span></code></pre></div>
 <p>The next step is to create the authoritative DNS server. The constructor registers the zone this server is authoritative for and creates its record store. <code>add_record</code> lets callers populate the zone before the simulation starts:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> AuthoritativeDNSServer(Process):</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""An authoritative DNS server for a specific zone."""</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> init(<span class="va">self</span>, name: <span class="bu">str</span>, zone: <span class="bu">str</span>, request_queue: Queue):</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.name <span class="op">=</span> name</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.zone <span class="op">=</span> zone  <span class="co"># e.g., "example.com"</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.request_queue <span class="op">=</span> request_queue</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.records: <span class="bu">dict</span>[<span class="bu">tuple</span>[<span class="bu">str</span>, RecordType], <span class="bu">list</span>[DNSRecord]] <span class="op">=</span> {}</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.queries_served <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> add_record(<span class="va">self</span>, record: DNSRecord):</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Add a DNS record to this server's zone."""</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>        key <span class="op">=</span> (record.name, record.record_type)</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> key <span class="kw">not</span> <span class="kw">in</span> <span class="va">self</span>.records:</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.records[key] <span class="op">=</span> []</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.records[key].append(record)</span></code></pre></div>
 <p>The <code>run</code> loop receives queries and builds responses. If the query domain ends in this server’s zone, the server looks up the record directly; it also follows CNAME chains to resolve aliases to their target A records:</p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>The recursive resolver is more complex because it must cache and coordinate with authoritative servers. A <code>CacheEntry</code> wraps a record with its expiry time:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> CacheEntry:</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""A cached DNS record with expiration time."""</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, record: DNSRecord, expire_time: <span class="bu">float</span>):</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.record <span class="op">=</span> record</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.expire_time <span class="op">=</span> expire_time</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> is_expired(<span class="va">self</span>, current_time: <span class="bu">float</span>) <span class="op">-&gt;</span> <span class="bu">bool</span>:</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Check if this cache entry has expired."""</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> current_time <span class="op">&gt;=</span> <span class="va">self</span>.expire_time</span></code></pre></div>
 <p>The resolver’s constructor sets up the cache and tracks hit and miss statistics:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> RecursiveDNSResolver(Process):</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""A recursive DNS resolver with caching."""</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> init(</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>,</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>        name: <span class="bu">str</span>,</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>        request_queue: Queue,</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>        root_servers: <span class="bu">dict</span>[<span class="bu">str</span>, Queue],</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>    ):</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.name <span class="op">=</span> name</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.request_queue <span class="op">=</span> request_queue</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.root_servers <span class="op">=</span> root_servers  <span class="co"># zone -&gt; server queue</span></span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.cache: <span class="bu">dict</span>[<span class="bu">tuple</span>[<span class="bu">str</span>, RecordType], <span class="bu">list</span>[CacheEntry]] <span class="op">=</span> {}</span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.response_queue <span class="op">=</span> Queue(<span class="va">self</span>._env)</span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.queries_received <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.cache_hits <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.cache_misses <span class="op">=</span> <span class="dv">0</span></span></code></pre></div>
 <p>The <code>run</code> loop checks the cache before forwarding to an authoritative server. On a cache miss it calls <code>_resolve_recursive</code>, then stores the results:</p>
 <div class="sourceCode" id="cb9"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p><code>_check_cache</code> filters out expired entries and returns <code>None</code> on a complete miss. <code>_cache_records</code> stores records with expiry times computed from each record’s TTL:</p>
@@ -89,15 +149,87 @@
 <p>Our simplified resolver directly contacts authoritative servers. Real DNS resolvers walk the hierarchy starting from root servers, but the principle is the same: cache aggressively, query only when necessary.</p>
 <h2 data-number="W.3" id="dns-client"><span class="header-section-number">W.3</span> Clients</h2>
 <p>The DNS client wraps a response queue and a query counter:</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> DNSClient(Process):</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""A DNS client that performs lookups."""</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> init(<span class="va">self</span>, name: <span class="bu">str</span>, resolver_queue: Queue):</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.name <span class="op">=</span> name</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.resolver_queue <span class="op">=</span> resolver_queue</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.response_queue <span class="op">=</span> Queue(<span class="va">self</span>._env)</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.query_counter <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.queries_sent <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">async</span> <span class="kw">def</span> run(<span class="va">self</span>):</span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Override in subclass to perform lookups."""</span></span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">pass</span></span></code></pre></div>
 <p><code>lookup</code> constructs a query, sends it to the resolver, and prints the response:</p>
 <div class="sourceCode" id="cb13"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>Clients send queries to recursive resolvers and wait for responses. In real systems, clients also cache locally and can query multiple resolvers for redundancy.</p>
 <h2 data-number="W.4" id="running-a-simulation"><span class="header-section-number">W.4</span> Running a Simulation</h2>
 <p>Let’s see DNS resolution in action by building a client:</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> TestClient(DNSClient):</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Test client that performs a series of lookups."""</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">async</span> <span class="kw">def</span> run(<span class="va">self</span>):</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Perform test lookups."""</span></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Lookup example.com</span></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">await</span> <span class="va">self</span>.lookup(<span class="st">"www.example.com"</span>)</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>        <span class="cf">await</span> <span class="va">self</span>.timeout(<span class="fl">1.0</span>)</span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Lookup again - should be cached</span></span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">await</span> <span class="va">self</span>.lookup(<span class="st">"www.example.com"</span>)</span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">await</span> <span class="va">self</span>.timeout(<span class="fl">1.0</span>)</span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Lookup different domain</span></span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>        <span class="cf">await</span> <span class="va">self</span>.lookup(<span class="st">"mail.example.com"</span>)</span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>        <span class="cf">await</span> <span class="va">self</span>.timeout(<span class="fl">1.0</span>)</span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Lookup from different zone</span></span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>        <span class="cf">await</span> <span class="va">self</span>.lookup(<span class="st">"www.another.org"</span>)</span></code></pre></div>
 <p>We can now create the overall simulation:</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> main():</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Simulate DNS resolution with caching."""</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>    env <span class="op">=</span> Environment()</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Create authoritative servers for different zones</span></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>    example_queue <span class="op">=</span> Queue(env)</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>    example_server <span class="op">=</span> AuthoritativeDNSServer(</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>        env, <span class="st">"ns1.example.com"</span>, <span class="st">"example.com"</span>, example_queue</span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Add records to example.com zone</span></span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>    example_server.add_record(</span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>        DNSRecord(<span class="st">"www.example.com"</span>, RecordType.A, <span class="st">"192.0.2.1"</span>, ttl<span class="op">=</span><span class="dv">300</span>)</span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a>    example_server.add_record(</span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a>        DNSRecord(<span class="st">"mail.example.com"</span>, RecordType.A, <span class="st">"192.0.2.2"</span>, ttl<span class="op">=</span><span class="dv">300</span>)</span>
+<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a>    example_server.add_record(</span>
+<span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a>        DNSRecord(<span class="st">"ftp.example.com"</span>, RecordType.CNAME, <span class="st">"www.example.com"</span>, ttl<span class="op">=</span><span class="dv">300</span>)</span>
+<span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb15-19"><a href="#cb15-19" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Create authoritative server for another.org</span></span>
+<span id="cb15-20"><a href="#cb15-20" aria-hidden="true" tabindex="-1"></a>    another_queue <span class="op">=</span> Queue(env)</span>
+<span id="cb15-21"><a href="#cb15-21" aria-hidden="true" tabindex="-1"></a>    another_server <span class="op">=</span> AuthoritativeDNSServer(</span>
+<span id="cb15-22"><a href="#cb15-22" aria-hidden="true" tabindex="-1"></a>        env, <span class="st">"ns1.another.org"</span>, <span class="st">"another.org"</span>, another_queue</span>
+<span id="cb15-23"><a href="#cb15-23" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb15-24"><a href="#cb15-24" aria-hidden="true" tabindex="-1"></a>    another_server.add_record(</span>
+<span id="cb15-25"><a href="#cb15-25" aria-hidden="true" tabindex="-1"></a>        DNSRecord(<span class="st">"www.another.org"</span>, RecordType.A, <span class="st">"198.51.100.1"</span>, ttl<span class="op">=</span><span class="dv">300</span>)</span>
+<span id="cb15-26"><a href="#cb15-26" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb15-27"><a href="#cb15-27" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Create recursive resolver</span></span>
+<span id="cb15-28"><a href="#cb15-28" aria-hidden="true" tabindex="-1"></a>    resolver_queue <span class="op">=</span> Queue(env)</span>
+<span id="cb15-29"><a href="#cb15-29" aria-hidden="true" tabindex="-1"></a>    resolver <span class="op">=</span> RecursiveDNSResolver(</span>
+<span id="cb15-30"><a href="#cb15-30" aria-hidden="true" tabindex="-1"></a>        env,</span>
+<span id="cb15-31"><a href="#cb15-31" aria-hidden="true" tabindex="-1"></a>        <span class="st">"resolver.isp.net"</span>,</span>
+<span id="cb15-32"><a href="#cb15-32" aria-hidden="true" tabindex="-1"></a>        resolver_queue,</span>
+<span id="cb15-33"><a href="#cb15-33" aria-hidden="true" tabindex="-1"></a>        root_servers<span class="op">=</span>{<span class="st">"example.com"</span>: example_queue, <span class="st">"another.org"</span>: another_queue},</span>
+<span id="cb15-34"><a href="#cb15-34" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb15-35"><a href="#cb15-35" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Create test clients</span></span>
+<span id="cb15-36"><a href="#cb15-36" aria-hidden="true" tabindex="-1"></a>    TestClient(env, <span class="st">"client1.local"</span>, resolver_queue)</span>
+<span id="cb15-37"><a href="#cb15-37" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Run simulation</span></span>
+<span id="cb15-38"><a href="#cb15-38" aria-hidden="true" tabindex="-1"></a>    env.run(until<span class="op">=</span><span class="dv">10</span>)</span>
+<span id="cb15-39"><a href="#cb15-39" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Print statistics</span></span>
+<span id="cb15-40"><a href="#cb15-40" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">=== DNS Resolution Statistics ==="</span>)</span>
+<span id="cb15-41"><a href="#cb15-41" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Example.com server: </span><span class="sc">{</span>example_server<span class="sc">.</span>queries_served<span class="sc">}</span><span class="ss"> queries"</span>)</span>
+<span id="cb15-42"><a href="#cb15-42" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Another.org server: </span><span class="sc">{</span>another_server<span class="sc">.</span>queries_served<span class="sc">}</span><span class="ss"> queries"</span>)</span>
+<span id="cb15-43"><a href="#cb15-43" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">Resolver:"</span>)</span>
+<span id="cb15-44"><a href="#cb15-44" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  Total queries: </span><span class="sc">{</span>resolver<span class="sc">.</span>queries_received<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb15-45"><a href="#cb15-45" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  Cache hits: </span><span class="sc">{</span>resolver<span class="sc">.</span>cache_hits<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb15-46"><a href="#cb15-46" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  Cache misses: </span><span class="sc">{</span>resolver<span class="sc">.</span>cache_misses<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb15-47"><a href="#cb15-47" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> resolver.queries_received <span class="op">&gt;</span> <span class="dv">0</span>:</span>
+<span id="cb15-48"><a href="#cb15-48" aria-hidden="true" tabindex="-1"></a>        hit_rate <span class="op">=</span> (resolver.cache_hits <span class="op">/</span> resolver.queries_received) <span class="op">*</span> <span class="dv">100</span></span>
+<span id="cb15-49"><a href="#cb15-49" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"  Cache hit rate: </span><span class="sc">{</span>hit_rate<span class="sc">:.1f}</span><span class="ss">%"</span>)</span></code></pre></div>
 <p>The output shows that the first lookup of <code>www.example.com</code> is a cache miss, necessitating a query to the authoritative server, but the second lookup is a cache hit. Different domains are cache misses until they’re cached, and the cache hit rate improves as the simulation runs. In other words, the first user to look up a domain pays the full resolution cost, but subsequent users (or repeated lookups) get instant responses.</p>
 <pre><code>[0.000] client1.local: Looking up www.example.com (A)
 [0.000] resolver.isp.net: Received query for www.example.com (A)
@@ -131,7 +263,29 @@ Resolver:
 <h2 data-number="W.5" id="dns-hier"><span class="header-section-number">W.5</span> Hierarchical Resolution</h2>
 <p>Our simplified resolver jumps directly to the best-matching authoritative server. Real DNS resolvers cannot do this: they only know about the root servers at startup and must walk the delegation chain to find the authoritative server for a new domain.</p>
 <p><code>HierarchicalResolver</code> implements this:</p>
-<div class="sourceCode" id="cb17"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> HierarchicalResolver(Process):</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Recursive resolver that walks the hierarchy from root servers.</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a><span class="co">    The resolver starts every query at a root server.</span></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a><span class="co">    When a server returns an NS referral (the zone is delegated to another</span></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a><span class="co">    server), the resolver follows the referral.  This continues until it</span></span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a><span class="co">    reaches an authoritative server that can answer the query directly.</span></span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a><span class="co">    """</span></span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> init(</span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>,</span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a>        name: <span class="bu">str</span>,</span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a>        request_queue: Queue,</span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a>        root_server_queue: Queue,</span>
+<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a>    ):</span>
+<span id="cb17-14"><a href="#cb17-14" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.name <span class="op">=</span> name</span>
+<span id="cb17-15"><a href="#cb17-15" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.request_queue <span class="op">=</span> request_queue</span>
+<span id="cb17-16"><a href="#cb17-16" aria-hidden="true" tabindex="-1"></a>        <span class="co"># The single entry point into the hierarchy.</span></span>
+<span id="cb17-17"><a href="#cb17-17" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.root_server_queue <span class="op">=</span> root_server_queue</span>
+<span id="cb17-18"><a href="#cb17-18" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.response_queue: Queue <span class="op">=</span> Queue(<span class="va">self</span>._env)</span>
+<span id="cb17-19"><a href="#cb17-19" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.cache: <span class="bu">dict</span>[<span class="bu">tuple</span>[<span class="bu">str</span>, RecordType], <span class="bu">list</span>[CacheEntry]] <span class="op">=</span> {}</span>
+<span id="cb17-20"><a href="#cb17-20" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.queries_received <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb17-21"><a href="#cb17-21" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.cache_hits <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb17-22"><a href="#cb17-22" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.cache_misses <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb17-23"><a href="#cb17-23" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.referrals_followed <span class="op">=</span> <span class="dv">0</span></span></code></pre></div>
 <p>Its <code>_walk_hierarchy</code> method starts at the root server, follows NS referrals until it reaches an authoritative server, and returns the answer:</p>
 <div class="sourceCode" id="cb18"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>The first query for <code>www.example.com</code> requires two round-trips—one to the root, one to <code>.com</code>— before reaching <code>example.com</code>’s authoritative server. All subsequent queries for anything in <code>example.com</code> can skip this walk because the answers are cached.</p>

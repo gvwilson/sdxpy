@@ -7,7 +7,7 @@ from tcp_applications import TCPClient, TCPServer
 from dsdx import dsdx
 
 
-# mccole: highlossexample
+# mccole:highlossexample
 def main():
     env = Environment()
 
@@ -70,7 +70,7 @@ def main():
         print(f"Success: All {expected_bytes} bytes delivered correctly!")
     else:
         print(f"Incomplete: {server_conn.bytes_received}/{expected_bytes} bytes")
-# mccole: /highlossexample
+# mccole:/highlossexample
 
 
 if __name__ == "__main__":

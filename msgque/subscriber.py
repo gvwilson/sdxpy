@@ -2,7 +2,7 @@ from asimpy import FirstOf, Process
 from broker import MessageBroker
 
 
-# mccole: subscriber
+# mccole:subscriber
 class Subscriber(Process):
     """Subscribes to topics and processes messages."""
 
@@ -44,4 +44,4 @@ class Subscriber(Process):
             await self.timeout(self.processing_time)
 
 
-# mccole: /subscriber
+# mccole:/subscriber

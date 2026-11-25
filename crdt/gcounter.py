@@ -3,7 +3,7 @@
 from dataclasses import dataclass, field
 
 
-# mccole: gcounter
+# mccole:gcounter
 @dataclass
 class GCounter:
     """Grow-only counter (state-based CRDT)."""
@@ -32,7 +32,7 @@ class GCounter:
         """Create a copy of this counter."""
         return GCounter(replica_id=self.replica_id, counts=self.counts.copy())
 
-    # mccole: /gcounter
+    # mccole:/gcounter
 
     def __str__(self):
         return f"GCounter(id={self.replica_id}, value={self.value()}, counts={self.counts})"

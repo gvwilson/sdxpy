@@ -6,7 +6,7 @@ from priority_backpressure import PriorityBackpressureBroker, PriorityMessage
 from dsdx import dsdx
 
 
-# mccole: prioritypublisher
+# mccole:prioritypublisher
 class PriorityPublisher(Process):
     """Publisher that sends messages with different priorities."""
 
@@ -49,10 +49,10 @@ class PriorityPublisher(Process):
             )
 
             await self.timeout(self.interval)
-# mccole: /prioritypublisher
+# mccole:/prioritypublisher
 
 
-# mccole: prioritysubscriber
+# mccole:prioritysubscriber
 class PrioritySubscriber(Process):
     """Subscriber that processes priority messages."""
 
@@ -86,10 +86,10 @@ class PrioritySubscriber(Process):
             )
 
             await self.timeout(self.processing_time)
-# mccole: /prioritysubscriber
+# mccole:/prioritysubscriber
 
 
-# mccole: simulate
+# mccole:simulate
 def main():
     """Demonstrate priority-based message handling."""
     env = Environment()
@@ -114,7 +114,7 @@ def main():
     print("\nReceived by priority:")
     for priority in sorted(subscriber.priority_counts.keys()):
         print(f"  Priority {priority}: {subscriber.priority_counts[priority]}")
-# mccole: /simulate
+# mccole:/simulate
 
 
 if __name__ == "__main__":

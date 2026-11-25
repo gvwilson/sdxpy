@@ -23,7 +23,7 @@ class PartitionManager(Process):
         self.coordinator.heal_partition("Node3")
 
 
-# mccole: partitionexample
+# mccole:partitionexample
 def main():
     """Demonstrate behavior during network partition."""
     env = Environment()
@@ -60,7 +60,7 @@ def main():
     PartitionManager(env, coordinator)
 
     env.run(until=10)
-# mccole: /partitionexample
+# mccole:/partitionexample
 
 
 if __name__ == "__main__":

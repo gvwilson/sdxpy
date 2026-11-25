@@ -7,7 +7,7 @@ from message import Message
 from dsdx import dsdx
 
 
-# mccole: acksubscriber
+# mccole:acksubscriber
 class AckSubscriber(Process):
     """Subscriber that acknowledges messages (sometimes)."""
 
@@ -52,10 +52,10 @@ class AckSubscriber(Process):
                     f"[{self.now:.1f}] {self.name}: FAILED to process "
                     f"{message.content} (will be redelivered)"
                 )
-# mccole: /acksubscriber
+# mccole:/acksubscriber
 
 
-# mccole: ackpublisher
+# mccole:ackpublisher
 class AckPublisher(Process):
     """Simple publisher for acknowledgment test."""
 
@@ -81,10 +81,10 @@ class AckPublisher(Process):
             await self.broker.publish(message)
 
             await self.timeout(self.interval)
-# mccole: /ackpublisher
+# mccole:/ackpublisher
 
 
-# mccole: simulate
+# mccole:simulate
 def main():
     """Demonstrate acknowledgment-based redelivery."""
     env = Environment()
@@ -108,7 +108,7 @@ def main():
     print(f"Messages received: {subscriber.num_received}")
     print(f"Messages acknowledged: {subscriber.num_acked}")
     print(f"Pending acks: {len(broker.pending_acks)}")
-# mccole: /simulate
+# mccole:/simulate
 
 
 if __name__ == "__main__":

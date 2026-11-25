@@ -4,7 +4,7 @@ from asimpy import Queue
 from tracing_types import BaseCollector, Span, Trace
 
 
-# mccole: collector
+# mccole:collector
 class TraceCollector(BaseCollector):
     """Collects and aggregates spans into traces."""
 
@@ -25,9 +25,9 @@ class TraceCollector(BaseCollector):
             span = await self.span_queue.get()
             self.process_span(span)
 
-    # mccole: /collector
+    # mccole:/collector
 
-    # mccole: process
+    # mccole:process
     def process_span(self, span: Span) -> None:
         """Process incoming span."""
         self.spans_received += 1
@@ -58,7 +58,7 @@ class TraceCollector(BaseCollector):
         self.traces_completed += 1
         del self.active_traces[trace.trace_id]
 
-    # mccole: /process
+    # mccole:/process
 
     def report_trace(self, trace: Trace) -> None:
         """Show newly-completed trace."""

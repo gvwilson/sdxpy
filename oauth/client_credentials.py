@@ -19,7 +19,7 @@ from asimpy import Process, Queue
 from typing import Optional
 
 
-# mccole: cc_token_request
+# mccole:cc_token_request
 from dataclasses import dataclass
 
 
@@ -35,10 +35,10 @@ class ClientCredentialsRequest:
     client_secret: str
     scope: list[str]
     response_queue: Queue
-# mccole: /cc_token_request
+# mccole:/cc_token_request
 
 
-# mccole: cc_client
+# mccole:cc_client
 class ClientCredentialsClient(Process):
     """OAuth client using the client credentials flow.
 
@@ -119,4 +119,4 @@ class ClientCredentialsClient(Process):
             )
         else:
             print(f"[{self.now:.1f}] M2M client: Cannot call API, no token")
-# mccole: /cc_client
+# mccole:/cc_client

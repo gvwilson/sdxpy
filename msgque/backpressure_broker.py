@@ -4,7 +4,7 @@ from collections import defaultdict
 from message import Message
 
 
-# mccole: backpressure
+# mccole:backpressure
 class BackpressureBroker:
     """A message broker with backpressure support."""
 
@@ -16,18 +16,18 @@ class BackpressureBroker:
         self.num_delivered = 0
         self.num_dropped = 0
 
-    # mccole: /backpressure
+    # mccole:/backpressure
 
-    # mccole: subscribe
+    # mccole:subscribe
     def subscribe(self, topic: str) -> Queue:
         """Create a bounded queue for a subscriber to a topic."""
         queue = Queue(self.env, capacity=self.max_queue_size)
         self.topics[topic].append(queue)
         return queue
 
-    # mccole: /subscribe
+    # mccole:/subscribe
 
-    # mccole: publish
+    # mccole:publish
     async def publish(self, message: Message) -> bool:
         """
         Publish a message, applying backpressure if queues are full.
@@ -48,4 +48,4 @@ class BackpressureBroker:
 
         return all_delivered
 
-    # mccole: /publish
+    # mccole:/publish

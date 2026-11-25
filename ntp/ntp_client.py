@@ -2,7 +2,7 @@ from asimpy import Process, Queue
 from ntp_message import NTPMessage
 
 
-# mccole: client_init
+# mccole:client_init
 class NTPClient(Process):
     """An NTP client that synchronizes its clock with a server."""
 
@@ -30,9 +30,9 @@ class NTPClient(Process):
     def get_local_time(self) -> float:
         """Get current time according to client's local clock."""
         return self.now + self.clock_offset
-# mccole: /client_init
+# mccole:/client_init
 
-    # mccole: client_run
+    # mccole:client_run
     async def run(self):
         """Periodically sync with NTP server."""
         while True:
@@ -41,9 +41,9 @@ class NTPClient(Process):
 
             # Perform NTP sync
             await self._sync_with_server()
-    # mccole: /client_run
+    # mccole:/client_run
 
-    # mccole: client_sync
+    # mccole:client_sync
     async def _sync_with_server(self):
         """Execute one NTP synchronization cycle."""
         # Create request message with client send time (t1)
@@ -82,4 +82,4 @@ class NTPClient(Process):
             f"[{self.now:.3f}] {self.name}: Clock adjusted, "
             f"new offset from true time: {self.clock_offset:.3f}"
         )
-    # mccole: /client_sync
+    # mccole:/client_sync

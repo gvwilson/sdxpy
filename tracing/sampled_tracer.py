@@ -44,7 +44,7 @@ from asimpy import Process, Queue
 from tracing_types import TraceContext, Span, generate_id, BaseCollector
 
 
-# mccole: sampler
+# mccole:sampler
 class HeadSampler:
     """Decides at trace start whether to record this trace.
 
@@ -79,10 +79,10 @@ class HeadSampler:
         if self.total_traces == 0:
             return 0.0
         return self.sampled_traces / self.total_traces
-# mccole: /sampler
+# mccole:/sampler
 
 
-# mccole: propagated_context
+# mccole:propagated_context
 @dataclass
 class PropagatedRequest:
     """A request that carries trace context for cross-service propagation.
@@ -99,10 +99,10 @@ class PropagatedRequest:
     response_queue: Queue
     # Trace context propagated from the caller, or None if not sampled.
     trace_context: TraceContext | None = None
-# mccole: /propagated_context
+# mccole:/propagated_context
 
 
-# mccole: sampled_service
+# mccole:sampled_service
 class SampledService(Process):
     """Service that applies head-based sampling before creating spans.
 
@@ -187,4 +187,4 @@ class SampledService(Process):
                 )
 
         await req.response_queue.put({"ok": True})
-# mccole: /sampled_service
+# mccole:/sampled_service

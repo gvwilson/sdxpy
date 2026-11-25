@@ -7,7 +7,7 @@ from failing_client import FailingClient
 from dsdx import dsdx
 
 
-# mccole: failureexample
+# mccole:failureexample
 def main():
     env = Environment()
 
@@ -22,7 +22,7 @@ def main():
     LockClient(env, "Client2", server, "database", work_duration=2.0, initial_delay=5.0)
 
     env.run(until=15)
-# mccole: /failureexample
+# mccole:/failureexample
 
 
 if __name__ == "__main__":

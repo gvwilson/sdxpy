@@ -3,7 +3,7 @@ from message import Message
 from broker import MessageBroker
 
 
-# mccole: publisher
+# mccole:publisher
 class Publisher(Process):
     """Publishes messages to topics."""
 
@@ -30,4 +30,4 @@ class Publisher(Process):
             await self.timeout(self.interval)
 
 
-# mccole: /publisher
+# mccole:/publisher

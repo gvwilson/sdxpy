@@ -7,7 +7,7 @@ from task import Task
 from worker import Worker
 
 
-# mccole: joining
+# mccole:joining
 class JoiningWorker(Worker):
     """Worker that tracks parent-child relationships and waits for children.
 
@@ -112,4 +112,4 @@ class JoiningWorker(Worker):
                     worker.pending_children[task.parent_id] -= 1
                     await worker.join_queues[task.parent_id].put(task.task_id)
                     break
-# mccole: /joining
+# mccole:/joining

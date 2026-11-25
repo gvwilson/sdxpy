@@ -7,7 +7,7 @@ from versioned_value import VersionedValue
 from messages import ReadRequest, WriteRequest, ReadResponse
 
 
-# mccole: repair_read
+# mccole:repair_read
 class CoordinatorWithReadRepair(Coordinator):
     """Coordinator that performs read repair."""
 
@@ -57,9 +57,9 @@ class CoordinatorWithReadRepair(Coordinator):
             )
 
         return merged_versions
-    # mccole: /repair_read
+    # mccole:/repair_read
 
-    # mccole: repair_perform
+    # mccole:repair_perform
     async def _perform_read_repair(
         self,
         key: str,
@@ -95,4 +95,4 @@ class CoordinatorWithReadRepair(Coordinator):
                         )
                         await replica.request_queue.put(request)
                         await response_queue.get()
-    # mccole: /repair_perform
+    # mccole:/repair_perform

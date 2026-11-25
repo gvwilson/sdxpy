@@ -4,7 +4,7 @@ from collections import defaultdict
 from message import Message
 
 
-# mccole: broker
+# mccole:broker
 class MessageBroker:
     """A message broker that routes messages to topic subscribers."""
 
@@ -14,18 +14,18 @@ class MessageBroker:
         self.num_published = 0
         self.num_delivered = 0
 
-    # mccole: /broker
+    # mccole:/broker
 
-    # mccole: subscribe
+    # mccole:subscribe
     def subscribe(self, topic: str) -> Queue:
         """Create a queue for a subscriber to a topic."""
         queue = Queue(self.env)
         self.topics[topic].append(queue)
         return queue
 
-    # mccole: /subscribe
+    # mccole:/subscribe
 
-    # mccole: publish
+    # mccole:publish
     async def publish(self, message: Message):
         """Publish a message to all subscribers of its topic."""
         self.num_published += 1
@@ -34,4 +34,4 @@ class MessageBroker:
             await queue.put(message)
             self.num_delivered += 1
 
-    # mccole: /publish
+    # mccole:/publish

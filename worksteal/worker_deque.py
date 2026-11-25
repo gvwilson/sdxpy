@@ -3,7 +3,7 @@
 from task import Task
 
 
-# mccole: deque
+# mccole:deque
 class WorkerDeque:
     """Double-ended queue for tasks with stealing support."""
 
@@ -31,4 +31,4 @@ class WorkerDeque:
         return len(self.tasks)
 
 
-# mccole: /deque
+# mccole:/deque

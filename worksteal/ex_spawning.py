@@ -6,7 +6,7 @@ from task_generator import TaskGenerator
 from dsdx import dsdx
 
 
-# mccole: sim
+# mccole:sim
 def main():
     """Demonstrate nested task spawning."""
     env = Environment()
@@ -22,7 +22,7 @@ def main():
 
     # Print statistics
     scheduler.get_statistics()
-# mccole: /sim
+# mccole:/sim
 
 
 if __name__ == "__main__":

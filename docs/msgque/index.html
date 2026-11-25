@@ -51,7 +51,12 @@
 <p>Publish-subscribe is popular because it <a href="../glossary/index.html#decoupling">decouples</a> publishers and subscribers. They don’t need to know about each other: they only share knowledge of topic names, which allows us to add more of either without modifying existing code. In addition, the broker provides <a href="../glossary/index.html#buffer">buffering</a>: if consumers are slow or temporarily unavailable, messages wait rather than being lost.</p>
 <h2 data-number="M.1" id="msgque-impl"><span class="header-section-number">M.1</span> Our Implementation</h2>
 <p>Our first implementation has three main components: publishers that send messages, a broker that routes messages to topics, and subscribers that receive and process messages. We start by defining a <a href="../glossary/index.html#dataclass">dataclass</a> to store a single message:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Message:</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    topic: <span class="bu">str</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    content: <span class="bu">str</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">id</span>: <span class="bu">int</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    timestamp: <span class="bu">float</span></span></code></pre></div>
 <p>Each message belongs to a topic like “orders” or “user-activity”, and has some content, a unique ID, and a timestamp. Messages in a real system would contain structured data (e.g., as <a href="../glossary/index.html#json">JSON</a>), but strings are sufficient for our example.</p>
 <p>The broker stores a dictionary called <code>topics</code> mapping topics to lists of queues:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
@@ -67,11 +72,63 @@
 <p>When a message is published, the broker looks up the topic and places the message in each subscriber’s queue:</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>To test this, let’s create a publisher that sends messages to a specific topic at some rate:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Publisher(Process):</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Publishes messages to topics."""</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> init(<span class="va">self</span>, broker: MessageBroker, name: <span class="bu">str</span>, topic: <span class="bu">str</span>, interval: <span class="bu">float</span>):</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.broker <span class="op">=</span> broker</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.name <span class="op">=</span> name</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.topic <span class="op">=</span> topic</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.interval <span class="op">=</span> interval</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.message_counter <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">async</span> <span class="kw">def</span> run(<span class="va">self</span>):</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">while</span> <span class="va">True</span>:</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.message_counter <span class="op">+=</span> <span class="dv">1</span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>            message <span class="op">=</span> Message(</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>                topic<span class="op">=</span><span class="va">self</span>.topic,</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>                content<span class="op">=</span><span class="ss">f"Message </span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>message_counter<span class="sc">}</span><span class="ss"> from </span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>name<span class="sc">}</span><span class="ss">"</span>,</span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>                <span class="bu">id</span><span class="op">=</span><span class="va">self</span>.message_counter,</span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>                timestamp<span class="op">=</span><span class="va">self</span>.now,</span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>            )</span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] </span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>name<span class="sc">}</span><span class="ss"> publishing: </span><span class="sc">{</span>message<span class="sc">.</span>content<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>            <span class="cf">await</span> <span class="va">self</span>.broker.publish(message)</span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>            <span class="cf">await</span> <span class="va">self</span>.timeout(<span class="va">self</span>.interval)</span></code></pre></div>
 <p>Real publishers would react to external events (like HTTP requests or database changes), but timed generation works well for simulation.</p>
 <p>Notice that we inherit from <code>Process</code>, which is asimpy’s base class for active components. As described in the appendix, the <code>init()</code> method is called during construction to set up our state, while <code>run()</code> creates the coroutine that defines the publisher’s behavior.</p>
 <p>Finally, our simulated subscribers receive and process messages:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Subscriber(Process):</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Subscribes to topics and processes messages."""</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> init(</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>,</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>        broker: MessageBroker,</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>        name: <span class="bu">str</span>,</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>        topics: <span class="bu">list</span>[<span class="bu">str</span>],</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>        processing_time: <span class="bu">float</span>,</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>    ):</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.broker <span class="op">=</span> broker</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.name <span class="op">=</span> name</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.topics <span class="op">=</span> topics</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.processing_time <span class="op">=</span> processing_time</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.num_received <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.queues <span class="op">=</span> {}</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> topic <span class="kw">in</span> topics:</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>            queue <span class="op">=</span> broker.subscribe(topic)</span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.queues[topic] <span class="op">=</span> queue</span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>    <span class="cf">async</span> <span class="kw">def</span> run(<span class="va">self</span>):</span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>        <span class="cf">while</span> <span class="va">True</span>:</span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Wait for a message from any queue.</span></span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>            get_operations <span class="op">=</span> {</span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>                topic: queue.get() <span class="cf">for</span> topic, queue <span class="kw">in</span> <span class="va">self</span>.queues.items()</span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a>            }</span>
+<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a>            topic, message <span class="op">=</span> <span class="cf">await</span> FirstOf(<span class="va">self</span>._env, <span class="op">**</span>get_operations)</span>
+<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Report.</span></span>
+<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.num_received <span class="op">+=</span> <span class="dv">1</span></span>
+<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a>            latency <span class="op">=</span> <span class="va">self</span>.now <span class="op">-</span> message.timestamp</span>
+<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(</span>
+<span id="cb6-30"><a href="#cb6-30" aria-hidden="true" tabindex="-1"></a>                <span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] </span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>name<span class="sc">}</span><span class="ss"> received from '</span><span class="sc">{</span>topic<span class="sc">}</span><span class="ss">': "</span></span>
+<span id="cb6-31"><a href="#cb6-31" aria-hidden="true" tabindex="-1"></a>                <span class="ss">f"</span><span class="sc">{</span>message<span class="sc">.</span>content<span class="sc">}</span><span class="ss"> (latency: </span><span class="sc">{</span>latency<span class="sc">:.1f}</span><span class="ss">)"</span></span>
+<span id="cb6-32"><a href="#cb6-32" aria-hidden="true" tabindex="-1"></a>            )</span>
+<span id="cb6-33"><a href="#cb6-33" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Simulate processing time.</span></span>
+<span id="cb6-34"><a href="#cb6-34" aria-hidden="true" tabindex="-1"></a>            <span class="cf">await</span> <span class="va">self</span>.timeout(<span class="va">self</span>.processing_time)</span></code></pre></div>
 <div>
 <blockquote>
 <p><strong>None</strong></p>
@@ -80,7 +137,28 @@
 </div>
 <h2 data-number="M.2" id="msgque-sim"><span class="header-section-number">M.2</span> Running a Simulation</h2>
 <p>Let’s create a scenario with multiple publishers and subscribers to see the system in action:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> main():</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Run a simulation of the message queue system."""</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    env <span class="op">=</span> Environment()</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    broker <span class="op">=</span> MessageBroker(env)</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Publishers.</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>    Publisher(env, broker, <span class="st">"OrderService"</span>, <span class="st">"orders"</span>, interval<span class="op">=</span><span class="fl">2.0</span>)</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>    Publisher(env, broker, <span class="st">"UserService"</span>, <span class="st">"user-activity"</span>, interval<span class="op">=</span><span class="fl">1.5</span>)</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Fast and slow subscribers.</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>    inventory <span class="op">=</span> Subscriber(env, broker, <span class="st">"Inventory"</span>, [<span class="st">"orders"</span>], processing_time<span class="op">=</span><span class="fl">0.5</span>)</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>    email <span class="op">=</span> Subscriber(env, broker, <span class="st">"Email"</span>, [<span class="st">"orders"</span>], processing_time<span class="op">=</span><span class="fl">3.0</span>)</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Subscriber handling multiple topics.</span></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>    analytics <span class="op">=</span> Subscriber(</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>        env, broker, <span class="st">"Analytics"</span>, [<span class="st">"orders"</span>, <span class="st">"user-activity"</span>], processing_time<span class="op">=</span><span class="fl">1.0</span></span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Run simulation and report.</span></span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>    env.run(until<span class="op">=</span><span class="dv">20</span>)</span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">=== Statistics ==="</span>)</span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Messages published: </span><span class="sc">{</span>broker<span class="sc">.</span>num_published<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Messages delivered: </span><span class="sc">{</span>broker<span class="sc">.</span>num_delivered<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Inventory received: </span><span class="sc">{</span>inventory<span class="sc">.</span>num_received<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Email received: </span><span class="sc">{</span>email<span class="sc">.</span>num_received<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Analytics received: </span><span class="sc">{</span>analytics<span class="sc">.</span>num_received<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div>
 <p>The output shows messages being published and consumed asynchronously:</p>
 <pre><code>[0.0] OrderService publishing: Message 1 from OrderService
 [0.0] UserService publishing: Message 1 from UserService
@@ -124,7 +202,28 @@ When backpressure occurs, the system drops low-priority messages first in order 
 <div class="sourceCode" id="cb12"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>The publisher’s <code>run()</code> method uses these two parameters to implement <a href="../glossary/index.html#exponential-backoff">exponential backoff</a>, which is one of the most important concepts in distributed systems. If an attempt to publish a message fails, the publisher increases its interval between messages. If publishing succeeds, on the other hand, it gradually reduces the interval back to the base rate. This creates a <a href="../glossary/index.html#negative-feedback-loop">negative feedback loop</a> that stabilizes the system under load.</p>
 <p>Let’s see backpressure in action with one fast publisher, one that’s slow, and and a deliberately small queue size:</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> main():</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Demonstrate backpressure in action."""</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    env <span class="op">=</span> Environment()</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Small queue size to trigger backpressure quickly.</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>    broker <span class="op">=</span> BackpressureBroker(env, max_queue_size<span class="op">=</span><span class="dv">5</span>)</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Fast publisher.</span></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>    fast_publisher <span class="op">=</span> BackpressurePublisher(</span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>        env, broker, <span class="st">"FastPublisher"</span>, <span class="st">"events"</span>, base_interval<span class="op">=</span><span class="fl">0.5</span></span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Slow subscriber creates backpressure.</span></span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>    slow_subscriber <span class="op">=</span> Subscriber(</span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>        env, broker, <span class="st">"SlowSubscriber"</span>, [<span class="st">"events"</span>], processing_time<span class="op">=</span><span class="fl">2.0</span></span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Run simulation.</span></span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>    env.run(until<span class="op">=</span><span class="dv">30</span>)</span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">=== Backpressure Statistics ==="</span>)</span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Messages published: </span><span class="sc">{</span>broker<span class="sc">.</span>num_published<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Messages delivered: </span><span class="sc">{</span>broker<span class="sc">.</span>num_delivered<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Messages dropped: </span><span class="sc">{</span>broker<span class="sc">.</span>num_dropped<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Backpressure events: </span><span class="sc">{</span>fast_publisher<span class="sc">.</span>backpressure_events<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb13-21"><a href="#cb13-21" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Final interval: </span><span class="sc">{</span>fast_publisher<span class="sc">.</span>current_interval<span class="sc">:.1f}</span><span class="ss">s"</span>)</span>
+<span id="cb13-22"><a href="#cb13-22" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Messages received: </span><span class="sc">{</span>slow_subscriber<span class="sc">.</span>num_received<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div>
 <p>The full output shows that the publisher starts fast but encounter backpressure as the slow subscriber’s queue fills. The publisher adapts by slowing down, and the system reaches equilibrium where the publishing rate matches the consumption rate.</p>
 <pre><code>[0.0] FastPublisher published: Message 1 from FastPublisher (interval: 0.5s)
 [0.0] SlowSubscriber received from 'events': Message 1 from FastPublisher (latency: 0.0)
@@ -138,7 +237,13 @@ When backpressure occurs, the system drops low-priority messages first in order 
 [3.5] FastPublisher BACKPRESSURE - slowing to 1.0s interval</code></pre>
 <h2 data-number="M.4" id="msgque-priority"><span class="header-section-number">M.4</span> Message Priority</h2>
 <p>In most real systems, not all messages are equal. As the system becomes overloaded, we might want to preserve high-priority messages while dropping low-priority ones. To implement this, we start by adding a <code>priority</code> field to our messages:</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> PriorityMessage(Message):</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Message with priority level."""</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>    priority: <span class="bu">int</span> <span class="op">=</span> <span class="dv">0</span>  <span class="co"># Lower number = higher priority</span></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__lt__</span>(<span class="va">self</span>, other):</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Compare by priority for heap operations."""</span></span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>.priority <span class="op">&lt;</span> other.priority</span></code></pre></div>
 <p>When we publish a message, we check queue-by-queue to see if there’s room. If not, we either evict a lower-priority message or discard the one that just arrived:</p>
 <div class="sourceCode" id="cb16"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>This implementation uses <a href="https://asimpy.readthedocs.io/">asimpy</a>’s <a href="../glossary/index.html#priority-queue">priority queue</a> class to manage efficient eviction of low-priority messages.</p>
@@ -159,7 +264,10 @@ This ensures every message is delivered, possibly multiple times. It acknowledgm
 </dd>
 </dl>
 <p>We can extend our broker to support at-least-once delivery with acknowledgments. First, we add an acknowledgment ID field to each message:</p>
-<div class="sourceCode" id="cb17"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> AckMessage(Message):</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Message that requires acknowledgment."""</span></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>    ack_id: <span class="bu">int</span> <span class="op">=</span> <span class="dv">0</span></span></code></pre></div>
 <p>Next, we have the broker keep track of how long to wait for acknowledgments and of outstanding acknowledgments:</p>
 <div class="sourceCode" id="cb18"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>When a message is published, the broker schedules a callback to check if it was acknowledged. The lambda captures the acknowledgment ID and calls <code>_check_ack()</code> after the timeout:</p>
@@ -170,9 +278,37 @@ This ensures every message is delivered, possibly multiple times. It acknowledgm
 <p>Consider a subscriber that increments a counter in a database when it receives an “order placed” message. If the broker redelivers the message because the subscriber crashed before acknowledging, the counter will be incremented a second time, double-counting the order. The fix is to make the operation idempotent: check whether the order ID has already been processed before incrementing, and skip the increment if so. This “exactly-once processing” pattern—at-least-once delivery plus idempotent consumers— is the standard way to achieve reliable message processing in production systems. Exactly-once delivery at the broker level is theoretically possible but requires distributed transactions, which are expensive and rarely worth the cost compared to idempotent consumers.</p>
 <h2 data-number="M.6" id="msgque-balance"><span class="header-section-number">M.6</span> Consumer Groups and Load Balancing</h2>
 <p>In production systems, multiple instances of the same subscriber type often share the workload. This is called a <a href="../glossary/index.html#consumer-group">consumer group</a>: messages on a topic are distributed among group members rather than duplicated to each. Here’s a simple implementation:</p>
-<div class="sourceCode" id="cb21"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb21"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> ConsumerGroup:</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Distribute messages among multiple consumers."""</span></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>, env: Environment, broker: MessageBroker, topic: <span class="bu">str</span>, num_consumers: <span class="bu">int</span></span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>    ):</span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.env <span class="op">=</span> env</span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.queue <span class="op">=</span> broker.subscribe(topic)</span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.consumers <span class="op">=</span> []</span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Create consumer queues for load balancing</span></span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(num_consumers):</span>
+<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a>            consumer_queue <span class="op">=</span> Queue(env)</span>
+<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.consumers.append(consumer_queue)</span>
+<span id="cb21-13"><a href="#cb21-13" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Start distributor process</span></span>
+<span id="cb21-14"><a href="#cb21-14" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._distributor <span class="op">=</span> _Distributor(env, <span class="va">self</span>.queue, <span class="va">self</span>.consumers)</span>
+<span id="cb21-15"><a href="#cb21-15" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> get_consumer_queue(<span class="va">self</span>, index: <span class="bu">int</span>) <span class="op">-&gt;</span> Queue:</span>
+<span id="cb21-16"><a href="#cb21-16" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Get queue for a specific consumer in the group."""</span></span>
+<span id="cb21-17"><a href="#cb21-17" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>.consumers[index]</span></code></pre></div>
 <p>It relies on helper process <code>_Distributor</code> to do the work:</p>
-<div class="sourceCode" id="cb22"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb22"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> _Distributor(Process):</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Distribute messages round-robin to consumers."""</span></span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> init(<span class="va">self</span>, source: Queue, destinations: <span class="bu">list</span>[Queue]):</span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.source <span class="op">=</span> source</span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.destinations <span class="op">=</span> destinations</span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.next_dest <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">async</span> <span class="kw">def</span> run(<span class="va">self</span>):</span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Forward messages to consumers in round-robin order."""</span></span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">while</span> <span class="va">True</span>:</span>
+<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a>            message <span class="op">=</span> <span class="cf">await</span> <span class="va">self</span>.source.get()</span>
+<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a>            dest <span class="op">=</span> <span class="va">self</span>.destinations[<span class="va">self</span>.next_dest]</span>
+<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a>            <span class="cf">await</span> dest.put(message)</span>
+<span id="cb22-13"><a href="#cb22-13" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.next_dest <span class="op">=</span> (<span class="va">self</span>.next_dest <span class="op">+</span> <span class="dv">1</span>) <span class="op">%</span> <span class="bu">len</span>(<span class="va">self</span>.destinations)</span></code></pre></div>
 <p>This consumer group receives messages from the broker on a single queue, then distributes them round-robin to individual consumers’ queues. Each consumer in the group processes a subset of the messages in parallel with its peers. Real systems use more sophisticated load balancing algorithms, such as weighted distribution, least-loaded routing, or partition-based assignment.</p>
 <section class="exercises">
 <h2 data-number="M.7" id="msgque-exercises"><span class="header-section-number">M.7</span> Exercises</h2>

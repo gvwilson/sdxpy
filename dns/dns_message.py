@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from enum import Enum
 
 
-# mccole: recordtype
+# mccole:recordtype
 class RecordType(Enum):
     """DNS record types."""
 
@@ -11,10 +11,10 @@ class RecordType(Enum):
     CNAME = "CNAME"  # Canonical name (alias)
     NS = "NS"  # Name server
     MX = "MX"  # Mail exchange
-# mccole: /recordtype
+# mccole:/recordtype
 
 
-# mccole: dnsrecord
+# mccole:dnsrecord
 @dataclass
 class DNSRecord:
     """A DNS resource record."""
@@ -23,10 +23,10 @@ class DNSRecord:
     value: str  # IP address, domain name, etc.
     record_type: RecordType
     ttl: int = 3600  # Time to live in seconds
-# mccole: /dnsrecord
+# mccole:/dnsrecord
 
 
-# mccole: dnsquery
+# mccole:dnsquery
 @dataclass
 class DNSQuery:
     """A DNS query message."""
@@ -34,10 +34,10 @@ class DNSQuery:
     query_id: int
     domain: str
     record_type: RecordType
-# mccole: /dnsquery
+# mccole:/dnsquery
 
 
-# mccole: dnsresponse
+# mccole:dnsresponse
 @dataclass
 class DNSResponse:
     """A DNS response message."""
@@ -48,4 +48,4 @@ class DNSResponse:
     records: list[DNSRecord]
     authoritative: bool = False
     from_cache: bool = False
-# mccole: /dnsresponse
+# mccole:/dnsresponse

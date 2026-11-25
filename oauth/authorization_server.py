@@ -13,7 +13,7 @@ from oauth_types import (
 )
 
 
-# mccole: init
+# mccole:init
 class AuthorizationServer(Process):
     """OAuth 2.0 authorization server."""
 
@@ -37,9 +37,9 @@ class AuthorizationServer(Process):
         }
 
         print(f"[{self.now:.1f}] Authorization Server started")
-    # mccole: /init
+    # mccole:/init
 
-    # mccole: register
+    # mccole:register
     def register_client(
         self, client_id: str, client_secret: str, redirect_uris: List[str]
     ):
@@ -49,9 +49,9 @@ class AuthorizationServer(Process):
             "redirect_uris": redirect_uris,
         }
         print(f"[{self.now:.1f}] Registered client: {client_id}")
-    # mccole: /register
+    # mccole:/register
 
-    # mccole: run
+    # mccole:run
     async def run(self):
         """Main server loop."""
         while True:
@@ -64,9 +64,9 @@ class AuthorizationServer(Process):
                 await self.handle_authorization_request(request)
             elif name == "token":
                 await self.handle_token_request(request)
-    # mccole: /run
+    # mccole:/run
 
-    # mccole: handle_auth
+    # mccole:handle_auth
     async def handle_authorization_request(self, request: AuthorizationRequest):
         """Handle authorization request from client."""
         print(f"[{self.now:.1f}] AuthServer: Received {request}")
@@ -82,9 +82,9 @@ class AuthorizationServer(Process):
         print(f"[{self.now:.1f}] AuthServer: User granted permissions: {request.scope}")
 
         await self._issue_authorization_code(request)
-    # mccole: /handle_auth
+    # mccole:/handle_auth
 
-    # mccole: validate_auth
+    # mccole:validate_auth
     def _validate_auth_request(self, request: AuthorizationRequest) -> bool:
         """Check that the client is registered and the redirect URI is allowed."""
         if request.client_id not in self.clients:
@@ -97,9 +97,9 @@ class AuthorizationServer(Process):
             return False
 
         return True
-    # mccole: /validate_auth
+    # mccole:/validate_auth
 
-    # mccole: issue_code
+    # mccole:issue_code
     async def _issue_authorization_code(self, request: AuthorizationRequest):
         """Generate, store, and return a one-time authorization code."""
         code = generate_token("code")
@@ -116,9 +116,9 @@ class AuthorizationServer(Process):
         await request.response_queue.put(response)
 
         print(f"[{self.now:.1f}] AuthServer: Issued authorization code")
-    # mccole: /issue_code
+    # mccole:/issue_code
 
-    # mccole: handle_token
+    # mccole:handle_token
     async def handle_token_request(self, request: TokenRequest):
         """Exchange authorization code for access token."""
         print(f"[{self.now:.1f}] AuthServer: Received {request}")
@@ -128,9 +128,9 @@ class AuthorizationServer(Process):
             return
 
         await self._issue_access_token(request, auth_code)
-    # mccole: /handle_token
+    # mccole:/handle_token
 
-    # mccole: validate_token
+    # mccole:validate_token
     async def _validate_token_request(
         self, request: TokenRequest
     ) -> AuthorizationCode | None:
@@ -171,9 +171,9 @@ class AuthorizationServer(Process):
             return None
 
         return auth_code
-    # mccole: /validate_token
+    # mccole:/validate_token
 
-    # mccole: issue_token
+    # mccole:issue_token
     async def _issue_access_token(
         self, request: TokenRequest, auth_code: AuthorizationCode
     ):
@@ -198,4 +198,4 @@ class AuthorizationServer(Process):
         await request.response_queue.put(response)
 
         print(f"[{self.now:.1f}] AuthServer: Issued access token")
-    # mccole: /issue_token
+    # mccole:/issue_token

@@ -14,7 +14,7 @@ class GenericService:
         pass
 
 
-# mccole: service
+# mccole:service
 class Service(GenericService):
     async def handle_request(self, request):
         # Create span manually
@@ -44,4 +44,4 @@ class Service(GenericService):
             await self.collector.span_queue.put(span)
 
 
-# mccole: /service
+# mccole:/service

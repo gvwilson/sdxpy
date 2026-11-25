@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 
 
-# mccole: op
+# mccole:op
 @dataclass
 class Operation:
     """An operation on a CRDT."""
@@ -13,10 +13,10 @@ class Operation:
     amount: int = 0
 
 
-# mccole: /op
+# mccole:/op
 
 
-# mccole: counter
+# mccole:counter
 class OpBasedCounter:
     """Operation-based PN-Counter."""
 
@@ -45,7 +45,7 @@ class OpBasedCounter:
         elif op.op_type == "decrement":
             self.value -= op.amount
 
-    # mccole: /counter
+    # mccole:/counter
 
     def __str__(self):
         return f"OpCounter(id={self.replica_id}, value={self.value})"

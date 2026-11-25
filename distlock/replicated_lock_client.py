@@ -2,7 +2,7 @@ from asimpy import Process
 from replicated_lock_manager import ReplicatedLockManager
 
 
-# mccole: replicatedclient
+# mccole:replicatedclient
 class ReplicatedLockClient(Process):
     """Client using replicated lock manager."""
 
@@ -32,4 +32,4 @@ class ReplicatedLockClient(Process):
         print(f"[{self.now:.1f}] {self.client_id}: Work complete")
 
         await self.manager.release_lock(self.client_id, self.resource)
-# mccole: /replicatedclient
+# mccole:/replicatedclient

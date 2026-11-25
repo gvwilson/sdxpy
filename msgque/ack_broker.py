@@ -4,7 +4,7 @@ from message import Message
 from broker import MessageBroker
 
 
-# mccole: message
+# mccole:message
 @dataclass
 class AckMessage(Message):
     """Message that requires acknowledgment."""
@@ -12,10 +12,10 @@ class AckMessage(Message):
     ack_id: int = 0
 
 
-# mccole: /message
+# mccole:/message
 
 
-# mccole: broker
+# mccole:broker
 class AckBroker(MessageBroker):
     """Broker with acknowledgment support."""
 
@@ -25,9 +25,9 @@ class AckBroker(MessageBroker):
         self.pending_acks = {}  # ack_id -> (message, timestamp, queue)
         self.next_ack_id = 0
 
-    # mccole: /broker
+    # mccole:/broker
 
-    # mccole: publish
+    # mccole:publish
     async def publish(self, message: Message):
         """Publish with acknowledgment."""
         self.num_published += 1
@@ -63,12 +63,12 @@ class AckBroker(MessageBroker):
             else:
                 queue._items.append(msg)
 
-    # mccole: /publish
+    # mccole:/publish
 
-    # mccole: acknowledge
+    # mccole:acknowledge
     def acknowledge(self, ack_id: int):
         """Acknowledge receipt of a message."""
         if ack_id in self.pending_acks:
             del self.pending_acks[ack_id]
 
-    # mccole: /acknowledge
+    # mccole:/acknowledge

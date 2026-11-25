@@ -5,7 +5,7 @@ from ntp_message import NTPMessage
 from dsdx import dsdx
 
 
-# mccole: stratumserver
+# mccole:stratumserver
 class StratumServerProcess(Process):
     """Server process for a stratum N+1 NTP server."""
 
@@ -41,10 +41,10 @@ class StratumServerProcess(Process):
             # Send response
             await self.timeout(self.network_delay)
             await client_queue.put(message)
-# mccole: /stratumserver
+# mccole:/stratumserver
 
 
-# mccole: stratumclient
+# mccole:stratumclient
 class StratumClientProcess(Process):
     """Client process for a stratum N+1 NTP server."""
 
@@ -91,10 +91,10 @@ class StratumClientProcess(Process):
                 f"[{self.now:.3f}] {self.name} (stratum {self.stratum}): "
                 f"Synced with upstream, offset={offset:.3f}"
             )
-# mccole: /stratumclient
+# mccole:/stratumclient
 
 
-# mccole: hierarchy
+# mccole:hierarchy
 def main():
     """Demonstrate NTP stratum hierarchy."""
     env = Environment()
@@ -151,7 +151,7 @@ def main():
     print(f"Stratum 2b clock offset: {s2b_clock['offset']:.6f}s")
     print(f"\nClient A final offset: {client_a.clock_offset:.6f}s")
     print(f"Client B final offset: {client_b.clock_offset:.6f}s")
-# mccole: /hierarchy
+# mccole:/hierarchy
 
 
 if __name__ == "__main__":

@@ -6,7 +6,7 @@ from collections import defaultdict
 from message import Message
 
 
-# mccole: message
+# mccole:message
 @dataclass
 class PriorityMessage(Message):
     """Message with priority level."""
@@ -18,7 +18,7 @@ class PriorityMessage(Message):
         return self.priority < other.priority
 
 
-# mccole: /message
+# mccole:/message
 
 
 class PriorityBackpressureBroker:
@@ -37,7 +37,7 @@ class PriorityBackpressureBroker:
         self.topics[topic].append(queue)
         return queue
 
-    # mccole: publish
+    # mccole:publish
     async def publish(self, message: PriorityMessage) -> bool:
         """Publish message to priority queues.
 
@@ -64,4 +64,4 @@ class PriorityBackpressureBroker:
 
         return all_delivered
 
-    # mccole: /publish
+    # mccole:/publish

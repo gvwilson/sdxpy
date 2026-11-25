@@ -4,7 +4,7 @@ from ntp_client import NTPClient
 from dsdx import dsdx
 
 
-# mccole: simulate
+# mccole:simulate
 def main():
     """Simulate NTP clock synchronization."""
     env = Environment()
@@ -55,7 +55,7 @@ def main():
             print(
                 f"  Average correction: {sum(client.offset_history) / len(client.offset_history):.6f}s"
             )
-# mccole: /simulate
+# mccole:/simulate
 
 
 if __name__ == "__main__":

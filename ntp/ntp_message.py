@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 
-# mccole: ntpmessage
+# mccole:ntpmessage
 @dataclass
 class NTPMessage:
     """A simplified NTP message packet."""
@@ -32,4 +32,4 @@ class NTPMessage:
         if self.t1 and self.t2 and self.t3 and self.t4:
             return (self.t4 - self.t1) - (self.t3 - self.t2)
         return 0.0
-# mccole: /ntpmessage
+# mccole:/ntpmessage

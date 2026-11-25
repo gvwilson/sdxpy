@@ -6,7 +6,7 @@ from dns_message import DNSRecord, RecordType
 from dsdx import dsdx
 
 
-# mccole: testclient
+# mccole:testclient
 class TestClient(DNSClient):
     """Test client that performs a series of lookups."""
 
@@ -26,10 +26,10 @@ class TestClient(DNSClient):
 
         # Lookup from different zone
         await self.lookup("www.another.org")
-# mccole: /testclient
+# mccole:/testclient
 
 
-# mccole: simulate
+# mccole:simulate
 def main():
     """Simulate DNS resolution with caching."""
     env = Environment()
@@ -86,7 +86,7 @@ def main():
     if resolver.queries_received > 0:
         hit_rate = (resolver.cache_hits / resolver.queries_received) * 100
         print(f"  Cache hit rate: {hit_rate:.1f}%")
-# mccole: /simulate
+# mccole:/simulate
 
 
 if __name__ == "__main__":

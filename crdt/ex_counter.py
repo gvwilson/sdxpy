@@ -18,7 +18,7 @@ class Peer:
     counter: GCounter | PNCounter
 
 
-# mccole: replica
+# mccole:replica
 class Replica(Process):
     """A replica that updates its local counter and syncs with peers."""
 
@@ -51,10 +51,10 @@ class Replica(Process):
             )
 
             await self.timeout(self.sync_interval)
-# mccole: /replica
+# mccole:/replica
 
 
-# mccole: sim
+# mccole:sim
 def run_simulation(counter_cls):
     """Demonstrate GCounter convergence across three replicas."""
     env = Environment()
@@ -71,7 +71,7 @@ def run_simulation(counter_cls):
     print("\n--- Final State")
     for r in replicas:
         print(r.counter)
-# mccole: /sim
+# mccole:/sim
 
 
 def main():

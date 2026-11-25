@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 
 
-# mccole: packettypes
+# mccole:packettypes
 class PacketType(Enum):
     """Types of TCP packets."""
 
@@ -14,10 +14,10 @@ class PacketType(Enum):
     DATA = "DATA"  # Data packet
     FIN = "FIN"  # Finish (connection teardown)
     FIN_ACK = "FIN_ACK"  # Finish-Acknowledge
-# mccole: /packettypes
+# mccole:/packettypes
 
 
-# mccole: connectionstate
+# mccole:connectionstate
 class ConnectionState(Enum):
     """TCP connection states."""
 
@@ -28,10 +28,10 @@ class ConnectionState(Enum):
     FIN_WAIT = "FIN_WAIT"
     CLOSE_WAIT = "CLOSE_WAIT"
     CLOSING = "CLOSING"
-# mccole: /connectionstate
+# mccole:/connectionstate
 
 
-# mccole: packet
+# mccole:packet
 @dataclass
 class Packet:
     """A network packet (simulating IP + TCP)."""
@@ -45,7 +45,7 @@ class Packet:
     packet_type: PacketType
     data: bytes = b""
     window_size: int = 65535
-# mccole: /packet
+# mccole:/packet
 
     def __str__(self) -> str:
         data_len = len(self.data)
@@ -68,7 +68,7 @@ class SegmentBuffer:
         return f"Segment(seq={self.seq_num}, len={len(self.data)})"
 
 
-# mccole: receivebuffer
+# mccole:receivebuffer
 @dataclass
 class ReceiveBuffer:
     """Buffer for out-of-order received segments."""
@@ -99,4 +99,4 @@ class ReceiveBuffer:
     def has_data(self) -> bool:
         """Check if buffer has any segments."""
         return len(self.segments) > 0
-# mccole: /receivebuffer
+# mccole:/receivebuffer

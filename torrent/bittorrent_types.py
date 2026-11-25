@@ -6,7 +6,7 @@ from asimpy import Queue
 import hashlib
 
 
-# mccole: file_types
+# mccole:file_types
 @dataclass
 class Piece:
     """A piece of the file being shared."""
@@ -55,10 +55,10 @@ class PeerInfo:
         if not isinstance(other, PeerInfo):
             return False
         return self.peer_id == other.peer_id
-# mccole: /file_types
+# mccole:/file_types
 
 
-# mccole: message_types
+# mccole:message_types
 @dataclass
 class TrackerRequest:
     """Request to tracker."""
@@ -118,4 +118,4 @@ class BitfieldMessage:
     def __str__(self) -> str:
         count = sum(1 for b in self.bitfield if b)
         return f"Bitfield({count}/{len(self.bitfield)} pieces)"
-# mccole: /message_types
+# mccole:/message_types

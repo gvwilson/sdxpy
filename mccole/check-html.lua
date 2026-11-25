@@ -90,6 +90,12 @@ for _, path in ipairs(arg) do
       pandoc.walk_block(b, filter)
     end
 
+    -- Pandoc's HTML reader drops the id attribute on <figcaption> (its AST
+    -- Caption type has no Attr), so collect ids from the raw HTML as well.
+    for id in html:gmatch('id="([^"]+)"') do
+      ids[id] = true
+    end
+
     for _, r in ipairs(refs) do
       if not ids[r[2]] then
         report(path, string.format('%s references missing id "%s"', r[1], r[2]))

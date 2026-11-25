@@ -3,7 +3,7 @@ from message import Message
 from backpressure_broker import BackpressureBroker
 
 
-# mccole: init
+# mccole:init
 class BackpressurePublisher(Process):
     """Publisher that adapts to backpressure signals."""
 
@@ -24,9 +24,9 @@ class BackpressurePublisher(Process):
         self.current_interval = base_interval
         self.backpressure_events = 0
 
-    # mccole: /init
+    # mccole:/init
 
-    # mccole: run
+    # mccole:run
     async def run(self):
         """Generate and publish messages, slowing down on backpressure."""
         while True:
@@ -64,4 +64,4 @@ class BackpressurePublisher(Process):
             # Wait before next message.
             await self.timeout(self.current_interval)
 
-    # mccole: /run
+    # mccole:/run

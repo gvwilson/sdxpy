@@ -8,7 +8,7 @@ from tracing_types import BaseCollector, ServiceRequest
 from dsdx import dsdx
 
 
-# mccole: client
+# mccole:client
 class SimpleClient(Process):
     """Client that initiates traced requests."""
 
@@ -41,10 +41,10 @@ class SimpleClient(Process):
         response = await response_queue.get()
 
         return response
-# mccole: /client
+# mccole:/client
 
 
-# mccole: demo
+# mccole:demo
 def main() -> None:
     """Demonstrate JSON-formatted tracing output."""
     env = Environment()
@@ -52,7 +52,7 @@ def main() -> None:
     service = SimpleService(env, "OrderService", collector, verbose=False)
     SimpleClient(env, "Client", service, collector)
     env.run(until=4)
-# mccole: /demo
+# mccole:/demo
 
 
 if __name__ == "__main__":
