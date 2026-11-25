@@ -15,9 +15,10 @@ QUARTO = quarto
 TYPOS_CONFIG ?= config/typos.toml
 SLIDES_EXTRA ?=
 
-MD_SRC = $(wildcard *.qmd) $(wildcard */*.qmd)
+PAGES_SRC = $(wildcard *.qmd) $(wildcard */*.qmd)
+PAGES_DST = $(patsubst %.qmd,$(DOCS)/%.html,$(PAGES_SRC))
 SLIDES_SRC = $(wildcard slides.qmd) $(wildcard */slides.qmd)
-SLIDES_DST = $(patsubst %.qmd,${DOCS}/%.html,${SLIDES_SRC})
+SLIDES_DST = $(patsubst %.qmd,$(DOCS)/%.html,$(SLIDES_SRC))
 SLIDES_FLAGS = \
   -f markdown \
   -t revealjs \
@@ -28,34 +29,35 @@ SLIDES_FLAGS = \
   --mathjax \
   --syntax-highlighting=tango \
   --lua-filter=mccole/inc-pandoc.lua \
-  ${SLIDES_EXTRA}
+  $(SLIDES_EXTRA)
 
 ## commands: show available commands (*)
 commands:
-	@grep -h -E '^##' ${MAKEFILE_LIST} \
+	@grep -h -E '^##' $(MAKEFILE_LIST) \
 	| sed -e 's/## //g' \
 	| column -t -s ':'
 
-## site: render HTML with Quarto
+## site: render pages and slides
 site:
-	${QUARTO} render --to html
-	@mkdir -p ${DOCS}/mccole
-	@cp mccole/mccole-slides.css ${DOCS}/mccole/mccole-slides.css
-	@if [ -d images ]; then cp -r images ${DOCS}/images; fi
-	touch ${DOCS}/.nojekyll
+	$(QUARTO) render --to html
+	@$(MAKE) slides
+	@mkdir -p $(DOCS)/mccole
+	@cp mccole/mccole-slides.css $(DOCS)/mccole/mccole-slides.css
+	@if [ -d images ]; then cp -r images $(DOCS)/images; fi
+	@touch $(DOCS)/.nojekyll
 
-## pdf: render PDF with Quarto
+## pdf: generate PDF
 pdf:
 	mkdir -p pdf
-	${QUARTO} render --to pdf --output-dir=pdf
+	$(QUARTO) render --to pdf --output-dir=pdf
 
 ## serve: preview the site locally
 serve:
-	${QUARTO} preview
+	$(QUARTO) preview
 
 ## publish: publish the site
 publish:
-	${LUA} ${BIN}/publish.lua docs ${OUT} ${EXTRA}
+	$(LUA) $(BIN)/publish.lua docs $(OUT) $(EXTRA)
 
 ## update-mccole: refresh mccole/ from the mcq remote
 update-mccole:
@@ -64,38 +66,42 @@ update-mccole:
 	git checkout mcq/main -- mccole
 
 ## slides: rebuild the slides using Pandoc
-slides: ${SLIDES_DST}
+slides: $(SLIDES_DST)
 
-${DOCS}/%.html: %.qmd
+$(DOCS)/%.html: %.qmd
 	@mkdir -p $(@D)
-	pandoc $< ${SLIDES_FLAGS} -o $@
-	@mkdir -p ${DOCS}/mccole
-	@cp mccole/mccole-slides.css ${DOCS}/mccole/mccole-slides.css
+	pandoc $< $(SLIDES_FLAGS) -o $@
+	@mkdir -p $(DOCS)/mccole
+	@cp mccole/mccole-slides.css $(DOCS)/mccole/mccole-slides.css
 	@sed -i '' '/simple\.css/d' $@
 	@sed -i '' 's:mccole/mccole-slides.css:../mccole/mccole-slides.css:g' $@
 
 ## check: check structure, spelling, etc.
-check: check-bib check-links check-glossary check-formatting check-typos
+check: check-bib check-links check-glossary check-formatting check-typos check-html
 
 ## check-bib: check bibliography
 check-bib:
-	@-${LUA} ${BIN}/check-bib.lua ${BIB} ${MD_SRC}
+	@-$(LUA) $(BIN)/check-bib.lua $(BIB) $(PAGES_SRC)
 
 ## check-links: check Markdown links
 check-links:
-	@-${LUA} ${BIN}/check-links.lua ${LINKS} ${MD_SRC}
+	@-$(LUA) $(BIN)/check-links.lua $(LINKS) $(PAGES_SRC)
 
 ## check-glossary: check glossary references
 check-glossary:
-	@-${LUA} ${BIN}/check-glossary.lua ${GLOSSARY} ${MD_SRC}
+	@-$(LUA) $(BIN)/check-glossary.lua $(GLOSSARY) $(PAGES_SRC)
 
 ## check-formatting: check include formatting
 check-formatting:
-	@-${LUA} ${BIN}/check-formatting.lua ${MD_SRC}
+	@-$(LUA) $(BIN)/check-formatting.lua $(PAGES_SRC)
 
 ## check-typos: check spelling
 check-typos:
-	@-typos -c ${TYPOS_CONFIG} ${MD_SRC} ${SLIDES_SRC}
+	@-typos -c $(TYPOS_CONFIG) $(PAGES_SRC) $(SLIDES_SRC)
+
+## check-html: check accessibility
+check-html:
+	@-$(LUA) $(BIN)/check-html.lua $(DOCS)/*.html $(DOCS)/*/*.html
 
 ## clean: remove generated and cache files
 clean:

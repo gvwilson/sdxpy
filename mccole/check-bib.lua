@@ -1,4 +1,4 @@
--- check-bib.lua
+--
 -- Check that citation keys in Quarto Markdown files match entries in a
 -- BibTeX file.
 --
@@ -13,6 +13,7 @@
 -- The script reports keys that are cited but not defined (along with the file
 -- that cites each one) and keys that are defined but not cited. It exits with
 -- a non-zero status if either report is non-empty.
+--
 
 local script_dir = arg[0] and arg[0]:match("^(.*)/") or "."
 package.path = script_dir .. "/?.lua;" .. package.path

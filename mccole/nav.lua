@@ -1,11 +1,12 @@
--- nav.lua
--- Read chapters and appendices from _quarto.yml and expose them to the
--- HTML template as "chapters" and "appendices" (raw HTML nav lists),
--- "home" (a page-relative path to the site index), and "heading" (the
--- current page's title, used for the <title> element). The page heading
--- is also prepended to the document body as a raw H1 so it renders above
--- the content. Links are prefixed with "../" for pages nested a directory
--- deep, so they resolve without JavaScript.
+--
+-- Read chapters and appendices from _quarto.yml and expose them to the HTML
+-- template as "chapters" and "appendices" (raw HTML nav lists), "home" (a
+-- page-relative path to the site index), and "heading" (the current page's
+-- title, used for the <title> element). The page heading is also prepended to
+-- the document body as a raw H1 so it renders above the content. Links are
+-- prefixed with "../" for pages nested a directory deep, so they resolve
+-- without JavaScript.
+--
 
 local function read_file(path)
   local f = io.open(path, "r")
@@ -17,8 +18,8 @@ end
 
 -- Collect the `- <path>` entries under `key:` (a list indented below the
 -- key). Stops at the first non-list, non-blank line at or above the key's
--- indentation. Good enough for the simple `book: chapters:/appendices:`
--- lists this template uses.
+-- indentation. Good enough for the simple `book: chapters:/appendices:` lists
+-- this template uses.
 local function extract_list(yaml, key)
   local result = {}
   local lines = {}
@@ -66,6 +67,14 @@ local function book_title(yaml)
   return yaml:match("title:%s*(%S+)") or "Home"
 end
 
+local function book_repo_url(yaml)
+  local u = yaml:match('repo%-url:%s*"([^"]*)"')
+  if u then return u end
+  u = yaml:match("repo%-url:%s*'([^']*)'")
+  if u then return u end
+  return yaml:match("repo%-url:%s*(%S+)")
+end
+
 local function build_list(project_dir, paths, prefix)
   local items = {}
   for _, path in ipairs(paths) do
@@ -74,6 +83,15 @@ local function build_list(project_dir, paths, prefix)
     table.insert(items, string.format('<li><a href="%s">%s</a></li>', href, title))
   end
   return '<ul class="topnav-list">' .. table.concat(items) .. '</ul>'
+end
+
+local function build_pager_link(project_dir, path, prefix, dir)
+  local href = prefix .. path:gsub("%.qmd$", ".html")
+  local title = (path == "index.qmd") and "Home" or chapter_title(project_dir, path)
+  if dir == "prev" then
+    return string.format('<a class="pager-link prev" href="%s">&larr; %s</a>', href, title)
+  end
+  return string.format('<a class="pager-link next" href="%s">%s &rarr;</a>', href, title)
 end
 
 function Pandoc(doc)
@@ -117,8 +135,26 @@ function Pandoc(doc)
 
     doc.meta.home = prefix .. "index.html"
     doc.meta.heading = heading
+    local source = book_repo_url(yaml)
+    if source then
+      doc.meta.source = source
+    end
     doc.meta.chapters = pandoc.RawBlock("html", build_list(project_dir, menu_chapters, prefix))
     doc.meta.appendices = pandoc.RawBlock("html", build_list(project_dir, appendices, prefix))
+
+    local all = {}
+    for _, c in ipairs(chapters) do table.insert(all, c) end
+    for _, a in ipairs(appendices) do table.insert(all, a) end
+    local idx
+    for i, p in ipairs(all) do
+      if p == rel then idx = i; break end
+    end
+    if idx and idx > 1 then
+      doc.meta.prev = pandoc.RawBlock("html", build_pager_link(project_dir, all[idx - 1], prefix, "prev"))
+    end
+    if idx and idx < #all then
+      doc.meta.next = pandoc.RawBlock("html", build_pager_link(project_dir, all[idx + 1], prefix, "next"))
+    end
 
     table.insert(doc.blocks, 1, pandoc.RawBlock("html", '<h1 class="title">' .. heading .. '</h1>'))
   end

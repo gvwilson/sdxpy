@@ -1,4 +1,4 @@
--- check-links.lua
+--
 -- Check that "@key" links in Markdown files match definitions in a links file.
 --
 -- Usage: lua check-links.lua LINKS_FILE MARKDOWN_FILE...
@@ -11,6 +11,7 @@
 -- The script reports links that are used but not defined (along with the file
 -- that uses each one) and links that are defined but not used. It exits with
 -- a non-zero status if either report is non-empty.
+--
 
 local script_dir = arg[0] and arg[0]:match("^(.*)/") or "."
 package.path = script_dir .. "/?.lua;" .. package.path

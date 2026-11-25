@@ -1,5 +1,7 @@
--- inc-utils.lua — shared helpers for the {{< inc ... >}} include, used by
--- both inc-quarto.lua (Quarto shortcode) and inc-pandoc.lua (pandoc filter).
+--
+-- shared helpers for the {{< inc ... >}} include, used by both inc-quarto.lua
+-- (Quarto shortcode) and inc-pandoc.lua (pandoc filter).
+--
 
 local M = {}
 

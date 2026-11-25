@@ -1,13 +1,14 @@
--- publish.lua
--- Copy a rendered Quarto book into a shared site tree. The shared tree
--- keeps the mccole CSS directory one level above the book, so this script
--- rewrites every reference to it accordingly.
+--
+-- Copy a rendered Quarto book into a shared site. The shared tree keeps the
+-- mccole CSS directory one level above the book, so this script rewrites every
+-- reference to it accordingly.
 --
 -- Usage: pandoc lua mccole/publish.lua SOURCE DESTINATION [SNIPPET]
 --   SOURCE      directory of rendered HTML (e.g. 'docs')
 --   DESTINATION directory to write into (e.g. '~/third/docs/change')
 --   SNIPPET     optional path to an HTML fragment inserted as the last
 --               element inside each page's <head>
+--
 
 local script_dir = arg[0] and arg[0]:match("^(.*)/") or "."
 package.path = script_dir .. "/?.lua;" .. package.path
@@ -20,8 +21,8 @@ local function join(base, name)
   return base .. "/" .. name
 end
 
--- True if path is an existing directory. list_directory errors on files and
--- on non-existent paths, so a successful call is exactly the check we want.
+-- True if path is an existing directory. list_directory errors on files and on
+-- non-existent paths, so a successful call is exactly the check we want.
 local function is_dir(path)
   return pcall(pandoc.system.list_directory, path)
 end
@@ -36,9 +37,9 @@ local function write_file(path, content)
   f:close()
 end
 
--- Rewrite a src="..." or href="..." attribute value so that it points at
--- the shared '../mccole/' tree. Replacing the bare directory name also
--- handles nested references.
+-- Rewrite a src="..." or href="..." attribute value so that it points at the
+-- shared '../mccole/' tree. Replacing the bare directory name also handles
+-- nested references.
 local function relocate(value)
   return value:gsub("mccole/", "../mccole/")
 end

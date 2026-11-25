@@ -134,6 +134,8 @@ A brief orientation for this Quarto book template.
 - `check-formatting`: no adjacent `{{< inc >}}` lines and no four-colon callouts
   - If `inc` shortcode is used on consecutive lines, they are interpreted as a paragraph
 - `check-typos`: runs `typos -c config/typos.toml`
+- `check-html`: basic accessibility checks on the built HTML
+  - exercised against `fixtures/` via `make check-fixtures`
 
 ## Updating mccole/
 

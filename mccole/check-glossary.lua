@@ -1,4 +1,4 @@
--- check-glossary.lua
+--
 -- Check that glossary shortcode references in Markdown files match entries
 -- in a glossary file.
 --
@@ -15,6 +15,7 @@
 -- referred to more than once (along with the files they occur in). A key
 -- cross-referenced inside the glossary itself (`[text](#key)`) counts as
 -- used. It exits with a non-zero status if any report is non-empty.
+--
 
 local script_dir = arg[0] and arg[0]:match("^(.*)/") or "."
 package.path = script_dir .. "/?.lua;" .. package.path

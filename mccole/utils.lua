@@ -1,5 +1,6 @@
--- utils.lua
--- Shared helpers for the bin/check-*.lua scripts.
+--
+-- Shared helpers for the check-*.lua scripts.
+--
 
 local utils = {}
 

@@ -1,5 +1,6 @@
--- inc-pandoc.lua — expand {{< inc ... >}} shortcodes in pandoc (slides).
--- Shared helpers live in inc-utils.lua.
+--
+-- Expand {{< inc ... >}} shortcodes in pandoc (slides).
+--
 
 local dir = pandoc.path.directory(PANDOC_SCRIPT_FILE)
 local U = dofile(pandoc.path.join({dir, "inc-utils.lua"}))

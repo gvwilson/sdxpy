@@ -1,12 +1,9 @@
--- check-formatting.lua
+--
 -- Check that consecutive {{< inc ... >}} shortcodes are separated by a blank line.
+-- so that they are not read as a paragraph.
 --
 -- Usage: lua check-formatting.lua MARKDOWN_FILE...
 --
--- Adjacent shortcode lines are parsed as one paragraph, so their code blocks
--- merge into a single <pre> in the rendered output. This script reports each
--- file/line where an {{< inc ... >}} line is immediately followed by another,
--- and exits non-zero if any are found.
 
 local script_dir = arg[0] and arg[0]:match("^(.*)/") or "."
 package.path = script_dir .. "/?.lua;" .. package.path
