@@ -51,7 +51,7 @@
 <p>Before they need version control tools or interpreters, programmers need a way to edit text files. Even simple editors like Notepad and <a href="https://www.nano-editor.org/">Nano</a> do a lot of things: moving a cursor, inserting and deleting characters, and more. This is too much to fit into one lesson, so this chapter builds a tool for viewing files, which <a href="../undo/index.html" class="quarto-xref"><span>Chapter 24</span></a> extends to create an editor with undo and redo. Our example is inspired by <a href="https://wasimlorgat.com/posts/editor.html">this tutorial</a> written by <a href="https://wasimlorgat.com/">Wasim Lorgat</a>.</p>
 <h2 data-number="23.1" id="viewer-curses"><span class="header-section-number">23.1</span> Curses</h2>
 <p>Our starting point is the <a href="https://docs.python.org/3/library/curses.html"><code>curses</code></a> module, which handles interaction with text terminals on several different operating systems in a uniform way. A very simple curses-based program looks like this:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> curses</span>
+<div class="sourceCode" id="cb1" data-file="viewer/first_curses.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> curses</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> main(stdscr):</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span> <span class="va">True</span>:</span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>        stdscr.getkey()</span>
@@ -59,14 +59,14 @@
 <span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    curses.wrapper(main)</span></code></pre></div>
 <p><code>curses.wrapper</code> takes a function with a single parameter as input, does some setup, and then calls that function with an object that acts as an interface to the screen. (It is called <code>stdscr</code>, for “standard screen”, by analogy with standard input <code>stdin</code> and standard output <code>stdout</code>.) Our function <code>main</code> is just an infinite loop that consumes keystrokes but does nothing with them. When we run the program, it clears the screen and waits for the user to interrupt it by typing Ctrl-C.</p>
 <p>We’d like to see what the user is typing, but since the program has taken over the screen, <code>print</code> statements won’t be of use. Running this program inside a single-stepping debugger is challenging for the same reason, so for the moment we will cheat and create a <a href="../glossary/index.html#log_file">log file</a> for the program to write to:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>LOG <span class="op">=</span> <span class="va">None</span></span>
+<div class="sourceCode" id="cb2" data-file="viewer/util.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>LOG <span class="op">=</span> <span class="va">None</span></span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> open_log(filename):</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">global</span> LOG</span>
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    LOG <span class="op">=</span> <span class="bu">open</span>(filename, <span class="st">"w"</span>)</span>
 <span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> log(<span class="op">*</span>args):</span>
 <span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="op">*</span>args, <span class="bu">file</span><span class="op">=</span>LOG)</span></code></pre></div>
 <p>With this in hand, we can rewrite our program to take the name of the log file as its sole command-line argument and print messages to that file to show the keys that are being pressed. We can also modify the program so that when the user presses <code>q</code>, the program exits cleanly:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> main(stdscr):</span>
+<div class="sourceCode" id="cb3" data-file="viewer/logging_curses.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> main(stdscr):</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span> <span class="va">True</span>:</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>        key <span class="op">=</span> stdscr.getkey()</span>
 <span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>        util.log(<span class="bu">repr</span>(key))</span>
@@ -83,7 +83,7 @@
 <li><p>wait for a keystroke, and</p></li>
 <li><p>exit if the key is a <code>q</code>.</p></li>
 </ol>
-<div class="sourceCode" id="cb4"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> main(stdscr, lines):</span>
+<div class="sourceCode" id="cb4" data-file="viewer/show_lines.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> main(stdscr, lines):</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span> <span class="va">True</span>:</span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>        stdscr.erase()</span>
 <span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> (y, line) <span class="kw">in</span> <span class="bu">enumerate</span>(lines):</span>
@@ -94,14 +94,14 @@
 <p>Two things about this function need to be kept in mind. First, as explained in <a href="../layout/index.html" class="quarto-xref"><span>Chapter 14</span></a>, screens put (0, 0) in the upper left rather than the lower left, and increasing values of Y move down rather than up. To make things even more confusing, <code>curses</code> uses (row, column) coordinates, so we have to remember to write (y, x) instead of (x, y).</p>
 <p>The other oddity in this function is that it erases the entire screen each time the user presses a key. Doing this is unnecessary in most cases—if the user’s action doesn’t modify the text being shown, there’s no need to redraw it—but keeping track of which actions do and don’t require redraw would require extra code (and extra debugging). For now, we’ll do the simple, inefficient thing.</p>
 <p>Here’s how we run our revised <code>main</code> function:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="va">__name__</span> <span class="op">==</span> <span class="st">"__main__"</span>:</span>
+<div class="sourceCode" id="cb5" data-file="viewer/show_lines.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="va">__name__</span> <span class="op">==</span> <span class="st">"__main__"</span>:</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    num_lines, logfile <span class="op">=</span> <span class="bu">int</span>(sys.argv[<span class="dv">1</span>]), sys.argv[<span class="dv">2</span>]</span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    lines <span class="op">=</span> make_lines(num_lines)</span>
 <span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    open_log(logfile)</span>
 <span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    curses.wrapper(<span class="kw">lambda</span> stdscr: main(stdscr, lines))</span></code></pre></div>
 <p>From top to bottom, we make a list of strings to display, open the log file, and then use <code>lambda</code> to make an anonymous function that takes a single screen object as input (which <code>curses.wrapper</code> requires) and immediately calls <code>main</code> with the two arguments that <em>it</em> requires.</p>
 <p>A real text viewer would display the contents of a file, but for development we will just make up a regular pattern of text:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> string <span class="im">import</span> ascii_lowercase</span>
+<div class="sourceCode" id="cb6" data-file="viewer/util.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> string <span class="im">import</span> ascii_lowercase</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> make_lines(num_lines):</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    result <span class="op">=</span> []</span>
 <span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(num_lines):</span>
@@ -109,7 +109,7 @@
 <span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>        result.append(ch <span class="op">+</span> <span class="st">""</span>.join(<span class="bu">str</span>(j <span class="op">%</span> <span class="dv">10</span>) <span class="cf">for</span> j <span class="kw">in</span> <span class="bu">range</span>(i)))</span>
 <span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> result</span></code></pre></div>
 <p>If we ask for five lines, the pattern is:</p>
-<pre><code>a
+<pre data-file="viewer/make_lines.out"><code>a
 b0
 c01
 d012
@@ -117,7 +117,7 @@ e0123</code></pre>
 <p>These lines are a very (very) simple example of <a href="../glossary/index.html#synthetic_data">synthetic data</a>, i.e., data that is made up for testing purposes. If the viewer doesn’t work for this text it probably won’t work on actual files, and the patterns in the synthetic data will help us spot mistakes in the display.</p>
 <h2 data-number="23.2" id="viewer-window"><span class="header-section-number">23.2</span> Windowing</h2>
 <p>Our file viewer works, but only for small examples. If we ask it to display 100 lines, or anything else that is larger than our screen, it falls over with the message <code>_curses.error: addwstr() returned ERR</code> because it is trying to draw outside screen. The solution is to create a <code>Window</code> class that knows how big the screen is and only displays lines (or parts of lines) that fit inside it:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Window:</span>
+<div class="sourceCode" id="cb8" data-file="viewer/use_window.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Window:</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, screen):</span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._screen <span class="op">=</span> screen</span>
 <span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> draw(<span class="va">self</span>, lines):</span>
@@ -126,7 +126,7 @@ e0123</code></pre>
 <span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="dv">0</span> <span class="op">&lt;=</span> y <span class="op">&lt;</span> curses.LINES:</span>
 <span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>                <span class="va">self</span>._screen.addstr(y, <span class="dv">0</span>, line[:curses.COLS])</span></code></pre></div>
 <p>Our <code>main</code> function is then:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> main(stdscr, lines):</span>
+<div class="sourceCode" id="cb9" data-file="viewer/use_window.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> main(stdscr, lines):</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    window <span class="op">=</span> Window(stdscr)</span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    window.draw(lines)</span>
 <span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span> <span class="va">True</span>:</span>
@@ -145,7 +145,7 @@ Figure&nbsp;23.1: Order of operations in delayed construction.
 </figure>
 </div>
 <p>Nothing says we have to make our window exactly the same size as the terminal that is displaying it. In fact, testing will be a lot simpler if we can create windows of arbitrary size (so long as they aren’t <em>larger</em> than the terminal). This version of <code>Window</code> takes an extra parameter <code>size</code> which is either <code>None</code> (meaning “use the full terminal”) or a (rows, columns) pair specifying the size we want:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Window:</span>
+<div class="sourceCode" id="cb10" data-file="viewer/size_window.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Window:</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, screen, size):</span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._screen <span class="op">=</span> screen</span>
 <span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> size <span class="kw">is</span> <span class="va">None</span>:</span>
@@ -160,9 +160,9 @@ Figure&nbsp;23.1: Order of operations in delayed construction.
 <span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="dv">0</span> <span class="op">&lt;=</span> y <span class="op">&lt;</span> <span class="va">self</span>._nrow:</span>
 <span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>                <span class="va">self</span>._screen.addstr(y, <span class="dv">0</span>, line[:<span class="va">self</span>._ncol])</span></code></pre></div>
 <p>We’re going to have a lot of two-dimensional (row, column) coordinates in this program, so let’s define a pair of constants <code>ROW</code> and <code>COL</code> to be more readable than 0 and 1 or <code>R</code> and <code>C</code>. (We should really create an <a href="../glossary/index.html#enumeration">enumeration</a>, but a pair of constants is good enough for now.)</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>ROW <span class="op">=</span> <span class="dv">0</span></span>
+<div class="sourceCode" id="cb11" data-file="viewer/util.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>ROW <span class="op">=</span> <span class="dv">0</span></span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>COL <span class="op">=</span> <span class="dv">1</span></span></code></pre></div>
-<div class="sourceCode" id="cb12"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Window:</span>
+<div class="sourceCode" id="cb12" data-file="viewer/cursor_const.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Window:</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>        <span class="kw">def</span> draw(<span class="va">self</span>, lines):</span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._screen.erase()</span>
 <span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> (y, line) <span class="kw">in</span> <span class="bu">enumerate</span>(lines):</span>
@@ -170,7 +170,7 @@ Figure&nbsp;23.1: Order of operations in delayed construction.
 <span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>                <span class="va">self</span>._screen.addstr(y, <span class="dv">0</span>, line[:<span class="va">self</span>._size[COL]])</span></code></pre></div>
 <h2 data-number="23.3" id="viewer-move"><span class="header-section-number">23.3</span> Moving</h2>
 <p>Our program no longer crashes when given large input to display, but we can’t see any of the text outside the window. To fix that, we need to teach the application to scroll. let’s create another class to keep track of the position of a cursor:</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Cursor:</span>
+<div class="sourceCode" id="cb13" data-file="viewer/move_cursor.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Cursor:</span>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>):</span>
 <span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._pos <span class="op">=</span> [<span class="dv">0</span>, <span class="dv">0</span>]</span>
 <span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> pos(<span class="va">self</span>):</span>
@@ -181,7 +181,7 @@ Figure&nbsp;23.1: Order of operations in delayed construction.
 <span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> right(<span class="va">self</span>): <span class="va">self</span>._pos[COL] <span class="op">+=</span> <span class="dv">1</span></span></code></pre></div>
 <p>The cursor keeps track of its current (row, column) position in a list, but <code>Cursor.pos</code> returns the location as a separate tuple so that other code can’t modify it. In general, nothing outside an object should be able to change the data structures that object uses to keep track of its state; otherwise, it’s very easy for the internal state to become inconsistent in difficult-to-debug ways.</p>
 <p>Now that we have a way to keep track of where the cursor is, we can tell <code>curses</code> to draw the cursor in the right location each time it renders the screen:</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> main(stdscr, size, lines):</span>
+<div class="sourceCode" id="cb14" data-file="viewer/move_cursor.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> main(stdscr, size, lines):</span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>    window <span class="op">=</span> Window(stdscr, size)</span>
 <span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    cursor <span class="op">=</span> Cursor()</span>
 <span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span> <span class="va">True</span>:</span>
@@ -199,7 +199,7 @@ Figure&nbsp;23.1: Order of operations in delayed construction.
 <p>We need to constrain the cursor’s movement so that it stays inside the text (not just the window), while simultaneously moving the text up or down when appropriate. Before tackling those problems, we will reorganize the code to give ourselves a better starting point.</p>
 <h2 data-number="23.4" id="viewer-refactor"><span class="header-section-number">23.4</span> Refactoring</h2>
 <p>Our first change is to write a class to represent the application as a whole; our program will then create one instance of this class, which will own the window and cursor. The trick to making this work is to take advantage of one of the protocols introduced in <a href="../protocols/index.html" class="quarto-xref"><span>Chapter 9</span></a>: if an object has a method named <code>__call__</code>, that method will be invoked when the object is “called” as if it were a function:</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Pretend:</span>
+<div class="sourceCode" id="cb15" data-file="viewer/call_example.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Pretend:</span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, increment):</span>
 <span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._increment <span class="op">=</span> increment</span>
 <span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__call__</span>(<span class="va">self</span>, value):</span>
@@ -207,9 +207,9 @@ Figure&nbsp;23.1: Order of operations in delayed construction.
 <span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>p <span class="op">=</span> Pretend(<span class="dv">3</span>)</span>
 <span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> p(<span class="dv">10</span>)</span>
 <span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(result)</span></code></pre></div>
-<pre><code>13</code></pre>
+<pre data-file="viewer/call_example.out"><code>13</code></pre>
 <p>Since the <code>MainApp</code> class below defines <code>__call__</code>, <code>curses.wrapper</code> believes we have given it the single-parameter function it needs:</p>
-<div class="sourceCode" id="cb17"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> MainApp:</span>
+<div class="sourceCode" id="cb17" data-file="viewer/main_app.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> MainApp:</span>
 <span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, size, lines):</span>
 <span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._size <span class="op">=</span> size</span>
 <span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._lines <span class="op">=</span> lines</span>
@@ -221,7 +221,7 @@ Figure&nbsp;23.1: Order of operations in delayed construction.
 <span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._window <span class="op">=</span> Window(<span class="va">self</span>._screen, <span class="va">self</span>._size)</span>
 <span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._cursor <span class="op">=</span> Cursor()</span></code></pre></div>
 <p>The <code>__call__</code> method calls <code>_setup</code> to create and store the objects the application needs, then <code>_run</code> to handle interaction. The latter is:</p>
-<div class="sourceCode" id="cb18"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _run(<span class="va">self</span>):</span>
+<div class="sourceCode" id="cb18" data-file="viewer/main_app.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _run(<span class="va">self</span>):</span>
 <span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>        <span class="cf">while</span> <span class="va">True</span>:</span>
 <span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>._window.draw(<span class="va">self</span>._lines)</span>
 <span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>._screen.move(<span class="op">*</span><span class="va">self</span>._cursor.pos())</span>
@@ -233,7 +233,7 @@ Figure&nbsp;23.1: Order of operations in delayed construction.
 <span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>            <span class="cf">elif</span> key.lower() <span class="op">==</span> <span class="st">"q"</span>:</span>
 <span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a>                <span class="cf">return</span></span></code></pre></div>
 <p>Finally, we pull the startup code into a function <code>start</code> so that we can use it in future versions of this code:</p>
-<div class="sourceCode" id="cb19"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> start():</span>
+<div class="sourceCode" id="cb19" data-file="viewer/util.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> start():</span>
 <span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>    num_lines, logfile <span class="op">=</span> <span class="bu">int</span>(sys.argv[<span class="dv">1</span>]), sys.argv[<span class="dv">2</span>]</span>
 <span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>    size <span class="op">=</span> <span class="va">None</span></span>
 <span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="bu">len</span>(sys.argv) <span class="op">&gt;</span> <span class="dv">3</span>:</span>
@@ -242,15 +242,15 @@ Figure&nbsp;23.1: Order of operations in delayed construction.
 <span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>    open_log(logfile)</span>
 <span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> size, lines</span></code></pre></div>
 <p>and then launch our application like this:</p>
-<div class="sourceCode" id="cb20"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="va">__name__</span> <span class="op">==</span> <span class="st">"__main__"</span>:</span>
+<div class="sourceCode" id="cb20" data-file="viewer/main_app.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="va">__name__</span> <span class="op">==</span> <span class="st">"__main__"</span>:</span>
 <span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>    size, lines <span class="op">=</span> start()</span>
 <span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>    app <span class="op">=</span> MainApp(size, lines)</span>
 <span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>    curses.wrapper(app)</span></code></pre></div>
 <p>Next, we refactor <code>_run</code> to handle keystrokes using dynamic dispatch instead of a long chain of <code>if</code>/<code>elif</code> statement:</p>
-<div class="sourceCode" id="cb21"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb21" data-file="viewer/dispatch_keys.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>A little experimentation showed that while the <code>curses</code> module uses names like <code>"KEY_DOWN"</code> for arrow keys, it returns actual control codes for key combinations like Ctrl-X. The <code>TRANSLATE</code> dictionary turns these into human-readable names that we can glue together with <code>_do_</code> to make a method name; we got the hexadecimal value <code>"\x18"</code> by logging keystrokes to a file and then looking at its contents. We could probably have found this value in some documentation somewhere if we had looked hard enough, but a ten-second experiment seemed simpler.</p>
 <p>With <code>_interact</code> in place, we can rewrite <code>_run</code> to be just five lines long:</p>
-<div class="sourceCode" id="cb22"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> DispatchApp(MainApp):</span>
+<div class="sourceCode" id="cb22" data-file="viewer/dispatch_keys.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> DispatchApp(MainApp):</span>
 <span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, size, lines):</span>
 <span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>        <span class="bu">super</span>().<span class="fu">__init__</span>(size, lines)</span>
 <span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._running <span class="op">=</span> <span class="va">True</span></span>
@@ -268,13 +268,13 @@ Figure&nbsp;23.1: Order of operations in delayed construction.
 </blockquote>
 </div>
 <p>We now have classes to represent the application, the window, and the cursor, but we are still storing the text to display as a naked list of lines. Let’s wrap it up in a class:</p>
-<div class="sourceCode" id="cb23"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Buffer:</span>
+<div class="sourceCode" id="cb23" data-file="viewer/buffer_class.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Buffer:</span>
 <span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, lines):</span>
 <span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._lines <span class="op">=</span> lines[:]</span>
 <span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> lines(<span class="va">self</span>):</span>
 <span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>._lines</span></code></pre></div>
 <p>This <a href="../glossary/index.html#buffer_text">text buffer</a> class doesn’t do much yet, but will later keep track of the viewable region. Again, we make a copy of <code>lines</code> rather than using the list the caller gives us so that other code can’t change the buffer’s internals. The corresponding change to the application class is:</p>
-<div class="sourceCode" id="cb24"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> BufferApp(DispatchApp):</span>
+<div class="sourceCode" id="cb24" data-file="viewer/buffer_class.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> BufferApp(DispatchApp):</span>
 <span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, size, lines):</span>
 <span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>        <span class="bu">super</span>().<span class="fu">__init__</span>(size, lines)</span>
 <span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _setup(<span class="va">self</span>, screen):</span>
@@ -296,7 +296,7 @@ Figure&nbsp;23.1: Order of operations in delayed construction.
 </div>
 <h2 data-number="23.5" id="viewer-clip"><span class="header-section-number">23.5</span> Clipping</h2>
 <p>We are now ready to keep the cursor inside both the text and the screen. The <code>ClipCursor</code> class below takes the buffer as a constructor argument so that it can ask how many rows there are and how big each one is, but its <code>up</code>, <code>down</code>, <code>left</code>, and <code>right</code> methods have exactly the same signatures as the corresponding methods in the original <code>Cursor</code> class. As a result, while we have to change the code that <em>creates</em> a cursor, we won’t have to make any changes to the code that <em>uses</em> the cursor:</p>
-<div class="sourceCode" id="cb25"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> ClipCursor(Cursor):</span>
+<div class="sourceCode" id="cb25" data-file="viewer/clip_cursor.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> ClipCursor(Cursor):</span>
 <span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, <span class="bu">buffer</span>):</span>
 <span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>        <span class="bu">super</span>().<span class="fu">__init__</span>()</span>
 <span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._buffer <span class="op">=</span> <span class="bu">buffer</span></span>
@@ -312,7 +312,7 @@ Figure&nbsp;23.1: Order of operations in delayed construction.
 <span id="cb25-14"><a href="#cb25-14" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>._buffer.ncol(<span class="va">self</span>._pos[ROW])<span class="op">-</span><span class="dv">1</span></span>
 <span id="cb25-15"><a href="#cb25-15" aria-hidden="true" tabindex="-1"></a>        )</span></code></pre></div>
 <p>The logic in the movement methods in <code>ClipCursor</code> is relatively straightforward. If the user wants to go up, don’t let the cursor go above line 0. If the user wants to go down, on the other hand, don’t let the cursor go below the last line, and so on. These methods rely on the buffer being able to report the number of rows it has and the number of columns in a particular row, so we define a new <code>ClipBuffer</code> class that provides those, and then override the <code>_make_buffer</code> and <code>_make_cursor</code> methods in the application class to construct the appropriate objects <em>without</em> changing the kind of window we are creating:</p>
-<div class="sourceCode" id="cb26"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> ClipBuffer(Buffer):</span>
+<div class="sourceCode" id="cb26" data-file="viewer/clip_cursor.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> ClipBuffer(Buffer):</span>
 <span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> nrow(<span class="va">self</span>):</span>
 <span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="bu">len</span>(<span class="va">self</span>._lines)</span>
 <span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> ncol(<span class="va">self</span>, row):</span>
@@ -323,7 +323,7 @@ Figure&nbsp;23.1: Order of operations in delayed construction.
 <span id="cb26-9"><a href="#cb26-9" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _make_cursor(<span class="va">self</span>):</span>
 <span id="cb26-10"><a href="#cb26-10" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._cursor <span class="op">=</span> ClipCursor(<span class="va">self</span>._buffer)</span></code></pre></div>
 <p>When we run this program, we are no longer able to move the cursor outside the window or outside the displayed text—unless, that is, we go to the end of a long line and then move up to a shorter one. The problem is that <code>up</code> and <code>down</code> only change the cursor’s idea of the row it is on; they don’t check that the column position is still inside the text. The fix is simple:</p>
-<div class="sourceCode" id="cb27"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> ClipCursorFixed(ClipCursor):</span>
+<div class="sourceCode" id="cb27" data-file="viewer/clip_fixed.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> ClipCursorFixed(ClipCursor):</span>
 <span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> up(<span class="va">self</span>):</span>
 <span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>        <span class="bu">super</span>().up()</span>
 <span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._fix()</span>
@@ -337,7 +337,7 @@ Figure&nbsp;23.1: Order of operations in delayed construction.
 <p>One sign of a good design is that there is one (hopefully obvious) place to make a change in order to fix a bug or add a feature. By that measure, we seem to be on the right track.</p>
 <h2 data-number="23.6" id="viewer-continue"><span class="header-section-number">23.6</span> Viewport</h2>
 <p>We are finally ready to scroll the text vertically so that all of the lines can be seen no matter how small the window is. (We will leave horizontal scrolling as an exercise.) A full-featured editor would introduce another class, often called a <a href="../glossary/index.html#viewport">viewport</a>, to track the currently-visible portion of the buffer. To keep things simple, we will add two member variables to the buffer instead to keep track of the top-most visible line and the height of the window:</p>
-<div class="sourceCode" id="cb28"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> ViewportBuffer(ClipBuffer):</span>
+<div class="sourceCode" id="cb28" data-file="viewer/viewport.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> ViewportBuffer(ClipBuffer):</span>
 <span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, lines):</span>
 <span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>        <span class="bu">super</span>().<span class="fu">__init__</span>(lines)</span>
 <span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._top <span class="op">=</span> <span class="dv">0</span></span>
@@ -350,11 +350,11 @@ Figure&nbsp;23.1: Order of operations in delayed construction.
 <span id="cb28-11"><a href="#cb28-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>._top <span class="op">+</span> <span class="va">self</span>._height</span></code></pre></div>
 <p>The most important change in the buffer is that <code>lines</code> returns the visible portion of the text rather than all of it. Another change is that the buffer initializes <code>_height</code> to <code>None</code> and requires someone to set it to a real value later because the application’s <code>_setup</code> method creates the cursor, buffer, and window independently. If we were building a single class rather than layering tutorial classes on top of each other, we would probably go back and change <code>_setup</code> to remove the need for this.</p>
 <p>Our buffer also gains two more methods. The first transforms the cursor’s position from buffer coordinates to screen coordinates:</p>
-<div class="sourceCode" id="cb29"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb29" data-file="viewer/viewport.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>The second method moves <code>_top</code> up or down when we reach the edge of the display:</p>
-<div class="sourceCode" id="cb30"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb30" data-file="viewer/viewport.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>As before, we derive a new application class to create the right kind of buffer object. We also override <code>_run</code> to scroll the buffer after each interaction with the user:</p>
-<div class="sourceCode" id="cb31"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> ViewportApp(ClipAppFixed):</span>
+<div class="sourceCode" id="cb31" data-file="viewer/viewport.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> ViewportApp(ClipAppFixed):</span>
 <span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _make_buffer(<span class="va">self</span>):</span>
 <span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._buffer <span class="op">=</span> ViewportBuffer(<span class="va">self</span>._lines)</span>
 <span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _make_cursor(<span class="va">self</span>):</span>
@@ -368,7 +368,7 @@ Figure&nbsp;23.1: Order of operations in delayed construction.
 <span id="cb31-12"><a href="#cb31-12" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>._interact()</span>
 <span id="cb31-13"><a href="#cb31-13" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>._buffer.scroll(<span class="op">*</span><span class="va">self</span>._cursor.pos())</span></code></pre></div>
 <p>Notice that the <code>ViewportApp</code> class creates a <code>ViewportCursor</code>. When we were testing the program, we discovered that we had introduced a bug: the cursor could go outside the window again if the line it was currently on was wider than the window. The solution is to add another check to <code>_fix</code> and to ensure that left and right movement constrain the cursor’s position in the same way as vertical movement:</p>
-<div class="sourceCode" id="cb32"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> ViewportCursor(ClipCursorFixed):</span>
+<div class="sourceCode" id="cb32" data-file="viewer/viewport.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> ViewportCursor(ClipCursorFixed):</span>
 <span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, <span class="bu">buffer</span>, window):</span>
 <span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>        <span class="bu">super</span>().<span class="fu">__init__</span>(<span class="bu">buffer</span>)</span>
 <span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._window <span class="op">=</span> window</span>
@@ -430,6 +430,14 @@ Figure&nbsp;23.3: Class definitions and inheritance in lesson.
     <a class="pager-link next" href="../undo/index.html">Undo and Redo →</a>
   </nav>
 </footer>
+<script>
+document.addEventListener('click', function (e) {
+  var link = e.target.closest && e.target.closest('a');
+  document.querySelectorAll('details.topnav-dropdown[open]').forEach(function (d) {
+    if (!d.contains(e.target) || (link && d.contains(link))) d.removeAttribute('open');
+  });
+});
+</script>
 
 
 </body></html>

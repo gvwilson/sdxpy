@@ -56,7 +56,7 @@
 <p>It isn’t hard to compare simple semantic version identifiers, but handling <a href="https://semver.org/">the whole standard</a> is almost as tricky as handling dates and times correctly. Our examples therefore number versions with plain integers; we recommend the <a href="https://pypi.org/project/semantic-version/"><code>semantic-version</code></a> package for working with the real thing.</p>
 <h2 data-number="20.2" id="pack-exhaustive"><span class="header-section-number">20.2</span> Exhaustive Search</h2>
 <p>To avoid messing around with parsers, we store the manifest of available packages as JSON:</p>
-<pre><code>{
+<pre data-file="pack/triple.json"><code>{
   "A": {
     "3": {"B": ["3", "2"], "C": ["2"]},
     "2": {"B": ["2"],      "C": ["2", "1"]},
@@ -108,7 +108,7 @@ Figure&nbsp;20.2: Finding allowable combinations of package versions.
 </blockquote>
 </div>
 <p>Our brute-force program generates all possible combinations of package versions, then eliminates ones that aren’t compatible with the manifest. Its main body is just those steps in order with a few <code>print</code> statements to show the results:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> main():</span>
+<div class="sourceCode" id="cb2" data-file="pack/exhaustive.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> main():</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    manifest <span class="op">=</span> json.load(sys.stdin)</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    possible <span class="op">=</span> make_possibilities(manifest)</span>
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="bu">len</span>(possible)<span class="sc">}</span><span class="ss"> possibilities"</span>)</span>
@@ -117,7 +117,7 @@ Figure&nbsp;20.2: Finding allowable combinations of package versions.
 <span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> a <span class="kw">in</span> allowed:</span>
 <span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(a)</span></code></pre></div>
 <p>To generate the possibilities, we create a list of the available versions of each package, then use Python’s <a href="https://docs.python.org/3/library/itertools.html"><code>itertools</code></a> module to generate the <a href="../glossary/index.html#cross_product">cross product</a> that contains all possible combinations of items (<a href="#fig-pack-product" class="quarto-xref">Figure&nbsp;<span>20.3</span></a>):</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> make_possibilities(manifest):</span>
+<div class="sourceCode" id="cb3" data-file="pack/exhaustive.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> make_possibilities(manifest):</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    available <span class="op">=</span> []</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> package, versions <span class="kw">in</span> manifest.items():</span>
 <span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>        available.append([(package, v) <span class="cf">for</span> v <span class="kw">in</span> versions])</span>
@@ -140,7 +140,7 @@ Figure&nbsp;20.3: Generating all possible combinations of items.
 <li><p>If we haven’t ruled out a candidate after doing all these checks, we add it to the list of allowed configurations.</p></li>
 </ol>
 <p>Sure enough, these rules find 3 valid combinations among our 18 possibilities:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> compatible(manifest, combination):</span>
+<div class="sourceCode" id="cb4" data-file="pack/exhaustive.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> compatible(manifest, combination):</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> package_i, version_i <span class="kw">in</span> combination:</span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>        lookup_i <span class="op">=</span> manifest[package_i][version_i]</span>
 <span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> package_j, version_j <span class="kw">in</span> combination:</span>
@@ -151,14 +151,14 @@ Figure&nbsp;20.3: Generating all possible combinations of items.
 <span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> version_j <span class="kw">not</span> <span class="kw">in</span> lookup_i[package_j]:</span>
 <span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>                <span class="cf">return</span> <span class="va">False</span></span>
 <span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="va">True</span></span></code></pre></div>
-<pre><code>18 possibilities
+<pre data-file="pack/exhaustive.out"><code>18 possibilities
 3 allowed
 (('A', '3'), ('B', '3'), ('C', '2'))
 (('A', '2'), ('B', '2'), ('C', '1'))
 (('A', '1'), ('B', '1'), ('C', '1'))</code></pre>
 <h2 data-number="20.3" id="pack-manual"><span class="header-section-number">20.3</span> Generating Possibilities Manually</h2>
 <p>Our brute-force code uses <code>itertools.product</code> to generate all possible combinations of several lists of items. To see how it works, let’s rewrite <code>make_possibilities</code> to use a function of our own:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> make_possibilities(manifest):</span>
+<div class="sourceCode" id="cb6" data-file="pack/manual.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> make_possibilities(manifest):</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    available <span class="op">=</span> []</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> package, versions <span class="kw">in</span> manifest.items():</span>
 <span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>        available.append([(package, v) <span class="cf">for</span> v <span class="kw">in</span> versions])</span>
@@ -167,14 +167,14 @@ Figure&nbsp;20.3: Generating all possible combinations of items.
 <span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> accum</span></code></pre></div>
 <p>The first half creates the same list of lists as before, where each sub-list is the available versions of a single package. It then creates an empty <a href="../glossary/index.html#accumulator">accumulator</a> to collect all the combinations and calls a recursive function called <code>_make_possible</code> to fill it in.</p>
 <p>Each call to <code>_make_possible</code> handles one package’s worth of work (<a href="#fig-pack-recursive" class="quarto-xref">Figure&nbsp;<span>20.4</span></a>). If the package is X, the function loops over the available versions of X, adds that version to the combination in progress, and calls itself with the remaining lists of versions. If there aren’t any more lists to loop over, the recursive calls must have included exactly one version of each package, so the combination is appended to the accumulator.</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> _make_possible(remaining, current, accum):</span>
+<div class="sourceCode" id="cb7" data-file="pack/manual.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> _make_possible(remaining, current, accum):</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="kw">not</span> remaining:</span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>        accum.append(current)</span>
 <span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span>:</span>
 <span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>        head, tail <span class="op">=</span> remaining[<span class="dv">0</span>], remaining[<span class="dv">1</span>:]</span>
 <span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> h <span class="kw">in</span> head:</span>
 <span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>            _make_possible(tail, current <span class="op">+</span> [h], accum)</span></code></pre></div>
-<pre><code>18 possibilities
+<pre data-file="pack/manual.out"><code>18 possibilities
 3 allowed
 [('A', '3'), ('B', '3'), ('C', '2')]
 [('A', '2'), ('B', '2'), ('C', '1')]
@@ -194,7 +194,7 @@ Figure&nbsp;20.4: Generating all possible combinations of items recursively.
 <h2 data-number="20.4" id="pack-incremental"><span class="header-section-number">20.4</span> Incremental Search</h2>
 <p>Generating an exponentiality of combinations and then throwing most of them away is inefficient. Instead, we can modify the recursive generator to stop if a partially-generated combination of packages isn’t legal. Combining generation and checking made the code more complicated, but as we’ll see, it leads to some significant improvements.</p>
 <p>The main function for our modified program is similar to its predecessor. After loading the manifest, we generate a list of all package names. Unlike our earlier code, the entries in this list don’t include versions because we’re going to be checking those as we go:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> main():</span>
+<div class="sourceCode" id="cb9" data-file="pack/incremental.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> main():</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    manifest <span class="op">=</span> json.load(sys.stdin)</span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    packages <span class="op">=</span> <span class="bu">list</span>(manifest.keys())</span>
 <span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="bu">len</span>(sys.argv) <span class="op">&gt;</span> <span class="dv">1</span>:</span>
@@ -213,7 +213,7 @@ Figure&nbsp;20.4: Generating all possible combinations of items recursively.
 <li><p>The partially-completed combination we’re going to extend next.</p></li>
 <li><p>A count of the number of combinations we’ve considered so far, which we will use as a measure of efficiency.</p></li>
 </ol>
-<div class="sourceCode" id="cb10"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> find(manifest, remaining, accum, current, count):</span>
+<div class="sourceCode" id="cb10" data-file="pack/incremental.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> find(manifest, remaining, accum, current, count):</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>    count <span class="op">+=</span> <span class="dv">1</span></span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="kw">not</span> remaining:</span>
 <span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>        accum.append(current)</span>
@@ -232,14 +232,14 @@ Figure&nbsp;20.4: Generating all possible combinations of items recursively.
 <li><p>Otherwise, we put the next package to consider in <code>head</code> and all the remaining packages in <code>tail</code>. We then check each version of the <code>head</code> package in turn. If adding it to the current collection of packages wouldn’t cause a problem, we continue searching with that version in place.</p></li>
 </ol>
 <p>How much work does incremental checking save us? Using the same test case as before, we only create 11 candidates instead of 18, so we’ve reduced our search by about a third:</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> incremental.py <span class="op">&lt;</span> triple.json</span></code></pre></div>
-<pre><code>count 11
+<div class="sourceCode" id="cb11" data-file="pack/incremental.sh"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> incremental.py <span class="op">&lt;</span> triple.json</span></code></pre></div>
+<pre data-file="pack/incremental.out"><code>count 11
 [('A', '3'), ('B', '3'), ('C', '2')]
 [('A', '2'), ('B', '2'), ('C', '1')]
 [('A', '1'), ('B', '1'), ('C', '1')]</code></pre>
 <p>If we reverse the order in which we search, though, we only generate half as many candidates as before:</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> incremental.py reversed <span class="op">&lt;</span> triple.json</span></code></pre></div>
-<pre><code>count 9
+<div class="sourceCode" id="cb13" data-file="pack/incremental_reverse.sh"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> incremental.py reversed <span class="op">&lt;</span> triple.json</span></code></pre></div>
+<pre data-file="pack/incremental_reverse.out"><code>count 9
 [('C', '2'), ('B', '3'), ('A', '3')]
 [('C', '1'), ('B', '2'), ('A', '2')]
 [('C', '1'), ('B', '1'), ('A', '1')]</code></pre>
@@ -247,38 +247,38 @@ Figure&nbsp;20.4: Generating all possible combinations of items recursively.
 <p>Cutting the amount of work we have to do is good: can we do better? The answer is yes, but the algorithms involved are complicated and the jargon almost impenetrable. To give you a taste of how they work, we will solve our example problem using the <a href="https://en.wikipedia.org/wiki/Z3_Theorem_Prover">Z3 theorem prover</a>.</p>
 <p>Installing packages and proving theorems may not seem to have a lot to do with each other, but an automated theorem prover’s purpose is to determine how to make a set of logical propositions consistent with each other, or to prove that doing so is impossible. If we frame our problem as, “Is there a choice of package versions that satisfies all the inter-package dependencies at once?”, then a theorem prover is exactly what we need.</p>
 <p>To start, let’s import a few things from <code>z3</code> and create three <a href="../glossary/index.html#boolean_value">Boolean variables</a>:</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> z3 <span class="im">import</span> Bool</span>
+<div class="sourceCode" id="cb15" data-file="pack/z3_setup.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> z3 <span class="im">import</span> Bool</span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>A <span class="op">=</span> Bool(<span class="st">"A"</span>)</span>
 <span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>B <span class="op">=</span> Bool(<span class="st">"B"</span>)</span>
 <span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>C <span class="op">=</span> Bool(<span class="st">"C"</span>)</span></code></pre></div>
 <p>Our three variables don’t have values yet—they’re not either true or false. Instead, each one represents all the possible states a Boolean could be in. If we had asked <code>z3</code> to create one of its special integers, it would have given us something that initially encompassed all possible integer values.</p>
 <p>Instead of assigning values to <code>A</code>, <code>B</code>, and <code>C</code>, we specify constraints on them, then ask <code>z3</code> whether it’s possible to find a set of values, or <a href="../glossary/index.html#model">model</a>, that satisfies all those constraints at once. For example, we can ask whether it’s possible for <code>A</code> to equal <code>B</code> and <code>B</code> to equal <code>C</code> at the same time. The answer is “yes”, and the solution the solver finds is to make them all <code>False</code>:</p>
-<div class="sourceCode" id="cb16"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>solver <span class="op">=</span> Solver()</span>
+<div class="sourceCode" id="cb16" data-file="pack/z3_equal.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>solver <span class="op">=</span> Solver()</span>
 <span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>solver.add(A <span class="op">==</span> B)</span>
 <span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>solver.add(B <span class="op">==</span> C)</span>
 <span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>report(<span class="st">"A == B &amp; B == C"</span>, solver.check())</span></code></pre></div>
-<pre><code>A == B &amp; B == C: sat
+<pre data-file="pack/z3_equal.out"><code>A == B &amp; B == C: sat
 A False
 B False
 C False</code></pre>
 <p>What if we say that <code>A</code> and <code>B</code> must be equal, but <code>B</code> and <code>C</code> must be unequal? In this case, the solver finds a solution in which <code>A</code> and <code>B</code> are <code>True</code> but <code>C</code> is <code>False</code>:</p>
-<div class="sourceCode" id="cb18"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>solver <span class="op">=</span> Solver()</span>
+<div class="sourceCode" id="cb18" data-file="pack/z3_part_equal.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>solver <span class="op">=</span> Solver()</span>
 <span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>solver.add(A <span class="op">==</span> B)</span>
 <span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>solver.add(B <span class="op">!=</span> C)</span>
 <span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>report(<span class="st">"A == B &amp; B != C"</span>, solver.check())</span></code></pre></div>
-<pre><code>A == B &amp; B != C: sat
+<pre data-file="pack/z3_part_equal.out"><code>A == B &amp; B != C: sat
 A True
 B True
 C False</code></pre>
 <p>Finally, what if we require <code>A</code> to equal <code>B</code> and <code>B</code> to equal <code>C</code> but <code>A</code> and <code>C</code> to be unequal? No assignment of values to the three variables can satisfy all three constraints at once, and the solver duly tells us that:</p>
-<div class="sourceCode" id="cb20"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>solver <span class="op">=</span> Solver()</span>
+<div class="sourceCode" id="cb20" data-file="pack/z3_unequal.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>solver <span class="op">=</span> Solver()</span>
 <span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>solver.add(A <span class="op">==</span> B)</span>
 <span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>solver.add(B <span class="op">==</span> C)</span>
 <span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>solver.add(A <span class="op">!=</span> C)</span>
 <span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>report(<span class="st">"A == B &amp; B == C &amp; B != C"</span>, solver.check())</span></code></pre></div>
-<pre><code>A == B &amp; B == C &amp; B != C: unsat</code></pre>
+<pre data-file="pack/z3_unequal.out"><code>A == B &amp; B == C &amp; B != C: unsat</code></pre>
 <p>Returning to package management, we can represent the versions from our running example like this:</p>
-<div class="sourceCode" id="cb22"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>A1 <span class="op">=</span> Bool(<span class="st">"A.1"</span>)</span>
+<div class="sourceCode" id="cb22" data-file="pack/z3_triple.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>A1 <span class="op">=</span> Bool(<span class="st">"A.1"</span>)</span>
 <span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>A2 <span class="op">=</span> Bool(<span class="st">"A.2"</span>)</span>
 <span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>A3 <span class="op">=</span> Bool(<span class="st">"A.3"</span>)</span>
 <span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>B1 <span class="op">=</span> Bool(<span class="st">"B.1"</span>)</span>
@@ -287,22 +287,22 @@ C False</code></pre>
 <span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>C1 <span class="op">=</span> Bool(<span class="st">"C.1"</span>)</span>
 <span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>C2 <span class="op">=</span> Bool(<span class="st">"C.2"</span>)</span></code></pre></div>
 <p>We then tell the solver that we want one of the available versions of package A:</p>
-<div class="sourceCode" id="cb23"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>solver <span class="op">=</span> Solver()</span>
+<div class="sourceCode" id="cb23" data-file="pack/z3_triple.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>solver <span class="op">=</span> Solver()</span>
 <span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>solver.add(Or(A1, A2, A3))</span></code></pre></div>
 <p>and that the three versions of package A are mutually exclusive:</p>
-<div class="sourceCode" id="cb24"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>solver.add(Implies(A1, Not(Or(A2, A3))))</span>
+<div class="sourceCode" id="cb24" data-file="pack/z3_triple.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>solver.add(Implies(A1, Not(Or(A2, A3))))</span>
 <span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>solver.add(Implies(A2, Not(Or(A1, A3))))</span>
 <span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>solver.add(Implies(A3, Not(Or(A1, A2))))</span></code></pre></div>
 <p>We need equivalent statements for packages B and C; we’ll explore in the exercises how to generate all of these from a package manifest.</p>
 <p>Finally, we add the inter-package dependencies and search for a result:</p>
-<div class="sourceCode" id="cb25"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>solver.add(Implies(A3, And(Or(B3, B2), C2)))</span>
+<div class="sourceCode" id="cb25" data-file="pack/z3_triple.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>solver.add(Implies(A3, And(Or(B3, B2), C2)))</span>
 <span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>solver.add(Implies(A2, And(B2, Or(C2, C1))))</span>
 <span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>solver.add(Implies(A1, B1))</span>
 <span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>solver.add(Implies(B3, C2))</span>
 <span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>solver.add(Implies(B2, C1))</span>
 <span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>solver.add(Implies(B1, C1))</span>
 <span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"result"</span>, solver.check(), solver.model())</span></code></pre></div>
-<pre><code>result sat [B.3 = True,
+<pre data-file="pack/z3_triple.out"><code>result sat [B.3 = True,
  A.1 = False,
  C.2 = True,
  C.1 = False,
@@ -312,14 +312,14 @@ C False</code></pre>
  B.1 = False]</code></pre>
 <p>The output tells us that the combination of A.3, B.3, and C.2 will satisfy our constraints.</p>
 <p>We saw earlier, though, that there are three solutions to our constraints. One way to find the others is to ask the solver to solve the problem again with the initial solution ruled out. We can repeat the process many times, adding “not the latest solution” to the constraints each time until the problem becomes unsolvable:</p>
-<div class="sourceCode" id="cb27"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>everything <span class="op">=</span> [A1, A2, A3, B1, B2, B3, C1, C2]</span>
+<div class="sourceCode" id="cb27" data-file="pack/z3_complete.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>everything <span class="op">=</span> [A1, A2, A3, B1, B2, B3, C1, C2]</span>
 <span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a><span class="cf">while</span> solver.check() <span class="op">==</span> sat:</span>
 <span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>    model <span class="op">=</span> solver.model()</span>
 <span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>([var <span class="cf">for</span> var <span class="kw">in</span> model.decls() <span class="cf">if</span> model[var]])</span>
 <span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a>    settings <span class="op">=</span> [var <span class="op">==</span> model[var] <span class="cf">for</span> var <span class="kw">in</span> everything]</span>
 <span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a>    cond <span class="op">=</span> Not(And(<span class="op">*</span>settings))</span>
 <span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a>    solver.add(cond)</span></code></pre></div>
-<pre><code>[B.3, C.2, A.3]
+<pre data-file="pack/z3_complete.out"><code>[B.3, C.2, A.3]
 [C.1, B.2, A.2]
 [A.1, C.1, B.1]</code></pre>
 <h2 data-number="20.6" id="pack-summary"><span class="header-section-number">20.6</span> Summary</h2>
@@ -375,6 +375,14 @@ Figure&nbsp;20.5: Concepts for package manager.
     <a class="pager-link next" href="../ftp/index.html">Transferring Files →</a>
   </nav>
 </footer>
+<script>
+document.addEventListener('click', function (e) {
+  var link = e.target.closest && e.target.closest('a');
+  document.querySelectorAll('details.topnav-dropdown[open]').forEach(function (d) {
+    if (!d.contains(e.target) || (link && d.contains(link))) d.removeAttribute('open');
+  });
+});
+</script>
 
 
 </body></html>

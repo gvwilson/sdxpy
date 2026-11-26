@@ -53,18 +53,18 @@
 <p>This chapter starts by implementing the first option (built-in types only), then extends it to handle objects that the data structure refers to in several places (which JSON does not). To keep parsing and testing simple, our framework will store everything as text with one value per line; we will look at non-text options in <a href="../binary/index.html" class="quarto-xref"><span>Chapter 17</span></a>, and at how to handle user-defined types in <a href="../bonus/index.html" class="quarto-xref"><span>Appendix G</span></a>.</p>
 <h2 data-number="16.1" id="persist-builtin"><span class="header-section-number">16.1</span> Built-in Types</h2>
 <p>The first thing we need to do is specify our data format. We will store each <a href="../glossary/index.html#atomic_value">atomic value</a> on a line of its own with a type name and a value separated by a colon:</p>
-<pre><code>bool:True
+<pre data-file="persist/format.txt"><code>bool:True
 int:123</code></pre>
 <p>Since we are storing things as text, we have to handle strings carefully: for example, we might need to save the string <code>"str:something"</code> and later be able to tell that it <em>isn’t</em> the string <code>"something"</code>. We do this by splitting strings on newline characters and saving the number of lines, followed by the actual data:</p>
-<pre><code># input
+<pre data-file="persist/multiline_input.txt"><code># input
 this is
 two lines</code></pre>
-<pre><code># output
+<pre data-file="persist/multiline_output.txt"><code># output
 str:2
 this is
 two lines</code></pre>
 <p>The function <code>save</code> handles three of Python’s built-in types to start with:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> save(writer, thing):</span>
+<div class="sourceCode" id="cb4" data-file="persist/builtin.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> save(writer, thing):</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="bu">isinstance</span>(thing, <span class="bu">bool</span>):</span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"bool:</span><span class="sc">{</span>thing<span class="sc">}</span><span class="ss">"</span>, <span class="bu">file</span><span class="op">=</span>writer)</span>
 <span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">elif</span> <span class="bu">isinstance</span>(thing, <span class="bu">float</span>):</span>
@@ -74,7 +74,7 @@ two lines</code></pre>
 <span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
 <span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">raise</span> <span class="pp">ValueError</span>(<span class="ss">f"unknown type of thing </span><span class="sc">{</span><span class="bu">type</span>(thing)<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div>
 <p>The function that loads data starts by reading a single line, stripping off the newline at the end (which is added automatically by the <code>print</code> statement in <code>save</code>), and then splitting the line on colons. After checking that there are two fields, it uses the type name in the first field to decide how to handle the second:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> load(reader):</span>
+<div class="sourceCode" id="cb5" data-file="persist/builtin.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> load(reader):</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    line <span class="op">=</span> reader.readline()[:<span class="op">-</span><span class="dv">1</span>]</span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> line, <span class="st">"Nothing to read"</span></span>
 <span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    fields <span class="op">=</span> line.split(<span class="st">":"</span>, maxsplit<span class="op">=</span><span class="dv">1</span>)</span>
@@ -91,9 +91,9 @@ two lines</code></pre>
 <span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
 <span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>        <span class="cf">raise</span> <span class="pp">ValueError</span>(<span class="ss">f"unknown type of thing </span><span class="sc">{</span>line<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div>
 <p>Saving a list is almost as easy: we save the number of items in the list, and then save each item with a recursive call to <code>save</code>. For example, the list <code>[55, True, 2.71]</code> is saved as shown in <a href="#fig-persist-lists" class="quarto-xref">Figure&nbsp;<span>16.1</span></a>. The code to do this is:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb6" data-file="persist/builtin.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>while to load a list, we just read the specified number of items:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb7" data-file="persist/builtin.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <div id="fig-persist-lists" class="quarto-float quarto-figure quarto-figure-center" alt="Writing out nested structures">
 <figure class="quarto-float quarto-float-fig">
 <div aria-describedby="fig-persist-lists-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
@@ -106,10 +106,10 @@ Figure&nbsp;16.1: Saving nested data structures.
 </div>
 <p>Notice that <code>save</code> and <code>load</code> don’t need to know what kinds of values are in the list. Each recursive call advances the input or output stream by precisely as many lines as it needs to. As a result, this approach should handle empty lists and nested lists without any extra work.</p>
 <p>Our functions handle sets in exactly the same way as lists; the only difference is using the keyword <code>set</code> instead of the keyword <code>list</code> in the opening line. To save a dictionary, we save the number of entries and then save each key and value in turn:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb8" data-file="persist/builtin.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>The code to load a dictionary is analogous. With this machinery in place, we can save our first data structure:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>save(sys.stdout, [<span class="va">False</span>, <span class="fl">3.14</span>, <span class="st">"hello"</span>, {<span class="st">"left"</span>: <span class="dv">1</span>, <span class="st">"right"</span>: [<span class="dv">2</span>, <span class="dv">3</span>]}])</span></code></pre></div>
-<pre><code>list:4
+<div class="sourceCode" id="cb9" data-file="persist/save_builtin.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>save(sys.stdout, [<span class="va">False</span>, <span class="fl">3.14</span>, <span class="st">"hello"</span>, {<span class="st">"left"</span>: <span class="dv">1</span>, <span class="st">"right"</span>: [<span class="dv">2</span>, <span class="dv">3</span>]}])</span></code></pre></div>
+<pre data-file="persist/save_builtin.out"><code>list:4
 bool:False
 float:3.14
 str:1
@@ -128,7 +128,7 @@ int:3</code></pre>
 <li><p>The <code>StringIO</code> class from Python’s <a href="https://docs.python.org/3/library/io.html"><code>io</code></a> module allows us to read from strings and write to them using the functions we normally use to read and write files. Using this lets us run our tests without creating lots of little files as a side effect.</p></li>
 <li><p>The <code>dedent</code> function from Python’s <a href="https://docs.python.org/3/library/textwrap.html"><code>textwrap</code></a> module removes leading indentation from the body of a string. As the example below shows, <code>dedent</code> allows us to indent a fixture the same way we indent our Python code, which makes the test easier to read.</p></li>
 </ol>
-<div class="sourceCode" id="cb11"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_save_list_flat():</span>
+<div class="sourceCode" id="cb11" data-file="persist/test_builtin.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_save_list_flat():</span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>    fixture <span class="op">=</span> [<span class="dv">0</span>, <span class="va">False</span>]</span>
 <span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    expected <span class="op">=</span> dedent(<span class="st">"""</span><span class="op">\</span></span>
 <span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="st">    list:2</span></span>
@@ -142,7 +142,7 @@ int:3</code></pre>
 <p>The <code>save</code> and <code>load</code> functions we built in the previous section work, but as we were extending them we had to modify their internals every time we wanted to do something new.</p>
 <p>The <a href="../glossary/index.html#open_closed_principle">Open-Closed Principle</a> states that software should be open for extension but closed for modification, i.e., that it should be possible to extend functionality without having to rewrite existing code. This allows old code to use new code, but only if our design permits the kinds of extensions people are going to want to make. (Even then, it often leads to deep class hierarchies that can be hard for the next programmer to understand.) Since we can’t anticipate everything, it is normal to have to revise a design the first two or three times we try to extend it. As <span class="citation" data-cites="Brand1995">(<a href="../bibliography/index.html#ref-Brand1995" role="doc-biblioref">Brand 1995</a>)</span> said of buildings, the things we make learn how to do things better as we use them.</p>
 <p>In this case, we can follow the Open-Closed Principle by rewriting our functions as classes and by using yet another form of dynamic dispatch to handle each item so that we don’t have to modify a multi-way <code>if</code> statement each time we add a new capability. If we have an object <code>obj</code>, then <code>hasattr(obj, "name")</code> tells us whether that object has an attribute called <code>"name"</code>. If it does, <code>getattr(obj, "name")</code> returns that attribute’s value; if that attribute happens to be a method, we can then call it like a function:</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Example:</span>
+<div class="sourceCode" id="cb12" data-file="persist/attr.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Example:</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, label):</span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.label <span class="op">=</span> label</span>
 <span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> get_size(<span class="va">self</span>):</span>
@@ -153,12 +153,12 @@ int:3</code></pre>
 <span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"ex has get_size"</span>, <span class="bu">hasattr</span>(ex, <span class="st">"get_size"</span>))</span>
 <span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>method <span class="op">=</span> <span class="bu">getattr</span>(ex, <span class="st">"get_size"</span>)</span>
 <span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"result of calling method"</span>, method())</span></code></pre></div>
-<pre><code>ex has missing False
+<pre data-file="persist/attr.out"><code>ex has missing False
 ex has label True with value thing
 ex has get_size True
 result of calling method 5</code></pre>
 <p>Using this, the core of our saving class is:</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> SaveObjects:</span>
+<div class="sourceCode" id="cb14" data-file="persist/objects.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> SaveObjects:</span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, writer):</span>
 <span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.writer <span class="op">=</span> writer</span>
 <span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> save(<span class="va">self</span>, thing):</span>
@@ -168,14 +168,14 @@ result of calling method 5</code></pre>
 <span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>            <span class="ss">f"Unknown object type </span><span class="sc">{</span>typename<span class="sc">}</span><span class="ss">"</span></span>
 <span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>        <span class="bu">getattr</span>(<span class="va">self</span>, method)(thing)</span></code></pre></div>
 <p>We have called this class <code>SaveObjects</code> instead of just <code>Save</code> because we are going to create other variations on it. <code>SaveObjects.save</code> figures out which method to call to save a particular thing by constructing a name based on the thing’s type, checking whether that method exists, and then calling it. As in the previous example of dynamic dispatch, the methods that handle specific items must all have the same signature so that they can be called interchangeably. For example, the methods that write integers and strings are:</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb15" data-file="persist/objects.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p><code>LoadObjects.load</code> combines dynamic dispatch with the string handling of our original <code>load</code> function:</p>
-<div class="sourceCode" id="cb16"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb16" data-file="persist/objects.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>The methods that load individual items are even simpler. For example, we load a floating-point number like this:</p>
-<div class="sourceCode" id="cb17"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb17" data-file="persist/objects.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <h2 data-number="16.3" id="persist-aliasing"><span class="header-section-number">16.3</span> Aliasing</h2>
 <p>Consider the two lines of code below, which created the data structure shown in <a href="#fig-persist-shared" class="quarto-xref">Figure&nbsp;<span>16.2</span></a>. If we save this structure and then reload it using what we have built so far, we will wind up with two copies of the list containing the string <code>"content"</code> instead of one. This won’t be a problem if we only ever read the reloaded data, but if we modify the new copy of <code>fixture[0]</code>, we won’t see that change reflected in <code>fixture[1]</code>, where we <em>would</em> have seen the change in the original data structure:</p>
-<div class="sourceCode" id="cb18"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>shared <span class="op">=</span> [<span class="st">"content"</span>]</span>
+<div class="sourceCode" id="cb18" data-file="persist/ex_aliasing.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>shared <span class="op">=</span> [<span class="st">"content"</span>]</span>
 <span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>fixture <span class="op">=</span> [shared, shared]</span></code></pre></div>
 <div id="fig-persist-shared" class="quarto-float quarto-figure quarto-figure-center" alt="Aliased data saved as separate copies">
 <figure class="quarto-float quarto-float-fig">
@@ -199,13 +199,13 @@ Figure&nbsp;16.2: Saving aliased data without respecting aliases.
 <li><p>write a special entry with the keyword <code>alias</code> and its unique ID when we see an object for the second time.</p></li>
 </ol>
 <p>Here’s the start of <code>SaveAlias</code>:</p>
-<div class="sourceCode" id="cb19"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb19" data-file="persist/aliasing_wrong.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>Its constructor creates an empty set of IDs seen so far. If <code>SaveAlias.save</code> notices that the object it’s about to save has been saved before, it writes a line like this:</p>
-<pre><code>alias:12345678:</code></pre>
+<pre data-file="persist/ex_alias_line.txt"><code>alias:12345678:</code></pre>
 <p>where <code>12345678</code> is the object’s ID. (The exercises will ask why the trailing colon needs to be there.) If the object hasn’t been seen before, <code>SaveAlias</code> saves the object’s type, its ID, and either its value or its length:</p>
-<div class="sourceCode" id="cb21"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb21" data-file="persist/aliasing_wrong.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p><code>SaveAlias._list</code> is a little different from <code>SaveObjects._list</code> because it has to save each object’s identifier along with its type and its value or length. Our <code>LoadAlias</code> class needs a similar change compared to <code>LoadObjects</code>. The first version is shown below; as we will see, it contains a subtle bug:</p>
-<div class="sourceCode" id="cb22"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> LoadAlias(LoadObjects):</span>
+<div class="sourceCode" id="cb22" data-file="persist/aliasing_wrong.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> LoadAlias(LoadObjects):</span>
 <span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, reader):</span>
 <span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>        <span class="bu">super</span>().<span class="fu">__init__</span>(reader)</span>
 <span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.seen <span class="op">=</span> {}</span>
@@ -225,17 +225,17 @@ Figure&nbsp;16.2: Saving aliased data without respecting aliases.
 <span id="cb22-18"><a href="#cb22-18" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.seen[ident] <span class="op">=</span> result</span>
 <span id="cb22-19"><a href="#cb22-19" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> result</span></code></pre></div>
 <p>The first test of our new code is:</p>
-<div class="sourceCode" id="cb23"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_aliasing_no_aliasing():</span>
+<div class="sourceCode" id="cb23" data-file="persist/test_aliasing_wrong.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_aliasing_no_aliasing():</span>
 <span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>    fixture <span class="op">=</span> [<span class="st">"a"</span>, {<span class="st">"b"</span>: <span class="va">True</span>, <span class="dv">7</span>: {<span class="st">"c"</span>: <span class="st">"d"</span>}}]</span>
 <span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> roundtrip(fixture) <span class="op">==</span> fixture</span></code></pre></div>
 <p>which uses this helper function:</p>
-<div class="sourceCode" id="cb24"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> roundtrip(fixture):</span>
+<div class="sourceCode" id="cb24" data-file="persist/test_aliasing_wrong.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> roundtrip(fixture):</span>
 <span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>    writer <span class="op">=</span> StringIO()</span>
 <span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>    SaveAlias(writer).save(fixture)</span>
 <span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>    reader <span class="op">=</span> StringIO(writer.getvalue())</span>
 <span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> LoadAlias(reader).load()</span></code></pre></div>
 <p>There isn’t any aliasing in the test case, but that’s deliberate: we want to make sure we haven’t broken code that was working before we move on. Here’s a test that actually includes some aliasing:</p>
-<div class="sourceCode" id="cb25"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_aliasing_shared_child():</span>
+<div class="sourceCode" id="cb25" data-file="persist/test_aliasing_wrong.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_aliasing_shared_child():</span>
 <span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>    shared <span class="op">=</span> [<span class="st">"content"</span>]</span>
 <span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>    fixture <span class="op">=</span> [shared, shared]</span>
 <span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>    result <span class="op">=</span> roundtrip(fixture)</span>
@@ -245,7 +245,7 @@ Figure&nbsp;16.2: Saving aliased data without respecting aliases.
 <span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> result[<span class="dv">1</span>][<span class="dv">0</span>] <span class="op">==</span> <span class="st">"changed"</span></span></code></pre></div>
 <p>It checks that the aliased sub-list is actually aliased after the data is restored, then checks that changes to the sub-list through one alias show up through the other. The second check ought to be redundant, but it’s still comforting.</p>
 <p>There’s one more case to check, and unfortunately it reveals a bug. The two lines:</p>
-<div class="sourceCode" id="cb26"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>fixture <span class="op">=</span> []</span>
+<div class="sourceCode" id="cb26" data-file="persist/ex_circular.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>fixture <span class="op">=</span> []</span>
 <span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>fixture.append(fixture)</span></code></pre></div>
 <p>create the data structure shown in <a href="#fig-persist-circular" class="quarto-xref">Figure&nbsp;<span>16.3</span></a>, in which an object contains a reference to itself. Our code ought to handle this case but doesn’t: when we try to read in the saved data, <code>LoadAlias.load</code> sees the <code>alias</code> line but then says it can’t find the object being referred to.</p>
 <div id="fig-persist-circular" class="quarto-float quarto-figure quarto-figure-center" alt="Self-referential data structure">
@@ -259,9 +259,9 @@ Figure&nbsp;16.3: A data structure that contains a reference to itself.
 </figure>
 </div>
 <p>The problem is these lines in <code>LoadAlias.load</code> marked as containing a bug, in combination with these lines inherited from <code>LoadObjects</code>:</p>
-<div class="sourceCode" id="cb27"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb27" data-file="persist/objects.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>Let’s trace execution for the saved data:</p>
-<pre><code>list:4484025600:1
+<pre data-file="persist/ex_list_alias.txt"><code>list:4484025600:1
 alias:4484025600:</code></pre>
 <ol type="1">
 <li><p>The first line tells us that there’s a list whose ID is <code>4484025600</code> so we <code>LoadObjects._list</code> to load a list of one element.</p></li>
@@ -269,16 +269,16 @@ alias:4484025600:</code></pre>
 <li><p><code>LoadAlias.load</code> reads the second line of saved data, which tells it to re-use the data whose ID is <code>4484025600</code>. But <code>LoadObjects._list</code> hasn’t created that list yet—it is still reading the elements—so <code>LoadAlias.load</code> hasn’t added the list to <code>seen</code>.</p></li>
 </ol>
 <p>The solution is to reorder the operations, which unfortunately means writing new versions of all the methods defined in <code>LoadObjects</code>. The new implementation of <code>_list</code> is:</p>
-<div class="sourceCode" id="cb29"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb29" data-file="persist/aliasing.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>This method creates the list it’s going to return, adds that list to the <code>seen</code> dictionary immediately, and <em>then</em> loads list items recursively. We have to pass it the ID of the list to use as the key in <code>seen</code>, and we have to use a loop rather than a <a href="../glossary/index.html#list_comprehension">list comprehension</a>, but the changes to <code>save_set</code> and <code>save_dict</code> follow exactly the same pattern.</p>
-<div class="sourceCode" id="cb30"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>word <span class="op">=</span> <span class="st">"word"</span></span>
+<div class="sourceCode" id="cb30" data-file="persist/save_aliasing.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>word <span class="op">=</span> <span class="st">"word"</span></span>
 <span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>child <span class="op">=</span> [word, word]</span>
 <span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>parent <span class="op">=</span> []</span>
 <span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>parent.append(parent)</span>
 <span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>parent.append(child)</span>
 <span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>saver <span class="op">=</span> SaveAlias(sys.stdout)</span>
 <span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a>saver.save(parent)</span></code></pre></div>
-<pre><code>list:4539747200:2
+<pre data-file="persist/save_aliasing.out"><code>list:4539747200:2
 alias:4539747200:
 list:4539552960:2
 str:4539552048:1
@@ -324,6 +324,14 @@ Brand, Stewart. 1995. <em>How Buildings Learn: What Happens After They’re Buil
     <a class="pager-link next" href="../binary/index.html">Binary Data →</a>
   </nav>
 </footer>
+<script>
+document.addEventListener('click', function (e) {
+  var link = e.target.closest && e.target.closest('a');
+  document.querySelectorAll('details.topnav-dropdown[open]').forEach(function (d) {
+    if (!d.contains(e.target) || (link && d.contains(link))) d.removeAttribute('open');
+  });
+});
+</script>
 
 
 </body></html>

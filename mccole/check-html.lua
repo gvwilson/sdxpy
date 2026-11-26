@@ -96,6 +96,21 @@ for _, path in ipairs(arg) do
       ids[id] = true
     end
 
+    -- Raw-text checks (with line numbers) that the AST can't express.
+    local line_no = 0
+    for line in (html .. "\n"):gmatch("(.-)\n") do
+      line_no = line_no + 1
+      if line:find("\\_", 1, true) then
+        print(("%s:%d: literal \\_ in output"):format(path, line_no))
+        problems = true
+      end
+      if line:match("<pre[^>]*>%s*</pre>")
+         or line:match("<pre[^>]*>%s*<code[^>]*>%s*</code>%s*</pre>") then
+        print(("%s:%d: empty <pre> block"):format(path, line_no))
+        problems = true
+      end
+    end
+
     for _, r in ipairs(refs) do
       if not ids[r[2]] then
         report(path, string.format('%s references missing id "%s"', r[1], r[2]))

@@ -52,7 +52,7 @@
 <p>We will not touch a real disk. Instead, we will use an in-memory array of bytes to <em>simulate</em> one. As <a href="../binary/index.html" class="quarto-xref"><span>Chapter 17</span></a> explains, bytes are just numbers, so a <code>bytearray</code> in Python is a perfectly good stand-in for the raw storage of a physical device. The ideas we build here—blocks, superblocks, inodes, directories—are the same ones used by real filesystems such as ext4 and NTFS.</p>
 <h2 data-number="Y.1" id="fs-disk"><span class="header-section-number">Y.1</span> A Disk of Bytes</h2>
 <p>A physical disk stores a long sequence of bytes, but reading and writing them one at a time would be painfully slow. Real filesystems therefore group bytes into blocks of a fixed size and always read or write whole blocks at once. Our simulated disk does the same thing:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Disk:</span>
+<div class="sourceCode" id="cb1" data-file="fs/disk.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Disk:</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""A fixed-size array of bytes divided into fixed-size blocks."""</span></span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, block_size, block_count):</span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.block_size <span class="op">=</span> block_size</span>
@@ -87,7 +87,7 @@
 </div>
 <h2 data-number="Y.2" id="fs-super"><span class="header-section-number">Y.2</span> The Superblock</h2>
 <p>The first thing our filesystem needs is a way to recognize itself. If we are handed a <code>bytearray</code> full of bytes, how do we know whether it is one of <em>our</em> filesystems or just random garbage? The answer is to store some <a href="../glossary/index.html#metadata">metadata</a> in the first block:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>BLOCK_SIZE <span class="op">=</span> <span class="dv">32</span></span>
+<div class="sourceCode" id="cb2" data-file="fs/filesystem.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>BLOCK_SIZE <span class="op">=</span> <span class="dv">32</span></span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>NUM_BLOCKS <span class="op">=</span> <span class="dv">64</span></span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>DISK_SIZE <span class="op">=</span> BLOCK_SIZE <span class="op">*</span> NUM_BLOCKS</span>
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>INODE_SIZE <span class="op">=</span> BLOCK_SIZE</span>
@@ -112,11 +112,11 @@
 <li><p>the number of inodes (which we will meet shortly).</p></li>
 </ul>
 <p>The <code>format</code> method writes a fresh superblock and initializes everything else:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb3" data-file="fs/filesystem.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>Formatting first clears the bitmap (which we discuss next) and marks the blocks that hold the superblock and the inode table as being in use. It then writes the superblock into block 0, fills every inode with zeros to mark it as free, and creates the root directory in inode 0.</p>
 <h2 data-number="Y.3" id="fs-free"><span class="header-section-number">Y.3</span> Free Blocks</h2>
 <p>A filesystem must remember which blocks are occupied and which are available. The simplest way to do this is a bitmap: an array with one entry per block that is <code>1</code> if the block is in use and <code>0</code> if it is free.</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb4" data-file="fs/filesystem.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p><code>_allocate_block</code> scans the bitmap for the first free block. <code>_free_block</code> simply marks a block as free again. <code>_allocate_inode</code> does the same job for inodes: it finds an inode whose kind is <code>KIND_FREE</code> and initializes it.</p>
 <div>
 <blockquote>
@@ -126,36 +126,36 @@
 </div>
 <h2 data-number="Y.4" id="fs-inode"><span class="header-section-number">Y.4</span> Inodes and Files</h2>
 <p>A file is more than its contents. It also has a size, a kind (file or directory), and—crucially—a list of the blocks that hold its data. We store this metadata in a structure called an inode:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb5" data-file="fs/filesystem.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>Each inode is exactly <code>INODE_SIZE</code> bytes long, and because <code>INODE_SIZE</code> equals <code>BLOCK_SIZE</code>, one inode fits in one block. Inode<span class="math inline">\(i\)</span> therefore lives in block <code>INODE_TABLE_START + i</code>. The inode stores the file’s size, its kind, and up to <code>MAX_FILE_BLOCKS</code> block numbers.</p>
 <p>Reading and writing a file’s contents means following those block numbers:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb6" data-file="fs/filesystem.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p><code>_read_data</code> reads each block listed in the inode, joins them together, and trims the result to the file’s recorded size. <code>_write_data</code> does the reverse: it frees the file’s old blocks, allocates fresh ones, and copies the data into them one block at a time.</p>
 <p>This indirection—storing <em>pointers to</em> data rather than the data itself—is the heart of how filesystems work. The inode is small and fixed in size, but the file it describes can be larger and scattered across the disk.</p>
 <h2 data-number="Y.5" id="fs-dir"><span class="header-section-number">Y.5</span> Directories</h2>
 <p>If a file is “a list of blocks”, then a directory is “a file whose contents are a list of names”. Each directory entry maps a name to an inode number:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb7" data-file="fs/filesystem.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>A directory entry is 16 bytes: 12 for the name (padded with zero bytes if it is shorter) and 4 for the inode number. <code>_list_dir</code> reads the directory’s data and unpacks it into a list of <code>(name, inode)</code> pairs. <code>_dir_add</code> and <code>_dir_remove</code> add and remove entries by rewriting the directory’s contents.</p>
 <p>Notice that we never check that a directory entry is “really” a directory: to the filesystem, a directory is just a file with a particular structure. This is a small example of a larger design idea that we first met in <a href="../persist/index.html" class="quarto-xref"><span>Chapter 16</span></a>: a program is just another kind of data.</p>
 <h2 data-number="Y.6" id="fs-path"><span class="header-section-number">Y.6</span> Paths and Operations</h2>
 <p>The last piece of the puzzle is turning a path like <code>/docs/hello.txt</code> into the file it names. We do this by walking from the root directory down through each component of the path:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb8" data-file="fs/filesystem.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p><code>_lookup</code> starts at <code>ROOT_INODE</code> and, for each name in the path, looks it up in the current directory. If any component is missing, it returns <code>None</code>. <code>_split</code> separates a path into its parent directory and final name.</p>
 <p>The public methods are then straightforward compositions of the pieces we have already built:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb9" data-file="fs/filesystem.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p><code>create</code> and <code>mkdir</code> allocate an inode and add an entry to the parent directory. <code>write</code> creates the file if it doesn’t exist and then stores the data. <code>read</code>, <code>listdir</code>, and <code>remove</code> look up an inode and act on it. None of these methods is more than a few lines long because each one is standing on the shoulders of the ones below it.</p>
 <h2 data-number="Y.7" id="fs-test"><span class="header-section-number">Y.7</span> Testing</h2>
 <p>As in earlier chapters, we test our code with small examples rather than a real disk:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_write_block_pads_with_zeros():</span>
+<div class="sourceCode" id="cb10" data-file="fs/test_disk.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_write_block_pads_with_zeros():</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>    disk <span class="op">=</span> Disk(block_size<span class="op">=</span><span class="dv">16</span>, block_count<span class="op">=</span><span class="dv">4</span>)</span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    disk.write_block(<span class="dv">0</span>, <span class="st">b"hello"</span>)</span>
 <span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> disk.read_block(<span class="dv">0</span>) <span class="op">==</span> <span class="st">b"hello"</span> <span class="op">+</span> <span class="st">b"</span><span class="ch">\x00</span><span class="st">"</span> <span class="op">*</span> <span class="dv">11</span></span></code></pre></div>
 <p>and:</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> make_fs():</span>
+<div class="sourceCode" id="cb11" data-file="fs/test_filesystem.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> make_fs():</span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>    fs <span class="op">=</span> FileSystem()</span>
 <span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    fs.<span class="bu">format</span>()</span>
 <span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> fs</span></code></pre></div>
-<div class="sourceCode" id="cb12"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_create_and_read_file():</span>
+<div class="sourceCode" id="cb12" data-file="fs/test_filesystem.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_create_and_read_file():</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>    fs <span class="op">=</span> make_fs()</span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    fs.write(<span class="st">"/hello.txt"</span>, <span class="st">b"Hello, world!"</span>)</span>
 <span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> fs.read(<span class="st">"/hello.txt"</span>) <span class="op">==</span> <span class="st">b"Hello, world!"</span></span></code></pre></div>
@@ -183,6 +183,14 @@
     <a class="pager-link next" href="../slides/index.html">Slides →</a>
   </nav>
 </footer>
+<script>
+document.addEventListener('click', function (e) {
+  var link = e.target.closest && e.target.closest('a');
+  document.querySelectorAll('details.topnav-dropdown[open]').forEach(function (d) {
+    if (!d.contains(e.target) || (link && d.contains(link))) d.removeAttribute('open');
+  });
+});
+</script>
 
 
 </body></html>

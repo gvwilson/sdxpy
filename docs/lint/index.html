@@ -47,7 +47,7 @@
 <h2 data-number="13.1" id="lint-machinery"><span class="header-section-number">13.1</span> Machinery</h2>
 <p><a href="../check/index.html" class="quarto-xref"><span>Chapter 11</span></a> represented HTML as a DOM tree. We can also represent the structure of a program as an abstract syntax tree (AST) whose nodes represent functions, statements, variables, array indexing operations, and so on.</p>
 <p>Python’s <a href="https://docs.python.org/3/library/ast.html"><code>ast</code></a> module will parse Python source code and produce an AST for us. For example, <a href="#fig-lint-ast-simple" class="quarto-xref">Figure&nbsp;<span>13.1</span></a> shows key parts of the AST for the short program shown below:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> double(x):</span>
+<div class="sourceCode" id="cb1" data-file="lint/simple.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> double(x):</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="dv">2</span> <span class="op">*</span> x</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> double(<span class="dv">3</span>)</span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(result)</span></code></pre></div>
@@ -62,14 +62,14 @@ Figure&nbsp;13.1: The abstract syntax tree for a simple Python program.
 </figure>
 </div>
 <p>We said “key parts of the AST” because the complete structure contains many details that we haven’t bothered to draw. To see them, let’s use <code>ast.parse</code> to turn our example code into an AST and <code>ast.dump</code> to display it:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> ast</span>
+<div class="sourceCode" id="cb2" data-file="lint/dump_ast.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> ast</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> sys</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> <span class="bu">open</span>(sys.argv[<span class="dv">1</span>], <span class="st">"r"</span>) <span class="im">as</span> reader:</span>
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    source <span class="op">=</span> reader.read()</span>
 <span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>tree <span class="op">=</span> ast.parse(source)</span>
 <span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(ast.dump(tree, indent<span class="op">=</span><span class="dv">4</span>))</span></code></pre></div>
-<div class="sourceCode" id="cb3"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> dump_ast.py simple.py</span></code></pre></div>
-<pre><code>Module(
+<div class="sourceCode" id="cb3" data-file="lint/dump_ast_simple.sh"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> dump_ast.py simple.py</span></code></pre></div>
+<pre data-file="lint/dump_ast_simple.out"><code>Module(
     body=[
         FunctionDef(
             name='double',
@@ -82,7 +82,7 @@ Figure&nbsp;13.1: The abstract syntax tree for a simple Python program.
 <p>The node representing the definition of the function <code>double</code> is a <code>FunctionDef</code> node with a <code>name</code> and an <code>arguments</code> sub-node that stores information about the function’s arguments; other nodes that we have left out represent its return value, the call to <code>double</code>, the assignment to <code>result</code>, and so on.</p>
 <p>If we want a list of all the functions defined in this module, we can walk through this tree to find all the <code>FunctionDef</code> nodes and record their <code>name</code> properties. Since each node’s structure is a little different, we would have to write one function for each type of node that knew which fields of that node were worth exploring.</p>
 <p>Luckily for us the <code>ast</code> module has tools to do this for us. The class <code>ast.NodeVisitor</code> uses the now-familiar Visitor design pattern to recurse through a structure like the one in <a href="#fig-lint-ast-simple" class="quarto-xref">Figure&nbsp;<span>13.1</span></a>. Each time the visitor reaches a node of type <code>Thing</code>, it looks for a method called <code>visit_Thing</code>; for example, when it reaches a <code>FunctionDef</code> node it looks for <code>visit_FunctionDef</code>. If that method has been defined, <code>NodeVisitor</code> calls it with the node as an argument. The class <code>CollectNames</code> uses this machinery to create a list of the function and variable names defined in a program:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> CollectNames(ast.NodeVisitor):</span>
+<div class="sourceCode" id="cb5" data-file="lint/walk_ast.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> CollectNames(ast.NodeVisitor):</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>):</span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>        <span class="bu">super</span>().<span class="fu">__init__</span>()</span>
 <span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.names <span class="op">=</span> {}</span>
@@ -106,18 +106,18 @@ Figure&nbsp;13.1: The abstract syntax tree for a simple Python program.
 <li><p>The method <code>position</code> relies on the fact that every node in the AST keeps track of where in the source code it came from.</p></li>
 </ol>
 <p>To use this class, we read the source of the program that we want to analyze, parse it, and then call the <code>visit</code> method of our class to trigger recursion:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> <span class="bu">open</span>(sys.argv[<span class="dv">1</span>], <span class="st">"r"</span>) <span class="im">as</span> reader:</span>
+<div class="sourceCode" id="cb6" data-file="lint/walk_ast.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> <span class="bu">open</span>(sys.argv[<span class="dv">1</span>], <span class="st">"r"</span>) <span class="im">as</span> reader:</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    source <span class="op">=</span> reader.read()</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>tree <span class="op">=</span> ast.parse(source)</span>
 <span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>collector <span class="op">=</span> CollectNames()</span>
 <span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>collector.visit(tree)</span>
 <span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(collector.names)</span></code></pre></div>
-<div class="sourceCode" id="cb7"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> walk_ast.py simple.py</span></code></pre></div>
-<pre><code>{'double': {(1, 0)}, 'result': {(4, 0)}}</code></pre>
+<div class="sourceCode" id="cb7" data-file="lint/walk_ast.sh"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> walk_ast.py simple.py</span></code></pre></div>
+<pre data-file="lint/walk_ast.out"><code>{'double': {(1, 0)}, 'result': {(4, 0)}}</code></pre>
 <p>With a little more work we could record class names as well, and then check that (for example) class names use CamelCase, while function and variable names use pothole_case. We’ll tackle this in the exercises.</p>
 <h2 data-number="13.2" id="lint-dup"><span class="header-section-number">13.2</span> Finding Duplicate Keys</h2>
 <p>Many programs store their configuration in dictionaries. As those dictionaries grow larger, it’s easy for programmers to redefine values by accident. For example, the dictionary in this short piece of code has two entries for the key <code>"third"</code>:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>has_duplicates <span class="op">=</span> {</span>
+<div class="sourceCode" id="cb9" data-file="lint/has_duplicate_keys.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>has_duplicates <span class="op">=</span> {</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">"third"</span>: <span class="dv">3</span>,</span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">"fourth"</span>: <span class="dv">4</span>,</span>
 <span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">"fourth"</span>: <span class="dv">5</span>,</span>
@@ -125,9 +125,9 @@ Figure&nbsp;13.1: The abstract syntax tree for a simple Python program.
 <span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>}</span>
 <span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(has_duplicates)</span></code></pre></div>
 <p>Python could treat this as an error, keep the first entry, keep the last entry, or concatenate the entries somehow. As the output below shows, it chooses the third option:</p>
-<pre><code>{'third': 6, 'fourth': 5}</code></pre>
+<pre data-file="lint/has_duplicate_keys.out"><code>{'third': 6, 'fourth': 5}</code></pre>
 <p>We can build a linter that finds dictionaries like <code>has_duplicates</code> with just a few lines of code and the <code>Counter</code> class from Python’s <a href="https://docs.python.org/3/library/collections.html"><code>collections</code></a> module (which implements a specialized dictionary that counts how many times a key has been seen). We define a <code>visit_Dict</code> method for <code>NodeVisitor</code> that adds each constant key to the counter, then look for keys that have been seen more than once:</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> FindDuplicateKeys(ast.NodeVisitor):</span>
+<div class="sourceCode" id="cb11" data-file="lint/find_duplicate_keys.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> FindDuplicateKeys(ast.NodeVisitor):</span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> visit_Dict(<span class="va">self</span>, node):</span>
 <span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>        seen <span class="op">=</span> Counter()</span>
 <span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> key <span class="kw">in</span> node.keys:</span>
@@ -141,12 +141,12 @@ Figure&nbsp;13.1: The abstract syntax tree for a simple Python program.
 <span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>            msg <span class="op">=</span> <span class="st">", "</span>.join(p <span class="cf">for</span> p <span class="kw">in</span> problems)</span>
 <span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="ss">f"duplicate key(s) </span><span class="ch">{{</span><span class="sc">{</span>msg<span class="sc">}</span><span class="ch">}}</span><span class="ss"> at </span><span class="sc">{</span>node<span class="sc">.</span>lineno<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div>
 <p>When we parse <code>has_duplicate_keys.py</code> and pass the AST to <code>FindDuplicateKeys</code>, we get:</p>
-<pre><code>duplicate key(s) {fourth, third} at 1</code></pre>
+<pre data-file="lint/find_duplicate_keys.out"><code>duplicate key(s) {fourth, third} at 1</code></pre>
 <div>
 <blockquote>
 <p><strong>As Far as We Can Go</strong></p>
 <p><code>FindDuplicateKeys</code> only considers constant keys, which means it won’t find duplicate keys that are created on the fly like this:</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> label():</span>
+<div class="sourceCode" id="cb13" data-file="lint/function_keys.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> label():</span>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="st">"label"</span></span>
 <span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>actually_has_duplicate_keys <span class="op">=</span> {</span>
 <span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">"label"</span>: <span class="dv">1</span>,</span>
@@ -160,21 +160,21 @@ Figure&nbsp;13.1: The abstract syntax tree for a simple Python program.
 <h2 data-number="13.3" id="lint-unused"><span class="header-section-number">13.3</span> Finding Unused Variables</h2>
 <p>Finding unused variables—ones that are assigned values but never used—is more challenging than our previous examples. The problem is scope: a variable defined in a function or method might have the same name as one defined elsewhere, but they are different variables.</p>
 <p>Let’s start by defining a class that handles variables in modules and functions. Since functions can be defined inside modules and other functions, the constructor for our class creates a list that we will use as a stack to keep track of what scopes we’re currently in:</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb14" data-file="lint/find_unused_variables.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>We could just use a list of three values to record information for each scope, but using <code>namedtuple</code> (which also comes from Python’s <code>collections</code> module) tells readers explicitly what each scope consists of:</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>Scope <span class="op">=</span> namedtuple(<span class="st">"Scope"</span>, [<span class="st">"name"</span>, <span class="st">"load"</span>, <span class="st">"store"</span>])</span></code></pre></div>
+<div class="sourceCode" id="cb15" data-file="lint/find_unused_variables.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>Scope <span class="op">=</span> namedtuple(<span class="st">"Scope"</span>, [<span class="st">"name"</span>, <span class="st">"load"</span>, <span class="st">"store"</span>])</span></code></pre></div>
 <p>Each time we encounter a new scope we push a new <code>Scope</code> triple onto the stack with a name, a set to hold the variables that are used in the scope, and another set to hold the variables that are defined in the scope. We then call <code>NodeVisitor.generic_visitor</code> to trigger recursion, pop the record we just pushed off the stack, and report any problems:</p>
-<div class="sourceCode" id="cb16"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb16" data-file="lint/find_unused_variables.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>The last part of the puzzle is <code>visit_Name</code>. If the variable’s value is being read, the node will have a property <code>.ctx</code> (short for “context”) of type <code>ast.Load</code>. If the variable is being written to, the node’s <code>.ctx</code> property will be an instance of <code>ast.Store</code>. Checking this property allows us to put the name in the right set in the scope that’s at the top of the stack:</p>
-<div class="sourceCode" id="cb17"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb17" data-file="lint/find_unused_variables.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>Once again, we can run this by reading the source of a program, converting it to an AST, constructing an instance of <code>FindUnusedVariables</code>, and running its <code>visit</code> method:</p>
-<div class="sourceCode" id="cb18"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> <span class="bu">open</span>(sys.argv[<span class="dv">1</span>], <span class="st">"r"</span>) <span class="im">as</span> reader:</span>
+<div class="sourceCode" id="cb18" data-file="lint/find_unused_variables.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> <span class="bu">open</span>(sys.argv[<span class="dv">1</span>], <span class="st">"r"</span>) <span class="im">as</span> reader:</span>
 <span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>    source <span class="op">=</span> reader.read()</span>
 <span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>tree <span class="op">=</span> ast.parse(source)</span>
 <span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>finder <span class="op">=</span> FindUnusedVariables()</span>
 <span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>finder.visit(tree)</span></code></pre></div>
 <p>To test our code, let’s create a program that has some unused variables:</p>
-<div class="sourceCode" id="cb19"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>used <span class="op">=</span> <span class="dv">3</span></span>
+<div class="sourceCode" id="cb19" data-file="lint/has_unused_variables.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>used <span class="op">=</span> <span class="dv">3</span></span>
 <span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>distractor <span class="op">=</span> <span class="dv">2</span></span>
 <span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>not_used <span class="op">=</span> used <span class="op">+</span> distractor</span>
 <span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> no_unused(param):</span>
@@ -186,7 +186,7 @@ Figure&nbsp;13.1: The abstract syntax tree for a simple Python program.
 <span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a>    distractor <span class="op">=</span> <span class="st">"distraction"</span></span>
 <span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> used</span></code></pre></div>
 <p>When we run our linter we get:</p>
-<pre><code>unused in has_unused: distractor, not_used
+<pre data-file="lint/find_unused_variables.out"><code>unused in has_unused: distractor, not_used
 unused in global: not_used</code></pre>
 <h2 data-number="13.4" id="lint-summary"><span class="header-section-number">13.4</span> Summary</h2>
 <p><a href="#fig-lint-concept-map" class="quarto-xref">Figure&nbsp;<span>13.2</span></a> summarizes the ideas introduced in this chapter; please see <a href="../bonus/index.html" class="quarto-xref"><span>Appendix G</span></a> for some more related material.</p>
@@ -205,7 +205,7 @@ Figure&nbsp;13.2: Concepts for code manipulation.
 <p>Modify the code that finds unused variables to report unused function parameters as well.</p>
 <h3 data-number="13.5.2" id="finding-redundant-assignments"><span class="header-section-number">13.5.2</span> Finding Redundant Assignments</h3>
 <p>Write a linter that looks for redundant assignments to variables, i.e., assignments that are immediately overwritten:</p>
-<div class="sourceCode" id="cb21"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>x <span class="op">=</span> <span class="dv">1</span>  <span class="co"># redundant</span></span>
+<div class="sourceCode" id="cb21" data-file="lint/ex_redundant.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>x <span class="op">=</span> <span class="dv">1</span>  <span class="co"># redundant</span></span>
 <span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>x <span class="op">=</span> <span class="dv">2</span></span></code></pre></div>
 <p>(Redundant assignments are a common result of copying and pasting.)</p>
 <h3 data-number="13.5.3" id="checking-names"><span class="header-section-number">13.5.3</span> Checking Names</h3>
@@ -229,6 +229,14 @@ Figure&nbsp;13.2: Concepts for code manipulation.
     <a class="pager-link next" href="../layout/index.html">Page Layout →</a>
   </nav>
 </footer>
+<script>
+document.addEventListener('click', function (e) {
+  var link = e.target.closest && e.target.closest('a');
+  document.querySelectorAll('details.topnav-dropdown[open]').forEach(function (d) {
+    if (!d.contains(e.target) || (link && d.contains(link))) d.removeAttribute('open');
+  });
+});
+</script>
 
 
 </body></html>

@@ -46,7 +46,7 @@
 <p>One peril of publishing a book online is obsessing over analytics. How many people visited the site today? Which pages did they look at, and for how long? Whether we use Excel, SQL, or Python, we will almost certainly be analyzing tables with named columns and multiple rows. Such tables are called <a href="../glossary/index.html#dataframe">dataframes</a>, and their performance is important when we are working with large data sets. This chapter therefore implements dataframes in two ways and shows how to compare their performance.</p>
 <h2 data-number="15.1" id="perf-options"><span class="header-section-number">15.1</span> Options</h2>
 <p>To start, let’s create an abstract class that defines the methods our dataframe classes will support. This class requires concrete classes to implement the methods shown below:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> DataFrame:</span>
+<div class="sourceCode" id="cb1" data-file="perf/df_base.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> DataFrame:</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> ncol(<span class="va">self</span>):</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Report the number of columns."""</span></span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> nrow(<span class="va">self</span>):</span>
@@ -91,20 +91,20 @@ Figure&nbsp;15.2: Storing a dataframe’s data in columns.
 </div>
 <h2 data-number="15.2" id="perf-row"><span class="header-section-number">15.2</span> Row-Wise Storage</h2>
 <p>We start by deriving <code>DfRow</code> from <code>DataFrame</code> and writing its constructor, which takes a list of dictionaries as an argument, checks that they’re consistent with each other, and saves them:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb2" data-file="perf/df_row.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>The helper function to check that a bunch of dictionaries all have the same keys and the same types of values associated with those keys is:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> dict_match(d, prototype):</span>
+<div class="sourceCode" id="cb3" data-file="perf/util.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> dict_match(d, prototype):</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="bu">set</span>(d.keys()) <span class="op">!=</span> <span class="bu">set</span>(prototype.keys()):</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">False</span></span>
 <span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="bu">all</span>(<span class="bu">isinstance</span>(d[k], prototype[k]) <span class="cf">for</span> k <span class="kw">in</span> d)</span></code></pre></div>
 <p>Notice that <code>DfRow</code>’s constructor compares all of the rows against the first row. Doing this means that we can’t create an empty dataframe, i.e., one that has no rows. This restriction wasn’t part of our original design: it’s an accident of implementation that might surprise our users. It’s OK not to fix this while we’re prototyping, but we will look at ways to address it in the exercises.</p>
 <p>Four of the methods required by <code>DataFrame</code> are easy to implement on top of row-wise storage, though once again our implementation assumes there is at least one row:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb4" data-file="perf/df_row.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>Checking equality is also relatively simple. Two dataframes are the same if they have exactly the same columns and the same values in every column:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb5" data-file="perf/df_row.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>Notice that we use <code>other.cols()</code> and <code>other.get()</code> rather than reaching into the other dataframe. We are planning to implement dataframes in several different ways, and we might want to compare instances of those different implementations. Since they might have different internal data structures, the only safe way to do this is to rely on the interface defined in the base class.</p>
 <p>Our final operations are selection, which returns a subset of the original dataframe’s columns, and filtering, which returns a subset of its rows. Since we don’t know how many columns the user might want, we give the <code>select</code> method a single parameter <code>*names</code> that will capture zero or more positional arguments. We then build a new list of dictionaries that only contain the fields with those names (<a href="#fig-perf-row-select" class="quarto-xref">Figure&nbsp;<span>15.3</span></a>):</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb6" data-file="perf/df_row.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <div id="fig-perf-row-select" class="quarto-float quarto-figure quarto-figure-center" alt="Column selection with row storage">
 <figure class="quarto-float quarto-float-fig">
 <div aria-describedby="fig-perf-row-select-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
@@ -116,16 +116,16 @@ Figure&nbsp;15.3: Selecting columns from data stored as rows.
 </figure>
 </div>
 <p>We now need to decide how to filter rows. Typical filtering conditions include, “Keep rows where <code>red</code> is non-zero,” “Keep rows where <code>red</code> is greater than <code>green</code>,” and, “Keep rows where <code>red+green</code> is within 10% of <code>blue</code>.” Rather than trying to anticipate every possible rule, we require users to define functions whose parameters match the names of the table’s columns. For example, if we have this test fixture:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> odd_even():</span>
+<div class="sourceCode" id="cb7" data-file="perf/test_df_row.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> odd_even():</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> DfRow([{<span class="st">"a"</span>: <span class="dv">1</span>, <span class="st">"b"</span>: <span class="dv">3</span>}, {<span class="st">"a"</span>: <span class="dv">2</span>, <span class="st">"b"</span>: <span class="dv">4</span>}])</span></code></pre></div>
 <p>then we should be able to write this test:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_filter():</span>
+<div class="sourceCode" id="cb8" data-file="perf/test_df_row.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_filter():</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> odd(a, b):</span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> (a <span class="op">%</span> <span class="dv">2</span>) <span class="op">==</span> <span class="dv">1</span></span>
 <span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    df <span class="op">=</span> odd_even()</span>
 <span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> df.<span class="bu">filter</span>(odd).eq(DfRow([{<span class="st">"a"</span>: <span class="dv">1</span>, <span class="st">"b"</span>: <span class="dv">3</span>}]))</span></code></pre></div>
 <p>We can implement this by using <code>**</code> to spread the row across the function’s parameters (<a href="../oop/index.html" class="quarto-xref"><span>Chapter 2</span></a>). If there are keys in the row that don’t match parameters in the function or vice versa, Python will throw an exception, but that’s probably what we want. Using this, the implementation of <code>DfRow.filter</code> is:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb9" data-file="perf/df_row.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>Notice that the dataframe created by <code>filter</code> re-uses the rows of the original dataframe (<a href="#fig-perf-row-filter" class="quarto-xref">Figure&nbsp;<span>15.4</span></a>). This is safe and efficient as long as dataframes are <a href="../glossary/index.html#immutable">immutable</a>, i.e., as long as their contents are never changed in place. Most dataframe libraries work this way: while recycling memory can save a little time, it usually also makes bugs much harder to track down.</p>
 <div id="fig-perf-row-filter" class="quarto-float quarto-figure quarto-figure-center" alt="Row-wise filtering of records">
 <figure class="quarto-float quarto-float-fig">
@@ -139,9 +139,9 @@ Figure&nbsp;15.4: Filtering data stored as rows.
 </div>
 <h2 data-number="15.3" id="perf-col"><span class="header-section-number">15.3</span> Column-Wise Storage</h2>
 <p>Having done all of this thinking, our column-wise dataframe class is somewhat easier to write. We start as before with its constructor:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb10" data-file="perf/df_col.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>and use a helper function <code>all_eq</code> to check that all of the values in any column have the same types:</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> all_eq(<span class="op">*</span>values):</span>
+<div class="sourceCode" id="cb11" data-file="perf/util.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> all_eq(<span class="op">*</span>values):</span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> (<span class="kw">not</span> values) <span class="kw">or</span> <span class="bu">all</span>(v <span class="op">==</span> values[<span class="dv">0</span>] <span class="cf">for</span> v <span class="kw">in</span> values)</span></code></pre></div>
 <div>
 <blockquote>
@@ -150,11 +150,11 @@ Figure&nbsp;15.4: Filtering data stored as rows.
 </blockquote>
 </div>
 <p>The four methods that were simple to write for <code>DfRow</code> are equally simple to write for <code>DfCol</code>, though once again our prototype implementation accidentally disallows empty dataframes:</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb12" data-file="perf/df_col.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>As with <code>DfRow</code>, the method that checks equality relies on the internal details of its own class but uses the interface defined by <code>DataFrame</code> to access the other object:</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb13" data-file="perf/df_col.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>To select columns, we pick the ones named by the caller and use them to create a new dataframe. Again, this recycles the existing storage (<a href="#fig-perf-col-select" class="quarto-xref">Figure&nbsp;<span>15.5</span></a>):</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb14" data-file="perf/df_col.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <div id="fig-perf-col-select" class="quarto-float quarto-figure quarto-figure-center" alt="Selecting from column storage">
 <figure class="quarto-float quarto-float-fig">
 <div aria-describedby="fig-perf-col-select-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
@@ -177,16 +177,16 @@ Figure&nbsp;15.6: Extracting values from columns to create temporary rows.
 </figure>
 </div>
 <p>For now, we will solve this problem by requiring the user-defined filter function to define parameters to match all of the dataframe’s columns regardless of whether they are used for filtering or not. We will then build a temporary dictionary with all the values in a “row” (i.e., the corresponding values across all columns) and use <code>**</code> to spread it across the filter function. <a href="../bonus/index.html" class="quarto-xref"><span>Appendix G</span></a> looks at a safer, but more complex, way to do this.</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb15" data-file="perf/df_col.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>Time to write some tests. This one checks that we can construct a dataframe with some values:</p>
-<div class="sourceCode" id="cb16"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_construct_with_two_pairs():</span>
+<div class="sourceCode" id="cb16" data-file="perf/test_df_col.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_construct_with_two_pairs():</span>
 <span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>    df <span class="op">=</span> DfCol(a<span class="op">=</span>[<span class="dv">1</span>, <span class="dv">2</span>], b<span class="op">=</span>[<span class="dv">3</span>, <span class="dv">4</span>])</span>
 <span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> df.get(<span class="st">"a"</span>, <span class="dv">0</span>) <span class="op">==</span> <span class="dv">1</span></span>
 <span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> df.get(<span class="st">"a"</span>, <span class="dv">1</span>) <span class="op">==</span> <span class="dv">2</span></span>
 <span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> df.get(<span class="st">"b"</span>, <span class="dv">0</span>) <span class="op">==</span> <span class="dv">3</span></span>
 <span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> df.get(<span class="st">"b"</span>, <span class="dv">1</span>) <span class="op">==</span> <span class="dv">4</span></span></code></pre></div>
 <p>while this one checks that <code>filter</code> works correctly:</p>
-<div class="sourceCode" id="cb17"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_filter():</span>
+<div class="sourceCode" id="cb17" data-file="perf/test_df_col.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_filter():</span>
 <span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> odd(a, b):</span>
 <span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> (a <span class="op">%</span> <span class="dv">2</span>) <span class="op">==</span> <span class="dv">1</span></span>
 <span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>    df <span class="op">=</span> DfCol(a<span class="op">=</span>[<span class="dv">1</span>, <span class="dv">2</span>], b<span class="op">=</span>[<span class="dv">3</span>, <span class="dv">4</span>])</span>
@@ -200,7 +200,7 @@ Figure&nbsp;15.6: Extracting values from columns to create temporary rows.
 </blockquote>
 </div>
 <p>To compare the speed of these classes, let’s write a short program to create dataframes of each kind and time how long it takes to select their columns and filter their rows. To keep things simple, we will create dataframes whose columns are called <code>label_1</code>, <code>label_2</code>, and so on, and whose values are all integers in the range 0–9. A thorough set of <a href="../glossary/index.html#benchmark">benchmarks</a> would create columns with other datatypes as well, but this example is enough to illustrate the technique.</p>
-<div class="sourceCode" id="cb18"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>RANGE <span class="op">=</span> <span class="dv">10</span></span>
+<div class="sourceCode" id="cb18" data-file="perf/timing.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>RANGE <span class="op">=</span> <span class="dv">10</span></span>
 <span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> make_col(nrow, ncol):</span>
 <span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _col(n, start):</span>
 <span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> [((start <span class="op">+</span> i) <span class="op">%</span> RANGE) <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(n)]</span>
@@ -215,7 +215,7 @@ Figure&nbsp;15.6: Extracting values from columns to create temporary rows.
 <span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a>    fill <span class="op">=</span> [_row(r) <span class="cf">for</span> r <span class="kw">in</span> <span class="bu">range</span>(nrow)]</span>
 <span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> DfRow(fill)</span></code></pre></div>
 <p>To time <code>filter</code>, we arbitrarily decide to keep rows with an even value in the first column:</p>
-<div class="sourceCode" id="cb19"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>FILTER <span class="op">=</span> <span class="dv">2</span></span>
+<div class="sourceCode" id="cb19" data-file="perf/timing.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>FILTER <span class="op">=</span> <span class="dv">2</span></span>
 <span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> time_filter(df):</span>
 <span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> f(label_0, <span class="op">**</span>args):</span>
 <span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> label_0 <span class="op">%</span> FILTER <span class="op">==</span> <span class="dv">1</span></span>
@@ -224,7 +224,7 @@ Figure&nbsp;15.6: Extracting values from columns to create temporary rows.
 <span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> time.time() <span class="op">-</span> start</span></code></pre></div>
 <p>Since <code>DfCol</code> and <code>DfRow</code> derive from the same base class, <code>time_filter</code> doesn’t care which we give it. Again, if we were doing this for real, we would look at actual programs to see what fraction of rows filtering usually kept and simulate that.</p>
 <p>To time <code>select</code>, we arbitrarily decide to keep one-third of the columns:</p>
-<div class="sourceCode" id="cb20"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>SELECT <span class="op">=</span> <span class="dv">3</span></span>
+<div class="sourceCode" id="cb20" data-file="perf/timing.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>SELECT <span class="op">=</span> <span class="dv">3</span></span>
 <span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> time_select(df):</span>
 <span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>    indices <span class="op">=</span> [i <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(df.ncol()) <span class="cf">if</span> ((i <span class="op">%</span> SELECT) <span class="op">==</span> <span class="dv">0</span>)]</span>
 <span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>    labels <span class="op">=</span> [<span class="ss">f"label_</span><span class="sc">{</span>i<span class="sc">}</span><span class="ss">"</span> <span class="cf">for</span> i <span class="kw">in</span> indices]</span>
@@ -232,7 +232,7 @@ Figure&nbsp;15.6: Extracting values from columns to create temporary rows.
 <span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>    df.select(<span class="op">*</span>labels)</span>
 <span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> time.time() <span class="op">-</span> start</span></code></pre></div>
 <p>Finally, we write a function that takes a list of strings like <code>3x3</code> or <code>100x20</code>, creates dataframes of each size, times operations, and reports the results. We call this function <code>sweep</code> because executing code multiple times with different parameters to measure performance is called <a href="../glossary/index.html#parameter_sweeping">parameter sweeping</a>:</p>
-<div class="sourceCode" id="cb21"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> sweep(sizes):</span>
+<div class="sourceCode" id="cb21" data-file="perf/timing.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> sweep(sizes):</span>
 <span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>    result <span class="op">=</span> []</span>
 <span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> (nrow, ncol) <span class="kw">in</span> sizes:</span>
 <span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>        df_col <span class="op">=</span> make_col(nrow, ncol)</span>
@@ -312,9 +312,9 @@ Figure&nbsp;15.7: Relative performance of row-wise and column-wise storage.
 </figure>
 </div>
 <p>We can get much more insight by <a href="../glossary/index.html#profiling">profiling</a> our code using Python <a href="https://docs.python.org/3/library/profile.html"><code>cProfile</code></a> module, which collects detailed information on how long each function runs and reports the result:</p>
-<div class="sourceCode" id="cb22"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> <span class="at">-m</span> cProfile <span class="at">--sort</span><span class="op">=</span>tottime <span class="dt">\</span></span>
+<div class="sourceCode" id="cb22" data-file="perf/profile.sh"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> <span class="at">-m</span> cProfile <span class="at">--sort</span><span class="op">=</span>tottime <span class="dt">\</span></span>
 <span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>  timing.py <span class="at">--silent</span> 10x10 50x50 100x100 500x500 1000x1000</span></code></pre></div>
-<pre><code>         3007281 function calls (3003108 primitive calls) in 2.120 seconds
+<pre data-file="perf/profile.out"><code>         3007281 function calls (3003108 primitive calls) in 2.120 seconds
    Ordered by: internal time
    ncalls  tottime  percall  cumtime  percall filename:lineno(function)
   2319840    0.671    0.000    0.671    0.000 util.py:10(&lt;genexpr&gt;)
@@ -490,9 +490,9 @@ Figure&nbsp;15.8: Concepts for dataframes.
 </tbody>
 </table>
 <p>The first step is to create a <code>Map</code> showing where each key is found in the first table:</p>
-<div class="sourceCode" id="cb24"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>{<span class="st">"A"</span>: [<span class="dv">0</span>], <span class="st">"B"</span>: [<span class="dv">1</span>], <span class="st">"C"</span>: [<span class="dv">2</span>]}</span></code></pre></div>
+<div class="sourceCode" id="cb24" data-file="perf/ex_map_1.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>{<span class="st">"A"</span>: [<span class="dv">0</span>], <span class="st">"B"</span>: [<span class="dv">1</span>], <span class="st">"C"</span>: [<span class="dv">2</span>]}</span></code></pre></div>
 <p>The second step is to create a similar <code>Map</code> for the second table:</p>
-<div class="sourceCode" id="cb25"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>{<span class="st">"A"</span>: [<span class="dv">0</span>, <span class="dv">1</span>], <span class="st">"B"</span>: [<span class="dv">2</span>]}</span></code></pre></div>
+<div class="sourceCode" id="cb25" data-file="perf/ex_map_2.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>{<span class="st">"A"</span>: [<span class="dv">0</span>, <span class="dv">1</span>], <span class="st">"B"</span>: [<span class="dv">2</span>]}</span></code></pre></div>
 <p>We can then loop over the keys in one of the maps, look up values in the second map, and construct all of the matches.</p>
 <p>Write a function that joins two tables this way. Is it faster or slower than using a double loop? How does the answer depend on the number of keys and the fraction that match?</p>
 
@@ -511,6 +511,14 @@ Patterson, David A., and John L. Hennessy. 2017. <em>Computer Organization and D
     <a class="pager-link next" href="../persist/index.html">Object Persistence →</a>
   </nav>
 </footer>
+<script>
+document.addEventListener('click', function (e) {
+  var link = e.target.closest && e.target.closest('a');
+  document.querySelectorAll('details.topnav-dropdown[open]').forEach(function (d) {
+    if (!d.contains(e.target) || (link && d.contains(link))) d.removeAttribute('open');
+  });
+});
+</script>
 
 
 </body></html>

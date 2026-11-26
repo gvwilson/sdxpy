@@ -59,7 +59,7 @@
 <p>Compensations must be idempotent because it’s possible for a workflow to go forward and backward several times. Compensations can be implemented as negative transitions, but it is often easier to implement them by saving the state before the transition, such as the account balance, and then restoring that state. These approaches can be mixed together in a single workflow depending on which is easiest to use with a particular external service.</p>
 <h2 data-number="U.2" id="saga-struct"><span class="header-section-number">U.2</span> Core Data Structures</h2>
 <p>Let’s build a travel booking saga with flights, hotels, and car rentals. We start by defining the states that the saga as a whole and the individual transactions can be in:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> SagaStatus(Enum):</span>
+<div class="sourceCode" id="cb1" data-file="saga/saga_types.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> SagaStatus(Enum):</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Status of a saga execution."""</span></span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    PENDING <span class="op">=</span> <span class="st">"pending"</span></span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    IN_PROGRESS <span class="op">=</span> <span class="st">"in_progress"</span></span>
@@ -73,7 +73,7 @@
 <span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    FAILED <span class="op">=</span> <span class="st">"failed"</span></span>
 <span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    COMPENSATED <span class="op">=</span> <span class="st">"compensated"</span></span></code></pre></div>
 <p>We then create structures to represent the saga’s state machine. Each step has a forward transaction and a backward compensation.</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
+<div class="sourceCode" id="cb2" data-file="saga/saga_types.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> SagaStep:</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""A step in the saga with transaction and compensation."""</span></span>
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    name: <span class="bu">str</span></span>
@@ -114,7 +114,7 @@
 <span id="cb2-39"><a href="#cb2-39" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="ss">f"Event(</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>event_type<span class="sc">}</span><span class="ss">)"</span></span></code></pre></div>
 <h2 data-number="U.3" id="saga-services"><span class="header-section-number">U.3</span> Service Implementations</h2>
 <p>We can now implement the three microservices involved in the saga. Each service manages its own local state and provides both forward (book) and backward (cancel) operations. The flight service manages seat availability; we have given it a 10% random failure rate to simulate real-world unreliability:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> FlightService(Process):</span>
+<div class="sourceCode" id="cb3" data-file="saga/booking_services.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> FlightService(Process):</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Microservice for booking flights."""</span></span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> init(<span class="va">self</span>) <span class="op">-&gt;</span> <span class="va">None</span>:</span>
 <span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.bookings: Dict[<span class="bu">str</span>, Dict[<span class="bu">str</span>, Any]] <span class="op">=</span> {}</span>
@@ -161,7 +161,7 @@
 <span id="cb3-45"><a href="#cb3-45" aria-hidden="true" tabindex="-1"></a>        )</span>
 <span id="cb3-46"><a href="#cb3-46" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">True</span></span></code></pre></div>
 <p>The hotel service follows the same pattern with a 15% failure rate and room inventory:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> HotelService(Process):</span>
+<div class="sourceCode" id="cb4" data-file="saga/booking_services.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> HotelService(Process):</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Microservice for booking hotels."""</span></span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> init(<span class="va">self</span>) <span class="op">-&gt;</span> <span class="va">None</span>:</span>
 <span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.bookings: Dict[<span class="bu">str</span>, Dict[<span class="bu">str</span>, Any]] <span class="op">=</span> {}</span>
@@ -208,7 +208,7 @@
 <span id="cb4-45"><a href="#cb4-45" aria-hidden="true" tabindex="-1"></a>        )</span>
 <span id="cb4-46"><a href="#cb4-46" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">True</span></span></code></pre></div>
 <p>Finally, the car rental service has a 30% failure rate to demonstrate more frequent compensation:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> CarRentalService(Process):</span>
+<div class="sourceCode" id="cb5" data-file="saga/booking_services.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> CarRentalService(Process):</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Microservice for renting cars."""</span></span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> init(<span class="va">self</span>) <span class="op">-&gt;</span> <span class="va">None</span>:</span>
 <span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.bookings: Dict[<span class="bu">str</span>, Dict[<span class="bu">str</span>, Any]] <span class="op">=</span> {}</span>
@@ -257,17 +257,17 @@
 <p>Each service is autonomous: it manages its own database and can succeed or fail independently.</p>
 <h2 data-number="U.4" id="saga-orch"><span class="header-section-number">U.4</span> Orchestration-Based Saga</h2>
 <p>The orchestrator coordinates the sequence of transactions. It stores references to each service and processes requests from a queue:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb6" data-file="saga/saga_orchestrator.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>When a booking request arrives, <code>execute_saga</code> builds the list of steps and drives them forward, triggering compensation if any step fails:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb7" data-file="saga/saga_orchestrator.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>The forward pass runs each step in sequence, stopping immediately on the first failure:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb8" data-file="saga/saga_orchestrator.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>The compensation pass runs in reverse, undoing each completed step:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb9" data-file="saga/saga_orchestrator.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>The compensation pass runs in reverse order—this is not an implementation detail but a logical requirement. If the forward steps are A → B → C and C fails, we must compensate B before compensating A. Compensating A first could leave the system in a state where A’s compensation removes a resource that B’s compensation still needs to reference. Reversing the order ensures that each compensation sees the same state as the step that originally succeeded.</p>
 <h2 data-number="U.5" id="basic-orchestration-example"><span class="header-section-number">U.5</span> Basic Orchestration Example</h2>
 <p>Let’s see orchestration in action:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> main():</span>
+<div class="sourceCode" id="cb10" data-file="saga/ex_saga.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> main():</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>    env <span class="op">=</span> Environment()</span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Create services</span></span>
 <span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    flight_service <span class="op">=</span> FlightService(env)</span>
@@ -302,7 +302,7 @@
 <span id="cb10-33"><a href="#cb10-33" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Cars available: </span><span class="sc">{</span>car_service<span class="sc">.</span>available_cars<span class="sc">}</span><span class="ss">/3"</span>)</span>
 <span id="cb10-34"><a href="#cb10-34" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">Completed sagas: </span><span class="sc">{</span>orchestrator<span class="sc">.</span>sagas_completed<span class="sc">}</span><span class="ss">"</span>)</span>
 <span id="cb10-35"><a href="#cb10-35" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Failed sagas: </span><span class="sc">{</span>orchestrator<span class="sc">.</span>sagas_failed<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div>
-<pre><code>[0.0] FlightService started (seats: 10)
+<pre data-file="saga/ex_saga.out"><code>[0.0] FlightService started (seats: 10)
 [0.0] HotelService started (rooms: 5)
 [0.0] CarRentalService started (cars: 3)
 [0.0] SagaOrchestrator started
@@ -390,7 +390,7 @@ Failed sagas: 4</code></pre>
 <h2 data-number="U.6" id="saga-choreo"><span class="header-section-number">U.6</span> Choreography-Based Saga</h2>
 <p>In orchestration, the orchestrator is a single point of failure: if it crashes mid-saga, the saga is stuck. Choreography avoids this by removing the central coordinator entirely. Instead, each service listens for events and decides what to do next.</p>
 <p>The event bus routes events to subscribers:</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> EventBus(Process):</span>
+<div class="sourceCode" id="cb12" data-file="saga/saga_choreography.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> EventBus(Process):</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Simple pub-sub event bus for choreography.</span></span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="co">    Services publish events to named topics.</span></span>
 <span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="co">    Other services subscribe to topics and receive events.</span></span>
@@ -415,7 +415,7 @@ Failed sagas: 4</code></pre>
 <span id="cb12-23"><a href="#cb12-23" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> q <span class="kw">in</span> subscribers:</span>
 <span id="cb12-24"><a href="#cb12-24" aria-hidden="true" tabindex="-1"></a>            <span class="cf">await</span> q.put(event)</span></code></pre></div>
 <p>Each service subscribes to the events it cares about. The flight service listens for <code>"booking_started"</code> and <code>"hotel_compensated"</code>:</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> ChoreographedFlightService(Process):</span>
+<div class="sourceCode" id="cb13" data-file="saga/saga_choreography.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> ChoreographedFlightService(Process):</span>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Flight service driven by events rather than direct calls.</span></span>
 <span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="co">    Listens for "booking_started" events, tries to book a flight,</span></span>
 <span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="co">    then publishes "flight_booked" or "flight_booking_failed".</span></span>
@@ -475,7 +475,7 @@ Failed sagas: 4</code></pre>
 <span id="cb13-58"><a href="#cb13-58" aria-hidden="true" tabindex="-1"></a>            data<span class="op">=</span>{<span class="st">"booking_id"</span>: booking_id},</span>
 <span id="cb13-59"><a href="#cb13-59" aria-hidden="true" tabindex="-1"></a>        ))</span></code></pre></div>
 <p>The hotel service listens for <code>"flight_booked"</code> (forward step) and <code>"car_booking_failed"</code> (trigger for its own compensation):</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> ChoreographedHotelService(Process):</span>
+<div class="sourceCode" id="cb14" data-file="saga/saga_choreography.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> ChoreographedHotelService(Process):</span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Hotel service driven by events.</span></span>
 <span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="co">    Listens for "flight_booked", tries to book a hotel, and publishes</span></span>
 <span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="co">    "hotel_booked" or "hotel_booking_failed".</span></span>
@@ -529,7 +529,7 @@ Failed sagas: 4</code></pre>
 <span id="cb14-52"><a href="#cb14-52" aria-hidden="true" tabindex="-1"></a>            data<span class="op">=</span>{<span class="st">"booking_id"</span>: booking_id},</span>
 <span id="cb14-53"><a href="#cb14-53" aria-hidden="true" tabindex="-1"></a>        ))</span></code></pre></div>
 <p>The car service is the last step, so it triggers the compensation chain when it fails:</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> ChoreographedCarService(Process):</span>
+<div class="sourceCode" id="cb15" data-file="saga/saga_choreography.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> ChoreographedCarService(Process):</span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Car rental service driven by events.</span></span>
 <span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="co">    Listens for "hotel_booked" and publishes "car_booked" or "car_booking_failed".</span></span>
 <span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a><span class="co">    Car is the last step, so it initiates compensation when it fails.</span></span>
@@ -579,6 +579,14 @@ Failed sagas: 4</code></pre>
     <a class="pager-link next" href="../tcp/index.html">Building TCP on UDP →</a>
   </nav>
 </footer>
+<script>
+document.addEventListener('click', function (e) {
+  var link = e.target.closest && e.target.closest('a');
+  document.querySelectorAll('details.topnav-dropdown[open]').forEach(function (d) {
+    if (!d.contains(e.target) || (link && d.contains(link))) d.removeAttribute('open');
+  });
+});
+</script>
 
 
 </body></html>

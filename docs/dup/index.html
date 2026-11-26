@@ -48,7 +48,7 @@
 <p>Slowdown like this is often unavoidable, but in our case there’s a better way. If we generate a shorter identifier for each file that depends only on the bytes it contains, we can group together the files that have the same identifier and only compare the files within a group. This approach is faster because we only do the expensive byte-by-byte comparison on files that <em>might</em> be equal. And as we’ll see, if we are very clever about how we generate identifiers then we can avoid byte-by-byte comparisons entirely.</p>
 <h2 data-number="3.1" id="dup-start"><span class="header-section-number">3.1</span> Getting Started</h2>
 <p>We’ll start by implementing the inefficient <span class="math inline">\(N^2\)</span> approach so that we can compare our later designs to it. The short program below takes a list of filenames from the command line, finds duplicates, and prints the matches:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> find_duplicates(filenames):</span>
+<div class="sourceCode" id="cb1" data-file="dup/brute_force_1.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> find_duplicates(filenames):</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    matches <span class="op">=</span> []</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> left <span class="kw">in</span> filenames:</span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> right <span class="kw">in</span> filenames:</span>
@@ -60,7 +60,7 @@
 <span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> (left, right) <span class="kw">in</span> duplicates:</span>
 <span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(left, right)</span></code></pre></div>
 <p>This program uses a function called <code>same_bytes</code> that reads two files and compares them byte by byte:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> same_bytes(left_name, right_name):</span>
+<div class="sourceCode" id="cb2" data-file="dup/brute_force_1.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> same_bytes(left_name, right_name):</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    left_bytes <span class="op">=</span> <span class="bu">open</span>(left_name, <span class="st">"rb"</span>).read()</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    right_bytes <span class="op">=</span> <span class="bu">open</span>(right_name, <span class="st">"rb"</span>).read()</span>
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> left_bytes <span class="op">==</span> right_bytes</span></code></pre></div>
@@ -100,8 +100,8 @@
 </tbody>
 </table>
 <p>We expect the three <code>a</code> files and the two <code>b</code> files to be reported as duplicates. There’s no particular reason for these tests—we just have to start somewhere. Our first test looks like this:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> brute_force_1.py tests/<span class="pp">*</span>.txt</span></code></pre></div>
-<pre><code>tests/a1.txt tests/a1.txt
+<div class="sourceCode" id="cb3" data-file="dup/brute_force_1.sh"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> brute_force_1.py tests/<span class="pp">*</span>.txt</span></code></pre></div>
+<pre data-file="dup/brute_force_1.out"><code>tests/a1.txt tests/a1.txt
 tests/a1.txt tests/a2.txt
 tests/a1.txt tests/a3.txt
 tests/a2.txt tests/a1.txt
@@ -116,7 +116,7 @@ tests/b2.txt tests/b1.txt
 tests/b2.txt tests/b2.txt
 tests/c1.txt tests/c1.txt</code></pre>
 <p>Our program’s output is correct but not useful: every file is reported as being identical to itself, and every match of different files is reported twice. Let’s fix the nested loop in <code>find_duplicates</code> so that we only check potentially differing pairs once (<a href="#fig-dup-triangle" class="quarto-xref">Figure&nbsp;<span>3.1</span></a>):</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> find_duplicates(filenames):</span>
+<div class="sourceCode" id="cb5" data-file="dup/brute_force_2.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> find_duplicates(filenames):</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    matches <span class="op">=</span> []</span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> i_left <span class="kw">in</span> <span class="bu">range</span>(<span class="bu">len</span>(filenames)):</span>
 <span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>        left <span class="op">=</span> filenames[i_left]</span>
@@ -148,11 +148,11 @@ Figure&nbsp;3.2: Grouping by hash code reduces comparisons from 15 to 4.
 </figure>
 </div>
 <p>We can construct IDs for files using a <a href="../glossary/index.html#hash_function">hash function</a> to produce a <a href="../glossary/index.html#hash_code">hash code</a>. Since bytes are just numbers, we can create a very simple hash function by adding up the bytes in a file and taking the remainder modulo some number:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> naive_hash(data):</span>
+<div class="sourceCode" id="cb6" data-file="dup/naive_hash.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> naive_hash(data):</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="bu">sum</span>(data) <span class="op">%</span> <span class="dv">13</span></span></code></pre></div>
 <p>Here’s a quick test that calculates the hash code for successively longer substrings of the word <code>"hashing"</code>:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
-<pre><code> 0 b'h'
+<div class="sourceCode" id="cb7" data-file="dup/naive_hash.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<pre data-file="dup/naive_hash.out"><code> 0 b'h'
  6 b'ha'
  4 b'has'
  4 b'hash'
@@ -183,7 +183,7 @@ Figure&nbsp;3.4: Distribution of hash codes per unique line in <em>Dracula</em>.
 </figure>
 </div>
 <p>Hashing is a tremendously powerful tool: for example, Python’s dictionaries hash their keys to make lookup fast. Now that we can hash files, we can build a dictionary with hash codes as keys and sets of filenames as values. The code that does this is shown below; each time it calculates a hash code, it checks to see if that value has been seen before. If not, it creates a new entry in the <code>groups</code> dictionary with the hash code as its key and an empty set as a value. It can then be sure that there’s a set to add the filename to:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> find_groups(filenames):</span>
+<div class="sourceCode" id="cb9" data-file="dup/grouped.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> find_groups(filenames):</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    groups <span class="op">=</span> {}</span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> fn <span class="kw">in</span> filenames:</span>
 <span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>        data <span class="op">=</span> <span class="bu">open</span>(fn, <span class="st">"rb"</span>).read()</span>
@@ -193,8 +193,8 @@ Figure&nbsp;3.4: Distribution of hash codes per unique line in <em>Dracula</em>.
 <span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>        groups[hash_code].add(fn)</span>
 <span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> groups</span></code></pre></div>
 <p>We can now re-use most of the code we wrote earlier to find duplicates within each group:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
-<pre><code>tests/a2.txt tests/a1.txt
+<div class="sourceCode" id="cb10" data-file="dup/grouped.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<pre data-file="dup/grouped.out"><code>tests/a2.txt tests/a1.txt
 tests/a3.txt tests/a1.txt
 tests/a3.txt tests/a2.txt
 tests/b1.txt tests/b2.txt</code></pre>
@@ -202,8 +202,8 @@ tests/b1.txt tests/b2.txt</code></pre>
 <p>Let’s go back to the formula <span class="math inline">\(O(N^2/g)\)</span> that tells us how much work we have to do if we have divided <span class="math inline">\(N\)</span> files between <span class="math inline">\(g\)</span> groups. If we have exactly as many groups as files—i.e., if <span class="math inline">\(g\)</span> is equal to <span class="math inline">\(N\)</span>—then the work to process <span class="math inline">\(N\)</span> files would be <span class="math inline">\(O(N^2/N) = O(N)\)</span>, which means that the work will be proportional to the number of files. We have to read each file at least once anyway, so we can’t possibly do better than this, but how can we ensure that each unique file winds up in its own group?</p>
 <p>The answer is to use a <a href="../glossary/index.html#cryptographic_hash_function">cryptographic hash function</a>. The output of such a function is completely deterministic: given the same bytes in the same order, it will always produce the same output. However, the output is distributed like a uniform random variable: each possible output is equally likely, which ensures that files will be evenly distributed between groups.</p>
 <p>Cryptographic hash functions are hard to write, and it’s very hard to prove that a particular algorithm has the properties we require. We will therefore use a function from Python’s <a href="https://docs.python.org/3/library/hashlib.html">hashing module</a> that implements the <a href="../glossary/index.html#sha256">SHA-256</a> hashing algorithm. Given some bytes as input, this function produces a 256-bit hash, which is normally written as a 64-character <a href="../glossary/index.html#hexadecimal">hexadecimal</a> string. This uses the letters A-F (or a-f) to represent the digits from 10 to 15, so that (for example) <code>3D5</code> is <span class="math inline">\((3×16^2)+(13×16^1)+(5×16^0)\)</span>, or 981 in decimal:</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
-<pre><code>b'h'
+<div class="sourceCode" id="cb12" data-file="dup/using_sha256.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<pre data-file="dup/using_sha256.out"><code>b'h'
 aaa9402664f1a41f40ebbc52c9993eb66aeb366602958fdfaa283b71e64db123
 b'ha'
 8693873cd8f8a2d9c7c596477180f851e525f4eaf55a4f637b445cb442a5e340
@@ -219,7 +219,7 @@ d04b98f48e8f8bcc15c6ae5ac050801cd6dcfd428fb5f9e65c4e16e7807340fa</code></pre>
 </blockquote>
 </div>
 <p>Using this library function makes our duplicate file finder much shorter:</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> sys</span>
+<div class="sourceCode" id="cb14" data-file="dup/dup.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> sys</span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> hashlib <span class="im">import</span> sha256</span>
 <span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> find_groups(filenames):</span>
 <span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>    groups <span class="op">=</span> {}</span>
@@ -234,7 +234,7 @@ d04b98f48e8f8bcc15c6ae5ac050801cd6dcfd428fb5f9e65c4e16e7807340fa</code></pre>
 <span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>    groups <span class="op">=</span> find_groups(sys.argv[<span class="dv">1</span>:])</span>
 <span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> filenames <span class="kw">in</span> groups.values():</span>
 <span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="st">", "</span>.join(<span class="bu">sorted</span>(filenames)))</span></code></pre></div>
-<div class="sourceCode" id="cb15"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> dup.py tests/<span class="pp">*</span>.txt</span></code></pre></div>
+<div class="sourceCode" id="cb15" data-file="dup/dup.sh"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> dup.py tests/<span class="pp">*</span>.txt</span></code></pre></div>
 <p>More importantly, our new approach scales to very large sets of files: as explained above, we only have to look at each file once, so the running time is as good as it possibly can be.</p>
 <h2 data-number="3.4" id="dup-summary"><span class="header-section-number">3.4</span> Summary</h2>
 <p><a href="#fig-dup-concept-map" class="quarto-xref">Figure&nbsp;<span>3.5</span></a> summarizes the key ideas in this chapter, the most important of which is that some algorithms are intrinsically better than others.</p>
@@ -306,6 +306,14 @@ Figure&nbsp;3.5: Concept map for duplicate file detection with hashing.
     <a class="pager-link next" href="../glob/index.html">Matching Patterns →</a>
   </nav>
 </footer>
+<script>
+document.addEventListener('click', function (e) {
+  var link = e.target.closest && e.target.closest('a');
+  document.querySelectorAll('details.topnav-dropdown[open]').forEach(function (d) {
+    if (!d.contains(e.target) || (link && d.contains(link))) d.removeAttribute('open');
+  });
+});
+</script>
 
 
 </body></html>

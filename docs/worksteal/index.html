@@ -59,7 +59,7 @@
 </ol>
 <p>The key idea is asymmetry: the owning worker operates on one end of their deque (usually called the bottom) while other workers (called thieves) steal from its other end (the top). This reduces contention because owners and thieves don’t compete for the same task unless the queue is almost empty.</p>
 <p>Let’s start with the task representation:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
+<div class="sourceCode" id="cb1" data-file="worksteal/task.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Task:</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""A unit of work to be executed."""</span></span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    task_id: <span class="bu">str</span></span>
@@ -69,7 +69,7 @@
 <span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="ss">f"Task(</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>task_id<span class="sc">}</span><span class="ss">)"</span></span></code></pre></div>
 <p>Each task has an ID, a duration to simulate CPU-bound work, and an optional parent task ID for tracking task dependencies.</p>
 <p>Each worker maintains a deque. In our simulation, we’ll use a simple list-based deque:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> WorkerDeque:</span>
+<div class="sourceCode" id="cb2" data-file="worksteal/worker_deque.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> WorkerDeque:</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Double-ended queue for tasks with stealing support."""</span></span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>):</span>
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.tasks: <span class="bu">list</span>[Task] <span class="op">=</span> []</span>
@@ -90,19 +90,19 @@
 <span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="bu">len</span>(<span class="va">self</span>.tasks)</span></code></pre></div>
 <p>A production system would use something more sophisticated than a simple Python list to manage the deque, but our simulation focuses on the algorithmic pattern rather than low-level synchronization.</p>
 <p>A worker executes tasks from its local deque and steals when idle. We start by setting up its members:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb3" data-file="worksteal/worker.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>and then define its behavior:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb4" data-file="worksteal/worker.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>As the code above shows, the worker continuously tries to execute tasks. If its local deque is empty, it attempts to steal from other workers. If stealing fails, it waits briefly before trying again.</p>
 <p>Executing a task is relatively straightforward:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb5" data-file="worksteal/worker.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>Stealing a task from another worker is somewhat more interesting. The most important part is that we randomize the order in which we check the workers in order to spread the load as evenly as possible:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb6" data-file="worksteal/worker.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <h2 data-number="N.2" id="worksteal-scheduler"><span class="header-section-number">N.2</span> The Scheduler</h2>
 <p>The scheduler coordinates workers and provides task submission:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb7" data-file="worksteal/scheduler.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>We can create a simple simulation with load imbalance to see it in action:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> main():</span>
+<div class="sourceCode" id="cb8" data-file="worksteal/ex_basic_ws.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> main():</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Basic work-stealing simulation."""</span></span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    env <span class="op">=</span> Environment()</span>
 <span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    scheduler <span class="op">=</span> WorkStealingScheduler(env, num_workers<span class="op">=</span><span class="dv">3</span>)</span>
@@ -111,7 +111,7 @@
 <span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    env.run(until<span class="op">=</span><span class="dv">20</span>)</span>
 <span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>    scheduler.get_statistics()</span></code></pre></div>
 <p>The output shows workers executing tasks and stealing from each other when they run out of local work. The steal rate shows how much load balancing occurred:</p>
-<pre><code>[0.0] Submitted T1 to Worker 2
+<pre data-file="worksteal/ex_basic_ws.out"><code>[0.0] Submitted T1 to Worker 2
 [0.0] Submitted T2 to Worker 2
 [0.0] Submitted T3 to Worker 0
 [0.0] Submitted T4 to Worker 1
@@ -123,7 +123,7 @@
 [0.0] Submitted T10 to Worker 1</code></pre>
 <h2 data-number="N.3" id="worksteal-spawn"><span class="header-section-number">N.3</span> Nested Task Spawning</h2>
 <p>A common extension of work-stealing is to support <a href="../glossary/index.html#divide-and-conquer">divide-and-conquer</a> algorithms by allowing tasks to spawn subtasks. To explore this, we can create a task generator:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> TaskGenerator(Process):</span>
+<div class="sourceCode" id="cb10" data-file="worksteal/task_generator.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> TaskGenerator(Process):</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Generates tasks including ones that spawn subtasks."""</span></span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> init(<span class="va">self</span>, scheduler: WorkStealingScheduler, num_initial_tasks: <span class="bu">int</span>):</span>
 <span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.scheduler <span class="op">=</span> scheduler</span>
@@ -134,7 +134,7 @@
 <span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.scheduler.submit_task(duration<span class="op">=</span>random.uniform(<span class="fl">1.0</span>, <span class="fl">3.0</span>))</span>
 <span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>            <span class="cf">await</span> <span class="va">self</span>.timeout(<span class="fl">0.5</span>)</span></code></pre></div>
 <p>and then create a worker that spawns subtasks with some random probability (in our case, 30%):</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> WorkerWithSpawning(Worker):</span>
+<div class="sourceCode" id="cb11" data-file="worksteal/worker_with_spawning.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> WorkerWithSpawning(Worker):</span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Worker that can spawn child tasks during execution."""</span></span>
 <span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">async</span> <span class="kw">def</span> execute_task(<span class="va">self</span>, task: Task):</span>
 <span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Execute task and possibly spawn children."""</span></span>
@@ -162,7 +162,7 @@
 <span id="cb11-26"><a href="#cb11-26" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.deque.push_bottom(task)</span>
 <span id="cb11-27"><a href="#cb11-27" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] Worker </span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>worker_id<span class="sc">}</span><span class="ss">: Spawned </span><span class="sc">{</span>task<span class="sc">.</span>task_id<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div>
 <p>The final step is to write a scheduler that creates these workers:</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> SchedulerWithSpawning(WorkStealingScheduler):</span>
+<div class="sourceCode" id="cb12" data-file="worksteal/scheduler_with_spawning.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> SchedulerWithSpawning(WorkStealingScheduler):</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Scheduler using workers that can spawn tasks."""</span></span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(</span>
 <span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>,</span>
@@ -173,7 +173,7 @@
 <span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>    ):</span>
 <span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>        <span class="bu">super</span>().<span class="fu">__init__</span>(env, num_workers, verbose, worker_cls)</span></code></pre></div>
 <p>Our simulation looks similar to our first one:</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> main():</span>
+<div class="sourceCode" id="cb13" data-file="worksteal/ex_spawning.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> main():</span>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Demonstrate nested task spawning."""</span></span>
 <span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    env <span class="op">=</span> Environment()</span>
 <span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Create scheduler with spawning workers</span></span>
@@ -185,7 +185,7 @@
 <span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Print statistics</span></span>
 <span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>    scheduler.get_statistics()</span></code></pre></div>
 <p>Its output shows that spawning helps balance the load even with irregular task creation:</p>
-<pre><code>[0.0] Submitted T1 to Worker 1
+<pre data-file="worksteal/ex_spawning.out"><code>[0.0] Submitted T1 to Worker 1
 [0.1] Worker 0: Stole T1 from Worker 1
 [0.1] Worker 0: Executing T1
 [0.5] Submitted T2 to Worker 1
@@ -206,7 +206,7 @@
 === Statistics ===</code></pre>
 <h2 data-number="N.4" id="worksteal-balance"><span class="header-section-number">N.4</span> Load Balancing Strategies</h2>
 <p>What effect does target selection strategy have on performance? To find out, we can create a worker that uses adaptive target selection, i.e., that steals tasks from the largest of its peers’ queues:</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> AdaptiveWorker(Worker):</span>
+<div class="sourceCode" id="cb15" data-file="worksteal/adaptive_worker.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> AdaptiveWorker(Worker):</span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Worker with adaptive target selection."""</span></span>
 <span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> init(</span>
 <span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>, worker_id: <span class="bu">int</span>, scheduler: <span class="st">"WorkStealingScheduler"</span>, verbose: <span class="bu">bool</span> <span class="op">=</span> <span class="va">True</span></span>
@@ -234,7 +234,7 @@
 <span id="cb15-26"><a href="#cb15-26" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.failed_steals <span class="op">+=</span> <span class="dv">1</span></span>
 <span id="cb15-27"><a href="#cb15-27" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">None</span></span></code></pre></div>
 <p>Unsurprisingly, this leads to better load balancing:</p>
-<pre><code>Initial load distribution:
+<pre data-file="worksteal/ex_adaptive.out"><code>Initial load distribution:
   Worker 0: 12 tasks
   Worker 1: 1 tasks
   Worker 2: 2 tasks
@@ -256,7 +256,7 @@
 [1.9] Worker 1: Executing T3 (queue size: 0)</code></pre>
 <h2 data-number="N.5" id="worksteal-granularity"><span class="header-section-number">N.5</span> Task Granularity</h2>
 <p>The <a href="../glossary/index.html#granularity">granularity</a> of tasks—i.e., how much work is in each one—has a big impact on performance. Many small tasks create lots of scheduling overhead, while a few large tasks cause load imbalance. Using the code we have written so far, we can easily experiment with the effect of changing task size:</p>
-<pre><code>=== Performance Analysis ===
+<pre data-file="worksteal/ex_granularity.out"><code>=== Performance Analysis ===
 Granularity: 0.1s
 Total work: 50.0s
 Wall time: 13.00s
@@ -301,7 +301,7 @@ Worker 3: executed=6, stolen=0, queue=0</code></pre>
 <h2 data-number="N.6" id="worksteal-join"><span class="header-section-number">N.6</span> Parent-Child Join</h2>
 <p>The current workers spawn child tasks and move on immediately. For divide-and-conquer algorithms, the parent usually needs to wait for all children to finish before it can complete its own work— this is the <a href="../glossary/index.html#fork-join">fork-join</a> pattern.</p>
 <p><code>JoiningWorker</code> implements this by suspending the parent at the join point and resuming it only when all children have signaled completion:</p>
-<div class="sourceCode" id="cb18"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> JoiningWorker(Worker):</span>
+<div class="sourceCode" id="cb18" data-file="worksteal/joining_worker.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> JoiningWorker(Worker):</span>
 <span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Worker that tracks parent-child relationships and waits for children.</span></span>
 <span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="co">    When a task spawns children, it does not complete until all children have</span></span>
 <span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a><span class="co">    finished.  This models the fork-join pattern used in parallel divide-and-conquer</span></span>
@@ -410,6 +410,14 @@ Worker 3: executed=6, stolen=0, queue=0</code></pre>
     <a class="pager-link next" href="../tracing/index.html">Distributed Tracing →</a>
   </nav>
 </footer>
+<script>
+document.addEventListener('click', function (e) {
+  var link = e.target.closest && e.target.closest('a');
+  document.querySelectorAll('details.topnav-dropdown[open]').forEach(function (d) {
+    if (!d.contains(e.target) || (link && d.contains(link))) d.removeAttribute('open');
+  });
+});
+</script>
 
 
 </body></html>

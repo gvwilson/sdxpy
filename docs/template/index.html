@@ -64,7 +64,7 @@ Figure&nbsp;12.1: Three different ways to implement page templating.
 <p>This chapter builds a simple page templating system using the third strategy. We will process each page independently by parsing the HTML and walking the DOM to find nodes with special attributes. Our program will execute the instructions in those nodes to implement loops and if/else statements; other nodes will be copied as-is to create text.</p>
 <h2 data-number="12.1" id="template-syntax"><span class="header-section-number">12.1</span> Syntax</h2>
 <p>Let’s start by deciding what “done” looks like. Suppose we want to turn an array of strings into an HTML list. Our template will look like this:</p>
-<pre><code>&lt;html&gt;
+<pre data-file="template/loop.ht"><code>&lt;html&gt;
   &lt;body&gt;
     &lt;ul z-loop="item:names"&gt;
       &lt;li&gt;&lt;span z-var="item"/&gt;&lt;/li&gt;
@@ -72,7 +72,7 @@ Figure&nbsp;12.1: Three different ways to implement page templating.
   &lt;/body&gt;
 &lt;/html&gt;</code></pre>
 <p>The attribute <code>z-loop</code> tells the tool to repeat the contents of that node; the loop variable and the collection being looped over are separated by a colon. The <code>span</code> with the attribute <code>z-var</code> tells the tool to fill in the node with the value of the variable. When our tool processes this page, the output will be standard HTML without any traces of how it was created:</p>
-<pre><code>&lt;html&gt;
+<pre data-file="template/loop.out"><code>&lt;html&gt;
 &lt;body&gt;
 &lt;ul&gt;
 &lt;li&gt;&lt;span&gt;Johnson&lt;/span&gt;&lt;/li&gt;
@@ -85,12 +85,12 @@ Figure&nbsp;12.1: Three different ways to implement page templating.
 <blockquote>
 <p><strong>Human-Readable vs.&nbsp;Machine-Readable</strong></p>
 <p>Putting the loop variable and target in a single attribute makes loops easy to type but hides information from standard HTML tools, which can’t know that this attribute contains multiple values separated by a colon. We should use two attributes like this:</p>
-<pre><code>&lt;ul z-loop="names" z-loop-var="item"&gt;</code></pre>
+<pre data-file="template/ex_use_two_var.ht"><code>&lt;ul z-loop="names" z-loop-var="item"&gt;</code></pre>
 <p>but we decided to save ourselves a little typing. We should also call our attributes <code>data-something</code> instead of <code>z-something</code> to conform with the HTML5 specification, but again, decided to save ourselves a bit of typing.</p>
 </blockquote>
 </div>
 <p>The next step is to define the <a href="../glossary/index.html#api">Application Programming Interface</a> (API) for filling in templates. Our tool needs the template itself, somewhere to write its output, and the set of variables to use in the expansion. Those variables might come from a configuration file from a header in the file itself, or from somewhere else entirely, so we will assume the calling program has gotten them somehow and have it pass them into the expansion function as a dictionary (<a href="#fig-template-api" class="quarto-xref">Figure&nbsp;<span>12.2</span></a>):</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> {<span class="st">"names"</span>: [<span class="st">"Johnson"</span>, <span class="st">"Vaughan"</span>, <span class="st">"Jackson"</span>]}</span>
+<div class="sourceCode" id="cb4" data-file="template/example_call.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> {<span class="st">"names"</span>: [<span class="st">"Johnson"</span>, <span class="st">"Vaughan"</span>, <span class="st">"Jackson"</span>]}</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>dom <span class="op">=</span> read_html(<span class="st">"template.html"</span>)</span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>expander <span class="op">=</span> Expander(dom, data)</span>
 <span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>expander.walk()</span>
@@ -108,7 +108,7 @@ Figure&nbsp;12.2: Combining text and data in templating.
 <h2 data-number="12.2" id="template-values"><span class="header-section-number">12.2</span> Managing Variables</h2>
 <p>As soon as we have variables, we need a way to track their values. We also need to maintain multiple sets of variables so that (for example) variables used inside a loop don’t conflict with ones used outside of it. As in <a href="../interp/index.html" class="quarto-xref"><span>Chapter 7</span></a>, we will use a stack of environments, each of which is a dictionary.</p>
 <p>Our stack-handling class <code>Env</code> has methods to push and pop new stack frames and find a variable given its name. If the variable can’t be found, <code>Env.find</code> returns <code>None</code> instead of raising an exception:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Env:</span>
+<div class="sourceCode" id="cb5" data-file="template/env.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Env:</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, initial):</span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.stack <span class="op">=</span> [initial.copy()]</span>
 <span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> push(<span class="va">self</span>, frame):</span>
@@ -122,7 +122,7 @@ Figure&nbsp;12.2: Combining text and data in templating.
 <span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">None</span></span></code></pre></div>
 <h2 data-number="12.3" id="template-nodes"><span class="header-section-number">12.3</span> Visiting Nodes</h2>
 <p>As <a href="../check/index.html" class="quarto-xref"><span>Chapter 11</span></a> explained, HTML pages are usually stored in memory as trees and processed using the Visitor pattern. We therefore create a <code>Visitor</code> class whose constructor takes the root node of the DOM tree as an argument and saves it. Calling <code>Visitor.walk</code> without a value starts recursion from that saved root; when <code>.walk</code> is given a value (as it is during recursive calls), it uses that instead.</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Visitor:</span>
+<div class="sourceCode" id="cb6" data-file="template/visitor.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Visitor:</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, root):</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.root <span class="op">=</span> root</span>
 <span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> walk(<span class="va">self</span>, node<span class="op">=</span><span class="va">None</span>):</span>
@@ -138,7 +138,7 @@ Figure&nbsp;12.2: Combining text and data in templating.
 <span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>        <span class="cf">raise</span> <span class="pp">NotImplementedError</span>(<span class="st">"close"</span>)</span></code></pre></div>
 <p><code>Visitor</code> defines two <a href="../glossary/index.html#abstract_method">abstract methods</a> <code>open</code> and <code>close</code> that are called when we first arrive at a node and when we are finished with it. These methods are called “abstract” because we can’t actually use them: any attempt to do so will raise an exception, which means child classes <em>must</em> override them. (In object-oriented terminology, this means that <code>Visitor</code> is an <a href="../glossary/index.html#abstract_class">abstract class</a>.) This approach is different from that of the visitor in <a href="../check/index.html" class="quarto-xref"><span>Chapter 11</span></a>, where we defined do-nothing methods so that derived classes could override only the ones they needed.</p>
 <p>The <code>Expander</code> class is specialization of <code>Visitor</code> that uses an <code>Env</code> to keep track of variables. It imports handlers for each type of special node—we will explore those in a moment—and saves them along with a newly-created environment and a list of strings making up the output:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Expander(Visitor):</span>
+<div class="sourceCode" id="cb7" data-file="template/expander.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Expander(Visitor):</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, root, variables):</span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>        <span class="bu">super</span>().<span class="fu">__init__</span>(root)</span>
 <span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.env <span class="op">=</span> Env(variables)</span>
@@ -150,23 +150,23 @@ Figure&nbsp;12.2: Combining text and data in templating.
 <li><p>If there is a handler for the node, call the handler’s <code>open</code> or <code>close</code> method.</p></li>
 <li><p>Otherwise, open a regular tag.</p></li>
 </ol>
-<div class="sourceCode" id="cb8"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb8" data-file="template/expander.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p><code>Expander.close</code> works much the same way. Both methods find handlers by comparing the DOM node’s attributes to the keys in the dictionary of handlers built during construction:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb9" data-file="template/expander.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>Finally, we need a few helper methods to show tags and generate output:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb10" data-file="template/expander.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>Notice that <code>Expander</code> adds strings to an array and joins them all right at the end rather than concatenating strings repeatedly. Doing this is more efficient; it also helps with debugging, since each string in the array corresponds to a single method call.</p>
 <h2 data-number="12.4" id="template-handlers"><span class="header-section-number">12.4</span> Implementing Handlers</h2>
 <p>Our last task is to implement the handlers for filling in variables’ values, looping, and so on. We could define an abstract class with <code>open</code> and <code>close</code> methods, derive one class for each of the template expander’s capabilities, and then construct one instance of each class for <code>Expander</code> to use, but there’s a simpler way. When Python executes the statement <code>import something</code> it executes the file <code>something.py</code>, saves the result in a specialized dictionary-like object, and assigns that object to the variable <code>something</code>. That object can also be saved in data structures like lists and dictionaries or passed as an argument to a function just like numbers, functions, and classes—remember, programs are just data.</p>
 <p>Let’s write a pair of functions that each take an expander and a node as inputs and expand a DOM node with a <code>z-num</code> attribute to insert a number into the output:</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> <span class="bu">open</span>(expander, node):</span>
+<div class="sourceCode" id="cb11" data-file="template/z_num.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> <span class="bu">open</span>(expander, node):</span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>    expander.showTag(node, <span class="va">False</span>)</span>
 <span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    expander.output(node.attrs[<span class="st">"z-num"</span>])</span>
 <span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> close(expander, node):</span>
 <span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>    expander.showTag(node, <span class="va">True</span>)</span></code></pre></div>
 <p>When we enter a node like <code>&lt;span z-num="123"/&gt;</code> this handler asks the expander to show an opening tag followed by the value of the <code>z-num</code> attribute. When we exit the node, the handler asks the expander to close the tag. The handler doesn’t know whether things are printed immediately, added to an output list, or something else; it just knows that whoever called it implements the low-level operations it needs.</p>
 <p>Here’s how we connect this handler (and others we’re going to write in a second) to the expander:</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> z_if</span>
+<div class="sourceCode" id="cb12" data-file="template/expander.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> z_if</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> z_loop</span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> z_num</span>
 <span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> z_var</span>
@@ -178,14 +178,14 @@ Figure&nbsp;12.2: Combining text and data in templating.
 <span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
 <p>The <code>HANDLERS</code> dictionary maps the names of special attributes in the HTML to modules, each of which defines <code>open</code> and <code>close</code> functions for the expander to call. In other words, we are using modules to prevent name collision just as we would use classes or functions.</p>
 <p>The handlers for variables are:</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> <span class="bu">open</span>(expander, node):</span>
+<div class="sourceCode" id="cb13" data-file="template/z_var.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> <span class="bu">open</span>(expander, node):</span>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>    expander.showTag(node, <span class="va">False</span>)</span>
 <span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    expander.output(expander.env.find(node.attrs[<span class="st">"z-var"</span>]))</span>
 <span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> close(expander, node):</span>
 <span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>    expander.showTag(node, <span class="va">True</span>)</span></code></pre></div>
 <p>This code is almost the same as the previous example. The only difference is that instead of copying the attribute’s value directly to the output, we use it as a key to look up a value.</p>
 <p>These two pairs of handlers look plausible, but do they work? To find out, we can build a program that loads variable definitions from a JSON file, reads an HTML template using the <a href="https://beautiful-soup-4.readthedocs.io/">Beautiful Soup</a> module, and does the expansion:</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
+<div class="sourceCode" id="cb14" data-file="template/template.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> sys</span>
 <span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> bs4 <span class="im">import</span> BeautifulSoup</span>
 <span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> expander <span class="im">import</span> Expander</span>
@@ -201,7 +201,7 @@ Figure&nbsp;12.2: Combining text and data in templating.
 <span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="va">__name__</span> <span class="op">==</span> <span class="st">"__main__"</span>:</span>
 <span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>    main()</span></code></pre></div>
 <p>We added new variables for our test cases one by one as we were writing this chapter. To avoid repeating text repeatedly, here’s the entire set:</p>
-<pre><code>{
+<pre data-file="template/vars.json"><code>{
   "firstVar": "firstValue",
   "secondVar": "secondValue",
   "varName": "varValue",
@@ -212,7 +212,7 @@ Figure&nbsp;12.2: Combining text and data in templating.
 <p>Our first test checks whether static text is copied over as-is:</p>
 <div class="row">
 <div class="col-6">
-<pre><code>&lt;html&gt;
+<pre data-file="template/static_text.ht"><code>&lt;html&gt;
   &lt;body&gt;
     &lt;h1&gt;Static Text&lt;/h1&gt;
     &lt;p&gt;test&lt;/p&gt;
@@ -220,7 +220,7 @@ Figure&nbsp;12.2: Combining text and data in templating.
 &lt;/html&gt;</code></pre>
 </div>
 <div class="col-6">
-<pre><code>&lt;html&gt;
+<pre data-file="template/static_text.out"><code>&lt;html&gt;
 &lt;body&gt;
 &lt;h1&gt;Static Text&lt;/h1&gt;
 &lt;p&gt;test&lt;/p&gt;
@@ -231,14 +231,14 @@ Figure&nbsp;12.2: Combining text and data in templating.
 <p>Good. Now, does the expander handle constants?</p>
 <div class="row">
 <div class="col-6">
-<pre><code>&lt;html&gt;
+<pre data-file="template/single_constant.ht"><code>&lt;html&gt;
   &lt;body&gt;
     &lt;p&gt;&lt;span z-num="123"/&gt;&lt;/p&gt;
   &lt;/body&gt;
 &lt;/html&gt;</code></pre>
 </div>
 <div class="col-6">
-<pre><code>&lt;html&gt;
+<pre data-file="template/single_constant.out"><code>&lt;html&gt;
 &lt;body&gt;
 &lt;p&gt;&lt;span&gt;123&lt;/span&gt;&lt;/p&gt;
 &lt;/body&gt;
@@ -248,14 +248,14 @@ Figure&nbsp;12.2: Combining text and data in templating.
 <p>What about a single variable?</p>
 <div class="row">
 <div class="col-6">
-<pre><code>&lt;html&gt;
+<pre data-file="template/single_variable.ht"><code>&lt;html&gt;
   &lt;body&gt;
     &lt;p&gt;&lt;span z-var="varName"/&gt;&lt;/p&gt;
   &lt;/body&gt;
 &lt;/html&gt;</code></pre>
 </div>
 <div class="col-6">
-<pre><code>&lt;html&gt;
+<pre data-file="template/single_variable.out"><code>&lt;html&gt;
 &lt;body&gt;
 &lt;p&gt;&lt;span&gt;varValue&lt;/span&gt;&lt;/p&gt;
 &lt;/body&gt;
@@ -265,7 +265,7 @@ Figure&nbsp;12.2: Combining text and data in templating.
 <p>What about a page containing multiple variables? There’s no reason it should fail if the single-variable case works, but we should still check—again, software isn’t done until it has been tested.</p>
 <div class="row">
 <div class="col-6">
-<pre><code>&lt;html&gt;
+<pre data-file="template/multiple_variables.ht"><code>&lt;html&gt;
   &lt;body&gt;
     &lt;p&gt;&lt;span z-var="firstVar" /&gt;&lt;/p&gt;
     &lt;p&gt;&lt;span z-var="secondVar" /&gt;&lt;/p&gt;
@@ -273,7 +273,7 @@ Figure&nbsp;12.2: Combining text and data in templating.
 &lt;/html&gt;</code></pre>
 </div>
 <div class="col-6">
-<pre><code>&lt;html&gt;
+<pre data-file="template/multiple_variables.out"><code>&lt;html&gt;
 &lt;body&gt;
 &lt;p&gt;&lt;span&gt;firstValue&lt;/span&gt;&lt;/p&gt;
 &lt;p&gt;&lt;span&gt;secondValue&lt;/span&gt;&lt;/p&gt;
@@ -289,7 +289,7 @@ Figure&nbsp;12.2: Combining text and data in templating.
 </div>
 <h2 data-number="12.5" id="template-flow"><span class="header-section-number">12.5</span> Control Flow</h2>
 <p>Our tool supports conditional expressions and loops. Since we’re not implementing <a href="../glossary/index.html#boolean_expression">Boolean expressions</a> like <code>and</code> and <code>or</code>, all we have to do for a condition is look up a variable and then expand the node if Python thinks the variable’s value is <a href="../glossary/index.html#truthy">truthy</a>:</p>
-<div class="sourceCode" id="cb24"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> <span class="bu">open</span>(expander, node):</span>
+<div class="sourceCode" id="cb24" data-file="template/z_if.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> <span class="bu">open</span>(expander, node):</span>
 <span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>    check <span class="op">=</span> expander.env.find(node.attrs[<span class="st">"z-if"</span>])</span>
 <span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> check:</span>
 <span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>        expander.showTag(node, <span class="va">False</span>)</span>
@@ -300,7 +300,7 @@ Figure&nbsp;12.2: Combining text and data in templating.
 <p>Let’s test it:</p>
 <div class="row">
 <div class="col-6">
-<pre><code>&lt;html&gt;
+<pre data-file="template/conditional.ht"><code>&lt;html&gt;
   &lt;body&gt;
     &lt;p z-if="yes"&gt;Should be shown.&lt;/p&gt;
     &lt;p z-if="no"&gt;Should &lt;em&gt;not&lt;/em&gt; be shown.&lt;/p&gt;
@@ -308,7 +308,7 @@ Figure&nbsp;12.2: Combining text and data in templating.
 &lt;/html&gt;</code></pre>
 </div>
 <div class="col-6">
-<pre><code>&lt;html&gt;
+<pre data-file="template/conditional.out"><code>&lt;html&gt;
 &lt;body&gt;
 &lt;p&gt;Should be shown.&lt;/p&gt;
 &lt;/body&gt;
@@ -327,7 +327,7 @@ Figure&nbsp;12.2: Combining text and data in templating.
 <li><p>Expand all of the node’s children with that stack frame in place.</p></li>
 <li><p>Pop the stack frame to get rid of the temporary variable.</p></li>
 </ol>
-<div class="sourceCode" id="cb27"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> <span class="bu">open</span>(expander, node):</span>
+<div class="sourceCode" id="cb27" data-file="template/z_loop.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> <span class="bu">open</span>(expander, node):</span>
 <span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>    index_name, target_name <span class="op">=</span> node.attrs[<span class="st">"z-loop"</span>].split(<span class="st">":"</span>)</span>
 <span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>    expander.showTag(node, <span class="va">False</span>)</span>
 <span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>    target <span class="op">=</span> expander.env.find(target_name)</span>
@@ -342,7 +342,7 @@ Figure&nbsp;12.2: Combining text and data in templating.
 <p>Once again, it’s not done until we test it:</p>
 <div class="row">
 <div class="col-6">
-<pre><code>&lt;html&gt;
+<pre data-file="template/loop.ht"><code>&lt;html&gt;
   &lt;body&gt;
     &lt;ul z-loop="item:names"&gt;
       &lt;li&gt;&lt;span z-var="item"/&gt;&lt;/li&gt;
@@ -351,7 +351,7 @@ Figure&nbsp;12.2: Combining text and data in templating.
 &lt;/html&gt;</code></pre>
 </div>
 <div class="col-6">
-<pre><code>&lt;html&gt;
+<pre data-file="template/loop.out"><code>&lt;html&gt;
 &lt;body&gt;
 &lt;ul&gt;
 &lt;li&gt;&lt;span&gt;Johnson&lt;/span&gt;&lt;/li&gt;
@@ -391,7 +391,7 @@ Figure&nbsp;12.3: HTML templating concept map.
 </ol>
 <h3 data-number="12.7.6" id="html-snippets"><span class="header-section-number">12.7.6</span> HTML Snippets</h3>
 <p>Add a directive <code>&lt;div z-snippet="variable"&gt;…&lt;/div&gt;</code> that saves some text in a variable so that it can be displayed later. For example:</p>
-<pre><code>&lt;html&gt;
+<pre data-file="template/ex_snippets.ht"><code>&lt;html&gt;
   &lt;body&gt;
     &lt;div z-snippet="prefix"&gt;&lt;strong&gt;Important:&lt;/strong&gt;&lt;/div&gt;
     &lt;p&gt;Expect three items&lt;/p&gt;
@@ -405,7 +405,7 @@ Figure&nbsp;12.3: HTML templating concept map.
 <p>would print the word “Important:” in bold before each item in the list.</p>
 <h3 data-number="12.7.7" id="yaml-headers"><span class="header-section-number">12.7.7</span> YAML Headers</h3>
 <p>Modify the template expander to handle variables defined in a YAML header in the page being processed. For example, if the page is:</p>
-<pre><code>---
+<pre data-file="template/ex_yaml_header.ht"><code>---
 name: "Dorothy Johnson Vaughan"
 ---
 &lt;html&gt;
@@ -430,6 +430,14 @@ name: "Dorothy Johnson Vaughan"
     <a class="pager-link next" href="../lint/index.html">A Code Linter →</a>
   </nav>
 </footer>
+<script>
+document.addEventListener('click', function (e) {
+  var link = e.target.closest && e.target.closest('a');
+  document.querySelectorAll('details.topnav-dropdown[open]').forEach(function (d) {
+    if (!d.contains(e.target) || (link && d.contains(link))) d.removeAttribute('open');
+  });
+});
+</script>
 
 
 </body></html>

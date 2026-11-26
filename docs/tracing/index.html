@@ -61,7 +61,7 @@ X-Parent-Span-Id: ghi789</code></pre>
 <p>Finally, tags and logs are metadata attached to spans for debugging. Tags are values used for filtering and searching, such as the <a href="../glossary/index.html#http-status-code">HTTP status code</a>, while logs are timestamped events such as a <a href="../glossary/index.html#cache-miss">cache miss</a> or retry attempt.</p>
 <h2 data-number="O.1" id="tracing-decorator"><span class="header-section-number">O.1</span> A Minimum Viable Decorator</h2>
 <p>Suppose we want to write a method <code>handle_request()</code> that performs some work in <code>do_work()</code> in a traceable way. If we add the tracing code directly in <code>handle_request()</code> we wind up with something like this:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Service(GenericService):</span>
+<div class="sourceCode" id="cb2" data-file="tracing/long_winded.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Service(GenericService):</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">async</span> <span class="kw">def</span> handle_request(<span class="va">self</span>, request):</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Create span manually</span></span>
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>        span <span class="op">=</span> Span(</span>
@@ -86,7 +86,7 @@ X-Parent-Span-Id: ghi789</code></pre>
 <span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>            span.finish(<span class="va">self</span>.now)</span>
 <span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a>            <span class="cf">await</span> <span class="va">self</span>.collector.span_queue.put(span)</span></code></pre></div>
 <p>That is 15 lines of tracing code for a simple function, and those lines would have to be copied into every function we want to trace. A better approach is to define a decorator that adds tracing for us so that we can write:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Service(GenericService):</span>
+<div class="sourceCode" id="cb3" data-file="tracing/short_winded.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Service(GenericService):</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    <span class="at">@traced</span>(<span class="st">"handle_request"</span>)</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">async</span> <span class="kw">def</span> handle_request(<span class="va">self</span>, request):</span>
 <span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>        result <span class="op">=</span> <span class="cf">await</span> <span class="va">self</span>.do_work()</span>
@@ -100,7 +100,7 @@ X-Parent-Span-Id: ghi789</code></pre>
 <li>Clean up by finishing the current span and restoring the previous context.</li>
 </ol>
 <p>None of this is particularly hard, but it does require a fair bit of code. First, we create a <a href="../glossary/index.html#singleton">singleton</a> to hold the active trace context and the <a href="../glossary/index.html#trace-collector">collector</a> where completed spans are to be sent. (In production, we would use <a href="../glossary/index.html#thread-local-storage">thread-local storage</a> or <a href="../glossary/index.html#async-context-vars">async context variables</a> to storage this data.)</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> _StorageClass:</span>
+<div class="sourceCode" id="cb4" data-file="tracing/tracing_decorators.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> _StorageClass:</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Record trace information."""</span></span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>):</span>
 <span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Construct instance."""</span></span>
@@ -120,7 +120,7 @@ X-Parent-Span-Id: ghi789</code></pre>
 <span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> Storage._current_collector</span>
 <span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>Storage <span class="op">=</span> _StorageClass()</span></code></pre></div>
 <p>We can now define the tracing decorator itself. It’s long, but all of the steps are fairly straightforward:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> traced(operation_name: <span class="bu">str</span>):</span>
+<div class="sourceCode" id="cb5" data-file="tracing/tracing_decorators.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> traced(operation_name: <span class="bu">str</span>):</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Decorator that automatically creates spans for functions."""</span></span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> decorator(func: Callable) <span class="op">-&gt;</span> Callable:</span>
 <span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Get operation name</span></span>
@@ -183,19 +183,19 @@ X-Parent-Span-Id: ghi789</code></pre>
 <span id="cb5-61"><a href="#cb5-61" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> decorator</span></code></pre></div>
 <h2 data-number="O.2" id="tracing-types"><span class="header-section-number">O.2</span> Data Types</h2>
 <p>We now need to double back and define the core types for distributed tracing. <code>TraceContext</code> propagates between services:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb6" data-file="tracing/tracing_types.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p><code>Span</code> tracks individual operations, and has methods for adding tags and log entries and to mark the span as completed:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb7" data-file="tracing/tracing_types.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>Finally, <code>Trace</code> aggregates spans, and has methods for adding spans and getting the overall duration of the trace:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb8" data-file="tracing/tracing_types.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <h2 data-number="O.3" id="trace-collector"><span class="header-section-number">O.3</span> Trace Collector</h2>
 <p>The collector is an active process that receives spans from services and assembles them into traces. When it runs, it repeatedly gets a span from its incoming queue and processes it:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb9" data-file="tracing/trace_collector.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>To process a new span, the collector either adds it to an existing trace or creates a new one. If the trace is now complete, the collector moves it from the active set into the completed set:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb10" data-file="tracing/trace_collector.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <h2 data-number="O.4" id="tracing-service"><span class="header-section-number">O.4</span> A Simple Service</h2>
 <p>With all this machinery in place, tracing a microservice is relatively straightforward:</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> SimpleService(Process):</span>
+<div class="sourceCode" id="cb11" data-file="tracing/simple_service.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> SimpleService(Process):</span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Service instrumented with decorators."""</span></span>
 <span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> init(<span class="va">self</span>, service_name: <span class="bu">str</span>, collector, verbose: <span class="bu">bool</span> <span class="op">=</span> <span class="va">True</span>):</span>
 <span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.service_name <span class="op">=</span> service_name</span>
@@ -233,7 +233,7 @@ X-Parent-Span-Id: ghi789</code></pre>
 <span id="cb11-36"><a href="#cb11-36" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> {<span class="st">"processed"</span>: <span class="va">True</span>, <span class="st">"input"</span>: payload}</span></code></pre></div>
 <p><code>handle_request</code> is automatically traced; <code>process_data</code> is also traced and becomes a child span. No spans are created manually, and error handling is automatic.</p>
 <p>The client creates the root span manually (since it initiates the trace):</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> SimpleClient(Process):</span>
+<div class="sourceCode" id="cb12" data-file="tracing/ex_decorators.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> SimpleClient(Process):</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Client that initiates traced requests."""</span></span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> init(<span class="va">self</span>, name: <span class="bu">str</span>, service: SimpleService, collector: TraceCollector):</span>
 <span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.name <span class="op">=</span> name</span>
@@ -282,7 +282,7 @@ X-Parent-Span-Id: ghi789</code></pre>
 <span id="cb12-47"><a href="#cb12-47" aria-hidden="true" tabindex="-1"></a>        root_span.add_tag(<span class="st">"success"</span>, response.success)</span>
 <span id="cb12-48"><a href="#cb12-48" aria-hidden="true" tabindex="-1"></a>        <span class="cf">await</span> <span class="va">self</span>.collector.span_queue.put(root_span)</span></code></pre></div>
 <p>The output shows that we are capturing what we wanted to:</p>
-<pre><code>[0.0] OrderService started
+<pre data-file="tracing/ex_decorators.out"><code>[0.0] OrderService started
 [0.0] TraceCollector started
 [1.5] Client: Starting request req_1
 [1.5] OrderService: Processing Request(req_1)
@@ -351,7 +351,7 @@ Trace(trace_13..., 1 spans, 0.212s)
 <li>simplified status codes.</li>
 </ul>
 <p>Even with these simplifications, a simple example like the one below produces over 300 lines of pretty-printed output:</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> SimpleClient(Process):</span>
+<div class="sourceCode" id="cb14" data-file="tracing/ex_json.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> SimpleClient(Process):</span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Client that initiates traced requests."""</span></span>
 <span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> init(<span class="va">self</span>, name: <span class="bu">str</span>, service: SimpleService, collector: BaseCollector):</span>
 <span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.name <span class="op">=</span> name</span>
@@ -378,7 +378,7 @@ Trace(trace_13..., 1 spans, 0.212s)
 <span id="cb14-25"><a href="#cb14-25" aria-hidden="true" tabindex="-1"></a>        response <span class="op">=</span> <span class="cf">await</span> response_queue.get()</span>
 <span id="cb14-26"><a href="#cb14-26" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> response</span></code></pre></div>
 <p>A sample clause of this JSON looks like this:</p>
-<pre><code>{
+<pre data-file="tracing/ex_json.out"><code>{
   "resourceSpans": [
     {
       "resource": {
@@ -434,7 +434,7 @@ Trace(trace_13..., 1 spans, 0.212s)
 <h2 data-number="O.6" id="tracing-sampling"><span class="header-section-number">O.6</span> Sampling</h2>
 <p>Recording every trace in a high-traffic system is prohibitively expensive. A service processing 10,000 requests per second produces 10,000 root spans per second, plus all their children. Sampling records only a fraction of traces and discards the rest.</p>
 <p>Head-based sampling decides at the <em>start</em> of a trace—before any spans are created— whether to record it:</p>
-<div class="sourceCode" id="cb16"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> HeadSampler:</span>
+<div class="sourceCode" id="cb16" data-file="tracing/sampled_tracer.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> HeadSampler:</span>
 <span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Decides at trace start whether to record this trace.</span></span>
 <span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="co">    Head-based sampling uses a fixed probability per trace.</span></span>
 <span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a><span class="co">    Every span in a sampled trace is recorded; spans from unsampled traces</span></span>
@@ -467,7 +467,7 @@ Trace(trace_13..., 1 spans, 0.212s)
 <h2 data-number="O.7" id="tracing-propagation"><span class="header-section-number">O.7</span> Cross-Service Propagation</h2>
 <p>The basic tracer stores context in a module-level variable. This works in a single process but breaks across service boundaries. The only correct way to propagate context between services is to include it in the request itself—conventionally as HTTP headers.</p>
 <p><code>PropagatedRequest</code> carries the trace context as a field:</p>
-<div class="sourceCode" id="cb17"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
+<div class="sourceCode" id="cb17" data-file="tracing/sampled_tracer.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
 <span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> PropagatedRequest:</span>
 <span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""A request that carries trace context for cross-service propagation.</span></span>
 <span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a><span class="co">    In a real HTTP system these fields would be HTTP headers:</span></span>
@@ -482,7 +482,7 @@ Trace(trace_13..., 1 spans, 0.212s)
 <span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Trace context propagated from the caller, or None if not sampled.</span></span>
 <span id="cb17-14"><a href="#cb17-14" aria-hidden="true" tabindex="-1"></a>    trace_context: TraceContext <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span></span></code></pre></div>
 <p><code>SampledService</code> reads the context from the request and passes a child context to any downstream service it calls:</p>
-<div class="sourceCode" id="cb18"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> SampledService(Process):</span>
+<div class="sourceCode" id="cb18" data-file="tracing/sampled_tracer.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> SampledService(Process):</span>
 <span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Service that applies head-based sampling before creating spans.</span></span>
 <span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="co">    When a request arrives with a trace context, the context dictates whether</span></span>
 <span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a><span class="co">    to record spans (the sampling decision was made by the initiating service).</span></span>
@@ -587,6 +587,14 @@ Trace(trace_13..., 1 spans, 0.212s)
     <a class="pager-link next" href="../crdt/index.html">Conflict-Free Replicated Data Types →</a>
   </nav>
 </footer>
+<script>
+document.addEventListener('click', function (e) {
+  var link = e.target.closest && e.target.closest('a');
+  document.querySelectorAll('details.topnav-dropdown[open]').forEach(function (d) {
+    if (!d.contains(e.target) || (link && d.contains(link))) d.removeAttribute('open');
+  });
+});
+</script>
 
 
 </body></html>

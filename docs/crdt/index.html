@@ -56,9 +56,9 @@
 <p>In contrast, the replicas in <a href="../glossary/index.html#op-based-crdt">operation-based CRDTs</a> send each other <em>changes</em> in state (sometimes called <a href="../glossary/index.html#delta">deltas</a>). This reduces the network overhead, but requires exactly-once delivery of operations. Those operations must commute, but needn’t be idempotent. We will implement both approaches to understand the trade-offs.</p>
 <h2 data-number="P.1" id="dxdx-lww"><span class="header-section-number">P.1</span> Last-Write-Wins Register</h2>
 <p>Let’s start with the simplest CRDT: a <a href="../glossary/index.html#lww-register">last-write-wins register</a>. For values that should be overwritten (like a user’s profile name), we can use timestamps to determine which write wins.</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb1" data-file="crdt/lwwregister.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>To see how this works, consider three replicas that randomly choose color values to share with peers:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>NAMES <span class="op">=</span> [<span class="st">"Ahmed"</span>, <span class="st">"Baemi"</span>, <span class="st">"Chiti"</span>]</span>
+<div class="sourceCode" id="cb2" data-file="crdt/ex_lwwregister.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>NAMES <span class="op">=</span> [<span class="st">"Ahmed"</span>, <span class="st">"Baemi"</span>, <span class="st">"Chiti"</span>]</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>VALUES <span class="op">=</span> [<span class="st">"red"</span>, <span class="st">"green"</span>, <span class="st">"blue"</span>, <span class="st">"yellow"</span>]</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Replica(Process):</span>
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""A replica that writes to its local register and syncs with peers."""</span></span>
@@ -84,7 +84,7 @@
 <span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a>            )</span>
 <span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a>            <span class="cf">await</span> <span class="va">self</span>.timeout(<span class="va">self</span>.sync_interval)</span></code></pre></div>
 <p>If we run three replicas for 10 timesteps, the output is:</p>
-<pre><code>[0] Ahmed: set 'yellow'
+<pre data-file="crdt/ex_lwwregister.out"><code>[0] Ahmed: set 'yellow'
 [0] Baemi: set 'yellow'
 [0] Chiti: set 'yellow'
 [2] Ahmed: synced with Chiti -&gt; 'yellow'
@@ -107,7 +107,7 @@ Chiti: LWWRegister(value=green, ts=10.00)</code></pre>
 <p>An LWW-Register has a weakness: concurrent writes to the same register result in one being lost (either the one with the earlier timestamp or with the lower replica ID). This is acceptable for some use cases (like “last edit wins” in a profile), but not for others. The key trade-off is simplicity versus data preservation. An LWW register never produces a conflict that needs manual resolution, but it also never preserves both sides of a concurrent update. This makes it a poor fit for situations where losing a write is costly, such as a shared to-do list where two people add items at the same time.</p>
 <h2 data-number="P.2" id="crdt-counter"><span class="header-section-number">P.2</span> Counters</h2>
 <p>Another CRDT is a <a href="../glossary/index.html#grow-only-counter">grow-only counter</a> whose value can only increase. Each replica maintains a vector of counters, one per replica:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb4" data-file="crdt/gcounter.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>The G-Counter works by having each replica only modify its own entry in the vector. When merging, we take the maximum of each entry. This operation is commutative, associative, and idempotent, which guarantees convergence.</p>
 <p>A G-Counter solves the problem of counting across multiple replicas that can’t always communicate. Imagine three servers tracking how many times a button has been clicked. Users hit whichever server is nearest, and the servers sync up when they can. A naive approach is to have each server keep a single integer and share its value with the other two, but this breaks because there’s no way to tell whether a value Ahmed receives from Baemi already includes Ahmed’s updates or not.</p>
 <p>In a G-Counter, each replica only increments its own entry: for example, Ahmed’s server only ever touches <code>counts["Ahmed"]</code>. This ensures that there’s never a conflict because no two replicas write to the same slot. When replicas sync, they can safely take the <code>max</code> of each slot, because a higher value always means that replica has done more increments. <code>max</code> is idempotent (applying the same sync twice is harmless), commutative (order doesn’t matter), and associative (grouping doesn’t matter), which makes it suitable for a CRDT.</p>
@@ -120,7 +120,7 @@ Chiti: LWWRegister(value=green, ts=10.00)</code></pre>
 <div class="sourceCode" id="cb6"><pre class="sourceCode txt"><code class="sourceCode default"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>counts={'Ahmed': 3, 'Baemi': 3, 'Chiti': 3}`</span></code></pre></div>
 <p>with the value 9. No increments are lost, regardless of sync order or timing.</p>
 <p>A grow-only counter is limited. What if we want to be able to decrement the value? A <a href="../glossary/index.html#pn-counter">positive-negative counter</a>, or PN-Counter, uses two G-Counters: one for increments, one for decrements. This works because increments and decrements are tracked separately. Each remains monotonically increasing, so the G-Counter merge properties still apply.</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb7" data-file="crdt/pncounter.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <h2 data-number="P.3" id="crdt-orset"><span class="header-section-number">P.3</span> Observed-Remove Set (OR-Set)</h2>
 <p>Sets are trickier to implement than counters. If Ahmed adds X and Baemi removes X concurrently, should X be in the final set?</p>
 <p>The most natural answer is “remove wins”: the element is absent. But this makes it impossible to add an element back after a concurrent remove has been received— the remove has already been applied. The OR-Set chooses “add-wins” semantics instead, by using unique tags to distinguish each add operation.</p>
@@ -139,9 +139,9 @@ Merge all three:
   Baemi: {} removes={(Ahmed,1)}
   Chiti: {X: {(Chiti,1)}}
   Result: X is present because (Chiti,1) was never removed.</code></pre>
-<div class="sourceCode" id="cb9"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb9" data-file="crdt/orset.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>This example shows an OR-set in operation:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>NAMES <span class="op">=</span> [<span class="st">"Ahmed"</span>, <span class="st">"Baemi"</span>, <span class="st">"Chiti"</span>]</span>
+<div class="sourceCode" id="cb10" data-file="crdt/ex_orset.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>NAMES <span class="op">=</span> [<span class="st">"Ahmed"</span>, <span class="st">"Baemi"</span>, <span class="st">"Chiti"</span>]</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>ITEMS <span class="op">=</span> [<span class="st">"apple"</span>, <span class="st">"banana"</span>, <span class="st">"cherry"</span>]</span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>P_REMOVE <span class="op">=</span> <span class="fl">0.3</span></span>
 <span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Replica(Process):</span>
@@ -175,7 +175,7 @@ Merge all three:
 <span id="cb10-32"><a href="#cb10-32" aria-hidden="true" tabindex="-1"></a>                <span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">}</span><span class="ss">] </span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>name<span class="sc">}</span><span class="ss">: synced with </span><span class="sc">{</span>peer<span class="sc">.</span>name<span class="sc">}</span><span class="ss"> -&gt; </span><span class="sc">{</span><span class="bu">sorted</span>(<span class="va">self</span>.orset.value())<span class="sc">}</span><span class="ss">"</span></span>
 <span id="cb10-33"><a href="#cb10-33" aria-hidden="true" tabindex="-1"></a>            )</span>
 <span id="cb10-34"><a href="#cb10-34" aria-hidden="true" tabindex="-1"></a>            <span class="cf">await</span> <span class="va">self</span>.timeout(<span class="va">self</span>.sync_interval)</span></code></pre></div>
-<pre><code>[0] Ahmed: add 'banana' -&gt; ['banana']
+<pre data-file="crdt/ex_orset.out"><code>[0] Ahmed: add 'banana' -&gt; ['banana']
 [0] Baemi: add 'banana' -&gt; ['banana']
 [0] Chiti: add 'cherry' -&gt; ['cherry']
 [2] Ahmed: synced with Chiti -&gt; ['banana', 'cherry']
@@ -196,18 +196,18 @@ Baemi: ['apple', 'banana', 'cherry']
 Chiti: ['apple', 'banana', 'cherry']</code></pre>
 <h2 data-number="P.4" id="crdt-op"><span class="header-section-number">P.4</span> Operation-Based CRDTs</h2>
 <p>While state-based CRDTs send the full state between replicas operation-based CRDTs send just the operations. Let’s implement an operation-based counter by defining a dataclass to represent a single operation:</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
+<div class="sourceCode" id="cb12" data-file="crdt/opbased_counter.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Operation:</span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""An operation on a CRDT."""</span></span>
 <span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    op_type: <span class="bu">str</span></span>
 <span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>    replica_id: <span class="bu">str</span></span>
 <span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>    amount: <span class="bu">int</span> <span class="op">=</span> <span class="dv">0</span></span></code></pre></div>
 <p>and then a class to use it:</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb13" data-file="crdt/opbased_counter.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>Operation-based CRDTs require reliable broadcast to ensure that every operation reaches every replica exactly once. In practice, this means tracking which operations have been delivered and handling duplicates, which is what the <code>applied_ops</code> member of the <code>OpBasedCounter</code> class above does.</p>
 <p>“Exactly once” does not mean the network must guarantee it—networks never do. Instead, the sender can re-send operations as many times as needed (achieving “at least once”), and the receiver deduplicates using the unique operation ID (<code>applied_ops</code>). Together these give “exactly once” <em>effect</em>: the operation changes state only the first time it arrives. This is why operation IDs must be globally unique (not just unique per replica) and must be stored permanently— discarding <code>applied_ops</code> would allow a re-delivered operation to be applied twice, breaking convergence.</p>
 <p>The <code>Replica</code> class below exercises this counter:</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Replica(Process):</span>
+<div class="sourceCode" id="cb14" data-file="crdt/ex_opbased_counter.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Replica(Process):</span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""A replica that creates operations and broadcasts them to peers."""</span></span>
 <span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> init(<span class="va">self</span>, name, counter, peer_record, all_peers, interval):</span>
 <span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.name <span class="op">=</span> name</span>
@@ -243,7 +243,7 @@ Chiti: ['apple', 'banana', 'cherry']</code></pre>
 <span id="cb14-34"><a href="#cb14-34" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">}</span><span class="ss">] </span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>name<span class="sc">}</span><span class="ss">: applied inbox -&gt; </span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>counter<span class="sc">.</span>value<span class="sc">}</span><span class="ss">"</span>)</span>
 <span id="cb14-35"><a href="#cb14-35" aria-hidden="true" tabindex="-1"></a>            <span class="cf">await</span> <span class="va">self</span>.timeout(<span class="va">self</span>.interval)</span></code></pre></div>
 <p>Unlike the state-based examples that sync by merging full state, each replica creates an increment or decrement operation with a unique ID, applies it locally, and then broadcasts it to all the other replicates. The replica then drains its inbox and applies received operations, skipping duplicates via <code>op_id</code>. As the output below shows, all replicas converge to the same value because every operation is delivered to every replica exactly once:</p>
-<pre><code>[0] Ahmed: increment -&gt; 1
+<pre data-file="crdt/ex_opbased_counter.out"><code>[0] Ahmed: increment -&gt; 1
 [0] Baemi: increment -&gt; 1
 [0] Chiti: increment -&gt; 1
 [2] Ahmed: applied inbox -&gt; 3
@@ -268,9 +268,9 @@ OpCounter(id=Chiti, value=1)</code></pre>
 <h2 data-number="P.5" id="crdt-partition"><span class="header-section-number">P.5</span> Network Partition Simulation</h2>
 <p>A <a href="../glossary/index.html#network-partition">network partition</a> happens when nodes in a distributed system temporarily can’t communicate, which causes them to form isolated groups. As a result, messages sent from one part of the system may not reach another, effectively splitting the system into disconnected segments.</p>
 <p>One of CRDTs’ key benefits is <a href="../glossary/index.html#partition-tolerance">partition tolerance</a>. Let’s simulate a network partition using the <code>GCounter</code> class defined earlier. First, we create a simple dataclass to represent peers in the network:</p>
-<div class="sourceCode" id="cb16"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb16" data-file="crdt/ex_partition.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>Next, we define a <code>Replica</code> process that repeatedly tries to synchronize with a randomly-selected peer:</p>
-<div class="sourceCode" id="cb17"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Replica(Process):</span>
+<div class="sourceCode" id="cb17" data-file="crdt/ex_partition.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Replica(Process):</span>
 <span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""A replica that increments and syncs, respecting partitions."""</span></span>
 <span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> init(<span class="va">self</span>, name, counter, peer_record, all_peers, interval):</span>
 <span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.name <span class="op">=</span> name</span>
@@ -296,7 +296,7 @@ OpCounter(id=Chiti, value=1)</code></pre>
 <span id="cb17-24"><a href="#cb17-24" aria-hidden="true" tabindex="-1"></a>                )</span>
 <span id="cb17-25"><a href="#cb17-25" aria-hidden="true" tabindex="-1"></a>            <span class="cf">await</span> <span class="va">self</span>.timeout(<span class="va">self</span>.interval)</span></code></pre></div>
 <p>We then create a partition controller that creates and heals a partition:</p>
-<div class="sourceCode" id="cb18"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> PartitionController(Process):</span>
+<div class="sourceCode" id="cb18" data-file="crdt/ex_partition.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> PartitionController(Process):</span>
 <span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Create and heal a network partition between two peers."""</span></span>
 <span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> init(<span class="va">self</span>, peer_a, peer_b, start, end):</span>
 <span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.peer_a <span class="op">=</span> peer_a</span>
@@ -315,7 +315,7 @@ OpCounter(id=Chiti, value=1)</code></pre>
 <span id="cb18-17"><a href="#cb18-17" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.peer_b.partitioned_from.discard(<span class="va">self</span>.peer_a.name)</span>
 <span id="cb18-18"><a href="#cb18-18" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">}</span><span class="ss">] *** healed: </span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>peer_a<span class="sc">.</span>name<span class="sc">}</span><span class="ss"> &lt;---&gt; </span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>peer_b<span class="sc">.</span>name<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div>
 <p>Finally, we create three replicas and force a break in the network at a particular time and for a particular duration:</p>
-<div class="sourceCode" id="cb19"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>NAMES <span class="op">=</span> [<span class="st">"Ahmed"</span>, <span class="st">"Baemi"</span>, <span class="st">"Chiti"</span>]</span>
+<div class="sourceCode" id="cb19" data-file="crdt/ex_partition.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>NAMES <span class="op">=</span> [<span class="st">"Ahmed"</span>, <span class="st">"Baemi"</span>, <span class="st">"Chiti"</span>]</span>
 <span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> main():</span>
 <span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Show that GCounters converge after a partition heals."""</span></span>
 <span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>    env <span class="op">=</span> Environment()</span>
@@ -329,7 +329,7 @@ OpCounter(id=Chiti, value=1)</code></pre>
 <span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> p <span class="kw">in</span> peers:</span>
 <span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(p.counter)</span></code></pre></div>
 <p>As the output shows, the counter recovers from the partitioning:</p>
-<pre><code>[0] Ahmed: increment -&gt; 1
+<pre data-file="crdt/ex_partition.out"><code>[0] Ahmed: increment -&gt; 1
 [0] Baemi: increment -&gt; 1
 [0] Chiti: increment -&gt; 1
 [2] Ahmed: synced with Chiti -&gt; 2
@@ -375,6 +375,14 @@ GCounter(id=Chiti, value=12, counts={'Chiti': 4, 'Baemi': 4, 'Ahmed': 4})</code>
     <a class="pager-link next" href="../oauth/index.html">OAuth →</a>
   </nav>
 </footer>
+<script>
+document.addEventListener('click', function (e) {
+  var link = e.target.closest && e.target.closest('a');
+  document.querySelectorAll('details.topnav-dropdown[open]').forEach(function (d) {
+    if (!d.contains(e.target) || (link && d.contains(link))) d.removeAttribute('open');
+  });
+});
+</script>
 
 
 </body></html>

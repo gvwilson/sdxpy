@@ -66,12 +66,12 @@ Figure&nbsp;19.1: Dependencies and topological order.
 </div>
 <h2 data-number="19.2" id="build-design"><span class="header-section-number">19.2</span> Initial Design</h2>
 <p>Our first step is to decide how we are going to represent <a href="../glossary/index.html#build_rule">build rules</a>. We could invent a special-purpose syntax to fit the problem, but as we said in <a href="../parse/index.html" class="quarto-xref"><span>Chapter 5</span></a>, the world has enough data formats. Instead, we will represent our recipes as JSON. For example, this file describes two targets <code>A</code> and <code>B</code> and states that the former depends on the latter:</p>
-<pre><code>{
+<pre data-file="build/double_linear_dep.json"><code>{
   "A": {"depends": ["B"], "rule": "build A"},
   "B": {"depends": [], "rule": "build B"}
 }</code></pre>
 <p>As in <a href="../archive/index.html" class="quarto-xref"><span>Chapter 10</span></a>, we will use successive refinement to create our first build manager. Our <code>BuildBase</code> class takes a configuration file as a constructor argument, loads it, creates a topological ordering, and then refreshes each target in order. For now, “refreshing” means “prints the update rule”; we will come back and make this more sophisticated later.</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> BuildBase:</span>
+<div class="sourceCode" id="cb2" data-file="build/build_simple.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> BuildBase:</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> build(<span class="va">self</span>, config_file):</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>        config <span class="op">=</span> <span class="va">self</span>._configure(config_file)</span>
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>        ordered <span class="op">=</span> <span class="va">self</span>._topo_sort(config)</span>
@@ -81,9 +81,9 @@ Figure&nbsp;19.1: Dependencies and topological order.
 <span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">assert</span> node <span class="kw">in</span> config, <span class="ss">f"Unknown node </span><span class="sc">{</span>node<span class="sc">}</span><span class="ss">"</span></span>
 <span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(config[node][<span class="st">"rule"</span>])</span></code></pre></div>
 <p>To load a configuration file, we read in the JSON, build a set of known targets, and then verify each rule using a helper method called <code>_check</code>:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb3" data-file="build/build_simple.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>To check a rule, we make sure the dictionary that represents it has the required keys and that we have a rule for every dependency it mentions. We also transform the rule’s structure a bit to simplify later processing (<a href="#fig-build-diamond" class="quarto-xref">Figure&nbsp;<span>19.2</span></a>):</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb4" data-file="build/build_simple.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <div id="fig-build-diamond" class="quarto-float quarto-figure quarto-figure-center" alt="Diamond-shaped dependency graph">
 <figure class="quarto-float quarto-float-fig">
 <div aria-describedby="fig-build-diamond-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
@@ -119,13 +119,13 @@ Figure&nbsp;19.3: Topological Sort.
 </figure>
 </div>
 <p>The code that implements this algorithm is:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb5" data-file="build/build_simple.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>With all of this in place, we can run our first test:</p>
-<pre><code>{
+<pre data-file="build/double_linear_dep.json"><code>{
   "A": {"depends": ["B"], "rule": "build A"},
   "B": {"depends": [], "rule": "build B"}
 }</code></pre>
-<pre><code>build B
+<pre data-file="build/double_linear_dep.out"><code>build B
 build A</code></pre>
 <h2 data-number="19.4" id="build-better"><span class="header-section-number">19.4</span> A Better Design</h2>
 <p>Our implementation works, but we can do better:</p>
@@ -137,7 +137,7 @@ build A</code></pre>
 <li><p>We might want to add other keys to rules, so we should put that check in a separate method that we can override.</p></li>
 </ol>
 <p>The top level of our better build manager looks like this:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> BuildBetter:</span>
+<div class="sourceCode" id="cb8" data-file="build/build_better.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> BuildBetter:</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> build(<span class="va">self</span>, config):</span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>        config <span class="op">=</span> <span class="va">self</span>._configure(config)</span>
 <span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>        ordered <span class="op">=</span> <span class="va">self</span>._topo_sort(config)</span>
@@ -152,11 +152,11 @@ build A</code></pre>
 <span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="kw">not</span> condition:</span>
 <span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>            <span class="cf">raise</span> <span class="pp">ValueError</span>(message)</span></code></pre></div>
 <p>The revised configuration code is:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb9" data-file="build/build_better.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>and the updated topological sorting method is</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb10" data-file="build/build_better.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>We can now test that the code detects circularities in the dependency graph:</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_circular():</span>
+<div class="sourceCode" id="cb11" data-file="build/test_build_better.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_circular():</span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>    action_A <span class="op">=</span> <span class="st">"build A"</span></span>
 <span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    action_B <span class="op">=</span> <span class="st">"build B"</span></span>
 <span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    config <span class="op">=</span> {</span>
@@ -169,7 +169,7 @@ build A</code></pre>
 <span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">except</span> <span class="pp">ValueError</span>:</span>
 <span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>        <span class="cf">pass</span></span></code></pre></div>
 <p>and that it builds what it’s supposed to:</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_no_dep():</span>
+<div class="sourceCode" id="cb12" data-file="build/test_build_better.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_no_dep():</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>    action_A <span class="op">=</span> <span class="st">"build A"</span></span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    action_B <span class="op">=</span> <span class="st">"build B"</span></span>
 <span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    config <span class="op">=</span> {</span>
@@ -178,7 +178,7 @@ build A</code></pre>
 <span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>    }</span>
 <span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> Builder().build(config) <span class="op">==</span> [action_A, action_B]</span></code></pre></div>
 <p>We can also extend it. For example, suppose we only want to update targets that are older than their dependencies (which is, after all, the whole point of a build manager). If the targets are actual files we can check their timestamps, but for testing purposes we would like to specify pretended times in the configuration:</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_diamond_dep():</span>
+<div class="sourceCode" id="cb13" data-file="build/test_build_time.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_diamond_dep():</span>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>    action_A <span class="op">=</span> <span class="st">"build A"</span></span>
 <span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    action_B <span class="op">=</span> <span class="st">"build B"</span></span>
 <span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    action_C <span class="op">=</span> <span class="st">"build C"</span></span>
@@ -191,7 +191,7 @@ build A</code></pre>
 <span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>    }</span>
 <span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> Builder().build(config) <span class="op">==</span> [action_B, action_A]</span></code></pre></div>
 <p>Starting from the class we have written so far, we need to override three methods:</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> BuildTime(BuildBetter):</span>
+<div class="sourceCode" id="cb14" data-file="build/build_time.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> BuildTime(BuildBetter):</span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _check_keys(<span class="va">self</span>, name, details):</span>
 <span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>        <span class="bu">super</span>()._check_keys(name, details)</span>
 <span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._must(<span class="st">"time"</span> <span class="kw">in</span> details, <span class="ss">f"No time for </span><span class="sc">{</span>name<span class="sc">}</span><span class="ss">"</span>)</span>
@@ -260,6 +260,14 @@ Figure&nbsp;19.4: Concept map.
     <a class="pager-link next" href="../pack/index.html">A Package Manager →</a>
   </nav>
 </footer>
+<script>
+document.addEventListener('click', function (e) {
+  var link = e.target.closest && e.target.closest('a');
+  document.querySelectorAll('details.topnav-dropdown[open]').forEach(function (d) {
+    if (!d.contains(e.target) || (link && d.contains(link))) d.removeAttribute('open');
+  });
+});
+</script>
 
 
 </body></html>

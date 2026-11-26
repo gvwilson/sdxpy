@@ -47,7 +47,7 @@
 <p>You might be reading this as HTML in your browser, as an e-book, or on the printed page. In all three cases a <a href="../glossary/index.html#layout_engine">layout engine</a> took some text and some layout instructions and decided where to put each character and image. To explore how they work, we will build a small layout engine based on Matt Brubeck's <a href="https://limpet.net/mbrubeck/2014/08/08/toy-layout-engine-1.html">tutorial</a> and on <a href="https://pavpanchekha.com/">Pavel Panchekha</a> and <a href="https://twitter.com/chrishtr">Chris Harrelson’s</a> book <a href="https://browser.engineering/"><em>Web Browser Engineering</em></a>. Since our focus is layout, we will create objects ourselves to represent DOM nodes rather than parsing HTML.</p>
 <h2 data-number="14.1" id="layout-size"><span class="header-section-number">14.1</span> Sizing</h2>
 <p>Let’s start on <a href="../glossary/index.html#easy_mode">easy mode</a> without margins, padding, line-wrapping, or other complications. Everything we can put on the screen is represented as a rectangular cell, and every cell is either a row, a column, or a <a href="../glossary/index.html#block_page">block</a>. A block has a fixed width and height:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Block:</span>
+<div class="sourceCode" id="cb1" data-file="layout/easy_mode.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Block:</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, width, height):</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.width <span class="op">=</span> width</span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.height <span class="op">=</span> height</span>
@@ -72,7 +72,7 @@ Figure&nbsp;14.1: Coordinate system with (0, 0) in the upper-left corner.
 </figure>
 </div>
 <p>A row arranges one or more cells horizontally; its width is the sum of the widths of its children, while its height is the height of its tallest child (<a href="#fig-layout-sizing" class="quarto-xref">Figure&nbsp;<span>14.2</span></a>):</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Row:</span>
+<div class="sourceCode" id="cb2" data-file="layout/easy_mode.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Row:</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, <span class="op">*</span>children):</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.children <span class="op">=</span> <span class="bu">list</span>(children)</span>
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> get_width(<span class="va">self</span>):</span>
@@ -93,7 +93,7 @@ Figure&nbsp;14.2: Calculating sizes of blocks with fixed width and height.
 </figure>
 </div>
 <p>Finally, a column arranges one or more cells vertically: its width is the width of its widest child and its height is the sum of the heights of its children. (Here and elsewhere, we use the abbreviation <code>col</code> when referring to columns.)</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Col:</span>
+<div class="sourceCode" id="cb3" data-file="layout/easy_mode.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Col:</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, <span class="op">*</span>children):</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.children <span class="op">=</span> <span class="bu">list</span>(children)</span>
 <span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> get_width(<span class="va">self</span>):</span>
@@ -105,7 +105,7 @@ Figure&nbsp;14.2: Calculating sizes of blocks with fixed width and height.
 <span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="bu">sum</span>([c.get_height() <span class="cf">for</span> c <span class="kw">in</span> <span class="va">self</span>.children])</span></code></pre></div>
 <p>Rows and columns nest inside one another: a row cannot span two or more columns, and a column cannot cross the boundary between two rows. We can therefore represent our document as a tree and calculate the width and height of each cell every time we need it. This is simple but inefficient: we could calculate both width and height at the same time and cache those values to avoid recalculation, but we called this “easy mode” for a reason.</p>
 <p>As simple as it is, this code could still contain errors (and did during development), so we write some tests to check that it works properly before trying to build anything more complicated. One such test is:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_lays_out_a_grid_of_rows_of_columns():</span>
+<div class="sourceCode" id="cb4" data-file="layout/test_easy_mode.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_lays_out_a_grid_of_rows_of_columns():</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    fixture <span class="op">=</span> Col(</span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>        Row(Block(<span class="dv">1</span>, <span class="dv">2</span>), Block(<span class="dv">3</span>, <span class="dv">4</span>)),</span>
 <span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>        Row(Block(<span class="dv">5</span>, <span class="dv">6</span>), Col(Block(<span class="dv">7</span>, <span class="dv">8</span>), Block(<span class="dv">9</span>, <span class="dv">10</span>)))</span>
@@ -125,7 +125,7 @@ Figure&nbsp;14.3: Laying out rows and columns of fixed-size blocks.
 </figure>
 </div>
 <p>To save ourselves some work, we will derive the classes that know how to do layout from the classes we wrote before. Basic blocks are:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> PlacedBlock(Block):</span>
+<div class="sourceCode" id="cb5" data-file="layout/placed.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> PlacedBlock(Block):</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, width, height):</span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>        <span class="bu">super</span>().<span class="fu">__init__</span>(width, height)</span>
 <span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.x0 <span class="op">=</span> <span class="va">None</span></span>
@@ -140,11 +140,11 @@ Figure&nbsp;14.3: Laying out rows and columns of fixed-size blocks.
 <span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.x0 <span class="op">+</span> <span class="va">self</span>.width, <span class="va">self</span>.y0 <span class="op">+</span> <span class="va">self</span>.height</span>
 <span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>        ]</span></code></pre></div>
 <p>The constructor and reporting method for the <code>PlacedCol</code> class looks much the same. Its placement method is:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb6" data-file="layout/placed.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>while the placement method for rows is:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb7" data-file="layout/placed.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>Once again, we write and run some tests to check that everything is doing what it’s supposed to. One such test is:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_places_a_column_of_two_blocks():</span>
+<div class="sourceCode" id="cb8" data-file="layout/test_placed.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_places_a_column_of_two_blocks():</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    fixture <span class="op">=</span> Col(Block(<span class="dv">1</span>, <span class="dv">1</span>), Block(<span class="dv">2</span>, <span class="dv">4</span>))</span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    fixture.place(<span class="dv">0</span>, <span class="dv">0</span>)</span>
 <span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> fixture.report() <span class="op">==</span> [</span>
@@ -166,13 +166,13 @@ Figure&nbsp;14.4: Render blocks by drawing child nodes on top of parent nodes.
 </figure>
 </div>
 <p>Our “screen” is a list of lists of characters, with one inner list for each a row on the screen. (We use lists rather than strings so that we can overwrite characters in place.)</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> make_screen(width, height):</span>
+<div class="sourceCode" id="cb9" data-file="layout/render.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> make_screen(width, height):</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    screen <span class="op">=</span> []</span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(height):</span>
 <span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>        screen.append([<span class="st">" "</span>] <span class="op">*</span> width)</span>
 <span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> screen</span></code></pre></div>
 <p>We will use successive lower-case characters to show each block, i.e., the root block will draw itself using ‘a’, while its children will be ‘b’, ‘c’, and so on.</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> draw(screen, node, fill<span class="op">=</span><span class="va">None</span>):</span>
+<div class="sourceCode" id="cb10" data-file="layout/render.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> draw(screen, node, fill<span class="op">=</span><span class="va">None</span>):</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>    fill <span class="op">=</span> next_fill(fill)</span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    node.render(screen, fill)</span>
 <span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="bu">hasattr</span>(node, <span class="st">"children"</span>):</span>
@@ -182,13 +182,13 @@ Figure&nbsp;14.4: Render blocks by drawing child nodes on top of parent nodes.
 <span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> next_fill(fill):</span>
 <span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="st">"a"</span> <span class="cf">if</span> fill <span class="kw">is</span> <span class="va">None</span> <span class="cf">else</span> <span class="bu">chr</span>(<span class="bu">ord</span>(fill) <span class="op">+</span> <span class="dv">1</span>)</span></code></pre></div>
 <p>To teach each kind of cell to render itself, we derive new classes from the ones we have and give each of those new classes a <code>render</code> method with the same signature. Since Python supports multiple inheritance, we can do this with a <a href="../glossary/index.html#mixin_class">mixin class</a> (<a href="#fig-layout-mixin" class="quarto-xref">Figure&nbsp;<span>14.5</span></a>). The <code>Renderable</code> mixin is:</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Renderable:</span>
+<div class="sourceCode" id="cb11" data-file="layout/rendered.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Renderable:</span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> render(<span class="va">self</span>, screen, fill):</span>
 <span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> ix <span class="kw">in</span> <span class="bu">range</span>(<span class="va">self</span>.get_width()):</span>
 <span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>            <span class="cf">for</span> iy <span class="kw">in</span> <span class="bu">range</span>(<span class="va">self</span>.get_height()):</span>
 <span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>                screen[<span class="va">self</span>.y0 <span class="op">+</span> iy][<span class="va">self</span>.x0 <span class="op">+</span> ix] <span class="op">=</span> fill</span></code></pre></div>
 <p>Using it, the new cell classes are simply:</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> RenderedBlock(PlacedBlock, Renderable):</span>
+<div class="sourceCode" id="cb12" data-file="layout/rendered.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> RenderedBlock(PlacedBlock, Renderable):</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">pass</span></span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> RenderedCol(PlacedCol, Renderable):</span>
 <span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">pass</span></span>
@@ -211,7 +211,7 @@ Figure&nbsp;14.5: Using multiple inheritance and a mixin class to add methods.
 </blockquote>
 </div>
 <p>Simple tests are a little easier to read using rendering, though we still had to draw things on paper to figure out what to expect:</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_renders_a_column_of_two_blocks():</span>
+<div class="sourceCode" id="cb13" data-file="layout/test_rendered.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_renders_a_column_of_two_blocks():</span>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>    fixture <span class="op">=</span> Col(Block(<span class="dv">1</span>, <span class="dv">1</span>), Block(<span class="dv">2</span>, <span class="dv">4</span>))</span>
 <span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    fixture.place(<span class="dv">0</span>, <span class="dv">0</span>)</span>
 <span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    expected <span class="op">=</span> <span class="st">"</span><span class="ch">\n</span><span class="st">"</span>.join([<span class="st">"ba"</span>, <span class="st">"cc"</span>, <span class="st">"cc"</span>, <span class="st">"cc"</span>, <span class="st">"cc"</span>])</span>
@@ -221,7 +221,7 @@ Figure&nbsp;14.5: Using multiple inheritance and a mixin class to add methods.
 <p>One of the biggest differences between a browser and a printed page is that the text in the browser wraps automatically as the window is resized. (The other, these days, is that the printed page doesn’t spy on us, though someone is undoubtedly working on that.)</p>
 <p>The first step in adding wrapping to our layout engine is to fix the width of a row. If the total width of the children is greater than the row’s width, the layout engine needs to wrap the children around. This assumes that columns can be made as tall as they need to be, i.e., that we can grow vertically to make up for limited space horizontally. It also assumes that none of a row’s children is wider than the width of the row so that each can fit in a row of its own if necessary. We will look at what happens when this isn’t true in the exercises.</p>
 <p>Our layout engine manages wrapping by transforming the tree. The height and width of blocks are fixed, so they become themselves. Columns become themselves as well, but since they have children that might need to wrap, the class representing columns needs a new method:</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> WrappedBlock(PlacedBlock):</span>
+<div class="sourceCode" id="cb14" data-file="layout/wrapped.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> WrappedBlock(PlacedBlock):</span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> wrap(<span class="va">self</span>):</span>
 <span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span></span>
 <span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> WrappedCol(PlacedCol):</span>
@@ -240,7 +240,7 @@ Figure&nbsp;14.6: Wrapping rows by introducing a new row and column.
 </figure>
 </div>
 <p>Our new wrappable row’s constructor takes a fixed width followed by the children and returns that fixed width when asked for its size:</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> WrappedRow(PlacedRow):</span>
+<div class="sourceCode" id="cb15" data-file="layout/wrapped.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> WrappedRow(PlacedRow):</span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, width, <span class="op">*</span>children):</span>
 <span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>        <span class="bu">super</span>().<span class="fu">__init__</span>(<span class="op">*</span>children)</span>
 <span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>        <span class="cf">assert</span> width <span class="op">&gt;=</span> <span class="dv">0</span>, <span class="st">"Need non-negative width"</span></span>
@@ -248,11 +248,11 @@ Figure&nbsp;14.6: Wrapping rows by introducing a new row and column.
 <span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> get_width(<span class="va">self</span>):</span>
 <span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>.width</span></code></pre></div>
 <p>Wrapping puts the row’s children into buckets, and then converts the buckets to a row of a column of rows:</p>
-<div class="sourceCode" id="cb16"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb16" data-file="layout/wrapped.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>To bucket the children, we add them one at a time to a temporary list. If adding another node would make the total width of the nodes in that list too large, we use that node to start a new temporary list:</p>
-<div class="sourceCode" id="cb17"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb17" data-file="layout/wrapped.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>Once again, we bring forward all the previous tests and write some new ones to test the functionality we’ve added:</p>
-<div class="sourceCode" id="cb18"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_wrap_a_row_of_two_blocks_that_do_not_fit_on_one_row():</span>
+<div class="sourceCode" id="cb18" data-file="layout/test_wrapped.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_wrap_a_row_of_two_blocks_that_do_not_fit_on_one_row():</span>
 <span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>    fixture <span class="op">=</span> WrappedRow(<span class="dv">3</span>, WrappedBlock(<span class="dv">2</span>, <span class="dv">1</span>), WrappedBlock(<span class="dv">2</span>, <span class="dv">1</span>))</span>
 <span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>    wrapped <span class="op">=</span> fixture.wrap()</span>
 <span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>    wrapped.place(<span class="dv">0</span>, <span class="dv">0</span>)</span>
@@ -311,7 +311,7 @@ Figure&nbsp;14.7: Page layout concept map.
 <p>Look at the documentation for Python’s <code>@property</code> decorator and modify the block classes to replace the <code>get_width</code> and <code>get_height</code> methods with properties called <code>width</code> and <code>height</code>.</p>
 <h3 data-number="14.6.9" id="drawing-borders"><span class="header-section-number">14.6.9</span> Drawing Borders</h3>
 <p>Modify the existing code so that elements are drawn with borders like this:</p>
-<pre><code>+----+
+<pre data-file="layout/ex_box.txt"><code>+----+
 |text|
 +----+</code></pre>
 <h3 data-number="14.6.10" id="padding-elements"><span class="header-section-number">14.6.10</span> Padding Elements</h3>
@@ -321,7 +321,7 @@ Figure&nbsp;14.7: Page layout concept map.
 <li><p>When the node is rendered, that many blank spaces are added on all four sides of the contents.</p></li>
 </ol>
 <p>For example, string <code>"text"</code> with a padding of 1 would render as:</p>
-<pre><code>+------+
+<pre data-file="layout/ex_padding.txt"><code>+------+
 |      |
 | text |
 |      |
@@ -342,6 +342,14 @@ Figure&nbsp;14.7: Page layout concept map.
     <a class="pager-link next" href="../perf/index.html">Performance Profiling →</a>
   </nav>
 </footer>
+<script>
+document.addEventListener('click', function (e) {
+  var link = e.target.closest && e.target.closest('a');
+  document.querySelectorAll('details.topnav-dropdown[open]').forEach(function (d) {
+    if (!d.contains(e.target) || (link && d.contains(link))) d.removeAttribute('open');
+  });
+});
+</script>
 
 
 </body></html>

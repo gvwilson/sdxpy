@@ -75,7 +75,7 @@
 <p>The key insight is <strong>tit-for-tat</strong>: peers upload to those who upload to them. This creates incentives for cooperation without central enforcement.</p>
 <h2 data-number="S.2" id="core-data-structures"><span class="header-section-number">S.2</span> Core Data Structures</h2>
 <p>Let’s start with the fundamental types. The file types describe pieces and torrent metadata:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
+<div class="sourceCode" id="cb1" data-file="torrent/bittorrent_types.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Piece:</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""A piece of the file being shared."""</span></span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    index: <span class="bu">int</span></span>
@@ -112,7 +112,7 @@
 <span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="va">False</span></span>
 <span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>.peer_id <span class="op">==</span> other.peer_id</span></code></pre></div>
 <p>The message types describe the protocol exchanges between peers and tracker:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
+<div class="sourceCode" id="cb2" data-file="torrent/bittorrent_types.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> TrackerRequest:</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Request to tracker."""</span></span>
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    info_hash: <span class="bu">str</span></span>
@@ -159,23 +159,23 @@
 <p>These structures represent the protocol’s messages and state. The bitfield is particularly important—it compactly represents which pieces a peer has.</p>
 <h2 data-number="S.3" id="tracker-implementation"><span class="header-section-number">S.3</span> Tracker Implementation</h2>
 <p>The tracker coordinates the swarm by maintaining a list of active peers. The class and its constructor set up the request queue and swarm registry:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb3" data-file="torrent/tracker.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>When a peer announces itself, <code>handle_request</code> updates the swarm and returns a list of known peers:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb4" data-file="torrent/tracker.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>The tracker is stateless—it just maintains the current list of peers. In production, trackers often use UDP for efficiency and can handle millions of peers.</p>
 <h2 data-number="S.4" id="simplified-peer"><span class="header-section-number">S.4</span> Simplified Peer</h2>
 <p>The peer is the heart of BitTorrent—it downloads pieces, uploads to others, and manages connections. The constructor stores the peer’s identity, piece inventory, and connections to other peers:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb5" data-file="torrent/simplified_peer.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>The <code>run</code> method announces to the tracker, then loops through download rounds until all pieces are obtained:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb6" data-file="torrent/simplified_peer.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>Each download round selects pieces to request using rarest-first ordering, then attempts to download from available peers:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb7" data-file="torrent/simplified_peer.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p><code>_download_from_peer</code> applies the tit-for-tat rule—only downloading from a peer if it has uploaded to us recently—and on success updates piece state and broadcasts a HAVE message:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb8" data-file="torrent/simplified_peer.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>This simplified version captures the essence of BitTorrent without all the protocol complexity.</p>
 <h2 data-number="S.5" id="basic-simulation"><span class="header-section-number">S.5</span> Basic Simulation</h2>
 <p>Let’s see BitTorrent in action:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> run_basic_bittorrent() <span class="op">-&gt;</span> <span class="va">None</span>:</span>
+<div class="sourceCode" id="cb9" data-file="torrent/example_basic_bittorrent.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> run_basic_bittorrent() <span class="op">-&gt;</span> <span class="va">None</span>:</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Demonstrate basic BitTorrent operation."""</span></span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    env <span class="op">=</span> Environment()</span>
 <span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Create tracker</span></span>
@@ -233,17 +233,17 @@
 <h3 data-number="S.6.4" id="choking-algorithm"><span class="header-section-number">S.6.4</span> Choking Algorithm</h3>
 <p>Peers limit uploads to their top 4-5 uploaders. This maximizes efficiency by focusing bandwidth on productive connections rather than spreading it thin.</p>
 <p><code>ChokingPeer</code> implements the full choking/unchoking algorithm:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
+<div class="sourceCode" id="cb10" data-file="torrent/choking_peer.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> UploadRecord:</span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Tracks how much a peer has uploaded to us in the recent window."""</span></span>
 <span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    peer_id: <span class="bu">str</span></span>
 <span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    bytes_received: <span class="bu">int</span> <span class="op">=</span> <span class="dv">0</span>   <span class="co"># bytes downloaded FROM this peer recently</span></span>
 <span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>    is_choked: <span class="bu">bool</span> <span class="op">=</span> <span class="va">True</span>    <span class="co"># are we choking this peer (refusing to upload)?</span></span></code></pre></div>
-<div class="sourceCode" id="cb11"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb11" data-file="torrent/choking_peer.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>The <code>rechoke</code> method re-evaluates who gets upload slots based on recent upload history, and <code>rotate_optimistic</code> gives new peers a chance to prove themselves:</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb12" data-file="torrent/choking_peer.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>Piece verification checks each downloaded piece against the SHA-1 hash in the torrent metadata:</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb13" data-file="torrent/choking_peer.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <h3 data-number="S.6.5" id="end-game-mode"><span class="header-section-number">S.6.5</span> End Game Mode</h3>
 <p>When almost complete, aggressively request remaining pieces from all peers. Cancel duplicate requests when pieces arrive. This prevents the last few pieces from taking disproportionately long.</p>
 <h2 data-number="S.7" id="dht-distributed-hash-table"><span class="header-section-number">S.7</span> DHT (Distributed Hash Table)</h2>
@@ -295,6 +295,14 @@
     <a class="pager-link next" href="../eventual/index.html">Eventually Consistent Key-Value Store →</a>
   </nav>
 </footer>
+<script>
+document.addEventListener('click', function (e) {
+  var link = e.target.closest && e.target.closest('a');
+  document.querySelectorAll('details.topnav-dropdown[open]').forEach(function (d) {
+    if (!d.contains(e.target) || (link && d.contains(link))) d.removeAttribute('open');
+  });
+});
+</script>
 
 
 </body></html>

@@ -72,12 +72,12 @@
 <h2 data-number="Q.2" id="oauth-messages"><span class="header-section-number">Q.2</span> Message Types</h2>
 <p>The most common OAuth flow is the Authorization Code flow designed for server-side applications. Before looking at the servers themselves, we need to understand the data types they exchange.</p>
 <p>The foundation is a helper function that generates random strings for codes and tokens:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> generate_token(prefix: <span class="bu">str</span> <span class="op">=</span> <span class="st">"tok"</span>) <span class="op">-&gt;</span> <span class="bu">str</span>:</span>
+<div class="sourceCode" id="cb1" data-file="oauth/oauth_types.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> generate_token(prefix: <span class="bu">str</span> <span class="op">=</span> <span class="st">"tok"</span>) <span class="op">-&gt;</span> <span class="bu">str</span>:</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Generate a random token."""</span></span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    random_part <span class="op">=</span> <span class="st">""</span>.join(random.choices(string.ascii_letters <span class="op">+</span> string.digits, k<span class="op">=</span><span class="dv">16</span>))</span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="ss">f"</span><span class="sc">{</span>prefix<span class="sc">}</span><span class="ss">_</span><span class="sc">{</span>random_part<span class="sc">}</span><span class="ss">"</span></span></code></pre></div>
 <p>The six message dataclasses come in three request-response pairs, one for each phase of the protocol. <code>AuthorizationRequest</code> carries the client’s identity, the desired <a href="../glossary/index.html#oauth-scope">scope</a>, and a <code>state</code> token for <a href="../glossary/index.html#csrf">cross-site request forgery</a> (CSRF) protection. <code>TokenRequest</code> carries the one-time code along with the client’s own credentials so the authorization server can verify who it is talking to. <code>ResourceRequest</code> carries the access token so the resource server can check whether the caller is allowed to see the requested data:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
+<div class="sourceCode" id="cb2" data-file="oauth/oauth_types.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> AuthorizationRequest:</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Request for user authorization."""</span></span>
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    client_id: <span class="bu">str</span></span>
@@ -133,7 +133,7 @@
 <span id="cb2-54"><a href="#cb2-54" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="st">"ResourceResponse(success=True)"</span></span>
 <span id="cb2-55"><a href="#cb2-55" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="ss">f"ResourceResponse(error=</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>error<span class="sc">}</span><span class="ss">)"</span></span></code></pre></div>
 <p>The servers also need two internal record-keeping types. An <code>AuthorizationCode</code> tracks whether a code has already been used (codes are one-time-only) and when it expires. An <code>AccessToken</code> records which client owns it, what scopes it covers, and when it expires. Both have an <code>is_valid</code> method that encapsulates this check:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
+<div class="sourceCode" id="cb3" data-file="oauth/oauth_types.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> AuthorizationCode:</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Authorization code with metadata."""</span></span>
 <span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    code: <span class="bu">str</span></span>
@@ -158,48 +158,48 @@
 <p>The authorization code is short-lived (typically 10 minutes), while access tokens last longer (often 1 hour).</p>
 <h2 data-number="Q.3" id="oauth-authserver"><span class="header-section-number">Q.3</span> Authorization Server</h2>
 <p>The authorization server is the <a href="../glossary/index.html#trust-anchor">trust anchor</a> of OAuth: it verifies the user’s identity, obtains consent, and issues tokens. Its <code>init</code> method creates two incoming queues and three dictionaries for tracking registered clients, issued codes, and active tokens:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb4" data-file="oauth/authorization_server.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>Before any client can use the server, it must be registered with a client ID, a shared secret, and a list of allowed redirect URIs. The redirect URI check is an important security constraint: it prevents an attacker from registering a lookalike app and redirecting authorization codes to a server they control:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb5" data-file="oauth/authorization_server.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>The server’s event loop uses asimpy’s <code>FirstOf</code> to wait on both queues simultaneously. Whichever queue receives a message first wins; the other request is automatically cancelled:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb6" data-file="oauth/authorization_server.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>When an authorization request arrives, <code>handle_authorization_request</code> delegates to two helpers and handles the user consent simulation in between:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb7" data-file="oauth/authorization_server.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p><code>_validate_auth_request</code> checks that the client is registered and that the redirect URI is one the client pre-registered. Checking the redirect URI here is an important security constraint: without it, an attacker could register a lookalike application and redirect authorization codes to a server they control:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb8" data-file="oauth/authorization_server.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p><code>_issue_authorization_code</code> generates the code, records it in <code>auth_codes</code> with its expiry and scope, and sends it back through the response queue embedded in the request:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb9" data-file="oauth/authorization_server.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>When the client then presents that code to exchange it for a token, <code>handle_token_request</code> is similarly short because all the checking is delegated:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb10" data-file="oauth/authorization_server.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p><code>_validate_token_request</code> works through a chain of checks: the client must exist, the secret must match, the code must exist and still be valid, and the client and redirect URI in the token request must exactly match those in the original authorization request. Any mismatch sends an error response and returns <code>None</code> so the caller can exit early. The method constructs the error response once at the top rather than repeating it at each branch:</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb11" data-file="oauth/authorization_server.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p><code>_issue_access_token</code> marks the code as <code>used</code> before doing anything else. This is the line that makes authorization codes one-time-only: re-using a code is one of the classic attack vectors against OAuth, so the flag must be set before the token is issued, not after:</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb12" data-file="oauth/authorization_server.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <h2 data-number="Q.4" id="oauth-resserver"><span class="header-section-number">Q.4</span> Resource Server</h2>
 <p>The resource server hosts the protected API. Its <code>init</code> method takes a reference to the authorization server so it can look up tokens, and it stores a dictionary of protected resources where each entry specifies the required scope and the data to return:</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb13" data-file="oauth/resource_server.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>Critically, the resource server doesn’t need to know anything about users, only about tokens and scopes. Its event loop is simpler than the authorization server’s because it has only one incoming queue:</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb14" data-file="oauth/resource_server.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>When a request arrives, <code>handle_resource_request</code> delegates to two helpers and sends the successful response only if both pass:</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb15" data-file="oauth/resource_server.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p><code>_validate_token</code> looks the token up in the authorization server’s table and checks it hasn’t expired. Because the resource server shares a reference to the authorization server, it can read <code>access_tokens</code> directly without a network call—a simplification that real deployments replace with a token introspection endpoint or a shared cache:</p>
-<div class="sourceCode" id="cb16"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb16" data-file="oauth/resource_server.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p><code>_check_resource_access</code> confirms the path exists and then checks scope using set operations. The token must cover all scopes the resource requires, but may cover more, so a token issued with <code>["profile", "photos"]</code> scope passes a check for a resource that requires only <code>["profile"]</code>:</p>
-<div class="sourceCode" id="cb17"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb17" data-file="oauth/resource_server.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <h2 data-number="Q.5" id="oauth-client"><span class="header-section-number">Q.5</span> OAuth Client</h2>
 <p>The OAuth client orchestrates the authorization flow. Its <code>init</code> method stores the client credentials and references to both servers, and initializes <code>access_token</code> to <code>None</code> since no token has been issued yet:</p>
-<div class="sourceCode" id="cb18"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb18" data-file="oauth/oauth_client.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>The client’s <code>run</code> method calls three helper methods in sequence, aborting if any step fails. It requests authorization for the <code>profile</code> and <code>photos</code> scopes, exchanges the resulting code for an access token, then uses that token to make three API calls, including one for <code>messages</code> that it was not granted access to:</p>
-<div class="sourceCode" id="cb19"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb19" data-file="oauth/oauth_client.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p><code>request_authorization</code> generates a <code>state</code> token before sending the request. This state value is a random string that the client includes in the request and the server echoes back in the response. The client checks that the echoed state matches the one it sent, which detects CSRF attacks where an attacker tricks a user’s browser into sending a forged callback:</p>
-<div class="sourceCode" id="cb20"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb20" data-file="oauth/oauth_client.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p><code>exchange_code_for_token</code> packages the code with the client credentials and sends the bundle to the token endpoint. The client must authenticate itself here—not just the user—because the token endpoint needs to confirm that the party asking for the token is the same one that originally registered with the server:</p>
-<div class="sourceCode" id="cb21"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb21" data-file="oauth/oauth_client.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p><code>access_resource</code> wraps the stored token in a <code>ResourceRequest</code> and waits for the response. The client never stores the user’s password at any point in this flow; it only ever handles codes and tokens:</p>
-<div class="sourceCode" id="cb22"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb22" data-file="oauth/oauth_client.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <h2 data-number="Q.6" id="oauth-sim"><span class="header-section-number">Q.6</span> Basic OAuth Simulation</h2>
 <p>Putting it all together, the simulation creates an authorization server and resource server, registers a client application called <code>photo_app</code>, and then runs the complete three-step flow:</p>
-<div class="sourceCode" id="cb23"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> main():</span>
+<div class="sourceCode" id="cb23" data-file="oauth/ex_basic_oauth.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> main():</span>
 <span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Demonstrate basic OAuth 2.0 authorization code flow."""</span></span>
 <span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>    env <span class="op">=</span> Environment()</span>
 <span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Create authorization server</span></span>
@@ -225,7 +225,7 @@
 <span id="cb23-24"><a href="#cb23-24" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Run simulation</span></span>
 <span id="cb23-25"><a href="#cb23-25" aria-hidden="true" tabindex="-1"></a>    env.run(until<span class="op">=</span><span class="dv">20</span>)</span></code></pre></div>
 <p>The output shows the servers processing requests in sequence, the user authentication pause, the code exchange, and finally the resource access attempts—including the denied request for <code>messages</code>, which the client was never granted permission to read.</p>
-<pre><code>[0.0] Authorization Server started
+<pre data-file="oauth/ex_basic_oauth.out"><code>[0.0] Authorization Server started
 [0.0] Resource Server started
 [0.0] Registered client: photo_app
 [0.0] Client 'photo_app' started
@@ -254,7 +254,7 @@
 <h2 data-number="Q.7" id="oauth-pkce"><span class="header-section-number">Q.7</span> PKCE for Public Clients</h2>
 <p>The authorization code flow above assumes the client has a <code>client_secret</code>— a shared secret between the client and the authorization server. Mobile apps and single-page apps cannot keep a secret: anyone who installs the app or reads the JavaScript source code can extract it. PKCE (Proof Key for Code Exchange, RFC 7636) solves this.</p>
 <p>Before making the authorization request, the client generates a random <em>code verifier</em> and computes a <em>code challenge</em> by hashing it with SHA-256:</p>
-<div class="sourceCode" id="cb25"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> generate_code_verifier(length: <span class="bu">int</span> <span class="op">=</span> <span class="dv">64</span>) <span class="op">-&gt;</span> <span class="bu">str</span>:</span>
+<div class="sourceCode" id="cb25" data-file="oauth/pkce_client.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> generate_code_verifier(length: <span class="bu">int</span> <span class="op">=</span> <span class="dv">64</span>) <span class="op">-&gt;</span> <span class="bu">str</span>:</span>
 <span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Generate a cryptographically random code verifier.</span></span>
 <span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a><span class="co">    The verifier must be 43–128 characters of URL-safe random data.</span></span>
 <span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a><span class="co">    In production, use os.urandom and encode as base64url.</span></span>
@@ -275,7 +275,7 @@
 <span id="cb25-19"><a href="#cb25-19" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Verify that the verifier matches the stored challenge."""</span></span>
 <span id="cb25-20"><a href="#cb25-20" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> compute_code_challenge(verifier) <span class="op">==</span> stored_challenge</span></code></pre></div>
 <p>The client sends the challenge (not the verifier) in the authorization request. When exchanging the code for a token, it sends the original verifier. The server hashes it and checks that it matches the stored challenge. An attacker who intercepts the code cannot use it without knowing the verifier, which was never sent over the network.</p>
-<div class="sourceCode" id="cb26"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> PKCEClient(Process):</span>
+<div class="sourceCode" id="cb26" data-file="oauth/pkce_client.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> PKCEClient(Process):</span>
 <span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""OAuth client that uses PKCE for the authorization code flow.</span></span>
 <span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a><span class="co">    This client generates a code verifier before requesting authorization,</span></span>
 <span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a><span class="co">    sends the code challenge with the authorization request,</span></span>
@@ -365,7 +365,7 @@
 <p><strong>Token storage:</strong> Once a client has an access token, it must store it securely. On mobile apps, use the platform’s secure storage (iOS Keychain, Android Keystore). In web apps, prefer <code>sessionStorage</code> over <code>localStorage</code>— tokens in <code>localStorage</code> are accessible to any JavaScript on the page, including third-party analytics scripts. Never store tokens in non-<code>HttpOnly</code> cookies, which are readable by JavaScript and vulnerable to XSS.</p>
 <h2 data-number="Q.8" id="oauth-cc"><span class="header-section-number">Q.8</span> Client Credentials Flow</h2>
 <p>The authorization code flow authenticates <em>users</em>. Server-to-server communication—batch jobs, microservices, scheduled tasks—often has no user. The Client Credentials flow handles this case: the application authenticates itself directly and receives a token representing the application, not any particular user.</p>
-<div class="sourceCode" id="cb27"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> dataclasses <span class="im">import</span> dataclass</span>
+<div class="sourceCode" id="cb27" data-file="oauth/client_credentials.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> dataclasses <span class="im">import</span> dataclass</span>
 <span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
 <span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> ClientCredentialsRequest:</span>
 <span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Token request for the client credentials flow.</span></span>
@@ -376,7 +376,7 @@
 <span id="cb27-9"><a href="#cb27-9" aria-hidden="true" tabindex="-1"></a>    client_secret: <span class="bu">str</span></span>
 <span id="cb27-10"><a href="#cb27-10" aria-hidden="true" tabindex="-1"></a>    scope: <span class="bu">list</span>[<span class="bu">str</span>]</span>
 <span id="cb27-11"><a href="#cb27-11" aria-hidden="true" tabindex="-1"></a>    response_queue: Queue</span></code></pre></div>
-<div class="sourceCode" id="cb28"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> ClientCredentialsClient(Process):</span>
+<div class="sourceCode" id="cb28" data-file="oauth/client_credentials.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> ClientCredentialsClient(Process):</span>
 <span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""OAuth client using the client credentials flow.</span></span>
 <span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a><span class="co">    Suitable for server-to-server communication where there is no user.</span></span>
 <span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a><span class="co">    The client authenticates itself and receives a token that represents</span></span>
@@ -449,7 +449,7 @@
 <p>The flow is simpler than authorization code: there is no redirect, no authorization code, and no user consent screen. The client sends its <code>client_id</code> and <code>client_secret</code> directly to the token endpoint. This means the <code>client_secret</code> is the application’s password and must be protected accordingly.</p>
 <h2 data-number="Q.9" id="oauth-refresh"><span class="header-section-number">Q.9</span> Refresh Tokens</h2>
 <p>Access tokens expire quickly (typically 1 hour). Refresh tokens allow clients to get new access tokens without user interaction. A <code>RefreshToken</code> has the same structure as an access token but is stored separately and used only to request a replacement:</p>
-<div class="sourceCode" id="cb29"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
+<div class="sourceCode" id="cb29" data-file="oauth/oauth_types.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
 <span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> RefreshToken:</span>
 <span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Refresh token for obtaining new access tokens."""</span></span>
 <span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>    token: <span class="bu">str</span></span>
@@ -477,6 +477,14 @@
     <a class="pager-link next" href="../distlock/index.html">Distributed Lock Manager →</a>
   </nav>
 </footer>
+<script>
+document.addEventListener('click', function (e) {
+  var link = e.target.closest && e.target.closest('a');
+  document.querySelectorAll('details.topnav-dropdown[open]').forEach(function (d) {
+    if (!d.contains(e.target) || (link && d.contains(link))) d.removeAttribute('open');
+  });
+});
+</script>
 
 
 </body></html>

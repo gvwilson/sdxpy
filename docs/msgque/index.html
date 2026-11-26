@@ -51,7 +51,7 @@
 <p>Publish-subscribe is popular because it <a href="../glossary/index.html#decoupling">decouples</a> publishers and subscribers. They don’t need to know about each other: they only share knowledge of topic names, which allows us to add more of either without modifying existing code. In addition, the broker provides <a href="../glossary/index.html#buffer">buffering</a>: if consumers are slow or temporarily unavailable, messages wait rather than being lost.</p>
 <h2 data-number="M.1" id="msgque-impl"><span class="header-section-number">M.1</span> Our Implementation</h2>
 <p>Our first implementation has three main components: publishers that send messages, a broker that routes messages to topics, and subscribers that receive and process messages. We start by defining a <a href="../glossary/index.html#dataclass">dataclass</a> to store a single message:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
+<div class="sourceCode" id="cb1" data-file="msgque/message.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Message:</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    topic: <span class="bu">str</span></span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    content: <span class="bu">str</span></span>
@@ -59,7 +59,7 @@
 <span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    timestamp: <span class="bu">float</span></span></code></pre></div>
 <p>Each message belongs to a topic like “orders” or “user-activity”, and has some content, a unique ID, and a timestamp. Messages in a real system would contain structured data (e.g., as JSON), but strings are sufficient for our example.</p>
 <p>The broker stores a dictionary called <code>topics</code> mapping topics to lists of queues:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb2" data-file="msgque/broker.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <div>
 <blockquote>
 <p><strong>None</strong></p>
@@ -67,12 +67,12 @@
 </blockquote>
 </div>
 <p>When someone wants to be notified of messages, it registers itself and gets a queue in return:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb3" data-file="msgque/broker.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>Using separate queues per subscriber ensures that a slow consumer doesn’t block others, which is a key property of the pattern. Real-world message queue implementations would drop messages when queues fill up; we will look at this later.</p>
 <p>When a message is published, the broker looks up the topic and places the message in each subscriber’s queue:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb4" data-file="msgque/broker.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>To test this, let’s create a publisher that sends messages to a specific topic at some rate:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Publisher(Process):</span>
+<div class="sourceCode" id="cb5" data-file="msgque/publisher.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Publisher(Process):</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Publishes messages to topics."""</span></span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> init(<span class="va">self</span>, broker: MessageBroker, name: <span class="bu">str</span>, topic: <span class="bu">str</span>, interval: <span class="bu">float</span>):</span>
 <span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.broker <span class="op">=</span> broker</span>
@@ -95,7 +95,7 @@
 <p>Real publishers would react to external events (like HTTP requests or database changes), but timed generation works well for simulation.</p>
 <p>Notice that we inherit from <code>Process</code>, which is asimpy’s base class for active components. As described in the appendix, the <code>init()</code> method is called during construction to set up our state, while <code>run()</code> creates the coroutine that defines the publisher’s behavior.</p>
 <p>Finally, our simulated subscribers receive and process messages:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Subscriber(Process):</span>
+<div class="sourceCode" id="cb6" data-file="msgque/subscriber.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Subscriber(Process):</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Subscribes to topics and processes messages."""</span></span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> init(</span>
 <span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>,</span>
@@ -137,7 +137,7 @@
 </div>
 <h2 data-number="M.2" id="msgque-sim"><span class="header-section-number">M.2</span> Running a Simulation</h2>
 <p>Let’s create a scenario with multiple publishers and subscribers to see the system in action:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> main():</span>
+<div class="sourceCode" id="cb7" data-file="msgque/ex_simple.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> main():</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Run a simulation of the message queue system."""</span></span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    env <span class="op">=</span> Environment()</span>
 <span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    broker <span class="op">=</span> MessageBroker(env)</span>
@@ -160,7 +160,7 @@
 <span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Email received: </span><span class="sc">{</span>email<span class="sc">.</span>num_received<span class="sc">}</span><span class="ss">"</span>)</span>
 <span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Analytics received: </span><span class="sc">{</span>analytics<span class="sc">.</span>num_received<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div>
 <p>The output shows messages being published and consumed asynchronously:</p>
-<pre><code>[0.0] OrderService publishing: Message 1 from OrderService
+<pre data-file="msgque/ex_simple.out"><code>[0.0] OrderService publishing: Message 1 from OrderService
 [0.0] UserService publishing: Message 1 from UserService
 [0.0] Inventory received from 'orders': Message 1 from OrderService (latency: 0.0)
 [0.0] Email received from 'orders': Message 1 from OrderService (latency: 0.0)
@@ -193,16 +193,16 @@ When backpressure occurs, the system drops low-priority messages first in order 
 </dd>
 </dl>
 <p>Let’s implement bounded queues with message dropping and adaptive rate limiting. The constructor takes an extra parameter <code>max_queue_size</code>:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb9" data-file="msgque/backpressure_broker.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>It uses this value to initialize queues:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb10" data-file="msgque/backpressure_broker.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>When a queue is full, <code>publish()</code> drops the message for that subscriber and returns <code>False</code> to signal backpressure to the publisher:</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb11" data-file="msgque/backpressure_broker.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>Now we need a publisher that responds to backpressure. Its constructor needs two new parameters: a base interval to wait before re-trying a message, and a <a href="../glossary/index.html#backoff-multiplier">backoff multiplier</a> that tells it how to increase the interval if repeated attempts to publish fail:</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb12" data-file="msgque/backpressure_publisher.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>The publisher’s <code>run()</code> method uses these two parameters to implement <a href="../glossary/index.html#exponential-backoff">exponential backoff</a>, which is one of the most important concepts in distributed systems. If an attempt to publish a message fails, the publisher increases its interval between messages. If publishing succeeds, on the other hand, it gradually reduces the interval back to the base rate. This creates a <a href="../glossary/index.html#negative-feedback-loop">negative feedback loop</a> that stabilizes the system under load.</p>
 <p>Let’s see backpressure in action with one fast publisher, one that’s slow, and and a deliberately small queue size:</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> main():</span>
+<div class="sourceCode" id="cb13" data-file="msgque/ex_backpressure.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> main():</span>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Demonstrate backpressure in action."""</span></span>
 <span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    env <span class="op">=</span> Environment()</span>
 <span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Small queue size to trigger backpressure quickly.</span></span>
@@ -225,7 +225,7 @@ When backpressure occurs, the system drops low-priority messages first in order 
 <span id="cb13-21"><a href="#cb13-21" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Final interval: </span><span class="sc">{</span>fast_publisher<span class="sc">.</span>current_interval<span class="sc">:.1f}</span><span class="ss">s"</span>)</span>
 <span id="cb13-22"><a href="#cb13-22" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Messages received: </span><span class="sc">{</span>slow_subscriber<span class="sc">.</span>num_received<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div>
 <p>The full output shows that the publisher starts fast but encounter backpressure as the slow subscriber’s queue fills. The publisher adapts by slowing down, and the system reaches equilibrium where the publishing rate matches the consumption rate.</p>
-<pre><code>[0.0] FastPublisher published: Message 1 from FastPublisher (interval: 0.5s)
+<pre data-file="msgque/ex_backpressure.out"><code>[0.0] FastPublisher published: Message 1 from FastPublisher (interval: 0.5s)
 [0.0] SlowSubscriber received from 'events': Message 1 from FastPublisher (latency: 0.0)
 [0.5] FastPublisher published: Message 2 from FastPublisher (interval: 0.5s)
 [1.0] FastPublisher published: Message 3 from FastPublisher (interval: 0.5s)
@@ -237,7 +237,7 @@ When backpressure occurs, the system drops low-priority messages first in order 
 [3.5] FastPublisher BACKPRESSURE - slowing to 1.0s interval</code></pre>
 <h2 data-number="M.4" id="msgque-priority"><span class="header-section-number">M.4</span> Message Priority</h2>
 <p>In most real systems, not all messages are equal. As the system becomes overloaded, we might want to preserve high-priority messages while dropping low-priority ones. To implement this, we start by adding a <code>priority</code> field to our messages:</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
+<div class="sourceCode" id="cb15" data-file="msgque/priority_backpressure.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> PriorityMessage(Message):</span>
 <span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Message with priority level."""</span></span>
 <span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>    priority: <span class="bu">int</span> <span class="op">=</span> <span class="dv">0</span>  <span class="co"># Lower number = higher priority</span></span>
@@ -245,7 +245,7 @@ When backpressure occurs, the system drops low-priority messages first in order 
 <span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Compare by priority for heap operations."""</span></span>
 <span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>.priority <span class="op">&lt;</span> other.priority</span></code></pre></div>
 <p>When we publish a message, we check queue-by-queue to see if there’s room. If not, we either evict a lower-priority message or discard the one that just arrived:</p>
-<div class="sourceCode" id="cb16"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb16" data-file="msgque/priority_backpressure.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>This implementation uses <a href="https://asimpy.readthedocs.io/">asimpy</a>’s <a href="../glossary/index.html#priority-queue">priority queue</a> class to manage efficient eviction of low-priority messages.</p>
 <h2 data-number="M.5" id="msgque-delivery"><span class="header-section-number">M.5</span> Delivery Guarantees</h2>
 <p>Different message delivery systems provide different kinds of delivery guarantees:</p>
@@ -264,21 +264,21 @@ This ensures every message is delivered, possibly multiple times. It acknowledgm
 </dd>
 </dl>
 <p>We can extend our broker to support at-least-once delivery with acknowledgments. First, we add an acknowledgment ID field to each message:</p>
-<div class="sourceCode" id="cb17"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
+<div class="sourceCode" id="cb17" data-file="msgque/ack_broker.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
 <span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> AckMessage(Message):</span>
 <span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Message that requires acknowledgment."""</span></span>
 <span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>    ack_id: <span class="bu">int</span> <span class="op">=</span> <span class="dv">0</span></span></code></pre></div>
 <p>Next, we have the broker keep track of how long to wait for acknowledgments and of outstanding acknowledgments:</p>
-<div class="sourceCode" id="cb18"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb18" data-file="msgque/ack_broker.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>When a message is published, the broker schedules a callback to check if it was acknowledged. The lambda captures the acknowledgment ID and calls <code>_check_ack()</code> after the timeout:</p>
-<div class="sourceCode" id="cb19"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb19" data-file="msgque/ack_broker.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>A subscriber using this broker calls <code>broker.acknowledge(message.ack_id)</code> after successfully processing a message. Messages not acknowledged within the timeout are redelivered.</p>
-<div class="sourceCode" id="cb20"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb20" data-file="msgque/ack_broker.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>At-least-once delivery makes redelivery possible, so subscribers must be prepared to receive the same message more than once. This is the <strong>idempotence requirement</strong>: processing a message twice must have the same effect as processing it once.</p>
 <p>Consider a subscriber that increments a counter in a database when it receives an “order placed” message. If the broker redelivers the message because the subscriber crashed before acknowledging, the counter will be incremented a second time, double-counting the order. The fix is to make the operation idempotent: check whether the order ID has already been processed before incrementing, and skip the increment if so. This “exactly-once processing” pattern—at-least-once delivery plus idempotent consumers— is the standard way to achieve reliable message processing in production systems. Exactly-once delivery at the broker level is theoretically possible but requires distributed transactions, which are expensive and rarely worth the cost compared to idempotent consumers.</p>
 <h2 data-number="M.6" id="msgque-balance"><span class="header-section-number">M.6</span> Consumer Groups and Load Balancing</h2>
 <p>In production systems, multiple instances of the same subscriber type often share the workload. This is called a <a href="../glossary/index.html#consumer-group">consumer group</a>: messages on a topic are distributed among group members rather than duplicated to each. Here’s a simple implementation:</p>
-<div class="sourceCode" id="cb21"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> ConsumerGroup:</span>
+<div class="sourceCode" id="cb21" data-file="msgque/consumer_group.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> ConsumerGroup:</span>
 <span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Distribute messages among multiple consumers."""</span></span>
 <span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(</span>
 <span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>, env: Environment, broker: MessageBroker, topic: <span class="bu">str</span>, num_consumers: <span class="bu">int</span></span>
@@ -296,7 +296,7 @@ This ensures every message is delivered, possibly multiple times. It acknowledgm
 <span id="cb21-16"><a href="#cb21-16" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Get queue for a specific consumer in the group."""</span></span>
 <span id="cb21-17"><a href="#cb21-17" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>.consumers[index]</span></code></pre></div>
 <p>It relies on helper process <code>_Distributor</code> to do the work:</p>
-<div class="sourceCode" id="cb22"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> _Distributor(Process):</span>
+<div class="sourceCode" id="cb22" data-file="msgque/consumer_group.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> _Distributor(Process):</span>
 <span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Distribute messages round-robin to consumers."""</span></span>
 <span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> init(<span class="va">self</span>, source: Queue, destinations: <span class="bu">list</span>[Queue]):</span>
 <span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.source <span class="op">=</span> source</span>
@@ -326,6 +326,14 @@ This ensures every message is delivered, possibly multiple times. It acknowledgm
     <a class="pager-link next" href="../worksteal/index.html">A Work-Stealing Scheduler →</a>
   </nav>
 </footer>
+<script>
+document.addEventListener('click', function (e) {
+  var link = e.target.closest && e.target.closest('a');
+  document.querySelectorAll('details.topnav-dropdown[open]').forEach(function (d) {
+    if (!d.contains(e.target) || (link && d.contains(link))) d.removeAttribute('open');
+  });
+});
+</script>
 
 
 </body></html>

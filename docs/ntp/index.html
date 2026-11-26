@@ -89,7 +89,7 @@ delay = (t4 - t1) - (t3 - t2)</code></pre>
 <p>NTP organizes time servers into levels called <a href="../glossary/index.html#ntp-stratum">strata</a>: Stratum 0 is reference clocks such as atomic clocks and GPS receivers. Stratum 1 includes servers directly connected to stratum 0, which act as primary time servers. Stratum 2 is servers that connect with stratum 1 servers, and so on. This hierarchy prevents circular dependencies and allows the system to scale. End-user computers typically sync with stratum 2 or 3 servers.</p>
 <h2 data-number="X.1" id="ntp-impl"><span class="header-section-number">X.1</span> Implementation</h2>
 <p>Our simulation starts with the NTP message structure:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
+<div class="sourceCode" id="cb2" data-file="ntp/ntp_message.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> NTPMessage:</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""A simplified NTP message packet."""</span></span>
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Client timestamps</span></span>
@@ -115,7 +115,7 @@ delay = (t4 - t1) - (t3 - t2)</code></pre>
 <span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="fl">0.0</span></span></code></pre></div>
 <p>The message holds the four timestamps and includes methods to calculate offset and delay using the NTP formulas.</p>
 <p>The NTP server receives requests, records timestamps t2 and t3, and sends responses back to clients. In our simulation, the server’s clock is accurate: it uses <code>self.now</code>, which is the simulation’s true time. The <code>stratum</code> field indicates this server’s level in the time hierarchy:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> NTPServer(Process):</span>
+<div class="sourceCode" id="cb3" data-file="ntp/ntp_server.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> NTPServer(Process):</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""An NTP time server that responds to client requests."""</span></span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> init(</span>
 <span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>,</span>
@@ -150,7 +150,7 @@ delay = (t4 - t1) - (t3 - t2)</code></pre>
 <span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a>            <span class="cf">await</span> client_queue.put(message)</span>
 <span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.requests_served <span class="op">+=</span> <span class="dv">1</span></span></code></pre></div>
 <p>The NTP client is more complex because it must adjust its own clock. The constructor stores the server queue, sync interval, simulated network delay, and an initial clock offset that represents how far off the client starts:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> NTPClient(Process):</span>
+<div class="sourceCode" id="cb4" data-file="ntp/ntp_client.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> NTPClient(Process):</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""An NTP client that synchronizes its clock with a server."""</span></span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> init(</span>
 <span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>,</span>
@@ -174,13 +174,13 @@ delay = (t4 - t1) - (t3 - t2)</code></pre>
 <span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Get current time according to client's local clock."""</span></span>
 <span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>.now <span class="op">+</span> <span class="va">self</span>.clock_offset</span></code></pre></div>
 <p>The <code>run</code> method simply waits for each sync interval before calling <code>_sync_with_server</code>:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb5" data-file="ntp/ntp_client.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p><code>_sync_with_server</code> executes one full NTP exchange. It records the send time t1, waits for the server’s response containing t2 and t3, records the receive time t4, and then applies the calculated offset:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb6" data-file="ntp/ntp_client.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>The client maintains a <code>clock_offset</code> representing how far its local clock differs from true time. When it syncs, it calculates the offset using the NTP algorithm and adjusts its clock accordingly. Notice that <code>get_local_time()</code> returns the client’s view of time, which may differ from simulation time until synchronization occurs.</p>
 <h2 data-number="X.2" id="running-a-simulation"><span class="header-section-number">X.2</span> Running a Simulation</h2>
 <p>Let’s see clock synchronization in action:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> main():</span>
+<div class="sourceCode" id="cb7" data-file="ntp/ex_usage.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> main():</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Simulate NTP clock synchronization."""</span></span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    env <span class="op">=</span> Environment()</span>
 <span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Create server queue</span></span>
@@ -223,7 +223,7 @@ delay = (t4 - t1) - (t3 - t2)</code></pre>
 <span id="cb7-41"><a href="#cb7-41" aria-hidden="true" tabindex="-1"></a>                <span class="ss">f"  Average correction: </span><span class="sc">{</span><span class="bu">sum</span>(client.offset_history) <span class="op">/</span> <span class="bu">len</span>(client.offset_history)<span class="sc">:.6f}</span><span class="ss">s"</span></span>
 <span id="cb7-42"><a href="#cb7-42" aria-hidden="true" tabindex="-1"></a>            )</span></code></pre></div>
 <p>The output shows clients starting with different clock offsets—some fast, some slow—and gradually converging toward the true time as they sync with the server. After a few iterations, all clients are within milliseconds of true time.</p>
-<pre><code>[5.000] client1.local: Sending sync request (local_time=7.500, offset=2.500)
+<pre data-file="ntp/ex_usage.out"><code>[5.000] client1.local: Sending sync request (local_time=7.500, offset=2.500)
 [5.000] client2.local: Sending sync request (local_time=3.200, offset=-1.800)
 [5.101] time.example.com (stratum 1): Responding to request (t2=5.100, t3=5.101)
 [5.201] client1.local: Received response (offset=-2.500, delay=0.200)
@@ -283,7 +283,7 @@ client3.local:
   Average correction: 1.166667s</code></pre>
 <h2 data-number="X.3" id="stratum-hierarchy"><span class="header-section-number">X.3</span> Stratum Hierarchy</h2>
 <p>In real NTP deployments, servers form a hierarchy. Let’s simulate this with a server:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> StratumServerProcess(Process):</span>
+<div class="sourceCode" id="cb9" data-file="ntp/ex_stratum.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> StratumServerProcess(Process):</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Server process for a stratum N+1 NTP server."""</span></span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> init(</span>
 <span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>,</span>
@@ -314,7 +314,7 @@ client3.local:
 <span id="cb9-29"><a href="#cb9-29" aria-hidden="true" tabindex="-1"></a>            <span class="cf">await</span> <span class="va">self</span>.timeout(<span class="va">self</span>.network_delay)</span>
 <span id="cb9-30"><a href="#cb9-30" aria-hidden="true" tabindex="-1"></a>            <span class="cf">await</span> client_queue.put(message)</span></code></pre></div>
 <p>We also need a client for the stratum simulation:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> StratumClientProcess(Process):</span>
+<div class="sourceCode" id="cb10" data-file="ntp/ex_stratum.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> StratumClientProcess(Process):</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Client process for a stratum N+1 NTP server."""</span></span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> init(</span>
 <span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>,</span>
@@ -354,7 +354,7 @@ client3.local:
 <span id="cb10-38"><a href="#cb10-38" aria-hidden="true" tabindex="-1"></a>                <span class="ss">f"Synced with upstream, offset=</span><span class="sc">{</span>offset<span class="sc">:.3f}</span><span class="ss">"</span></span>
 <span id="cb10-39"><a href="#cb10-39" aria-hidden="true" tabindex="-1"></a>            )</span></code></pre></div>
 <p>A stratum N server needs to both sync with stratum N-1 (as a client) and serve stratum N+1 clients (as a server). We implement this with two separate processes that share clock state via a dictionary. The client process syncs with upstream and updates the shared clock offset. The server process reads from the shared clock offset when responding to downstream requests.</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> main():</span>
+<div class="sourceCode" id="cb11" data-file="ntp/ex_stratum.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> main():</span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Demonstrate NTP stratum hierarchy."""</span></span>
 <span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    env <span class="op">=</span> Environment()</span>
 <span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Stratum 1: Primary time server</span></span>
@@ -421,6 +421,14 @@ client3.local:
     <a class="pager-link next" href="../fs/index.html">A Simple Filesystem →</a>
   </nav>
 </footer>
+<script>
+document.addEventListener('click', function (e) {
+  var link = e.target.closest && e.target.closest('a');
+  document.querySelectorAll('details.topnav-dropdown[open]').forEach(function (d) {
+    if (!d.contains(e.target) || (link && d.contains(link))) d.removeAttribute('open');
+  });
+});
+</script>
 
 
 </body></html>

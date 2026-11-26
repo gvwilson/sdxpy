@@ -32,25 +32,25 @@ A brief orientation for this Quarto book template.
   - `links.lua`: resolves `@key` links
   - `nav.lua`: topbar navigation
   - `remove-empty-h1.lua`: drops the empty H1 on the home page
-  - `forma.lua`: conditional include of the forma widget assets
+  - `forma.lua`: conditional include of the formative assessment widgets
 - Shortcodes (`mccole.yml` → `shortcodes:`)
-  - `glossary.lua` (`g`)
-  - `inc-quarto.lua` (`inc`)
-  - `inc-noh1.lua` (FIXME)
-  - `i.lua` (FIXME)
-  - `issue.lua` (FIXME)
-  - `fixme.lua`, (FIXME)
-  - `exercise.lua` (FIXME)
-  - `linecount.lua` (FIXME)
+  - `glossary.lua`: glossary
+  - `inc-noh1.lua`: include root Markdown file without its H1
+  - `i.lua`: index entry
+  - `issue.lua`: reference GitHub issue
+  - `fixme.lua`: FIXME marker
+  - `exercise.lua`: exercise inclusion
+  - `linecount.lua`: line count
 - Include machinery
-  - `inc-quarto.lua` (Quarto/site)
-  - `inc-pandoc.lua` (pandoc/slides)
-  - `inc-utils.lua` (shared read/scrub/language helpers)
+  - `inc-quarto.lua`: Quarto/site
+  - `inc-pandoc.lua`: pandoc/slides
+  - `inc-utils.lua`: shared read/scrub/language helpers
 - Checkers
-  - `check-bib.lua`
-  - `check-links.lua`
-  - `check-glossary.lua`
-  - `check-formatting.lua`
+  - `check-bib.lua`: bibliography
+  - `check-formatting.lua`: source formatting
+  - `check-glossary.lua`: glossary
+  - `check-html.lua`: HTML formatting
+  - `check-links.lua`: links
 - Other:
   - `publish.lua`: used by `make publish`
   - `utils.lua`: shared helpers for the checkers

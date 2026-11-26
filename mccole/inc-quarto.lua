@@ -20,7 +20,7 @@ local function include_code(args, kwargs, meta)
   local ext = file:match("%.([^.]+)$") or ""
   local lang = U.LANG[ext] or ""
   local classes = (lang ~= "") and { lang } or {}
-  return pandoc.Blocks({ pandoc.CodeBlock(code, pandoc.Attr("", classes, {})) })
+  return pandoc.Blocks({ pandoc.CodeBlock(code, pandoc.Attr("", classes, { ["data-file"] = file })) })
 end
 
 return {

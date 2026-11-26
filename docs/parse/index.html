@@ -101,10 +101,10 @@ Figure&nbsp;5.1: Stages in parsing pipeline.
 <p>The result of tokenization is a flat list of tokens. The second stage of parsing assembles tokens to create an <a href="../glossary/index.html#abstract_syntax_tree">abstract syntax tree</a> (AST) that represents the structure of what was parsed. We will re-use the classes defined in <a href="../glob/index.html" class="quarto-xref"><span>Chapter 4</span></a> for this purpose.</p>
 <p>Before we start writing our tokenizer, we have to decide whether to implement it as a set of functions or as one or more classes. Based on previous experience, we choose the latter: this tokenizer is simple enough that we’ll only need a handful of functions, but one capable of handling a language like Python would be much larger, and classes are a handy way to group related functions together.</p>
 <p>The main method of our tokenizer looks like this:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb1" data-file="parse/tokenizer.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>This method calls <code>self._setup()</code> at the start so that the tokenizer can be re-used. It <em>doesn’t</em> call <code>self._add()</code> for regular characters; instead, it creates a <code>Lit</code> entry when it encounters a special character (i.e., when the current literal ends) and after all the input has been parsed (to capture the last literal).</p>
 <p>The method <code>self._add</code> adds the current thing to the list of tokens. As a special case, <code>self._add(None)</code> means “add the literal but nothing else” (<a href="#fig-parse-tokenize" class="quarto-xref">Figure&nbsp;<span>5.2</span></a>):</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb2" data-file="parse/tokenizer.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <div id="fig-parse-tokenize" class="quarto-float quarto-figure quarto-figure-center" alt="Breaking a string into tokens">
 <figure class="quarto-float quarto-float-fig">
 <div aria-describedby="fig-parse-tokenize-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
@@ -116,7 +116,7 @@ Figure&nbsp;5.2: Steps in tokenizing a string.
 </figure>
 </div>
 <p>Finally, we work backward to initialize the tokenizer when we construct it and to define the set of characters that make up literals:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>CHARS <span class="op">=</span> <span class="bu">set</span>(string.ascii_letters <span class="op">+</span> string.digits)</span>
+<div class="sourceCode" id="cb3" data-file="parse/tokenizer.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>CHARS <span class="op">=</span> <span class="bu">set</span>(string.ascii_letters <span class="op">+</span> string.digits)</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Tokenizer:</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>):</span>
 <span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._setup()</span>
@@ -130,7 +130,7 @@ Figure&nbsp;5.2: Steps in tokenizing a string.
 </blockquote>
 </div>
 <p>We can now write a few tests to check that the tokenizer is producing a list of lists in which each sub-list represents a single token:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_tok_empty_string():</span>
+<div class="sourceCode" id="cb4" data-file="parse/test_tokenizer.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_tok_empty_string():</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> Tokenizer().tok(<span class="st">""</span>) <span class="op">==</span> []</span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_tok_any_either():</span>
 <span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> Tokenizer().tok(<span class="st">"*{abc,def}"</span>) <span class="op">==</span> [</span>
@@ -142,20 +142,20 @@ Figure&nbsp;5.2: Steps in tokenizing a string.
 <span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>    ]</span></code></pre></div>
 <h2 data-number="5.2" id="parse-parse"><span class="header-section-number">5.2</span> Parsing</h2>
 <p>We now need to turn the list of tokens into a tree. Just as we used a class for tokenizing, we will create one for parsing and give it a <code>_parse</code> method to start things off. This method doesn’t do any conversion itself. Instead, it takes a token off the front of the list and figures out which method handles tokens of that kind:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb5" data-file="parse/parser.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>The handlers for <code>Any</code> and <code>Lit</code> are straightforward:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb6" data-file="parse/parser.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p><code>Either</code> is a little messier. We didn’t save the commas, so we’ll just pull two tokens and store them after checking to make sure that we actually <em>have</em> two tokens:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb7" data-file="parse/parser.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>An alternative approach is to take tokens from the list until we see an <code>EitherEnd</code> marker:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb8" data-file="parse/better_parser.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>This achieves the same thing in the two-token case but allows us to write alternatives with more options without changing the code (assuming you solved the “Multiple Alternatives” exercise in <a href="../glob/index.html" class="quarto-xref"><span>Chapter 4</span></a>). Tests confirm that we’re on the right track:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_parse_either_two_lit():</span>
+<div class="sourceCode" id="cb9" data-file="parse/test_parser.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_parse_either_two_lit():</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> Parser().parse(<span class="st">"{abc,def}"</span>) <span class="op">==</span> Either(</span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>        [Lit(<span class="st">"abc"</span>), Lit(<span class="st">"def"</span>)]</span>
 <span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    )</span></code></pre></div>
 <p>This test assumes we can compare <code>Match</code> objects using <code>==</code>, just as we would compare numbers or strings. so we add a <code>__eq__</code> method to our classes:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Match:</span>
+<div class="sourceCode" id="cb10" data-file="parse/match.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Match:</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, rest):</span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.rest <span class="op">=</span> rest <span class="cf">if</span> rest <span class="cf">else</span> Null()</span>
 <span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__eq__</span>(<span class="va">self</span>, other):</span>
@@ -208,6 +208,14 @@ Figure&nbsp;5.3: Parser concept map.
     <a class="pager-link next" href="../test/index.html">Running Tests →</a>
   </nav>
 </footer>
+<script>
+document.addEventListener('click', function (e) {
+  var link = e.target.closest && e.target.closest('a');
+  document.querySelectorAll('details.topnav-dropdown[open]').forEach(function (d) {
+    if (!d.contains(e.target) || (link && d.contains(link))) d.removeAttribute('open');
+  });
+});
+</script>
 
 
 </body></html>

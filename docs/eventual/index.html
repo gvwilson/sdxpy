@@ -65,7 +65,7 @@
 <p>Our system accepts both writes and uses version vectors to track that X has two concurrent versions. When a client reads X, we can either return both versions and let the application decide how to resolve the conflict, or use a simple rule like “last write wins” based on timestamps.</p>
 <h2 data-number="T.2" id="eventual-clock"><span class="header-section-number">T.2</span> Vector Clocks for Causality</h2>
 <p>Vector clocks let us determine if two events are causally related or concurrent. Each replica maintains a counter for every replica in the system:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
+<div class="sourceCode" id="cb1" data-file="eventual/vector_clock.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> VectorClock:</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Vector clock for tracking causality."""</span></span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    clocks: <span class="bu">dict</span>[<span class="bu">str</span>, <span class="bu">int</span>] <span class="op">=</span> field(default_factory<span class="op">=</span><span class="bu">dict</span>)</span>
@@ -102,7 +102,7 @@
 <p>The key insight is that if clock A happens-before clock B, then every entry in A’s vector is ≤ the corresponding entry in B’s vector, with at least one entry strictly less. If neither vector dominates the other element-wise, the events are concurrent.</p>
 <h2 data-number="T.3" id="eventual-version"><span class="header-section-number">T.3</span> Versioned Values</h2>
 <p>Each value is stored with its vector clock:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
+<div class="sourceCode" id="cb2" data-file="eventual/versioned_value.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> VersionedValue:</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""A value with its vector clock."""</span></span>
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    value: Any</span>
@@ -111,7 +111,7 @@
 <p>When storing multiple versions of a key, we keep only the ones that are concurrent (neither happens-before the other). If a new version happens-after an existing version, we can discard the old one.</p>
 <h2 data-number="T.4" id="eventual-storage"><span class="header-section-number">T.4</span> Storage Node</h2>
 <p>Storage nodes can exchange four kinds of messages:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
+<div class="sourceCode" id="cb3" data-file="eventual/messages.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> ReadRequest:</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Request to read a key."""</span></span>
 <span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    key: <span class="bu">str</span></span>
@@ -137,12 +137,12 @@
 <span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>    success: <span class="bu">bool</span></span>
 <span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>    clock: VectorClock</span></code></pre></div>
 <p>Each storage node maintains a replica of a subset of keys. The node’s constructor sets up its data store and creates the queue it uses to receive requests:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb4" data-file="eventual/storage_node.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>The <code>run</code> method dispatches reads and writes to dedicated handlers. <code>_handle_read</code> returns all stored versions of a key:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb5" data-file="eventual/storage_node.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>The write handler is where causality is maintained. It increments the local clock, merges the client’s causal context, and discards any stored versions superseded by the new value.</p>
 <p>“Merging the client’s causal context” means the storage node takes the element-wise maximum of its local vector clock and the clock the client sent. The client’s clock represents “what the client has already seen”— it was returned to the client after a previous read. By merging it in, the storage node ensures the new write is recorded as happening <em>after</em> anything the client observed. Without this step, a write that the client intended to follow a previous read might appear concurrent with it, creating a spurious conflict.</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb6" data-file="eventual/storage_node.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>When writing a new version, we:</p>
 <ol type="1">
 <li>increment our local clock,</li>
@@ -153,13 +153,13 @@
 <h2 data-number="T.5" id="eventual-coord"><span class="header-section-number">T.5</span> Coordinator with Quorum Protocol</h2>
 <p>The coordinator manages replication across storage nodes. It implements quorum reads and writes: for N replicas, we wait for R replicas to respond to a read and W replicas to respond to a write. R + W &gt; N guarantees that we see the latest write.</p>
 <p>The constructor takes the list of storage nodes and quorum parameters, and <code>_get_replicas</code> uses consistent hashing to choose which nodes store a given key:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb7" data-file="eventual/coordinator.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>A read sends requests to R replicas in parallel and merges their responses:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb8" data-file="eventual/coordinator.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>A write sends the new value to W replicas, each of which updates its local clock. The coordinator merges those clocks to return a causal context to the client:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb9" data-file="eventual/coordinator.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p><code>_merge_versions</code> resolves the list of all versions returned by replicas, discarding any version whose clock is dominated by another:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb10" data-file="eventual/coordinator.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>The quorum protocol is the heart of tunable consistency. With N=3, R=2, W=2:</p>
 <ul>
 <li>Writes succeed after 2 nodes acknowledge (available even if 1 node is down).</li>
@@ -168,15 +168,15 @@
 </ul>
 <h2 data-number="T.6" id="eventual-client"><span class="header-section-number">T.6</span> Client Implementation</h2>
 <p>Clients read values, resolve conflicts, and write back. The client stores a causal context per key and works through a list of operations:</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb11" data-file="eventual/kv_client.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>When reading, the client checks for conflicts. If a single version is returned there is no conflict. If multiple concurrent versions are returned, the client resolves them using last-write-wins and merges all their clocks:</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb12" data-file="eventual/kv_client.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>When writing, the client passes its current causal context so that the coordinator can detect whether the write is concurrent with or follows previous writes:</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb13" data-file="eventual/kv_client.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>The client maintains a context (vector clock) for each key. When writing, it passes this context to preserve causality. When reading multiple versions (a conflict), it resolves using last-write-wins but merges all clocks to capture the complete causality.</p>
 <h2 data-number="T.7" id="eventual-sim"><span class="header-section-number">T.7</span> Running a Simulation</h2>
 <p>Let’s create a scenario showing concurrent writes and conflict resolution:</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> main():</span>
+<div class="sourceCode" id="cb14" data-file="eventual/ex_basic.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> main():</span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>    env <span class="op">=</span> Environment()</span>
 <span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Create 3 storage nodes</span></span>
 <span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>    nodes <span class="op">=</span> [</span>
@@ -209,7 +209,7 @@
 <span id="cb14-31"><a href="#cb14-31" aria-hidden="true" tabindex="-1"></a>        initial_delay<span class="op">=</span><span class="fl">3.0</span>,</span>
 <span id="cb14-32"><a href="#cb14-32" aria-hidden="true" tabindex="-1"></a>    )</span>
 <span id="cb14-33"><a href="#cb14-33" aria-hidden="true" tabindex="-1"></a>    env.run(until<span class="op">=</span><span class="dv">10</span>)</span></code></pre></div>
-<pre><code>[0.0] Node2: Wrote X = 1 with clock {Node2:1}
+<pre data-file="eventual/ex_basic.out"><code>[0.0] Node2: Wrote X = 1 with clock {Node2:1}
 [0.0] Node3: Wrote X = 1 with clock {Node3:1}
 [0.0] Node1: Wrote X = 1 with clock {Node1:1}
 [0.0] Client1: Wrote X = 1
@@ -225,7 +225,7 @@
   - 2 (clock: {Node2:1, Node3:3}, ts: 0.5)
 [3.0] Client2: Resolved to 2</code></pre>
 <p>Now let’s create a more interesting scenario with concurrent conflicting writes:</p>
-<div class="sourceCode" id="cb16"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> main():</span>
+<div class="sourceCode" id="cb16" data-file="eventual/ex_conflict.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> main():</span>
 <span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>    env <span class="op">=</span> Environment()</span>
 <span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Create 5 storage nodes</span></span>
 <span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>    nodes <span class="op">=</span> [StorageNode(env, <span class="ss">f"Node</span><span class="sc">{</span>i <span class="op">+</span> <span class="dv">1</span><span class="sc">}</span><span class="ss">"</span>) <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">5</span>)]</span>
@@ -266,7 +266,7 @@
 <span id="cb16-39"><a href="#cb16-39" aria-hidden="true" tabindex="-1"></a>        initial_delay<span class="op">=</span><span class="fl">3.0</span>,</span>
 <span id="cb16-40"><a href="#cb16-40" aria-hidden="true" tabindex="-1"></a>    )</span>
 <span id="cb16-41"><a href="#cb16-41" aria-hidden="true" tabindex="-1"></a>    env.run(until<span class="op">=</span><span class="dv">10</span>)</span></code></pre></div>
-<pre><code>[0.0] Node4: Wrote cart = ['item1'] with clock {Node4:1}
+<pre data-file="eventual/ex_conflict.out"><code>[0.0] Node4: Wrote cart = ['item1'] with clock {Node4:1}
 [0.0] Node5: Wrote cart = ['item1'] with clock {Node5:1}
 [0.0] Node1: Wrote cart = ['item1'] with clock {Node1:1}
 [0.0] Client1: Wrote cart = ['item1']
@@ -294,13 +294,13 @@
 [3.5] Client3: Wrote cart = ['item1', 'item2']</code></pre>
 <h2 data-number="T.8" id="eventual-partition"><span class="header-section-number">T.8</span> Handling Network Partitions</h2>
 <p>Let’s simulate a network partition to see how the system maintains availability. <code>PartitionedCoordinator</code> extends the base coordinator with the ability to mark nodes as unreachable:</p>
-<div class="sourceCode" id="cb18"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb18" data-file="eventual/partitioned_coordinator.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>Reads skip any partitioned nodes. If fewer than R nodes are available the read fails; otherwise it proceeds with only the reachable replicas:</p>
-<div class="sourceCode" id="cb19"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb19" data-file="eventual/partitioned_coordinator.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>Writes follow the same pattern, requiring W reachable replicas before proceeding:</p>
-<div class="sourceCode" id="cb20"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb20" data-file="eventual/partitioned_coordinator.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>Let’s try it out:</p>
-<div class="sourceCode" id="cb21"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> main():</span>
+<div class="sourceCode" id="cb21" data-file="eventual/ex_partition.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> main():</span>
 <span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Demonstrate behavior during network partition."""</span></span>
 <span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>    env <span class="op">=</span> Environment()</span>
 <span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>    nodes <span class="op">=</span> [StorageNode(env, <span class="ss">f"Node</span><span class="sc">{</span>i <span class="op">+</span> <span class="dv">1</span><span class="sc">}</span><span class="ss">"</span>) <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">5</span>)]</span>
@@ -333,9 +333,9 @@
 <span id="cb21-31"><a href="#cb21-31" aria-hidden="true" tabindex="-1"></a>    env.run(until<span class="op">=</span><span class="dv">10</span>)</span></code></pre></div>
 <h2 data-number="T.9" id="eventual-repair"><span class="header-section-number">T.9</span> Read Repair</h2>
 <p>A real system needs mechanisms to ensure all replicas eventually converge. Read repair happens during reads: if we detect replicas are out of sync, we push the latest version to lagging replicas. <code>CoordinatorWithReadRepair</code> overrides <code>read</code> to query all replicas rather than just a quorum so that it can identify which ones are behind:</p>
-<div class="sourceCode" id="cb22"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb22" data-file="eventual/coordinator_with_read_repair.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>After collecting all responses, <code>_perform_read_repair</code> compares each replica’s set of versions against the merged result and writes missing versions back to any replica that is out of date:</p>
-<div class="sourceCode" id="cb23"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb23" data-file="eventual/coordinator_with_read_repair.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>Read repair ensures that whenever we read a key, we fix any inconsistencies we discover. Over time, this brings all replicas into sync.</p>
 <h2 data-number="T.10" id="eventual-real"><span class="header-section-number">T.10</span> Real-World Considerations</h2>
 <p>Our implementation demonstrates core concepts, but production systems need additional features:</p>
@@ -346,7 +346,7 @@
 </ol>
 <h2 data-number="T.11" id="eventual-partition-out"><span class="header-section-number">T.11</span> Partition Example Output</h2>
 <p>Let’s try the partition simulation:</p>
-<div class="sourceCode" id="cb24"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> main():</span>
+<div class="sourceCode" id="cb24" data-file="eventual/ex_partition.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> main():</span>
 <span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Demonstrate behavior during network partition."""</span></span>
 <span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>    env <span class="op">=</span> Environment()</span>
 <span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>    nodes <span class="op">=</span> [StorageNode(env, <span class="ss">f"Node</span><span class="sc">{</span>i <span class="op">+</span> <span class="dv">1</span><span class="sc">}</span><span class="ss">"</span>) <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">5</span>)]</span>
@@ -377,7 +377,7 @@
 <span id="cb24-29"><a href="#cb24-29" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Create partition manager</span></span>
 <span id="cb24-30"><a href="#cb24-30" aria-hidden="true" tabindex="-1"></a>    PartitionManager(env, coordinator)</span>
 <span id="cb24-31"><a href="#cb24-31" aria-hidden="true" tabindex="-1"></a>    env.run(until<span class="op">=</span><span class="dv">10</span>)</span></code></pre></div>
-<pre><code>[0.0] Node2: Wrote status = healthy with clock {Node2:1}
+<pre data-file="eventual/ex_partition.out"><code>[0.0] Node2: Wrote status = healthy with clock {Node2:1}
 [0.0] Node3: Wrote status = healthy with clock {Node3:1}
 [0.0] Client1: Wrote status = healthy
 [0.5] Node2: Read status -&gt; 1 version(s)
@@ -421,6 +421,14 @@
     <a class="pager-link next" href="../saga/index.html">The Saga Pattern →</a>
   </nav>
 </footer>
+<script>
+document.addEventListener('click', function (e) {
+  var link = e.target.closest && e.target.closest('a');
+  document.querySelectorAll('details.topnav-dropdown[open]').forEach(function (d) {
+    if (!d.contains(e.target) || (link && d.contains(link))) d.removeAttribute('open');
+  });
+});
+</script>
 
 
 </body></html>

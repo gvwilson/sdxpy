@@ -49,17 +49,17 @@
 <p>This chapter shows how to build a simple web server that understands the basics of HTTP and how to test programs of this kind. What we will build is much simpler than <a href="https://httpd.apache.org/">Apache</a>, <a href="https://nginx.org/">nginx</a>, or other industrial-strength servers, but all the key ideas will be there.</p>
 <h2 data-number="22.1" id="http-protocol"><span class="header-section-number">22.1</span> Protocol</h2>
 <p>An HTTP request is just text: any program that wants to can create one or parse one. An absolutely minimal HTTP request has just the name of a <a href="../glossary/index.html#http_method">method</a>, a <a href="../glossary/index.html#url">URL</a>, and a <a href="../glossary/index.html#http_protocol_version">protocol version</a> on a single line separated by spaces:</p>
-<pre><code>GET /index.html HTTP/1.1</code></pre>
+<pre data-file="http/minimal_http_request.txt"><code>GET /index.html HTTP/1.1</code></pre>
 <p>The HTTP method is almost always either <code>GET</code> (to fetch information) or <code>POST</code> (to submit form data or upload files). The URL specifies what the client wants: it is often a path to a file on disk, such as <code>/index.html</code>, but (and this is the crucial part) it’s completely up to the server to decide what to do with it. The HTTP version is usually “HTTP/1.0” or “HTTP/1.1”; the differences between the two don’t matter to us.</p>
 <p>Most real requests have a few extra lines called <a href="../glossary/index.html#http_header">headers</a>, which are key-value pairs like the ones shown below:</p>
-<pre><code>GET /index.html HTTP/1.1
+<pre data-file="http/http_request_headers.txt"><code>GET /index.html HTTP/1.1
 Accept: text/html
 Accept-Language: en, fr
 If-Modified-Since: 16-May-2023</code></pre>
 <p>Unlike the keys in hash tables, keys may appear any number of times in HTTP headers, so that (for example) a request can specify that it’s willing to accept several types of content.</p>
 <p>Finally, the <a href="../glossary/index.html#http_body">body</a> of the request is any extra data associated with it, such as form data or uploaded files. There must be a blank line between the last header and the start of the body to signal the end of the headers, and if there is a body, the request must have a header called <code>Content-Length</code> that tells the server how many bytes are in the body.</p>
 <p>An HTTP response is formatted like an HTTP request. Its first line has the protocol followed by a <a href="../glossary/index.html#http_status_code">status code</a> and a status phrase, such as “200 OK” or “404 Not Found”. There are then some headers (including <code>Content-Length</code> if the reply has a body), a blank line, and the body:</p>
-<pre><code>HTTP/1.1 200 OK
+<pre data-file="http/http_response.txt"><code>HTTP/1.1 200 OK
 Date: Thu, 16 June 2023 12:28:53 GMT
 Content-Type: text/html
 Content-Length: 53
@@ -69,12 +69,12 @@ Content-Length: 53
 &lt;/body&gt;
 &lt;/html&gt;</code></pre>
 <p>Constructing HTTP requests is tedious, so most people use a library to do the repetitive work. The most popular one in Python is the <a href="https://requests.readthedocs.io/"><code>requests</code></a> module, and works like this:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> requests</span>
+<div class="sourceCode" id="cb4" data-file="http/requests_example.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> requests</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> requests.get(<span class="st">"http://third-bit.com/test.html"</span>)</span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"status code:"</span>, response.status_code)</span>
 <span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"content length:"</span>, response.headers[<span class="st">"content-length"</span>])</span>
 <span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response.text)</span></code></pre></div>
-<pre><code>status code: 200
+<pre data-file="http/requests_example.out"><code>status code: 200
 content length: 103
 &lt;html&gt;
   &lt;head&gt;
@@ -104,7 +104,7 @@ Figure&nbsp;22.1: Lifecycle of an HTTP request and response.
 <li>reply with an HTML page.</li>
 </ol>
 <p>Steps 1, 2, and 4 are the same from one application to another, so the Python standard library has a module called <a href="https://docs.python.org/3/library/http.server.html"><code>http.server</code></a> to do most of the work. Here’s the entire server:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> http.server <span class="im">import</span> BaseHTTPRequestHandler, HTTPServer</span>
+<div class="sourceCode" id="cb6" data-file="http/basic_server.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> http.server <span class="im">import</span> BaseHTTPRequestHandler, HTTPServer</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>PAGE <span class="op">=</span> <span class="st">"""&lt;html&gt;&lt;body&gt;&lt;p&gt;test page&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;"""</span></span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> RequestHandler(BaseHTTPRequestHandler):</span>
 <span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> do_GET(<span class="va">self</span>):</span>
@@ -134,16 +134,16 @@ Figure&nbsp;22.1: Lifecycle of an HTTP request and response.
 <li>Finally, <code>do_GET</code> sends the content of the response by calling <code>self.wfile.write</code>. <code>self.wfile</code> is something that looks and acts like a write-only file, but is actually sending bytes to the socket connection.</li>
 </ol>
 <p>If we run this program from the command line, it doesn’t display anything:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> basic_http_server.py</span></code></pre></div>
+<div class="sourceCode" id="cb7" data-file="http/basic_server.sh"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> basic_http_server.py</span></code></pre></div>
 <p>but if we then go to <code>http://localhost:8080</code> with our browser we see this:</p>
-<pre><code>Hello, web!</code></pre>
+<pre data-file="http/hello_web.txt"><code>Hello, web!</code></pre>
 <p>and this in our shell:</p>
-<pre><code>127.0.0.1 - - [16/Sep/2022 06:34:59] "GET / HTTP/1.1" 200 -
+<pre data-file="http/basic_server.out"><code>127.0.0.1 - - [16/Sep/2022 06:34:59] "GET / HTTP/1.1" 200 -
 127.0.0.1 - - [16/Sep/2022 06:35:00] "GET /favicon.ico HTTP/1.1" 200 -</code></pre>
 <p>The first line is straightforward: since we didn’t ask for a particular file, our browser has asked for ‘/’ (the root directory of whatever the server is serving). The second line appears because our browser automatically sends a second request for an image file called <code>/favicon.ico</code>, which it will display as an icon in the address bar if it exists.</p>
 <h2 data-number="22.3" id="http-files"><span class="header-section-number">22.3</span> Serving Files</h2>
 <p>Serving the same page for every request isn’t particularly useful, so let’s rewrite our simple server to return files. The basic logic looks like this:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> RequestHandler(BaseHTTPRequestHandler):</span>
+<div class="sourceCode" id="cb10" data-file="http/file_server.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> RequestHandler(BaseHTTPRequestHandler):</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> do_GET(<span class="va">self</span>):</span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">try</span>:</span>
 <span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>            url_path <span class="op">=</span> <span class="va">self</span>.path.lstrip(<span class="st">"/"</span>)</span>
@@ -158,11 +158,11 @@ Figure&nbsp;22.1: Lifecycle of an HTTP request and response.
 <span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.handle_error(msg)</span></code></pre></div>
 <p>We first turn the path in the URL into a local file path by removing the leading <code>/</code>. Translating filenames this way is called <a href="../glossary/index.html#path_resolution">path resolution</a>, and in doing it, we assume that all the files we’re supposed to serve live in or below the directory in which the server is running. If the resolved path corresponds to a file, we send it back to the client; if not, we generate and send an error message.</p>
 <p>It might seem simpler to rewrite <code>do_GET</code> to use <code>if</code>/<code>else</code> instead of <code>try</code>/<code>except</code>, but doing the latter has an advantage: we can handle errors that occur inside methods we’re calling (like <code>handle_file</code>) in the same place and in the same way as we handle errors that occur here. This approach is sometimes called <a href="../glossary/index.html#throw_low_catch_high">throw low, catch high</a>, which means that errors should be flagged in many places but handled in a few places high up in the code. The method that handles files is an example of this:</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb11" data-file="http/file_server.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>If there’s an error at any point in the processing cycle, we send a page with an error message <em>and</em> an error status code. The former gives human users something to read, while the latter gives software a meaningful value in a predictable place:</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb12" data-file="http/file_server.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>The error page is just HTML with some placeholders for the path and message:</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>ERROR_PAGE <span class="op">=</span> <span class="st">"""</span><span class="op">\</span></span>
+<div class="sourceCode" id="cb13" data-file="http/file_server.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>ERROR_PAGE <span class="op">=</span> <span class="st">"""</span><span class="op">\</span></span>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="st">&lt;html&gt;</span></span>
 <span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="st">  &lt;head&gt;&lt;title&gt;Error accessing </span><span class="sc">{path}</span><span class="st">&lt;/title&gt;&lt;/head&gt;</span></span>
 <span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="st">  &lt;body&gt;</span></span>
@@ -171,7 +171,7 @@ Figure&nbsp;22.1: Lifecycle of an HTTP request and response.
 <span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a><span class="st">&lt;/html&gt;</span></span>
 <span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a><span class="st">"""</span></span></code></pre></div>
 <p>The code that actually sends the response is similar to what we’ve seen before:</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb14" data-file="http/file_server.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>This server works, but only for a very forgiving definition of “works”. We are careful not to show clients the actual paths to files on the server in our error messages, but if someone asked for <code>http://localhost:8080/../../passwords.txt</code>, this server will happily look two levels up from the directory where it’s running and try to return that file. The server machine’s passwords probably aren’t stored there, but with enough <code>..</code>’s and some patience, an attacker could poke around large parts of our filesystem. We will tackle this in the exercises.</p>
 <p>Another problem is that <code>send_content</code> always tells clients that it is returning an HTML file with the <code>Content-Type</code> header. It should instead look at the extension on the file’s name and set the content type appropriately, e.g., return <code>image/png</code> for a PNG-formatted image.</p>
 <p>One thing the server is doing right is character encoding. The <code>send_content</code> method expects <code>content</code> to be a <code>bytes</code> object, not a string, because the HTTP protocol requires the content length to be the number of bytes. The server reads files in binary mode by using <code>"rb"</code> instead of just <code>"r"</code> when it opens files in <code>handle_file</code>, converts the internally-generated error page from characters to bytes using the UTF-8 encoding and specifies <code>charset=utf-8</code> as part of the content type.</p>
@@ -196,7 +196,7 @@ Figure&nbsp;22.2: Class hierarchy for a testable server.
 </figure>
 </div>
 <p><code>MockRequestHandler</code> is just a few lines of code, though it would be longer if our application relied on more methods from the library class we’re replacing:</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> io <span class="im">import</span> BytesIO</span>
+<div class="sourceCode" id="cb15" data-file="http/mock_handler.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> io <span class="im">import</span> BytesIO</span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> MockRequestHandler:</span>
 <span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, path):</span>
 <span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.path <span class="op">=</span> path</span>
@@ -212,7 +212,7 @@ Figure&nbsp;22.2: Class hierarchy for a testable server.
 <span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> end_headers(<span class="va">self</span>):</span>
 <span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a>        <span class="cf">pass</span></span></code></pre></div>
 <p>The application-specific class contains the code we’ve already seen:</p>
-<div class="sourceCode" id="cb16"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> ApplicationRequestHandler:</span>
+<div class="sourceCode" id="cb16" data-file="http/testable_server.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> ApplicationRequestHandler:</span>
 <span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> do_GET(<span class="va">self</span>):</span>
 <span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">try</span>:</span>
 <span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>            url_path <span class="op">=</span> <span class="va">self</span>.path.lstrip(<span class="st">"/"</span>)</span>
@@ -246,7 +246,7 @@ Figure&nbsp;22.2: Class hierarchy for a testable server.
 <span id="cb16-32"><a href="#cb16-32" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.wfile.write(content)</span>
 <span id="cb16-33"><a href="#cb16-33" aria-hidden="true" tabindex="-1"></a>    <span class="co"># mccole:/skip</span></span></code></pre></div>
 <p><code>MockHandler</code> handles the simulated request and also stores the values that the client would receive:</p>
-<div class="sourceCode" id="cb17"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_existing_path(fs):</span>
+<div class="sourceCode" id="cb17" data-file="http/test_testable_server.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_existing_path(fs):</span>
 <span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>    content_str <span class="op">=</span> <span class="st">"actual"</span></span>
 <span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>    content_bytes <span class="op">=</span> <span class="bu">bytes</span>(content_str, <span class="st">"utf-8"</span>)</span>
 <span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>    fs.create_file(<span class="st">"/actual.txt"</span>, contents<span class="op">=</span>content_str)</span>
@@ -259,7 +259,7 @@ Figure&nbsp;22.2: Class hierarchy for a testable server.
 <span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a>        [<span class="bu">str</span>(<span class="bu">len</span>(content_bytes))]</span>
 <span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> handler.wfile.getvalue() <span class="op">==</span> content_bytes</span></code></pre></div>
 <p>The main body of our runnable server combines the two classes to create what it needs:</p>
-<div class="sourceCode" id="cb18"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="va">__name__</span> <span class="op">==</span> <span class="st">'__main__'</span>:</span>
+<div class="sourceCode" id="cb18" data-file="http/testable_server.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="va">__name__</span> <span class="op">==</span> <span class="st">'__main__'</span>:</span>
 <span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">class</span> RequestHandler(</span>
 <span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>            BaseHTTPRequestHandler,</span>
 <span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>            ApplicationRequestHandler</span>
@@ -269,7 +269,7 @@ Figure&nbsp;22.2: Class hierarchy for a testable server.
 <span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>    server <span class="op">=</span> HTTPServer(serverAddress, RequestHandler)</span>
 <span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>    server.serve_forever()</span></code></pre></div>
 <p>Our tests, on the other hand, create a server with mocked methods:</p>
-<div class="sourceCode" id="cb19"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> MockHandler(</span>
+<div class="sourceCode" id="cb19" data-file="http/test_testable_server.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> MockHandler(</span>
 <span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>        MockRequestHandler,</span>
 <span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>        ApplicationRequestHandler</span>
 <span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>):</span>
@@ -335,6 +335,14 @@ Figure&nbsp;22.3: HTTP concept map.
     <a class="pager-link next" href="../viewer/index.html">A File Viewer →</a>
   </nav>
 </footer>
+<script>
+document.addEventListener('click', function (e) {
+  var link = e.target.closest && e.target.closest('a');
+  document.querySelectorAll('details.topnav-dropdown[open]').forEach(function (d) {
+    if (!d.contains(e.target) || (link && d.contains(link))) d.removeAttribute('open');
+  });
+});
+</script>
 
 
 </body></html>

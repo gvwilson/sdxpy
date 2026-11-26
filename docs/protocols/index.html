@@ -49,7 +49,7 @@
 <p>This book is supposed to teach software design by implementing small versions of real-world tools, but we have reached a point where we need to learn a little more about Python itself in order to proceed. Our discussion of closures in <a href="../func/index.html" class="quarto-xref"><span>Chapter 8</span></a> was the first step; in this chapter, we will look at how Python allows users to tell it to do things at specific moments.</p>
 <h2 data-number="9.1" id="protocols-mock"><span class="header-section-number">9.1</span> Mock Objects</h2>
 <p>We have already seen that functions are objects referred to by variable names just like other values. We can use this fact to change functions at runtime to make testing easier. For example, if the function we want to test uses the time of day, we can temporarily replace the real <code>time.time</code> function with one that returns a specific value so we know what result to expect in our test:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> time</span>
+<div class="sourceCode" id="cb1" data-file="protocols/mock_time.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> time</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> elapsed(since):</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> time.time() <span class="op">-</span> since</span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> mock_time():</span>
@@ -58,7 +58,7 @@
 <span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    time.time <span class="op">=</span> mock_time</span>
 <span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> elapsed(<span class="dv">50</span>) <span class="op">==</span> <span class="dv">150</span></span></code></pre></div>
 <p>Temporary replacements like this are called <a href="../glossary/index.html#mock_object">mock objects</a> because we usually use objects even if the thing we’re replacing is a function. We can do this because Python lets us create objects that can be “called” just like functions. If an object <code>obj</code> has a <code>__call__</code> method, then <code>obj(…)</code> is automatically turned into <code>obj.__call__(…)</code> just as <code>a == b</code> is automatically turned into <code>a.__eq__(b)</code> (<a href="../parse/index.html" class="quarto-xref"><span>Chapter 5</span></a>). For example, the code below defines a class <code>Adder</code> whose instances add a constant to their input:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Adder:</span>
+<div class="sourceCode" id="cb2" data-file="protocols/callable.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Adder:</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, value):</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.value <span class="op">=</span> value</span>
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__call__</span>(<span class="va">self</span>, arg):</span>
@@ -66,7 +66,7 @@
 <span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>add_3 <span class="op">=</span> Adder(<span class="dv">3</span>)</span>
 <span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> add_3(<span class="dv">8</span>)</span>
 <span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"add_3(8): </span><span class="sc">{</span>result<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div>
-<pre><code>add_3(8): 11</code></pre>
+<pre data-file="protocols/callable.out"><code>add_3(8): 11</code></pre>
 <p>Let’s create a reusable mock object class that:</p>
 <ol type="1">
 <li><p>defines a <code>__call__</code> method so that instances can be called like functions;</p></li>
@@ -75,7 +75,7 @@
 <li><p>returns either a fixed value or a value produced by a user-defined function.</p></li>
 </ol>
 <p>The class itself is only 11 lines long:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Fake:</span>
+<div class="sourceCode" id="cb4" data-file="protocols/mock_object.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Fake:</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, func<span class="op">=</span><span class="va">None</span>, value<span class="op">=</span><span class="va">None</span>):</span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.calls <span class="op">=</span> []</span>
 <span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.func <span class="op">=</span> func</span>
@@ -86,18 +86,18 @@
 <span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="va">self</span>.func(<span class="op">*</span>args, <span class="op">**</span>kwargs)</span>
 <span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>.value</span></code></pre></div>
 <p>For convenience, let’s also define a function that replaces some function we’ve already defined with an instance of our <code>Fake</code> class:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> fakeit(name, func<span class="op">=</span><span class="va">None</span>, value<span class="op">=</span><span class="va">None</span>):</span>
+<div class="sourceCode" id="cb5" data-file="protocols/mock_object.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> fakeit(name, func<span class="op">=</span><span class="va">None</span>, value<span class="op">=</span><span class="va">None</span>):</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> name <span class="kw">in</span> <span class="bu">globals</span>()</span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    fake <span class="op">=</span> Fake(func, value)</span>
 <span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    <span class="bu">globals</span>()[name] <span class="op">=</span> fake</span>
 <span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> fake</span></code></pre></div>
 <p>To show how this works, we define a function that adds two numbers and write a test for it:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> adder(a, b):</span>
+<div class="sourceCode" id="cb6" data-file="protocols/mock_object.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> adder(a, b):</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> a <span class="op">+</span> b</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_with_real_function():</span>
 <span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> adder(<span class="dv">2</span>, <span class="dv">3</span>) <span class="op">==</span> <span class="dv">5</span></span></code></pre></div>
 <p>We then use <code>fakeit</code> to replace the real <code>adder</code> function with a mock object that always returns 99 (<a href="#fig-protocols-timeline" class="quarto-xref">Figure&nbsp;<span>9.1</span></a>):</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_with_fixed_return_value():</span>
+<div class="sourceCode" id="cb7" data-file="protocols/mock_object.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_with_fixed_return_value():</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    fakeit(<span class="st">"adder"</span>, value<span class="op">=</span><span class="dv">99</span>)</span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> adder(<span class="dv">2</span>, <span class="dv">3</span>) <span class="op">==</span> <span class="dv">99</span></span></code></pre></div>
 <div id="fig-protocols-timeline" class="quarto-float quarto-figure quarto-figure-center" alt="Sequence of steps in a mock call">
@@ -111,20 +111,20 @@ Figure&nbsp;9.1: Timeline of mock operation.
 </figure>
 </div>
 <p>Another test proves that our <code>Fake</code> class records all of the calls:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_fake_records_calls():</span>
+<div class="sourceCode" id="cb8" data-file="protocols/mock_object.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_fake_records_calls():</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    fake <span class="op">=</span> fakeit(<span class="st">"adder"</span>, value<span class="op">=</span><span class="dv">99</span>)</span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> adder(<span class="dv">2</span>, <span class="dv">3</span>) <span class="op">==</span> <span class="dv">99</span></span>
 <span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> adder(<span class="dv">3</span>, <span class="dv">4</span>) <span class="op">==</span> <span class="dv">99</span></span>
 <span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> adder.calls <span class="op">==</span> [[(<span class="dv">2</span>, <span class="dv">3</span>), {}], [(<span class="dv">3</span>, <span class="dv">4</span>), {}]]</span></code></pre></div>
 <p>And finally, the user can provide a function to calculate a return value:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_fake_calculates_result():</span>
+<div class="sourceCode" id="cb9" data-file="protocols/mock_object.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_fake_calculates_result():</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    fakeit(<span class="st">"adder"</span>, func<span class="op">=</span><span class="kw">lambda</span> left, right: <span class="dv">10</span> <span class="op">*</span> left <span class="op">+</span> right)</span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> adder(<span class="dv">2</span>, <span class="dv">3</span>) <span class="op">==</span> <span class="dv">23</span></span></code></pre></div>
 <h2 data-number="9.2" id="protocols-protocols"><span class="header-section-number">9.2</span> Protocols</h2>
 <p>Mock objects are very useful, but the way we’re using them is going to cause strange errors. The problem is that each test replaces <code>adder</code> with a mock object that does something different. As a result, any test that <em>doesn’t</em> replace <code>adder</code> will use whatever mock object was last put in place rather than the original <code>adder</code> function.</p>
 <p>We could tell users it’s their job to put everything back after each test, but people are forgetful. It would be better if Python did this automatically; luckily for us, it provides a <a href="../glossary/index.html#protocol">protocol</a> for exactly this purpose. A protocol is a rule that specifies how programs can tell Python to do specific things at specific moments. Giving a class a <code>__call__</code> method is an example of this: when Python sees <code>thing(…)</code>, it automatically checks if <code>thing</code> has that method. Defining an <code>__init__</code> method for a class is another example: if a class has a method with that name, Python calls it automatically when constructing a new instance of that class.</p>
 <p>What we want for managing mock objects is a <a href="../glossary/index.html#context_manager">context manager</a> that replaces the real function with our mock at the start of a block of code and then puts the original back at the end. The protocol for this relies on two methods called <code>__enter__</code> and <code>__exit__</code>. If the class is called <code>C</code>, then when Python executes a <code>with</code> block like this:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> C(…args…) <span class="im">as</span> name:</span>
+<div class="sourceCode" id="cb10" data-file="protocols/ex_with.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> C(…args…) <span class="im">as</span> name:</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>    …do things…</span></code></pre></div>
 <p>it does the following (<a href="#fig-protocols-context-manager" class="quarto-xref">Figure&nbsp;<span>9.2</span></a>):</p>
 <ol type="1">
@@ -144,7 +144,7 @@ Figure&nbsp;9.2: Operations performed by a context manager.
 </figure>
 </div>
 <p>Here’s a mock object that inherits all the capabilities of <code>Fake</code> and adds the two methods needed by <code>with</code>:</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> ContextFake(Fake):</span>
+<div class="sourceCode" id="cb11" data-file="protocols/mock_context.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> ContextFake(Fake):</span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, name, func<span class="op">=</span><span class="va">None</span>, value<span class="op">=</span><span class="va">None</span>):</span>
 <span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>        <span class="bu">super</span>().<span class="fu">__init__</span>(func, value)</span>
 <span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.name <span class="op">=</span> name</span>
@@ -157,7 +157,7 @@ Figure&nbsp;9.2: Operations performed by a context manager.
 <span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__exit__</span>(<span class="va">self</span>, exc_type, exc_value, exc_traceback):</span>
 <span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>        <span class="bu">globals</span>()[<span class="va">self</span>.name] <span class="op">=</span> <span class="va">self</span>.original</span></code></pre></div>
 <p>Notice that <code>__enter__</code> doesn’t take any extra parameters: anything it needs must be provided via the object’s constructor. On the other hand, <code>__exit__</code> will always be called with three values that tell it whether an exception occurred, and if so, what the exception was. This test shows that our context manager is doing what it’s supposed to:</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> subber(a, b):</span>
+<div class="sourceCode" id="cb12" data-file="protocols/mock_context.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> subber(a, b):</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> a <span class="op">-</span> b</span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> check_no_lasting_effects():</span>
 <span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> subber(<span class="dv">2</span>, <span class="dv">3</span>) <span class="op">==</span> <span class="op">-</span><span class="dv">1</span></span>
@@ -169,7 +169,7 @@ Figure&nbsp;9.2: Operations performed by a context manager.
 <h2 data-number="9.3" id="protocols-decorator"><span class="header-section-number">9.3</span> Decorators</h2>
 <p>Python programs rely on several other protocols, each of which gives user-level code a way to interact with some aspect of the Python interpreter. One of the most widely used is called a <a href="../glossary/index.html#decorator">decorator</a>, which allows us to wrap one function with another.</p>
 <p>In order to understand how decorators work, we must take another look at closures (<a href="../func/index.html" class="quarto-xref"><span>Chapter 8</span></a>). Suppose we want to create a function called <code>logging</code> that prints a message before and after each call to some other arbitrary function. We could try to do it like this:</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> original(value):</span>
+<div class="sourceCode" id="cb13" data-file="protocols/wrap_infinite.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> original(value):</span>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"original: </span><span class="sc">{</span>value<span class="sc">}</span><span class="ss">"</span>)</span>
 <span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> logging(value):</span>
 <span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"before call"</span>)</span>
@@ -178,7 +178,7 @@ Figure&nbsp;9.2: Operations performed by a context manager.
 <span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>original <span class="op">=</span> logging</span>
 <span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>original(<span class="st">"example"</span>)</span></code></pre></div>
 <p>but when we try to call <code>original</code> we wind up in an infinite loop. The wrapped version of our function refers to <code>original</code>, but Python looks up the function associated with that name <em>at the time of call</em>, which means it finds our wrapper function instead of the original function (<a href="#fig-protocols-recursion" class="quarto-xref">Figure&nbsp;<span>9.3</span></a>). We can prevent this <a href="../glossary/index.html#infinite_recursion">infinite recursion</a> by creating a closure to capture the original function for later use:</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> original(value):</span>
+<div class="sourceCode" id="cb14" data-file="protocols/wrap_capture.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> original(value):</span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"original: </span><span class="sc">{</span>value<span class="sc">}</span><span class="ss">"</span>)</span>
 <span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> logging(func):</span>
 <span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _inner(value):</span>
@@ -188,7 +188,7 @@ Figure&nbsp;9.2: Operations performed by a context manager.
 <span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> _inner</span>
 <span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>original <span class="op">=</span> logging(original)</span>
 <span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>original(<span class="st">"example"</span>)</span></code></pre></div>
-<pre><code>before call
+<pre data-file="protocols/wrap_capture.out"><code>before call
 original: example
 after call</code></pre>
 <div id="fig-protocols-recursion" class="quarto-float quarto-figure quarto-figure-center" alt="Runaway recursion from a wrapping mistake">
@@ -202,7 +202,7 @@ Figure&nbsp;9.3: Infinite recursion caused by careless use of a wrapped function
 </figure>
 </div>
 <p>Using a closure also gives us a way to pass extra arguments when we create the wrapped function:</p>
-<div class="sourceCode" id="cb16"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> original(value):</span>
+<div class="sourceCode" id="cb16" data-file="protocols/wrap_param.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> original(value):</span>
 <span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"original: </span><span class="sc">{</span>value<span class="sc">}</span><span class="ss">"</span>)</span>
 <span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> logging(func, label):</span>
 <span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _inner(value):</span>
@@ -212,11 +212,11 @@ Figure&nbsp;9.3: Infinite recursion caused by careless use of a wrapped function
 <span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> _inner</span>
 <span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>original <span class="op">=</span> logging(original, <span class="st">"call"</span>)</span>
 <span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>original(<span class="st">"example"</span>)</span></code></pre></div>
-<pre><code>++ call
+<pre data-file="protocols/wrap_param.out"><code>++ call
 original: example
 -- call</code></pre>
 <p>Wrapping functions like this is so useful that Python has built-in support for doing it. We define the decorator function that does the wrapping as before, but then use <code>@wrap</code> to apply it rather than <code>name = wrap(name)</code>:</p>
-<div class="sourceCode" id="cb18"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> wrap(func):</span>
+<div class="sourceCode" id="cb18" data-file="protocols/decorator_simple.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> wrap(func):</span>
 <span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _inner(<span class="op">*</span>args):</span>
 <span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="st">"before call"</span>)</span>
 <span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>        func(<span class="op">*</span>args)</span>
@@ -226,11 +226,11 @@ original: example
 <span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> original(message):</span>
 <span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"original: </span><span class="sc">{</span>message<span class="sc">}</span><span class="ss">"</span>)</span>
 <span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>original(<span class="st">"example"</span>)</span></code></pre></div>
-<pre><code>before call
+<pre data-file="protocols/decorator_simple.out"><code>before call
 original: example
 after call</code></pre>
 <p>If we want to pass arguments at the time we apply the decorator, though, it seems like we’re stuck: a Python decorator must take exactly one argument, which must be the function we want to decorate. The solution is to define a function inside a function <em>inside yet another function</em> to create a closure that captures the arguments:</p>
-<div class="sourceCode" id="cb20"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> wrap(label):                  <span class="co"># function returning a decorator</span></span>
+<div class="sourceCode" id="cb20" data-file="protocols/decorator_param.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> wrap(label):                  <span class="co"># function returning a decorator</span></span>
 <span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _decorate(func):          <span class="co"># the decorator Python will apply</span></span>
 <span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>        <span class="kw">def</span> _inner(<span class="op">*</span>args):        <span class="co"># the wrapped function</span></span>
 <span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="ss">f"++ </span><span class="sc">{</span>label<span class="sc">}</span><span class="ss">"</span>)  <span class="co"># 'label' is visible because</span></span>
@@ -242,11 +242,11 @@ after call</code></pre>
 <span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> original(message):            <span class="co"># decorator applied here</span></span>
 <span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"original: </span><span class="sc">{</span>message<span class="sc">}</span><span class="ss">"</span>)</span>
 <span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a>original(<span class="st">"example"</span>)</span></code></pre></div>
-<pre><code>++ wrapping
+<pre data-file="protocols/decorator_param.out"><code>++ wrapping
 original: example
 -- wrapping</code></pre>
 <p>Decorators didn’t need to be this complicated. In order to define a method that takes <span class="math inline">\(N\)</span> parameters in Python, we have to write a function of <span class="math inline">\(N+1\)</span> parameters, the first of which represents the object for which the method is being called. Python could have done the same thing with decorators, i.e., allowed people to define a function of <span class="math inline">\(N+1\)</span> parameters and have <code>@</code> fill in the first automatically:</p>
-<div class="sourceCode" id="cb22"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> decorator(func, label):</span>
+<div class="sourceCode" id="cb22" data-file="protocols/alternative_design.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> decorator(func, label):</span>
 <span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _inner(arg):</span>
 <span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"entering </span><span class="sc">{</span>label<span class="sc">}</span><span class="ss">"</span>)</span>
 <span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>        func(arg)</span>
@@ -262,7 +262,7 @@ original: example
 <li><p>That iterator object must have a <code>__next__</code> method, which must return a value each time it is called. When there are no more values to return, it must raise a <code>StopIteration</code> exception.</p></li>
 </ol>
 <p>For example, suppose we have a class that stores a list of strings and we want to return the characters from the strings in order. (We will use a class like this to store lines of text in <a href="../viewer/index.html" class="quarto-xref"><span>Chapter 23</span></a>.) In our first attempt, each object is its own iterator, i.e., each object keeps track of what value to return next when looping:</p>
-<div class="sourceCode" id="cb23"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> NaiveIterator:</span>
+<div class="sourceCode" id="cb23" data-file="protocols/naive_iterator.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> NaiveIterator:</span>
 <span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, text):</span>
 <span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._text <span class="op">=</span> text[:]</span>
 <span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__iter__</span>(<span class="va">self</span>):</span>
@@ -274,9 +274,9 @@ original: example
 <span id="cb23-10"><a href="#cb23-10" aria-hidden="true" tabindex="-1"></a>            <span class="cf">raise</span> <span class="pp">StopIteration</span></span>
 <span id="cb23-11"><a href="#cb23-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>._text[<span class="va">self</span>._row][<span class="va">self</span>._col]</span></code></pre></div>
 <p>If we think of the text in terms of rows and columns, the <code>advance</code> method moves the column marker forward within the current row. When we reach the end of a row, we reset the column to 0 and advance the row index by one:</p>
-<div class="sourceCode" id="cb24"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb24" data-file="protocols/naive_iterator.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
 <p>Our first test seems to work:</p>
-<div class="sourceCode" id="cb25"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> gather(<span class="bu">buffer</span>):</span>
+<div class="sourceCode" id="cb25" data-file="protocols/test_naive_iterator.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> gather(<span class="bu">buffer</span>):</span>
 <span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>    result <span class="op">=</span> <span class="st">""</span></span>
 <span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> char <span class="kw">in</span> <span class="bu">buffer</span>:</span>
 <span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>        result <span class="op">+=</span> char</span>
@@ -285,12 +285,12 @@ original: example
 <span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a>    <span class="bu">buffer</span> <span class="op">=</span> NaiveIterator([<span class="st">"ab"</span>, <span class="st">"c"</span>])</span>
 <span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> gather(<span class="bu">buffer</span>) <span class="op">==</span> <span class="st">"abc"</span></span></code></pre></div>
 <p>However, our iterator doesn’t work if the buffer contains an empty string:</p>
-<div class="sourceCode" id="cb26"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_naive_buffer_empty_string():</span>
+<div class="sourceCode" id="cb26" data-file="protocols/test_naive_iterator.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_naive_buffer_empty_string():</span>
 <span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">buffer</span> <span class="op">=</span> NaiveIterator([<span class="st">"a"</span>, <span class="st">""</span>])</span>
 <span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> pytest.raises(<span class="pp">IndexError</span>):</span>
 <span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>        <span class="cf">assert</span> gather(<span class="bu">buffer</span>) <span class="op">==</span> <span class="st">"a"</span></span></code></pre></div>
 <p>It also fails when we use a nested loop:</p>
-<div class="sourceCode" id="cb27"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_naive_buffer_nested_loop():</span>
+<div class="sourceCode" id="cb27" data-file="protocols/test_naive_iterator.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_naive_buffer_nested_loop():</span>
 <span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">buffer</span> <span class="op">=</span> NaiveIterator([<span class="st">"a"</span>, <span class="st">"b"</span>])</span>
 <span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>    result <span class="op">=</span> <span class="st">""</span></span>
 <span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> outer <span class="kw">in</span> <span class="bu">buffer</span>:</span>
@@ -298,13 +298,13 @@ original: example
 <span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a>            result <span class="op">+=</span> inner</span>
 <span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> result <span class="op">==</span> <span class="st">"abab"</span></span></code></pre></div>
 <p>We can fix the first problem with more careful bookkeeping—we leave that as an exercise—but fixing the second problem requires us to re-think our design. The problem is that we only have one pair of variables (the <code>_row</code> and <code>_col</code> attributes of the buffer) to store the current location, but two loops trying to use them. What we need to do instead is create a separate object for each loop to use:</p>
-<div class="sourceCode" id="cb28"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> BetterIterator:</span>
+<div class="sourceCode" id="cb28" data-file="protocols/better_iterator.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> BetterIterator:</span>
 <span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, text):</span>
 <span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._text <span class="op">=</span> text[:]</span>
 <span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__iter__</span>(<span class="va">self</span>):</span>
 <span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> BetterCursor(<span class="va">self</span>._text)</span></code></pre></div>
 <p>Each cursor keeps track of the current location for a single loop using code identical to what we’ve already seen (including the same bug with empty strings):</p>
-<div class="sourceCode" id="cb29"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> BetterCursor:</span>
+<div class="sourceCode" id="cb29" data-file="protocols/better_iterator.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> BetterCursor:</span>
 <span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, text):</span>
 <span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._text <span class="op">=</span> text</span>
 <span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._row <span class="op">=</span> <span class="dv">0</span></span>
@@ -340,7 +340,7 @@ Figure&nbsp;9.4: Concept map.
 <p>Create a context manager that works like <code>pytest.raises</code> from the <a href="https://docs.pytest.org/"><code>pytest</code></a> module, i.e., that does nothing if an expected exception is raised within its scope but fails with an assertion error if that kind of exception is <em>not</em> raised.</p>
 <h3 data-number="9.6.2" id="timing-blocks"><span class="header-section-number">9.6.2</span> Timing Blocks</h3>
 <p>Create a context manager called <code>Timer</code> that reports how long it has been since a block of code started running:</p>
-<div class="sourceCode" id="cb30"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="co"># your class goes here</span></span>
+<div class="sourceCode" id="cb30" data-file="protocols/ex_timer.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="co"># your class goes here</span></span>
 <span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> Timer() <span class="im">as</span> start:</span>
 <span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>    <span class="co"># …do some lengthy operation…</span></span>
 <span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(start.elapsed())  <span class="co"># time since the start of the block</span></span></code></pre></div>
@@ -358,6 +358,14 @@ Figure&nbsp;9.4: Concept map.
     <a class="pager-link next" href="../archive/index.html">A File Archiver →</a>
   </nav>
 </footer>
+<script>
+document.addEventListener('click', function (e) {
+  var link = e.target.closest && e.target.closest('a');
+  document.querySelectorAll('details.topnav-dropdown[open]').forEach(function (d) {
+    if (!d.contains(e.target) || (link && d.contains(link))) d.removeAttribute('open');
+  });
+});
+</script>
 
 
 </body></html>

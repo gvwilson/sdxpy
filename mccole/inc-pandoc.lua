@@ -39,5 +39,5 @@ function Para(el)
   local lang = U.LANG[ext] or ""
   local classes = (lang ~= "") and { lang } or {}
 
-  return pandoc.CodeBlock(code, pandoc.Attr("", classes, {}))
+  return pandoc.CodeBlock(code, pandoc.Attr("", classes, { ["data-file"] = file }))
 end

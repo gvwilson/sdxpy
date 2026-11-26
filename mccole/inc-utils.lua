@@ -11,12 +11,18 @@ function M.s(v)
   if type(v) == "string" and v ~= "" then return v end
 end
 
+local function escape_pattern(s)
+  return (s:gsub("[%^%$%(%)%%%.%[%]%*%+%-%?]", "%%%0"))
+end
+
 function M.extract_region(content, mark)
-  return content:match("# mccole:" .. mark .. "\n(.-)\n# mccole:/" .. mark) or ""
+  local m = escape_pattern(mark)
+  return content:match("# mccole:" .. m .. "\n(.-)\n# mccole:/" .. m) or ""
 end
 
 function M.omit_region(content, mark)
-  return content:gsub("# mccole:" .. mark .. "\n.-# mccole:/" .. mark .. "\n", "")
+  local m = escape_pattern(mark)
+  return content:gsub("# mccole:" .. m .. "\n.-# mccole:/" .. m .. "\n", "")
 end
 
 function M.head_lines(content, n)
