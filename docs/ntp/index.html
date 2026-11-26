@@ -174,9 +174,44 @@ delay = (t4 - t1) - (t3 - t2)</code></pre>
 <span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Get current time according to client's local clock."""</span></span>
 <span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>.now <span class="op">+</span> <span class="va">self</span>.clock_offset</span></code></pre></div>
 <p>The <code>run</code> method simply waits for each sync interval before calling <code>_sync_with_server</code>:</p>
-<div class="sourceCode" id="cb5" data-file="ntp/ntp_client.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb5" data-file="ntp/ntp_client.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>    <span class="cf">async</span> <span class="kw">def</span> run(<span class="va">self</span>):</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Periodically sync with NTP server."""</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">while</span> <span class="va">True</span>:</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Wait for sync interval</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>            <span class="cf">await</span> <span class="va">self</span>.timeout(<span class="va">self</span>.sync_interval)</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Perform NTP sync</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>            <span class="cf">await</span> <span class="va">self</span>._sync_with_server()</span></code></pre></div>
 <p><code>_sync_with_server</code> executes one full NTP exchange. It records the send time t1, waits for the server’s response containing t2 and t3, records the receive time t4, and then applies the calculated offset:</p>
-<div class="sourceCode" id="cb6" data-file="ntp/ntp_client.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb6" data-file="ntp/ntp_client.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>    <span class="cf">async</span> <span class="kw">def</span> _sync_with_server(<span class="va">self</span>):</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Execute one NTP synchronization cycle."""</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Create request message with client send time (t1)</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>        message <span class="op">=</span> NTPMessage(t1<span class="op">=</span><span class="va">self</span>.get_local_time())</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>            <span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.3f}</span><span class="ss">] </span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>name<span class="sc">}</span><span class="ss">: Sending sync request "</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>            <span class="ss">f"(local_time=</span><span class="sc">{</span>message<span class="sc">.</span>t1<span class="sc">:.3f}</span><span class="ss">, offset=</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>clock_offset<span class="sc">:.3f}</span><span class="ss">)"</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Send request with network delay</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">await</span> <span class="va">self</span>.timeout(<span class="va">self</span>.network_delay)</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">await</span> <span class="va">self</span>.server_queue.put((<span class="va">self</span>.response_queue, message))</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Wait for response</span></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>        response <span class="op">=</span> <span class="cf">await</span> <span class="va">self</span>.response_queue.get()</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Record client receive time (t4)</span></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>        response.t4 <span class="op">=</span> <span class="va">self</span>.get_local_time()</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Calculate offset and delay</span></span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>        offset <span class="op">=</span> response.calculate_offset()</span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>        delay <span class="op">=</span> response.calculate_delay()</span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(</span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>            <span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.3f}</span><span class="ss">] </span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>name<span class="sc">}</span><span class="ss">: Received response "</span></span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>            <span class="ss">f"(offset=</span><span class="sc">{</span>offset<span class="sc">:.3f}</span><span class="ss">, delay=</span><span class="sc">{</span>delay<span class="sc">:.3f}</span><span class="ss">)"</span></span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Adjust clock by the calculated offset</span></span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.clock_offset <span class="op">-=</span> offset</span>
+<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.syncs_performed <span class="op">+=</span> <span class="dv">1</span></span>
+<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.offset_history.append(<span class="bu">abs</span>(offset))</span>
+<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(</span>
+<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a>            <span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.3f}</span><span class="ss">] </span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>name<span class="sc">}</span><span class="ss">: Clock adjusted, "</span></span>
+<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a>            <span class="ss">f"new offset from true time: </span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>clock_offset<span class="sc">:.3f}</span><span class="ss">"</span></span>
+<span id="cb6-30"><a href="#cb6-30" aria-hidden="true" tabindex="-1"></a>        )</span></code></pre></div>
 <p>The client maintains a <code>clock_offset</code> representing how far its local clock differs from true time. When it syncs, it calculates the offset using the NTP algorithm and adjusts its clock accordingly. Notice that <code>get_local_time()</code> returns the client’s view of time, which may differ from simulation time until synchronization occurs.</p>
 <h2 data-number="X.2" id="running-a-simulation"><span class="header-section-number">X.2</span> Running a Simulation</h2>
 <p>Let’s see clock synchronization in action:</p>

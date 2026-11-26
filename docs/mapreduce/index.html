@@ -118,7 +118,11 @@
 <p>As this example shows, the programmer writes two simple functions and runs a process to coordinate them. The framework handles distribution, parallelization, and aggregation.</p>
 <h2 data-number="L.3" id="mapreduce-datastructures"><span class="header-section-number">L.3</span> Core Data Structures</h2>
 <p>Let’s start with some dataclasses to represent the data flowing through the framework. Input will be split into chunks for the map phase:</p>
-<div class="sourceCode" id="cb2" data-file="mapreduce/mr_types.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb2" data-file="mapreduce/mr_types.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> MapTask:</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""A map task to be executed."""</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    task_id: <span class="bu">str</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    data: <span class="bu">list</span>[Any]</span></code></pre></div>
 <p>Intermediate data will be partitioned for reducers:</p>
 <div class="sourceCode" id="cb3" data-file="mapreduce/mr_types.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> IntermediateData:</span>
@@ -141,7 +145,12 @@
 <span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>            grouped[key].append(value)</span>
 <span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="bu">dict</span>(grouped)</span></code></pre></div>
 <p>And finally, intermediate chunks will be reduced:</p>
-<div class="sourceCode" id="cb4" data-file="mapreduce/mr_types.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb4" data-file="mapreduce/mr_types.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> ReduceTask:</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""A reduce task to be executed."""</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    task_id: <span class="bu">str</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    partition_id: <span class="bu">int</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>    keys: <span class="bu">list</span>[Any]  <span class="co"># Keys this reducer is responsible for</span></span></code></pre></div>
 <div>
 <blockquote>
 <p><strong>None</strong></p>
@@ -153,12 +162,61 @@
 </div>
 <h2 data-number="L.4" id="mapreduce-worker"><span class="header-section-number">L.4</span> Worker Implementation</h2>
 <p>Worker processes execute both map and reduce tasks. Each has a unique worker ID, a queue of incoming tasks, and a reference to the overall work coordinator:</p>
-<div class="sourceCode" id="cb6" data-file="mapreduce/mr_worker.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb6" data-file="mapreduce/mr_worker.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> MapReduceWorker(Process):</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Worker that executes map and reduce tasks."""</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> init(<span class="va">self</span>, worker_id: <span class="bu">int</span>, coordinator: <span class="st">"MapReduceCoordinator"</span>):</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.worker_id <span class="op">=</span> worker_id</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.coordinator <span class="op">=</span> coordinator</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.task_queue <span class="op">=</span> Queue(<span class="va">self</span>._env)</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.current_task <span class="op">=</span> <span class="va">None</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Statistics</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.maps_executed <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.reduces_executed <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Simulate failure probability</span></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.failure_rate <span class="op">=</span> <span class="fl">0.0</span></span></code></pre></div>
 <p>The code shown above also records a few simple statistics and can simulate failure with a specified probability; we will use this last property when we look at fault tolerance.</p>
 <p>When a worker runs, it repeatedly gets a task from its queue and executes it. If there’s a simulated failure, the worker reports that back to the coordinator instead:</p>
-<div class="sourceCode" id="cb7" data-file="mapreduce/mr_worker.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb7" data-file="mapreduce/mr_worker.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>    <span class="cf">async</span> <span class="kw">def</span> run(<span class="va">self</span>):</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Main worker loop: fetch and execute tasks."""</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">while</span> <span class="va">True</span>:</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Get task from queue</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>            task <span class="op">=</span> <span class="cf">await</span> <span class="va">self</span>.task_queue.get()</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Check for simulated failure</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> random.random() <span class="op">&lt;</span> <span class="va">self</span>.failure_rate:</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>                <span class="bu">print</span>(<span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] Worker </span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>worker_id<span class="sc">}</span><span class="ss">: FAILED during </span><span class="sc">{</span>task<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>                <span class="cf">await</span> <span class="va">self</span>.coordinator.report_failure(task, <span class="va">self</span>.worker_id)</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>                <span class="cf">continue</span></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Execute task</span></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="bu">isinstance</span>(task, MapTask):</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>                <span class="cf">await</span> <span class="va">self</span>.execute_map(task)</span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>            <span class="cf">elif</span> <span class="bu">isinstance</span>(task, ReduceTask):</span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>                <span class="cf">await</span> <span class="va">self</span>.execute_reduce(task)</span></code></pre></div>
 <p>Each map task consists of one or more records. For simplicity’s sake we assume each record needs the same processing time, so after waiting that long, the worker partitions the results and sends them back to the coordinator:</p>
-<div class="sourceCode" id="cb8" data-file="mapreduce/mr_worker.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb8" data-file="mapreduce/mr_worker.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>    <span class="cf">async</span> <span class="kw">def</span> execute_map(<span class="va">self</span>, task: MapTask):</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Execute a map task."""</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.current_task <span class="op">=</span> task</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.maps_executed <span class="op">+=</span> <span class="dv">1</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>            <span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] Worker </span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>worker_id<span class="sc">}</span><span class="ss">: "</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>            <span class="ss">f"Starting </span><span class="sc">{</span>task<span class="sc">}</span><span class="ss"> with </span><span class="sc">{</span><span class="bu">len</span>(task.data)<span class="sc">}</span><span class="ss"> records"</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Simulate processing time</span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>        processing_time <span class="op">=</span> <span class="bu">len</span>(task.data) <span class="op">*</span> MAP_TIME</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">await</span> <span class="va">self</span>.timeout(processing_time)</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Apply map function</span></span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>        intermediate <span class="op">=</span> IntermediateData()</span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> record <span class="kw">in</span> task.data:</span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>            <span class="cf">for</span> key, value <span class="kw">in</span> <span class="va">self</span>.coordinator.map_fn(record):</span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>                intermediate.add(key, value)</span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Partition intermediate data</span></span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>        partitions <span class="op">=</span> intermediate.partition(<span class="va">self</span>.coordinator.num_reducers)</span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(</span>
+<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>            <span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] Worker </span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>worker_id<span class="sc">}</span><span class="ss">: "</span></span>
+<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a>            <span class="ss">f"Completed </span><span class="sc">{</span>task<span class="sc">}</span><span class="ss">, produced </span><span class="sc">{</span><span class="bu">len</span>(intermediate.pairs)<span class="sc">}</span><span class="ss"> pairs"</span></span>
+<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Send results to coordinator</span></span>
+<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.coordinator.map_completed(task.task_id, partitions, <span class="va">self</span>.worker_id)</span>
+<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.current_task <span class="op">=</span> <span class="va">None</span></span></code></pre></div>
 <p>Reducing works the same way:</p>
 <div class="sourceCode" id="cb9" data-file="mapreduce/mr_worker.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>    <span class="cf">async</span> <span class="kw">def</span> execute_reduce(<span class="va">self</span>, task: ReduceTask):</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Execute a reduce task."""</span></span>

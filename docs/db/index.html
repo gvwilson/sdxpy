@@ -151,9 +151,23 @@ Figure&nbsp;18.1: Storing a database as a single dictionary in memory.
 <span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>._data.get(key, <span class="va">None</span>)</span></code></pre></div>
 <h2 data-number="18.2" id="db-save"><span class="header-section-number">18.2</span> Saving Records</h2>
 <p>The next step in building a usable database is to have it store records rather than just refer to the user’s objects. Since we don’t want the database tied to any particular kind of record, records must know how to pack and unpack themselves. We could have used the techniques of <a href="../binary/index.html" class="quarto-xref"><span>Chapter 17</span></a>, but to make our test and sample output a little more readable, we will pack numbers as strings with a <a href="../glossary/index.html#null_byte">null byte</a> <code>\0</code> between each string:</p>
-<div class="sourceCode" id="cb8" data-file="db/record.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb8" data-file="db/record.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>    <span class="at">@staticmethod</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> pack(record):</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">assert</span> <span class="bu">isinstance</span>(record, Experiment)</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>        readings <span class="op">=</span> <span class="st">"</span><span class="ch">\0</span><span class="st">"</span>.join(<span class="bu">str</span>(r) <span class="cf">for</span> r <span class="kw">in</span> record._readings)</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>        result <span class="op">=</span> <span class="ss">f"</span><span class="sc">{</span>record<span class="sc">.</span>_name<span class="sc">}</span><span class="ch">\0</span><span class="sc">{</span>record<span class="sc">.</span>_timestamp<span class="sc">}</span><span class="ch">\0</span><span class="sc">{</span>readings<span class="sc">}</span><span class="ss">"</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="bu">len</span>(result) <span class="op">&lt;</span> Experiment.RECORD_LEN:</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>            result <span class="op">+=</span> <span class="st">"</span><span class="ch">\0</span><span class="st">"</span> <span class="op">*</span> (Experiment.RECORD_LEN <span class="op">-</span> <span class="bu">len</span>(result))</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> result</span></code></pre></div>
 <p>The corresponding method to unpack a stored record is:</p>
-<div class="sourceCode" id="cb9" data-file="db/record.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb9" data-file="db/record.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>    <span class="at">@staticmethod</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> unpack(raw):</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">assert</span> <span class="bu">isinstance</span>(raw, <span class="bu">str</span>)</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>        parts <span class="op">=</span> raw.split(<span class="st">"</span><span class="ch">\0</span><span class="st">"</span>)</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>        name <span class="op">=</span> parts[<span class="dv">0</span>]</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>        timestamp <span class="op">=</span> <span class="bu">int</span>(parts[<span class="dv">1</span>])</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>        readings <span class="op">=</span> [<span class="bu">int</span>(r) <span class="cf">for</span> r <span class="kw">in</span> parts[<span class="dv">2</span>:] <span class="cf">if</span> <span class="bu">len</span>(r)]</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> Experiment(name, timestamp, readings)</span></code></pre></div>
 <p>These records look like the example below (which uses <code>.</code> to show null bytes):</p>
 <div class="sourceCode" id="cb10" data-file="db/show_packed_records.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> record <span class="im">import</span> Experiment</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>ex <span class="op">=</span> Experiment(<span class="st">"abcdef"</span>, <span class="dv">12345</span>, [<span class="dv">6</span>, <span class="dv">7</span>])</span>
@@ -161,7 +175,14 @@ Figure&nbsp;18.1: Storing a database as a single dictionary in memory.
 <pre data-file="db/show_packed_records.out"><code>abcdef.12345.6.7.....</code></pre>
 <p>Notice that our packing and unpacking methods are static, i.e., they’re part of the class but don’t require an object to work. More importantly, they don’t handle strings that contain null bytes. This limitation wasn’t part of our original design, but is instead an accident of implementation. We will look at ways around it in the exercises.</p>
 <p>To finish off, we write methods to pack and unpack multiple records at once by joining and splitting single-record data:</p>
-<div class="sourceCode" id="cb12" data-file="db/record.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb12" data-file="db/record.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>    <span class="at">@staticmethod</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> pack_multi(records):</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="st">''</span>.join([Experiment.pack(r) <span class="cf">for</span> r <span class="kw">in</span> records])</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">@staticmethod</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> unpack_multi(raw):</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>        size <span class="op">=</span> Experiment.size()</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>        split <span class="op">=</span> [raw[i:i <span class="op">+</span> size] <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">0</span>, <span class="bu">len</span>(raw), size)]</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> [Experiment.unpack(s) <span class="cf">for</span> s <span class="kw">in</span> split]</span></code></pre></div>
 <p>and give our record class a static method that calculates the size of a single record:</p>
 <div class="sourceCode" id="cb13" data-file="db/record.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Experiment(BasicRec):</span>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>    RECORD_LEN <span class="op">=</span> BasicRec.MAX_NAME_LEN <span class="op">+</span> <span class="dv">1</span> <span class="op">\</span></span>
@@ -204,7 +225,16 @@ Figure&nbsp;18.2: Saving the entire database in a single file.
 </figure>
 </div>
 <p>The two helper methods we need to make this work are:</p>
-<div class="sourceCode" id="cb15" data-file="db/file_backed.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb15" data-file="db/file_backed.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _save(<span class="va">self</span>):</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>        packed <span class="op">=</span> <span class="va">self</span>._record_cls.pack_multi(<span class="va">self</span>._data.values())</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">with</span> <span class="bu">open</span>(<span class="va">self</span>._filename, <span class="st">"w"</span>) <span class="im">as</span> writer:</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>            writer.write(packed)</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _load(<span class="va">self</span>):</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">assert</span> <span class="va">self</span>._filename.exists()</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>        <span class="cf">with</span> <span class="bu">open</span>(<span class="va">self</span>._filename, <span class="st">"r"</span>) <span class="im">as</span> reader:</span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>            raw <span class="op">=</span> reader.read()</span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>        records <span class="op">=</span> <span class="va">self</span>._record_cls.unpack_multi(raw)</span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._data <span class="op">=</span> {<span class="va">self</span>._record_cls.key(r): r <span class="cf">for</span> r <span class="kw">in</span> records}</span></code></pre></div>
 <p>It isn’t very efficient—we are loading the entire database the first time we want a single record, and saving the entire database every time we add a record—but we are getting closer to something we might actually use.</p>
 <h2 data-number="18.4" id="db-block"><span class="header-section-number">18.4</span> Playing with Blocks</h2>
 <p>How can we make our file-backed implementation more efficient? One option would be to save each record in a file of its own, in the same way that we saved each version of a file in <a href="../archive/index.html" class="quarto-xref"><span>Chapter 10</span></a>. However, this strategy won’t give us as much of a performance boost as we’d like. The reason is that computers do file I/O in <a href="../glossary/index.html#page">pages</a> that are typically 2 or 4 kilobytes in size. Even when we want to read a single byte, the operating system always reads a full page and then gives us just the byte we asked for.</p>
@@ -243,16 +273,37 @@ Figure&nbsp;18.3: Mapping records to blocks.
 <li><p>find or create the right block; and</p></li>
 <li><p>add the record.</p></li>
 </ol>
-<div class="sourceCode" id="cb17" data-file="db/blocked.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb17" data-file="db/blocked.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> add(<span class="va">self</span>, record):</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>        key <span class="op">=</span> <span class="va">self</span>._record_cls.key(record)</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>        seq_id <span class="op">=</span> <span class="va">self</span>._next_seq_id()</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._index[key] <span class="op">=</span> seq_id</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>        block_id <span class="op">=</span> <span class="va">self</span>._get_block_id(seq_id)</span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>        block <span class="op">=</span> <span class="va">self</span>._get_block(block_id)</span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>        block[seq_id] <span class="op">=</span> record</span></code></pre></div>
 <p>To get a record given a record ID, we first ask if we even have that record. If we do, we:</p>
 <ol type="1">
 <li><p>find its current sequence ID;</p></li>
 <li><p>find the corresponding block; and</p></li>
 <li><p>get the record.</p></li>
 </ol>
-<div class="sourceCode" id="cb18" data-file="db/blocked.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb18" data-file="db/blocked.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> get(<span class="va">self</span>, key):</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> key <span class="kw">not</span> <span class="kw">in</span> <span class="va">self</span>._index:</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="va">None</span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>        seq_id <span class="op">=</span> <span class="va">self</span>._index[key]</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>        block_id <span class="op">=</span> <span class="va">self</span>._get_block_id(seq_id)</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>        block <span class="op">=</span> <span class="va">self</span>._get_block(block_id)</span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> block[seq_id]</span></code></pre></div>
 <p>The three helper methods that <code>add</code> and <code>get</code> rely on are:</p>
-<div class="sourceCode" id="cb19" data-file="db/blocked.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb19" data-file="db/blocked.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _next_seq_id(<span class="va">self</span>):</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>        seq_id <span class="op">=</span> <span class="va">self</span>._next</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._next <span class="op">+=</span> <span class="dv">1</span></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> seq_id</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _get_block_id(<span class="va">self</span>, seq_id):</span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> seq_id <span class="op">//</span> Blocked.RECORDS_PER_BLOCK</span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _get_block(<span class="va">self</span>, block_id):</span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">while</span> block_id <span class="op">&gt;=</span> <span class="bu">len</span>(<span class="va">self</span>._blocks):</span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>._blocks.append({})</span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>._blocks[block_id]</span></code></pre></div>
 <h2 data-number="18.5" id="db-persist"><span class="header-section-number">18.5</span> Persisting Blocks</h2>
 <p>We now have working prototypes of the two parts of our design: saving data to file and dividing records into blocks. In order to combine them, we will inherit from our block-based implementation and extend the <code>add</code> and <code>get</code> methods to save and load data:</p>
 <div class="sourceCode" id="cb20" data-file="db/blocked_file.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> BlockedFile(Blocked):</span>
@@ -276,11 +327,40 @@ Figure&nbsp;18.3: Mapping records to blocks.
 </blockquote>
 </div>
 <p>Saving a block is mostly a matter of bookkeeping at this point. Given the record, we figure out which block it belongs in, save it, pack the block, and write the result to a file:</p>
-<div class="sourceCode" id="cb21" data-file="db/blocked_file.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb21" data-file="db/blocked_file.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _save(<span class="va">self</span>, record):</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>        key <span class="op">=</span> <span class="va">self</span>._record_cls.key(record)</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>        seq_id <span class="op">=</span> <span class="va">self</span>._index[key]</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>        block_id <span class="op">=</span> <span class="va">self</span>._get_block_id(seq_id)</span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>        block <span class="op">=</span> <span class="va">self</span>._get_block(block_id)</span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>        packed <span class="op">=</span> <span class="va">self</span>._record_cls.pack_multi(block.values())</span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>        filename <span class="op">=</span> <span class="va">self</span>._get_filename(block_id)</span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">with</span> <span class="bu">open</span>(filename, <span class="st">"w"</span>) <span class="im">as</span> writer:</span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>            writer.write(<span class="st">''</span>.join(packed))</span></code></pre></div>
 <p>Loading involves almost the same steps, but our implementation splits it into two pieces:</p>
-<div class="sourceCode" id="cb22" data-file="db/blocked_file.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb22" data-file="db/blocked_file.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _load(<span class="va">self</span>, key):</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>        seq_id <span class="op">=</span> <span class="va">self</span>._index[key]</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>        block_id <span class="op">=</span> <span class="va">self</span>._get_block_id(seq_id)</span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>        filename <span class="op">=</span> <span class="va">self</span>._get_filename(block_id)</span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._load_block(block_id, filename)</span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _load_block(<span class="va">self</span>, block_id, filename):</span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>        <span class="cf">with</span> <span class="bu">open</span>(filename, <span class="st">"r"</span>) <span class="im">as</span> reader:</span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>            raw <span class="op">=</span> reader.read()</span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a>        records <span class="op">=</span> <span class="va">self</span>._record_cls.unpack_multi(raw)</span>
+<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a>        base <span class="op">=</span> <span class="va">self</span>.size() <span class="op">*</span> block_id</span>
+<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a>        block <span class="op">=</span> <span class="va">self</span>._get_block(block_id)</span>
+<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> i, r <span class="kw">in</span> <span class="bu">enumerate</span>(records):</span>
+<span id="cb22-13"><a href="#cb22-13" aria-hidden="true" tabindex="-1"></a>            block[base <span class="op">+</span> i] <span class="op">=</span> r</span></code></pre></div>
 <p>We put the code to load a single block in a method of its own because we need to initialize the in-memory index when restarting the database:</p>
-<div class="sourceCode" id="cb23" data-file="db/blocked_file.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb23" data-file="db/blocked_file.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _build_index(<span class="va">self</span>):</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>        seq_id <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> (block_id, filename) <span class="kw">in</span> <span class="bu">enumerate</span>(</span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>                <span class="bu">sorted</span>(<span class="va">self</span>._db_dir.iterdir())</span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>        ):</span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>._load_block(block_id, filename)</span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a>            <span class="cf">for</span> record <span class="kw">in</span> <span class="va">self</span>._get_block(block_id).values():</span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a>                key <span class="op">=</span> <span class="va">self</span>._record_cls.key(record)</span>
+<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a>                <span class="va">self</span>._index[key] <span class="op">=</span> seq_id</span>
+<span id="cb23-10"><a href="#cb23-10" aria-hidden="true" tabindex="-1"></a>                seq_id <span class="op">+=</span> <span class="dv">1</span></span></code></pre></div>
 <p>An obvious extension to our design is to save the index in a separate file each time we add or modify a record. However, we should profile this change before putting it into production to see if it actually improves performance (<a href="../perf/index.html" class="quarto-xref"><span>Chapter 15</span></a>), since many small writes might cost more than one large multi-file read. We would also have to do something to avoid creating a race condition; as in <a href="../archive/index.html" class="quarto-xref"><span>Chapter 10</span></a>, operating on two files (one for the index and one for the block) could lead to harmful inconsistencies.</p>
 <h2 data-number="18.6" id="db-cleanup"><span class="header-section-number">18.6</span> Cleaning Up</h2>
 <p>The final step in our implementation is to clean up blocks that are no longer needed because we have a more recent version of every record they contain. Reclaiming unused space this way is another form of <a href="../glossary/index.html#garbage_collection">garbage collection</a>. Python and most other modern languages do it automatically to recycle unused memory, but it’s our responsibility to do it for the files our database creates.</p>
@@ -293,7 +373,23 @@ Figure&nbsp;18.3: Mapping records to blocks.
 <li><p>Generate a new in-memory index.</p></li>
 </ol>
 <p>The implementation of these steps is mostly a matter of bookkeeping:</p>
-<div class="sourceCode" id="cb24" data-file="db/cleanup.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb24" data-file="db/cleanup.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _cleanup(<span class="va">self</span>):</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>        new_seq <span class="op">=</span> {</span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>            o: i <span class="cf">for</span> i, o <span class="kw">in</span> <span class="bu">enumerate</span>(<span class="va">self</span>._index.values())</span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>        }</span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>        keep <span class="op">=</span> {<span class="va">self</span>._get_block_id(o) <span class="cf">for</span> o <span class="kw">in</span> new_seq}</span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>        renaming <span class="op">=</span> {o: i <span class="cf">for</span> i, o <span class="kw">in</span> <span class="bu">enumerate</span>(<span class="bu">list</span>(<span class="bu">sorted</span>(keep)))}</span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>        garbage_ids <span class="op">=</span> {</span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a>            i <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="bu">len</span>(<span class="va">self</span>._blocks))</span>
+<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> i <span class="kw">not</span> <span class="kw">in</span> renaming</span>
+<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a>        }</span>
+<span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._delete_blocks(garbage_ids)</span>
+<span id="cb24-12"><a href="#cb24-12" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._rename_blocks(renaming)</span>
+<span id="cb24-13"><a href="#cb24-13" aria-hidden="true" tabindex="-1"></a>        new_index <span class="op">=</span> {</span>
+<span id="cb24-14"><a href="#cb24-14" aria-hidden="true" tabindex="-1"></a>            k: new_seq[<span class="va">self</span>._index[k]] <span class="cf">for</span> k <span class="kw">in</span> <span class="va">self</span>._index</span>
+<span id="cb24-15"><a href="#cb24-15" aria-hidden="true" tabindex="-1"></a>        }</span>
+<span id="cb24-16"><a href="#cb24-16" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._index <span class="op">=</span> new_index</span>
+<span id="cb24-17"><a href="#cb24-17" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._next <span class="op">=</span> <span class="bu">len</span>(<span class="va">self</span>._index)</span></code></pre></div>
 <p>This method doesn’t <a href="../glossary/index.html#compact">compact</a> storage, i.e., it doesn’t move records around to get rid of stale blocks within records. Production-quality databases do this periodically in order to use the disk more efficiently; we will explore this idea in the exercises.</p>
 <h2 data-number="18.7" id="db-summary"><span class="header-section-number">18.7</span> Summary</h2>
 <p><a href="#fig-db-concept-map" class="quarto-xref">Figure&nbsp;<span>18.4</span></a> summarizes the key ideas introduced in this chapter. Most real databases use different data structures than ours, but must deal with the same challenges: making data access fast without ever losing data or allowing it to become inconsistent.</p>

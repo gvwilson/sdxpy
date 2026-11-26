@@ -91,7 +91,13 @@ Figure&nbsp;15.2: Storing a dataframe’s data in columns.
 </div>
 <h2 data-number="15.2" id="perf-row"><span class="header-section-number">15.2</span> Row-Wise Storage</h2>
 <p>We start by deriving <code>DfRow</code> from <code>DataFrame</code> and writing its constructor, which takes a list of dictionaries as an argument, checks that they’re consistent with each other, and saves them:</p>
-<div class="sourceCode" id="cb2" data-file="perf/df_row.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb2" data-file="perf/df_row.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> df_base <span class="im">import</span> DataFrame</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> util <span class="im">import</span> dict_match</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> DfRow(DataFrame):</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, rows):</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>        <span class="cf">assert</span> <span class="bu">len</span>(rows) <span class="op">&gt;</span> <span class="dv">0</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">assert</span> <span class="bu">all</span>(dict_match(r, rows[<span class="dv">0</span>]) <span class="cf">for</span> r <span class="kw">in</span> rows)</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._data <span class="op">=</span> rows</span></code></pre></div>
 <p>The helper function to check that a bunch of dictionaries all have the same keys and the same types of values associated with those keys is:</p>
 <div class="sourceCode" id="cb3" data-file="perf/util.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> dict_match(d, prototype):</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="bu">set</span>(d.keys()) <span class="op">!=</span> <span class="bu">set</span>(prototype.keys()):</span>
@@ -99,12 +105,32 @@ Figure&nbsp;15.2: Storing a dataframe’s data in columns.
 <span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="bu">all</span>(<span class="bu">isinstance</span>(d[k], prototype[k]) <span class="cf">for</span> k <span class="kw">in</span> d)</span></code></pre></div>
 <p>Notice that <code>DfRow</code>’s constructor compares all of the rows against the first row. Doing this means that we can’t create an empty dataframe, i.e., one that has no rows. This restriction wasn’t part of our original design: it’s an accident of implementation that might surprise our users. It’s OK not to fix this while we’re prototyping, but we will look at ways to address it in the exercises.</p>
 <p>Four of the methods required by <code>DataFrame</code> are easy to implement on top of row-wise storage, though once again our implementation assumes there is at least one row:</p>
-<div class="sourceCode" id="cb4" data-file="perf/df_row.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb4" data-file="perf/df_row.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> ncol(<span class="va">self</span>):</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="bu">len</span>(<span class="va">self</span>._data[<span class="dv">0</span>])</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> nrow(<span class="va">self</span>):</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="bu">len</span>(<span class="va">self</span>._data)</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> cols(<span class="va">self</span>):</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="bu">set</span>(<span class="va">self</span>._data[<span class="dv">0</span>].keys())</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> get(<span class="va">self</span>, col, row):</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">assert</span> col <span class="kw">in</span> <span class="va">self</span>._data[<span class="dv">0</span>]</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">assert</span> <span class="dv">0</span> <span class="op">&lt;=</span> row <span class="op">&lt;</span> <span class="bu">len</span>(<span class="va">self</span>._data)</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>._data[row][col]</span></code></pre></div>
 <p>Checking equality is also relatively simple. Two dataframes are the same if they have exactly the same columns and the same values in every column:</p>
-<div class="sourceCode" id="cb5" data-file="perf/df_row.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb5" data-file="perf/df_row.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> eq(<span class="va">self</span>, other):</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>        <span class="cf">assert</span> <span class="bu">isinstance</span>(other, DataFrame)</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> (i, row) <span class="kw">in</span> <span class="bu">enumerate</span>(<span class="va">self</span>._data):</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>            <span class="cf">for</span> key <span class="kw">in</span> row:</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> key <span class="kw">not</span> <span class="kw">in</span> other.cols():</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>                    <span class="cf">return</span> <span class="va">False</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> row[key] <span class="op">!=</span> other.get(key, i):</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>                    <span class="cf">return</span> <span class="va">False</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">True</span></span></code></pre></div>
 <p>Notice that we use <code>other.cols()</code> and <code>other.get()</code> rather than reaching into the other dataframe. We are planning to implement dataframes in several different ways, and we might want to compare instances of those different implementations. Since they might have different internal data structures, the only safe way to do this is to rely on the interface defined in the base class.</p>
 <p>Our final operations are selection, which returns a subset of the original dataframe’s columns, and filtering, which returns a subset of its rows. Since we don’t know how many columns the user might want, we give the <code>select</code> method a single parameter <code>*names</code> that will capture zero or more positional arguments. We then build a new list of dictionaries that only contain the fields with those names (<a href="#fig-perf-row-select" class="quarto-xref">Figure&nbsp;<span>15.3</span></a>):</p>
-<div class="sourceCode" id="cb6" data-file="perf/df_row.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb6" data-file="perf/df_row.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> select(<span class="va">self</span>, <span class="op">*</span>names):</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>        <span class="cf">assert</span> <span class="bu">all</span>(n <span class="kw">in</span> <span class="va">self</span>._data[<span class="dv">0</span>] <span class="cf">for</span> n <span class="kw">in</span> names)</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>        rows <span class="op">=</span> [{key: r[key] <span class="cf">for</span> key <span class="kw">in</span> names} <span class="cf">for</span> r <span class="kw">in</span> <span class="va">self</span>._data]</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> DfRow(rows)</span></code></pre></div>
 <div id="fig-perf-row-select" class="quarto-float quarto-figure quarto-figure-center" alt="Column selection with row storage">
 <figure class="quarto-float quarto-float-fig">
 <div aria-describedby="fig-perf-row-select-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
@@ -125,7 +151,9 @@ Figure&nbsp;15.3: Selecting columns from data stored as rows.
 <span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    df <span class="op">=</span> odd_even()</span>
 <span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> df.<span class="bu">filter</span>(odd).eq(DfRow([{<span class="st">"a"</span>: <span class="dv">1</span>, <span class="st">"b"</span>: <span class="dv">3</span>}]))</span></code></pre></div>
 <p>We can implement this by using <code>**</code> to spread the row across the function’s parameters (<a href="../oop/index.html" class="quarto-xref"><span>Chapter 2</span></a>). If there are keys in the row that don’t match parameters in the function or vice versa, Python will throw an exception, but that’s probably what we want. Using this, the implementation of <code>DfRow.filter</code> is:</p>
-<div class="sourceCode" id="cb9" data-file="perf/df_row.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb9" data-file="perf/df_row.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="bu">filter</span>(<span class="va">self</span>, func):</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>        result <span class="op">=</span> [r <span class="cf">for</span> r <span class="kw">in</span> <span class="va">self</span>._data <span class="cf">if</span> func(<span class="op">**</span>r)]</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> DfRow(result)</span></code></pre></div>
 <p>Notice that the dataframe created by <code>filter</code> re-uses the rows of the original dataframe (<a href="#fig-perf-row-filter" class="quarto-xref">Figure&nbsp;<span>15.4</span></a>). This is safe and efficient as long as dataframes are <a href="../glossary/index.html#immutable">immutable</a>, i.e., as long as their contents are never changed in place. Most dataframe libraries work this way: while recycling memory can save a little time, it usually also makes bugs much harder to track down.</p>
 <div id="fig-perf-row-filter" class="quarto-float quarto-figure quarto-figure-center" alt="Row-wise filtering of records">
 <figure class="quarto-float quarto-float-fig">
@@ -139,7 +167,15 @@ Figure&nbsp;15.4: Filtering data stored as rows.
 </div>
 <h2 data-number="15.3" id="perf-col"><span class="header-section-number">15.3</span> Column-Wise Storage</h2>
 <p>Having done all of this thinking, our column-wise dataframe class is somewhat easier to write. We start as before with its constructor:</p>
-<div class="sourceCode" id="cb10" data-file="perf/df_col.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb10" data-file="perf/df_col.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> df_base <span class="im">import</span> DataFrame</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> util <span class="im">import</span> all_eq</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> DfCol(DataFrame):</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, <span class="op">**</span>kwargs):</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>        <span class="cf">assert</span> <span class="bu">len</span>(kwargs) <span class="op">&gt;</span> <span class="dv">0</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">assert</span> all_eq(<span class="bu">len</span>(kwargs[k]) <span class="cf">for</span> k <span class="kw">in</span> kwargs)</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> k <span class="kw">in</span> kwargs:</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>            <span class="cf">assert</span> all_eq(<span class="bu">type</span>(v) <span class="cf">for</span> v <span class="kw">in</span> kwargs[k])</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._data <span class="op">=</span> kwargs</span></code></pre></div>
 <p>and use a helper function <code>all_eq</code> to check that all of the values in any column have the same types:</p>
 <div class="sourceCode" id="cb11" data-file="perf/util.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> all_eq(<span class="op">*</span>values):</span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> (<span class="kw">not</span> values) <span class="kw">or</span> <span class="bu">all</span>(v <span class="op">==</span> values[<span class="dv">0</span>] <span class="cf">for</span> v <span class="kw">in</span> values)</span></code></pre></div>
@@ -150,11 +186,31 @@ Figure&nbsp;15.4: Filtering data stored as rows.
 </blockquote>
 </div>
 <p>The four methods that were simple to write for <code>DfRow</code> are equally simple to write for <code>DfCol</code>, though once again our prototype implementation accidentally disallows empty dataframes:</p>
-<div class="sourceCode" id="cb12" data-file="perf/df_col.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb12" data-file="perf/df_col.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> ncol(<span class="va">self</span>):</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="bu">len</span>(<span class="va">self</span>._data)</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> nrow(<span class="va">self</span>):</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>        n <span class="op">=</span> <span class="bu">list</span>(<span class="va">self</span>._data.keys())[<span class="dv">0</span>]</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="bu">len</span>(<span class="va">self</span>._data[n])</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> cols(<span class="va">self</span>):</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="bu">set</span>(<span class="va">self</span>._data.keys())</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> get(<span class="va">self</span>, col, row):</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">assert</span> col <span class="kw">in</span> <span class="va">self</span>._data</span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">assert</span> <span class="dv">0</span> <span class="op">&lt;=</span> row <span class="op">&lt;</span> <span class="bu">len</span>(<span class="va">self</span>._data[col])</span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>._data[col][row]</span></code></pre></div>
 <p>As with <code>DfRow</code>, the method that checks equality relies on the internal details of its own class but uses the interface defined by <code>DataFrame</code> to access the other object:</p>
-<div class="sourceCode" id="cb13" data-file="perf/df_col.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb13" data-file="perf/df_col.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> eq(<span class="va">self</span>, other):</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>        <span class="cf">assert</span> <span class="bu">isinstance</span>(other, DataFrame)</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> n <span class="kw">in</span> <span class="va">self</span>._data:</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> n <span class="kw">not</span> <span class="kw">in</span> other.cols():</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>                <span class="cf">return</span> <span class="va">False</span></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>            <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="bu">len</span>(<span class="va">self</span>._data[n])):</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> <span class="va">self</span>.get(n, i) <span class="op">!=</span> other.get(n, i):</span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>                    <span class="cf">return</span> <span class="va">False</span></span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">True</span></span></code></pre></div>
 <p>To select columns, we pick the ones named by the caller and use them to create a new dataframe. Again, this recycles the existing storage (<a href="#fig-perf-col-select" class="quarto-xref">Figure&nbsp;<span>15.5</span></a>):</p>
-<div class="sourceCode" id="cb14" data-file="perf/df_col.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb14" data-file="perf/df_col.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> select(<span class="va">self</span>, <span class="op">*</span>names):</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>        <span class="cf">assert</span> <span class="bu">all</span>(n <span class="kw">in</span> <span class="va">self</span>._data <span class="cf">for</span> n <span class="kw">in</span> names)</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> DfCol(<span class="op">**</span>{n: <span class="va">self</span>._data[n] <span class="cf">for</span> n <span class="kw">in</span> names})</span></code></pre></div>
 <div id="fig-perf-col-select" class="quarto-float quarto-figure quarto-figure-center" alt="Selecting from column storage">
 <figure class="quarto-float quarto-float-fig">
 <div aria-describedby="fig-perf-col-select-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
@@ -177,7 +233,14 @@ Figure&nbsp;15.6: Extracting values from columns to create temporary rows.
 </figure>
 </div>
 <p>For now, we will solve this problem by requiring the user-defined filter function to define parameters to match all of the dataframe’s columns regardless of whether they are used for filtering or not. We will then build a temporary dictionary with all the values in a “row” (i.e., the corresponding values across all columns) and use <code>**</code> to spread it across the filter function. <a href="../bonus/index.html" class="quarto-xref"><span>Appendix G</span></a> looks at a safer, but more complex, way to do this.</p>
-<div class="sourceCode" id="cb15" data-file="perf/df_col.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb15" data-file="perf/df_col.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="bu">filter</span>(<span class="va">self</span>, func):</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>        result <span class="op">=</span> {n: [] <span class="cf">for</span> n <span class="kw">in</span> <span class="va">self</span>._data}</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="va">self</span>.nrow()):</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>            args <span class="op">=</span> {n: <span class="va">self</span>._data[n][i] <span class="cf">for</span> n <span class="kw">in</span> <span class="va">self</span>._data}</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> func(<span class="op">**</span>args):</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>                <span class="cf">for</span> n <span class="kw">in</span> <span class="va">self</span>._data:</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>                    result[n].append(<span class="va">self</span>._data[n][i])</span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> DfCol(<span class="op">**</span>result)</span></code></pre></div>
 <p>Time to write some tests. This one checks that we can construct a dataframe with some values:</p>
 <div class="sourceCode" id="cb16" data-file="perf/test_df_col.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_construct_with_two_pairs():</span>
 <span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>    df <span class="op">=</span> DfCol(a<span class="op">=</span>[<span class="dv">1</span>, <span class="dv">2</span>], b<span class="op">=</span>[<span class="dv">3</span>, <span class="dv">4</span>])</span>

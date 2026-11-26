@@ -139,7 +139,36 @@
 <span id="cb4-32"><a href="#cb4-32" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.endpoints[endpoint_id] <span class="op">=</span> queue</span>
 <span id="cb4-33"><a href="#cb4-33" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] Network: Registered </span><span class="sc">{</span>endpoint_id<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div>
 <p><code>send_packet</code> applies the configured loss and duplication rates before calling <code>_deliver_packet</code>, which adds a random delay and optionally increases it to simulate reordering:</p>
-<div class="sourceCode" id="cb5" data-file="tcp/unreliable_network.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb5" data-file="tcp/unreliable_network.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>    <span class="cf">async</span> <span class="kw">def</span> send_packet(<span class="va">self</span>, packet: Packet) <span class="op">-&gt;</span> <span class="va">None</span>:</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Send packet with simulated unreliability."""</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.packets_sent <span class="op">+=</span> <span class="dv">1</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Simulate packet loss</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> random.random() <span class="op">&lt;</span> <span class="va">self</span>.loss_rate:</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.packets_lost <span class="op">+=</span> <span class="dv">1</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] Network: LOST </span><span class="sc">{</span>packet<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Simulate packet duplication</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> random.random() <span class="op">&lt;</span> <span class="va">self</span>.duplicate_rate:</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.packets_duplicated <span class="op">+=</span> <span class="dv">1</span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] Network: DUPLICATING </span><span class="sc">{</span>packet<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>            <span class="cf">await</span> <span class="va">self</span>._deliver_packet(packet)</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Deliver the packet</span></span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>        <span class="cf">await</span> <span class="va">self</span>._deliver_packet(packet)</span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>    <span class="cf">async</span> <span class="kw">def</span> _deliver_packet(<span class="va">self</span>, packet: Packet) <span class="op">-&gt;</span> <span class="va">None</span>:</span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Deliver packet to destination."""</span></span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Simulate network delay</span></span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>        delay <span class="op">=</span> random.uniform(<span class="op">*</span><span class="va">self</span>.delay_range)</span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Simulate reordering by adding extra random delay</span></span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> random.random() <span class="op">&lt;</span> <span class="va">self</span>.reorder_rate:</span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.packets_reordered <span class="op">+=</span> <span class="dv">1</span></span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>            delay <span class="op">+=</span> random.uniform(<span class="fl">0.2</span>, <span class="fl">0.8</span>)</span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>        <span class="cf">await</span> <span class="va">self</span>.timeout(delay)</span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Find destination endpoint</span></span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>        endpoint_id <span class="op">=</span> <span class="ss">f"</span><span class="sc">{</span>packet<span class="sc">.</span>dst_addr<span class="sc">}</span><span class="ss">:</span><span class="sc">{</span>packet<span class="sc">.</span>dst_port<span class="sc">}</span><span class="ss">"</span></span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> endpoint_id <span class="kw">in</span> <span class="va">self</span>.endpoints:</span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a>            <span class="cf">await</span> <span class="va">self</span>.endpoints[endpoint_id].put(packet)</span>
+<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] Network: No endpoint for </span><span class="sc">{</span>endpoint_id<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div>
 <p>This simulates the way packets in real networks can be lost, delayed, reordered, or duplicated. The network maintains a registry of endpoints and routes packets accordingly.</p>
 <h2 data-number="V.3" id="tcp-connection"><span class="header-section-number">V.3</span> TCP Connection</h2>
 <p>The TCP connection implements reliability over the unreliable network:</p>
@@ -188,10 +217,80 @@
 <span id="cb6-43"><a href="#cb6-43" aria-hidden="true" tabindex="-1"></a>        )</span></code></pre></div>
 <p>The connection maintains send and receive buffers. The send buffer holds unacknowledged segments for potential retransmission. The receive buffer handles out-of-order delivery by holding segments until gaps are filled.</p>
 <p>The <code>run</code> loop reads packets from the receive queue and dispatches each one through <code>handle_packet</code>, which routes SYN, SYN-ACK, ACK, and DATA packets to the appropriate handler:</p>
-<div class="sourceCode" id="cb7" data-file="tcp/tcp_connection.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb7" data-file="tcp/tcp_connection.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>    <span class="cf">async</span> <span class="kw">def</span> run(<span class="va">self</span>) <span class="op">-&gt;</span> <span class="va">None</span>:</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Main TCP loop: handle incoming packets."""</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">while</span> <span class="va">True</span>:</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>            packet <span class="op">=</span> <span class="cf">await</span> <span class="va">self</span>.recv_queue.get()</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>            <span class="cf">await</span> <span class="va">self</span>.handle_packet(packet)</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">async</span> <span class="kw">def</span> handle_packet(<span class="va">self</span>, packet: Packet) <span class="op">-&gt;</span> <span class="va">None</span>:</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Process incoming packet based on type."""</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> packet.packet_type <span class="op">==</span> PacketType.SYN:</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>            <span class="cf">await</span> <span class="va">self</span>.handle_syn(packet)</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">elif</span> packet.packet_type <span class="op">==</span> PacketType.SYN_ACK:</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>                <span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] TCP: Received SYN-ACK "</span></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>                <span class="ss">f"(seq=</span><span class="sc">{</span>packet<span class="sc">.</span>seq_num<span class="sc">}</span><span class="ss">, ack=</span><span class="sc">{</span>packet<span class="sc">.</span>ack_num<span class="sc">}</span><span class="ss">)"</span></span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>            )</span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.recv_seq <span class="op">=</span> packet.seq_num <span class="op">+</span> <span class="dv">1</span></span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.recv_buffer.next_expected_seq <span class="op">=</span> <span class="va">self</span>.recv_seq</span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.send_base <span class="op">=</span> packet.ack_num</span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Send final ACK</span></span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>            ack <span class="op">=</span> Packet(</span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>                src_addr<span class="op">=</span><span class="va">self</span>.local_addr,</span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>                dst_addr<span class="op">=</span>packet.src_addr,</span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>                src_port<span class="op">=</span><span class="va">self</span>.local_port,</span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>                dst_port<span class="op">=</span>packet.src_port,</span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a>                seq_num<span class="op">=</span><span class="va">self</span>.send_base,</span>
+<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a>                ack_num<span class="op">=</span><span class="va">self</span>.recv_seq,</span>
+<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a>                packet_type<span class="op">=</span>PacketType.ACK,</span>
+<span id="cb7-27"><a href="#cb7-27" aria-hidden="true" tabindex="-1"></a>            )</span>
+<span id="cb7-28"><a href="#cb7-28" aria-hidden="true" tabindex="-1"></a>            <span class="cf">await</span> <span class="va">self</span>.network.send_packet(ack)</span>
+<span id="cb7-29"><a href="#cb7-29" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.state <span class="op">=</span> ConnectionState.ESTABLISHED</span>
+<span id="cb7-30"><a href="#cb7-30" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] TCP: Sent ACK, connection established"</span>)</span>
+<span id="cb7-31"><a href="#cb7-31" aria-hidden="true" tabindex="-1"></a>        <span class="cf">elif</span> packet.packet_type <span class="op">==</span> PacketType.ACK:</span>
+<span id="cb7-32"><a href="#cb7-32" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="va">self</span>.state <span class="op">==</span> ConnectionState.SYN_RECEIVED:</span>
+<span id="cb7-33"><a href="#cb7-33" aria-hidden="true" tabindex="-1"></a>                <span class="bu">print</span>(</span>
+<span id="cb7-34"><a href="#cb7-34" aria-hidden="true" tabindex="-1"></a>                    <span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] TCP: Received final ACK, connection established"</span></span>
+<span id="cb7-35"><a href="#cb7-35" aria-hidden="true" tabindex="-1"></a>                )</span>
+<span id="cb7-36"><a href="#cb7-36" aria-hidden="true" tabindex="-1"></a>                <span class="va">self</span>.state <span class="op">=</span> ConnectionState.ESTABLISHED</span>
+<span id="cb7-37"><a href="#cb7-37" aria-hidden="true" tabindex="-1"></a>            <span class="cf">else</span>:</span>
+<span id="cb7-38"><a href="#cb7-38" aria-hidden="true" tabindex="-1"></a>                <span class="cf">await</span> <span class="va">self</span>.handle_ack(packet)</span>
+<span id="cb7-39"><a href="#cb7-39" aria-hidden="true" tabindex="-1"></a>        <span class="cf">elif</span> packet.packet_type <span class="op">==</span> PacketType.DATA:</span>
+<span id="cb7-40"><a href="#cb7-40" aria-hidden="true" tabindex="-1"></a>            <span class="cf">await</span> <span class="va">self</span>.handle_data(packet)</span></code></pre></div>
 <h2 data-number="V.4" id="tcp-handshake"><span class="header-section-number">V.4</span> Three-Way Handshake</h2>
 <p>TCP connection establishment uses three packets to synchronize state:</p>
-<div class="sourceCode" id="cb8" data-file="tcp/tcp_connection.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb8" data-file="tcp/tcp_connection.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>    <span class="cf">async</span> <span class="kw">def</span> <span class="ex">connect</span>(<span class="va">self</span>, remote_addr: <span class="bu">str</span>, remote_port: <span class="bu">int</span>) <span class="op">-&gt;</span> <span class="bu">bool</span>:</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Initiate TCP connection (3-way handshake)."""</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.remote_addr <span class="op">=</span> remote_addr</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.remote_port <span class="op">=</span> remote_port</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>            <span class="ss">f"</span><span class="ch">\n</span><span class="ss">[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] TCP: Starting connection to "</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>            <span class="ss">f"</span><span class="sc">{</span>remote_addr<span class="sc">}</span><span class="ss">:</span><span class="sc">{</span>remote_port<span class="sc">}</span><span class="ss">"</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Send SYN</span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.state <span class="op">=</span> ConnectionState.SYN_SENT</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>        syn <span class="op">=</span> Packet(</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>            src_addr<span class="op">=</span><span class="va">self</span>.local_addr,</span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>            dst_addr<span class="op">=</span>remote_addr,</span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>            src_port<span class="op">=</span><span class="va">self</span>.local_port,</span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>            dst_port<span class="op">=</span>remote_port,</span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>            seq_num<span class="op">=</span><span class="va">self</span>.send_seq,</span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>            ack_num<span class="op">=</span><span class="dv">0</span>,</span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>            packet_type<span class="op">=</span>PacketType.SYN,</span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>        <span class="cf">await</span> <span class="va">self</span>.network.send_packet(syn)</span>
+<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] TCP: Sent SYN (seq=</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>send_seq<span class="sc">}</span><span class="ss">)"</span>)</span>
+<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Wait for SYN-ACK with timeout</span></span>
+<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a>        timeout_time <span class="op">=</span> <span class="va">self</span>.now <span class="op">+</span> <span class="fl">5.0</span></span>
+<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a>        <span class="cf">while</span> <span class="va">self</span>.state <span class="op">!=</span> ConnectionState.ESTABLISHED <span class="kw">and</span> <span class="va">self</span>.now <span class="op">&lt;</span> timeout_time:</span>
+<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a>            <span class="cf">await</span> <span class="va">self</span>.timeout(<span class="fl">0.1</span>)</span>
+<span id="cb8-26"><a href="#cb8-26" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="va">self</span>.state <span class="op">==</span> ConnectionState.ESTABLISHED:</span>
+<span id="cb8-27"><a href="#cb8-27" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] TCP: Connection ESTABLISHED</span><span class="ch">\n</span><span class="ss">"</span>)</span>
+<span id="cb8-28"><a href="#cb8-28" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="va">True</span></span>
+<span id="cb8-29"><a href="#cb8-29" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb8-30"><a href="#cb8-30" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] TCP: Connection FAILED (timeout)</span><span class="ch">\n</span><span class="ss">"</span>)</span>
+<span id="cb8-31"><a href="#cb8-31" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.state <span class="op">=</span> ConnectionState.CLOSED</span>
+<span id="cb8-32"><a href="#cb8-32" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="va">False</span></span></code></pre></div>
 <p>The handshake sequence is:</p>
 <ol type="1">
 <li>Client → Server: SYN (seq=x)</li>
@@ -200,10 +299,84 @@
 </ol>
 <p>This synchronizes sequence numbers and establishes bidirectional communication.</p>
 <p>The server side of the handshake is handled by <code>listen_and_accept</code>, which waits for a SYN packet and then delegates the response to <code>handle_syn</code>:</p>
-<div class="sourceCode" id="cb9" data-file="tcp/tcp_connection.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb9" data-file="tcp/tcp_connection.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>    <span class="cf">async</span> <span class="kw">def</span> listen_and_accept(<span class="va">self</span>) <span class="op">-&gt;</span> <span class="bu">bool</span>:</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Listen for incoming connection (server side)."""</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] TCP </span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>local_addr<span class="sc">}</span><span class="ss">:</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>local_port<span class="sc">}</span><span class="ss">: Listening..."</span>)</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Wait for SYN</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>        <span class="cf">while</span> <span class="va">True</span>:</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>            packet <span class="op">=</span> <span class="cf">await</span> <span class="va">self</span>.recv_queue.get()</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> packet.packet_type <span class="op">==</span> PacketType.SYN:</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>                <span class="cf">await</span> <span class="va">self</span>.handle_syn(packet)</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>                <span class="cf">break</span></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Wait for final ACK</span></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>        timeout_time <span class="op">=</span> <span class="va">self</span>.now <span class="op">+</span> <span class="fl">5.0</span></span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>        <span class="cf">while</span> <span class="va">self</span>.state <span class="op">!=</span> ConnectionState.ESTABLISHED <span class="kw">and</span> <span class="va">self</span>.now <span class="op">&lt;</span> timeout_time:</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>            <span class="cf">await</span> <span class="va">self</span>.timeout(<span class="fl">0.1</span>)</span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>.state <span class="op">==</span> ConnectionState.ESTABLISHED</span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>    <span class="cf">async</span> <span class="kw">def</span> handle_syn(<span class="va">self</span>, packet: Packet) <span class="op">-&gt;</span> <span class="va">None</span>:</span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Handle incoming SYN."""</span></span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(</span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>            <span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] TCP: Received SYN from "</span></span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a>            <span class="ss">f"</span><span class="sc">{</span>packet<span class="sc">.</span>src_addr<span class="sc">}</span><span class="ss">:</span><span class="sc">{</span>packet<span class="sc">.</span>src_port<span class="sc">}</span><span class="ss">"</span></span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.remote_addr <span class="op">=</span> packet.src_addr</span>
+<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.remote_port <span class="op">=</span> packet.src_port</span>
+<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.recv_seq <span class="op">=</span> packet.seq_num <span class="op">+</span> <span class="dv">1</span></span>
+<span id="cb9-24"><a href="#cb9-24" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.recv_buffer.next_expected_seq <span class="op">=</span> <span class="va">self</span>.recv_seq</span>
+<span id="cb9-25"><a href="#cb9-25" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Send SYN-ACK</span></span>
+<span id="cb9-26"><a href="#cb9-26" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.state <span class="op">=</span> ConnectionState.SYN_RECEIVED</span>
+<span id="cb9-27"><a href="#cb9-27" aria-hidden="true" tabindex="-1"></a>        syn_ack <span class="op">=</span> Packet(</span>
+<span id="cb9-28"><a href="#cb9-28" aria-hidden="true" tabindex="-1"></a>            src_addr<span class="op">=</span><span class="va">self</span>.local_addr,</span>
+<span id="cb9-29"><a href="#cb9-29" aria-hidden="true" tabindex="-1"></a>            dst_addr<span class="op">=</span>packet.src_addr,</span>
+<span id="cb9-30"><a href="#cb9-30" aria-hidden="true" tabindex="-1"></a>            src_port<span class="op">=</span><span class="va">self</span>.local_port,</span>
+<span id="cb9-31"><a href="#cb9-31" aria-hidden="true" tabindex="-1"></a>            dst_port<span class="op">=</span>packet.src_port,</span>
+<span id="cb9-32"><a href="#cb9-32" aria-hidden="true" tabindex="-1"></a>            seq_num<span class="op">=</span><span class="va">self</span>.send_seq,</span>
+<span id="cb9-33"><a href="#cb9-33" aria-hidden="true" tabindex="-1"></a>            ack_num<span class="op">=</span><span class="va">self</span>.recv_seq,</span>
+<span id="cb9-34"><a href="#cb9-34" aria-hidden="true" tabindex="-1"></a>            packet_type<span class="op">=</span>PacketType.SYN_ACK,</span>
+<span id="cb9-35"><a href="#cb9-35" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb9-36"><a href="#cb9-36" aria-hidden="true" tabindex="-1"></a>        <span class="cf">await</span> <span class="va">self</span>.network.send_packet(syn_ack)</span>
+<span id="cb9-37"><a href="#cb9-37" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(</span>
+<span id="cb9-38"><a href="#cb9-38" aria-hidden="true" tabindex="-1"></a>            <span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] TCP: Sent SYN-ACK (seq=</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>send_seq<span class="sc">}</span><span class="ss">, "</span></span>
+<span id="cb9-39"><a href="#cb9-39" aria-hidden="true" tabindex="-1"></a>            <span class="ss">f"ack=</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>recv_seq<span class="sc">}</span><span class="ss">)"</span></span>
+<span id="cb9-40"><a href="#cb9-40" aria-hidden="true" tabindex="-1"></a>        )</span></code></pre></div>
 <h2 data-number="V.5" id="tcp-window"><span class="header-section-number">V.5</span> Sliding Window Protocol</h2>
 <p>The sliding window allows multiple packets in flight:</p>
-<div class="sourceCode" id="cb10" data-file="tcp/tcp_connection.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb10" data-file="tcp/tcp_connection.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>    <span class="cf">async</span> <span class="kw">def</span> send(<span class="va">self</span>, data: <span class="bu">bytes</span>) <span class="op">-&gt;</span> <span class="va">None</span>:</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Send data reliably using TCP."""</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="va">self</span>.state <span class="op">!=</span> ConnectionState.ESTABLISHED:</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] TCP: Cannot send - not connected"</span>)</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Split data into segments (respecting MTU)</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>        offset <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">while</span> offset <span class="op">&lt;</span> <span class="bu">len</span>(data):</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>            chunk <span class="op">=</span> data[offset : offset <span class="op">+</span> <span class="va">self</span>.mtu]</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Wait if send window is full</span></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>            <span class="cf">while</span> <span class="bu">len</span>(<span class="va">self</span>.send_buffer) <span class="op">&gt;=</span> <span class="va">self</span>.window_size:</span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>                <span class="cf">await</span> <span class="va">self</span>.timeout(<span class="fl">0.1</span>)</span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Create and send segment</span></span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>            seq_num <span class="op">=</span> <span class="va">self</span>.next_seq_num</span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>            segment <span class="op">=</span> Packet(</span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>                src_addr<span class="op">=</span><span class="va">self</span>.local_addr,</span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a>                dst_addr<span class="op">=</span><span class="va">self</span>.remote_addr,</span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a>                src_port<span class="op">=</span><span class="va">self</span>.local_port,</span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a>                dst_port<span class="op">=</span><span class="va">self</span>.remote_port,</span>
+<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a>                seq_num<span class="op">=</span>seq_num,</span>
+<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a>                ack_num<span class="op">=</span><span class="va">self</span>.recv_buffer.next_expected_seq,</span>
+<span id="cb10-22"><a href="#cb10-22" aria-hidden="true" tabindex="-1"></a>                packet_type<span class="op">=</span>PacketType.DATA,</span>
+<span id="cb10-23"><a href="#cb10-23" aria-hidden="true" tabindex="-1"></a>                data<span class="op">=</span>chunk,</span>
+<span id="cb10-24"><a href="#cb10-24" aria-hidden="true" tabindex="-1"></a>            )</span>
+<span id="cb10-25"><a href="#cb10-25" aria-hidden="true" tabindex="-1"></a>            <span class="cf">await</span> <span class="va">self</span>.network.send_packet(segment)</span>
+<span id="cb10-26"><a href="#cb10-26" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Add to send buffer for potential retransmission</span></span>
+<span id="cb10-27"><a href="#cb10-27" aria-hidden="true" tabindex="-1"></a>            buffer_entry <span class="op">=</span> SegmentBuffer(</span>
+<span id="cb10-28"><a href="#cb10-28" aria-hidden="true" tabindex="-1"></a>                seq_num<span class="op">=</span>seq_num, data<span class="op">=</span>chunk, sent_time<span class="op">=</span><span class="va">self</span>.now</span>
+<span id="cb10-29"><a href="#cb10-29" aria-hidden="true" tabindex="-1"></a>            )</span>
+<span id="cb10-30"><a href="#cb10-30" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.send_buffer.append(buffer_entry)</span>
+<span id="cb10-31"><a href="#cb10-31" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.next_seq_num <span class="op">+=</span> <span class="bu">len</span>(chunk)</span>
+<span id="cb10-32"><a href="#cb10-32" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.bytes_sent <span class="op">+=</span> <span class="bu">len</span>(chunk)</span>
+<span id="cb10-33"><a href="#cb10-33" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] TCP: Sent DATA (seq=</span><span class="sc">{</span>seq_num<span class="sc">}</span><span class="ss">, len=</span><span class="sc">{</span><span class="bu">len</span>(chunk)<span class="sc">}</span><span class="ss">)"</span>)</span>
+<span id="cb10-34"><a href="#cb10-34" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Start retransmission timer for this segment</span></span>
+<span id="cb10-35"><a href="#cb10-35" aria-hidden="true" tabindex="-1"></a>            RetransmissionTimer(<span class="va">self</span>._env, <span class="va">self</span>, buffer_entry)</span>
+<span id="cb10-36"><a href="#cb10-36" aria-hidden="true" tabindex="-1"></a>            offset <span class="op">+=</span> <span class="bu">len</span>(chunk)</span></code></pre></div>
 <p>The sender can have <code>window_size</code> unacknowledged packets in flight. This maintains throughput even with high latency: new packets are being sent while waiting for ACKs from earlier packets.</p>
 <h2 data-number="V.6" id="tcp-retrans"><span class="header-section-number">V.6</span> Retransmission on Timeout</h2>
 <p>If an ACK doesn’t arrive within the timeout period, the segment is retransmitted. We use a separate <code>Process</code> to simulate each retransmission timer:</p>
@@ -249,7 +422,36 @@
 <span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>RetransmissionTimer(<span class="va">self</span>._env, <span class="va">self</span>, buffer_entry)</span></code></pre></div>
 <p>Each segment has its own timer <code>Process</code>. If the segment hasn’t been acknowledged (i.e., is still in the send buffer) when the timer expires, it is retransmitted and a new timer starts.</p>
 <p>When a DATA packet arrives, <code>handle_data</code> adds it to the receive buffer, extracts any newly contiguous data to deliver to the application, and sends a cumulative ACK:</p>
-<div class="sourceCode" id="cb13" data-file="tcp/tcp_connection.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb13" data-file="tcp/tcp_connection.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>    <span class="cf">async</span> <span class="kw">def</span> handle_data(<span class="va">self</span>, packet: Packet) <span class="op">-&gt;</span> <span class="va">None</span>:</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Handle DATA packet."""</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>        seq_num <span class="op">=</span> packet.seq_num</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>        data <span class="op">=</span> packet.data</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] TCP: Received DATA (seq=</span><span class="sc">{</span>seq_num<span class="sc">}</span><span class="ss">, len=</span><span class="sc">{</span><span class="bu">len</span>(data)<span class="sc">}</span><span class="ss">)"</span>)</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Add to receive buffer</span></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.recv_buffer.add_segment(seq_num, data)</span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Extract continuous data</span></span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>        continuous_data <span class="op">=</span> <span class="va">self</span>.recv_buffer.get_continuous_data()</span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> continuous_data:</span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.bytes_received <span class="op">+=</span> <span class="bu">len</span>(continuous_data)</span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>            <span class="cf">await</span> <span class="va">self</span>.data_ready.put(continuous_data)</span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(</span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>                <span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] TCP: Delivered </span><span class="sc">{</span><span class="bu">len</span>(continuous_data)<span class="sc">}</span><span class="ss"> "</span></span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>                <span class="ss">f"bytes to application"</span></span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>            )</span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Send ACK</span></span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a>        ack <span class="op">=</span> Packet(</span>
+<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a>            src_addr<span class="op">=</span><span class="va">self</span>.local_addr,</span>
+<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a>            dst_addr<span class="op">=</span>packet.src_addr,</span>
+<span id="cb13-21"><a href="#cb13-21" aria-hidden="true" tabindex="-1"></a>            src_port<span class="op">=</span><span class="va">self</span>.local_port,</span>
+<span id="cb13-22"><a href="#cb13-22" aria-hidden="true" tabindex="-1"></a>            dst_port<span class="op">=</span>packet.src_port,</span>
+<span id="cb13-23"><a href="#cb13-23" aria-hidden="true" tabindex="-1"></a>            seq_num<span class="op">=</span><span class="va">self</span>.next_seq_num,</span>
+<span id="cb13-24"><a href="#cb13-24" aria-hidden="true" tabindex="-1"></a>            ack_num<span class="op">=</span><span class="va">self</span>.recv_buffer.next_expected_seq,</span>
+<span id="cb13-25"><a href="#cb13-25" aria-hidden="true" tabindex="-1"></a>            packet_type<span class="op">=</span>PacketType.ACK,</span>
+<span id="cb13-26"><a href="#cb13-26" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb13-27"><a href="#cb13-27" aria-hidden="true" tabindex="-1"></a>        <span class="cf">await</span> <span class="va">self</span>.network.send_packet(ack)</span>
+<span id="cb13-28"><a href="#cb13-28" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(</span>
+<span id="cb13-29"><a href="#cb13-29" aria-hidden="true" tabindex="-1"></a>            <span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] TCP: Sent ACK (ack=</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>recv_buffer<span class="sc">.</span>next_expected_seq<span class="sc">}</span><span class="ss">)"</span></span>
+<span id="cb13-30"><a href="#cb13-30" aria-hidden="true" tabindex="-1"></a>        )</span></code></pre></div>
 <h2 data-number="V.7" id="tcp-order"><span class="header-section-number">V.7</span> Handling Out-of-Order Delivery</h2>
 <p>The receive buffer handles segments arriving out of order:</p>
 <div class="sourceCode" id="cb14" data-file="tcp/tcp_types.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
@@ -278,7 +480,21 @@
 <p>Segments are held until all gaps are filled. When a contiguous block of data is available, it’s delivered to the application in order.</p>
 <h2 data-number="V.8" id="tcp-ack"><span class="header-section-number">V.8</span> Cumulative Acknowledgments</h2>
 <p>TCP uses cumulative ACKs, i.e., each ACK indicates all data up to a sequence number has been received:</p>
-<div class="sourceCode" id="cb15" data-file="tcp/tcp_connection.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb15" data-file="tcp/tcp_connection.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>    <span class="cf">async</span> <span class="kw">def</span> handle_ack(<span class="va">self</span>, packet: Packet) <span class="op">-&gt;</span> <span class="va">None</span>:</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Handle ACK packet."""</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>        ack_num <span class="op">=</span> packet.ack_num</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Remove acknowledged segments from send buffer</span></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>        acknowledged <span class="op">=</span> []</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> seg <span class="kw">in</span> <span class="va">self</span>.send_buffer[:]:</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> seg.seq_num <span class="op">&lt;</span> ack_num:</span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>                acknowledged.append(seg)</span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>                <span class="va">self</span>.send_buffer.remove(seg)</span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> acknowledged:</span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.send_base <span class="op">=</span> ack_num</span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(</span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a>                <span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] TCP: ACK </span><span class="sc">{</span>ack_num<span class="sc">}</span><span class="ss"> "</span></span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a>                <span class="ss">f"(acknowledged </span><span class="sc">{</span><span class="bu">len</span>(acknowledged)<span class="sc">}</span><span class="ss"> segments)"</span></span>
+<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a>            )</span></code></pre></div>
 <p>A single ACK can acknowledge multiple segments. This is simpler than selective acknowledgments and works well when most data arrives in order.</p>
 <h2 data-number="V.9" id="tcp-basic"><span class="header-section-number">V.9</span> Basic Example</h2>
 <p>Let’s see TCP in action:</p>

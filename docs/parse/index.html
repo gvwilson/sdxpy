@@ -101,10 +101,31 @@ Figure&nbsp;5.1: Stages in parsing pipeline.
 <p>The result of tokenization is a flat list of tokens. The second stage of parsing assembles tokens to create an <a href="../glossary/index.html#abstract_syntax_tree">abstract syntax tree</a> (AST) that represents the structure of what was parsed. We will re-use the classes defined in <a href="../glob/index.html" class="quarto-xref"><span>Chapter 4</span></a> for this purpose.</p>
 <p>Before we start writing our tokenizer, we have to decide whether to implement it as a set of functions or as one or more classes. Based on previous experience, we choose the latter: this tokenizer is simple enough that we’ll only need a handful of functions, but one capable of handling a language like Python would be much larger, and classes are a handy way to group related functions together.</p>
 <p>The main method of our tokenizer looks like this:</p>
-<div class="sourceCode" id="cb1" data-file="parse/tokenizer.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb1" data-file="parse/tokenizer.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> tok(<span class="va">self</span>, text):</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._setup()</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> ch <span class="kw">in</span> text:</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> ch <span class="op">==</span> <span class="st">"*"</span>:</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>                <span class="va">self</span>._add(<span class="st">"Any"</span>)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>            <span class="cf">elif</span> ch <span class="op">==</span> <span class="st">"{"</span>:</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>                <span class="va">self</span>._add(<span class="st">"EitherStart"</span>)</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>            <span class="cf">elif</span> ch <span class="op">==</span> <span class="st">","</span>:</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>                <span class="va">self</span>._add(<span class="va">None</span>)</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>            <span class="cf">elif</span> ch <span class="op">==</span> <span class="st">"}"</span>:</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>                <span class="va">self</span>._add(<span class="st">"EitherEnd"</span>)</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>            <span class="cf">elif</span> ch <span class="kw">in</span> CHARS:</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>                <span class="va">self</span>.current <span class="op">+=</span> ch</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>            <span class="cf">else</span>:</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>                <span class="cf">raise</span> <span class="pp">NotImplementedError</span>(<span class="ss">f"what is '</span><span class="sc">{</span>ch<span class="sc">}</span><span class="ss">'?"</span>)</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._add(<span class="va">None</span>)</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>.result</span></code></pre></div>
 <p>This method calls <code>self._setup()</code> at the start so that the tokenizer can be re-used. It <em>doesn’t</em> call <code>self._add()</code> for regular characters; instead, it creates a <code>Lit</code> entry when it encounters a special character (i.e., when the current literal ends) and after all the input has been parsed (to capture the last literal).</p>
 <p>The method <code>self._add</code> adds the current thing to the list of tokens. As a special case, <code>self._add(None)</code> means “add the literal but nothing else” (<a href="#fig-parse-tokenize" class="quarto-xref">Figure&nbsp;<span>5.2</span></a>):</p>
-<div class="sourceCode" id="cb2" data-file="parse/tokenizer.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb2" data-file="parse/tokenizer.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _add(<span class="va">self</span>, thing):</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="bu">len</span>(<span class="va">self</span>.current) <span class="op">&gt;</span> <span class="dv">0</span>:</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.result.append([<span class="st">"Lit"</span>, <span class="va">self</span>.current])</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.current <span class="op">=</span> <span class="st">""</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> thing <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span>:</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.result.append([thing])</span></code></pre></div>
 <div id="fig-parse-tokenize" class="quarto-float quarto-figure quarto-figure-center" alt="Breaking a string into tokens">
 <figure class="quarto-float quarto-float-fig">
 <div aria-describedby="fig-parse-tokenize-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
@@ -142,13 +163,44 @@ Figure&nbsp;5.2: Steps in tokenizing a string.
 <span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>    ]</span></code></pre></div>
 <h2 data-number="5.2" id="parse-parse"><span class="header-section-number">5.2</span> Parsing</h2>
 <p>We now need to turn the list of tokens into a tree. Just as we used a class for tokenizing, we will create one for parsing and give it a <code>_parse</code> method to start things off. This method doesn’t do any conversion itself. Instead, it takes a token off the front of the list and figures out which method handles tokens of that kind:</p>
-<div class="sourceCode" id="cb5" data-file="parse/parser.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb5" data-file="parse/parser.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _parse(<span class="va">self</span>, tokens):</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="kw">not</span> tokens:</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> Null()</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>        front, back <span class="op">=</span> tokens[<span class="dv">0</span>], tokens[<span class="dv">1</span>:]</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> front[<span class="dv">0</span>] <span class="op">==</span> <span class="st">"Any"</span>: handler <span class="op">=</span> <span class="va">self</span>._parse_Any</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">elif</span> front[<span class="dv">0</span>] <span class="op">==</span> <span class="st">"EitherStart"</span>: handler <span class="op">=</span> <span class="va">self</span>._parse_EitherStart</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>        <span class="cf">elif</span> front[<span class="dv">0</span>] <span class="op">==</span> <span class="st">"Lit"</span>: handler <span class="op">=</span> <span class="va">self</span>._parse_Lit</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>            <span class="cf">assert</span> <span class="va">False</span>, <span class="ss">f"Unknown token type </span><span class="sc">{</span>front<span class="sc">}</span><span class="ss">"</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> handler(front[<span class="dv">1</span>:], back)</span></code></pre></div>
 <p>The handlers for <code>Any</code> and <code>Lit</code> are straightforward:</p>
-<div class="sourceCode" id="cb6" data-file="parse/parser.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb6" data-file="parse/parser.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _parse_Any(<span class="va">self</span>, rest, back):</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> Any(<span class="va">self</span>._parse(back))</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _parse_Lit(<span class="va">self</span>, rest, back):</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> Lit(rest[<span class="dv">0</span>], <span class="va">self</span>._parse(back))</span></code></pre></div>
 <p><code>Either</code> is a little messier. We didn’t save the commas, so we’ll just pull two tokens and store them after checking to make sure that we actually <em>have</em> two tokens:</p>
-<div class="sourceCode" id="cb7" data-file="parse/parser.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb7" data-file="parse/parser.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _parse_EitherStart(<span class="va">self</span>, rest, back):</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> (</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>            <span class="bu">len</span>(back) <span class="op">&lt;</span> <span class="dv">3</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>            <span class="kw">or</span> (back[<span class="dv">0</span>][<span class="dv">0</span>] <span class="op">!=</span> <span class="st">"Lit"</span>)</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>            <span class="kw">or</span> (back[<span class="dv">1</span>][<span class="dv">0</span>] <span class="op">!=</span> <span class="st">"Lit"</span>)</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>            <span class="kw">or</span> (back[<span class="dv">2</span>][<span class="dv">0</span>] <span class="op">!=</span> <span class="st">"EitherEnd"</span>)</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>        ):</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>            <span class="cf">raise</span> <span class="pp">ValueError</span>(<span class="st">"badly-formatted Either"</span>)</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>        left <span class="op">=</span> Lit(back[<span class="dv">0</span>][<span class="dv">1</span>])</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>        right <span class="op">=</span> Lit(back[<span class="dv">1</span>][<span class="dv">1</span>])</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> Either([left, right], <span class="va">self</span>._parse(back[<span class="dv">3</span>:]))</span></code></pre></div>
 <p>An alternative approach is to take tokens from the list until we see an <code>EitherEnd</code> marker:</p>
-<div class="sourceCode" id="cb8" data-file="parse/better_parser.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb8" data-file="parse/better_parser.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _parse_EitherStart(<span class="va">self</span>, rest, back):</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>        children <span class="op">=</span> []</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">while</span> back <span class="kw">and</span> (back[<span class="dv">0</span>][<span class="dv">0</span>] <span class="op">==</span> <span class="st">"Lit"</span>):</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>            children.append(Lit(back[<span class="dv">0</span>][<span class="dv">1</span>]))</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>            back <span class="op">=</span> back[<span class="dv">1</span>:]</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="kw">not</span> children:</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>            <span class="cf">raise</span> <span class="pp">ValueError</span>(<span class="st">"empty Either"</span>)</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> back[<span class="dv">0</span>][<span class="dv">0</span>] <span class="op">!=</span> <span class="st">"EitherEnd"</span>:</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>            <span class="cf">raise</span> <span class="pp">ValueError</span>(<span class="st">"badly-formatted Either"</span>)</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> Either(children, <span class="va">self</span>._parse(back[<span class="dv">1</span>:]))</span></code></pre></div>
 <p>This achieves the same thing in the two-token case but allows us to write alternatives with more options without changing the code (assuming you solved the “Multiple Alternatives” exercise in <a href="../glob/index.html" class="quarto-xref"><span>Chapter 4</span></a>). Tests confirm that we’re on the right track:</p>
 <div class="sourceCode" id="cb9" data-file="parse/test_parser.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_parse_either_two_lit():</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> Parser().parse(<span class="st">"{abc,def}"</span>) <span class="op">==</span> Either(</span>

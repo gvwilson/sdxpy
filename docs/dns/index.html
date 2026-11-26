@@ -113,7 +113,51 @@
 <span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.records[key] <span class="op">=</span> []</span>
 <span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.records[key].append(record)</span></code></pre></div>
 <p>The <code>run</code> loop receives queries and builds responses. If the query domain ends in this server’s zone, the server looks up the record directly; it also follows CNAME chains to resolve aliases to their target A records:</p>
-<div class="sourceCode" id="cb6" data-file="dns/authoritative_server.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb6" data-file="dns/authoritative_server.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>    <span class="cf">async</span> <span class="kw">def</span> run(<span class="va">self</span>):</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Process DNS queries."""</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">while</span> <span class="va">True</span>:</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Wait for a query</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>            client_queue, query <span class="op">=</span> <span class="cf">await</span> <span class="va">self</span>.request_queue.get()</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Check if this query is for our zone</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="kw">not</span> query.domain.endswith(<span class="va">self</span>.zone):</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>                <span class="co"># Not authoritative for this domain</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>                response <span class="op">=</span> DNSResponse(</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>                    query_id<span class="op">=</span>query.query_id,</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>                    domain<span class="op">=</span>query.domain,</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>                    record_type<span class="op">=</span>query.record_type,</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>                    records<span class="op">=</span>[],</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>                    authoritative<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>                )</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>            <span class="cf">else</span>:</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>                <span class="co"># Look up the record</span></span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>                key <span class="op">=</span> (query.domain, query.record_type)</span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>                records <span class="op">=</span> <span class="va">self</span>.records.get(key, [])</span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>                <span class="co"># Handle CNAME (alias) records</span></span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> <span class="kw">not</span> records <span class="kw">and</span> query.record_type <span class="op">==</span> RecordType.A:</span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>                    cname_key <span class="op">=</span> (query.domain, RecordType.CNAME)</span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>                    cname_records <span class="op">=</span> <span class="va">self</span>.records.get(cname_key, [])</span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a>                    <span class="cf">if</span> cname_records:</span>
+<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a>                        <span class="co"># Follow the CNAME</span></span>
+<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a>                        canonical_name <span class="op">=</span> cname_records[<span class="dv">0</span>].value</span>
+<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a>                        a_key <span class="op">=</span> (canonical_name, RecordType.A)</span>
+<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a>                        records <span class="op">=</span> <span class="va">self</span>.records.get(a_key, [])</span>
+<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a>                        records <span class="op">=</span> cname_records <span class="op">+</span> records</span>
+<span id="cb6-30"><a href="#cb6-30" aria-hidden="true" tabindex="-1"></a>                response <span class="op">=</span> DNSResponse(</span>
+<span id="cb6-31"><a href="#cb6-31" aria-hidden="true" tabindex="-1"></a>                    query_id<span class="op">=</span>query.query_id,</span>
+<span id="cb6-32"><a href="#cb6-32" aria-hidden="true" tabindex="-1"></a>                    domain<span class="op">=</span>query.domain,</span>
+<span id="cb6-33"><a href="#cb6-33" aria-hidden="true" tabindex="-1"></a>                    record_type<span class="op">=</span>query.record_type,</span>
+<span id="cb6-34"><a href="#cb6-34" aria-hidden="true" tabindex="-1"></a>                    records<span class="op">=</span>records,</span>
+<span id="cb6-35"><a href="#cb6-35" aria-hidden="true" tabindex="-1"></a>                    authoritative<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb6-36"><a href="#cb6-36" aria-hidden="true" tabindex="-1"></a>                )</span>
+<span id="cb6-37"><a href="#cb6-37" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(</span>
+<span id="cb6-38"><a href="#cb6-38" aria-hidden="true" tabindex="-1"></a>                <span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.3f}</span><span class="ss">] </span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>name<span class="sc">}</span><span class="ss">: Query for </span><span class="sc">{</span>query<span class="sc">.</span>domain<span class="sc">}</span><span class="ss"> "</span></span>
+<span id="cb6-39"><a href="#cb6-39" aria-hidden="true" tabindex="-1"></a>                <span class="ss">f"(</span><span class="sc">{</span>query<span class="sc">.</span>record_type<span class="sc">.</span>value<span class="sc">}</span><span class="ss">) -&gt; </span><span class="sc">{</span><span class="bu">len</span>(response.records)<span class="sc">}</span><span class="ss"> record(s)"</span></span>
+<span id="cb6-40"><a href="#cb6-40" aria-hidden="true" tabindex="-1"></a>            )</span>
+<span id="cb6-41"><a href="#cb6-41" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Simulate processing delay</span></span>
+<span id="cb6-42"><a href="#cb6-42" aria-hidden="true" tabindex="-1"></a>            <span class="cf">await</span> <span class="va">self</span>.timeout(<span class="fl">0.01</span>)</span>
+<span id="cb6-43"><a href="#cb6-43" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Send response</span></span>
+<span id="cb6-44"><a href="#cb6-44" aria-hidden="true" tabindex="-1"></a>            <span class="cf">await</span> client_queue.put(response)</span>
+<span id="cb6-45"><a href="#cb6-45" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.queries_served <span class="op">+=</span> <span class="dv">1</span></span></code></pre></div>
 <p>The recursive resolver is more complex because it must cache and coordinate with authoritative servers. A <code>CacheEntry</code> wraps a record with its expiry time:</p>
 <div class="sourceCode" id="cb7" data-file="dns/recursive_resolver.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> CacheEntry:</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""A cached DNS record with expiration time."""</span></span>
@@ -141,11 +185,90 @@
 <span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.cache_hits <span class="op">=</span> <span class="dv">0</span></span>
 <span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.cache_misses <span class="op">=</span> <span class="dv">0</span></span></code></pre></div>
 <p>The <code>run</code> loop checks the cache before forwarding to an authoritative server. On a cache miss it calls <code>_resolve_recursive</code>, then stores the results:</p>
-<div class="sourceCode" id="cb9" data-file="dns/recursive_resolver.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb9" data-file="dns/recursive_resolver.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>    <span class="cf">async</span> <span class="kw">def</span> run(<span class="va">self</span>):</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Process client DNS queries."""</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">while</span> <span class="va">True</span>:</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Wait for a query from a client</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>            client_queue, query <span class="op">=</span> <span class="cf">await</span> <span class="va">self</span>.request_queue.get()</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.queries_received <span class="op">+=</span> <span class="dv">1</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>                <span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.3f}</span><span class="ss">] </span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>name<span class="sc">}</span><span class="ss">: Received query for "</span></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>                <span class="ss">f"</span><span class="sc">{</span>query<span class="sc">.</span>domain<span class="sc">}</span><span class="ss"> (</span><span class="sc">{</span>query<span class="sc">.</span>record_type<span class="sc">.</span>value<span class="sc">}</span><span class="ss">)"</span></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>            )</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Check cache first</span></span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>            cached_records <span class="op">=</span> <span class="va">self</span>._check_cache(query.domain, query.record_type)</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> cached_records:</span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>                <span class="va">self</span>.cache_hits <span class="op">+=</span> <span class="dv">1</span></span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>                response <span class="op">=</span> DNSResponse(</span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>                    query_id<span class="op">=</span>query.query_id,</span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>                    domain<span class="op">=</span>query.domain,</span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>                    record_type<span class="op">=</span>query.record_type,</span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a>                    records<span class="op">=</span>cached_records,</span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a>                    authoritative<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a>                    from_cache<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a>                )</span>
+<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a>                <span class="bu">print</span>(<span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.3f}</span><span class="ss">] </span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>name<span class="sc">}</span><span class="ss">: Cache HIT for </span><span class="sc">{</span>query<span class="sc">.</span>domain<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb9-24"><a href="#cb9-24" aria-hidden="true" tabindex="-1"></a>            <span class="cf">else</span>:</span>
+<span id="cb9-25"><a href="#cb9-25" aria-hidden="true" tabindex="-1"></a>                <span class="va">self</span>.cache_misses <span class="op">+=</span> <span class="dv">1</span></span>
+<span id="cb9-26"><a href="#cb9-26" aria-hidden="true" tabindex="-1"></a>                <span class="bu">print</span>(<span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.3f}</span><span class="ss">] </span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>name<span class="sc">}</span><span class="ss">: Cache MISS for </span><span class="sc">{</span>query<span class="sc">.</span>domain<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb9-27"><a href="#cb9-27" aria-hidden="true" tabindex="-1"></a>                <span class="co"># Recursively resolve</span></span>
+<span id="cb9-28"><a href="#cb9-28" aria-hidden="true" tabindex="-1"></a>                response <span class="op">=</span> <span class="cf">await</span> <span class="va">self</span>._resolve_recursive(query)</span>
+<span id="cb9-29"><a href="#cb9-29" aria-hidden="true" tabindex="-1"></a>                <span class="co"># Cache the results</span></span>
+<span id="cb9-30"><a href="#cb9-30" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> response.records:</span>
+<span id="cb9-31"><a href="#cb9-31" aria-hidden="true" tabindex="-1"></a>                    <span class="va">self</span>._cache_records(response.records)</span>
+<span id="cb9-32"><a href="#cb9-32" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Send response to client</span></span>
+<span id="cb9-33"><a href="#cb9-33" aria-hidden="true" tabindex="-1"></a>            <span class="cf">await</span> client_queue.put(response)</span></code></pre></div>
 <p><code>_check_cache</code> filters out expired entries and returns <code>None</code> on a complete miss. <code>_cache_records</code> stores records with expiry times computed from each record’s TTL:</p>
-<div class="sourceCode" id="cb10" data-file="dns/recursive_resolver.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb10" data-file="dns/recursive_resolver.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _check_cache(</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>, domain: <span class="bu">str</span>, record_type: RecordType</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    ) <span class="op">-&gt;</span> Optional[<span class="bu">list</span>[DNSRecord]]:</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Check if we have a cached record."""</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>        key <span class="op">=</span> (domain, record_type)</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> key <span class="kw">not</span> <span class="kw">in</span> <span class="va">self</span>.cache:</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="va">None</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Filter out expired entries</span></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>        valid_entries <span class="op">=</span> [</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>            entry <span class="cf">for</span> entry <span class="kw">in</span> <span class="va">self</span>.cache[key] <span class="cf">if</span> <span class="kw">not</span> entry.is_expired(<span class="va">self</span>.now)</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>        ]</span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="kw">not</span> valid_entries:</span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>            <span class="kw">del</span> <span class="va">self</span>.cache[key]</span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="va">None</span></span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.cache[key] <span class="op">=</span> valid_entries</span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> [entry.record <span class="cf">for</span> entry <span class="kw">in</span> valid_entries]</span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _cache_records(<span class="va">self</span>, records: <span class="bu">list</span>[DNSRecord]):</span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Add records to the cache."""</span></span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> record <span class="kw">in</span> records:</span>
+<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a>            key <span class="op">=</span> (record.name, record.record_type)</span>
+<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> key <span class="kw">not</span> <span class="kw">in</span> <span class="va">self</span>.cache:</span>
+<span id="cb10-22"><a href="#cb10-22" aria-hidden="true" tabindex="-1"></a>                <span class="va">self</span>.cache[key] <span class="op">=</span> []</span>
+<span id="cb10-23"><a href="#cb10-23" aria-hidden="true" tabindex="-1"></a>            expire_time <span class="op">=</span> <span class="va">self</span>.now <span class="op">+</span> record.ttl</span>
+<span id="cb10-24"><a href="#cb10-24" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.cache[key].append(CacheEntry(record, expire_time))</span></code></pre></div>
 <p><code>_resolve_recursive</code> finds the authoritative server whose zone suffix matches the query domain most specifically, then forwards the query and returns the response. Each cached entry has an expiration time based on the record’s TTL.</p>
-<div class="sourceCode" id="cb11" data-file="dns/recursive_resolver.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb11" data-file="dns/recursive_resolver.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>    <span class="cf">async</span> <span class="kw">def</span> _resolve_recursive(<span class="va">self</span>, query: DNSQuery) <span class="op">-&gt;</span> DNSResponse:</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Recursively resolve a query by querying authoritative servers."""</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Find the appropriate authoritative server</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>        <span class="co"># In real DNS, this involves walking the DNS hierarchy</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>        <span class="co"># For simplicity, we'll match the longest zone suffix</span></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>        matching_zone <span class="op">=</span> <span class="va">None</span></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> zone <span class="kw">in</span> <span class="va">self</span>.root_servers.keys():</span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> query.domain.endswith(zone):</span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> matching_zone <span class="kw">is</span> <span class="va">None</span> <span class="kw">or</span> <span class="bu">len</span>(zone) <span class="op">&gt;</span> <span class="bu">len</span>(matching_zone):</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>                    matching_zone <span class="op">=</span> zone</span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> matching_zone <span class="kw">is</span> <span class="va">None</span>:</span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>            <span class="co"># No authoritative server found</span></span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> DNSResponse(</span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a>                query_id<span class="op">=</span>query.query_id,</span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a>                domain<span class="op">=</span>query.domain,</span>
+<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a>                record_type<span class="op">=</span>query.record_type,</span>
+<span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a>                records<span class="op">=</span>[],</span>
+<span id="cb11-18"><a href="#cb11-18" aria-hidden="true" tabindex="-1"></a>                authoritative<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb11-19"><a href="#cb11-19" aria-hidden="true" tabindex="-1"></a>            )</span>
+<span id="cb11-20"><a href="#cb11-20" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Query the authoritative server</span></span>
+<span id="cb11-21"><a href="#cb11-21" aria-hidden="true" tabindex="-1"></a>        server_queue <span class="op">=</span> <span class="va">self</span>.root_servers[matching_zone]</span>
+<span id="cb11-22"><a href="#cb11-22" aria-hidden="true" tabindex="-1"></a>        <span class="cf">await</span> server_queue.put((<span class="va">self</span>.response_queue, query))</span>
+<span id="cb11-23"><a href="#cb11-23" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Wait for response</span></span>
+<span id="cb11-24"><a href="#cb11-24" aria-hidden="true" tabindex="-1"></a>        response <span class="op">=</span> <span class="cf">await</span> <span class="va">self</span>.response_queue.get()</span>
+<span id="cb11-25"><a href="#cb11-25" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> response</span></code></pre></div>
 <p>Our simplified resolver directly contacts authoritative servers. Real DNS resolvers walk the hierarchy starting from root servers, but the principle is the same: cache aggressively, query only when necessary.</p>
 <h2 data-number="W.3" id="dns-client"><span class="header-section-number">W.3</span> Clients</h2>
 <p>The DNS client wraps a response queue and a query counter:</p>
@@ -161,7 +284,29 @@
 <span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Override in subclass to perform lookups."""</span></span>
 <span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">pass</span></span></code></pre></div>
 <p><code>lookup</code> constructs a query, sends it to the resolver, and prints the response:</p>
-<div class="sourceCode" id="cb13" data-file="dns/dns_client.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb13" data-file="dns/dns_client.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>    <span class="cf">async</span> <span class="kw">def</span> lookup(<span class="va">self</span>, domain: <span class="bu">str</span>, record_type: RecordType <span class="op">=</span> RecordType.A):</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Perform a DNS lookup."""</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.query_counter <span class="op">+=</span> <span class="dv">1</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>        query <span class="op">=</span> DNSQuery(</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>            query_id<span class="op">=</span><span class="va">self</span>.query_counter, domain<span class="op">=</span>domain, record_type<span class="op">=</span>record_type</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(</span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>            <span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.3f}</span><span class="ss">] </span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>name<span class="sc">}</span><span class="ss">: Looking up </span><span class="sc">{</span>domain<span class="sc">}</span><span class="ss"> (</span><span class="sc">{</span>record_type<span class="sc">.</span>value<span class="sc">}</span><span class="ss">)"</span></span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Send query to resolver</span></span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">await</span> <span class="va">self</span>.resolver_queue.put((<span class="va">self</span>.response_queue, query))</span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.queries_sent <span class="op">+=</span> <span class="dv">1</span></span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Wait for response</span></span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>        response <span class="op">=</span> <span class="cf">await</span> <span class="va">self</span>.response_queue.get()</span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Print results</span></span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> response.records:</span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a>            cache_status <span class="op">=</span> <span class="st">" (cached)"</span> <span class="cf">if</span> response.from_cache <span class="cf">else</span> <span class="st">""</span></span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.3f}</span><span class="ss">] </span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>name<span class="sc">}</span><span class="ss">: Resolved </span><span class="sc">{</span>domain<span class="sc">}{</span>cache_status<span class="sc">}</span><span class="ss">:"</span>)</span>
+<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a>            <span class="cf">for</span> record <span class="kw">in</span> response.records:</span>
+<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a>                <span class="bu">print</span>(<span class="ss">f"  </span><span class="sc">{</span>record<span class="sc">.</span>name<span class="sc">}</span><span class="ss"> -&gt; </span><span class="sc">{</span>record<span class="sc">.</span>value<span class="sc">}</span><span class="ss"> (TTL: </span><span class="sc">{</span>record<span class="sc">.</span>ttl<span class="sc">}</span><span class="ss">s)"</span>)</span>
+<span id="cb13-21"><a href="#cb13-21" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb13-22"><a href="#cb13-22" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.3f}</span><span class="ss">] </span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>name<span class="sc">}</span><span class="ss">: No records found for </span><span class="sc">{</span>domain<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb13-23"><a href="#cb13-23" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> response</span></code></pre></div>
 <p>Clients send queries to recursive resolvers and wait for responses. In real systems, clients also cache locally and can query multiple resolvers for redundancy.</p>
 <h2 data-number="W.4" id="running-a-simulation"><span class="header-section-number">W.4</span> Running a Simulation</h2>
 <p>Let’s see DNS resolution in action by building a client:</p>
@@ -287,11 +432,93 @@ Resolver:
 <span id="cb17-22"><a href="#cb17-22" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.cache_misses <span class="op">=</span> <span class="dv">0</span></span>
 <span id="cb17-23"><a href="#cb17-23" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.referrals_followed <span class="op">=</span> <span class="dv">0</span></span></code></pre></div>
 <p>Its <code>_walk_hierarchy</code> method starts at the root server, follows NS referrals until it reaches an authoritative server, and returns the answer:</p>
-<div class="sourceCode" id="cb18" data-file="dns/hierarchical_resolver.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb18" data-file="dns/hierarchical_resolver.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>    <span class="cf">async</span> <span class="kw">def</span> _walk_hierarchy(<span class="va">self</span>, query: DNSQuery) <span class="op">-&gt;</span> DNSResponse:</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Walk the DNS delegation hierarchy from root to authoritative server.</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="co">        The algorithm:</span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a><span class="co">        1. Start at the root server.</span></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a><span class="co">        2. Send the query.</span></span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a><span class="co">        3. If the response is authoritative, return it.</span></span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a><span class="co">        4. If the response is a referral (NS records), follow the first referral</span></span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a><span class="co">           by looking up the referred zone's server and repeating from step 2.</span></span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a><span class="co">        5. If neither, return a not-found response.</span></span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a><span class="co">        In real DNS the resolver must also resolve the IP address of the</span></span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a><span class="co">        referred name server (a glue record lookup) if it is not already known.</span></span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a><span class="co">        We simulate this by giving each server a reference to the next layer.</span></span>
+<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a><span class="co">        """</span></span>
+<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a>        current_server_queue <span class="op">=</span> <span class="va">self</span>.root_server_queue</span>
+<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a>        labels <span class="op">=</span> query.domain.split(<span class="st">"."</span>)</span>
+<span id="cb18-16"><a href="#cb18-16" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Walk up to len(labels) levels of delegation.</span></span>
+<span id="cb18-17"><a href="#cb18-17" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> depth <span class="kw">in</span> <span class="bu">range</span>(<span class="bu">len</span>(labels) <span class="op">+</span> <span class="dv">1</span>):</span>
+<span id="cb18-18"><a href="#cb18-18" aria-hidden="true" tabindex="-1"></a>            <span class="cf">await</span> current_server_queue.put((<span class="va">self</span>.response_queue, query))</span>
+<span id="cb18-19"><a href="#cb18-19" aria-hidden="true" tabindex="-1"></a>            response <span class="op">=</span> <span class="cf">await</span> <span class="va">self</span>.response_queue.get()</span>
+<span id="cb18-20"><a href="#cb18-20" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> response.authoritative:</span>
+<span id="cb18-21"><a href="#cb18-21" aria-hidden="true" tabindex="-1"></a>                <span class="co"># We reached an authoritative server.</span></span>
+<span id="cb18-22"><a href="#cb18-22" aria-hidden="true" tabindex="-1"></a>                <span class="cf">return</span> response</span>
+<span id="cb18-23"><a href="#cb18-23" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Look for NS referrals in the response.</span></span>
+<span id="cb18-24"><a href="#cb18-24" aria-hidden="true" tabindex="-1"></a>            ns_records <span class="op">=</span> [r <span class="cf">for</span> r <span class="kw">in</span> response.records <span class="cf">if</span> r.record_type <span class="op">==</span> RecordType.NS]</span>
+<span id="cb18-25"><a href="#cb18-25" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> ns_records:</span>
+<span id="cb18-26"><a href="#cb18-26" aria-hidden="true" tabindex="-1"></a>                <span class="co"># The NS record's value is the queue for the delegated zone server.</span></span>
+<span id="cb18-27"><a href="#cb18-27" aria-hidden="true" tabindex="-1"></a>                <span class="co"># In real DNS, NS values are hostnames that must be resolved</span></span>
+<span id="cb18-28"><a href="#cb18-28" aria-hidden="true" tabindex="-1"></a>                <span class="co"># to IP addresses; here we use the hostname as a direct key</span></span>
+<span id="cb18-29"><a href="#cb18-29" aria-hidden="true" tabindex="-1"></a>                <span class="co"># into the resolver's known server map.</span></span>
+<span id="cb18-30"><a href="#cb18-30" aria-hidden="true" tabindex="-1"></a>                referred_zone <span class="op">=</span> ns_records[<span class="dv">0</span>].value</span>
+<span id="cb18-31"><a href="#cb18-31" aria-hidden="true" tabindex="-1"></a>                next_queue <span class="op">=</span> <span class="va">self</span>._known_servers.get(referred_zone)</span>
+<span id="cb18-32"><a href="#cb18-32" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> next_queue <span class="kw">is</span> <span class="va">None</span>:</span>
+<span id="cb18-33"><a href="#cb18-33" aria-hidden="true" tabindex="-1"></a>                    <span class="bu">print</span>(</span>
+<span id="cb18-34"><a href="#cb18-34" aria-hidden="true" tabindex="-1"></a>                        <span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.3f}</span><span class="ss">] </span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>name<span class="sc">}</span><span class="ss">: "</span></span>
+<span id="cb18-35"><a href="#cb18-35" aria-hidden="true" tabindex="-1"></a>                        <span class="ss">f"Unknown referral target </span><span class="sc">{</span>referred_zone<span class="sc">}</span><span class="ss">"</span></span>
+<span id="cb18-36"><a href="#cb18-36" aria-hidden="true" tabindex="-1"></a>                    )</span>
+<span id="cb18-37"><a href="#cb18-37" aria-hidden="true" tabindex="-1"></a>                    <span class="cf">break</span></span>
+<span id="cb18-38"><a href="#cb18-38" aria-hidden="true" tabindex="-1"></a>                <span class="va">self</span>.referrals_followed <span class="op">+=</span> <span class="dv">1</span></span>
+<span id="cb18-39"><a href="#cb18-39" aria-hidden="true" tabindex="-1"></a>                current_server_queue <span class="op">=</span> next_queue</span>
+<span id="cb18-40"><a href="#cb18-40" aria-hidden="true" tabindex="-1"></a>                <span class="bu">print</span>(</span>
+<span id="cb18-41"><a href="#cb18-41" aria-hidden="true" tabindex="-1"></a>                    <span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.3f}</span><span class="ss">] </span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>name<span class="sc">}</span><span class="ss">: "</span></span>
+<span id="cb18-42"><a href="#cb18-42" aria-hidden="true" tabindex="-1"></a>                    <span class="ss">f"Following referral to </span><span class="sc">{</span>referred_zone<span class="sc">}</span><span class="ss"> (depth </span><span class="sc">{</span>depth <span class="op">+</span> <span class="dv">1</span><span class="sc">}</span><span class="ss">)"</span></span>
+<span id="cb18-43"><a href="#cb18-43" aria-hidden="true" tabindex="-1"></a>                )</span>
+<span id="cb18-44"><a href="#cb18-44" aria-hidden="true" tabindex="-1"></a>            <span class="cf">else</span>:</span>
+<span id="cb18-45"><a href="#cb18-45" aria-hidden="true" tabindex="-1"></a>                <span class="co"># No answer, no referral.</span></span>
+<span id="cb18-46"><a href="#cb18-46" aria-hidden="true" tabindex="-1"></a>                <span class="cf">break</span></span>
+<span id="cb18-47"><a href="#cb18-47" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> DNSResponse(</span>
+<span id="cb18-48"><a href="#cb18-48" aria-hidden="true" tabindex="-1"></a>            query_id<span class="op">=</span>query.query_id,</span>
+<span id="cb18-49"><a href="#cb18-49" aria-hidden="true" tabindex="-1"></a>            domain<span class="op">=</span>query.domain,</span>
+<span id="cb18-50"><a href="#cb18-50" aria-hidden="true" tabindex="-1"></a>            record_type<span class="op">=</span>query.record_type,</span>
+<span id="cb18-51"><a href="#cb18-51" aria-hidden="true" tabindex="-1"></a>            records<span class="op">=</span>[],</span>
+<span id="cb18-52"><a href="#cb18-52" aria-hidden="true" tabindex="-1"></a>            authoritative<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb18-53"><a href="#cb18-53" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb18-54"><a href="#cb18-54" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> register_server(<span class="va">self</span>, zone: <span class="bu">str</span>, server_queue: Queue) <span class="op">-&gt;</span> <span class="va">None</span>:</span>
+<span id="cb18-55"><a href="#cb18-55" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Register the queue for a delegated zone's server."""</span></span>
+<span id="cb18-56"><a href="#cb18-56" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="kw">not</span> <span class="bu">hasattr</span>(<span class="va">self</span>, <span class="st">"_known_servers"</span>):</span>
+<span id="cb18-57"><a href="#cb18-57" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>._known_servers: <span class="bu">dict</span>[<span class="bu">str</span>, Queue] <span class="op">=</span> {}</span>
+<span id="cb18-58"><a href="#cb18-58" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._known_servers[zone] <span class="op">=</span> server_queue</span></code></pre></div>
 <p>The first query for <code>www.example.com</code> requires two round-trips—one to the root, one to <code>.com</code>— before reaching <code>example.com</code>’s authoritative server. All subsequent queries for anything in <code>example.com</code> can skip this walk because the answers are cached.</p>
 <h2 data-number="W.6" id="dns-negative"><span class="header-section-number">W.6</span> Negative Caching</h2>
 <p>The <code>HierarchicalResolver</code> also caches negative responses (NXDOMAIN):</p>
-<div class="sourceCode" id="cb19" data-file="dns/hierarchical_resolver.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb19" data-file="dns/hierarchical_resolver.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _cache_negative(<span class="va">self</span>, domain: <span class="bu">str</span>, record_type: RecordType) <span class="op">-&gt;</span> <span class="va">None</span>:</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Cache a negative response (NXDOMAIN) to reduce redundant queries.</span></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a><span class="co">        Negative caching prevents the resolver from querying the authoritative</span></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a><span class="co">        server again for a domain that does not exist.  The TTL for negative</span></span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a><span class="co">        responses is typically found in the SOA record of the authoritative</span></span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a><span class="co">        zone; we use a fixed value here.</span></span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a><span class="co">        """</span></span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>        NEGATIVE_TTL <span class="op">=</span> <span class="dv">300</span>  <span class="co"># 5 minutes, a common default</span></span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a>        key <span class="op">=</span> (domain, record_type)</span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Store an empty entry list with an expiry.  _check_cache returns None</span></span>
+<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a>        <span class="co"># for an empty list, so we store a sentinel entry instead.</span></span>
+<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a>        sentinel <span class="op">=</span> DNSRecord(</span>
+<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a>            name<span class="op">=</span>domain,</span>
+<span id="cb19-14"><a href="#cb19-14" aria-hidden="true" tabindex="-1"></a>            value<span class="op">=</span><span class="st">"NXDOMAIN"</span>,</span>
+<span id="cb19-15"><a href="#cb19-15" aria-hidden="true" tabindex="-1"></a>            record_type<span class="op">=</span>record_type,</span>
+<span id="cb19-16"><a href="#cb19-16" aria-hidden="true" tabindex="-1"></a>            ttl<span class="op">=</span>NEGATIVE_TTL,</span>
+<span id="cb19-17"><a href="#cb19-17" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb19-18"><a href="#cb19-18" aria-hidden="true" tabindex="-1"></a>        entry <span class="op">=</span> CacheEntry(sentinel, <span class="va">self</span>.now <span class="op">+</span> NEGATIVE_TTL)</span>
+<span id="cb19-19"><a href="#cb19-19" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.cache[key] <span class="op">=</span> [entry]</span>
+<span id="cb19-20"><a href="#cb19-20" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(</span>
+<span id="cb19-21"><a href="#cb19-21" aria-hidden="true" tabindex="-1"></a>            <span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.3f}</span><span class="ss">] </span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>name<span class="sc">}</span><span class="ss">: "</span></span>
+<span id="cb19-22"><a href="#cb19-22" aria-hidden="true" tabindex="-1"></a>            <span class="ss">f"Cached NXDOMAIN for </span><span class="sc">{</span>domain<span class="sc">}</span><span class="ss"> (TTL </span><span class="sc">{</span>NEGATIVE_TTL<span class="sc">}</span><span class="ss">s)"</span></span>
+<span id="cb19-23"><a href="#cb19-23" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb19-24"><a href="#cb19-24" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _is_negative_entry(<span class="va">self</span>, record: DNSRecord) <span class="op">-&gt;</span> <span class="bu">bool</span>:</span>
+<span id="cb19-25"><a href="#cb19-25" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Return True if this is a negative-cache sentinel record."""</span></span>
+<span id="cb19-26"><a href="#cb19-26" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> record.value <span class="op">==</span> <span class="st">"NXDOMAIN"</span></span></code></pre></div>
 <p>Without negative caching, every lookup of a non-existent domain (a typo, a deleted record) results in a full hierarchy walk—one round-trip to the root, one to the TLD, one to the authoritative server. Caching “this domain does not exist” for the TTL specified in the zone’s SOA record means that repeated lookups of the same nonexistent name are answered locally. This is especially important for protecting authoritative servers from DNS amplification attacks, where an attacker repeatedly queries nonexistent subdomains to exhaust server resources.</p>
 <h2 data-number="W.7" id="real-world-considerations"><span class="header-section-number">W.7</span> Real-World Considerations</h2>
 <p>Our implementation simplifies several DNS complexities:</p>

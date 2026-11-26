@@ -90,20 +90,145 @@
 <span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>    lease_expiry: <span class="bu">float</span> <span class="op">=</span> <span class="dv">0</span></span>
 <span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>    waiters: <span class="bu">list</span> <span class="op">=</span> field(default_factory<span class="op">=</span><span class="bu">list</span>)</span></code></pre></div>
 <p><code>LockServer</code> and its constructor set up the request queue and a dictionary of per-resource lock states. Its <code>run</code> loop dispatches each incoming request by operation type:</p>
-<div class="sourceCode" id="cb2" data-file="distlock/basic_lock_server.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb2" data-file="distlock/basic_lock_server.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> LockServer(Process):</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""A single lock server managing multiple resources."""</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> init(<span class="va">self</span>, name: <span class="bu">str</span>, lease_duration: <span class="bu">float</span> <span class="op">=</span> <span class="fl">5.0</span>):</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.name <span class="op">=</span> name</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.lease_duration <span class="op">=</span> lease_duration</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.request_queue <span class="op">=</span> Queue(<span class="va">self</span>._env)</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.locks: <span class="bu">dict</span>[<span class="bu">str</span>, LockState] <span class="op">=</span> {}</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.next_token <span class="op">=</span> <span class="dv">1</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">async</span> <span class="kw">def</span> run(<span class="va">self</span>):</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Process lock requests."""</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">while</span> <span class="va">True</span>:</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>            request <span class="op">=</span> <span class="cf">await</span> <span class="va">self</span>.request_queue.get()</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> request.operation <span class="op">==</span> <span class="st">"acquire"</span>:</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>                response <span class="op">=</span> <span class="cf">await</span> <span class="va">self</span>._handle_acquire(request)</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>            <span class="cf">elif</span> request.operation <span class="op">==</span> <span class="st">"release"</span>:</span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>                response <span class="op">=</span> <span class="cf">await</span> <span class="va">self</span>._handle_release(request)</span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>            <span class="cf">else</span>:</span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>                response <span class="op">=</span> LockResponse(<span class="va">False</span>, message<span class="op">=</span><span class="st">"Unknown operation"</span>)</span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>            <span class="cf">await</span> request.response_queue.put(response)</span></code></pre></div>
 <p>When a client tries to acquire a lock, the server first checks whether the current lease has expired, then grants the lock or renews it if the same client is asking again:</p>
-<div class="sourceCode" id="cb3" data-file="distlock/basic_lock_server.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb3" data-file="distlock/basic_lock_server.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>    <span class="cf">async</span> <span class="kw">def</span> _handle_acquire(<span class="va">self</span>, request: LockRequest) <span class="op">-&gt;</span> LockResponse:</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Try to acquire a lock."""</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>        resource <span class="op">=</span> request.resource</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Create lock state if needed</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> resource <span class="kw">not</span> <span class="kw">in</span> <span class="va">self</span>.locks:</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.locks[resource] <span class="op">=</span> LockState()</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>        lock <span class="op">=</span> <span class="va">self</span>.locks[resource]</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Check if lock is expired</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> lock.holder <span class="kw">and</span> <span class="va">self</span>.now <span class="op">&gt;=</span> lock.lease_expiry:</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>                <span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] </span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>name<span class="sc">}</span><span class="ss">: Lock on </span><span class="sc">{</span>resource<span class="sc">}</span><span class="ss"> "</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>                <span class="ss">f"expired (was held by </span><span class="sc">{</span>lock<span class="sc">.</span>holder<span class="sc">}</span><span class="ss">)"</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>            )</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>            lock.holder <span class="op">=</span> <span class="va">None</span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Try to acquire</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> lock.holder <span class="kw">is</span> <span class="va">None</span>:</span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>            lock.holder <span class="op">=</span> request.client_id</span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>            lock.token <span class="op">=</span> <span class="va">self</span>.next_token</span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.next_token <span class="op">+=</span> <span class="dv">1</span></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>            lock.lease_expiry <span class="op">=</span> <span class="va">self</span>.now <span class="op">+</span> <span class="va">self</span>.lease_duration</span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(</span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>                <span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] </span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>name<span class="sc">}</span><span class="ss">: Granted lock on </span><span class="sc">{</span>resource<span class="sc">}</span><span class="ss"> "</span></span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>                <span class="ss">f"to </span><span class="sc">{</span>request<span class="sc">.</span>client_id<span class="sc">}</span><span class="ss"> (token </span><span class="sc">{</span>lock<span class="sc">.</span>token<span class="sc">}</span><span class="ss">)"</span></span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>            )</span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> LockResponse(<span class="va">True</span>, token<span class="op">=</span>lock.token)</span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>        <span class="cf">elif</span> lock.holder <span class="op">==</span> request.client_id:</span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Renew lease for current holder</span></span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>            lock.lease_expiry <span class="op">=</span> <span class="va">self</span>.now <span class="op">+</span> <span class="va">self</span>.lease_duration</span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(</span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a>                <span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] </span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>name<span class="sc">}</span><span class="ss">: Renewed lease on </span><span class="sc">{</span>resource<span class="sc">}</span><span class="ss"> "</span></span>
+<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a>                <span class="ss">f"for </span><span class="sc">{</span>request<span class="sc">.</span>client_id<span class="sc">}</span><span class="ss">"</span></span>
+<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a>            )</span>
+<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> LockResponse(<span class="va">True</span>, token<span class="op">=</span>lock.token)</span>
+<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Lock is held by someone else</span></span>
+<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> LockResponse(<span class="va">False</span>, message<span class="op">=</span><span class="ss">f"Lock held by </span><span class="sc">{</span>lock<span class="sc">.</span>holder<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div>
 <p>Releasing a lock simply clears the holder if the request comes from the current holder:</p>
-<div class="sourceCode" id="cb4" data-file="distlock/basic_lock_server.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb4" data-file="distlock/basic_lock_server.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>    <span class="cf">async</span> <span class="kw">def</span> _handle_release(<span class="va">self</span>, request: LockRequest) <span class="op">-&gt;</span> LockResponse:</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Release a lock."""</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>        resource <span class="op">=</span> request.resource</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> resource <span class="kw">not</span> <span class="kw">in</span> <span class="va">self</span>.locks:</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> LockResponse(<span class="va">False</span>, message<span class="op">=</span><span class="st">"Lock not found"</span>)</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>        lock <span class="op">=</span> <span class="va">self</span>.locks[resource]</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> lock.holder <span class="op">==</span> request.client_id:</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>                <span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] </span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>name<span class="sc">}</span><span class="ss">: Released lock on </span><span class="sc">{</span>resource<span class="sc">}</span><span class="ss"> "</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>                <span class="ss">f"by </span><span class="sc">{</span>request<span class="sc">.</span>client_id<span class="sc">}</span><span class="ss">"</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>            )</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>            lock.holder <span class="op">=</span> <span class="va">None</span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> LockResponse(<span class="va">True</span>)</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> LockResponse(<span class="va">False</span>, message<span class="op">=</span><span class="ss">f"Lock not held by </span><span class="sc">{</span>request<span class="sc">.</span>client_id<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div>
 <h2 data-number="R.3" id="distlock-client"><span class="header-section-number">R.3</span> Lock Clients</h2>
 <p>Clients acquire locks, do work in <a href="../glossary/index.html#critical-section">critical sections</a>, and release locks. The client class’s constructor stores connection details and tracks the current fencing token:</p>
-<div class="sourceCode" id="cb5" data-file="distlock/lock_client.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb5" data-file="distlock/lock_client.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> LockClient(Process):</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Client that acquires locks to access resources."""</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> init(</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>,</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>        client_id: <span class="bu">str</span>,</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>        server: LockServer,</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>        resource: <span class="bu">str</span>,</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>        work_duration: <span class="bu">float</span>,</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>        initial_delay: <span class="bu">float</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>    ):</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.client_id <span class="op">=</span> client_id</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.server <span class="op">=</span> server</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.resource <span class="op">=</span> resource</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.work_duration <span class="op">=</span> work_duration</span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.initial_delay <span class="op">=</span> initial_delay</span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.current_token: <span class="bu">int</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span></span></code></pre></div>
 <p>Its <code>run</code> method schedules repeated attempts to acquire the lock and do work:</p>
-<div class="sourceCode" id="cb6" data-file="distlock/lock_client.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb6" data-file="distlock/lock_client.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>    <span class="cf">async</span> <span class="kw">def</span> run(<span class="va">self</span>):</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Acquire lock, do work, release lock."""</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Possibly delay start</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="va">self</span>.initial_delay <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span>:</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>            <span class="cf">await</span> <span class="va">self</span>.timeout(<span class="va">self</span>.initial_delay)</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Try to acquire lock</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>        acquired <span class="op">=</span> <span class="cf">await</span> <span class="va">self</span>.acquire_lock()</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="kw">not</span> acquired:</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] </span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>client_id<span class="sc">}</span><span class="ss">: Failed to acquire lock"</span>)</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Do work with the lock held</span></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>            <span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] </span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>client_id<span class="sc">}</span><span class="ss">: Starting critical section "</span></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>            <span class="ss">f"(token </span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>current_token<span class="sc">}</span><span class="ss">)"</span></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>        <span class="cf">await</span> <span class="va">self</span>.timeout(<span class="va">self</span>.work_duration)</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] </span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>client_id<span class="sc">}</span><span class="ss">: Finished critical section"</span>)</span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Release lock</span></span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>        <span class="cf">await</span> <span class="va">self</span>.release_lock()</span></code></pre></div>
 <p><code>acquire</code> sends a request to the lock server and waits for a response:</p>
-<div class="sourceCode" id="cb7" data-file="distlock/lock_client.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb7" data-file="distlock/lock_client.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>    <span class="cf">async</span> <span class="kw">def</span> acquire_lock(<span class="va">self</span>) <span class="op">-&gt;</span> <span class="bu">bool</span>:</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Request lock from server."""</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>        response_queue <span class="op">=</span> Queue(<span class="va">self</span>._env)</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>        request <span class="op">=</span> LockRequest(</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>            client_id<span class="op">=</span><span class="va">self</span>.client_id,</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>            resource<span class="op">=</span><span class="va">self</span>.resource,</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>            operation<span class="op">=</span><span class="st">"acquire"</span>,</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>            response_queue<span class="op">=</span>response_queue,</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">await</span> <span class="va">self</span>.server.request_queue.put(request)</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>        response <span class="op">=</span> <span class="cf">await</span> response_queue.get()</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> response.success:</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.current_token <span class="op">=</span> response.token</span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="va">True</span></span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">False</span></span></code></pre></div>
 <p><code>release</code> sends a release request when the client is done with the resource:</p>
-<div class="sourceCode" id="cb8" data-file="distlock/lock_client.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb8" data-file="distlock/lock_client.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>    <span class="cf">async</span> <span class="kw">def</span> release_lock(<span class="va">self</span>):</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Release lock back to server."""</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>        response_queue <span class="op">=</span> Queue(<span class="va">self</span>._env)</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>        request <span class="op">=</span> LockRequest(</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>            client_id<span class="op">=</span><span class="va">self</span>.client_id,</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>            resource<span class="op">=</span><span class="va">self</span>.resource,</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>            operation<span class="op">=</span><span class="st">"release"</span>,</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>            response_queue<span class="op">=</span>response_queue,</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">await</span> <span class="va">self</span>.server.request_queue.put(request)</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">await</span> response_queue.get()</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.current_token <span class="op">=</span> <span class="va">None</span></span></code></pre></div>
 <p>Let’s run a simple simulation where multiple clients compete for the same lock:</p>
 <div class="sourceCode" id="cb9" data-file="distlock/ex_basic.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> main():</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    env <span class="op">=</span> Environment()</span>
@@ -204,13 +329,81 @@
 <span id="cb14-23"><a href="#cb14-23" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.current_accessor <span class="op">=</span> <span class="va">None</span></span>
 <span id="cb14-24"><a href="#cb14-24" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">True</span></span></code></pre></div>
 <p>Now let’s create a client that uses fencing tokens. The fenced client stores the token it received when acquiring the lock and passes it with every resource access:</p>
-<div class="sourceCode" id="cb15" data-file="distlock/fenced_client.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb15" data-file="distlock/fenced_client.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> FencedClient(Process):</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Client that uses fencing tokens when accessing resources."""</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> init(</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>,</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>        client_id: <span class="bu">str</span>,</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>        server: LockServer,</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>        resource_name: <span class="bu">str</span>,</span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>        protected_resource: ProtectedResource,</span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>        work_duration: <span class="bu">float</span>,</span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>        pause_duration: <span class="bu">float</span> <span class="op">=</span> <span class="dv">0</span>,</span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>        initial_delay: <span class="bu">float</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>    ):</span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.client_id <span class="op">=</span> client_id</span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.server <span class="op">=</span> server</span>
+<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.resource_name <span class="op">=</span> resource_name</span>
+<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.protected_resource <span class="op">=</span> protected_resource</span>
+<span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.work_duration <span class="op">=</span> work_duration</span>
+<span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.pause_duration <span class="op">=</span> pause_duration</span>
+<span id="cb15-19"><a href="#cb15-19" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.initial_delay <span class="op">=</span> initial_delay</span>
+<span id="cb15-20"><a href="#cb15-20" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.current_token: <span class="bu">int</span> <span class="op">=</span> <span class="dv">0</span></span></code></pre></div>
 <p>Its <code>run</code> method follows the same lifecycle as the basic client:</p>
-<div class="sourceCode" id="cb16" data-file="distlock/fenced_client.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb16" data-file="distlock/fenced_client.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>    <span class="cf">async</span> <span class="kw">def</span> run(<span class="va">self</span>):</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Acquire lock and access resource with token."""</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Potentially delay start</span></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="va">self</span>.initial_delay <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span>:</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.timeout(<span class="va">self</span>.initial_delay)</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Acquire lock</span></span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>        acquired <span class="op">=</span> <span class="cf">await</span> <span class="va">self</span>.acquire_lock()</span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="kw">not</span> acquired:</span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span></span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Simulate pause (GC, network delay, etc.)</span></span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="va">self</span>.pause_duration <span class="op">&gt;</span> <span class="dv">0</span>:</span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(</span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a>                <span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] </span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>client_id<span class="sc">}</span><span class="ss">: Pausing for </span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>pause_duration<span class="sc">}</span><span class="ss">s"</span></span>
+<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a>            )</span>
+<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a>            <span class="cf">await</span> <span class="va">self</span>.timeout(<span class="va">self</span>.pause_duration)</span>
+<span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] </span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>client_id<span class="sc">}</span><span class="ss">: Resuming"</span>)</span>
+<span id="cb16-17"><a href="#cb16-17" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Try to access resource with our token</span></span>
+<span id="cb16-18"><a href="#cb16-18" aria-hidden="true" tabindex="-1"></a>        success <span class="op">=</span> <span class="cf">await</span> <span class="va">self</span>.protected_resource.access(</span>
+<span id="cb16-19"><a href="#cb16-19" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.client_id, <span class="va">self</span>.current_token, <span class="va">self</span>.work_duration</span>
+<span id="cb16-20"><a href="#cb16-20" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb16-21"><a href="#cb16-21" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> success:</span>
+<span id="cb16-22"><a href="#cb16-22" aria-hidden="true" tabindex="-1"></a>            <span class="cf">await</span> <span class="va">self</span>.release_lock()</span></code></pre></div>
 <p>The acquire step is identical to the basic client but stores the token:</p>
-<div class="sourceCode" id="cb17" data-file="distlock/fenced_client.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb17" data-file="distlock/fenced_client.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>    <span class="cf">async</span> <span class="kw">def</span> acquire_lock(<span class="va">self</span>) <span class="op">-&gt;</span> <span class="bu">bool</span>:</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Acquire lock from server."""</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>        response_queue <span class="op">=</span> Queue(<span class="va">self</span>._env)</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>        request <span class="op">=</span> LockRequest(</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>            client_id<span class="op">=</span><span class="va">self</span>.client_id,</span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>            resource<span class="op">=</span><span class="va">self</span>.resource_name,</span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>            operation<span class="op">=</span><span class="st">"acquire"</span>,</span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>            response_queue<span class="op">=</span>response_queue,</span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">await</span> <span class="va">self</span>.server.request_queue.put(request)</span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a>        response <span class="op">=</span> <span class="cf">await</span> response_queue.get()</span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> response.success:</span>
+<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.current_token <span class="op">=</span> response.token</span>
+<span id="cb17-14"><a href="#cb17-14" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(</span>
+<span id="cb17-15"><a href="#cb17-15" aria-hidden="true" tabindex="-1"></a>                <span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] </span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>client_id<span class="sc">}</span><span class="ss">: Acquired lock "</span></span>
+<span id="cb17-16"><a href="#cb17-16" aria-hidden="true" tabindex="-1"></a>                <span class="ss">f"(token </span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>current_token<span class="sc">}</span><span class="ss">)"</span></span>
+<span id="cb17-17"><a href="#cb17-17" aria-hidden="true" tabindex="-1"></a>            )</span>
+<span id="cb17-18"><a href="#cb17-18" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="va">True</span></span>
+<span id="cb17-19"><a href="#cb17-19" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">False</span></span></code></pre></div>
 <p>When accessing the resource, the client passes the fencing token so the resource can reject stale requests:</p>
-<div class="sourceCode" id="cb18" data-file="distlock/fenced_client.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb18" data-file="distlock/fenced_client.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>    <span class="cf">async</span> <span class="kw">def</span> release_lock(<span class="va">self</span>):</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Release lock."""</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>        response_queue <span class="op">=</span> Queue(<span class="va">self</span>._env)</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>        request <span class="op">=</span> LockRequest(</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>            client_id<span class="op">=</span><span class="va">self</span>.client_id,</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>            resource<span class="op">=</span><span class="va">self</span>.resource_name,</span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>            operation<span class="op">=</span><span class="st">"release"</span>,</span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>            response_queue<span class="op">=</span>response_queue,</span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">await</span> <span class="va">self</span>.server.request_queue.put(request)</span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">await</span> response_queue.get()</span></code></pre></div>
 <p>Now we can demonstrate split-brain prevention:</p>
 <div class="sourceCode" id="cb19" data-file="distlock/ex_fencing.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> main():</span>
 <span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>    env <span class="op">=</span> Environment()</span>
@@ -259,14 +452,69 @@
 <h2 data-number="R.6" id="distlock-replicate"><span class="header-section-number">R.6</span> Replicated Lock Servers</h2>
 <p>A single lock server is a single point of failure. Real distributed lock managers replicate state across multiple servers. When implementing full consensus using Raft or Paxos, a client must get agreement from a majority of servers before considering the lock acquired.</p>
 <p>Here’s a simplified version with replicated lock servers. The replicated manager holds references to all lock server replicas and a configurable majority threshold:</p>
-<div class="sourceCode" id="cb21" data-file="distlock/replicated_lock_manager.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb21" data-file="distlock/replicated_lock_manager.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> ReplicatedLockManager:</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Manages multiple lock servers with majority voting."""</span></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>, env: Environment, num_servers: <span class="bu">int</span> <span class="op">=</span> <span class="dv">3</span>, lease_duration: <span class="bu">float</span> <span class="op">=</span> <span class="fl">5.0</span></span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>    ):</span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.env <span class="op">=</span> env</span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.servers <span class="op">=</span> []</span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(num_servers):</span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>            server <span class="op">=</span> LockServer(env, <span class="ss">f"Server</span><span class="sc">{</span>i <span class="op">+</span> <span class="dv">1</span><span class="sc">}</span><span class="ss">"</span>, lease_duration)</span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.servers.append(server)</span>
+<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.majority <span class="op">=</span> (num_servers <span class="op">//</span> <span class="dv">2</span>) <span class="op">+</span> <span class="dv">1</span></span></code></pre></div>
 <p>Why majority? If we have N replicas and require agreement from M &gt; N/2 of them, then any two successful acquires must share at least one replica in common. That shared replica can only grant one lock at a time, so two clients can never both achieve a majority simultaneously. With N=3, majority is 2: if client A gets yes from replicas 1 and 2, client B can get yes from at most replica 3 (one), which is not a majority. With N=5, majority is 3: any two sets of 3 from 5 must overlap in at least 1 replica.</p>
 <p>Majority also determines fault tolerance: with N=3 you can tolerate 1 failed replica; with N=5 you can tolerate 2. In general, a majority quorum tolerates floor(N/2) failures, which is why lock clusters almost always have an odd number of nodes.</p>
 <p>There is a subtlety around fencing tokens and restarts. If the lock server crashes and restarts, it must restore its token counter from durable storage— not restart at zero. A restarted server that forgets its previous token value could issue token 1 again after it has already been used, allowing a stale client with the old token 1 to pass the resource’s fencing check. Real systems write the token to disk before issuing it to the client.</p>
 <p>To acquire a lock, the manager sends requests to all replicas and waits until a majority grant it:</p>
-<div class="sourceCode" id="cb22" data-file="distlock/replicated_lock_manager.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb22" data-file="distlock/replicated_lock_manager.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>    <span class="cf">async</span> <span class="kw">def</span> acquire_lock(<span class="va">self</span>, client_id: <span class="bu">str</span>, resource: <span class="bu">str</span>) <span class="op">-&gt;</span> <span class="bu">int</span> <span class="op">|</span> <span class="va">None</span>:</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Try to acquire lock from majority of servers."""</span></span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>        responses <span class="op">=</span> []</span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>        response_queues <span class="op">=</span> []</span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Send request to all servers</span></span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> server <span class="kw">in</span> <span class="va">self</span>.servers:</span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>            response_queue <span class="op">=</span> Queue(<span class="va">self</span>.env)</span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>            response_queues.append(response_queue)</span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a>            request <span class="op">=</span> LockRequest(</span>
+<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a>                client_id<span class="op">=</span>client_id,</span>
+<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a>                resource<span class="op">=</span>resource,</span>
+<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a>                operation<span class="op">=</span><span class="st">"acquire"</span>,</span>
+<span id="cb22-13"><a href="#cb22-13" aria-hidden="true" tabindex="-1"></a>                response_queue<span class="op">=</span>response_queue,</span>
+<span id="cb22-14"><a href="#cb22-14" aria-hidden="true" tabindex="-1"></a>            )</span>
+<span id="cb22-15"><a href="#cb22-15" aria-hidden="true" tabindex="-1"></a>            <span class="cf">await</span> server.request_queue.put(request)</span>
+<span id="cb22-16"><a href="#cb22-16" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Collect responses</span></span>
+<span id="cb22-17"><a href="#cb22-17" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> queue <span class="kw">in</span> response_queues:</span>
+<span id="cb22-18"><a href="#cb22-18" aria-hidden="true" tabindex="-1"></a>            response <span class="op">=</span> <span class="cf">await</span> queue.get()</span>
+<span id="cb22-19"><a href="#cb22-19" aria-hidden="true" tabindex="-1"></a>            responses.append(response)</span>
+<span id="cb22-20"><a href="#cb22-20" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Check if we got majority approval</span></span>
+<span id="cb22-21"><a href="#cb22-21" aria-hidden="true" tabindex="-1"></a>        successful <span class="op">=</span> [r <span class="cf">for</span> r <span class="kw">in</span> responses <span class="cf">if</span> r.success]</span>
+<span id="cb22-22"><a href="#cb22-22" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="bu">len</span>(successful) <span class="op">&gt;=</span> <span class="va">self</span>.majority:</span>
+<span id="cb22-23"><a href="#cb22-23" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Use the highest token from successful responses</span></span>
+<span id="cb22-24"><a href="#cb22-24" aria-hidden="true" tabindex="-1"></a>            token <span class="op">=</span> <span class="bu">max</span>(r.token <span class="cf">for</span> r <span class="kw">in</span> successful)</span>
+<span id="cb22-25"><a href="#cb22-25" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(</span>
+<span id="cb22-26"><a href="#cb22-26" aria-hidden="true" tabindex="-1"></a>                <span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>env<span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] Lock acquired by </span><span class="sc">{</span>client_id<span class="sc">}</span><span class="ss"> "</span></span>
+<span id="cb22-27"><a href="#cb22-27" aria-hidden="true" tabindex="-1"></a>                <span class="ss">f"(</span><span class="sc">{</span><span class="bu">len</span>(successful)<span class="sc">}</span><span class="ss">/</span><span class="sc">{</span><span class="bu">len</span>(<span class="va">self</span>.servers)<span class="sc">}</span><span class="ss"> servers, token </span><span class="sc">{</span>token<span class="sc">}</span><span class="ss">)"</span></span>
+<span id="cb22-28"><a href="#cb22-28" aria-hidden="true" tabindex="-1"></a>            )</span>
+<span id="cb22-29"><a href="#cb22-29" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> token</span>
+<span id="cb22-30"><a href="#cb22-30" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb22-31"><a href="#cb22-31" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(</span>
+<span id="cb22-32"><a href="#cb22-32" aria-hidden="true" tabindex="-1"></a>                <span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>env<span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] Lock acquisition failed for </span><span class="sc">{</span>client_id<span class="sc">}</span><span class="ss"> "</span></span>
+<span id="cb22-33"><a href="#cb22-33" aria-hidden="true" tabindex="-1"></a>                <span class="ss">f"(</span><span class="sc">{</span><span class="bu">len</span>(successful)<span class="sc">}</span><span class="ss">/</span><span class="sc">{</span><span class="bu">len</span>(<span class="va">self</span>.servers)<span class="sc">}</span><span class="ss"> servers)"</span></span>
+<span id="cb22-34"><a href="#cb22-34" aria-hidden="true" tabindex="-1"></a>            )</span>
+<span id="cb22-35"><a href="#cb22-35" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="va">None</span></span></code></pre></div>
 <p>Releasing a lock sends release requests to all replicas that acknowledged the acquire:</p>
-<div class="sourceCode" id="cb23" data-file="distlock/replicated_lock_manager.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb23" data-file="distlock/replicated_lock_manager.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>    <span class="cf">async</span> <span class="kw">def</span> release_lock(<span class="va">self</span>, client_id: <span class="bu">str</span>, resource: <span class="bu">str</span>):</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Release lock from all servers."""</span></span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> server <span class="kw">in</span> <span class="va">self</span>.servers:</span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>            response_queue <span class="op">=</span> Queue(<span class="va">self</span>.env)</span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>            request <span class="op">=</span> LockRequest(</span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>                client_id<span class="op">=</span>client_id,</span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a>                resource<span class="op">=</span>resource,</span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a>                operation<span class="op">=</span><span class="st">"release"</span>,</span>
+<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a>                response_queue<span class="op">=</span>response_queue,</span>
+<span id="cb23-10"><a href="#cb23-10" aria-hidden="true" tabindex="-1"></a>            )</span>
+<span id="cb23-11"><a href="#cb23-11" aria-hidden="true" tabindex="-1"></a>            <span class="cf">await</span> server.request_queue.put(request)</span>
+<span id="cb23-12"><a href="#cb23-12" aria-hidden="true" tabindex="-1"></a>            <span class="cf">await</span> response_queue.get()</span></code></pre></div>
 <p>This client uses the replicated manager:</p>
 <div class="sourceCode" id="cb24" data-file="distlock/replicated_lock_client.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> ReplicatedLockClient(Process):</span>
 <span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Client using replicated lock manager."""</span></span>

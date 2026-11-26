@@ -151,7 +151,11 @@ Figure&nbsp;3.2: Grouping by hash code reduces comparisons from 15 to 4.
 <div class="sourceCode" id="cb6" data-file="dup/naive_hash.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> naive_hash(data):</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="bu">sum</span>(data) <span class="op">%</span> <span class="dv">13</span></span></code></pre></div>
 <p>Here’s a quick test that calculates the hash code for successively longer substrings of the word <code>"hashing"</code>:</p>
-<div class="sourceCode" id="cb7" data-file="dup/naive_hash.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb7" data-file="dup/naive_hash.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>    example <span class="op">=</span> <span class="bu">bytes</span>(<span class="st">"hashing"</span>, <span class="st">"utf-8"</span>)</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">1</span>, <span class="bu">len</span>(example) <span class="op">+</span> <span class="dv">1</span>):</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>        substring <span class="op">=</span> example[:i]</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>        <span class="bu">hash</span> <span class="op">=</span> naive_hash(substring)</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="bu">hash</span><span class="sc">:2}</span><span class="ss"> </span><span class="sc">{</span>substring<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div>
 <pre data-file="dup/naive_hash.out"><code> 0 b'h'
  6 b'ha'
  4 b'has'
@@ -193,7 +197,11 @@ Figure&nbsp;3.4: Distribution of hash codes per unique line in <em>Dracula</em>.
 <span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>        groups[hash_code].add(fn)</span>
 <span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> groups</span></code></pre></div>
 <p>We can now re-use most of the code we wrote earlier to find duplicates within each group:</p>
-<div class="sourceCode" id="cb10" data-file="dup/grouped.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb10" data-file="dup/grouped.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>    groups <span class="op">=</span> find_groups(sys.argv[<span class="dv">1</span>:])</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> filenames <span class="kw">in</span> groups.values():</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>        duplicates <span class="op">=</span> find_duplicates(<span class="bu">list</span>(filenames))</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> (left, right) <span class="kw">in</span> duplicates:</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(left, right)</span></code></pre></div>
 <pre data-file="dup/grouped.out"><code>tests/a2.txt tests/a1.txt
 tests/a3.txt tests/a1.txt
 tests/a3.txt tests/a2.txt
@@ -202,7 +210,11 @@ tests/b1.txt tests/b2.txt</code></pre>
 <p>Let’s go back to the formula <span class="math inline">\(O(N^2/g)\)</span> that tells us how much work we have to do if we have divided <span class="math inline">\(N\)</span> files between <span class="math inline">\(g\)</span> groups. If we have exactly as many groups as files—i.e., if <span class="math inline">\(g\)</span> is equal to <span class="math inline">\(N\)</span>—then the work to process <span class="math inline">\(N\)</span> files would be <span class="math inline">\(O(N^2/N) = O(N)\)</span>, which means that the work will be proportional to the number of files. We have to read each file at least once anyway, so we can’t possibly do better than this, but how can we ensure that each unique file winds up in its own group?</p>
 <p>The answer is to use a <a href="../glossary/index.html#cryptographic_hash_function">cryptographic hash function</a>. The output of such a function is completely deterministic: given the same bytes in the same order, it will always produce the same output. However, the output is distributed like a uniform random variable: each possible output is equally likely, which ensures that files will be evenly distributed between groups.</p>
 <p>Cryptographic hash functions are hard to write, and it’s very hard to prove that a particular algorithm has the properties we require. We will therefore use a function from Python’s <a href="https://docs.python.org/3/library/hashlib.html">hashing module</a> that implements the <a href="../glossary/index.html#sha256">SHA-256</a> hashing algorithm. Given some bytes as input, this function produces a 256-bit hash, which is normally written as a 64-character <a href="../glossary/index.html#hexadecimal">hexadecimal</a> string. This uses the letters A-F (or a-f) to represent the digits from 10 to 15, so that (for example) <code>3D5</code> is <span class="math inline">\((3×16^2)+(13×16^1)+(5×16^0)\)</span>, or 981 in decimal:</p>
-<div class="sourceCode" id="cb12" data-file="dup/using_sha256.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb12" data-file="dup/using_sha256.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>    example <span class="op">=</span> <span class="bu">bytes</span>(<span class="st">"hash"</span>, <span class="st">"utf-8"</span>)</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">1</span>, <span class="bu">len</span>(example) <span class="op">+</span> <span class="dv">1</span>):</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>        substring <span class="op">=</span> example[:i]</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>        <span class="bu">hash</span> <span class="op">=</span> sha256(substring).hexdigest()</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>substring<span class="sc">}</span><span class="ch">\n</span><span class="sc">{</span><span class="bu">hash</span><span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div>
 <pre data-file="dup/using_sha256.out"><code>b'h'
 aaa9402664f1a41f40ebbc52c9993eb66aeb366602958fdfaa283b71e64db123
 b'ha'

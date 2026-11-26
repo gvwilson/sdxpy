@@ -112,11 +112,34 @@
 <li><p>the number of inodes (which we will meet shortly).</p></li>
 </ul>
 <p>The <code>format</code> method writes a fresh superblock and initializes everything else:</p>
-<div class="sourceCode" id="cb3" data-file="fs/filesystem.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb3" data-file="fs/filesystem.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="bu">format</span>(<span class="va">self</span>):</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Initialize the disk to hold an empty filesystem."""</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.bitmap[:] <span class="op">=</span> <span class="st">b"</span><span class="ch">\x00</span><span class="st">"</span> <span class="op">*</span> NUM_BLOCKS</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> block <span class="kw">in</span> <span class="bu">range</span>(SUPERBLOCK_BLOCK, DATA_START):</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.bitmap[block] <span class="op">=</span> <span class="dv">1</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>        packed <span class="op">=</span> SUPERBLOCK.pack(MAGIC, BLOCK_SIZE, NUM_BLOCKS, NUM_INODES)</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.disk.write_block(SUPERBLOCK_BLOCK, packed)</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>        empty <span class="op">=</span> INODE.pack(<span class="dv">0</span>, KIND_FREE, <span class="op">*</span>([<span class="dv">0</span>] <span class="op">*</span> MAX_FILE_BLOCKS))</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(NUM_INODES):</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.disk.write_block(INODE_TABLE_START <span class="op">+</span> i, empty)</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._write_inode(ROOT_INODE, <span class="dv">0</span>, KIND_DIR, [<span class="dv">0</span>] <span class="op">*</span> MAX_FILE_BLOCKS)</span></code></pre></div>
 <p>Formatting first clears the bitmap (which we discuss next) and marks the blocks that hold the superblock and the inode table as being in use. It then writes the superblock into block 0, fills every inode with zeros to mark it as free, and creates the root directory in inode 0.</p>
 <h2 data-number="Y.3" id="fs-free"><span class="header-section-number">Y.3</span> Free Blocks</h2>
 <p>A filesystem must remember which blocks are occupied and which are available. The simplest way to do this is a bitmap: an array with one entry per block that is <code>1</code> if the block is in use and <code>0</code> if it is free.</p>
-<div class="sourceCode" id="cb4" data-file="fs/filesystem.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb4" data-file="fs/filesystem.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _allocate_block(<span class="va">self</span>):</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> block <span class="kw">in</span> <span class="bu">range</span>(DATA_START, NUM_BLOCKS):</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="va">self</span>.bitmap[block] <span class="op">==</span> <span class="dv">0</span>:</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>                <span class="va">self</span>.bitmap[block] <span class="op">=</span> <span class="dv">1</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>                <span class="cf">return</span> block</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">raise</span> <span class="pp">OSError</span>(<span class="st">"disk is full"</span>)</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _free_block(<span class="va">self</span>, block):</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.bitmap[block] <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _allocate_inode(<span class="va">self</span>, kind):</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(NUM_INODES):</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="va">self</span>._read_inode(i)[<span class="st">"kind"</span>] <span class="op">==</span> KIND_FREE:</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>                <span class="va">self</span>._write_inode(i, <span class="dv">0</span>, kind, [<span class="dv">0</span>] <span class="op">*</span> MAX_FILE_BLOCKS)</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>                <span class="cf">return</span> i</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>        <span class="cf">raise</span> <span class="pp">OSError</span>(<span class="st">"no free inodes"</span>)</span></code></pre></div>
 <p><code>_allocate_block</code> scans the bitmap for the first free block. <code>_free_block</code> simply marks a block as free again. <code>_allocate_inode</code> does the same job for inodes: it finds an inode whose kind is <code>KIND_FREE</code> and initializes it.</p>
 <div>
 <blockquote>
@@ -126,23 +149,136 @@
 </div>
 <h2 data-number="Y.4" id="fs-inode"><span class="header-section-number">Y.4</span> Inodes and Files</h2>
 <p>A file is more than its contents. It also has a size, a kind (file or directory), and—crucially—a list of the blocks that hold its data. We store this metadata in a structure called an inode:</p>
-<div class="sourceCode" id="cb5" data-file="fs/filesystem.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb5" data-file="fs/filesystem.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _read_inode(<span class="va">self</span>, inode_number):</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._check_inode(inode_number)</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>        raw <span class="op">=</span> <span class="va">self</span>.disk.read_block(INODE_TABLE_START <span class="op">+</span> inode_number)</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>        size, kind, <span class="op">*</span>blocks <span class="op">=</span> INODE.unpack(raw)</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> {<span class="st">"size"</span>: size, <span class="st">"kind"</span>: kind, <span class="st">"blocks"</span>: blocks}</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _write_inode(<span class="va">self</span>, inode_number, size, kind, blocks):</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._check_inode(inode_number)</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>        raw <span class="op">=</span> INODE.pack(size, kind, <span class="op">*</span>blocks)</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.disk.write_block(INODE_TABLE_START <span class="op">+</span> inode_number, raw)</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _check_inode(<span class="va">self</span>, inode_number):</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="kw">not</span> (<span class="dv">0</span> <span class="op">&lt;=</span> inode_number <span class="op">&lt;</span> NUM_INODES):</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>            <span class="cf">raise</span> <span class="pp">ValueError</span>(<span class="ss">f"inode number </span><span class="sc">{</span>inode_number<span class="sc">}</span><span class="ss"> out of range"</span>)</span></code></pre></div>
 <p>Each inode is exactly <code>INODE_SIZE</code> bytes long, and because <code>INODE_SIZE</code> equals <code>BLOCK_SIZE</code>, one inode fits in one block. Inode<span class="math inline">\(i\)</span> therefore lives in block <code>INODE_TABLE_START + i</code>. The inode stores the file’s size, its kind, and up to <code>MAX_FILE_BLOCKS</code> block numbers.</p>
 <p>Reading and writing a file’s contents means following those block numbers:</p>
-<div class="sourceCode" id="cb6" data-file="fs/filesystem.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb6" data-file="fs/filesystem.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _read_data(<span class="va">self</span>, inode_number):</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>        inode <span class="op">=</span> <span class="va">self</span>._read_inode(inode_number)</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>        chunks <span class="op">=</span> []</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> block <span class="kw">in</span> inode[<span class="st">"blocks"</span>]:</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> block <span class="op">==</span> <span class="dv">0</span>:</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>                <span class="cf">break</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>            chunks.append(<span class="va">self</span>.disk.read_block(block))</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="st">b""</span>.join(chunks)[: inode[<span class="st">"size"</span>]]</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _write_data(<span class="va">self</span>, inode_number, data):</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>        inode <span class="op">=</span> <span class="va">self</span>._read_inode(inode_number)</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> block <span class="kw">in</span> inode[<span class="st">"blocks"</span>]:</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> block <span class="op">!=</span> <span class="dv">0</span>:</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>                <span class="va">self</span>._free_block(block)</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>        blocks <span class="op">=</span> []</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> offset <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">0</span>, <span class="bu">len</span>(data), BLOCK_SIZE):</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>            block <span class="op">=</span> <span class="va">self</span>._allocate_block()</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.disk.write_block(block, data[offset : offset <span class="op">+</span> BLOCK_SIZE])</span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>            blocks.append(block)</span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>        blocks <span class="op">+=</span> [<span class="dv">0</span>] <span class="op">*</span> (MAX_FILE_BLOCKS <span class="op">-</span> <span class="bu">len</span>(blocks))</span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._write_inode(inode_number, <span class="bu">len</span>(data), inode[<span class="st">"kind"</span>], blocks)</span></code></pre></div>
 <p><code>_read_data</code> reads each block listed in the inode, joins them together, and trims the result to the file’s recorded size. <code>_write_data</code> does the reverse: it frees the file’s old blocks, allocates fresh ones, and copies the data into them one block at a time.</p>
 <p>This indirection—storing <em>pointers to</em> data rather than the data itself—is the heart of how filesystems work. The inode is small and fixed in size, but the file it describes can be larger and scattered across the disk.</p>
 <h2 data-number="Y.5" id="fs-dir"><span class="header-section-number">Y.5</span> Directories</h2>
 <p>If a file is “a list of blocks”, then a directory is “a file whose contents are a list of names”. Each directory entry maps a name to an inode number:</p>
-<div class="sourceCode" id="cb7" data-file="fs/filesystem.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb7" data-file="fs/filesystem.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _pack_dir_entry(<span class="va">self</span>, name, inode_number):</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>        name_bytes <span class="op">=</span> name.encode(<span class="st">"utf-8"</span>)</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="bu">len</span>(name_bytes) <span class="op">&gt;</span> NAME_LEN:</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>            <span class="cf">raise</span> <span class="pp">ValueError</span>(<span class="ss">f"name too long: </span><span class="sc">{</span>name<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> DIR_ENTRY.pack(name_bytes, inode_number)</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _unpack_dir_entry(<span class="va">self</span>, raw):</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>        name_bytes, inode_number <span class="op">=</span> DIR_ENTRY.unpack(raw)</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>        name <span class="op">=</span> name_bytes.split(<span class="st">b"</span><span class="ch">\x00</span><span class="st">"</span>)[<span class="dv">0</span>].decode(<span class="st">"utf-8"</span>)</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> name, inode_number</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _list_dir(<span class="va">self</span>, inode_number):</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>        data <span class="op">=</span> <span class="va">self</span>._read_data(inode_number)</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>        entries <span class="op">=</span> []</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> offset <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">0</span>, <span class="bu">len</span>(data), DIR_ENTRY.size):</span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>            name, child <span class="op">=</span> <span class="va">self</span>._unpack_dir_entry(</span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>                data[offset : offset <span class="op">+</span> DIR_ENTRY.size]</span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>            )</span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>            entries.append((name, child))</span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> entries</span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _dir_add(<span class="va">self</span>, dir_inode, name, child_inode):</span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>        data <span class="op">=</span> <span class="va">self</span>._read_data(dir_inode)</span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>        raw <span class="op">=</span> <span class="va">self</span>._pack_dir_entry(name, child_inode)</span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._write_data(dir_inode, data <span class="op">+</span> raw)</span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _dir_remove(<span class="va">self</span>, dir_inode, name):</span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a>        kept <span class="op">=</span> [</span>
+<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>._pack_dir_entry(n, child)</span>
+<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a>            <span class="cf">for</span> (n, child) <span class="kw">in</span> <span class="va">self</span>._list_dir(dir_inode)</span>
+<span id="cb7-27"><a href="#cb7-27" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> n <span class="op">!=</span> name</span>
+<span id="cb7-28"><a href="#cb7-28" aria-hidden="true" tabindex="-1"></a>        ]</span>
+<span id="cb7-29"><a href="#cb7-29" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._write_data(dir_inode, <span class="st">b""</span>.join(kept))</span></code></pre></div>
 <p>A directory entry is 16 bytes: 12 for the name (padded with zero bytes if it is shorter) and 4 for the inode number. <code>_list_dir</code> reads the directory’s data and unpacks it into a list of <code>(name, inode)</code> pairs. <code>_dir_add</code> and <code>_dir_remove</code> add and remove entries by rewriting the directory’s contents.</p>
 <p>Notice that we never check that a directory entry is “really” a directory: to the filesystem, a directory is just a file with a particular structure. This is a small example of a larger design idea that we first met in <a href="../persist/index.html" class="quarto-xref"><span>Chapter 16</span></a>: a program is just another kind of data.</p>
 <h2 data-number="Y.6" id="fs-path"><span class="header-section-number">Y.6</span> Paths and Operations</h2>
 <p>The last piece of the puzzle is turning a path like <code>/docs/hello.txt</code> into the file it names. We do this by walking from the root directory down through each component of the path:</p>
-<div class="sourceCode" id="cb8" data-file="fs/filesystem.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb8" data-file="fs/filesystem.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _split(<span class="va">self</span>, path):</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="kw">not</span> path.startswith(<span class="st">"/"</span>):</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>            <span class="cf">raise</span> <span class="pp">ValueError</span>(<span class="st">"absolute path required"</span>)</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> path <span class="op">==</span> <span class="st">"/"</span>:</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>            <span class="cf">raise</span> <span class="pp">ValueError</span>(<span class="st">"the root directory cannot be split"</span>)</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>        parent, _, name <span class="op">=</span> path.rpartition(<span class="st">"/"</span>)</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> (parent <span class="cf">if</span> parent <span class="op">!=</span> <span class="st">""</span> <span class="cf">else</span> <span class="st">"/"</span>), name</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _lookup(<span class="va">self</span>, path):</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>        current <span class="op">=</span> ROOT_INODE</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> name <span class="kw">in</span> [p <span class="cf">for</span> p <span class="kw">in</span> path.split(<span class="st">"/"</span>) <span class="cf">if</span> p]:</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>            child <span class="op">=</span> <span class="va">None</span></span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>            <span class="cf">for</span> (entry_name, child_inode) <span class="kw">in</span> <span class="va">self</span>._list_dir(current):</span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> entry_name <span class="op">==</span> name:</span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>                    child <span class="op">=</span> child_inode</span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>                    <span class="cf">break</span></span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> child <span class="kw">is</span> <span class="va">None</span>:</span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>                <span class="cf">return</span> <span class="va">None</span></span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>            current <span class="op">=</span> child</span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> current</span></code></pre></div>
 <p><code>_lookup</code> starts at <code>ROOT_INODE</code> and, for each name in the path, looks it up in the current directory. If any component is missing, it returns <code>None</code>. <code>_split</code> separates a path into its parent directory and final name.</p>
 <p>The public methods are then straightforward compositions of the pieces we have already built:</p>
-<div class="sourceCode" id="cb9" data-file="fs/filesystem.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb9" data-file="fs/filesystem.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> create(<span class="va">self</span>, path):</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>        parent, name <span class="op">=</span> <span class="va">self</span>._split(path)</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>        parent_inode <span class="op">=</span> <span class="va">self</span>._lookup(parent)</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>        inode <span class="op">=</span> <span class="va">self</span>._allocate_inode(KIND_FILE)</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._dir_add(parent_inode, name, inode)</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> inode</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> mkdir(<span class="va">self</span>, path):</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>        parent, name <span class="op">=</span> <span class="va">self</span>._split(path)</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>        parent_inode <span class="op">=</span> <span class="va">self</span>._lookup(parent)</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>        inode <span class="op">=</span> <span class="va">self</span>._allocate_inode(KIND_DIR)</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._dir_add(parent_inode, name, inode)</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> read(<span class="va">self</span>, path):</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>        inode <span class="op">=</span> <span class="va">self</span>._lookup(path)</span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> inode <span class="kw">is</span> <span class="va">None</span>:</span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>            <span class="cf">raise</span> <span class="pp">FileNotFoundError</span>(path)</span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>._read_data(inode)</span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> write(<span class="va">self</span>, path, data):</span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>        inode <span class="op">=</span> <span class="va">self</span>._lookup(path)</span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> inode <span class="kw">is</span> <span class="va">None</span>:</span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a>            inode <span class="op">=</span> <span class="va">self</span>.create(path)</span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._write_data(inode, data)</span>
+<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> listdir(<span class="va">self</span>, path):</span>
+<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a>        inode <span class="op">=</span> <span class="va">self</span>._lookup(path)</span>
+<span id="cb9-24"><a href="#cb9-24" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> inode <span class="kw">is</span> <span class="va">None</span>:</span>
+<span id="cb9-25"><a href="#cb9-25" aria-hidden="true" tabindex="-1"></a>            <span class="cf">raise</span> <span class="pp">FileNotFoundError</span>(path)</span>
+<span id="cb9-26"><a href="#cb9-26" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> [name <span class="cf">for</span> (name, child) <span class="kw">in</span> <span class="va">self</span>._list_dir(inode)]</span>
+<span id="cb9-27"><a href="#cb9-27" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> remove(<span class="va">self</span>, path):</span>
+<span id="cb9-28"><a href="#cb9-28" aria-hidden="true" tabindex="-1"></a>        parent, name <span class="op">=</span> <span class="va">self</span>._split(path)</span>
+<span id="cb9-29"><a href="#cb9-29" aria-hidden="true" tabindex="-1"></a>        parent_inode <span class="op">=</span> <span class="va">self</span>._lookup(parent)</span>
+<span id="cb9-30"><a href="#cb9-30" aria-hidden="true" tabindex="-1"></a>        inode <span class="op">=</span> <span class="va">self</span>._lookup(path)</span>
+<span id="cb9-31"><a href="#cb9-31" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> inode <span class="kw">is</span> <span class="va">None</span>:</span>
+<span id="cb9-32"><a href="#cb9-32" aria-hidden="true" tabindex="-1"></a>            <span class="cf">raise</span> <span class="pp">FileNotFoundError</span>(path)</span>
+<span id="cb9-33"><a href="#cb9-33" aria-hidden="true" tabindex="-1"></a>        info <span class="op">=</span> <span class="va">self</span>._read_inode(inode)</span>
+<span id="cb9-34"><a href="#cb9-34" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> block <span class="kw">in</span> info[<span class="st">"blocks"</span>]:</span>
+<span id="cb9-35"><a href="#cb9-35" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> block <span class="op">!=</span> <span class="dv">0</span>:</span>
+<span id="cb9-36"><a href="#cb9-36" aria-hidden="true" tabindex="-1"></a>                <span class="va">self</span>._free_block(block)</span>
+<span id="cb9-37"><a href="#cb9-37" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._write_inode(inode, <span class="dv">0</span>, KIND_FREE, [<span class="dv">0</span>] <span class="op">*</span> MAX_FILE_BLOCKS)</span>
+<span id="cb9-38"><a href="#cb9-38" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._dir_remove(parent_inode, name)</span></code></pre></div>
 <p><code>create</code> and <code>mkdir</code> allocate an inode and add an entry to the parent directory. <code>write</code> creates the file if it doesn’t exist and then stores the data. <code>read</code>, <code>listdir</code>, and <code>remove</code> look up an inode and act on it. None of these methods is more than a few lines long because each one is standing on the shoulders of the ones below it.</p>
 <h2 data-number="Y.7" id="fs-test"><span class="header-section-number">Y.7</span> Testing</h2>
 <p>As in earlier chapters, we test our code with small examples rather than a real disk:</p>

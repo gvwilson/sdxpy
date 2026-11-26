@@ -267,11 +267,30 @@ Figure&nbsp;G.1: Adding methods to classes after their definition.
 <span id="cb22-21"><a href="#cb22-21" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> orange(<span class="va">self</span>):</span>
 <span id="cb22-22"><a href="#cb22-22" aria-hidden="true" tabindex="-1"></a>        <span class="cf">pass</span></span></code></pre></div>
 <p>As in <a href="../lint/index.html" class="quarto-xref"><span>Chapter 13</span></a>, our class’s constructor creates a stack to keep track of where we are. It also creates a couple of dictionaries to keep track of how classes inherit from each other and the methods each class defines:</p>
-<div class="sourceCode" id="cb23" data-file="bonus/inheritance.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb23" data-file="bonus/inheritance.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> FindClassesAndMethods(ast.NodeVisitor):</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>):</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>        <span class="bu">super</span>().<span class="fu">__init__</span>()</span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.stack <span class="op">=</span> []</span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.parents <span class="op">=</span> {}</span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.methods <span class="op">=</span> {}</span></code></pre></div>
 <p>When we encounter a new class definition, we push its name on the stack, record its parents, and create an empty set to hold its methods:</p>
-<div class="sourceCode" id="cb24" data-file="bonus/inheritance.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb24" data-file="bonus/inheritance.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> visit_ClassDef(<span class="va">self</span>, node):</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>        class_name <span class="op">=</span> node.name</span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">assert</span> class_name <span class="kw">not</span> <span class="kw">in</span> <span class="va">self</span>.methods</span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.stack.append(class_name)</span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.methods[class_name] <span class="op">=</span> <span class="bu">set</span>()</span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.parents[class_name] <span class="op">=</span> {p.<span class="bu">id</span> <span class="cf">for</span> p <span class="kw">in</span> node.bases}</span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.generic_visit(node)</span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.stack.pop()</span></code></pre></div>
 <p>When we encounter a function definition, the first thing we do is check the stack. If it’s empty, we’re looking at a top-level function rather than a method, so there’s nothing for us to do. (We actually should recurse through the function’s children, since it’s possible to define classes inside functions, but we’ll leave as an exercise.) If this function definition is inside a class, on the other hand, we add its name to our records:</p>
-<div class="sourceCode" id="cb25" data-file="bonus/inheritance.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb25" data-file="bonus/inheritance.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> visit_FunctionDef(<span class="va">self</span>, node):</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="kw">not</span> <span class="va">self</span>.stack:</span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span></span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>        class_name <span class="op">=</span> <span class="va">self</span>.stack[<span class="op">-</span><span class="dv">1</span>]</span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>        <span class="cf">assert</span> class_name <span class="kw">in</span> <span class="va">self</span>.methods</span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>        method_name <span class="op">=</span> node.name</span>
+<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a>        <span class="cf">assert</span> method_name <span class="kw">not</span> <span class="kw">in</span> <span class="va">self</span>.methods[class_name]</span>
+<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.methods[class_name].add(method_name)</span></code></pre></div>
 <p>Once we’re done searching the AST, we print out a table of the classes and methods we’ve seen (<a href="#tbl-linter-inheritance" class="quarto-xref">Table&nbsp;<span>G.1</span></a>). We could make this display easier to read—for example, we could sort the classes from parent to child and display methods in the order they were first defined—but none of that requires us to inspect the AST.</p>
 <div id="tbl-linter-inheritance" class="quarto-float quarto-figure quarto-figure-center">
 <figure class="quarto-float quarto-float-tbl">
@@ -347,11 +366,31 @@ parameters: ['first', 'second']</code></pre>
 <p><em>This material extends <a href="../persist/index.html" class="quarto-xref"><span>Chapter 16</span></a>.</em></p>
 </div>
 <p>The persistence framework of <a href="../persist/index.html" class="quarto-xref"><span>Chapter 16</span></a> only handles built-in data types, but can easily be extended to handle user-defined classes as well. To start, we refactor the code so that the <code>save</code> method doesn’t get any larger:</p>
-<div class="sourceCode" id="cb28" data-file="bonus/extend.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb28" data-file="bonus/extend.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> SaveExtend(SaveAlias):</span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, writer):</span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>        <span class="bu">super</span>().<span class="fu">__init__</span>(writer)</span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> save(<span class="va">self</span>, thing):</span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="va">self</span>._aliased(thing):</span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span></span>
+<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="va">self</span>._builtin(thing):</span>
+<span id="cb28-8"><a href="#cb28-8" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span></span>
+<span id="cb28-9"><a href="#cb28-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">assert</span> <span class="va">False</span>, <span class="ss">f"Don't know how to handle </span><span class="sc">{</span>thing<span class="sc">}</span><span class="ss">"</span></span></code></pre></div>
 <p>The method to handle built-in types is:</p>
-<div class="sourceCode" id="cb29" data-file="bonus/extend.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb29" data-file="bonus/extend.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _builtin(<span class="va">self</span>, thing):</span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>        typename <span class="op">=</span> <span class="bu">type</span>(thing).<span class="va">__name__</span></span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>        method <span class="op">=</span> <span class="ss">f"_</span><span class="sc">{</span>typename<span class="sc">}</span><span class="ss">"</span></span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="kw">not</span> <span class="bu">hasattr</span>(<span class="va">self</span>, method):</span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="va">False</span></span>
+<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.seen.add(<span class="bu">id</span>(thing))</span>
+<span id="cb29-7"><a href="#cb29-7" aria-hidden="true" tabindex="-1"></a>        <span class="bu">getattr</span>(<span class="va">self</span>, method)(thing)</span>
+<span id="cb29-8"><a href="#cb29-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">True</span></span></code></pre></div>
 <p>and the one that handles aliases is:</p>
-<div class="sourceCode" id="cb30" data-file="bonus/extend.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb30" data-file="bonus/extend.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _aliased(<span class="va">self</span>, thing):</span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>        thing_id <span class="op">=</span> <span class="bu">id</span>(thing)</span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> thing_id <span class="kw">not</span> <span class="kw">in</span> <span class="va">self</span>.seen:</span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="va">False</span></span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._write(<span class="st">"alias"</span>, thing_id, <span class="st">""</span>)</span>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">True</span></span></code></pre></div>
 <p>None of this code is new: we’ve just moved things into methods to make each piece easier to understand.</p>
 <p>So how does a class indicate that it can be saved and loaded by our framework? Our options are:</p>
 <ol type="1">
@@ -360,15 +399,45 @@ parameters: ['first', 'second']</code></pre>
 <li><p>Require users to register a <a href="../glossary/index.html#helper_class">helper class</a> that knows how to save and load objects of the class we’re interested in. This approach is also commonly used in strictly-typed languages as a way of adding persistence after the fact without disrupting the class hierarchy.</p></li>
 </ol>
 <p>To implement option #2, we specify that if a class has a method called <code>to_dict</code>, we will call that to get the object’s contents as a dictionary and then persist that dictionary. Before doing that, though, we will save a line indicating that this dictionary should be used to reconstruct an object of a particular class:</p>
-<div class="sourceCode" id="cb31" data-file="bonus/extend.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb31" data-file="bonus/extend.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _extension(<span class="va">self</span>, thing):</span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="kw">not</span> <span class="bu">hasattr</span>(thing, <span class="st">"to_dict"</span>):</span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="va">False</span></span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._write(<span class="st">"@extension"</span>, <span class="bu">id</span>(thing), thing.<span class="va">__class__</span>.<span class="va">__name__</span>)</span>
+<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.save(thing.to_dict())</span>
+<span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">True</span></span></code></pre></div>
 <p>Loading user-defined classes requires more work because we have to map class names back to actual classes. (We could also use introspection to find <em>all</em> the classes in the program and build a lookup table of the ones with the right method.) We start by modifying the loader’s constructor to take zero or more extension classes as arguments and then build a name-to-class lookup table from them:</p>
-<div class="sourceCode" id="cb32" data-file="bonus/extend.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb32" data-file="bonus/extend.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> LoadExtend(LoadAlias):</span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, reader, <span class="op">*</span>extensions):</span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>        <span class="bu">super</span>().<span class="fu">__init__</span>(reader)</span>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.seen <span class="op">=</span> {}</span>
+<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.extensions <span class="op">=</span> {e.<span class="va">__name__</span>: e <span class="cf">for</span> e <span class="kw">in</span> extensions}</span></code></pre></div>
 <p>The <code>load</code> method then looks for aliases, built-in types, and extensions in that order. Instead of using a chain of <code>if</code> statements we loop over the methods that handle these cases. If a method decides that it can handle the incoming data it returns a result; if it can’t, it raises a <code>KeyError</code> exception, and if none of the methods handle a case we fail:</p>
-<div class="sourceCode" id="cb33" data-file="bonus/extend.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb33" data-file="bonus/extend.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> load(<span class="va">self</span>):</span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>        key, ident, value <span class="op">=</span> <span class="va">self</span>._next()</span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> method <span class="kw">in</span> (<span class="va">self</span>._aliased, <span class="va">self</span>._builtin, <span class="va">self</span>._extension):</span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a>            <span class="cf">try</span>:</span>
+<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a>                <span class="cf">return</span> method(key, ident, value)</span>
+<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a>            <span class="cf">except</span> <span class="pp">KeyError</span>:</span>
+<span id="cb33-7"><a href="#cb33-7" aria-hidden="true" tabindex="-1"></a>                <span class="cf">pass</span></span>
+<span id="cb33-8"><a href="#cb33-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">assert</span> <span class="va">False</span>, <span class="ss">f"Don't know how to handle </span><span class="sc">{</span>key<span class="sc">}</span><span class="ss"> </span><span class="sc">{</span>ident<span class="sc">}</span><span class="ss"> </span><span class="sc">{</span>value<span class="sc">}</span><span class="ss">"</span></span></code></pre></div>
 <p>The code to handle built-ins and aliases is copied from our previous work and modified to raise <code>KeyError</code>:</p>
-<div class="sourceCode" id="cb34" data-file="bonus/extend.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb34" data-file="bonus/extend.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _aliased(<span class="va">self</span>, key, ident, value):</span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> key <span class="op">!=</span> <span class="st">"alias"</span>:</span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>            <span class="cf">raise</span> <span class="pp">KeyError</span>()</span>
+<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a>        <span class="cf">assert</span> ident <span class="kw">in</span> <span class="va">self</span>.seen</span>
+<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>.seen[ident]</span>
+<span id="cb34-6"><a href="#cb34-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _builtin(<span class="va">self</span>, key, ident, value):</span>
+<span id="cb34-7"><a href="#cb34-7" aria-hidden="true" tabindex="-1"></a>        method <span class="op">=</span> <span class="ss">f"_</span><span class="sc">{</span>key<span class="sc">}</span><span class="ss">"</span></span>
+<span id="cb34-8"><a href="#cb34-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="kw">not</span> <span class="bu">hasattr</span>(<span class="va">self</span>, method):</span>
+<span id="cb34-9"><a href="#cb34-9" aria-hidden="true" tabindex="-1"></a>            <span class="cf">raise</span> <span class="pp">KeyError</span>()</span>
+<span id="cb34-10"><a href="#cb34-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="bu">getattr</span>(<span class="va">self</span>, method)(ident, value)</span></code></pre></div>
 <p>The method that handles extensions checks that the value on the line just read indicates an extension, then reads the dictionary containing the object’s contents from the input stream and uses it to build an instance of the right class:</p>
-<div class="sourceCode" id="cb35" data-file="bonus/extend.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb35" data-file="bonus/extend.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _extension(<span class="va">self</span>, key, ident, value):</span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> (key <span class="op">!=</span> <span class="st">"@extension"</span>) <span class="kw">or</span> (value <span class="kw">not</span> <span class="kw">in</span> <span class="va">self</span>.extensions):</span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>            <span class="cf">raise</span> <span class="pp">KeyError</span>()</span>
+<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a>        cls <span class="op">=</span> <span class="va">self</span>.extensions[value]</span>
+<span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a>        contents <span class="op">=</span> <span class="va">self</span>.load()</span>
+<span id="cb35-6"><a href="#cb35-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> cls(<span class="op">**</span>contents)</span></code></pre></div>
 <p>Here’s a class that defines the required method:</p>
 <div class="sourceCode" id="cb36" data-file="bonus/user_classes.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Parent:</span>
 <span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, name):</span>

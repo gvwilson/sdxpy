@@ -158,45 +158,327 @@
 <p>The authorization code is short-lived (typically 10 minutes), while access tokens last longer (often 1 hour).</p>
 <h2 data-number="Q.3" id="oauth-authserver"><span class="header-section-number">Q.3</span> Authorization Server</h2>
 <p>The authorization server is the <a href="../glossary/index.html#trust-anchor">trust anchor</a> of OAuth: it verifies the user’s identity, obtains consent, and issues tokens. Its <code>init</code> method creates two incoming queues and three dictionaries for tracking registered clients, issued codes, and active tokens:</p>
-<div class="sourceCode" id="cb4" data-file="oauth/authorization_server.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb4" data-file="oauth/authorization_server.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> AuthorizationServer(Process):</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""OAuth 2.0 authorization server."""</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> init(<span class="va">self</span>):</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.auth_queue <span class="op">=</span> Queue(<span class="va">self</span>._env)</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.token_queue <span class="op">=</span> Queue(<span class="va">self</span>._env)</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Registered clients</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.clients: Dict[<span class="bu">str</span>, Dict] <span class="op">=</span> {}</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Issued authorization codes</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.auth_codes: Dict[<span class="bu">str</span>, AuthorizationCode] <span class="op">=</span> {}</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Issued access tokens</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.access_tokens: Dict[<span class="bu">str</span>, AccessToken] <span class="op">=</span> {}</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>        <span class="co"># User credentials (simplified - real systems use secure storage)</span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.users <span class="op">=</span> {</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>            <span class="st">"alice@example.com"</span>: <span class="st">"password123"</span>,</span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>            <span class="st">"bob@example.com"</span>: <span class="st">"secret456"</span>,</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>        }</span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] Authorization Server started"</span>)</span></code></pre></div>
 <p>Before any client can use the server, it must be registered with a client ID, a shared secret, and a list of allowed redirect URIs. The redirect URI check is an important security constraint: it prevents an attacker from registering a lookalike app and redirecting authorization codes to a server they control:</p>
-<div class="sourceCode" id="cb5" data-file="oauth/authorization_server.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb5" data-file="oauth/authorization_server.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> register_client(</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>, client_id: <span class="bu">str</span>, client_secret: <span class="bu">str</span>, redirect_uris: List[<span class="bu">str</span>]</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    ):</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Register a new OAuth client."""</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.clients[client_id] <span class="op">=</span> {</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>            <span class="st">"secret"</span>: client_secret,</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>            <span class="st">"redirect_uris"</span>: redirect_uris,</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>        }</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] Registered client: </span><span class="sc">{</span>client_id<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div>
 <p>The server’s event loop uses asimpy’s <code>FirstOf</code> to wait on both queues simultaneously. Whichever queue receives a message first wins; the other request is automatically cancelled:</p>
-<div class="sourceCode" id="cb6" data-file="oauth/authorization_server.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb6" data-file="oauth/authorization_server.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>    <span class="cf">async</span> <span class="kw">def</span> run(<span class="va">self</span>):</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Main server loop."""</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">while</span> <span class="va">True</span>:</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Handle both authorization and token requests</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>            name, request <span class="op">=</span> <span class="cf">await</span> FirstOf(</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>                <span class="va">self</span>._env, auth<span class="op">=</span><span class="va">self</span>.auth_queue.get(), token<span class="op">=</span><span class="va">self</span>.token_queue.get()</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>            )</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> name <span class="op">==</span> <span class="st">"auth"</span>:</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>                <span class="cf">await</span> <span class="va">self</span>.handle_authorization_request(request)</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>            <span class="cf">elif</span> name <span class="op">==</span> <span class="st">"token"</span>:</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>                <span class="cf">await</span> <span class="va">self</span>.handle_token_request(request)</span></code></pre></div>
 <p>When an authorization request arrives, <code>handle_authorization_request</code> delegates to two helpers and handles the user consent simulation in between:</p>
-<div class="sourceCode" id="cb7" data-file="oauth/authorization_server.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb7" data-file="oauth/authorization_server.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>    <span class="cf">async</span> <span class="kw">def</span> handle_authorization_request(<span class="va">self</span>, request: AuthorizationRequest):</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Handle authorization request from client."""</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] AuthServer: Received </span><span class="sc">{</span>request<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="kw">not</span> <span class="va">self</span>._validate_auth_request(request):</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Simulate user authentication and consent</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>        <span class="cf">await</span> <span class="va">self</span>.timeout(<span class="fl">0.5</span>)  <span class="co"># User login time</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] AuthServer: User authenticated, showing consent"</span>)</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">await</span> <span class="va">self</span>.timeout(<span class="fl">0.3</span>)  <span class="co"># User consent time</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] AuthServer: User granted permissions: </span><span class="sc">{</span>request<span class="sc">.</span>scope<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">await</span> <span class="va">self</span>._issue_authorization_code(request)</span></code></pre></div>
 <p><code>_validate_auth_request</code> checks that the client is registered and that the redirect URI is one the client pre-registered. Checking the redirect URI here is an important security constraint: without it, an attacker could register a lookalike application and redirect authorization codes to a server they control:</p>
-<div class="sourceCode" id="cb8" data-file="oauth/authorization_server.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb8" data-file="oauth/authorization_server.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _validate_auth_request(<span class="va">self</span>, request: AuthorizationRequest) <span class="op">-&gt;</span> <span class="bu">bool</span>:</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Check that the client is registered and the redirect URI is allowed."""</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> request.client_id <span class="kw">not</span> <span class="kw">in</span> <span class="va">self</span>.clients:</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] AuthServer: Unknown client </span><span class="sc">{</span>request<span class="sc">.</span>client_id<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="va">False</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>        client <span class="op">=</span> <span class="va">self</span>.clients[request.client_id]</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> request.redirect_uri <span class="kw">not</span> <span class="kw">in</span> client[<span class="st">"redirect_uris"</span>]:</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] AuthServer: Invalid redirect URI"</span>)</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="va">False</span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">True</span></span></code></pre></div>
 <p><code>_issue_authorization_code</code> generates the code, records it in <code>auth_codes</code> with its expiry and scope, and sends it back through the response queue embedded in the request:</p>
-<div class="sourceCode" id="cb9" data-file="oauth/authorization_server.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb9" data-file="oauth/authorization_server.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>    <span class="cf">async</span> <span class="kw">def</span> _issue_authorization_code(<span class="va">self</span>, request: AuthorizationRequest):</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Generate, store, and return a one-time authorization code."""</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>        code <span class="op">=</span> generate_token(<span class="st">"code"</span>)</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>        auth_code <span class="op">=</span> AuthorizationCode(</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>            code<span class="op">=</span>code,</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>            client_id<span class="op">=</span>request.client_id,</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>            redirect_uri<span class="op">=</span>request.redirect_uri,</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>            scope<span class="op">=</span>request.scope,</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>            expires_at<span class="op">=</span><span class="va">self</span>.now <span class="op">+</span> <span class="dv">600</span>,  <span class="co"># 10 minute expiry</span></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.auth_codes[code] <span class="op">=</span> auth_code</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>        response <span class="op">=</span> AuthorizationResponse(code<span class="op">=</span>code, state<span class="op">=</span>request.state)</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>        <span class="cf">await</span> request.response_queue.put(response)</span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] AuthServer: Issued authorization code"</span>)</span></code></pre></div>
 <p>When the client then presents that code to exchange it for a token, <code>handle_token_request</code> is similarly short because all the checking is delegated:</p>
-<div class="sourceCode" id="cb10" data-file="oauth/authorization_server.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb10" data-file="oauth/authorization_server.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>    <span class="cf">async</span> <span class="kw">def</span> handle_token_request(<span class="va">self</span>, request: TokenRequest):</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Exchange authorization code for access token."""</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] AuthServer: Received </span><span class="sc">{</span>request<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>        auth_code <span class="op">=</span> <span class="cf">await</span> <span class="va">self</span>._validate_token_request(request)</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> auth_code <span class="kw">is</span> <span class="va">None</span>:</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>        <span class="cf">await</span> <span class="va">self</span>._issue_access_token(request, auth_code)</span></code></pre></div>
 <p><code>_validate_token_request</code> works through a chain of checks: the client must exist, the secret must match, the code must exist and still be valid, and the client and redirect URI in the token request must exactly match those in the original authorization request. Any mismatch sends an error response and returns <code>None</code> so the caller can exit early. The method constructs the error response once at the top rather than repeating it at each branch:</p>
-<div class="sourceCode" id="cb11" data-file="oauth/authorization_server.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb11" data-file="oauth/authorization_server.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>    <span class="cf">async</span> <span class="kw">def</span> _validate_token_request(</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>, request: TokenRequest</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    ) <span class="op">-&gt;</span> AuthorizationCode <span class="op">|</span> <span class="va">None</span>:</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Validate client credentials and authorization code; return code or None."""</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>        error <span class="op">=</span> TokenResponse(access_token<span class="op">=</span><span class="st">""</span>, token_type<span class="op">=</span><span class="st">"error"</span>)</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> request.client_id <span class="kw">not</span> <span class="kw">in</span> <span class="va">self</span>.clients:</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] AuthServer: Unknown client"</span>)</span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>            <span class="cf">await</span> request.response_queue.put(error)</span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="va">None</span></span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>        client <span class="op">=</span> <span class="va">self</span>.clients[request.client_id]</span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> client[<span class="st">"secret"</span>] <span class="op">!=</span> request.client_secret:</span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] AuthServer: Invalid client secret"</span>)</span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>            <span class="cf">await</span> request.response_queue.put(error)</span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="va">None</span></span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> request.code <span class="kw">not</span> <span class="kw">in</span> <span class="va">self</span>.auth_codes:</span>
+<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] AuthServer: Invalid authorization code"</span>)</span>
+<span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a>            <span class="cf">await</span> request.response_queue.put(error)</span>
+<span id="cb11-18"><a href="#cb11-18" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="va">None</span></span>
+<span id="cb11-19"><a href="#cb11-19" aria-hidden="true" tabindex="-1"></a>        auth_code <span class="op">=</span> <span class="va">self</span>.auth_codes[request.code]</span>
+<span id="cb11-20"><a href="#cb11-20" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="kw">not</span> auth_code.is_valid(<span class="va">self</span>.now):</span>
+<span id="cb11-21"><a href="#cb11-21" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] AuthServer: Authorization code expired or used"</span>)</span>
+<span id="cb11-22"><a href="#cb11-22" aria-hidden="true" tabindex="-1"></a>            <span class="cf">await</span> request.response_queue.put(error)</span>
+<span id="cb11-23"><a href="#cb11-23" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="va">None</span></span>
+<span id="cb11-24"><a href="#cb11-24" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> auth_code.client_id <span class="op">!=</span> request.client_id:</span>
+<span id="cb11-25"><a href="#cb11-25" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] AuthServer: Code issued to different client"</span>)</span>
+<span id="cb11-26"><a href="#cb11-26" aria-hidden="true" tabindex="-1"></a>            <span class="cf">await</span> request.response_queue.put(error)</span>
+<span id="cb11-27"><a href="#cb11-27" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="va">None</span></span>
+<span id="cb11-28"><a href="#cb11-28" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> auth_code.redirect_uri <span class="op">!=</span> request.redirect_uri:</span>
+<span id="cb11-29"><a href="#cb11-29" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] AuthServer: Redirect URI mismatch"</span>)</span>
+<span id="cb11-30"><a href="#cb11-30" aria-hidden="true" tabindex="-1"></a>            <span class="cf">await</span> request.response_queue.put(error)</span>
+<span id="cb11-31"><a href="#cb11-31" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="va">None</span></span>
+<span id="cb11-32"><a href="#cb11-32" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> auth_code</span></code></pre></div>
 <p><code>_issue_access_token</code> marks the code as <code>used</code> before doing anything else. This is the line that makes authorization codes one-time-only: re-using a code is one of the classic attack vectors against OAuth, so the flag must be set before the token is issued, not after:</p>
-<div class="sourceCode" id="cb12" data-file="oauth/authorization_server.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb12" data-file="oauth/authorization_server.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>    <span class="cf">async</span> <span class="kw">def</span> _issue_access_token(</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>, request: TokenRequest, auth_code: AuthorizationCode</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    ):</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Mark the code used, generate an access token, store it, and send it."""</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>        auth_code.used <span class="op">=</span> <span class="va">True</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>        access_token <span class="op">=</span> generate_token(<span class="st">"access"</span>)</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>        token <span class="op">=</span> AccessToken(</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>            token<span class="op">=</span>access_token,</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>            client_id<span class="op">=</span>request.client_id,</span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>            scope<span class="op">=</span>auth_code.scope,</span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>            expires_at<span class="op">=</span><span class="va">self</span>.now <span class="op">+</span> <span class="dv">3600</span>,  <span class="co"># 1 hour expiry</span></span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.access_tokens[access_token] <span class="op">=</span> token</span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>        response <span class="op">=</span> TokenResponse(</span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>            access_token<span class="op">=</span>access_token,</span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>            token_type<span class="op">=</span><span class="st">"Bearer"</span>,</span>
+<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a>            expires_in<span class="op">=</span><span class="dv">3600</span>,</span>
+<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a>            scope<span class="op">=</span>auth_code.scope,</span>
+<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a>        <span class="cf">await</span> request.response_queue.put(response)</span>
+<span id="cb12-21"><a href="#cb12-21" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] AuthServer: Issued access token"</span>)</span></code></pre></div>
 <h2 data-number="Q.4" id="oauth-resserver"><span class="header-section-number">Q.4</span> Resource Server</h2>
 <p>The resource server hosts the protected API. Its <code>init</code> method takes a reference to the authorization server so it can look up tokens, and it stores a dictionary of protected resources where each entry specifies the required scope and the data to return:</p>
-<div class="sourceCode" id="cb13" data-file="oauth/resource_server.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb13" data-file="oauth/resource_server.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> ResourceServer(Process):</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""OAuth 2.0 resource server (protected API)."""</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> init(<span class="va">self</span>, auth_server: AuthorizationServer):</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.auth_server <span class="op">=</span> auth_server</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.resource_queue <span class="op">=</span> Queue(<span class="va">self</span>._env)</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Protected resources</span></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.resources <span class="op">=</span> {</span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>            <span class="st">"/api/profile"</span>: {</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>                <span class="st">"scope_required"</span>: [<span class="st">"profile"</span>],</span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>                <span class="st">"data"</span>: {<span class="st">"name"</span>: <span class="st">"Alice"</span>, <span class="st">"email"</span>: <span class="st">"alice@example.com"</span>},</span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>            },</span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>            <span class="st">"/api/photos"</span>: {</span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>                <span class="st">"scope_required"</span>: [<span class="st">"photos"</span>],</span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>                <span class="st">"data"</span>: {<span class="st">"photos"</span>: [<span class="st">"photo1.jpg"</span>, <span class="st">"photo2.jpg"</span>, <span class="st">"photo3.jpg"</span>]},</span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>            },</span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>            <span class="st">"/api/messages"</span>: {</span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a>                <span class="st">"scope_required"</span>: [<span class="st">"messages"</span>],</span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a>                <span class="st">"data"</span>: {<span class="st">"messages"</span>: [<span class="st">"Hello!"</span>, <span class="st">"How are you?"</span>]},</span>
+<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a>            },</span>
+<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a>        }</span>
+<span id="cb13-21"><a href="#cb13-21" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] Resource Server started"</span>)</span></code></pre></div>
 <p>Critically, the resource server doesn’t need to know anything about users, only about tokens and scopes. Its event loop is simpler than the authorization server’s because it has only one incoming queue:</p>
-<div class="sourceCode" id="cb14" data-file="oauth/resource_server.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb14" data-file="oauth/resource_server.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>    <span class="cf">async</span> <span class="kw">def</span> run(<span class="va">self</span>):</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Main server loop."""</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">while</span> <span class="va">True</span>:</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>            request <span class="op">=</span> <span class="cf">await</span> <span class="va">self</span>.resource_queue.get()</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>            <span class="cf">await</span> <span class="va">self</span>.handle_resource_request(request)</span></code></pre></div>
 <p>When a request arrives, <code>handle_resource_request</code> delegates to two helpers and sends the successful response only if both pass:</p>
-<div class="sourceCode" id="cb15" data-file="oauth/resource_server.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb15" data-file="oauth/resource_server.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>    <span class="cf">async</span> <span class="kw">def</span> handle_resource_request(<span class="va">self</span>, request: ResourceRequest):</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Handle API request with access token."""</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] ResourceServer: Received </span><span class="sc">{</span>request<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>        token <span class="op">=</span> <span class="cf">await</span> <span class="va">self</span>._validate_token(request)</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> token <span class="kw">is</span> <span class="va">None</span>:</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span></span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>        resource <span class="op">=</span> <span class="cf">await</span> <span class="va">self</span>._check_resource_access(request, token)</span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> resource <span class="kw">is</span> <span class="va">None</span>:</span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span></span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] ResourceServer: Returning </span><span class="sc">{</span>request<span class="sc">.</span>resource_path<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">await</span> request.response_queue.put(</span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>            ResourceResponse(success<span class="op">=</span><span class="va">True</span>, data<span class="op">=</span>resource[<span class="st">"data"</span>])</span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a>        )</span></code></pre></div>
 <p><code>_validate_token</code> looks the token up in the authorization server’s table and checks it hasn’t expired. Because the resource server shares a reference to the authorization server, it can read <code>access_tokens</code> directly without a network call—a simplification that real deployments replace with a token introspection endpoint or a shared cache:</p>
-<div class="sourceCode" id="cb16" data-file="oauth/resource_server.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb16" data-file="oauth/resource_server.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>    <span class="cf">async</span> <span class="kw">def</span> _validate_token(</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>, request: ResourceRequest</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>    ) <span class="op">-&gt;</span> AccessToken <span class="op">|</span> <span class="va">None</span>:</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Check that the token exists and has not expired; send error if not."""</span></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> request.access_token <span class="kw">not</span> <span class="kw">in</span> <span class="va">self</span>.auth_server.access_tokens:</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] ResourceServer: Invalid token"</span>)</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>            <span class="cf">await</span> request.response_queue.put(</span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>                ResourceResponse(success<span class="op">=</span><span class="va">False</span>, error<span class="op">=</span><span class="st">"invalid_token"</span>)</span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>            )</span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="va">None</span></span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>        token <span class="op">=</span> <span class="va">self</span>.auth_server.access_tokens[request.access_token]</span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="kw">not</span> token.is_valid(<span class="va">self</span>.now):</span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] ResourceServer: Token expired"</span>)</span>
+<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a>            <span class="cf">await</span> request.response_queue.put(</span>
+<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a>                ResourceResponse(success<span class="op">=</span><span class="va">False</span>, error<span class="op">=</span><span class="st">"token_expired"</span>)</span>
+<span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a>            )</span>
+<span id="cb16-17"><a href="#cb16-17" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="va">None</span></span>
+<span id="cb16-18"><a href="#cb16-18" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> token</span></code></pre></div>
 <p><code>_check_resource_access</code> confirms the path exists and then checks scope using set operations. The token must cover all scopes the resource requires, but may cover more, so a token issued with <code>["profile", "photos"]</code> scope passes a check for a resource that requires only <code>["profile"]</code>:</p>
-<div class="sourceCode" id="cb17" data-file="oauth/resource_server.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb17" data-file="oauth/resource_server.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>    <span class="cf">async</span> <span class="kw">def</span> _check_resource_access(</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>, request: ResourceRequest, token: AccessToken</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>    ) <span class="op">-&gt;</span> <span class="bu">dict</span> <span class="op">|</span> <span class="va">None</span>:</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Check that the resource exists and the token's scope covers it."""</span></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> request.resource_path <span class="kw">not</span> <span class="kw">in</span> <span class="va">self</span>.resources:</span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] ResourceServer: Resource not found"</span>)</span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>            <span class="cf">await</span> request.response_queue.put(</span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>                ResourceResponse(success<span class="op">=</span><span class="va">False</span>, error<span class="op">=</span><span class="st">"not_found"</span>)</span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>            )</span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="va">None</span></span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a>        resource <span class="op">=</span> <span class="va">self</span>.resources[request.resource_path]</span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a>        required_scopes <span class="op">=</span> <span class="bu">set</span>(resource[<span class="st">"scope_required"</span>])</span>
+<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a>        token_scopes <span class="op">=</span> <span class="bu">set</span>(token.scope)</span>
+<span id="cb17-14"><a href="#cb17-14" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="kw">not</span> required_scopes.issubset(token_scopes):</span>
+<span id="cb17-15"><a href="#cb17-15" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] ResourceServer: Insufficient scope"</span>)</span>
+<span id="cb17-16"><a href="#cb17-16" aria-hidden="true" tabindex="-1"></a>            <span class="cf">await</span> request.response_queue.put(</span>
+<span id="cb17-17"><a href="#cb17-17" aria-hidden="true" tabindex="-1"></a>                ResourceResponse(success<span class="op">=</span><span class="va">False</span>, error<span class="op">=</span><span class="st">"insufficient_scope"</span>)</span>
+<span id="cb17-18"><a href="#cb17-18" aria-hidden="true" tabindex="-1"></a>            )</span>
+<span id="cb17-19"><a href="#cb17-19" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="va">None</span></span>
+<span id="cb17-20"><a href="#cb17-20" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> resource</span></code></pre></div>
 <h2 data-number="Q.5" id="oauth-client"><span class="header-section-number">Q.5</span> OAuth Client</h2>
 <p>The OAuth client orchestrates the authorization flow. Its <code>init</code> method stores the client credentials and references to both servers, and initializes <code>access_token</code> to <code>None</code> since no token has been issued yet:</p>
-<div class="sourceCode" id="cb18" data-file="oauth/oauth_client.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb18" data-file="oauth/oauth_client.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> OAuthClient(Process):</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""OAuth 2.0 client application."""</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> init(</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>,</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>        client_id: <span class="bu">str</span>,</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>        client_secret: <span class="bu">str</span>,</span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>        redirect_uri: <span class="bu">str</span>,</span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>        auth_server: AuthorizationServer,</span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>        resource_server: ResourceServer,</span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>    ):</span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.client_id <span class="op">=</span> client_id</span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.client_secret <span class="op">=</span> client_secret</span>
+<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.redirect_uri <span class="op">=</span> redirect_uri</span>
+<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.auth_server <span class="op">=</span> auth_server</span>
+<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.resource_server <span class="op">=</span> resource_server</span>
+<span id="cb18-16"><a href="#cb18-16" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.access_token: Optional[<span class="bu">str</span>] <span class="op">=</span> <span class="va">None</span></span>
+<span id="cb18-17"><a href="#cb18-17" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] Client '</span><span class="sc">{</span>client_id<span class="sc">}</span><span class="ss">' started"</span>)</span></code></pre></div>
 <p>The client’s <code>run</code> method calls three helper methods in sequence, aborting if any step fails. It requests authorization for the <code>profile</code> and <code>photos</code> scopes, exchanges the resulting code for an access token, then uses that token to make three API calls, including one for <code>messages</code> that it was not granted access to:</p>
-<div class="sourceCode" id="cb19" data-file="oauth/oauth_client.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb19" data-file="oauth/oauth_client.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>    <span class="cf">async</span> <span class="kw">def</span> run(<span class="va">self</span>):</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Demonstrate complete OAuth flow."""</span></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Step 1: Request authorization</span></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>        scopes <span class="op">=</span> [<span class="st">"profile"</span>, <span class="st">"photos"</span>]</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>        code <span class="op">=</span> <span class="cf">await</span> <span class="va">self</span>.request_authorization(scopes)</span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="kw">not</span> code:</span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] Client: Authorization failed"</span>)</span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span></span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Step 2: Exchange code for token</span></span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a>        token_response <span class="op">=</span> <span class="cf">await</span> <span class="va">self</span>.exchange_code_for_token(code)</span>
+<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="kw">not</span> token_response <span class="kw">or</span> token_response.token_type <span class="op">==</span> <span class="st">"error"</span>:</span>
+<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] Client: Token exchange failed"</span>)</span>
+<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span></span>
+<span id="cb19-14"><a href="#cb19-14" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.access_token <span class="op">=</span> token_response.access_token</span>
+<span id="cb19-15"><a href="#cb19-15" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] Client: Got access token!"</span>)</span>
+<span id="cb19-16"><a href="#cb19-16" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Step 3: Access protected resources</span></span>
+<span id="cb19-17"><a href="#cb19-17" aria-hidden="true" tabindex="-1"></a>        <span class="cf">await</span> <span class="va">self</span>.timeout(<span class="fl">0.5</span>)</span>
+<span id="cb19-18"><a href="#cb19-18" aria-hidden="true" tabindex="-1"></a>        <span class="cf">await</span> <span class="va">self</span>.access_resource(<span class="st">"/api/profile"</span>)</span>
+<span id="cb19-19"><a href="#cb19-19" aria-hidden="true" tabindex="-1"></a>        <span class="cf">await</span> <span class="va">self</span>.timeout(<span class="fl">0.5</span>)</span>
+<span id="cb19-20"><a href="#cb19-20" aria-hidden="true" tabindex="-1"></a>        <span class="cf">await</span> <span class="va">self</span>.access_resource(<span class="st">"/api/photos"</span>)</span>
+<span id="cb19-21"><a href="#cb19-21" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Try accessing resource without permission</span></span>
+<span id="cb19-22"><a href="#cb19-22" aria-hidden="true" tabindex="-1"></a>        <span class="cf">await</span> <span class="va">self</span>.timeout(<span class="fl">0.5</span>)</span>
+<span id="cb19-23"><a href="#cb19-23" aria-hidden="true" tabindex="-1"></a>        <span class="cf">await</span> <span class="va">self</span>.access_resource(<span class="st">"/api/messages"</span>)</span></code></pre></div>
 <p><code>request_authorization</code> generates a <code>state</code> token before sending the request. This state value is a random string that the client includes in the request and the server echoes back in the response. The client checks that the echoed state matches the one it sent, which detects CSRF attacks where an attacker tricks a user’s browser into sending a forged callback:</p>
-<div class="sourceCode" id="cb20" data-file="oauth/oauth_client.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb20" data-file="oauth/oauth_client.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>    <span class="cf">async</span> <span class="kw">def</span> request_authorization(<span class="va">self</span>, scopes: List[<span class="bu">str</span>]) <span class="op">-&gt;</span> Optional[<span class="bu">str</span>]:</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Step 1: Request user authorization."""</span></span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] Client: Requesting authorization for </span><span class="sc">{</span>scopes<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>        state <span class="op">=</span> generate_token(<span class="st">"state"</span>)  <span class="co"># CSRF protection</span></span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>        response_queue <span class="op">=</span> Queue(<span class="va">self</span>._env)</span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>        request <span class="op">=</span> AuthorizationRequest(</span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>            client_id<span class="op">=</span><span class="va">self</span>.client_id,</span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>            redirect_uri<span class="op">=</span><span class="va">self</span>.redirect_uri,</span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a>            scope<span class="op">=</span>scopes,</span>
+<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a>            state<span class="op">=</span>state,</span>
+<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a>            response_queue<span class="op">=</span>response_queue,</span>
+<span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb20-13"><a href="#cb20-13" aria-hidden="true" tabindex="-1"></a>        <span class="cf">await</span> <span class="va">self</span>.auth_server.auth_queue.put(request)</span>
+<span id="cb20-14"><a href="#cb20-14" aria-hidden="true" tabindex="-1"></a>        response <span class="op">=</span> <span class="cf">await</span> response_queue.get()</span>
+<span id="cb20-15"><a href="#cb20-15" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Validate state to prevent CSRF</span></span>
+<span id="cb20-16"><a href="#cb20-16" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> response.state <span class="op">!=</span> state:</span>
+<span id="cb20-17"><a href="#cb20-17" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] Client: State mismatch - possible CSRF attack!"</span>)</span>
+<span id="cb20-18"><a href="#cb20-18" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="va">None</span></span>
+<span id="cb20-19"><a href="#cb20-19" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] Client: Received authorization code"</span>)</span>
+<span id="cb20-20"><a href="#cb20-20" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> response.code</span></code></pre></div>
 <p><code>exchange_code_for_token</code> packages the code with the client credentials and sends the bundle to the token endpoint. The client must authenticate itself here—not just the user—because the token endpoint needs to confirm that the party asking for the token is the same one that originally registered with the server:</p>
-<div class="sourceCode" id="cb21" data-file="oauth/oauth_client.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb21" data-file="oauth/oauth_client.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>    <span class="cf">async</span> <span class="kw">def</span> exchange_code_for_token(<span class="va">self</span>, code: <span class="bu">str</span>) <span class="op">-&gt;</span> Optional[TokenResponse]:</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Step 2: Exchange authorization code for access token."""</span></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] Client: Exchanging code for token"</span>)</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>        response_queue <span class="op">=</span> Queue(<span class="va">self</span>._env)</span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>        request <span class="op">=</span> TokenRequest(</span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>            code<span class="op">=</span>code,</span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>            client_id<span class="op">=</span><span class="va">self</span>.client_id,</span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>            client_secret<span class="op">=</span><span class="va">self</span>.client_secret,</span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>            redirect_uri<span class="op">=</span><span class="va">self</span>.redirect_uri,</span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a>            response_queue<span class="op">=</span>response_queue,</span>
+<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a>        <span class="cf">await</span> <span class="va">self</span>.auth_server.token_queue.put(request)</span>
+<span id="cb21-13"><a href="#cb21-13" aria-hidden="true" tabindex="-1"></a>        response <span class="op">=</span> <span class="cf">await</span> response_queue.get()</span>
+<span id="cb21-14"><a href="#cb21-14" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> response</span></code></pre></div>
 <p><code>access_resource</code> wraps the stored token in a <code>ResourceRequest</code> and waits for the response. The client never stores the user’s password at any point in this flow; it only ever handles codes and tokens:</p>
-<div class="sourceCode" id="cb22" data-file="oauth/oauth_client.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb22" data-file="oauth/oauth_client.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>    <span class="cf">async</span> <span class="kw">def</span> access_resource(<span class="va">self</span>, path: <span class="bu">str</span>):</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Step 3: Access protected resource with token."""</span></span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] Client: Accessing </span><span class="sc">{</span>path<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="kw">not</span> <span class="va">self</span>.access_token:</span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] Client: No access token!"</span>)</span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span></span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>        response_queue <span class="op">=</span> Queue(<span class="va">self</span>._env)</span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>        request <span class="op">=</span> ResourceRequest(</span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a>            access_token<span class="op">=</span><span class="va">self</span>.access_token,</span>
+<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a>            resource_path<span class="op">=</span>path,</span>
+<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a>            response_queue<span class="op">=</span>response_queue,</span>
+<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb22-13"><a href="#cb22-13" aria-hidden="true" tabindex="-1"></a>        <span class="cf">await</span> <span class="va">self</span>.resource_server.resource_queue.put(request)</span>
+<span id="cb22-14"><a href="#cb22-14" aria-hidden="true" tabindex="-1"></a>        response <span class="op">=</span> <span class="cf">await</span> response_queue.get()</span>
+<span id="cb22-15"><a href="#cb22-15" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> response.success:</span>
+<span id="cb22-16"><a href="#cb22-16" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] Client: Success! Data: </span><span class="sc">{</span>response<span class="sc">.</span>data<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb22-17"><a href="#cb22-17" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb22-18"><a href="#cb22-18" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] Client: Failed - </span><span class="sc">{</span>response<span class="sc">.</span>error<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div>
 <h2 data-number="Q.6" id="oauth-sim"><span class="header-section-number">Q.6</span> Basic OAuth Simulation</h2>
 <p>Putting it all together, the simulation creates an authorization server and resource server, registers a client application called <code>photo_app</code>, and then runs the complete three-step flow:</p>
 <div class="sourceCode" id="cb23" data-file="oauth/ex_basic_oauth.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> main():</span>

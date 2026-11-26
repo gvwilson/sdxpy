@@ -124,9 +124,28 @@
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _make_buffer(<span class="va">self</span>):</span>
 <span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._buffer <span class="op">=</span> InsertDeleteBuffer(<span class="va">self</span>._lines)</span></code></pre></div>
 <p>We also need to create handlers for insertion and deletion:</p>
-<div class="sourceCode" id="cb7" data-file="undo/insert_delete.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb7" data-file="undo/insert_delete.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _do_DELETE(<span class="va">self</span>):</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._buffer.delete(<span class="va">self</span>._cursor.pos())</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _do_INSERT(<span class="va">self</span>, key):</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._buffer.insert(<span class="va">self</span>._cursor.pos(), key)</span></code></pre></div>
 <p>Finally, since we don’t want to have to add one handler for each insertable character, let’s write a <code>_get_key</code> method that returns a pair of values. The first indicates the “family” of the key, while the second is the actual key. If the family is <code>None</code>, the key is a special key with its own handler; otherwise, we look up the handler for the key’s family:</p>
-<div class="sourceCode" id="cb8" data-file="undo/insert_delete.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb8" data-file="undo/insert_delete.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _get_key(<span class="va">self</span>):</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>        key <span class="op">=</span> <span class="va">self</span>._screen.getkey()</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> key <span class="kw">in</span> <span class="va">self</span>.INSERTABLE:</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="st">"INSERT"</span>, key</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="va">None</span>, key</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _interact(<span class="va">self</span>):</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>        family, key <span class="op">=</span> <span class="va">self</span>._get_key()</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> family <span class="kw">is</span> <span class="va">None</span>:</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>            name <span class="op">=</span> <span class="ss">f"_do_</span><span class="sc">{</span>key<span class="sc">}</span><span class="ss">"</span></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="bu">hasattr</span>(<span class="va">self</span>, name):</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>                <span class="bu">getattr</span>(<span class="va">self</span>, name)()</span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>            name <span class="op">=</span> <span class="ss">f"_do_</span><span class="sc">{</span>family<span class="sc">}</span><span class="ss">"</span></span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="bu">hasattr</span>(<span class="va">self</span>, name):</span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>                <span class="bu">getattr</span>(<span class="va">self</span>, name)(key)</span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._add_log(key)</span></code></pre></div>
 <p>We’re going to write a lot of tests for this application, so let’s write a helper function to create a fixture, run the application, and return it:</p>
 <div class="sourceCode" id="cb9" data-file="undo/test_insert_delete.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> make_fixture(keys, size, lines):</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    screen <span class="op">=</span> HeadlessScreen(size, keys)</span>
@@ -208,9 +227,22 @@
 <span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> undo(<span class="va">self</span>):</span>
 <span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._app._cursor.move_to(<span class="va">self</span>._old)</span></code></pre></div>
 <p>This class records the new cursor position as well as the old one to make debugging easier. It depends on adding two new methods to <code>Cursor</code> to move in a particular direction by name (e.g., “right” or “left”) and to move to a particular location:</p>
-<div class="sourceCode" id="cb17" data-file="undo/cursor.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb17" data-file="undo/cursor.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> act(<span class="va">self</span>, direction):</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>        <span class="cf">assert</span> <span class="bu">hasattr</span>(<span class="va">self</span>, direction)</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>        <span class="bu">getattr</span>(<span class="va">self</span>, direction)()</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> move_to(<span class="va">self</span>, pos):</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._pos <span class="op">=</span> pos</span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._fix()</span></code></pre></div>
 <p>Our application’s <code>_interact</code> method changes too. Instead of relying on keystroke handler methods to do things, it expects them to create action objects (<a href="#fig-undo-verbs" class="quarto-xref">Figure&nbsp;<span>24.1</span></a>). These objects are appended to the application’s history, and then asked to do whatever they do:</p>
-<div class="sourceCode" id="cb18" data-file="undo/action.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb18" data-file="undo/action.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _interact(<span class="va">self</span>):</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>        family, key <span class="op">=</span> <span class="va">self</span>._get_key()</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>        name <span class="op">=</span> <span class="ss">f"_do_</span><span class="sc">{</span>family<span class="sc">}</span><span class="ss">"</span> <span class="cf">if</span> family <span class="cf">else</span> <span class="ss">f"_do_</span><span class="sc">{</span>key<span class="sc">}</span><span class="ss">"</span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="kw">not</span> <span class="bu">hasattr</span>(<span class="va">self</span>, name):</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span></span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>        action <span class="op">=</span> <span class="bu">getattr</span>(<span class="va">self</span>, name)(key)</span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._history.append(action)</span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>        action.do()</span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._add_log(key)</span></code></pre></div>
 <div id="fig-undo-verbs" class="quarto-float quarto-figure quarto-figure-center" alt="Actions modeled as Command objects">
 <figure class="quarto-float quarto-float-fig">
 <div aria-describedby="fig-undo-verbs-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
@@ -223,7 +255,12 @@ Figure&nbsp;24.1: Representing actions as objects in the Command design pattern.
 </div>
 <p>Note that we have modified all the handler methods to take the keystroke as an input argument so that we don’t have to distinguish between cases where it’s needed and cases where it isn’t. This simplifies the code a little at the expense of introducing unused parameters into the handlers for special keys like cursor movement.</p>
 <p>Finally, each handler method now builds an object and returns it:</p>
-<div class="sourceCode" id="cb19" data-file="undo/action.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb19" data-file="undo/action.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _do_DELETE(<span class="va">self</span>, key):</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> Delete(<span class="va">self</span>, <span class="va">self</span>._cursor.pos())</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _do_INSERT(<span class="va">self</span>, key):</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> Insert(<span class="va">self</span>, <span class="va">self</span>._cursor.pos(), key)</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _do_KEY_UP(<span class="va">self</span>, key):</span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> Move(<span class="va">self</span>, <span class="st">"up"</span>)</span></code></pre></div>
 <p>With all these changes in place, our application <em>almost</em> works. We add an <code>_do_UNDO</code> handler that pops the most recent action from the history and calls its <code>undo</code> method. When we test this, though, we wind up in an infinite loop because we are appending the action to the history before doing the action, so we are essentially undoing our undo forever. The solution is to modify the base class <code>Action</code> to have a <code>.save</code> method that tells the application whether or not to save this action. The default implementation returns <code>True</code>, but we override it in <code>Undo</code> to return <code>False</code>:</p>
 <div class="sourceCode" id="cb20" data-file="undo/undoable.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Undo(Action):</span>
 <span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> do(<span class="va">self</span>):</span>
@@ -235,7 +272,7 @@ Figure&nbsp;24.1: Representing actions as objects in the Command design pattern.
 <span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="ss">f"Undo(</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>_app<span class="sc">.</span>_history[<span class="op">-</span><span class="dv">1</span>]<span class="sc">}</span><span class="ss">)"</span></span></code></pre></div>
 <p>Note that popping the most recent action off the history stack only works once we modify the application’s <code>_interact</code> method so that it only saves actions that ought to be saved:</p>
 <div class="sourceCode" id="cb21" data-file="undo/undoable.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> UndoableApp(ActionApp):</span>
-<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>        <span class="kw">def</span> _interact(<span class="va">self</span>):</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _interact(<span class="va">self</span>):</span>
 <span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>        family, key <span class="op">=</span> <span class="va">self</span>._get_key()</span>
 <span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>        name <span class="op">=</span> <span class="ss">f"_do_</span><span class="sc">{</span>family<span class="sc">}</span><span class="ss">"</span> <span class="cf">if</span> family <span class="cf">else</span> <span class="ss">f"_do_</span><span class="sc">{</span>key<span class="sc">}</span><span class="ss">"</span></span>
 <span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="kw">not</span> <span class="bu">hasattr</span>(<span class="va">self</span>, name):</span>

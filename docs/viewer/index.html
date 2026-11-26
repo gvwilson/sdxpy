@@ -163,7 +163,7 @@ Figure&nbsp;23.1: Order of operations in delayed construction.
 <div class="sourceCode" id="cb11" data-file="viewer/util.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>ROW <span class="op">=</span> <span class="dv">0</span></span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>COL <span class="op">=</span> <span class="dv">1</span></span></code></pre></div>
 <div class="sourceCode" id="cb12" data-file="viewer/cursor_const.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Window:</span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>        <span class="kw">def</span> draw(<span class="va">self</span>, lines):</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> draw(<span class="va">self</span>, lines):</span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._screen.erase()</span>
 <span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> (y, line) <span class="kw">in</span> <span class="bu">enumerate</span>(lines):</span>
 <span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="dv">0</span> <span class="op">&lt;=</span> y <span class="op">&lt;</span> <span class="va">self</span>._size[ROW]:</span>
@@ -247,7 +247,19 @@ Figure&nbsp;23.1: Order of operations in delayed construction.
 <span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>    app <span class="op">=</span> MainApp(size, lines)</span>
 <span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>    curses.wrapper(app)</span></code></pre></div>
 <p>Next, we refactor <code>_run</code> to handle keystrokes using dynamic dispatch instead of a long chain of <code>if</code>/<code>elif</code> statement:</p>
-<div class="sourceCode" id="cb21" data-file="viewer/dispatch_keys.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb21" data-file="viewer/dispatch_keys.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>    TRANSLATE <span class="op">=</span> {</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>        <span class="st">"</span><span class="ch">\x18</span><span class="st">"</span>: <span class="st">"CONTROL_X"</span></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _interact(<span class="va">self</span>):</span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>        key <span class="op">=</span> <span class="va">self</span>._screen.getkey()</span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>        key <span class="op">=</span> <span class="va">self</span>.TRANSLATE.get(key, key)</span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>        name <span class="op">=</span> <span class="ss">f"_do_</span><span class="sc">{</span>key<span class="sc">}</span><span class="ss">"</span></span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="bu">hasattr</span>(<span class="va">self</span>, name):</span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>            <span class="bu">getattr</span>(<span class="va">self</span>, name)()</span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _do_CONTROL_X(<span class="va">self</span>):</span>
+<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._running <span class="op">=</span> <span class="va">False</span></span>
+<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _do_KEY_UP(<span class="va">self</span>):</span>
+<span id="cb21-13"><a href="#cb21-13" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._cursor.up()</span></code></pre></div>
 <p>A little experimentation showed that while the <code>curses</code> module uses names like <code>"KEY_DOWN"</code> for arrow keys, it returns actual control codes for key combinations like Ctrl-X. The <code>TRANSLATE</code> dictionary turns these into human-readable names that we can glue together with <code>_do_</code> to make a method name; we got the hexadecimal value <code>"\x18"</code> by logging keystrokes to a file and then looking at its contents. We could probably have found this value in some documentation somewhere if we had looked hard enough, but a ten-second experiment seemed simpler.</p>
 <p>With <code>_interact</code> in place, we can rewrite <code>_run</code> to be just five lines long:</p>
 <div class="sourceCode" id="cb22" data-file="viewer/dispatch_keys.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> DispatchApp(MainApp):</span>
@@ -350,9 +362,16 @@ Figure&nbsp;23.1: Order of operations in delayed construction.
 <span id="cb28-11"><a href="#cb28-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>._top <span class="op">+</span> <span class="va">self</span>._height</span></code></pre></div>
 <p>The most important change in the buffer is that <code>lines</code> returns the visible portion of the text rather than all of it. Another change is that the buffer initializes <code>_height</code> to <code>None</code> and requires someone to set it to a real value later because the application’s <code>_setup</code> method creates the cursor, buffer, and window independently. If we were building a single class rather than layering tutorial classes on top of each other, we would probably go back and change <code>_setup</code> to remove the need for this.</p>
 <p>Our buffer also gains two more methods. The first transforms the cursor’s position from buffer coordinates to screen coordinates:</p>
-<div class="sourceCode" id="cb29" data-file="viewer/viewport.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb29" data-file="viewer/viewport.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> transform(<span class="va">self</span>, pos):</span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>        result <span class="op">=</span> (pos[ROW] <span class="op">-</span> <span class="va">self</span>._top, pos[COL])</span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> result</span></code></pre></div>
 <p>The second method moves <code>_top</code> up or down when we reach the edge of the display:</p>
-<div class="sourceCode" id="cb30" data-file="viewer/viewport.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb30" data-file="viewer/viewport.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> scroll(<span class="va">self</span>, row, col):</span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> (row <span class="op">==</span> <span class="va">self</span>._top <span class="op">-</span> <span class="dv">1</span>) <span class="kw">and</span> <span class="va">self</span>._top <span class="op">&gt;</span> <span class="dv">0</span>:</span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>._top <span class="op">-=</span> <span class="dv">1</span></span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>        <span class="cf">elif</span> (row <span class="op">==</span> <span class="va">self</span>._bottom()) <span class="kw">and</span> <span class="op">\</span></span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>             (<span class="va">self</span>._bottom() <span class="op">&lt;</span> <span class="va">self</span>.nrow()):</span>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>._top <span class="op">+=</span> <span class="dv">1</span></span></code></pre></div>
 <p>As before, we derive a new application class to create the right kind of buffer object. We also override <code>_run</code> to scroll the buffer after each interaction with the user:</p>
 <div class="sourceCode" id="cb31" data-file="viewer/viewport.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> ViewportApp(ClipAppFixed):</span>
 <span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _make_buffer(<span class="va">self</span>):</span>

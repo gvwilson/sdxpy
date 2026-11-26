@@ -257,13 +257,122 @@
 <p>Each service is autonomous: it manages its own database and can succeed or fail independently.</p>
 <h2 data-number="U.4" id="saga-orch"><span class="header-section-number">U.4</span> Orchestration-Based Saga</h2>
 <p>The orchestrator coordinates the sequence of transactions. It stores references to each service and processes requests from a queue:</p>
-<div class="sourceCode" id="cb6" data-file="saga/saga_orchestrator.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb6" data-file="saga/saga_orchestrator.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> SagaOrchestrator(Process):</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Centralized saga coordinator (orchestration pattern)."""</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> init(</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>,</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>        flight_service: FlightService,</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>        hotel_service: HotelService,</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>        car_service: CarRentalService,</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>    ) <span class="op">-&gt;</span> <span class="va">None</span>:</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.flight_service <span class="op">=</span> flight_service</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.hotel_service <span class="op">=</span> hotel_service</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.car_service <span class="op">=</span> car_service</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.request_queue: Queue <span class="op">=</span> Queue(<span class="va">self</span>._env)</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.active_sagas: Dict[<span class="bu">str</span>, SagaExecution] <span class="op">=</span> {}</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Statistics</span></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.sagas_completed <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.sagas_failed <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] SagaOrchestrator started</span><span class="ch">\n</span><span class="ss">"</span>)</span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>    <span class="cf">async</span> <span class="kw">def</span> run(<span class="va">self</span>) <span class="op">-&gt;</span> <span class="va">None</span>:</span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Process booking requests."""</span></span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>        <span class="cf">while</span> <span class="va">True</span>:</span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>            request <span class="op">=</span> <span class="cf">await</span> <span class="va">self</span>.request_queue.get()</span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>            <span class="cf">await</span> <span class="va">self</span>.execute_saga(request)</span></code></pre></div>
 <p>When a booking request arrives, <code>execute_saga</code> builds the list of steps and drives them forward, triggering compensation if any step fails:</p>
-<div class="sourceCode" id="cb7" data-file="saga/saga_orchestrator.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb7" data-file="saga/saga_orchestrator.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>    <span class="cf">async</span> <span class="kw">def</span> execute_saga(<span class="va">self</span>, booking: BookingRequest) <span class="op">-&gt;</span> <span class="va">None</span>:</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Execute travel booking saga."""</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] </span><span class="sc">{</span><span class="st">'='</span> <span class="op">*</span> <span class="dv">60</span><span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] Starting saga for </span><span class="sc">{</span>booking<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] </span><span class="sc">{</span><span class="st">'='</span> <span class="op">*</span> <span class="dv">60</span><span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Define saga steps</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>        steps <span class="op">=</span> [</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>            SagaStep(</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>                name<span class="op">=</span><span class="st">"book_flight"</span>,</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>                service_name<span class="op">=</span><span class="st">"FlightService"</span>,</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>                transaction<span class="op">=</span><span class="kw">lambda</span>: <span class="va">self</span>.flight_service.book_flight(</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>                    booking.booking_id, booking.flight_id</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>                ),</span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>                compensation<span class="op">=</span><span class="kw">lambda</span>: <span class="va">self</span>.flight_service.cancel_flight(</span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>                    booking.booking_id</span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>                ),</span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>            ),</span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>            SagaStep(</span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>                name<span class="op">=</span><span class="st">"book_hotel"</span>,</span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>                service_name<span class="op">=</span><span class="st">"HotelService"</span>,</span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>                transaction<span class="op">=</span><span class="kw">lambda</span>: <span class="va">self</span>.hotel_service.book_hotel(</span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>                    booking.booking_id, booking.hotel_id</span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>                ),</span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a>                compensation<span class="op">=</span><span class="kw">lambda</span>: <span class="va">self</span>.hotel_service.cancel_hotel(</span>
+<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a>                    booking.booking_id</span>
+<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a>                ),</span>
+<span id="cb7-27"><a href="#cb7-27" aria-hidden="true" tabindex="-1"></a>            ),</span>
+<span id="cb7-28"><a href="#cb7-28" aria-hidden="true" tabindex="-1"></a>            SagaStep(</span>
+<span id="cb7-29"><a href="#cb7-29" aria-hidden="true" tabindex="-1"></a>                name<span class="op">=</span><span class="st">"book_car"</span>,</span>
+<span id="cb7-30"><a href="#cb7-30" aria-hidden="true" tabindex="-1"></a>                service_name<span class="op">=</span><span class="st">"CarRentalService"</span>,</span>
+<span id="cb7-31"><a href="#cb7-31" aria-hidden="true" tabindex="-1"></a>                transaction<span class="op">=</span><span class="kw">lambda</span>: <span class="va">self</span>.car_service.book_car(</span>
+<span id="cb7-32"><a href="#cb7-32" aria-hidden="true" tabindex="-1"></a>                    booking.booking_id, booking.car_id</span>
+<span id="cb7-33"><a href="#cb7-33" aria-hidden="true" tabindex="-1"></a>                ),</span>
+<span id="cb7-34"><a href="#cb7-34" aria-hidden="true" tabindex="-1"></a>                compensation<span class="op">=</span><span class="va">None</span>,  <span class="co"># Last step doesn't need compensation</span></span>
+<span id="cb7-35"><a href="#cb7-35" aria-hidden="true" tabindex="-1"></a>            ),</span>
+<span id="cb7-36"><a href="#cb7-36" aria-hidden="true" tabindex="-1"></a>        ]</span>
+<span id="cb7-37"><a href="#cb7-37" aria-hidden="true" tabindex="-1"></a>        saga <span class="op">=</span> SagaExecution(</span>
+<span id="cb7-38"><a href="#cb7-38" aria-hidden="true" tabindex="-1"></a>            saga_id<span class="op">=</span>booking.booking_id, steps<span class="op">=</span>steps, status<span class="op">=</span>SagaStatus.IN_PROGRESS</span>
+<span id="cb7-39"><a href="#cb7-39" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb7-40"><a href="#cb7-40" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.active_sagas[booking.booking_id] <span class="op">=</span> saga</span>
+<span id="cb7-41"><a href="#cb7-41" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Execute forward transactions</span></span>
+<span id="cb7-42"><a href="#cb7-42" aria-hidden="true" tabindex="-1"></a>        success <span class="op">=</span> <span class="cf">await</span> <span class="va">self</span>.execute_forward(saga)</span>
+<span id="cb7-43"><a href="#cb7-43" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> success:</span>
+<span id="cb7-44"><a href="#cb7-44" aria-hidden="true" tabindex="-1"></a>            saga.status <span class="op">=</span> SagaStatus.COMPLETED</span>
+<span id="cb7-45"><a href="#cb7-45" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.sagas_completed <span class="op">+=</span> <span class="dv">1</span></span>
+<span id="cb7-46"><a href="#cb7-46" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] ✓✓✓ Saga </span><span class="sc">{</span>saga<span class="sc">.</span>saga_id<span class="sc">}</span><span class="ss"> COMPLETED ✓✓✓</span><span class="ch">\n</span><span class="ss">"</span>)</span>
+<span id="cb7-47"><a href="#cb7-47" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb7-48"><a href="#cb7-48" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Execute compensations</span></span>
+<span id="cb7-49"><a href="#cb7-49" aria-hidden="true" tabindex="-1"></a>            saga.status <span class="op">=</span> SagaStatus.COMPENSATING</span>
+<span id="cb7-50"><a href="#cb7-50" aria-hidden="true" tabindex="-1"></a>            <span class="cf">await</span> <span class="va">self</span>.execute_compensation(saga)</span>
+<span id="cb7-51"><a href="#cb7-51" aria-hidden="true" tabindex="-1"></a>            saga.status <span class="op">=</span> SagaStatus.FAILED</span>
+<span id="cb7-52"><a href="#cb7-52" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.sagas_failed <span class="op">+=</span> <span class="dv">1</span></span>
+<span id="cb7-53"><a href="#cb7-53" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(</span>
+<span id="cb7-54"><a href="#cb7-54" aria-hidden="true" tabindex="-1"></a>                <span class="ss">f"</span><span class="ch">\n</span><span class="ss">[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] ✗✗✗ Saga </span><span class="sc">{</span>saga<span class="sc">.</span>saga_id<span class="sc">}</span><span class="ss"> FAILED - compensated ✗✗✗</span><span class="ch">\n</span><span class="ss">"</span></span>
+<span id="cb7-55"><a href="#cb7-55" aria-hidden="true" tabindex="-1"></a>            )</span></code></pre></div>
 <p>The forward pass runs each step in sequence, stopping immediately on the first failure:</p>
-<div class="sourceCode" id="cb8" data-file="saga/saga_orchestrator.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb8" data-file="saga/saga_orchestrator.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>    <span class="cf">async</span> <span class="kw">def</span> execute_forward(<span class="va">self</span>, saga: SagaExecution) <span class="op">-&gt;</span> <span class="bu">bool</span>:</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Execute forward transactions in sequence."""</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> i, step <span class="kw">in</span> <span class="bu">enumerate</span>(saga.steps):</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>            saga.current_step <span class="op">=</span> i</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>                <span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] Orchestrator: Executing step </span><span class="sc">{</span>i <span class="op">+</span> <span class="dv">1</span><span class="sc">}</span><span class="ss">/"</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>                <span class="ss">f"</span><span class="sc">{</span><span class="bu">len</span>(saga.steps)<span class="sc">}</span><span class="ss">: </span><span class="sc">{</span>step<span class="sc">.</span>name<span class="sc">}</span><span class="ss">"</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>            )</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Simulate network delay</span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>            <span class="cf">await</span> <span class="va">self</span>.timeout(<span class="fl">0.3</span>)</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Execute transaction</span></span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>            success <span class="op">=</span> step.transaction()</span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> success:</span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>                saga.completed_steps.append(step.name)</span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>            <span class="cf">else</span>:</span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>                saga.failed_step <span class="op">=</span> step.name</span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>                <span class="bu">print</span>(<span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] Orchestrator: Step </span><span class="sc">{</span>step<span class="sc">.</span>name<span class="sc">}</span><span class="ss"> FAILED"</span>)</span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>                <span class="cf">return</span> <span class="va">False</span></span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">True</span></span></code></pre></div>
 <p>The compensation pass runs in reverse, undoing each completed step:</p>
-<div class="sourceCode" id="cb9" data-file="saga/saga_orchestrator.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb9" data-file="saga/saga_orchestrator.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>    <span class="cf">async</span> <span class="kw">def</span> execute_compensation(<span class="va">self</span>, saga: SagaExecution) <span class="op">-&gt;</span> <span class="va">None</span>:</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Execute compensating transactions in reverse order."""</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] Orchestrator: Starting compensation..."</span>)</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Compensate in reverse order</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> step_name <span class="kw">in</span> <span class="bu">reversed</span>(saga.completed_steps):</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Find the step</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>            step <span class="op">=</span> <span class="bu">next</span>(s <span class="cf">for</span> s <span class="kw">in</span> saga.steps <span class="cf">if</span> s.name <span class="op">==</span> step_name)</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> step.compensation:</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>                <span class="bu">print</span>(<span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] Orchestrator: Compensating </span><span class="sc">{</span>step_name<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>                <span class="co"># Simulate network delay</span></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>                <span class="cf">await</span> <span class="va">self</span>.timeout(<span class="fl">0.2</span>)</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>                success <span class="op">=</span> step.compensation()</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> <span class="kw">not</span> success:</span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>                    <span class="bu">print</span>(</span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>                        <span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] Orchestrator: WARNING - "</span></span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>                        <span class="ss">f"Compensation </span><span class="sc">{</span>step_name<span class="sc">}</span><span class="ss"> failed! Manual intervention needed."</span></span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>                    )</span></code></pre></div>
 <p>The compensation pass runs in reverse order—this is not an implementation detail but a logical requirement. If the forward steps are A → B → C and C fails, we must compensate B before compensating A. Compensating A first could leave the system in a state where A’s compensation removes a resource that B’s compensation still needs to reference. Reversing the order ensures that each compensation sees the same state as the step that originally succeeded.</p>
 <h2 data-number="U.5" id="basic-orchestration-example"><span class="header-section-number">U.5</span> Basic Orchestration Example</h2>
 <p>Let’s see orchestration in action:</p>

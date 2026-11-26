@@ -219,7 +219,15 @@ Table&nbsp;25.1: Virtual machine op codes.
 <span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.reg <span class="op">=</span> [<span class="dv">0</span>] <span class="op">*</span> NUM_REG</span></code></pre></div>
 <p>Notice that the VM’s constructor calls <code>initialize</code> with an empty array (i.e., a program with no instructions) to do initial setup. If an object has a method to reset or reinitialize itself, having its constructor use that method is a way to avoid duplicating code.</p>
 <p>To execute the next instruction, the VM gets the value in memory that the instruction pointer currently refers to and moves the instruction pointer on by one address. It then uses bitwise operations (<a href="../binary/index.html" class="quarto-xref"><span>Chapter 17</span></a>) to extract the op code and operands from the instruction (<a href="#fig-vm-unpacking" class="quarto-xref">Figure&nbsp;<span>25.2</span></a>).</p>
-<div class="sourceCode" id="cb3" data-file="vm/vm.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb3" data-file="vm/vm.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> fetch(<span class="va">self</span>):</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>        instruction <span class="op">=</span> <span class="va">self</span>.ram[<span class="va">self</span>.ip]</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.ip <span class="op">+=</span> <span class="dv">1</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>        op <span class="op">=</span> instruction <span class="op">&amp;</span> OP_MASK</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>        instruction <span class="op">&gt;&gt;=</span> OP_SHIFT</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>        arg0 <span class="op">=</span> instruction <span class="op">&amp;</span> OP_MASK</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>        instruction <span class="op">&gt;&gt;=</span> OP_SHIFT</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>        arg1 <span class="op">=</span> instruction <span class="op">&amp;</span> OP_MASK</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> [op, arg0, arg1]</span></code></pre></div>
 <div id="fig-vm-unpacking" class="quarto-float quarto-figure quarto-figure-center" alt="Bitwise decoding of instructions">
 <figure class="quarto-float quarto-float-fig">
 <div aria-describedby="fig-vm-unpacking-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
@@ -238,13 +246,30 @@ Figure&nbsp;25.2: Using bitwise operations to unpack instructions.
 </blockquote>
 </div>
 <p>The next step is to add a <code>run</code> method to our VM that fetches instructions and executes them until told to stop:</p>
-<div class="sourceCode" id="cb4" data-file="vm/vm.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb4" data-file="vm/vm.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> run(<span class="va">self</span>):</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>        running <span class="op">=</span> <span class="va">True</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">while</span> running:</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>            op, arg0, arg1 <span class="op">=</span> <span class="va">self</span>.fetch()</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> op <span class="op">==</span> OPS[<span class="st">"hlt"</span>][<span class="st">"code"</span>]:</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>                running <span class="op">=</span> <span class="va">False</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>            <span class="cf">elif</span> op <span class="op">==</span> OPS[<span class="st">"ldc"</span>][<span class="st">"code"</span>]:</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>                <span class="va">self</span>.reg[arg0] <span class="op">=</span> arg1</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>            <span class="cf">elif</span> op <span class="op">==</span> OPS[<span class="st">"ldr"</span>][<span class="st">"code"</span>]:</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>                <span class="va">self</span>.reg[arg0] <span class="op">=</span> <span class="va">self</span>.ram[<span class="va">self</span>.reg[arg1]]</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>            <span class="cf">elif</span> op <span class="op">==</span> OPS[<span class="st">"cpy"</span>][<span class="st">"code"</span>]:</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>                <span class="va">self</span>.reg[arg0] <span class="op">=</span> <span class="va">self</span>.reg[arg1]</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>            <span class="cf">else</span>:</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>                <span class="cf">assert</span> <span class="va">False</span>, <span class="ss">f"Unknown op </span><span class="sc">{</span>op<span class="sc">:06x}</span><span class="ss">"</span></span></code></pre></div>
 <p>Let’s look more closely at three of these instructions. The first, <code>str</code>, stores the value of one register in the address held by another register:</p>
-<div class="sourceCode" id="cb5" data-file="vm/vm.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb5" data-file="vm/vm.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>            <span class="cf">elif</span> op <span class="op">==</span> OPS[<span class="st">"str"</span>][<span class="st">"code"</span>]:</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>                <span class="va">self</span>.ram[<span class="va">self</span>.reg[arg1]] <span class="op">=</span> <span class="va">self</span>.reg[arg0]</span></code></pre></div>
 <p>Adding the value in one register to the value in another register is simpler:</p>
-<div class="sourceCode" id="cb6" data-file="vm/vm.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb6" data-file="vm/vm.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>            <span class="cf">elif</span> op <span class="op">==</span> OPS[<span class="st">"add"</span>][<span class="st">"code"</span>]:</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>                <span class="va">self</span>.reg[arg0] <span class="op">+=</span> <span class="va">self</span>.reg[arg1]</span></code></pre></div>
 <p>as is jumping to a fixed address if the value in a register is zero. This <a href="../glossary/index.html#conditional_jump">conditional jump</a> instruction is how we implement <code>if</code>:</p>
-<div class="sourceCode" id="cb7" data-file="vm/vm.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb7" data-file="vm/vm.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>            <span class="cf">elif</span> op <span class="op">==</span> OPS[<span class="st">"beq"</span>][<span class="st">"code"</span>]:</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> <span class="va">self</span>.reg[arg0] <span class="op">==</span> <span class="dv">0</span>:</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>                    <span class="va">self</span>.ip <span class="op">=</span> arg1</span></code></pre></div>
 <h2 data-number="25.3" id="vm-assembly"><span class="header-section-number">25.3</span> Assembly Code</h2>
 <p>We could write out numerical op codes by hand just as <a href="http://eniacprogrammers.org/">early programmers</a> did. However, it is much easier to use an <a href="../glossary/index.html#assembler">assembler</a>, which is just a small compiler for a language that very closely represents actual machine instructions.</p>
 <p>Each command in our assembly languages matches an instruction in the VM. Here’s an assembly language program to print the value stored in R1 and then halt:</p>
@@ -326,13 +351,52 @@ Figure&nbsp;25.4: Tracing registers and memory values for a simple counting prog
 <span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>        program <span class="op">=</span> <span class="va">self</span>._to_text(compiled)</span>
 <span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> program</span></code></pre></div>
 <p>To find labels, we go through the lines one by one and either save the label <em>or</em> increment the current address (because labels don’t take up space):</p>
-<div class="sourceCode" id="cb13" data-file="vm/assembler.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb13" data-file="vm/assembler.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _find_labels(<span class="va">self</span>, lines):</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>        result <span class="op">=</span> {}</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>        loc <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> ln <span class="kw">in</span> lines:</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="va">self</span>._is_label(ln):</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>                label <span class="op">=</span> ln[:<span class="op">-</span><span class="dv">1</span>].strip()</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>                <span class="cf">assert</span> label <span class="kw">not</span> <span class="kw">in</span> result, <span class="ss">f"Duplicated </span><span class="sc">{</span>label<span class="sc">}</span><span class="ss">"</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>                result[label] <span class="op">=</span> loc</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>            <span class="cf">else</span>:</span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>                loc <span class="op">+=</span> <span class="dv">1</span></span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> result</span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _is_label(<span class="va">self</span>, line):</span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> line.endswith(<span class="st">":"</span>)</span></code></pre></div>
 <p>To compile a single instruction we break the line into pieces, look up the format for the operands, and pack the values:</p>
-<div class="sourceCode" id="cb14" data-file="vm/assembler.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb14" data-file="vm/assembler.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _compile(<span class="va">self</span>, instruction, labels):</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>        tokens <span class="op">=</span> instruction.split()</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>        op, args <span class="op">=</span> tokens[<span class="dv">0</span>], tokens[<span class="dv">1</span>:]</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>        fmt, code <span class="op">=</span> OPS[op][<span class="st">"fmt"</span>], OPS[op][<span class="st">"code"</span>]</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> fmt <span class="op">==</span> <span class="st">"--"</span>:</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="va">self</span>._combine(code)</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>        <span class="cf">elif</span> fmt <span class="op">==</span> <span class="st">"r-"</span>:</span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="va">self</span>._combine(<span class="va">self</span>._reg(args[<span class="dv">0</span>]), code)</span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">elif</span> fmt <span class="op">==</span> <span class="st">"rr"</span>:</span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="va">self</span>._combine(</span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>                <span class="va">self</span>._reg(args[<span class="dv">1</span>]), <span class="va">self</span>._reg(args[<span class="dv">0</span>]), code</span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>            )</span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>        <span class="cf">elif</span> fmt <span class="op">==</span> <span class="st">"rv"</span>:</span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="va">self</span>._combine(</span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>                <span class="va">self</span>._val(args[<span class="dv">1</span>], labels),</span>
+<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a>                <span class="va">self</span>._reg(args[<span class="dv">0</span>]), code</span>
+<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a>            )</span></code></pre></div>
 <p>To convert a value, we either look up the label’s address (if the value starts with <code>@</code>) or convert the value to a number:</p>
-<div class="sourceCode" id="cb15" data-file="vm/assembler.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb15" data-file="vm/assembler.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _val(<span class="va">self</span>, token, labels):</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> token[<span class="dv">0</span>] <span class="op">!=</span> <span class="st">"@"</span>:</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="bu">int</span>(token)</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>        lbl <span class="op">=</span> token[<span class="dv">1</span>:]</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>        <span class="cf">assert</span> lbl <span class="kw">in</span> labels, <span class="ss">f"Unknown label '</span><span class="sc">{</span>token<span class="sc">}</span><span class="ss">'"</span></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> labels[lbl]</span></code></pre></div>
 <p>Combining op codes and operands into a single value is the reverse of the unpacking done by the virtual machine:</p>
-<div class="sourceCode" id="cb16" data-file="vm/assembler.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb16" data-file="vm/assembler.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _combine(<span class="va">self</span>, <span class="op">*</span>args):</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>        <span class="cf">assert</span> <span class="bu">len</span>(args) <span class="op">&gt;</span> <span class="dv">0</span>, <span class="st">"Cannot combine no arguments"</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>        result <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> a <span class="kw">in</span> args:</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>            result <span class="op">&lt;&lt;=</span> OP_SHIFT</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>            result <span class="op">|=</span> a</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> result</span></code></pre></div>
 <p>As a test, this program counts up to 3:</p>
 <pre data-file="vm/count_up.as"><code># Count up to 3.
 # - R0: loop index.
@@ -371,9 +435,35 @@ Figure&nbsp;25.5: Allocating storage for arrays in the virtual machine.
 </figure>
 </div>
 <p>This enhancement only requires a few changes to the assembler. First, we need to split the lines into instructions and data allocations:</p>
-<div class="sourceCode" id="cb19" data-file="vm/arrays.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb19" data-file="vm/arrays.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>    DIVIDER <span class="op">=</span> <span class="st">".data"</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> assemble(<span class="va">self</span>, lines):</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>        lines <span class="op">=</span> <span class="va">self</span>._get_lines(lines)</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>        to_compile, to_allocate <span class="op">=</span> <span class="va">self</span>._split(lines)</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>        labels <span class="op">=</span> <span class="va">self</span>._find_labels(lines)</span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>        instructions <span class="op">=</span> [ln <span class="cf">for</span> ln <span class="kw">in</span> to_compile <span class="cf">if</span> <span class="kw">not</span> <span class="va">self</span>._is_label(ln)]</span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>        base_of_data <span class="op">=</span> <span class="bu">len</span>(instructions)</span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._add_allocations(base_of_data, labels, to_allocate)</span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a>        compiled <span class="op">=</span> [<span class="va">self</span>._compile(instr, labels) <span class="cf">for</span> instr <span class="kw">in</span> instructions]</span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a>        program <span class="op">=</span> <span class="va">self</span>._to_text(compiled)</span>
+<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> program</span>
+<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _split(<span class="va">self</span>, lines):</span>
+<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a>        <span class="cf">try</span>:</span>
+<span id="cb19-14"><a href="#cb19-14" aria-hidden="true" tabindex="-1"></a>            split <span class="op">=</span> lines.index(<span class="va">self</span>.DIVIDER)</span>
+<span id="cb19-15"><a href="#cb19-15" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> lines[<span class="dv">0</span>:split], lines[split <span class="op">+</span> <span class="dv">1</span>:]</span>
+<span id="cb19-16"><a href="#cb19-16" aria-hidden="true" tabindex="-1"></a>        <span class="cf">except</span> <span class="pp">ValueError</span>:</span>
+<span id="cb19-17"><a href="#cb19-17" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> lines, []</span></code></pre></div>
 <p>Second, we need to figure out where each allocation lies and create a label accordingly:</p>
-<div class="sourceCode" id="cb20" data-file="vm/arrays.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb20" data-file="vm/arrays.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _add_allocations(<span class="va">self</span>, base_of_data, labels, to_allocate):</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> alloc <span class="kw">in</span> to_allocate:</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>            fields <span class="op">=</span> [a.strip() <span class="cf">for</span> a <span class="kw">in</span> alloc.split(<span class="st">":"</span>)]</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>            <span class="cf">assert</span> <span class="bu">len</span>(fields) <span class="op">==</span> <span class="dv">2</span>, <span class="ss">f"Invalid allocation directive '</span><span class="sc">{</span>alloc<span class="sc">}</span><span class="ss">'"</span></span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>            lbl, num_words_text <span class="op">=</span> fields</span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>            <span class="cf">assert</span> lbl <span class="kw">not</span> <span class="kw">in</span> labels, <span class="ss">f"Duplicate label '</span><span class="sc">{</span>lbl<span class="sc">}</span><span class="ss">' in allocation"</span></span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>            num_words <span class="op">=</span> <span class="bu">int</span>(num_words_text)</span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>            <span class="cf">assert</span> (base_of_data <span class="op">+</span> num_words) <span class="op">&lt;</span> RAM_LEN, <span class="op">\</span></span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a>                <span class="ss">f"Allocation '</span><span class="sc">{</span>lbl<span class="sc">}</span><span class="ss">' requires too much memory"</span></span>
+<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a>            labels[lbl] <span class="op">=</span> base_of_data</span>
+<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a>            base_of_data <span class="op">+=</span> num_words</span></code></pre></div>
 <p>And that’s it: no other changes are needed to either compilation or execution. To test it, let’s fill an array with the numbers from 0 to 3:</p>
 <pre data-file="vm/fill_array.as"><code># Count up to 3.
 # - R0: loop index.

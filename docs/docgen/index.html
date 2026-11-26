@@ -41,9 +41,40 @@
 <p><strong>In Development</strong></p>
 <p>Many programmers believe they’re more likely to write documentation and keep it up to date if it is close to the code. Tools that extract specially-formatted comments from code and turn them into documentation have been around since at least the 1980s; both <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a href="https://www.mkdocs.org/">MkDocs</a> are popular ones for Python.</p>
 <p>Generating documentation isn’t the same as checking code style, but they share some tooling. Let’s start by building a <code>NodeVisitor</code> that extracts and saves docstrings:</p>
-<div class="sourceCode" id="cb1" data-file="docgen/doc_extract.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb1" data-file="docgen/doc_extract.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Extract(ast.NodeVisitor):</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Extraction class."""</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">@staticmethod</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> extract(filenames):</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Entry-level method."""</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>        extracter <span class="op">=</span> Extract()</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> filename <span class="kw">in</span> filenames:</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>            <span class="cf">with</span> <span class="bu">open</span>(filename, <span class="st">"r"</span>) <span class="im">as</span> reader:</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>                source <span class="op">=</span> reader.read()</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>                tree <span class="op">=</span> ast.parse(source)</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>                module_name <span class="op">=</span> Path(filename).stem</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>                extracter.extract_from(module_name, tree)</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> extracter.seen</span></code></pre></div>
 <p>The code to create a stack, extract docstrings, and save them in a dictionary should look familiar by now:</p>
-<div class="sourceCode" id="cb2" data-file="docgen/doc_extract.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb2" data-file="docgen/doc_extract.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>):</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Constructor."""</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>        <span class="bu">super</span>().<span class="fu">__init__</span>()</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.stack <span class="op">=</span> []</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.seen <span class="op">=</span> {}</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> visit_ClassDef(<span class="va">self</span>, node):</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Get docstring from class."""</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.save(<span class="st">"class"</span>, node.name, node)</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.generic_visit(node)</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.stack.pop()</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> extract_from(<span class="va">self</span>, module_name, tree):</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Start extraction for a module."""</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.save(<span class="st">"module"</span>, module_name, tree)</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.visit(tree)</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.stack.pop()</span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> save(<span class="va">self</span>, kind, name, node):</span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Save information about a docstring."""</span></span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.stack.append(name)</span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>        docstring <span class="op">=</span> ast.get_docstring(node)</span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.seen[<span class="st">"."</span>.join(<span class="va">self</span>.stack)] <span class="op">=</span> (kind, docstring)</span></code></pre></div>
 <p>To format the docstrings, we create a Markdown page with module, class, and function names as headers:</p>
 <div class="sourceCode" id="cb3" data-file="docgen/doc_format.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>HEADING <span class="op">=</span> {<span class="st">"module"</span>: <span class="st">"#"</span>, <span class="st">"class"</span>: <span class="st">"##"</span>, <span class="st">"function"</span>: <span class="st">"##"</span>}</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>MISSING <span class="op">=</span> <span class="st">"**No documentation.**"</span></span>

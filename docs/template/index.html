@@ -150,11 +150,42 @@ Figure&nbsp;12.2: Combining text and data in templating.
 <li><p>If there is a handler for the node, call the handler’s <code>open</code> or <code>close</code> method.</p></li>
 <li><p>Otherwise, open a regular tag.</p></li>
 </ol>
-<div class="sourceCode" id="cb8" data-file="template/expander.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb8" data-file="template/expander.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="bu">open</span>(<span class="va">self</span>, node):</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="bu">isinstance</span>(node, NavigableString):</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.output(node.string)</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="va">False</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>        <span class="cf">elif</span> <span class="va">self</span>.hasHandler(node):</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="va">self</span>.getHandler(node).<span class="bu">open</span>(<span class="va">self</span>, node)</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.showTag(node, <span class="va">False</span>)</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="va">True</span></span></code></pre></div>
 <p><code>Expander.close</code> works much the same way. Both methods find handlers by comparing the DOM node’s attributes to the keys in the dictionary of handlers built during construction:</p>
-<div class="sourceCode" id="cb9" data-file="template/expander.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb9" data-file="template/expander.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> hasHandler(<span class="va">self</span>, node):</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="bu">any</span>(</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>            name <span class="kw">in</span> <span class="va">self</span>.handlers</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>            <span class="cf">for</span> name <span class="kw">in</span> node.attrs</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> getHandler(<span class="va">self</span>, node):</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>        possible <span class="op">=</span> [</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>            name <span class="cf">for</span> name <span class="kw">in</span> node.attrs</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> name <span class="kw">in</span> <span class="va">self</span>.handlers</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>        ]</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">assert</span> <span class="bu">len</span>(possible) <span class="op">==</span> <span class="dv">1</span>, <span class="st">"Should be exactly one handler"</span></span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>.handlers[possible[<span class="dv">0</span>]]</span></code></pre></div>
 <p>Finally, we need a few helper methods to show tags and generate output:</p>
-<div class="sourceCode" id="cb10" data-file="template/expander.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb10" data-file="template/expander.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> showTag(<span class="va">self</span>, node, closing):</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> closing:</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.output(<span class="ss">f"&lt;/</span><span class="sc">{</span>node<span class="sc">.</span>name<span class="sc">}</span><span class="ss">&gt;"</span>)</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.output(<span class="ss">f"&lt;</span><span class="sc">{</span>node<span class="sc">.</span>name<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> name <span class="kw">in</span> node.attrs:</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="kw">not</span> name.startswith(<span class="st">"z-"</span>):</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>                <span class="va">self</span>.output(<span class="ss">f' </span><span class="sc">{</span>name<span class="sc">}</span><span class="ss">="</span><span class="sc">{</span>node<span class="sc">.</span>attrs[name]<span class="sc">}</span><span class="ss">"'</span>)</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.output(<span class="st">"&gt;"</span>)</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> output(<span class="va">self</span>, text):</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.result.append(<span class="st">"UNDEF"</span> <span class="cf">if</span> text <span class="kw">is</span> <span class="va">None</span> <span class="cf">else</span> text)</span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> getResult(<span class="va">self</span>):</span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="st">""</span>.join(<span class="va">self</span>.result)</span></code></pre></div>
 <p>Notice that <code>Expander</code> adds strings to an array and joins them all right at the end rather than concatenating strings repeatedly. Doing this is more efficient; it also helps with debugging, since each string in the array corresponds to a single method call.</p>
 <h2 data-number="12.4" id="template-handlers"><span class="header-section-number">12.4</span> Implementing Handlers</h2>
 <p>Our last task is to implement the handlers for filling in variables’ values, looping, and so on. We could define an abstract class with <code>open</code> and <code>close</code> methods, derive one class for each of the template expander’s capabilities, and then construct one instance of each class for <code>Expander</code> to use, but there’s a simpler way. When Python executes the statement <code>import something</code> it executes the file <code>something.py</code>, saves the result in a specialized dictionary-like object, and assigns that object to the variable <code>something</code>. That object can also be saved in data structures like lists and dictionaries or passed as an argument to a function just like numbers, functions, and classes—remember, programs are just data.</p>
@@ -201,14 +232,14 @@ Figure&nbsp;12.2: Combining text and data in templating.
 <span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="va">__name__</span> <span class="op">==</span> <span class="st">"__main__"</span>:</span>
 <span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>    main()</span></code></pre></div>
 <p>We added new variables for our test cases one by one as we were writing this chapter. To avoid repeating text repeatedly, here’s the entire set:</p>
-<pre data-file="template/vars.json"><code>{
-  "firstVar": "firstValue",
-  "secondVar": "secondValue",
-  "varName": "varValue",
-  "yes": true,
-  "no": false,
-  "names": ["Johnson", "Vaughan", "Jackson"]
-}</code></pre>
+<div class="sourceCode" id="cb15" data-file="template/vars.json"><pre class="sourceCode json"><code class="sourceCode json"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">"firstVar"</span><span class="fu">:</span> <span class="st">"firstValue"</span><span class="fu">,</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">"secondVar"</span><span class="fu">:</span> <span class="st">"secondValue"</span><span class="fu">,</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">"varName"</span><span class="fu">:</span> <span class="st">"varValue"</span><span class="fu">,</span></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">"yes"</span><span class="fu">:</span> <span class="kw">true</span><span class="fu">,</span></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>  <span class="dt">"no"</span><span class="fu">:</span> <span class="kw">false</span><span class="fu">,</span></span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>  <span class="dt">"names"</span><span class="fu">:</span> <span class="ot">[</span><span class="st">"Johnson"</span><span class="ot">,</span> <span class="st">"Vaughan"</span><span class="ot">,</span> <span class="st">"Jackson"</span><span class="ot">]</span></span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
 <p>Our first test checks whether static text is copied over as-is:</p>
 <div class="row">
 <div class="col-6">

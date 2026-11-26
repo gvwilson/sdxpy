@@ -183,16 +183,109 @@ X-Parent-Span-Id: ghi789</code></pre>
 <span id="cb5-61"><a href="#cb5-61" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> decorator</span></code></pre></div>
 <h2 data-number="O.2" id="tracing-types"><span class="header-section-number">O.2</span> Data Types</h2>
 <p>We now need to double back and define the core types for distributed tracing. <code>TraceContext</code> propagates between services:</p>
-<div class="sourceCode" id="cb6" data-file="tracing/tracing_types.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb6" data-file="tracing/tracing_types.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> TraceContext:</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Context propagated between services."""</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    trace_id: <span class="bu">str</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    span_id: <span class="bu">str</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>    parent_span_id: <span class="bu">str</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    baggage: <span class="bu">dict</span>[<span class="bu">str</span>, <span class="bu">str</span>] <span class="op">=</span> field(default_factory<span class="op">=</span><span class="bu">dict</span>)</span></code></pre></div>
 <p><code>Span</code> tracks individual operations, and has methods for adding tags and log entries and to mark the span as completed:</p>
-<div class="sourceCode" id="cb7" data-file="tracing/tracing_types.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb7" data-file="tracing/tracing_types.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Span:</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Represents a unit of work in a trace."""</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    trace_id: <span class="bu">str</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    span_id: <span class="bu">str</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>    parent_span_id: <span class="bu">str</span> <span class="op">|</span> <span class="va">None</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>    operation_name: <span class="bu">str</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>    service_name: <span class="bu">str</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>    start_time: <span class="bu">float</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>    end_time: <span class="bu">float</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>    duration: <span class="bu">float</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>    tags: <span class="bu">dict</span>[<span class="bu">str</span>, Any] <span class="op">=</span> field(default_factory<span class="op">=</span><span class="bu">dict</span>)</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>    logs: <span class="bu">list</span>[<span class="bu">dict</span>[<span class="bu">str</span>, Any]] <span class="op">=</span> field(default_factory<span class="op">=</span><span class="bu">list</span>)</span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> add_tag(<span class="va">self</span>, key: <span class="bu">str</span>, value: Any) <span class="op">-&gt;</span> <span class="va">None</span>:</span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Add metadata tag to span."""</span></span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.tags[key] <span class="op">=</span> value</span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> add_log(<span class="va">self</span>, message: <span class="bu">str</span>, <span class="op">**</span>fields: Any) <span class="op">-&gt;</span> <span class="va">None</span>:</span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Add log entry to span."""</span></span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.logs.append(</span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>            {<span class="st">"message"</span>: message, <span class="st">"timestamp"</span>: Environment.sim_time(), <span class="op">**</span>fields}</span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> finish(<span class="va">self</span>, end_time: <span class="bu">float</span>) <span class="op">-&gt;</span> <span class="va">None</span>:</span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Mark span as complete."""</span></span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.end_time <span class="op">=</span> end_time</span>
+<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.duration <span class="op">=</span> end_time <span class="op">-</span> <span class="va">self</span>.start_time</span></code></pre></div>
 <p>Finally, <code>Trace</code> aggregates spans, and has methods for adding spans and getting the overall duration of the trace:</p>
-<div class="sourceCode" id="cb8" data-file="tracing/tracing_types.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb8" data-file="tracing/tracing_types.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Trace:</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Complete trace containing all spans."""</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    trace_id: <span class="bu">str</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    spans: <span class="bu">list</span>[Span] <span class="op">=</span> field(default_factory<span class="op">=</span><span class="bu">list</span>)</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    start_time: <span class="bu">float</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    end_time: <span class="bu">float</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> add_span(<span class="va">self</span>, span: Span) <span class="op">-&gt;</span> <span class="va">None</span>:</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Add span to trace."""</span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.spans.append(span)</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="va">self</span>.start_time <span class="kw">is</span> <span class="va">None</span> <span class="kw">or</span> span.start_time <span class="op">&lt;</span> <span class="va">self</span>.start_time:</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.start_time <span class="op">=</span> span.start_time</span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> span.end_time:</span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="va">self</span>.end_time <span class="kw">is</span> <span class="va">None</span> <span class="kw">or</span> span.end_time <span class="op">&gt;</span> <span class="va">self</span>.end_time:</span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>                <span class="va">self</span>.end_time <span class="op">=</span> span.end_time</span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> get_root_span(<span class="va">self</span>) <span class="op">-&gt;</span> Span <span class="op">|</span> <span class="va">None</span>:</span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Get root span (no parent)."""</span></span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> span <span class="kw">in</span> <span class="va">self</span>.spans:</span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> span.parent_span_id <span class="kw">is</span> <span class="va">None</span>:</span>
+<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>                <span class="cf">return</span> span</span>
+<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">None</span></span>
+<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> get_duration(<span class="va">self</span>) <span class="op">-&gt;</span> <span class="bu">float</span> <span class="op">|</span> <span class="va">None</span>:</span>
+<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Get total trace duration."""</span></span>
+<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="va">self</span>.start_time <span class="kw">and</span> <span class="va">self</span>.end_time:</span>
+<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="va">self</span>.end_time <span class="op">-</span> <span class="va">self</span>.start_time</span>
+<span id="cb8-26"><a href="#cb8-26" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">None</span></span></code></pre></div>
 <h2 data-number="O.3" id="trace-collector"><span class="header-section-number">O.3</span> Trace Collector</h2>
 <p>The collector is an active process that receives spans from services and assembles them into traces. When it runs, it repeatedly gets a span from its incoming queue and processes it:</p>
-<div class="sourceCode" id="cb9" data-file="tracing/trace_collector.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb9" data-file="tracing/trace_collector.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> TraceCollector(BaseCollector):</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Collects and aggregates spans into traces."""</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> init(<span class="va">self</span>, verbose<span class="op">=</span><span class="va">True</span>) <span class="op">-&gt;</span> <span class="va">None</span>:</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.verbose <span class="op">=</span> verbose</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.span_queue: Queue <span class="op">=</span> Queue(<span class="va">self</span>._env)</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.active_traces: <span class="bu">dict</span>[<span class="bu">str</span>, Trace] <span class="op">=</span> {}</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.completed_traces: <span class="bu">list</span>[Trace] <span class="op">=</span> []</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Statistics</span></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.spans_received <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.traces_completed <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">async</span> <span class="kw">def</span> run(<span class="va">self</span>) <span class="op">-&gt;</span> <span class="va">None</span>:</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Main collector loop."""</span></span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"[</span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>now<span class="sc">:.1f}</span><span class="ss">] TraceCollector started"</span>)</span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>        <span class="cf">while</span> <span class="va">True</span>:</span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>            span <span class="op">=</span> <span class="cf">await</span> <span class="va">self</span>.span_queue.get()</span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.process_span(span)</span></code></pre></div>
 <p>To process a new span, the collector either adds it to an existing trace or creates a new one. If the trace is now complete, the collector moves it from the active set into the completed set:</p>
-<div class="sourceCode" id="cb10" data-file="tracing/trace_collector.py"><pre class="sourceCode python"><code class="sourceCode python"></code></pre></div>
+<div class="sourceCode" id="cb10" data-file="tracing/trace_collector.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> process_span(<span class="va">self</span>, span: Span) <span class="op">-&gt;</span> <span class="va">None</span>:</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Process incoming span."""</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.spans_received <span class="op">+=</span> <span class="dv">1</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Get or create trace</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> span.trace_id <span class="kw">not</span> <span class="kw">in</span> <span class="va">self</span>.active_traces:</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.active_traces[span.trace_id] <span class="op">=</span> Trace(trace_id<span class="op">=</span>span.trace_id)</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>        trace <span class="op">=</span> <span class="va">self</span>.active_traces[span.trace_id]</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>        trace.add_span(span)</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Check if trace is complete</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="va">self</span>.is_trace_complete(trace):</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.complete_trace(trace)</span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="va">self</span>.verbose:</span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>                <span class="va">self</span>.report_trace(trace)</span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>                <span class="va">self</span>.print_span_tree(trace)</span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> is_trace_complete(<span class="va">self</span>, trace: Trace) <span class="op">-&gt;</span> <span class="bu">bool</span>:</span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Check if all spans in trace are finished."""</span></span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="kw">not</span> trace.spans:</span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="va">False</span></span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="bu">all</span>(span.end_time <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span> <span class="cf">for</span> span <span class="kw">in</span> trace.spans)</span>
+<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> complete_trace(<span class="va">self</span>, trace: Trace) <span class="op">-&gt;</span> <span class="va">None</span>:</span>
+<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Mark trace as complete and move to storage."""</span></span>
+<span id="cb10-22"><a href="#cb10-22" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.completed_traces.append(trace)</span>
+<span id="cb10-23"><a href="#cb10-23" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.traces_completed <span class="op">+=</span> <span class="dv">1</span></span>
+<span id="cb10-24"><a href="#cb10-24" aria-hidden="true" tabindex="-1"></a>        <span class="kw">del</span> <span class="va">self</span>.active_traces[trace.trace_id]</span></code></pre></div>
 <h2 data-number="O.4" id="tracing-service"><span class="header-section-number">O.4</span> A Simple Service</h2>
 <p>With all this machinery in place, tracing a microservice is relatively straightforward:</p>
 <div class="sourceCode" id="cb11" data-file="tracing/simple_service.py"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> SimpleService(Process):</span>
