@@ -43,6 +43,8 @@ site:
 	@$(MAKE) slides
 	@mkdir -p $(DOCS)/mccole
 	@cp mccole/mccole-slides.css $(DOCS)/mccole/mccole-slides.css
+	@cp mccole/forma.js $(DOCS)/mccole/forma.js
+	@cp mccole/mccole-forma.css $(DOCS)/mccole/mccole-forma.css
 	@if [ -d images ]; then cp -r images $(DOCS)/images; fi
 	@touch $(DOCS)/.nojekyll
 

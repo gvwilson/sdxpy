@@ -32,6 +32,7 @@ A brief orientation for this Quarto book template.
   - `links.lua`: resolves `@key` links
   - `nav.lua`: topbar navigation
   - `remove-empty-h1.lua`: drops the empty H1 on the home page
+  - `forma.lua`: conditional include of the forma widget assets
 - Shortcodes (`mccole.yml` → `shortcodes:`)
   - `glossary.lua` (`g`)
   - `inc-quarto.lua` (`inc`)
@@ -105,6 +106,20 @@ A brief orientation for this Quarto book template.
 - `> quoted text` followed by `> <cite>author</cite>` creates a quotation
   - CSS puts the author on its own line with an em-dash prefix
 
+## Forma (formative assessment widgets)
+
+- Opt in with `include-forma: true` in `_quarto.yml`; `forma.lua` then injects
+  the `<link>`/`<script>` tags that load the widgets.
+- `forma.js` is a dependency-free ES module that auto-mounts each `div.forma-*`.
+- `mccole-forma.css` styles the widgets in the book palette; the `site` target
+  copies it and `forma.js` into `docs/mccole/`.
+- Four widgets, authored as `::: {.forma-<name>}` divs in Markdown:
+  - `multiple-choice`: `<p>` question + definition list (`dt` option, `dd`
+    explanation; correct = first `dd` starting "Correct").
+  - `flashcard`: `<p>` title + definition list (`dt` front, `dd` back).
+  - `ordering`: `<p>` question + ordered list.
+  - `labeling`: `<p>` question + two-column table (col 2 = comma-separated labels).
+
 ## Boilerplate chapters
 
 - `license/index.qmd`, `conduct/index.qmd`, etc. include `LICENSE.md`,
@@ -131,10 +146,12 @@ A brief orientation for this Quarto book template.
 - `check-bib`: every citation has a bibliography entry
 - `check-links`: every `@key` resolves in `config/links.md`
 - `check-glossary`: every glossary reference resolves
-- `check-formatting`: no adjacent `{{< inc >}}` lines and no four-colon callouts
+- `check-formatting`: no adjacent `{{< inc >}}` lines, no four-colon callouts,
+  no unescaped underscores inside `\text{...}`, and `mccole:` tags are `a-zA-Z0-9`
   - If `inc` shortcode is used on consecutive lines, they are interpreted as a paragraph
 - `check-typos`: runs `typos -c config/typos.toml`
-- `check-html`: basic accessibility checks on the built HTML
+- `check-html`: basic accessibility and reference checks on the built HTML
+  (collects ids from figure captions too)
   - exercised against `fixtures/` via `make check-fixtures`
 
 ## Updating mccole/
