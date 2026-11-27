@@ -184,6 +184,7 @@ A brief orientation for this Quarto book template.
 
 ## Styling
 
+- `mccole/mccole.css`: common definitions
 - `mccole/mccole-book.css`: for web site
 - `mccole/mccole-slides.css`: on top of reveal.js definitions
 - `mccole/tango.css`: syntax highlighting

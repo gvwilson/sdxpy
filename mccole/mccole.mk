@@ -25,6 +25,7 @@ SLIDES_FLAGS = \
   -s \
   -V theme=simple \
   -V slideNumber=true \
+  --css=mccole/mccole.css \
   --css=mccole/mccole-slides.css \
   --mathjax \
   --syntax-highlighting=tango \
@@ -76,6 +77,7 @@ $(DOCS)/%.html: %.qmd
 	@mkdir -p $(DOCS)/mccole
 	@cp mccole/mccole-slides.css $(DOCS)/mccole/mccole-slides.css
 	@sed -i '' '/simple\.css/d' $@
+	@sed -i '' 's:mccole/mccole.css:../mccole/mccole.css:g' $@
 	@sed -i '' 's:mccole/mccole-slides.css:../mccole/mccole-slides.css:g' $@
 
 ## check: check structure, spelling, etc.
