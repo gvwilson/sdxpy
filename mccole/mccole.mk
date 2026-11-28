@@ -46,7 +46,7 @@ site:
 	@cp mccole/mccole-slides.css $(DOCS)/mccole/mccole-slides.css
 	@cp mccole/forma.js $(DOCS)/mccole/forma.js
 	@cp mccole/mccole-forma.css $(DOCS)/mccole/mccole-forma.css
-	@if [ -d images ]; then cp -r images $(DOCS)/images; fi
+	@if [ -d images ]; then cp -r images $(DOCS); fi
 	@touch $(DOCS)/.nojekyll
 
 ## pdf: generate PDF
